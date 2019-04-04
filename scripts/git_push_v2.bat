@@ -22,6 +22,13 @@ IF "%t:~0,1%" == "_" (
 )
 
 :GIT
+ECHO --------------------------------------------------------------------------
 ECHO [41m Pushing to ["%1"] [0m
+ECHO
 CD "%1" & CMD /c git add . & CMD /c git commit -m "Changeset to project structure" & CMD /c git push
+ECHO
 ECHO [95m Push finished[0m
+ECHO --------------------------------------------------------------------------
+
+:END
+ECHO [95m Pushing to "%parent%" finished[0m
