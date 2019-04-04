@@ -6,7 +6,7 @@ SET current=%~n0
 SET parent=%~dp0
 
 :: GitHub Pushing
-ECHO [94m Update to "%parent%"[0m
+ECHO [94m Updating "%parent%"[0m
 
 PAUSE
 
@@ -30,4 +30,4 @@ ECHO --------------------------------------------------------------------------
 GOTO :EOF
 
 :END
-ECHO [94m Push to "%parent%" finished[0m
+ECHO [94m Updating "%parent%" finished[0m
