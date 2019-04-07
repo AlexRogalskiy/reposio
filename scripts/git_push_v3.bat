@@ -10,13 +10,13 @@ ECHO [94m Updating "%parent%"[0m
 
 PAUSE
 
-FOR /d %%i IN (%1*) DO call :GIT %%i
+FOR /d %%i IN (%1*) DO call :GIT %%i %2
 
 GOTO END
 
 :GIT
 SET t=%~nx1
-IF "%t:~0,3%" == "pem" (
+IF "%t:~0,3%" == "%2" (
 	GOTO :GITPUSH
 )
 GOTO :EOF
