@@ -1,0 +1,31 @@
+filetype:php HAXPLORER "Server Files Browser"
+"Enter ip" inurl:"php-ping.php"
+intitle:"PHP Shell *" "Enable stderr" filetype:php
+inurl:"install/install.php"
+"Powerered by PHPFM" filetype:php -username
+inurl:phpSysInfo/ "Created by phpsysinfo"
+"SquirrelMail vesion 1.4.4" inurl:src ext:php
+allinurl: admin mdb
+filetype: sql ("passwd values" | "password values" | "pass values")
+filetype:blt "buddylist"
+"File Upload Manager v1.3" "rename to"
+inurl:passlist.txt
+wwwboard WebAdmin inurl:passwd.txt wwwboard|webadmin
+inurl:webutil.pl
+filetype:xls inurl:"email.xls"
+intitle:index.of finances.xls
+"phone * * *" "address *" "e-mail" intitle:"curriculum vitae"
+"not for distribution" confidential
+filetype:ctt "msn"
+filetype:bak inurl:"htaccess|passwd|shadow|htusers"
+filetype:mdb inurl:"account|users|admin|administrators|passwd|password"
+inurl:admin inurl:backup intitle:index.of
+"Index of/" "Parent Directory" "WS_FTP.ini" filetype:ini WS_FTP PWD
+"A syntax error has occurred" filetype:ihtml
+"Access denied for user" "Using password"
+"Warning:mysql_query()" "invalid query"
+
+intext:"BiTBOARD v2.0" "BiTSHiFTERS Bulletin Board"
+"WebJeff-Filemanager 1.6" Login
+"Advanced Guestbook 2.2" Username inurl:admin
+inurl:server-info "Apache Server Information"
