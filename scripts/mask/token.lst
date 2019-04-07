@@ -24,7 +24,6 @@ inurl:admin inurl:backup intitle:index.of
 "A syntax error has occurred" filetype:ihtml
 "Access denied for user" "Using password"
 "Warning:mysql_query()" "invalid query"
-
 intext:"BiTBOARD v2.0" "BiTSHiFTERS Bulletin Board"
 "WebJeff-Filemanager 1.6" Login
 "Advanced Guestbook 2.2" Username inurl:admin
