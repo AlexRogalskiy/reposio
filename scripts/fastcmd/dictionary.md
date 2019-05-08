@@ -285,10 +285,18 @@ C:\> for /f "tokens=*" %G in ('dir /b /s /a:d "C:\Work\reports*"') do echo Found
 or the same thing in a batch file, with the %'s doubled: 
 for /f "tokens=*" %%G in ('dir /b /s /a:d "C:\Work\reports*"') do echo Found %%G
 --------------------------------------------------------------------------------------------------------
+find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
 --------------------------------------------------------------------------------------------------------
+git fetch --unshallow || true
+git fetch --tags
 --------------------------------------------------------------------------------------------------------
+gem install asciidoctor
 --------------------------------------------------------------------------------------------------------
+docker run -d --name postgres -p 5432:5432 -e POSTGRES_USER=reactive -e POSTGRES_PASSWORD=reactive123 -e POSTGRES_DB=reactive postgres
 --------------------------------------------------------------------------------------------------------
+$ curl -d '{"name":"Test1"}' -H "Content-Type: application/json" -X POST http://localhost:8095/organizations
+$ curl -d '{"name":"Name1", "balance":5000, "organizationId":1}' -H "Content-Type: application/json" -X POST http://localhost:8090/employees
+$ curl -d '{"name":"Name2", "balance":10000, "organizationId":1}' -H "Content-Type: application/json" -X POST http://localhost:8090/employees
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
