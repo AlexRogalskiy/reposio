@@ -1447,6 +1447,7 @@ print secured_url
 kafka-topics.sh --zookeeper <host,host,host> --topic flume-channel --partitions 1 --replication-factor 2 --create
 kafka-console-consumer.sh --bootstrap-server <host,host,host> --topic flume-channel --group flume-channel-consumers --from-beginning
 --------------------------------------------------------------------------------------------------------
+docker run -p "25:25" -p "143:143" linagora/james-jpa-sample:3.3.0
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
