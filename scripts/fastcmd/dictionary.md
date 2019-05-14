@@ -228,6 +228,17 @@ sudo service rsyslog restart
 --------------------------------------------------------------------------------------------------------
 git remote set-url origin <url>
 --------------------------------------------------------------------------------------------------------
+git fetch origin
+git checkout -b mailer_redis origin/mailer_redis
+
+git fetch origin
+git checkout origin/master
+git merge --no-ff mailer_redis
+
+git push origin master
+
+git push --set-upstream origin master_redis
+--------------------------------------------------------------------------------------------------------
 postcss --use autoprefixer -c options.json -o main.css css/*.css
 --------------------------------------------------------------------------------------------------------
  scoop bucket add extras
