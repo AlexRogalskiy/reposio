@@ -359,6 +359,39 @@ find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} $CIRCLE_TEST_REP
 git fetch --unshallow || true
 git fetch --tags
 --------------------------------------------------------------------------------------------------------
+git reset --hard @{u}
+git branch -a; git tag, git log --all or, my preference, you can look graphically at gitk --all --date-order
+git reset --hard REF
+git reset --hard HEAD^
+
+git branch nonce $last
+git rebase -p --onto $destination $first^ nonce
+
+git checkout $destination
+git reset --hard nonce
+git branch -d nonce
+
+
+gitk --all --date-order
+git rebase -p --onto $first^ $last $source
+git rebase -p --onto SHA^ SHA
+
+https://sethrobertson.github.io/GitFixUm/fixup.html
+
+bfg --strip-blobs-bigger-than 100M --replace-text banned.txt repo.git
+
+git clone --mirror git://example.com/some-big-repo.git
+java -jar bfg.jar --strip-blobs-bigger-than 100M some-big-repo.git
+$ cd some-big-repo.git
+$ git reflog expire --expire=now --all && git gc --prune=now --aggressive
+git push
+
+$ bfg --delete-files id_{dsa,rsa}  my-repo.git
+$ bfg --strip-blobs-bigger-than 50M  my-repo.git
+$ bfg --replace-text passwords.txt  my-repo.git
+$ bfg --delete-folders .git --delete-files .git  --no-blob-protection  my-repo.git
+$ bfg --strip-biggest-blobs 100 --protect-blobs-from master,maint,next repo.git
+--------------------------------------------------------------------------------------------------------
 gem install asciidoctor
 --------------------------------------------------------------------------------------------------------
 docker run -d --name postgres -p 5432:5432 -e POSTGRES_USER=reactive -e POSTGRES_PASSWORD=reactive123 -e POSTGRES_DB=reactive postgres
@@ -1924,6 +1957,91 @@ sbin/rabbitmq-server -detached
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
+#### DEVELOPMENT
 --------------------------------------------------------------------------------------------------------
+spring:
+  # (DataSourceAutoConfiguration & DataSourceProperties)
+  datasource:
+    name: ds-h2
+    url: jdbc:h2:D:/work/workspace/fdata;DATABASE_TO_UPPER=false
+    username: h2
+    password: h2
+    driver-class: org.h2.Driver
+	
+@Configuration
+@Component
+public class DataSourceBean {
 
+    @ConfigurationProperties(prefix = "spring.datasource")
+    @Bean
+    @Primary
+    public DataSource getDataSource() {
+        return DataSourceBuilder
+                .create()
+//                .url("jdbc:h2:D:/work/workspace/fork/gs-serving-web-content/initial/data/fdata;DATABASE_TO_UPPER=false")
+//                .username("h2")
+//                .password("h2")
+//                .driverClassName("org.h2.Driver")
+                .build();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+https://<API key>@api.keycdn.com/zones/purge/<zone id>.json
+--------------------------------------------------------------------------------------------------------
+import org.springframework.boot.Banner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.WebApplicationType;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.context.annotation.ComponentScan;
+import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
+@SpringBootApplication
+@EnableAutoConfiguration
+@EnableSwagger2
+@ComponentScan(basePackages = {"io.project"})
+@EntityScan("io.project.domain")
+public class Application {
+
+    public static void main(String[] args) {
+        final SpringApplication application = new SpringApplication(Application.class);
+        application.setBannerMode(Banner.Mode.OFF);
+        application.setWebApplicationType(WebApplicationType.SERVLET);
+        application.run(args);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
