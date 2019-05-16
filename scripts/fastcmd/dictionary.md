@@ -2012,6 +2012,54 @@ sbin/rabbitmq-server -detached
 --------------------------------------------------------------------------------------------------------
 #### DEVELOPMENT
 --------------------------------------------------------------------------------------------------------
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.concurrent.ConcurrentMapCache;
+import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
+import org.springframework.cache.support.SimpleCacheManager;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import static java.util.Arrays.asList;
+
+@Configuration
+@EnableCaching
+public class MailCacheConfiguration {
+
+    /**
+     * Default mail cache names
+     */
+    public static final String DEFAULT_MAIL_FOLDER_CACHE = "MAIL_FOLDER_CACHE";
+    public static final String DEFAULT_MAIL_STORE_CACHE = "MAIL_STORE_CACHE";
+
+//    @Bean
+//    public CacheManager cacheManager() {
+//        final SimpleCacheManager cacheManager = new SimpleCacheManager();
+//        cacheManager.setCaches(asList(this.mailFolderCache(), this.mailStoreCache()));
+//        cacheManager.afterPropertiesSet();
+//        return cacheManager;
+//    }
+
+    @Bean
+    public CacheManager cacheManager() {
+        final ConcurrentMapCacheManager cacheManager = new ConcurrentMapCacheManager("addresses");
+        cacheManager.setAllowNullValues(false);
+        cacheManager.setCacheNames(asList(DEFAULT_MAIL_FOLDER_CACHE, DEFAULT_MAIL_STORE_CACHE));
+        return cacheManager;
+    }
+
+    @Bean
+    public Cache mailFolderCache() {
+        return new ConcurrentMapCache(DEFAULT_MAIL_FOLDER_CACHE);
+    }
+
+    @Bean
+    public Cache mailStoreCache() {
+        return new ConcurrentMapCache(DEFAULT_MAIL_STORE_CACHE);
+    }
+}
+--------------------------------------------------------------------------------------------------------
 spring:
   # (DataSourceAutoConfiguration & DataSourceProperties)
   datasource:
