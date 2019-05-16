@@ -208,6 +208,8 @@ sudo flatpak remote-add --if-not-exists winepak https://dl.winepak.org/repo/wine
 flatpak search overwatch
 sudo flatpak install winepak com.blizzard.Overwatch
 --------------------------------------------------------------------------------------------------------
+ip a | grep inet
+--------------------------------------------------------------------------------------------------------
 timedatectl set-ntp true
 cfdisk
 
