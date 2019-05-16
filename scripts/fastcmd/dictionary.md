@@ -2060,6 +2060,15 @@ public class MailCacheConfiguration {
     }
 }
 --------------------------------------------------------------------------------------------------------
+@CacheEvict(value = {DEFAULT_MAIL_FOLDER_CACHE, DEFAULT_MAIL_STORE_CACHE}, allEntries = true)
+public void destroy() {
+}
+	
+@Caching(evict = { 
+  @CacheEvict("addresses"), 
+  @CacheEvict(value="directory", key="#customer.name") })
+public String getAddress(Customer customer) {...}
+--------------------------------------------------------------------------------------------------------
 spring:
   # (DataSourceAutoConfiguration & DataSourceProperties)
   datasource:
@@ -2147,6 +2156,12 @@ cd $CHE_STARTER_HOME/
 exec java -Djava.security.egd=file:/dev/./urandom -jar ${CHE_STARTER_HOME}/app.jar $@
 exit $?
 --------------------------------------------------------------------------------------------------------
+public static void main(String[] args) {
+  Optional<Integer> maxAge = employeeList
+      .stream()
+      .collect(Collectors.mapping((Employee emp) -> emp.getAge(), Collectors.maxBy(Integer::compareTo)));
+  System.out.println("Max Age: " + maxAge.get());
+}
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
