@@ -190,6 +190,59 @@ route print
 --------------------------------------------------------------------------------------------------------
 #### MISC
 --------------------------------------------------------------------------------------------------------
+Note: Should you find difficulties connecting to the WebDAV directory, update the Basic Authentication Level in Windows Registry.
+
+1. Right-click Start and select Run.
+
+2. Type regedit and press Enter to open Windows Registry Editor.
+
+3. Go to the directory path: “HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\WebClient\Parameters.”
+
+Map Webdav Drive Windows 10 Registry Editor Parameters Basic Auth Level
+
+4. Find “BasicAuthLevel” value. By default the value is set at 2, but if it’s not, right-click and select Modify and then change to 2.
+--------------------------------------------------------------------------------------------------------
+sudo apt install flatpak
+sudo flatpak remote-add --if-not-exists flathubhttps://dl.flathub.org/repo/flathub.flatpakrepo
+sudo flatpak remote-add --if-not-exists winepak https://dl.winepak.org/repo/winepak.flatpakrepo
+flatpak search overwatch
+sudo flatpak install winepak com.blizzard.Overwatch
+--------------------------------------------------------------------------------------------------------
+timedatectl set-ntp true
+cfdisk
+
+mkfs.ext4 /dev/sda1
+mkfs.ext4 /dev/sda2
+
+mount /dev/sda2 /mnt
+mkidr /mnt/boot
+mount /dev/sda1 /mnt/boot
+
+pacstrap /mnt base
+
+genfstab -U /mnt >> /mnt/etc/fstab
+arch-chroot /mnt
+
+ln -sf /usr/share/zoneinfo/America/New_York /etc/localtime
+
+hwclock --systohc
+
+locale-gen
+vi /etc/locale.conf
+LANG=en_US.UTF-8
+
+systemctl enable dhcpcd
+useradd -m -G users,audio,input,optical,storage,video -s /bin/bash username
+
+mkinitcpio -p linux
+pacman -S grub
+grub-install --target=i386-pc /dev/sda
+grub-mkconfig -o /boot/grub/grub.cfg
+
+exit
+umount -R /mnt
+reboot
+--------------------------------------------------------------------------------------------------------
 var paragraphs = document.getElementsByTagName("p");
 for (var i = 0; i < paragraphs.length; i++) {
   var paragraph = paragraphs.item(i);
