@@ -2166,6 +2166,631 @@ public static void main(String[] args) {
 }
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
+### VIM
+--------------------------------------------------------------------------------------------------------
+Global
+
+:help keyword – open help for keyword
+:o file – open file
+:saveas file – save file as
+:close – close current window
+
+Cursor Movements
+
+h – move cursor left
+j – move cursor down
+k – move cursor up
+l – move cursor right
+H – move to top of screen
+M – move to middle of screen
+L – move to bottom of screen
+w – jump forwards to the start of a word
+W – jump forwards to the start of a word (words can contain punctuation)
+e – jump forwards to the end of a word
+E – jump forwards to the end of a word (words can contain punctuation)
+b – jump backwards to the start of a word
+B – jump backwards to the start of a word (words can contain punctuation)
+0 – jump to the start of the line
+^ – jump to the first non-blank character of the line
+$ – jump to the end of the line
+g_ – jump to the last non-blank character of the line
+gg – go to the first line of the document
+G – go to the last line of the document
+5G – go to line 5
+fx – jump to next occurrence of character x
+tx – jump to before next occurrence of character x
+} – jump to next paragraph (or function/block, when editing code)
+{ – jump to previous paragraph (or function/block, when editing code)
+zz – center cursor on screen
+Ctrl + b – move back one full screen
+Ctrl + f – move forward one full screen
+Ctrl + d – move forward 1/2 a screen
+Ctrl + u – move back 1/2 a screen
+
+Tip: Prefix a cursor movement command with a number to repeat it. For example, 4j moves down 4 lines.
+
+Insert Mode
+
+i – insert before the cursor
+I – insert at the beginning of the line
+a – insert (append) after the cursor
+A – insert (append) at the end of the line
+o – append (open) a new line below the current line
+O – append (open) a new line above the current line
+ea – insert (append) at the end of the word
+Esc – exit insert mode
+
+Editing
+
+r – replace a single character
+J – join line below to the current line
+cc – change (replace) entire line
+cw – change (replace) to the end of the word
+c$ – change (replace) to the end of the line
+s – delete character and substitute text
+S – delete line and substitute text (same as cc)
+xp – transpose two letters (delete and paste)
+u – undo
+Ctrl + r – redo
+. – repeat last command
+
+Marking Text (Visual Mode)
+
+v – start visual mode, mark lines, then perform an operation (such as d-delete)
+V – start linewise visual mode
+Ctrl + v – start blockwise visual mode
+o – move to the other end of marked area
+O – move to other corner of block
+aw – mark a word
+ab – a block with ()
+aB – a block with {}
+ib – inner block with ()
+iB – inner block with {}
+Esc – exit visual mode
+
+Visual Commands
+
+> – shift text right
+< – shift text left
+y – yank (copy) marked text
+d – delete marked text
+~ – switch case
+
+Registers
+
+:reg – show registers content
+"xy – yank into register x
+"xp – paste contents of register x
+
+Tip: Registers are being stored in ~/.viminfo, and will be loaded again on next restart of vim.
+
+Tip: Register 0 contains always the value of the last yank command.
+
+Marks
+
+:marks – list of marks
+ma – set current position for mark A
+`a – jump to position of mark A
+y`a – yank text to position of mark A
+
+Macros
+
+qa – record macro a
+q – stop recording macro
+@a – run macro a
+@@ – rerun last run macro
+
+Cut and Paste
+
+yy – yank (copy) a line
+2yy – yank (copy) 2 lines
+yw – yank (copy) the characters of the word from the cursor position to the start of the next word
+y$ – yank (copy) to end of line
+p – put (paste) the clipboard after cursor
+P – put (paste) before cursor
+dd – delete (cut) a line
+2dd – delete (cut) 2 lines
+dw – delete (cut) the characters of the word from the cursor position to the start of the next word
+D – delete (cut) to the end of the line
+d$ – delete (cut) to the end of the line
+x – delete (cut) character
+
+Exiting
+
+:w – write (save) the file, but don’t exit
+:w !sudo tee % – write out the current file using sudo
+:wq or :x or ZZ – write (save) and quit
+:q – quit (fails if there are unsaved changes)
+:q! or ZQ – quit and throw away unsaved changes
+
+Search and Replace
+
+/pattern – search for pattern
+?pattern – search backward for pattern
+\vpattern – ‘very magic’ pattern: non-alphanumeric characters are interpreted as special regex symbols (no escaping needed)
+n – repeat search in same direction
+N – repeat search in opposite direction
+:%s/old/new/g – replace all old with new throughout file
+:%s/old/new/gc – replace all old with new throughout file with confirmations
+:noh – remove highlighting of search matches
+
+Search in Multiple Files
+
+:vimgrep /pattern/ {file} – search for pattern in multiple files
+e.g.
+:vimgrep /foo/ **/*
+:cn – jump to the next match
+:cp – jump to the previous match
+:copen – open a window containing the list of matches
+
+Working With Multiple Files
+
+:e file – edit a file in a new buffer
+:bnext or :bn – go to the next buffer
+:bprev or :bp – go to the previous buffer
+:bd – delete a buffer (close a file)
+:ls – list all open buffers
+:sp file – open a file in a new buffer and split window
+:vsp file – open a file in a new buffer and vertically split window
+Ctrl + ws – split window
+Ctrl + ww – switch windows
+Ctrl + wq – quit a window
+Ctrl + wv – split window vertically
+Ctrl + wh – move cursor to the left window (vertical split)
+Ctrl + wl – move cursor to the right window (vertical split)
+Ctrl + wj – move cursor to the window below (horizontal split)
+Ctrl + wk – move cursor to the window above (horizontal split)
+
+Tabs
+
+:tabnew or :tabnew file – open a file in a new tab
+Ctrl + wT – move the current split window into its own tab
+gt or :tabnext or :tabn – move to the next tab
+gT or :tabprev or :tabp – move to the previous tab
+#gt – move to tab number #
+:tabmove # – move current tab to the #th position (indexed from 0)
+:tabclose or :tabc – close the current tab and all its windows
+:tabonly or :tabo – close all tabs except for the current one
+:tabdo command – run the command on all tabs (e.g. :tabdo q – closes all opened tabs)
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+### INFO
+--------------------------------------------------------------------------------------------------------
+Deploy an Open Source Application
+
+Find an application that you would be interested in using and deploy it. Even if you don’t end up using the application you’ll have gained the experience of setting it up.
+
+    Alfresco
+    Bugzilla
+    DokuWiki
+    Drupal
+    Etherpad Lite
+    Gitlab
+    Joomla
+    MediaWiki
+    Moodle
+    osTicket
+    OwnCloud
+    phpBB
+    PunBB
+    Redmine
+    ServiceDesk Plus
+    SugarCRM
+    Trac
+    Twiki
+    WordPress
+    Zen Cart
+
+Configure Common Services – Client AND Server
+
+    cron
+    CUPS
+    DHCP
+    DNS
+    Email (SMTP, POP, IMAP)
+    LDAP
+    NFS
+    NIS
+    NTP
+    SSH
+
+Configure Monitoring
+
+    Cacti
+    Icinga
+    Monit
+    Munin
+    Nagios
+    OpenNMS
+    Zabbix
+    Zenoss
+
+Create a Build System
+
+    Cobbler
+    FAI
+    Foreman
+    Kickstart
+    Razor
+    Spacewalk
+
+Create a Centralized Syslog Server
+
+    ELK Stack: Elasticsearch, Logstash & Kibana
+    Fluentd
+    Logstash
+    Kibana
+    Splunk
+    syslog-ng
+
+System Automation
+
+    Ansible
+    Chef
+    MakeFiles and/or RakeFiles
+    Puppet
+    Salt Stack
+    Write Shell Scripts
+
+Cluster All The Things
+
+    Load balance web servers or other services using HAProxy
+    Create a MySQL Cluster
+    Create a GlusterFS Cluster
+    Red Hat Cluster (Conga)
+
+Build a NAS
+
+    NFS
+    Samba
+
+Practice Migrating Data
+
+    Migrate data from a disk on one server to a disk on another server.
+    Migrate Databases.
+        Live migrations
+        Export / Import
+
+Create and Manage Users
+
+    FreeIPA
+    LDAP
+    NIS
+    User name ideas: http://www.fakenamegenerator.com/
+
+Configure a Backup Server
+
+    Amanda
+    Bacula
+    Rsnapshot
+    Rsync + SSH
+
+Configure a Firewall
+
+    IPtables
+    UFW
+
+Learn LVM
+
+    Create and restore snapshots
+    Extend volumes without downtime
+
+Configure a Proxy Server
+
+    Forward Proxy
+        Apache
+        Squid
+    Reverse Proxy
+        Apache
+        NGINX
+        Pound
+
+Learn Revision Control
+
+    CVS
+    Git
+    RCS
+--------------------------------------------------------------------------------------------------------
+### UNIX/LINUX
+--------------------------------------------------------------------------------------------------------
+arping
+	
+
+Send ARP request to a neighbour host
+
+arping -I eth0 192.168.1.1
+
+Send ARP request to 192.168.1.1 via interface eth0
+
+arping -D -I eth0 192.168.1.1
+
+Check for duplicate MAC addresses at 192.168.1.1 on eth0
+--------------------------------------------------------------------------------------------------------
+ethtool
+	
+
+Query or control network driver and hardware settings
+
+ethtool -g eth0
+
+Display ring buffer for eth0
+
+ethtool -i eth0
+
+Display driver information for eth0
+
+ethtool -p eth0
+
+Identify eth0 by sight, typically by causing LEDs to blink on the network port
+
+ethtool -S eth0
+
+Display network and driver statistics for eth0
+--------------------------------------------------------------------------------------------------------
+ss
+	
+
+Display socket statistics. The below options can be combined
+
+ss -a
+
+Show all sockets (listening and non-listening)
+
+ss -e
+
+Show detailed socket information
+
+ss -o
+
+Show timer information
+
+ss -n
+
+Do not resolve addresses
+
+ss -p
+
+Show process using the socket
+--------------------------------------------------------------------------------------------------------
+arp -a = ip neigh
+arp -v = ip -s neigh
+arp -s 192.168.1.1 1:2:3:4:5:6 = ip neigh add 192.168.1.1 lladdr 1:2:3:4:5:6 dev eth1
+arp -i eth1 -d 192.168.1.1 = ip neigh del 192.168.1.1 dev eth1
+ifconfig -a = ip addr
+ifconfig eth0 down = ip link set eth0 down
+ifconfig eth0 up = ip link set eth0 up
+ifconfig eth0 192.168.1.1 = ip addr add 192.168.1.1/24 dev eth0
+ifconfig eth0 netmask 255.255.255.0 = ip addr add 192.168.1.1/24 dev eth0
+ifconfig eth0 mtu 9000 = ip link set eth0 mtu 9000
+ifconfig eth0:0 192.168.1.2 = ip addr add 192.168.1.2/24 dev eth0
+netstat = ss
+netstat -neopa = ss -neopa
+netstat -g = ip maddr
+route = ip route
+route add -net 192.168.1.0 netmask 255.255.255.0 dev eth0 = ip route add 192.168.1.0/24 dev eth0
+route add default gw 192.168.1.1 = ip route add default via 192.168.1.1
+--------------------------------------------------------------------------------------------------------
+neigh add
+	
+
+Add an entry to the ARP Table
+
+ip neigh add 192.168.1.1 lladdr 1:2:3:4:5:6 dev em1
+
+Add address 192.168.1.1 with MAC 1:2:3:4:5:6 to em1
+--------------------------------------------------------------------------------------------------------
+neigh del
+	
+
+Invalidate an entry
+
+ip neigh del 192.168.1.1 dev em1
+
+Invalidate the entry for 192.168.1.1 on em1
+--------------------------------------------------------------------------------------------------------
+neigh replace
+	
+
+Replace, or adds if not defined, an entry to the ARP table
+
+ip neigh replace 192.168.1.1 lladdr 1:2:3:4:5:6 dev em1
+
+Replace the entry for address 192.168.1.1 to use MAC 1:2:3:4:5:6 on em1
+--------------------------------------------------------------------------------------------------------
+route add
+	
+
+Add an entry to the routing table
+
+ip route add default via 192.168.1.1 dev em1
+
+Add a default route (for all addresses) via the local gateway 192.168.1.1 that can be reached on device em1
+
+ip route add 192.168.1.0/24 via 192.168.1.1
+
+Add a route to 192.168.1.0/24 via the gateway at 192.168.1.1
+
+ip route add 192.168.1.0/24 dev em1
+
+Add a route to 192.168.1.0/24 that can be reached on
+
+device em1
+--------------------------------------------------------------------------------------------------------
+route delete
+	
+
+Delete a routing table entry
+
+ip route delete 192.168.1.0/24 via 192.168.1.1
+
+Delete the route for 192.168.1.0/24 via the gateway at 192.168.1.1
+--------------------------------------------------------------------------------------------------------
+route replace
+	
+
+Replace, or add if not defined, a route
+
+ip route replace 192.168.1.0/24 dev em1
+
+Replace the defined route for 192.168.1.0/24 to use
+
+device em1
+--------------------------------------------------------------------------------------------------------
+route get
+	
+
+Display the route an address will take
+
+ip route get 192.168.1.5
+
+Display the route taken for IP 192.168.1.5
+--------------------------------------------------------------------------------------------------------
+addr add
+	
+
+Add an address
+
+ip addr add 192.168.1.1/24 dev em1
+
+Add address 192.168.1.1 with netmask 24 to device em1
+--------------------------------------------------------------------------------------------------------
+addr del
+	
+
+Delete an address
+
+ip addr del 192.168.1.1/24 dev em1
+
+Remove address 192.168.1.1/24 from device em1
+--------------------------------------------------------------------------------------------------------
+link set
+	
+
+Alter the status of the interface
+
+ip link set em1 up
+
+Bring em1 online
+
+ip link set em1 down
+
+Bring em1 offline
+
+ip link set em1 mtu 9000
+
+Set the MTU on em1 to 9000
+
+ip link set em1 promisc on
+
+Enable promiscuous mode for em1
+--------------------------------------------------------------------------------------------------------
+maddr add
+	
+
+Add a static link-layer multicast address
+
+ip maddr add 33:33:00:00:00:01 dev em1
+
+Add mutlicast address 33:33:00:00:00:01 to em1
+--------------------------------------------------------------------------------------------------------
+maddr del
+	
+
+Delete a multicast address
+
+ip maddr del 33:33:00:00:00:01 dev em1
+
+Delete address 33:33:00:00:00:01 from em1
+--------------------------------------------------------------------------------------------------------
+addr
+	
+
+Display IP Addresses and property information (abbreviation of address)
+
+ip addr
+
+Show information for all addresses
+
+ip addr show dev em1
+
+Display information only for device em1
+--------------------------------------------------------------------------------------------------------
+link
+	
+
+Manage and display the state of all network interfaces
+
+ip link
+
+Show information for all interfaces
+
+ip link show dev em1
+
+Display information only for device em1
+
+ip -s link
+
+Display interface statistics
+--------------------------------------------------------------------------------------------------------
+route  
+	
+
+Display and alter the routing table
+
+ip route
+
+List all of the route entries in the kernel
+--------------------------------------------------------------------------------------------------------
+maddr
+	
+
+Manage and display multicast IP addresses
+
+ip maddr
+
+Display multicast information for all devices
+
+ip maddr show dev em1
+
+Display multicast information for device em1
+--------------------------------------------------------------------------------------------------------
+neigh
+	
+
+Show neighbour objects; also known as the ARP table for IPv4
+
+ip neigh
+
+Display neighbour objects
+
+ip neigh show dev em1
+
+Show the ARP cache for device em1
+--------------------------------------------------------------------------------------------------------
+help
+	
+
+Display a list of commands and arguments for each subcommand
+
+ip help
+
+Display ip commands and arguments
+
+ip addr help
+
+Display address commands and arguments
+
+ip link help
+
+Display link commands and arguments
+
+ip neigh help
+
+Display neighbour commands and arguments
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
