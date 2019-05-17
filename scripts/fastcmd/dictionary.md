@@ -2014,6 +2014,29 @@ sbin/rabbitmq-server -detached
 --------------------------------------------------------------------------------------------------------
 #### DEVELOPMENT
 --------------------------------------------------------------------------------------------------------
+    /**
+     * Default parsing patterns
+     */
+    private static final String UPPER = "\\p{Lu}|\\P{InBASIC_LATIN}";
+    private static final String LOWER = "\\p{Ll}";
+    private static final String CAMEL_CASE_REGEX = "(?<!(^|[%u_$]))(?=[%u])|(?<!^)(?=[%u][%l])".replace("%u", UPPER).replace("%l", LOWER);
+    /**
+     * Default camel case {@link Pattern}
+     */
+    private static final Pattern CAMEL_CASE = Pattern.compile(CAMEL_CASE_REGEX);
+	
+	    /**
+     * Returns {@link List} by input source {@link String} and 
+     * @param source
+     * @param toLower
+     * @return
+     */
+    private static List<String> split(final String source, final boolean toLower) {
+        Objects.requireNonNull(source, "Source string must not be null!");
+        final List<String> result = CAMEL_CASE.splitAsStream(source).map(i -> toLower ? i.toLowerCase() : i).collect(Collectors.toList());
+        return Collections.unmodifiableList(result);
+    }
+--------------------------------------------------------------------------------------------------------
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
