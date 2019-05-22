@@ -255,6 +255,9 @@ spring:
       - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
       - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
 --------------------------------------------------------------------------------------------------------
+grep --basic-regexp "^.\{1,35\}$"
+echo "Hello" | grep --extended-regexp "^.{1,35}$"
+--------------------------------------------------------------------------------------------------------
 timedatectl set-ntp true
 cfdisk
 
