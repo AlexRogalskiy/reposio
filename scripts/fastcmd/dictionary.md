@@ -2059,6 +2059,115 @@ sbin/rabbitmq-server -detached
 --------------------------------------------------------------------------------------------------------
 #### DEVELOPMENT
 --------------------------------------------------------------------------------------------------------
+public class CacheManager {
+    public static final List<CacheManager> ALL_CACHE_MANAGERS = new CopyOnWriteArrayList<CacheManager>();
+....
+}
+--------------------------------------------------------------------------------------------------------
+@CacheConfig(cacheNames="book", keyGenerator="myKeyGenerator") 
+public class BookRepository {
+
+    @Cacheable
+    public Book findBook(ISBN isbn) {...}
+
+    public Book thisIsNotCached(String someArg) {...}
+}
+--------------------------------------------------------------------------------------------------------
+public class CacheUtil {
+  public static CacheManager myCacheManager;
+
+  public CacheManager getMyCacheManager() {
+    if(myCacheManager == null) {
+    for (CacheManager cacheManager : CacheManager.ALL_CACHE_MANAGERS) {
+       if("myCacheManager".equals(cacheManager.getName())) {
+          myCacheManager = cacheManager;
+       }
+    }
+    return myCacheManager;
+  }
+}
+--------------------------------------------------------------------------------------------------------
+var cacheManager = require('cache-manager');
+var fsStore = require('cache-manager-fs');
+var diskCache = cacheManager.caching({
+    store: fsStore, options: {
+      ttl: 60*60,
+      maxsize: 1000*1000*1000,
+      path: 'diskcache',
+      preventfill: true
+    }
+  });
+
+var ttl = 30;
+
+function getUser(id, cb) {
+    setTimeout(function () {
+        console.log("Returning user from slow database.");
+        cb(null, {id: id, name: 'Bob'});
+    }, 5000);
+}
+
+var userId = 123;
+var key = 'user_' + userId;
+
+// Note: ttl is optional in wrap()
+memoryCache.wrap(key, function (cb) {
+    getUser(userId, cb);
+}, {ttl: ttl}, function (err, user) {
+    console.log(user);
+
+    // Second time fetches user from memoryCache
+    memoryCache.wrap(key, function (cb) {
+        getUser(userId, cb);
+    }, function (err, user) {
+        console.log(user);
+    });
+});
+--------------------------------------------------------------------------------------------------------
+@Bean
+public CacheManager cacheManager() {
+	SimpleCacheManager cacheManager = new SimpleCacheManager();
+	cacheManager.setCaches( Collections.singletonList( new ConcurrentMapCache( “userCache” ) ) );
+
+	// manually call initialize the caches as our SimpleCacheManager is not declared as a bean
+	cacheManager.initializeCaches(); 
+
+	return new TransactionAwareCacheManagerProxy( cacheManager );
+}
+--------------------------------------------------------------------------------------------------------
+Cache transactionAwareUserCache( CacheManager cacheManager ) {
+	return new TransactionAwareCacheDecorator( cacheManager.getCache( “userCache” ) );
+}
+--------------------------------------------------------------------------------------------------------
+@Bean
+public CacheManager cacheManager( net.sf.ehcache.CacheManager ehCacheCacheManager ) {
+	EhCacheCacheManager cacheManager = new EhCacheCacheManager();
+	cacheManager.setCacheManager( ehCacheCacheManager );
+	cacheManager.setTransactionAware( true );
+	return cacheManager;
+}
+
+--------------------------------------------------------------------------------------------------------
+class UserService {
+	@Cacheable(value = "userCache", unless = "#result != null")
+	public User getUserById( long id ) {
+   		return userRepository.getById( id );
+	}
+}
+ 
+class UserRepository {
+	@Caching(
+      put = {
+            @CachePut(value = "userCache", key = "'username:' + #result.username", condition = "#result != null"),
+            @CachePut(value = "userCache", key = "#result.id", condition = "#result != null")
+      }
+	)
+	@Transactional(readOnly = true)
+	public User getById( long id ) {
+	   ...
+	}
+}
+--------------------------------------------------------------------------------------------------------
     /**
      * Default parsing patterns
      */
