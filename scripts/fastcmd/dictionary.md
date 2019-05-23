@@ -2062,6 +2062,57 @@ sbin/rabbitmq-server -detached
 --------------------------------------------------------------------------------------------------------
 #### DEVELOPMENT
 --------------------------------------------------------------------------------------------------------
+@ConfigurationProperties("app.system")
+public class AppSystemProperties {
+
+	@DurationUnit(ChronoUnit.SECONDS)
+	private Duration sessionTimeout = Duration.ofSeconds(30);
+
+	private Duration readTimeout = Duration.ofMillis(1000);
+
+	public Duration getSessionTimeout() {
+		return this.sessionTimeout;
+	}
+
+	public void setSessionTimeout(Duration sessionTimeout) {
+		this.sessionTimeout = sessionTimeout;
+	}
+
+	public Duration getReadTimeout() {
+		return this.readTimeout;
+	}
+
+	public void setReadTimeout(Duration readTimeout) {
+		this.readTimeout = readTimeout;
+	}
+
+}
+@ConfigurationProperties("app.io")
+public class AppIoProperties {
+
+	@DataSizeUnit(DataUnit.MEGABYTES)
+	private DataSize bufferSize = DataSize.ofMegabytes(2);
+
+	private DataSize sizeThreshold = DataSize.ofBytes(512);
+
+	public DataSize getBufferSize() {
+		return this.bufferSize;
+	}
+
+	public void setBufferSize(DataSize bufferSize) {
+		this.bufferSize = bufferSize;
+	}
+
+	public DataSize getSizeThreshold() {
+		return this.sizeThreshold;
+	}
+
+	public void setSizeThreshold(DataSize sizeThreshold) {
+		this.sizeThreshold = sizeThreshold;
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
 public class CacheManager {
     public static final List<CacheManager> ALL_CACHE_MANAGERS = new CopyOnWriteArrayList<CacheManager>();
 ....
@@ -2170,6 +2221,17 @@ class UserRepository {
 	   ...
 	}
 }
+--------------------------------------------------------------------------------------------------------
+LinkedMultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
+map.add("file", new ClassPathResource(file));
+HttpHeaders headers = new HttpHeaders();
+headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+HttpEntity<LinkedMultiValueMap<String, Object>> requestEntity = new    HttpEntity<LinkedMultiValueMap<String, Object>>(
+                    map, headers);
+ResponseEntity<String> result = template.get().exchange(
+                    contextPath.get() + path, HttpMethod.POST, requestEntity,
+                    String.class);
 --------------------------------------------------------------------------------------------------------
     /**
      * Default parsing patterns
