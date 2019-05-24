@@ -2045,6 +2045,7 @@ sbin/rabbitmq-server -detached
 %comspec% /k "C:\Program Files\RabbitMQ Server\rabbitmq_server-3.7.14\sbin\rabbitmq-service.bat" remove & if not errorlevel 1 exit /b 0
 %comspec% /k "C:\Program Files\RabbitMQ Server\rabbitmq_server-3.7.14\sbin\rabbitmq-service.bat" install & if not errorlevel 1 exit /b 0
 --------------------------------------------------------------------------------------------------------
+mvn clean package -Pprod
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
@@ -2069,6 +2070,37 @@ sbin/rabbitmq-server -detached
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
 #### DEVELOPMENT
+--------------------------------------------------------------------------------------------------------
+@Configuration
+@ConditionalOnExpression(
+    "${module.enabled:true} and ${module.submodule.enabled:true}"
+)
+class SubModule {
+  ...
+}
+--------------------------------------------------------------------------------------------------------
+@SpringBootApplication
+public class SpringBootComponentScanApp {
+    private static ApplicationContext applicationContext;
+ 
+    @Bean
+    public ExampleBean exampleBean() {
+        return new ExampleBean();
+    }
+ 
+    public static void main(String[] args) {
+        applicationContext = SpringApplication.run(SpringBootComponentScanApp.class, args);
+        checkBeansPresence("cat", "dog", "rose", "exampleBean", "springBootComponentScanApp");
+ 
+    }
+ 
+    private static void checkBeansPresence(String... beans) {
+        for (String beanName : beans) {
+            System.out.println("Is " + beanName + " in ApplicationContext: " + 
+              applicationContext.containsBean(beanName));
+        }
+    }
+}
 --------------------------------------------------------------------------------------------------------
 var oauthToken = null;
 
