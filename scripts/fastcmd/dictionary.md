@@ -2070,43 +2070,93 @@ sbin/rabbitmq-server -detached
 --------------------------------------------------------------------------------------------------------
 #### DEVELOPMENT
 --------------------------------------------------------------------------------------------------------
-    var oauthToken = null;
+var oauthToken = null;
 
-    function login() {
-        var userLogin = $('#loginField').val();
-        var userPassword = $('#passwordField').val();
-        console.log ( '#someButton was clicked' );
-        $.post({
-            url: 'http://localhost:8080/app/rest/v2/oauth/token',
-            headers: {
-                'Authorization': 'Basic Y2xpZW50OnNlY3JldA==',
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            dataType: 'json',
-            data: {grant_type: 'password', username: userLogin, password: userPassword},
-            success: function (data) {
-                oauthToken = data.access_token;
-                $('#loggedInStatus').show();
-                $('#loginForm').hide();
-                loadRecentOrders();
-            }
-        })
-    }
+function login() {
+    var userLogin = $('#loginField').val();
+    var userPassword = $('#passwordField').val();
+    console.log ( '#someButton was clicked' );
+    $.post({
+        url: 'http://localhost:8080/app/rest/v2/oauth/token',
+        headers: {
+            'Authorization': 'Basic Y2xpZW50OnNlY3JldA==',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        dataType: 'json',
+        data: {grant_type: 'password', username: userLogin, password: userPassword},
+        success: function (data) {
+            oauthToken = data.access_token;
+            $('#loggedInStatus').show();
+            $('#loginForm').hide();
+            loadRecentOrders();
+        }
+    })
+}
 
-    function loadRecentOrders() {
-        $.get({
-            url: 'http://localhost:8080/app/rest/v2/entities/workshop$Order?view=_local',
-            headers: {
-                'Authorization': 'Bearer ' + oauthToken,
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            success: function (data) {
-                $('#recentOrders').show();
-                $.each(data, function (i, order) {
-                    $('#ordersList').append("<li>" + order.description + "</li>");
-                });
-            }
-        });
+function loadRecentOrders() {
+    $.get({
+        url: 'http://localhost:8080/app/rest/v2/entities/workshop$Order?view=_local',
+        headers: {
+            'Authorization': 'Bearer ' + oauthToken,
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        success: function (data) {
+            $('#recentOrders').show();
+            $.each(data, function (i, order) {
+                $('#ordersList').append("<li>" + order.description + "</li>");
+            });
+        }
+    });
+}
+
+@ConfigurationProperties("app.system")
+public class AppSystemProperties {
+
+	@DurationUnit(ChronoUnit.SECONDS)
+	private Duration sessionTimeout = Duration.ofSeconds(30);
+
+	private Duration readTimeout = Duration.ofMillis(1000);
+
+	public Duration getSessionTimeout() {
+		return this.sessionTimeout;
+	}
+
+	public void setSessionTimeout(Duration sessionTimeout) {
+		this.sessionTimeout = sessionTimeout;
+	}
+
+	public Duration getReadTimeout() {
+		return this.readTimeout;
+	}
+
+	public void setReadTimeout(Duration readTimeout) {
+		this.readTimeout = readTimeout;
+	}
+
+}
+@ConfigurationProperties("app.io")
+public class AppIoProperties {
+
+	@DataSizeUnit(DataUnit.MEGABYTES)
+	private DataSize bufferSize = DataSize.ofMegabytes(2);
+
+	private DataSize sizeThreshold = DataSize.ofBytes(512);
+
+	public DataSize getBufferSize() {
+		return this.bufferSize;
+	}
+
+	public void setBufferSize(DataSize bufferSize) {
+		this.bufferSize = bufferSize;
+	}
+
+	public DataSize getSizeThreshold() {
+		return this.sizeThreshold;
+	}
+
+	public void setSizeThreshold(DataSize sizeThreshold) {
+		this.sizeThreshold = sizeThreshold;
+	}
 }
 --------------------------------------------------------------------------------------------------------
 public class CacheManager {
@@ -2397,7 +2447,6 @@ public class AppComponent implements Comparable<AppComponent> {
     }
 }
 --------------------------------------------------------------------------------------------------------
-
 import com.haulmont.cuba.core.global.MessageTools;
 import com.haulmont.cuba.core.global.Messages;
 import org.hibernate.validator.internal.engine.messageinterpolation.InterpolationTerm;
@@ -2709,6 +2758,18 @@ public class BeanValidationImpl implements BeanValidation {
         return locale;
     }
 }
+=======
+LinkedMultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
+map.add("file", new ClassPathResource(file));
+HttpHeaders headers = new HttpHeaders();
+headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+HttpEntity<LinkedMultiValueMap<String, Object>> requestEntity = new    HttpEntity<LinkedMultiValueMap<String, Object>>(
+                    map, headers);
+ResponseEntity<String> result = template.get().exchange(
+                    contextPath.get() + path, HttpMethod.POST, requestEntity,
+                    String.class);
+>>>>>>> b494d6cea61253f648b912ce216862387070907c
 --------------------------------------------------------------------------------------------------------
     /**
      * Default parsing patterns
