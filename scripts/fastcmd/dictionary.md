@@ -418,6 +418,14 @@ rem Move the file to directory
 move "%%a" "%%~dpa%%~xa\"
 ))
 --------------------------------------------------------------------------------------------------------
+docker stop $(docker ps -a -q)
+docker rm $(docker ps -a -q)
+--------------------------------------------------------------------------------------------------------
+git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+git config --global alias.lg "log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
+git lg
+git lg -p
+--------------------------------------------------------------------------------------------------------
 find . -maxdepth 1 -type d \( ! -name . \) -exec bash -c "cd '{}' && pwd" \;
 find . -name .git -type d -execdir git pull -v ';
 For /R %%G in (*.LOG) do Echo REN "%%G" "%%~nG.TXT"
@@ -2062,6 +2070,45 @@ sbin/rabbitmq-server -detached
 --------------------------------------------------------------------------------------------------------
 #### DEVELOPMENT
 --------------------------------------------------------------------------------------------------------
+    var oauthToken = null;
+
+    function login() {
+        var userLogin = $('#loginField').val();
+        var userPassword = $('#passwordField').val();
+        console.log ( '#someButton was clicked' );
+        $.post({
+            url: 'http://localhost:8080/app/rest/v2/oauth/token',
+            headers: {
+                'Authorization': 'Basic Y2xpZW50OnNlY3JldA==',
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            dataType: 'json',
+            data: {grant_type: 'password', username: userLogin, password: userPassword},
+            success: function (data) {
+                oauthToken = data.access_token;
+                $('#loggedInStatus').show();
+                $('#loginForm').hide();
+                loadRecentOrders();
+            }
+        })
+    }
+
+    function loadRecentOrders() {
+        $.get({
+            url: 'http://localhost:8080/app/rest/v2/entities/workshop$Order?view=_local',
+            headers: {
+                'Authorization': 'Bearer ' + oauthToken,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            success: function (data) {
+                $('#recentOrders').show();
+                $.each(data, function (i, order) {
+                    $('#ordersList').append("<li>" + order.description + "</li>");
+                });
+            }
+        });
+}
+--------------------------------------------------------------------------------------------------------
 public class CacheManager {
     public static final List<CacheManager> ALL_CACHE_MANAGERS = new CopyOnWriteArrayList<CacheManager>();
 ....
@@ -2149,7 +2196,6 @@ public CacheManager cacheManager( net.sf.ehcache.CacheManager ehCacheCacheManage
 	cacheManager.setTransactionAware( true );
 	return cacheManager;
 }
-
 --------------------------------------------------------------------------------------------------------
 class UserService {
 	@Cacheable(value = "userCache", unless = "#result != null")
@@ -2169,6 +2215,499 @@ class UserRepository {
 	public User getById( long id ) {
 	   ...
 	}
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class SingleAppResourcePatternResolver extends PathMatchingResourcePatternResolver {
+
+    public static final Pattern JAR_NAME_PATTERN = Pattern.compile(".*/(.+?\\.jar).*");
+
+    private Set<String> dependencyJars;
+
+    public SingleAppResourcePatternResolver(ResourceLoader resourceLoader, Set<String> dependencyJars) {
+        super(resourceLoader);
+        this.dependencyJars = dependencyJars;
+    }
+
+    @Override
+    public Resource[] getResources(String locationPattern) throws IOException {
+        Resource[] resources = super.getResources(locationPattern);
+        return Arrays.stream(resources)
+                .filter(this::foundInDependencies)
+                .toArray(Resource[]::new);
+    }
+
+    private boolean foundInDependencies(Resource resource) {
+        try {
+            String url = resource.getURL().toString();
+            if (url.contains("META-INF/resources/webjars/")) {
+                // WebJAR resources could be loaded from shared dependencies
+                return true;
+            }
+
+            Matcher matcher = JAR_NAME_PATTERN.matcher(url);
+            if (matcher.find()) {
+                String jarName = matcher.group(1);
+                return dependencyJars.contains(jarName);
+            }
+            return true;
+        } catch (IOException e) {
+            throw new RuntimeException("An error occurred while looking for resources", e);
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import javax.annotation.Nullable;
+import java.util.*;
+
+/**
+ * Describes an app component which the current application depends on.
+ */
+public class AppComponent implements Comparable<AppComponent> {
+
+    private final String id;
+    private final List<AppComponent> dependencies = new ArrayList<>();
+    private Properties properties;
+    private Set<String> additiveProperties;
+
+    public AppComponent(String id) {
+        this.id = id;
+    }
+
+    /**
+     * @return app component Id
+     */
+    public String getId() {
+        return id;
+    }
+
+    /**
+     * @return descriptor path by convention
+     */
+    public String getDescriptorPath() {
+        return id.replace('.', '/') + "/app-component.xml";
+    }
+
+    /**
+     * INTERNAL.
+     * Add a dependency to the component.
+     */
+    public void addDependency(AppComponent other) {
+        if (dependencies.contains(other))
+            return;
+        if (other.dependsOn(this))
+            throw new RuntimeException("Circular dependency between app components '" + this + "' and '" + other + "'");
+
+        dependencies.add(other);
+    }
+
+    /**
+     * Check if this component depends on the given component.
+     */
+    public boolean dependsOn(AppComponent other) {
+        for (AppComponent dependency : dependencies) {
+            if (dependency.equals(other) || dependency.dependsOn(other))
+                return true;
+        }
+        return false;
+    }
+
+    /**
+     * INTERNAL.
+     * Set a file-based app property defined in this app component.
+     */
+    public void setProperty(String name, String value, boolean additive) {
+        if (properties == null)
+            properties = new Properties();
+
+        if (additive) {
+            if (additiveProperties == null) {
+                additiveProperties = new HashSet<>();
+            }
+            additiveProperties.add(name);
+        } else if (additiveProperties != null) {
+            additiveProperties.remove(name);
+        }
+
+        properties.setProperty(name, value);
+    }
+
+    /**
+     * @return a file-based app property defined in this app component or null if not found
+     */
+    @Nullable
+    public String getProperty(String property) {
+        return properties == null ? null : properties.getProperty(property);
+    }
+
+    public boolean isAdditiveProperty(String property) {
+        return additiveProperties != null && additiveProperties.contains(property);
+    }
+
+    /**
+     * @return names of properties exported by this app component, sorted in natural order
+     */
+    public List<String> getPropertyNames() {
+        if (properties == null) {
+            return Collections.emptyList();
+        }
+        List<String> list = new ArrayList<>(properties.stringPropertyNames());
+        list.sort(Comparator.naturalOrder());
+        return list;
+    }
+
+    @Override
+    public int compareTo(AppComponent other) {
+        if (this.dependsOn(other))
+            return 1;
+        if (other.dependsOn(this)) {
+            return -1;
+        }
+        return 0;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        AppComponent that = (AppComponent) o;
+
+        return id.equals(that.id);
+
+    }
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return id;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+import com.haulmont.cuba.core.global.MessageTools;
+import com.haulmont.cuba.core.global.Messages;
+import org.hibernate.validator.internal.engine.messageinterpolation.InterpolationTerm;
+import org.hibernate.validator.internal.engine.messageinterpolation.InterpolationTermType;
+import org.hibernate.validator.internal.engine.messageinterpolation.parser.Token;
+import org.hibernate.validator.internal.engine.messageinterpolation.parser.TokenCollector;
+import org.hibernate.validator.internal.engine.messageinterpolation.parser.TokenIterator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.el.ExpressionFactory;
+import javax.validation.MessageInterpolator;
+import javax.validation.ValidationException;
+import java.util.List;
+import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class CubaValidationMessagesInterpolator implements MessageInterpolator {
+    protected static final String DEFAULT_CONSTRAINTS_MESSAGE_PACK = "com.haulmont.cuba.core.global.validation";
+
+    private final Logger log = LoggerFactory.getLogger(CubaValidationMessagesInterpolator.class);
+
+    protected Messages messages;
+    protected ExpressionFactory expressionFactory;
+    protected Locale locale;
+
+    protected static final Pattern LEFT_BRACE = Pattern.compile("\\{", Pattern.LITERAL);
+    protected static final Pattern RIGHT_BRACE = Pattern.compile("\\}", Pattern.LITERAL);
+    protected static final Pattern SLASH = Pattern.compile("\\\\", Pattern.LITERAL);
+    protected static final Pattern DOLLAR = Pattern.compile("\\$", Pattern.LITERAL);
+
+    public CubaValidationMessagesInterpolator(Messages messages, Locale locale) {
+        this.messages = messages;
+        this.locale = locale;
+        this.expressionFactory = ExpressionFactory.newInstance();
+    }
+
+    @Override
+    public String interpolate(String messageTemplate, Context context) {
+        Locale defaultLocale = locale;
+        return interpolate(messageTemplate, context, defaultLocale);
+    }
+
+    @Override
+    public String interpolate(String messageTemplate, Context context, Locale locale) {
+        String interpolatedMessage = messageTemplate;
+        try {
+            interpolatedMessage = interpolateMessage(messageTemplate, context, locale);
+        } catch (ValidationException e) {
+            log.error("Unable to interpolate validation message: {}", e.getMessage());
+        }
+        return interpolatedMessage;
+    }
+
+    protected String interpolateMessage(String messageTemplate, Context context, Locale locale) {
+        String resolvedMessage = interpolateMessage(messageTemplate, locale);
+
+        TokenCollector tokenCollector = new TokenCollector(resolvedMessage, InterpolationTermType.PARAMETER);
+        List<Token> tokens = tokenCollector.getTokenList();
+
+        resolvedMessage = interpolateExpression(new TokenIterator(tokens), context, locale);
+
+        tokenCollector = new TokenCollector(resolvedMessage, InterpolationTermType.EL);
+        tokens = tokenCollector.getTokenList();
+
+        resolvedMessage = interpolateExpression(new TokenIterator(tokens), context, locale);
+
+        resolvedMessage = replaceEscapedLiterals(resolvedMessage);
+
+        return resolvedMessage;
+    }
+
+    protected String interpolateExpression(TokenIterator tokenIterator, Context context, Locale locale) {
+        while (tokenIterator.hasMoreInterpolationTerms()) {
+            String term = tokenIterator.nextInterpolationTerm();
+
+            InterpolationTerm expression = new InterpolationTerm(term, locale, expressionFactory);
+            String resolvedExpression = expression.interpolate(context);
+            tokenIterator.replaceCurrentInterpolationTerm(resolvedExpression);
+        }
+        return tokenIterator.getInterpolatedMessage();
+    }
+
+    protected String replaceEscapedLiterals(String resolvedMessage) {
+        resolvedMessage = LEFT_BRACE.matcher(resolvedMessage).replaceAll("{");
+        resolvedMessage = RIGHT_BRACE.matcher(resolvedMessage).replaceAll("}");
+        resolvedMessage = SLASH.matcher(resolvedMessage).replaceAll(Matcher.quoteReplacement("\\"));
+        resolvedMessage = DOLLAR.matcher(resolvedMessage).replaceAll(Matcher.quoteReplacement("$"));
+        return resolvedMessage;
+    }
+
+    protected String interpolateMessage(String message, Locale locale) {
+        TokenCollector tokenCollector = new TokenCollector(message, InterpolationTermType.PARAMETER);
+        TokenIterator tokenIterator = new TokenIterator(tokenCollector.getTokenList());
+        while (tokenIterator.hasMoreInterpolationTerms()) {
+            String term = tokenIterator.nextInterpolationTerm();
+            String resolvedParameterValue = resolveParameter(term, locale);
+            tokenIterator.replaceCurrentInterpolationTerm(resolvedParameterValue);
+        }
+        return tokenIterator.getInterpolatedMessage();
+    }
+
+    protected String resolveParameter(String parameterName, Locale locale) {
+        String parameterValue;
+        String messageCode = removeCurlyBraces(parameterName);
+        try {
+            if (messageCode.startsWith("javax.validation.constraints")
+                    || messageCode.startsWith("org.hibernate.validator.constraints")) {
+                parameterValue = messages.getMessage(DEFAULT_CONSTRAINTS_MESSAGE_PACK, messageCode, locale);
+                // try to find tokens recursive
+                parameterValue = interpolateMessage(parameterValue, locale);
+            } else if (messageCode.startsWith(MessageTools.MARK) || messageCode.startsWith(MessageTools.MAIN_MARK)) {
+                parameterValue = messages.getTools().loadString(messageCode, locale);
+                // try to find tokens recursive
+                parameterValue = interpolateMessage(parameterValue, locale);
+            } else {
+                parameterValue = parameterName;
+            }
+        } catch (UnsupportedOperationException e) {
+            // return parameter itself
+            parameterValue = parameterName;
+        }
+        return parameterValue;
+    }
+
+    protected String removeCurlyBraces(String parameter) {
+        return parameter.substring(1, parameter.length() - 1);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.haulmont.cuba.core.global.EntityStates;
+import com.haulmont.cuba.core.global.Metadata;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.validation.Path;
+import javax.validation.TraversableResolver;
+import java.lang.annotation.ElementType;
+
+public class CubaValidationTraversableResolver implements TraversableResolver {
+
+    private static final Logger log = LoggerFactory.getLogger(CubaValidationTraversableResolver.class);
+
+    protected Metadata metadata;
+    protected EntityStates entityStates;
+
+    public CubaValidationTraversableResolver(Metadata metadata, EntityStates entityStates) {
+        this.metadata = metadata;
+        this.entityStates = entityStates;
+    }
+
+    @Override
+    public final boolean isReachable(Object traversableObject,
+                                     Path.Node traversableProperty,
+                                     Class<?> rootBeanType,
+                                     Path pathToTraversableObject,
+                                     ElementType elementType) {
+        log.trace("Calling isReachable on object {} with node name {}",
+                traversableObject, traversableProperty.getName());
+
+        if (traversableObject == null
+                || metadata.getClass(traversableObject.getClass()) == null) {
+            return true;
+        }
+
+        return entityStates.isLoaded(traversableObject, traversableProperty.getName());
+    }
+
+    @Override
+    public boolean isCascadable(Object traversableObject, Path.Node traversableProperty, Class<?> rootBeanType,
+                                Path pathToTraversableObject, ElementType elementType) {
+        // return true as org.hibernate.validator.internal.engine.resolver.JPATraversableResolver does
+        return true;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import javax.validation.ClockProvider;
+import java.time.Clock;
+import java.time.ZonedDateTime;
+
+public class CubaValidationTimeProvider implements ClockProvider {
+
+    protected TimeSource timeSource;
+
+    public CubaValidationTimeProvider(TimeSource timeSource) {
+        this.timeSource = timeSource;
+    }
+
+    @Override
+    public Clock getClock() {
+        ZonedDateTime now = timeSource.now();
+        return Clock.fixed(now.toInstant(), now.getZone());
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.haulmont.cuba.core.global.*;
+import com.haulmont.cuba.core.sys.validation.CubaValidationMessagesInterpolator;
+import com.haulmont.cuba.core.sys.validation.CubaValidationTimeProvider;
+import com.haulmont.cuba.core.sys.validation.CubaValidationTraversableResolver;
+import org.hibernate.validator.HibernateValidator;
+import org.hibernate.validator.HibernateValidatorConfiguration;
+import org.hibernate.validator.cfg.ConstraintMapping;
+import org.springframework.stereotype.Component;
+
+import javax.annotation.Nullable;
+import javax.inject.Inject;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
+import java.util.Locale;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static com.haulmont.bali.util.Preconditions.checkNotNullArgument;
+
+@Component(BeanValidation.NAME)
+public class BeanValidationImpl implements BeanValidation {
+
+    public static final ValidationOptions NO_VALIDATION_OPTIONS = new ValidationOptions();
+
+    @Inject
+    protected Messages messages;
+    @Inject
+    protected Metadata metadata;
+    @Inject
+    protected TimeSource timeSource;
+    @Inject
+    protected UserSessionSource userSessionSource;
+    @Inject
+    protected EntityStates entityStates;
+
+    protected ConcurrentHashMap<Locale, ValidatorFactory> validatorFactoriesCache = new ConcurrentHashMap<>();
+
+    @Override
+    public Validator getValidator() {
+        Locale locale = getCurrentLocale();
+
+        return getValidatorWithDefaultFactory(locale);
+    }
+
+    @Override
+    public Validator getValidator(ConstraintMapping constraintMapping) {
+        checkNotNullArgument(constraintMapping);
+
+        return getValidator(constraintMapping, NO_VALIDATION_OPTIONS);
+    }
+
+    @Override
+    public Validator getValidator(@Nullable ConstraintMapping constraintMapping, ValidationOptions options) {
+        checkNotNullArgument(options);
+
+        if (constraintMapping == null
+                && options.getFailFast() == null
+                && options.getLocale() != null) {
+            return getValidatorWithDefaultFactory(options.getLocale());
+        }
+
+        Locale locale;
+        if (options.getLocale() != null) {
+            locale = options.getLocale();
+        } else {
+            locale = getCurrentLocale();
+        }
+
+        HibernateValidatorConfiguration configuration = getValidatorFactoryConfiguration(locale);
+        if (options.getFailFast() != null) {
+            configuration.failFast(options.getFailFast());
+        }
+        if (constraintMapping != null) {
+            configuration.addMapping(constraintMapping);
+        }
+
+        ValidatorFactory factory = configuration.buildValidatorFactory();
+        return factory.getValidator();
+    }
+
+    protected Validator getValidatorWithDefaultFactory(Locale locale) {
+        ValidatorFactory validatorFactoryFromCache = validatorFactoriesCache.get(locale);
+        if (validatorFactoryFromCache != null) {
+            return validatorFactoryFromCache.getValidator();
+        }
+
+        HibernateValidatorConfiguration configuration = getValidatorFactoryConfiguration(locale);
+        ValidatorFactory factory = configuration.buildValidatorFactory();
+
+        validatorFactoriesCache.put(locale, factory);
+
+        return factory.getValidator();
+    }
+
+    protected HibernateValidatorConfiguration getValidatorFactoryConfiguration(Locale locale) {
+        @SuppressWarnings("UnnecessaryLocalVariable")
+        HibernateValidatorConfiguration configuration = Validation.byProvider(HibernateValidator.class)
+                .configure()
+                .clockProvider(new CubaValidationTimeProvider(timeSource))
+                .traversableResolver(new CubaValidationTraversableResolver(metadata, entityStates))
+                .messageInterpolator(new CubaValidationMessagesInterpolator(messages, locale));
+
+        return configuration;
+    }
+
+    protected Locale getCurrentLocale() {
+        Locale locale;
+        if (userSessionSource.checkCurrentUserSession()) {
+            locale = userSessionSource.getLocale();
+        } else {
+            locale = messages.getTools().getDefaultLocale();
+        }
+        return locale;
+    }
 }
 --------------------------------------------------------------------------------------------------------
     /**
@@ -2360,7 +2899,15 @@ public static void main(String[] args) {
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
+### NODE
 --------------------------------------------------------------------------------------------------------
+npm install fs-extra
+npm install google-closure-compiler
+npm install preprocessor
+
+npm run test
+npm run test:watch
+npm run test:release
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
@@ -2369,6 +2916,83 @@ public static void main(String[] args) {
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
 ### VIM
+--------------------------------------------------------------------------------------------------------
+1. Insert mode (Where you can just type like normal text editor. Press i for insert mode)
+2. Command mode (Where you give commands to the editor to get things done . Press ESC for command mode)
+
+Most of them below are in command mode
+
+    x - to delete the unwanted character
+    u - to undo the last the command and U to undo the whole line
+    CTRL-R to redo
+    A - to append text at the end
+    :wq - to save and exit
+    :q! - to trash all changes
+    dw - move the cursor to the beginning of the word to delete that word
+    2w - to move the cursor two words forward.
+    3e - to move the cursor to the end of the third word forward.
+    0 (zero) to move to the start of the line.
+    d2w - which deletes 2 words .. number can be changed for deleting the number of consecutive words like d3w
+    dd to delete the line and 2dd to delete to line .number can be changed for deleting the number of consecutive words
+
+The format for a change command is: operator [number] motion
+-operator - is what to do, such as d for delete
+- [number] - is an optional count to repeat the motion
+- motion - moves over the text to operate on, such as w (word),
+$ (to the end of line), etc.
+
+    p - puts the previously deleted text after the cursor(Type dd to delete the line and store it in a Vim register. and p to put the line)
+
+    r - to replace the letter e.g press re to replace the letter with e
+
+    ce - to change until the end of a word (place the cursor on the u in lubw it will delete ubw )
+
+    ce - deletes the word and places you in Insert mode
+
+    G - to move you to the bottom of the file.
+
+    gg - to move you to the start of the file.
+    Type the number of the line you were on and then G
+
+    % to find a matching ),], or }
+
+    :s/old/new/g to substitute 'new' for 'old' where g is globally
+
+    / backward search n to find the next occurrence and N to search in opposite direction
+
+    ? forward search
+
+    :! to run the shell commands like :!dir, :!ls
+
+    :w - TEST (where TEST is the filename you chose.) . Save the file
+
+    v - starts visual mode for selecting the lines and you can perform operation on that like d delete
+
+    :r - Filename will insert the content into the current file
+
+    R - to replace more than one character
+
+    y - operator to copy text using v visual mode and p to paste it
+
+    yw - (copy)yanks one word
+
+    o - opens a line below the cursor and start Insert mode.
+
+    O - opens a line above the cursor.
+
+    a - inserts text after the cursor.
+
+    A - inserts text after the end of the line.
+
+    e - command moves to the end of a word.
+
+    y - operator yanks (copies) text, p puts (pastes) it.
+
+    R - enters Replace mode until <ESC> is pressed.
+
+    ctrl-w to jump from one window to another
+
+type a command :e and press ctrl+D to list all the command name starts with :e and press tab to complete the command
 --------------------------------------------------------------------------------------------------------
 Global
 
