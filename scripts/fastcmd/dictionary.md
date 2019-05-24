@@ -2071,6 +2071,1780 @@ mvn clean package -Pprod
 --------------------------------------------------------------------------------------------------------
 #### DEVELOPMENT
 --------------------------------------------------------------------------------------------------------
+spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation=true
+ 
+/*
+ * The MIT License
+ *
+ * Copyright 2017 WildBees Labs.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+package com.wildbeeslabs.api.rest.subscription.configuration;
+
+import com.mchange.v2.c3p0.ComboPooledDataSource;
+import com.wildbeeslabs.api.rest.common.service.interfaces.IPropertiesConfiguration;
+
+import java.util.Properties;
+import javax.naming.NamingException;
+import javax.persistence.EntityManagerFactory;
+import javax.sql.DataSource;
+import java.beans.PropertyVetoException;
+
+import org.hibernate.SessionFactory;
+import com.zaxxer.hikari.HikariDataSource;
+
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceBuilder;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.JpaVendorAdapter;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.beans.factory.FactoryBean;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
+import org.springframework.orm.jpa.persistenceunit.DefaultPersistenceUnitManager;
+import org.springframework.orm.jpa.persistenceunit.PersistenceUnitManager;
+import org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+
+/**
+ *
+ * Application JPA Configuration
+ *
+ * @author Alex
+ * @version 1.0.0
+ * @since 2017-08-08
+ */
+@Configuration("subscriptionJpaConfiguration")
+@EnableAutoConfiguration
+@EnableAsync
+@EnableJpaAuditing
+@EnableTransactionManagement
+@EnableJpaRepositories(basePackages = {"com.wildbeeslabs.api.rest.subscription.repository"},
+        entityManagerFactoryRef = "entityManagerFactory",
+        transactionManagerRef = "transactionManager")
+//@ImportResource("classpath:hibernate.cfg.xml")
+//@PropertySource({"classpath:application.default.yml"})
+public class JpaConfiguration {
+
+//    @PersistenceContext(unitName = "ds2", type = PersistenceContextType.TRANSACTION)
+//    private EntityManager em;
+    @Autowired
+    @Qualifier("subscriptionPropertiesConfiguration")
+    private IPropertiesConfiguration propertyConfig;
+
+    /**
+     * Get Property Source placeholder
+     *
+     * @return property source placeholder
+     */
+    @Bean
+    public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() {
+        return new PropertySourcesPlaceholderConfigurer();
+    }
+
+    /**
+     * Get Default DataSource properties
+     *
+     * @return default DataSource properties
+     */
+    @Bean
+    @Primary
+    @ConfigurationProperties(ignoreInvalidFields = true, prefix = "datasource.subscriptionapp")
+    public DataSourceProperties dataSourceProperties() {
+        return new DataSourceProperties();
+    }
+
+    /**
+     * Get DataSource configuration
+     *
+     * @return DataSource configuration
+     */
+    @Bean
+    public DataSource dataSource() {
+        final DataSourceProperties dataSourceProperties = dataSourceProperties();
+        HikariDataSource dataSource = (HikariDataSource) DataSourceBuilder
+                .create(dataSourceProperties.getClassLoader())
+                .driverClassName(dataSourceProperties.getDriverClassName())
+                .url(dataSourceProperties.getUrl())
+                .username(dataSourceProperties.getUsername())
+                .password(dataSourceProperties.getPassword())
+                .type(HikariDataSource.class)
+                .build();
+        // Basic datasource properties
+        //dataSource.setAllowPoolSuspension(propertyConfig.getProperty("datasource.subscriptionapp.allowPoolSuspension", Boolean.class));
+        //dataSource.setAutoCommit(propertyConfig.getProperty("datasource.subscriptionapp.autoCommit", Boolean.class));
+        //dataSource.setMaximumPoolSize(propertyConfig.getProperty("datasource.subscriptionapp.maxPoolSize", Integer.class));
+        // MySQL specific properties
+        /*dataSource.addDataSourceProperty("cachePrepStmts", propertyConfig.getProperty("datasource.subscriptionapp.cachePrepStmts"));
+        dataSource.addDataSourceProperty("prepStmtCacheSize", propertyConfig.getProperty("datasource.subscriptionapp.prepStmtCacheSize"));
+        dataSource.addDataSourceProperty("prepStmtCacheSqlLimit", propertyConfig.getProperty("datasource.subscriptionapp.prepStmtCacheSqlLimit"));
+        dataSource.addDataSourceProperty("useServerPrepStmts", propertyConfig.getProperty("datasource.subscriptionapp.useServerPrepStmts"));
+        dataSource.addDataSourceProperty("useLocalSessionState", propertyConfig.getProperty("datasource.subscriptionapp.useLocalSessionState"));
+        dataSource.addDataSourceProperty("useLocalTransactionState", propertyConfig.getProperty("datasource.subscriptionapp.useLocalTransactionState"));
+        dataSource.addDataSourceProperty("rewriteBatchedStatements", propertyConfig.getProperty("datasource.subscriptionapp.rewriteBatchedStatements"));
+        dataSource.addDataSourceProperty("cacheResultSetMetadata", propertyConfig.getProperty("datasource.subscriptionapp.cacheResultSetMetadata"));
+        dataSource.addDataSourceProperty("cacheServerConfiguration", propertyConfig.getProperty("datasource.subscriptionapp.cacheServerConfiguration"));
+        dataSource.addDataSourceProperty("elideSetAutoCommits", propertyConfig.getProperty("datasource.subscriptionapp.elideSetAutoCommits"));
+        dataSource.addDataSourceProperty("maintainTimeStats", propertyConfig.getProperty("datasource.subscriptionapp.maintainTimeStats"));
+        dataSource.addDataSourceProperty("allowUrlInLocalInfile", propertyConfig.getProperty("datasource.subscriptionapp.allowUrlInLocalInfile"));
+        dataSource.addDataSourceProperty("useReadAheadInput", propertyConfig.getProperty("datasource.subscriptionapp.useReadAheadInput"));
+        dataSource.addDataSourceProperty("useUnbufferedIO", propertyConfig.getProperty("datasource.subscriptionapp.useUnbufferedIO"));*/
+        return dataSource;
+    }
+
+    /**
+     * Get Combo pool DataSource configuration
+     *
+     * @return DataSource configuration
+     * @throws java.beans.PropertyVetoException
+     */
+    //@Bean
+    public DataSource dataSource2() throws PropertyVetoException {
+        final ComboPooledDataSource dataSource2 = new ComboPooledDataSource();
+        dataSource2.setAcquireIncrement(propertyConfig.getProperty("datasource.subscriptionapp.acquireIncrement", Integer.class));
+        dataSource2.setMaxStatementsPerConnection(propertyConfig.getProperty("datasource.subscriptionapp.maxStatementsPerConnection", Integer.class));
+        dataSource2.setMaxStatements(propertyConfig.getProperty("datasource.subscriptionapp.maxStatements", Integer.class));
+        dataSource2.setMaxPoolSize(propertyConfig.getProperty("datasource.subscriptionapp.maxPoolSize", Integer.class));
+        dataSource2.setMinPoolSize(propertyConfig.getProperty("datasource.subscriptionapp.minPoolSize", Integer.class));
+        dataSource2.setJdbcUrl(propertyConfig.getMandatoryProperty("datasource.subscriptionapp.url"));
+        dataSource2.setUser(propertyConfig.getMandatoryProperty("datasource.subscriptionapp.username"));
+        dataSource2.setPassword(propertyConfig.getMandatoryProperty("datasource.subscriptionapp.password"));
+        dataSource2.setDriverClass(propertyConfig.getMandatoryProperty("datasource.subscriptionapp.driverClassName"));
+        return dataSource2;
+    }
+
+    /**
+     * Get DataSource configuration
+     *
+     * @return DataSource configuration
+     * @throws java.beans.PropertyVetoException
+     */
+    //@Bean
+    public DataSource dataSource3() throws PropertyVetoException {
+        final DriverManagerDataSource dataSource = new DriverManagerDataSource();
+        dataSource.setDriverClassName(propertyConfig.getMandatoryProperty("datasource.subscriptionapp.driverClassName"));
+        dataSource.setUrl(propertyConfig.getMandatoryProperty("datasource.subscriptionapp.url"));
+        dataSource.setUsername(propertyConfig.getMandatoryProperty("datasource.subscriptionapp.username"));
+        dataSource.setPassword(propertyConfig.getMandatoryProperty("datasource.subscriptionapp.password"));
+        return dataSource;
+    }
+
+    /**
+     * Get Entity Manager Factory bean
+     *
+     * @return local container emf bean
+     * @throws javax.naming.NamingException
+     */
+    @Bean
+    public LocalContainerEntityManagerFactoryBean entityManagerFactory() throws NamingException {
+        LocalContainerEntityManagerFactoryBean factoryBean = new LocalContainerEntityManagerFactoryBean();
+        factoryBean.setDataSource(dataSource());
+        factoryBean.setPackagesToScan(new String[]{"com.wildbeeslabs.api.rest.common.model", "com.wildbeeslabs.api.rest.subscription.model"});
+        factoryBean.setJpaVendorAdapter(jpaVendorAdapter());
+        factoryBean.setJpaProperties(jpaProperties());
+        factoryBean.setPersistenceUnitName("local");
+//        factoryBean.setPersistenceUnitManager(persistenceUnitManager());
+        return factoryBean;
+    }
+
+    /**
+     * Get Hibernate JPA adapter
+     *
+     * @return hibernate JPA adapter
+     */
+    @Bean
+    public JpaVendorAdapter jpaVendorAdapter() {
+        HibernateJpaVendorAdapter hibernateJpaVendorAdapter = new HibernateJpaVendorAdapter();
+//        hibernateJpaVendorAdapter.setShowSql(true);
+//        hibernateJpaVendorAdapter.setGenerateDdl(true);
+//        hibernateJpaVendorAdapter.setDatabasePlatform(propertyConfig.getMandatoryProperty("datasource.subscriptionapp.hibernate.dialect"));
+        return hibernateJpaVendorAdapter;
+    }
+
+    /**
+     * Get Persistence exception translation processor
+     *
+     * @return persistence exception translation processor
+     */
+    @Bean
+    public PersistenceExceptionTranslationPostProcessor exceptionTranslation() {
+        return new PersistenceExceptionTranslationPostProcessor();
+    }
+
+    /**
+     * Get JPA properties configuration
+     *
+     * @return JPA properties configuration
+     */
+    private Properties jpaProperties() {
+        final Properties properties = new Properties();
+        properties.put("hibernate.dialect", propertyConfig.getMandatoryProperty("datasource.subscriptionapp.hibernate.dialect"));
+        properties.put("hibernate.hbm2ddl.auto", propertyConfig.getProperty("datasource.subscriptionapp.hibernate.hbm2ddl.method"));
+        properties.put("hibernate.show_sql", propertyConfig.getProperty("datasource.subscriptionapp.hibernate.showSql"));
+        properties.put("hibernate.format_sql", propertyConfig.getProperty("datasource.subscriptionapp.hibernate.formatSql"));
+        properties.put("hibernate.max_fetch_depth", propertyConfig.getProperty("datasource.subscriptionapp.hibernate.maxFetchDepth"));
+        properties.put("hibernate.default_batch_fetch_size", propertyConfig.getProperty("datasource.subscriptionapp.hibernate.defaultBatchFetchSize"));
+        properties.put("hibernate.default_schema", propertyConfig.getProperty("datasource.subscriptionapp.hibernate.defaultSchema"));
+        properties.put("hibernate.globally_quoted_identifiers", propertyConfig.getProperty("datasource.subscriptionapp.hibernate.globallyQuotedIdentifiers"));
+        properties.put("hibernate.generate_statistics", propertyConfig.getProperty("datasource.subscriptionapp.hibernate.generateStatistics"));
+        properties.put("hibernate.bytecode.use_reflection_optimizer", propertyConfig.getProperty("datasource.subscriptionapp.hibernate.bytecode.useReflectionOptimizer"));
+
+        // Configure Lucene Search
+        properties.put("spring.jpa.properties.hibernate.search.default.directory_provider", propertyConfig.getProperty("spring.jpa.properties.hibernate.search.default.directoryProvider"));
+        properties.put("spring.jpa.properties.hibernate.search.default.indexBase", propertyConfig.getProperty("spring.jpa.properties.hibernate.search.default.indexBase"));
+        properties.put("spring.jpa.properties.hibernate.search.default.batch.merge_factor", propertyConfig.getProperty("spring.jpa.properties.hibernate.search.default.batch.mergeFactor"));
+        properties.put("spring.jpa.properties.hibernate.search.default.batch.max_buffered_docs", propertyConfig.getProperty("spring.jpa.properties.hibernate.search.default.batch.maxBufferedDocs"));
+
+        if (StringUtils.isNotEmpty(propertyConfig.getProperty("datasource.subscriptionapp.hibernate.hbm2ddl.importFiles"))) {
+            properties.put("hibernate.hbm2ddl.import_files", propertyConfig.getProperty("datasource.subscriptionapp.hibernate.hbm2ddl.importFiles"));
+        }
+
+        // Configure Hibernate Cache
+        properties.put("hibernate.cache.use_second_level_cache", propertyConfig.getProperty("datasource.subscriptionapp.hibernate.cache.useSecondLevelCache"));
+        properties.put("hibernate.cache.use_query_cache", propertyConfig.getProperty("datasource.subscriptionapp.hibernate.cache.useQueryCache"));
+        properties.put("hibernate.cache.region.factory_class", propertyConfig.getProperty("datasource.subscriptionapp.hibernate.cache.region.factoryClass"));
+
+        // Configure Connection Pool
+        properties.put("hibernate.c3p0.min_size", propertyConfig.getProperty("datasource.subscriptionapp.hibernate.c3p0.minSize"));
+        properties.put("hibernate.c3p0.max_size", propertyConfig.getProperty("datasource.subscriptionapp.hibernate.c3p0.maxSize"));
+        properties.put("hibernate.c3p0.timeout", propertyConfig.getProperty("datasource.subscriptionapp.hibernate.c3p0.timeout"));
+        properties.put("hibernate.c3p0.max_statements", propertyConfig.getProperty("datasource.subscriptionapp.hibernate.c3p0.maxStatements"));
+        properties.put("hibernate.c3p0.idle_test_period", propertyConfig.getProperty("datasource.subscriptionapp.hibernate.c3p0.idleTestPeriod"));
+        return properties;
+    }
+
+    /**
+     * Get Transaction Manager
+     *
+     * @param emf - entity manager factory
+     * @return transaction manager
+     */
+    @Bean
+    @Autowired
+    public PlatformTransactionManager transactionManager(final EntityManagerFactory emf) {
+        JpaTransactionManager txManager = new JpaTransactionManager();
+        txManager.setEntityManagerFactory(emf);
+        return txManager;
+    }
+
+    /**
+     * Get Session Factory bean
+     *
+     * @return session factory bean
+     */
+    @Bean
+    public FactoryBean<SessionFactory> sessionFactory() {
+        LocalSessionFactoryBean sessionFactory = new LocalSessionFactoryBean();
+        sessionFactory.setDataSource(dataSource());
+        return sessionFactory;
+    }
+
+    /**
+     * Get Persistence Unit Manager
+     *
+     * @return persistence unit manager
+     */
+    @Bean
+    public PersistenceUnitManager persistenceUnitManager() {
+        DefaultPersistenceUnitManager manager = new DefaultPersistenceUnitManager();
+        manager.setDefaultDataSource(dataSource());
+        return manager;
+    }
+
+    /**
+     * Get Persistence Annotation processor
+     *
+     * @return persistence annotation processor
+     */
+    @Bean
+    public BeanPostProcessor postProcessor() {
+        PersistenceAnnotationBeanPostProcessor postProcessor = new PersistenceAnnotationBeanPostProcessor();
+        return postProcessor;
+    }
+}
+
+ 
+package com.baeldung.jhipster.gateway.gateway.responserewriting;
+
+import com.netflix.zuul.context.RequestContext;
+import org.apache.commons.io.IOUtils;
+import org.junit.Test;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.zip.GZIPInputStream;
+
+import static com.baeldung.jhipster.gateway.gateway.responserewriting.SwaggerBasePathRewritingFilter.gzipData;
+import static org.junit.Assert.*;
+import static springfox.documentation.swagger2.web.Swagger2Controller.DEFAULT_URL;
+
+/**
+ * Tests SwaggerBasePathRewritingFilter class.
+ */
+public class SwaggerBasePathRewritingFilterTest {
+
+    private SwaggerBasePathRewritingFilter filter = new SwaggerBasePathRewritingFilter();
+
+    @Test
+    public void shouldFilter_on_default_swagger_url() {
+
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", DEFAULT_URL);
+        RequestContext.getCurrentContext().setRequest(request);
+
+        assertTrue(filter.shouldFilter());
+    }
+
+    /**
+     * Zuul DebugFilter can be triggered by "deug" parameter.
+     */
+    @Test
+    public void shouldFilter_on_default_swagger_url_with_param() {
+
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", DEFAULT_URL);
+        request.setParameter("debug", "true");
+        RequestContext.getCurrentContext().setRequest(request);
+
+        assertTrue(filter.shouldFilter());
+    }
+
+    @Test
+    public void shouldNotFilter_on_wrong_url() {
+
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/management/info");
+        RequestContext.getCurrentContext().setRequest(request);
+
+        assertFalse(filter.shouldFilter());
+    }
+
+    @Test
+    public void run_on_valid_response() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/service1" + DEFAULT_URL);
+        RequestContext context = RequestContext.getCurrentContext();
+        context.setRequest(request);
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        context.setResponseGZipped(false);
+        context.setResponse(response);
+
+        InputStream in = IOUtils.toInputStream("{\"basePath\":\"/\"}", StandardCharsets.UTF_8);
+        context.setResponseDataStream(in);
+
+        filter.run();
+
+        assertEquals("UTF-8", response.getCharacterEncoding());
+        assertEquals("{\"basePath\":\"/service1\"}", context.getResponseBody());
+    }
+
+    @Test
+    public void run_on_valid_response_gzip() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/service1" + DEFAULT_URL);
+        RequestContext context = RequestContext.getCurrentContext();
+        context.setRequest(request);
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        context.setResponseGZipped(true);
+        context.setResponse(response);
+
+        context.setResponseDataStream(new ByteArrayInputStream(gzipData("{\"basePath\":\"/\"}")));
+
+        filter.run();
+
+        assertEquals("UTF-8", response.getCharacterEncoding());
+
+        InputStream responseDataStream = new GZIPInputStream(context.getResponseDataStream());
+        String responseBody = IOUtils.toString(responseDataStream, StandardCharsets.UTF_8);
+        assertEquals("{\"basePath\":\"/service1\"}", responseBody);
+    }
+}
+
+ 
+ 
+package com.baeldung.jhipster.gateway.config;
+
+import org.springframework.cloud.client.loadbalancer.RestTemplateCustomizer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.security.oauth2.provider.token.TokenStore;
+import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
+import org.springframework.web.client.RestTemplate;
+
+/**
+ * Overrides UAA specific beans, so they do not interfere the testing
+ * This configuration must be included in @SpringBootTest in order to take effect.
+ */
+@Configuration
+public class SecurityBeanOverrideConfiguration {
+
+    @Bean
+    @Primary
+    public TokenStore tokenStore() {
+        return null;
+    }
+
+    @Bean
+    @Primary
+    public JwtAccessTokenConverter jwtAccessTokenConverter() {
+        return null;
+    }
+
+    @Bean
+    @Primary
+    public RestTemplate loadBalancedRestTemplate(RestTemplateCustomizer customizer) {
+        return null;
+    }
+}
+
+ 
+ 
+ 
+package com.baeldung.jhipster.gateway.config;
+
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.servlet.InstrumentedFilter;
+import com.codahale.metrics.servlets.MetricsServlet;
+import io.github.jhipster.config.JHipsterConstants;
+import io.github.jhipster.config.JHipsterProperties;
+import io.github.jhipster.web.filter.CachingHttpHeadersFilter;
+import io.undertow.Undertow;
+import io.undertow.Undertow.Builder;
+import io.undertow.UndertowOptions;
+import org.apache.commons.io.FilenameUtils;
+
+import org.h2.server.web.WebServlet;
+import org.junit.Before;
+import org.junit.Test;
+import org.springframework.boot.web.embedded.undertow.UndertowServletWebServerFactory;
+import org.springframework.http.HttpHeaders;
+import org.springframework.mock.env.MockEnvironment;
+import org.springframework.mock.web.MockServletContext;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.xnio.OptionMap;
+
+import javax.servlet.*;
+import java.util.*;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+/**
+ * Unit tests for the WebConfigurer class.
+ *
+ * @see WebConfigurer
+ */
+public class WebConfigurerTest {
+
+    private WebConfigurer webConfigurer;
+
+    private MockServletContext servletContext;
+
+    private MockEnvironment env;
+
+    private JHipsterProperties props;
+
+    private MetricRegistry metricRegistry;
+
+    @Before
+    public void setup() {
+        servletContext = spy(new MockServletContext());
+        doReturn(mock(FilterRegistration.Dynamic.class))
+            .when(servletContext).addFilter(anyString(), any(Filter.class));
+        doReturn(mock(ServletRegistration.Dynamic.class))
+            .when(servletContext).addServlet(anyString(), any(Servlet.class));
+
+        env = new MockEnvironment();
+        props = new JHipsterProperties();
+
+        webConfigurer = new WebConfigurer(env, props);
+        metricRegistry = new MetricRegistry();
+        webConfigurer.setMetricRegistry(metricRegistry);
+    }
+
+    @Test
+    public void testStartUpProdServletContext() throws ServletException {
+        env.setActiveProfiles(JHipsterConstants.SPRING_PROFILE_PRODUCTION);
+        webConfigurer.onStartup(servletContext);
+
+        assertThat(servletContext.getAttribute(InstrumentedFilter.REGISTRY_ATTRIBUTE)).isEqualTo(metricRegistry);
+        assertThat(servletContext.getAttribute(MetricsServlet.METRICS_REGISTRY)).isEqualTo(metricRegistry);
+        verify(servletContext).addFilter(eq("webappMetricsFilter"), any(InstrumentedFilter.class));
+        verify(servletContext).addServlet(eq("metricsServlet"), any(MetricsServlet.class));
+        verify(servletContext).addFilter(eq("cachingHttpHeadersFilter"), any(CachingHttpHeadersFilter.class));
+        verify(servletContext, never()).addServlet(eq("H2Console"), any(WebServlet.class));
+    }
+
+    @Test
+    public void testStartUpDevServletContext() throws ServletException {
+        env.setActiveProfiles(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT);
+        webConfigurer.onStartup(servletContext);
+
+        assertThat(servletContext.getAttribute(InstrumentedFilter.REGISTRY_ATTRIBUTE)).isEqualTo(metricRegistry);
+        assertThat(servletContext.getAttribute(MetricsServlet.METRICS_REGISTRY)).isEqualTo(metricRegistry);
+        verify(servletContext).addFilter(eq("webappMetricsFilter"), any(InstrumentedFilter.class));
+        verify(servletContext).addServlet(eq("metricsServlet"), any(MetricsServlet.class));
+        verify(servletContext, never()).addFilter(eq("cachingHttpHeadersFilter"), any(CachingHttpHeadersFilter.class));
+        verify(servletContext).addServlet(eq("H2Console"), any(WebServlet.class));
+    }
+
+    @Test
+    public void testCustomizeServletContainer() {
+        env.setActiveProfiles(JHipsterConstants.SPRING_PROFILE_PRODUCTION);
+        UndertowServletWebServerFactory container = new UndertowServletWebServerFactory();
+        webConfigurer.customize(container);
+        assertThat(container.getMimeMappings().get("abs")).isEqualTo("audio/x-mpeg");
+        assertThat(container.getMimeMappings().get("html")).isEqualTo("text/html;charset=utf-8");
+        assertThat(container.getMimeMappings().get("json")).isEqualTo("text/html;charset=utf-8");
+        if (container.getDocumentRoot() != null) {
+            assertThat(container.getDocumentRoot().getPath()).isEqualTo(FilenameUtils.separatorsToSystem("target/www"));
+        }
+
+        Builder builder = Undertow.builder();
+        container.getBuilderCustomizers().forEach(c -> c.customize(builder));
+        OptionMap.Builder serverOptions = (OptionMap.Builder) ReflectionTestUtils.getField(builder, "serverOptions");
+        assertThat(serverOptions.getMap().get(UndertowOptions.ENABLE_HTTP2)).isNull();
+    }
+
+    @Test
+    public void testUndertowHttp2Enabled() {
+        props.getHttp().setVersion(JHipsterProperties.Http.Version.V_2_0);
+        UndertowServletWebServerFactory container = new UndertowServletWebServerFactory();
+        webConfigurer.customize(container);
+        Builder builder = Undertow.builder();
+        container.getBuilderCustomizers().forEach(c -> c.customize(builder));
+        OptionMap.Builder serverOptions = (OptionMap.Builder) ReflectionTestUtils.getField(builder, "serverOptions");
+        assertThat(serverOptions.getMap().get(UndertowOptions.ENABLE_HTTP2)).isTrue();
+    }
+
+    @Test
+    public void testCorsFilterOnApiPath() throws Exception {
+        props.getCors().setAllowedOrigins(Collections.singletonList("*"));
+        props.getCors().setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE"));
+        props.getCors().setAllowedHeaders(Collections.singletonList("*"));
+        props.getCors().setMaxAge(1800L);
+        props.getCors().setAllowCredentials(true);
+
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new WebConfigurerTestController())
+            .addFilters(webConfigurer.corsFilter())
+            .build();
+
+        mockMvc.perform(
+            options("/api/test-cors")
+                .header(HttpHeaders.ORIGIN, "other.domain.com")
+                .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "POST"))
+            .andExpect(status().isOk())
+            .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "other.domain.com"))
+            .andExpect(header().string(HttpHeaders.VARY, "Origin"))
+            .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, "GET,POST,PUT,DELETE"))
+            .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true"))
+            .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_MAX_AGE, "1800"));
+
+        mockMvc.perform(
+            get("/api/test-cors")
+                .header(HttpHeaders.ORIGIN, "other.domain.com"))
+            .andExpect(status().isOk())
+            .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "other.domain.com"));
+    }
+
+    @Test
+    public void testCorsFilterOnOtherPath() throws Exception {
+        props.getCors().setAllowedOrigins(Collections.singletonList("*"));
+        props.getCors().setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE"));
+        props.getCors().setAllowedHeaders(Collections.singletonList("*"));
+        props.getCors().setMaxAge(1800L);
+        props.getCors().setAllowCredentials(true);
+
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new WebConfigurerTestController())
+            .addFilters(webConfigurer.corsFilter())
+            .build();
+
+        mockMvc.perform(
+            get("/test/test-cors")
+                .header(HttpHeaders.ORIGIN, "other.domain.com"))
+            .andExpect(status().isOk())
+            .andExpect(header().doesNotExist(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
+    }
+
+    @Test
+    public void testCorsFilterDeactivated() throws Exception {
+        props.getCors().setAllowedOrigins(null);
+
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new WebConfigurerTestController())
+            .addFilters(webConfigurer.corsFilter())
+            .build();
+
+        mockMvc.perform(
+            get("/api/test-cors")
+                .header(HttpHeaders.ORIGIN, "other.domain.com"))
+            .andExpect(status().isOk())
+            .andExpect(header().doesNotExist(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
+    }
+
+    @Test
+    public void testCorsFilterDeactivated2() throws Exception {
+        props.getCors().setAllowedOrigins(new ArrayList<>());
+
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new WebConfigurerTestController())
+            .addFilters(webConfigurer.corsFilter())
+            .build();
+
+        mockMvc.perform(
+            get("/api/test-cors")
+                .header(HttpHeaders.ORIGIN, "other.domain.com"))
+            .andExpect(status().isOk())
+            .andExpect(header().doesNotExist(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
+    }
+}
+
+ 
+ 
+ 
+ 
+package com.baeldung.jhipster.gateway.security;
+
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.oauth2.common.DefaultOAuth2AccessToken;
+import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.security.oauth2.provider.OAuth2Request;
+import org.springframework.security.oauth2.provider.token.ResourceServerTokenServices;
+import org.springframework.stereotype.Component;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import static org.mockito.BDDMockito.given;
+
+/**
+ * A bean providing simple mocking of OAuth2 access tokens for security integration tests.
+ */
+@Component
+public class OAuth2TokenMockUtil {
+
+    @MockBean
+    private ResourceServerTokenServices tokenServices;
+
+    private OAuth2Authentication createAuthentication(String username, Set<String> scopes, Set<String> roles) {
+        List<GrantedAuthority> authorities = roles.stream()
+            .map(SimpleGrantedAuthority::new)
+            .collect(Collectors.toList());
+
+        User principal = new User(username, "test", true, true, true, true, authorities);
+        Authentication authentication = new UsernamePasswordAuthenticationToken(principal, principal.getPassword(),
+            principal.getAuthorities());
+
+        // Create the authorization request and OAuth2Authentication object
+        OAuth2Request authRequest = new OAuth2Request(null, "testClient", null, true, scopes, null, null, null,
+            null);
+        return new OAuth2Authentication(authRequest, authentication);
+    }
+
+    public RequestPostProcessor oauth2Authentication(String username, Set<String> scopes, Set<String> roles) {
+        String uuid = String.valueOf(UUID.randomUUID());
+
+        given(tokenServices.loadAuthentication(uuid))
+            .willReturn(createAuthentication(username, scopes, roles));
+
+        given(tokenServices.readAccessToken(uuid)).willReturn(new DefaultOAuth2AccessToken(uuid));
+
+        return new OAuth2PostProcessor(uuid);
+    }
+
+    public RequestPostProcessor oauth2Authentication(String username, Set<String> scopes) {
+        return oauth2Authentication(username, scopes, Collections.emptySet());
+    }
+
+    public RequestPostProcessor oauth2Authentication(String username) {
+        return oauth2Authentication(username, Collections.emptySet());
+    }
+
+    public static class OAuth2PostProcessor implements RequestPostProcessor {
+
+        private String token;
+
+        public OAuth2PostProcessor(String token) {
+            this.token = token;
+        }
+
+        @Override
+        public MockHttpServletRequest postProcessRequest(MockHttpServletRequest mockHttpServletRequest) {
+            mockHttpServletRequest.addHeader("Authorization", "Bearer " + token);
+
+            return mockHttpServletRequest;
+        }
+    }
+}
+
+ 
+ 
+ 
+ 
+package com.baeldung.jhipster.gateway.web.rest.errors;
+
+import org.springframework.dao.ConcurrencyFailureException;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+import java.util.HashMap;
+import java.util.Map;
+
+@RestController
+public class ExceptionTranslatorTestController {
+
+    @GetMapping("/test/concurrency-failure")
+    public void concurrencyFailure() {
+        throw new ConcurrencyFailureException("test concurrency failure");
+    }
+
+    @PostMapping("/test/method-argument")
+    public void methodArgument(@Valid @RequestBody TestDTO testDTO) {
+    }
+
+    @GetMapping("/test/parameterized-error")
+    public void parameterizedError() {
+        throw new CustomParameterizedException("test parameterized error", "param0_value", "param1_value");
+    }
+
+    @GetMapping("/test/parameterized-error2")
+    public void parameterizedError2() {
+        Map<String, Object> params = new HashMap<>();
+        params.put("foo", "foo_value");
+        params.put("bar", "bar_value");
+        throw new CustomParameterizedException("test parameterized error", params);
+    }
+
+    @GetMapping("/test/missing-servlet-request-part")
+    public void missingServletRequestPartException(@RequestPart String part) {
+    }
+
+    @GetMapping("/test/missing-servlet-request-parameter")
+    public void missingServletRequestParameterException(@RequestParam String param) {
+    }
+
+    @GetMapping("/test/access-denied")
+    public void accessdenied() {
+        throw new AccessDeniedException("test access denied!");
+    }
+
+    @GetMapping("/test/unauthorized")
+    public void unauthorized() {
+        throw new BadCredentialsException("test authentication failed!");
+    }
+
+    @GetMapping("/test/response-status")
+    public void exceptionWithReponseStatus() {
+        throw new TestResponseStatusException();
+    }
+
+    @GetMapping("/test/internal-server-error")
+    public void internalServerError() {
+        throw new RuntimeException();
+    }
+
+    public static class TestDTO {
+
+        @NotNull
+        private String test;
+
+        public String getTest() {
+            return test;
+        }
+
+        public void setTest(String test) {
+            this.test = test;
+        }
+    }
+
+    @ResponseStatus(value = HttpStatus.BAD_REQUEST, reason = "test response status")
+    @SuppressWarnings("serial")
+    public static class TestResponseStatusException extends RuntimeException {
+    }
+
+}
+
+ 
+ 
+ 
+package com.baeldung.jhipster.gateway.web.rest.errors;
+
+import com.baeldung.jhipster.gateway.GatewayApp;
+import com.baeldung.jhipster.gateway.config.SecurityBeanOverrideConfiguration;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+/**
+ * Test class for the ExceptionTranslator controller advice.
+ *
+ * @see ExceptionTranslator
+ */
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = {SecurityBeanOverrideConfiguration.class, GatewayApp.class})
+public class ExceptionTranslatorIntTest {
+
+    @Autowired
+    private ExceptionTranslatorTestController controller;
+
+    @Autowired
+    private ExceptionTranslator exceptionTranslator;
+
+    @Autowired
+    private MappingJackson2HttpMessageConverter jacksonMessageConverter;
+
+    private MockMvc mockMvc;
+
+    @Before
+    public void setup() {
+        mockMvc = MockMvcBuilders.standaloneSetup(controller)
+            .setControllerAdvice(exceptionTranslator)
+            .setMessageConverters(jacksonMessageConverter)
+            .build();
+    }
+
+    @Test
+    public void testConcurrencyFailure() throws Exception {
+        mockMvc.perform(get("/test/concurrency-failure"))
+            .andExpect(status().isConflict())
+            .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+            .andExpect(jsonPath("$.message").value(ErrorConstants.ERR_CONCURRENCY_FAILURE));
+    }
+
+    @Test
+    public void testMethodArgumentNotValid() throws Exception {
+         mockMvc.perform(post("/test/method-argument").content("{}").contentType(MediaType.APPLICATION_JSON))
+             .andExpect(status().isBadRequest())
+             .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+             .andExpect(jsonPath("$.message").value(ErrorConstants.ERR_VALIDATION))
+             .andExpect(jsonPath("$.fieldErrors.[0].objectName").value("testDTO"))
+             .andExpect(jsonPath("$.fieldErrors.[0].field").value("test"))
+             .andExpect(jsonPath("$.fieldErrors.[0].message").value("NotNull"));
+    }
+
+    @Test
+    public void testParameterizedError() throws Exception {
+        mockMvc.perform(get("/test/parameterized-error"))
+            .andExpect(status().isBadRequest())
+            .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+            .andExpect(jsonPath("$.message").value("test parameterized error"))
+            .andExpect(jsonPath("$.params.param0").value("param0_value"))
+            .andExpect(jsonPath("$.params.param1").value("param1_value"));
+    }
+
+    @Test
+    public void testParameterizedError2() throws Exception {
+        mockMvc.perform(get("/test/parameterized-error2"))
+            .andExpect(status().isBadRequest())
+            .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+            .andExpect(jsonPath("$.message").value("test parameterized error"))
+            .andExpect(jsonPath("$.params.foo").value("foo_value"))
+            .andExpect(jsonPath("$.params.bar").value("bar_value"));
+    }
+
+    @Test
+    public void testMissingServletRequestPartException() throws Exception {
+        mockMvc.perform(get("/test/missing-servlet-request-part"))
+            .andExpect(status().isBadRequest())
+            .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+            .andExpect(jsonPath("$.message").value("error.http.400"));
+    }
+
+    @Test
+    public void testMissingServletRequestParameterException() throws Exception {
+        mockMvc.perform(get("/test/missing-servlet-request-parameter"))
+            .andExpect(status().isBadRequest())
+            .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+            .andExpect(jsonPath("$.message").value("error.http.400"));
+    }
+
+    @Test
+    public void testAccessDenied() throws Exception {
+        mockMvc.perform(get("/test/access-denied"))
+            .andExpect(status().isForbidden())
+            .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+            .andExpect(jsonPath("$.message").value("error.http.403"))
+            .andExpect(jsonPath("$.detail").value("test access denied!"));
+    }
+
+    @Test
+    public void testUnauthorized() throws Exception {
+        mockMvc.perform(get("/test/unauthorized"))
+            .andExpect(status().isUnauthorized())
+            .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+            .andExpect(jsonPath("$.message").value("error.http.401"))
+            .andExpect(jsonPath("$.path").value("/test/unauthorized"))
+            .andExpect(jsonPath("$.detail").value("test authentication failed!"));
+    }
+
+    @Test
+    public void testMethodNotSupported() throws Exception {
+        mockMvc.perform(post("/test/access-denied"))
+            .andExpect(status().isMethodNotAllowed())
+            .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+            .andExpect(jsonPath("$.message").value("error.http.405"))
+            .andExpect(jsonPath("$.detail").value("Request method 'POST' not supported"));
+    }
+
+    @Test
+    public void testExceptionWithResponseStatus() throws Exception {
+        mockMvc.perform(get("/test/response-status"))
+            .andExpect(status().isBadRequest())
+            .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+            .andExpect(jsonPath("$.message").value("error.http.400"))
+            .andExpect(jsonPath("$.title").value("test response status"));
+    }
+
+    @Test
+    public void testInternalServerError() throws Exception {
+        mockMvc.perform(get("/test/internal-server-error"))
+            .andExpect(status().isInternalServerError())
+            .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+            .andExpect(jsonPath("$.message").value("error.http.500"))
+            .andExpect(jsonPath("$.title").value("Internal Server Error"));
+    }
+
+}
+
+ 
+ 
+ 
+package com.baeldung.jhipster.gateway.web.rest;
+
+import com.baeldung.jhipster.gateway.GatewayApp;
+import com.baeldung.jhipster.gateway.config.SecurityBeanOverrideConfiguration;
+import com.baeldung.jhipster.gateway.web.rest.vm.LoggerVM;
+import ch.qos.logback.classic.AsyncAppender;
+import ch.qos.logback.classic.LoggerContext;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+/**
+ * Test class for the LogsResource REST controller.
+ *
+ * @see LogsResource
+ */
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = {SecurityBeanOverrideConfiguration.class, GatewayApp.class})
+public class LogsResourceIntTest {
+
+    private MockMvc restLogsMockMvc;
+
+    @Before
+    public void setup() {
+        LogsResource logsResource = new LogsResource();
+        this.restLogsMockMvc = MockMvcBuilders
+            .standaloneSetup(logsResource)
+            .build();
+    }
+
+    @Test
+    public void getAllLogs() throws Exception {
+        restLogsMockMvc.perform(get("/management/logs"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE));
+    }
+
+    @Test
+    public void changeLogs() throws Exception {
+        LoggerVM logger = new LoggerVM();
+        logger.setLevel("INFO");
+        logger.setName("ROOT");
+
+        restLogsMockMvc.perform(put("/management/logs")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(logger)))
+            .andExpect(status().isNoContent());
+    }
+
+    @Test
+    public void testLogstashAppender() {
+        LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
+        assertThat(context.getLogger("ROOT").getAppender("ASYNC_LOGSTASH")).isInstanceOf(AsyncAppender.class);
+    }
+}
+
+ 
+ 
+package com.baeldung.jhipster.gateway.web.rest;
+
+import com.baeldung.jhipster.gateway.GatewayApp;
+import com.baeldung.jhipster.gateway.config.SecurityBeanOverrideConfiguration;
+import com.baeldung.jhipster.gateway.web.rest.vm.LoggerVM;
+import ch.qos.logback.classic.AsyncAppender;
+import ch.qos.logback.classic.LoggerContext;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+/**
+ * Test class for the LogsResource REST controller.
+ *
+ * @see LogsResource
+ */
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = {SecurityBeanOverrideConfiguration.class, GatewayApp.class})
+public class LogsResourceIntTest {
+
+    private MockMvc restLogsMockMvc;
+
+    @Before
+    public void setup() {
+        LogsResource logsResource = new LogsResource();
+        this.restLogsMockMvc = MockMvcBuilders
+            .standaloneSetup(logsResource)
+            .build();
+    }
+
+    @Test
+    public void getAllLogs() throws Exception {
+        restLogsMockMvc.perform(get("/management/logs"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE));
+    }
+
+    @Test
+    public void changeLogs() throws Exception {
+        LoggerVM logger = new LoggerVM();
+        logger.setLevel("INFO");
+        logger.setName("ROOT");
+
+        restLogsMockMvc.perform(put("/management/logs")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(logger)))
+            .andExpect(status().isNoContent());
+    }
+
+    @Test
+    public void testLogstashAppender() {
+        LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
+        assertThat(context.getLogger("ROOT").getAppender("ASYNC_LOGSTASH")).isInstanceOf(AsyncAppender.class);
+    }
+}
+
+ 
+ 
+package com.baeldung.jhipster.gateway.web.rest;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.hamcrest.Description;
+import org.hamcrest.TypeSafeDiagnosingMatcher;
+import org.springframework.format.datetime.standard.DateTimeFormatterRegistrar;
+import org.springframework.format.support.DefaultFormattingConversionService;
+import org.springframework.format.support.FormattingConversionService;
+import org.springframework.http.MediaType;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeParseException;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * Utility class for testing REST controllers.
+ */
+public class TestUtil {
+
+    /** MediaType for JSON UTF8 */
+    public static final MediaType APPLICATION_JSON_UTF8 = new MediaType(
+            MediaType.APPLICATION_JSON.getType(),
+            MediaType.APPLICATION_JSON.getSubtype(), StandardCharsets.UTF_8);
+
+    /**
+     * Convert an object to JSON byte array.
+     *
+     * @param object
+     *            the object to convert
+     * @return the JSON byte array
+     * @throws IOException
+     */
+    public static byte[] convertObjectToJsonBytes(Object object)
+            throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+
+        JavaTimeModule module = new JavaTimeModule();
+        mapper.registerModule(module);
+
+        return mapper.writeValueAsBytes(object);
+    }
+
+    /**
+     * Create a byte array with a specific size filled with specified data.
+     *
+     * @param size the size of the byte array
+     * @param data the data to put in the byte array
+     * @return the JSON byte array
+     */
+    public static byte[] createByteArray(int size, String data) {
+        byte[] byteArray = new byte[size];
+        for (int i = 0; i < size; i++) {
+            byteArray[i] = Byte.parseByte(data, 2);
+        }
+        return byteArray;
+    }
+
+    /**
+     * A matcher that tests that the examined string represents the same instant as the reference datetime.
+     */
+    public static class ZonedDateTimeMatcher extends TypeSafeDiagnosingMatcher<String> {
+
+        private final ZonedDateTime date;
+
+        public ZonedDateTimeMatcher(ZonedDateTime date) {
+            this.date = date;
+        }
+
+        @Override
+        protected boolean matchesSafely(String item, Description mismatchDescription) {
+            try {
+                if (!date.isEqual(ZonedDateTime.parse(item))) {
+                    mismatchDescription.appendText("was ").appendValue(item);
+                    return false;
+                }
+                return true;
+            } catch (DateTimeParseException e) {
+                mismatchDescription.appendText("was ").appendValue(item)
+                    .appendText(", which could not be parsed as a ZonedDateTime");
+                return false;
+            }
+
+        }
+
+        @Override
+        public void describeTo(Description description) {
+            description.appendText("a String representing the same Instant as ").appendValue(date);
+        }
+    }
+
+    /**
+     * Creates a matcher that matches when the examined string reprensents the same instant as the reference datetime
+     * @param date the reference datetime against which the examined string is checked
+     */
+    public static ZonedDateTimeMatcher sameInstant(ZonedDateTime date) {
+        return new ZonedDateTimeMatcher(date);
+    }
+
+    /**
+     * Verifies the equals/hashcode contract on the domain object.
+     */
+    public static <T> void equalsVerifier(Class<T> clazz) throws Exception {
+        T domainObject1 = clazz.getConstructor().newInstance();
+        assertThat(domainObject1.toString()).isNotNull();
+        assertThat(domainObject1).isEqualTo(domainObject1);
+        assertThat(domainObject1.hashCode()).isEqualTo(domainObject1.hashCode());
+        // Test with an instance of another class
+        Object testOtherObject = new Object();
+        assertThat(domainObject1).isNotEqualTo(testOtherObject);
+        assertThat(domainObject1).isNotEqualTo(null);
+        // Test with an instance of the same class
+        T domainObject2 = clazz.getConstructor().newInstance();
+        assertThat(domainObject1).isNotEqualTo(domainObject2);
+        // HashCodes are equals because the objects are not persisted yet
+        assertThat(domainObject1.hashCode()).isEqualTo(domainObject2.hashCode());
+    }
+
+    /**
+     * Create a FormattingConversionService which use ISO date format, instead of the localized one.
+     * @return the FormattingConversionService
+     */
+    public static FormattingConversionService createFormattingConversionService() {
+        DefaultFormattingConversionService dfcs = new DefaultFormattingConversionService ();
+        DateTimeFormatterRegistrar registrar = new DateTimeFormatterRegistrar();
+        registrar.setUseIsoFormat(true);
+        registrar.registerFormatters(dfcs);
+        return dfcs;
+    }
+}
+
+ 
+ 
+package com.baeldung.jhipster.gateway.web.rest.util;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.junit.Test;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpHeaders;
+
+/**
+ * Tests based on parsing algorithm in app/components/util/pagination-util.service.js
+ *
+ * @see PaginationUtil
+ */
+public class PaginationUtilUnitTest {
+
+    @Test
+    public void generatePaginationHttpHeadersTest() {
+        String baseUrl = "/api/_search/example";
+        List<String> content = new ArrayList<>();
+        Page<String> page = new PageImpl<>(content, PageRequest.of(6, 50), 400L);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(page, baseUrl);
+        List<String> strHeaders = headers.get(HttpHeaders.LINK);
+        assertNotNull(strHeaders);
+        assertTrue(strHeaders.size() == 1);
+        String headerData = strHeaders.get(0);
+        assertTrue(headerData.split(",").length == 4);
+        String expectedData = "</api/_search/example?page=7&size=50>; rel=\"next\","
+                + "</api/_search/example?page=5&size=50>; rel=\"prev\","
+                + "</api/_search/example?page=7&size=50>; rel=\"last\","
+                + "</api/_search/example?page=0&size=50>; rel=\"first\"";
+        assertEquals(expectedData, headerData);
+        List<String> xTotalCountHeaders = headers.get("X-Total-Count");
+        assertTrue(xTotalCountHeaders.size() == 1);
+        assertTrue(Long.valueOf(xTotalCountHeaders.get(0)).equals(400L));
+    }
+
+}
+
+ 
+package com.baeldung.jhipster.gateway.security.oauth2;
+
+import com.baeldung.jhipster.gateway.config.oauth2.OAuth2Properties;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.test.util.ReflectionTestUtils;
+
+/**
+ * Tests helper functions around OAuth2 Cookies.
+ *
+ * @see OAuth2CookieHelper
+ */
+public class OAuth2CookieHelperTest {
+    public static final String GET_COOKIE_DOMAIN_METHOD = "getCookieDomain";
+    private OAuth2Properties oAuth2Properties;
+    private OAuth2CookieHelper cookieHelper;
+
+    @Before
+    public void setUp() throws NoSuchMethodException {
+        oAuth2Properties = new OAuth2Properties();
+        cookieHelper = new OAuth2CookieHelper(oAuth2Properties);
+    }
+
+    @Test
+    public void testLocalhostDomain() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setServerName("localhost");
+        String name = ReflectionTestUtils.invokeMethod(cookieHelper, GET_COOKIE_DOMAIN_METHOD, request);
+        Assert.assertNull(name);
+    }
+
+    @Test
+    public void testComDomain() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setServerName("test.com");
+        String name = ReflectionTestUtils.invokeMethod(cookieHelper, GET_COOKIE_DOMAIN_METHOD, request);
+        Assert.assertNull(name);        //already top-level domain
+    }
+
+    @Test
+    public void testWwwDomainCom() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setServerName("MailScanner has detected a possible fraud attempt from "www.test.com");ÂÂÂÂÂÂÂstringname=reflectiontestutils.invokemethod(cookiehelper,get_cookie_domain_method,request);ÂÂÂÂÂÂÂassert.assertnull(name);ÂÂÂ}ÂÂÂ@testÂÂÂpublicvoidtestcomsubdomain(){ÂÂÂÂÂÂÂmockhttpservletrequestrequest=newmockhttpservletrequest();ÂÂÂÂÂÂÂrequest.setservername("abc.test.com");ÂÂÂÂÂÂÂstringname=reflectiontestutils.invokemethod(cookiehelper,get_cookie_domain_method,request);ÂÂÂÂÂÂÂassert.assertequals(".test.com",name);ÂÂÂ}ÂÂÂ@testÂÂÂpublicvoidtestwwwsubdomaincom(){ÂÂÂÂÂÂÂmockhttpservletrequestrequest=newmockhttpservletrequest();ÂÂÂÂÂÂÂrequest.setservername("www.abc.test.com");ÂÂÂÂÂÂÂstringname=reflectiontestutils.invokemethod(cookiehelper,get_cookie_domain_method,request);ÂÂÂÂÂÂÂassert.assertequals(".test.com",name);ÂÂÂ}ÂÂÂ@testÂÂÂpublicvoidtestcoukdomain(){ÂÂÂÂÂÂÂmockhttpservletrequestrequest=newmockhttpservletrequest();ÂÂÂÂÂÂÂrequest.setservername("test.co.uk");ÂÂÂÂÂÂÂstringname=reflectiontestutils.invokemethod(cookiehelper,get_cookie_domain_method,request);ÂÂÂÂÂÂÂassert.assertnull(name);ÂÂÂÂÂÂÂÂÂÂÂ" claiming to be www.test.com");
+        String name = ReflectionTestUtils.invokeMethod(cookieHelper, GET_COOKIE_DOMAIN_METHOD, request);
+        Assert.assertNull(name);
+    }
+
+    @Test
+    public void testComSubDomain() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setServerName("abc.test.com");
+        String name = ReflectionTestUtils.invokeMethod(cookieHelper, GET_COOKIE_DOMAIN_METHOD, request);
+        Assert.assertEquals(".test.com", name);
+    }
+
+    @Test
+    public void testWwwSubDomainCom() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setServerName("www.abc.test.com");
+        String name = ReflectionTestUtils.invokeMethod(cookieHelper, GET_COOKIE_DOMAIN_METHOD, request);
+        Assert.assertEquals(".test.com", name);
+    }
+
+
+    @Test
+    public void testCoUkDomain() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setServerName("test.co.uk");
+        String name = ReflectionTestUtils.invokeMethod(cookieHelper, GET_COOKIE_DOMAIN_METHOD, request);
+        Assert.assertNull(name);            //already top-level domain
+    }
+
+    @Test
+    public void testCoUkSubDomain() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setServerName("abc.test.co.uk");
+        String name = ReflectionTestUtils.invokeMethod(cookieHelper, GET_COOKIE_DOMAIN_METHOD, request);
+        Assert.assertEquals(".test.co.uk", name);
+    }
+
+    @Test
+    public void testNestedDomain() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setServerName("abc.xyu.test.co.uk");
+        String name = ReflectionTestUtils.invokeMethod(cookieHelper, GET_COOKIE_DOMAIN_METHOD, request);
+        Assert.assertEquals(".test.co.uk", name);
+    }
+
+    @Test
+    public void testIpAddress() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setServerName("127.0.0.1");
+        String name = ReflectionTestUtils.invokeMethod(cookieHelper, GET_COOKIE_DOMAIN_METHOD, request);
+        Assert.assertNull(name);
+    }
+}
+
+ 
+ 
+package com.baeldung.jhipster.gateway.security.oauth2;
+
+import com.baeldung.jhipster.gateway.config.oauth2.OAuth2Properties;
+import com.baeldung.jhipster.gateway.web.filter.RefreshTokenFilter;
+import com.baeldung.jhipster.gateway.web.rest.errors.InvalidPasswordException;
+import io.github.jhipster.config.JHipsterProperties;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.http.*;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.oauth2.common.DefaultOAuth2AccessToken;
+import org.springframework.security.oauth2.common.DefaultOAuth2RefreshToken;
+import org.springframework.security.oauth2.common.OAuth2AccessToken;
+import org.springframework.security.oauth2.common.exceptions.InvalidTokenException;
+import org.springframework.security.oauth2.provider.token.TokenStore;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
+
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.mockito.Mockito.when;
+
+/**
+ * Test password and refresh token grants.
+ *
+ * @see OAuth2AuthenticationService
+ */
+@RunWith(MockitoJUnitRunner.class)
+public class OAuth2AuthenticationServiceTest {
+    public static final String CLIENT_AUTHORIZATION = "Basic d2ViX2FwcDpjaGFuZ2VpdA==";
+    public static final String ACCESS_TOKEN_VALUE = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0OTQyNzI4NDQsInVzZXJfbmFtZSI6InVzZXIiLCJhdXRob3JpdGllcyI6WyJST0xFX1VTRVIiXSwianRpIjoiNzc1ZTJkYWUtYWYzZi00YTdhLWExOTktNzNiZTU1MmIxZDVkIiwiY2xpZW50X2lkIjoid2ViX2FwcCIsInNjb3BlIjpbIm9wZW5pZCJdfQ.gEK0YcX2IpkpxnkxXXHQ4I0xzTjcy7edqb89ukYE0LPe7xUcZVwkkCJF_nBxsGJh2jtA6NzNLfY5zuL6nP7uoAq3fmvsyrcyR2qPk8JuuNzGtSkICx3kPDRjAT4ST8SZdeh7XCbPVbySJ7ZmPlRWHyedzLA1wXN0NUf8yZYS4ELdUwVBYIXSjkNoKqfWm88cwuNr0g0teypjPtjDqCnXFt1pibwdfIXn479Y1neNAdvSpHcI4Ost-c7APCNxW2gqX-0BItZQearxRgKDdBQ7CGPAIky7dA0gPuKUpp_VCoqowKCXqkE9yKtRQGIISewtj2UkDRZePmzmYrUBXRzfYw";
+    public static final String REFRESH_TOKEN_VALUE = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJ1c2VyIiwic2NvcGUiOlsib3BlbmlkIl0sImF0aSI6Ijc3NWUyZGFlLWFmM2YtNGE3YS1hMTk5LTczYmU1NTJiMWQ1ZCIsImV4cCI6MTQ5Njg2NDc0MywiYXV0aG9yaXRpZXMiOlsiUk9MRV9VU0VSIl0sImp0aSI6IjhmYjI2YTllLTdjYzQtNDFlMi1hNzBjLTk4MDc0N2U2YWFiOSIsImNsaWVudF9pZCI6IndlYl9hcHAifQ.q1-Df9_AFO6TJNiLKV2YwTjRbnd7qcXv52skXYnog5siHYRoR6cPtm6TNQ04iDAoIHljTSTNnD6DS3bHk41mV55gsSVxGReL8VCb_R8ZmhVL4-5yr90sfms0wFp6lgD2bPmZ-TXiS2Oe9wcbNWagy5RsEplZ-sbXu3tjmDao4FN35ojPsXmUs84XnNQH3Y_-PY9GjZG0JEfLQIvE0J5BkXS18Z015GKyA6GBIoLhAGBQQYyG9m10ld_a9fD5SmCyCF72Jad_pfP1u8Z_WyvO-wrlBvm2x-zBthreVrXU5mOb9795wJEP-xaw3dXYGjht_grcW4vKUFtj61JgZk98CQ";
+    public static final String EXPIRED_SESSION_TOKEN_VALUE = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJ1c2VyIiwic2NvcGUiOlsib3BlbmlkIl0sImF0aSI6IjE0NTkwYzdkLTQ5M2YtNDU0NS05MzlmLTg1ODM4ZjRmNzNmNSIsImV4cCI6MTQ5NTU3Mjg5MywiaWF0IjoxNDk1MzIwODkzLCJhdXRob3JpdGllcyI6WyJST0xFX1VTRVIiXSwianRpIjoiNzVhYTIxNzEtMzFmNi00MWJmLWExZGUtYWU0YTg1ZjZiMjEyIiwiY2xpZW50X2lkIjoid2ViX2FwcCJ9.gAH-yly7WAslQUeGhyHmjYXwQN3dluvoT84iOJ2mVWYGVlnDRsoxN3_d1ozqtiso9UM7dWpAr80o3gK7AyK-cO1GGBXa3lg0ETsbucFoqHLivgGZA2qVOsFlDq8E7DZENAbOWmywmhFUOogCfZ-BqsuFSi8waMLL-1qlhehBPuK1KzGxIZbjSVUFFFYTxoWPKi2NNTBzYSwwCV0ixj-gHyFC6Gl5ByA4EvYygGUZF2pACxs4tIRkmT90pXWCjWeKS9k9MlxZ7C4UHqyTRW-IYzqAm8OHdwsnXeu0GkFYc08gxoUuPcjMby8ziYLG5uWj0Ua0msmiSjoafzs-5xfH-Q";
+    public static final String NEW_ACCESS_TOKEN_VALUE = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0OTQyNzY2NDEsInVzZXJfbmFtZSI6InVzZXIiLCJhdXRob3JpdGllcyI6WyJST0xFX1VTRVIiXSwianRpIjoiYzIyY2YzMDgtZTIyYi00YzNjLWI5MjctOTYwYzA2YmY1ZmU0IiwiY2xpZW50X2lkIjoid2ViX2FwcCIsInNjb3BlIjpbIm9wZW5pZCJdfQ.IAhE39GCqWRUuXdWy-raOcE9NYXRhGiqkeJH649501LeqNPH5HtRUNWmudVRgwT52Bj7HcbJapMLGetKIMEASqC1-WARfcZ_PR0r7Kfg3OlFALWOH_oVT5kvi2H-QCoSAF9mRYK6abCh_tPk5KryVB5c7YxTMIXDT2nTsSexD8eNQOMBWRCg0RaLHZ9bKfeyVgncQJsu7-vTo1xJyh-keYpdNZ0TA2SjYJgezmB7gwW1Kmc7_83htr8VycG7XA_PuD9--yRNlrN0LtNHEBqNypZsOe6NvpKiNlodFYHlsU1CaumzcF9U7dpVanjIUKJ5VRWVUlSFY6JJ755W29VCTw";
+    public static final String NEW_REFRESH_TOKEN_VALUE = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJ1c2VyIiwic2NvcGUiOlsib3BlbmlkIl0sImF0aSI6ImMyMmNmMzA4LWUyMmItNGMzYy1iOTI3LTk2MGMwNmJmNWZlNCIsImV4cCI6MTQ5Njg2ODU4MSwiYXV0aG9yaXRpZXMiOlsiUk9MRV9VU0VSIl0sImp0aSI6ImU4YmZhZWJlLWYzMDItNGNjZS1hZGY1LWQ4MzE5OWM1MjBlOSIsImNsaWVudF9pZCI6IndlYl9hcHAifQ.OemWBUfc-2rl4t4VVqolYxul3L527PbSbX2Xvo7oyy3Vy5nmmblqp4hVGdTEjivrlldGVQX03ERbrA-oFkpmfWbBzLvnKS6AUq1MGjut6dXZJeiEqNYmiAABn6jSgK26S0k6b2ADgmf7mxJO8EBypb5sT1DMAbY5cbOe7r4ZG7zMTVSvlvjHTXp_FM8Y9i6nehLD4XDYY57cb_ZA89vAXNzvTAjoopDliExgR0bApG6nvvDEhEYgTS65lccEQocoev6bISJ3RvNYNPJxWcNPftKDp4HrEt2E2WP28K5IivRtQgDQNlQeormf1tp6AG-Oj__NXyAPM7yhAKXNy2zWdQ";
+    @Mock
+    private RestTemplate restTemplate;
+    @Mock
+    private TokenStore tokenStore;
+    private OAuth2TokenEndpointClient authorizationClient;
+    private OAuth2AuthenticationService authenticationService;
+    private RefreshTokenFilter refreshTokenFilter;
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
+    private OAuth2Properties oAuth2Properties;
+    private JHipsterProperties jHipsterProperties;
+
+    @Before
+    public void init() {
+        oAuth2Properties = new OAuth2Properties();
+        jHipsterProperties = new JHipsterProperties();
+        jHipsterProperties.getSecurity().getClientAuthorization().setAccessTokenUri("http://uaa/oauth/token");
+        OAuth2CookieHelper cookieHelper = new OAuth2CookieHelper(oAuth2Properties);
+        OAuth2AccessToken accessToken = createAccessToken(ACCESS_TOKEN_VALUE, REFRESH_TOKEN_VALUE);
+
+        mockInvalidPassword();
+        mockPasswordGrant(accessToken);
+        mockRefreshGrant();
+
+        authorizationClient = new UaaTokenEndpointClient(restTemplate, jHipsterProperties, oAuth2Properties);
+        authenticationService = new OAuth2AuthenticationService(authorizationClient, cookieHelper);
+        when(tokenStore.readAccessToken(ACCESS_TOKEN_VALUE)).thenReturn(accessToken);
+        refreshTokenFilter = new RefreshTokenFilter(authenticationService, tokenStore);
+    }
+
+    public static OAuth2AccessToken createAccessToken(String accessTokenValue, String refreshTokenValue) {
+        DefaultOAuth2AccessToken accessToken = new DefaultOAuth2AccessToken(accessTokenValue);
+        accessToken.setExpiration(new Date());          //token expires now
+        DefaultOAuth2RefreshToken refreshToken = new DefaultOAuth2RefreshToken(refreshTokenValue);
+        accessToken.setRefreshToken(refreshToken);
+        return accessToken;
+    }
+
+    public static MockHttpServletRequest createMockHttpServletRequest() {
+        MockHttpServletRequest request = new MockHttpServletRequest(HttpMethod.GET.name(), "http://www.test.com");
+        Cookie accessTokenCookie = new Cookie(OAuth2CookieHelper.ACCESS_TOKEN_COOKIE, ACCESS_TOKEN_VALUE);
+        Cookie refreshTokenCookie = new Cookie(OAuth2CookieHelper.REFRESH_TOKEN_COOKIE, REFRESH_TOKEN_VALUE);
+        request.setCookies(accessTokenCookie, refreshTokenCookie);
+        return request;
+    }
+
+    private void mockInvalidPassword() {
+        HttpHeaders reqHeaders = new HttpHeaders();
+        reqHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        reqHeaders.add("Authorization", CLIENT_AUTHORIZATION);                //take over Authorization header from client request to UAA request
+        MultiValueMap<String, String> formParams = new LinkedMultiValueMap<>();
+        formParams.set("username", "user");
+        formParams.set("password", "user2");
+        formParams.add("grant_type", "password");
+        HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(formParams, reqHeaders);
+        when(restTemplate.postForEntity("http://uaa/oauth/token", entity, OAuth2AccessToken.class))
+            .thenThrow(new HttpClientErrorException(HttpStatus.BAD_REQUEST));
+    }
+
+    private void mockPasswordGrant(OAuth2AccessToken accessToken) {
+        HttpHeaders reqHeaders = new HttpHeaders();
+        reqHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        reqHeaders.add("Authorization", CLIENT_AUTHORIZATION);                //take over Authorization header from client request to UAA request
+        MultiValueMap<String, String> formParams = new LinkedMultiValueMap<>();
+        formParams.set("username", "user");
+        formParams.set("password", "user");
+        formParams.add("grant_type", "password");
+        HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(formParams, reqHeaders);
+        when(restTemplate.postForEntity("http://uaa/oauth/token", entity, OAuth2AccessToken.class))
+            .thenReturn(new ResponseEntity<OAuth2AccessToken>(accessToken, HttpStatus.OK));
+    }
+
+    private void mockRefreshGrant() {
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("grant_type", "refresh_token");
+        params.add("refresh_token", REFRESH_TOKEN_VALUE);
+        //we must authenticate with the UAA server via HTTP basic authentication using the browser's client_id with no client secret
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Authorization", CLIENT_AUTHORIZATION);
+        HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(params, headers);
+        OAuth2AccessToken newAccessToken = createAccessToken(NEW_ACCESS_TOKEN_VALUE, NEW_REFRESH_TOKEN_VALUE);
+        when(restTemplate.postForEntity("http://uaa/oauth/token", entity, OAuth2AccessToken.class))
+            .thenReturn(new ResponseEntity<OAuth2AccessToken>(newAccessToken, HttpStatus.OK));
+    }
+
+    @Test
+    public void testAuthenticationCookies() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setServerName("www.test.com");
+        request.addHeader("Authorization", CLIENT_AUTHORIZATION);
+        Map<String, String> params = new HashMap<>();
+        params.put("username", "user");
+        params.put("password", "user");
+        params.put("rememberMe", "true");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        authenticationService.authenticate(request, response, params);
+        //check that cookies are set correctly
+        Cookie accessTokenCookie = response.getCookie(OAuth2CookieHelper.ACCESS_TOKEN_COOKIE);
+        Assert.assertEquals(ACCESS_TOKEN_VALUE, accessTokenCookie.getValue());
+        Cookie refreshTokenCookie = response.getCookie(OAuth2CookieHelper.REFRESH_TOKEN_COOKIE);
+        Assert.assertEquals(REFRESH_TOKEN_VALUE, OAuth2CookieHelper.getRefreshTokenValue(refreshTokenCookie));
+        Assert.assertTrue(OAuth2CookieHelper.isRememberMe(refreshTokenCookie));
+    }
+
+    @Test
+    public void testAuthenticationNoRememberMe() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setServerName("www.test.com");
+        Map<String, String> params = new HashMap<>();
+        params.put("username", "user");
+        params.put("password", "user");
+        params.put("rememberMe", "false");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        authenticationService.authenticate(request, response, params);
+        //check that cookies are set correctly
+        Cookie accessTokenCookie = response.getCookie(OAuth2CookieHelper.ACCESS_TOKEN_COOKIE);
+        Assert.assertEquals(ACCESS_TOKEN_VALUE, accessTokenCookie.getValue());
+        Cookie refreshTokenCookie = response.getCookie(OAuth2CookieHelper.SESSION_TOKEN_COOKIE);
+        Assert.assertEquals(REFRESH_TOKEN_VALUE, OAuth2CookieHelper.getRefreshTokenValue(refreshTokenCookie));
+        Assert.assertFalse(OAuth2CookieHelper.isRememberMe(refreshTokenCookie));
+    }
+
+    @Test
+    public void testInvalidPassword() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setServerName("www.test.com");
+        Map<String, String> params = new HashMap<>();
+        params.put("username", "user");
+        params.put("password", "user2");
+        params.put("rememberMe", "false");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        expectedException.expect(InvalidPasswordException.class);
+        authenticationService.authenticate(request, response, params);
+    }
+
+    @Test
+    public void testRefreshGrant() {
+        MockHttpServletRequest request = createMockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        HttpServletRequest newRequest = refreshTokenFilter.refreshTokensIfExpiring(request, response);
+        Cookie newAccessTokenCookie = response.getCookie(OAuth2CookieHelper.ACCESS_TOKEN_COOKIE);
+        Assert.assertEquals(NEW_ACCESS_TOKEN_VALUE, newAccessTokenCookie.getValue());
+        Cookie newRefreshTokenCookie = response.getCookie(OAuth2CookieHelper.REFRESH_TOKEN_COOKIE);
+        Assert.assertEquals(NEW_REFRESH_TOKEN_VALUE, newRefreshTokenCookie.getValue());
+        Cookie requestAccessTokenCookie = OAuth2CookieHelper.getAccessTokenCookie(newRequest);
+        Assert.assertEquals(NEW_ACCESS_TOKEN_VALUE, requestAccessTokenCookie.getValue());
+    }
+
+    @Test
+    public void testSessionExpired() {
+        MockHttpServletRequest request = new MockHttpServletRequest(HttpMethod.GET.name(), "http://www.test.com");
+        Cookie accessTokenCookie = new Cookie(OAuth2CookieHelper.ACCESS_TOKEN_COOKIE, ACCESS_TOKEN_VALUE);
+        Cookie refreshTokenCookie = new Cookie(OAuth2CookieHelper.SESSION_TOKEN_COOKIE, EXPIRED_SESSION_TOKEN_VALUE);
+        request.setCookies(accessTokenCookie, refreshTokenCookie);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        HttpServletRequest newRequest = refreshTokenFilter.refreshTokensIfExpiring(request, response);
+        //cookies in response are deleted
+        Cookie newAccessTokenCookie = response.getCookie(OAuth2CookieHelper.ACCESS_TOKEN_COOKIE);
+        Assert.assertEquals(0, newAccessTokenCookie.getMaxAge());
+        Cookie newRefreshTokenCookie = response.getCookie(OAuth2CookieHelper.REFRESH_TOKEN_COOKIE);
+        Assert.assertEquals(0, newRefreshTokenCookie.getMaxAge());
+        //request no longer contains cookies
+        Cookie requestAccessTokenCookie = OAuth2CookieHelper.getAccessTokenCookie(newRequest);
+        Assert.assertNull(requestAccessTokenCookie);
+        Cookie requestRefreshTokenCookie = OAuth2CookieHelper.getRefreshTokenCookie(newRequest);
+        Assert.assertNull(requestRefreshTokenCookie);
+    }
+
+    /**
+     * If no refresh token is found and the access token has expired, then expect an exception.
+     */
+    @Test
+    public void testRefreshGrantNoRefreshToken() {
+        MockHttpServletRequest request = new MockHttpServletRequest(HttpMethod.GET.name(), "http://www.test.com");
+        Cookie accessTokenCookie = new Cookie(OAuth2CookieHelper.ACCESS_TOKEN_COOKIE, ACCESS_TOKEN_VALUE);
+        request.setCookies(accessTokenCookie);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        expectedException.expect(InvalidTokenException.class);
+        refreshTokenFilter.refreshTokensIfExpiring(request, response);
+    }
+
+    @Test
+    public void testLogout() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        Cookie accessTokenCookie = new Cookie(OAuth2CookieHelper.ACCESS_TOKEN_COOKIE, ACCESS_TOKEN_VALUE);
+        Cookie refreshTokenCookie = new Cookie(OAuth2CookieHelper.REFRESH_TOKEN_COOKIE, REFRESH_TOKEN_VALUE);
+        request.setCookies(accessTokenCookie, refreshTokenCookie);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        authenticationService.logout(request, response);
+        Cookie newAccessTokenCookie = response.getCookie(OAuth2CookieHelper.ACCESS_TOKEN_COOKIE);
+        Assert.assertEquals(0, newAccessTokenCookie.getMaxAge());
+        Cookie newRefreshTokenCookie = response.getCookie(OAuth2CookieHelper.REFRESH_TOKEN_COOKIE);
+        Assert.assertEquals(0, newRefreshTokenCookie.getMaxAge());
+    }
+
+    @Test
+    public void testStripTokens() {
+        MockHttpServletRequest request = createMockHttpServletRequest();
+        HttpServletRequest newRequest = authenticationService.stripTokens(request);
+        CookieCollection cookies = new CookieCollection(newRequest.getCookies());
+        Assert.assertFalse(cookies.contains(OAuth2CookieHelper.ACCESS_TOKEN_COOKIE));
+        Assert.assertFalse(cookies.contains(OAuth2CookieHelper.REFRESH_TOKEN_COOKIE));
+    }
+}
+
+ 
+ 
+ 
+ 
+package com.baeldung.jhipster.gateway.security.oauth2;
+
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.springframework.http.HttpMethod;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.common.OAuth2AccessToken;
+
+/**
+ * Test whether the CookieTokenExtractor can properly extract access tokens from
+ * Cookies and Headers.
+ */
+public class CookieTokenExtractorTest {
+    private CookieTokenExtractor cookieTokenExtractor;
+
+    @Before
+    public void init() {
+        cookieTokenExtractor = new CookieTokenExtractor();
+    }
+
+    @Test
+    public void testExtractTokenCookie() {
+        MockHttpServletRequest request = OAuth2AuthenticationServiceTest.createMockHttpServletRequest();
+        Authentication authentication = cookieTokenExtractor.extract(request);
+        Assert.assertEquals(OAuth2AuthenticationServiceTest.ACCESS_TOKEN_VALUE, authentication.getPrincipal().toString());
+    }
+
+    @Test
+    public void testExtractTokenHeader() {
+        MockHttpServletRequest request = new MockHttpServletRequest(HttpMethod.GET.name(), "http://www.test.com");
+        request.addHeader("Authorization", OAuth2AccessToken.BEARER_TYPE + " " + OAuth2AuthenticationServiceTest.ACCESS_TOKEN_VALUE);
+        Authentication authentication = cookieTokenExtractor.extract(request);
+        Assert.assertEquals(OAuth2AuthenticationServiceTest.ACCESS_TOKEN_VALUE, authentication.getPrincipal().toString());
+    }
+
+    @Test
+    public void testExtractTokenParam() {
+        MockHttpServletRequest request = new MockHttpServletRequest(HttpMethod.GET.name(), "http://www.test.com");
+        request.addParameter(OAuth2AccessToken.ACCESS_TOKEN, OAuth2AuthenticationServiceTest.ACCESS_TOKEN_VALUE);
+        Authentication authentication = cookieTokenExtractor.extract(request);
+        Assert.assertEquals(OAuth2AuthenticationServiceTest.ACCESS_TOKEN_VALUE, authentication.getPrincipal().toString());
+    }
+}
+
+ 
+https://blog.csdn.net/liusanyu/article/details/78840483
+ 
+ 
+@RunWith(SpringRunner.class)
+@DataJpaTest
+@AutoConfigureEmbeddedDatabase
+public class SpringDataJpaAnnotationTest {
+
+    @Autowired
+    private PersonRepository personRepository;
+
+    @Test
+    public void testEmbeddedDatabase() {
+        Optional<Person> personOptional = personRepository.findById(1L);
+
+        assertThat(personOptional).hasValueSatisfying(person -> {
+            assertThat(person.getId()).isNotNull();
+            assertThat(person.getFirstName()).isEqualTo("Dave");
+            assertThat(person.getLastName()).isEqualTo("Syer");
+        });
+    }
+}
+
+Standard Dockerfile
+FROM openjdk:8-jdk
+
+RUN groupadd --system --gid 1000 test
+RUN useradd --system --gid test --uid 1000 --shell /bin/bash --create-home test
+
+USER test
+WORKDIR /home/test
+Alpine Dockerfile
+FROM openjdk:8-jdk-alpine
+
+RUN addgroup -S -g 1000 test
+RUN adduser -D -S -G test -u 1000 -s /bin/ash test
+
+USER test
+WORKDIR /home/test
+--------------------------------------------------------------------------------------------------------
 @Configuration
 @ConditionalOnExpression(
     "${module.enabled:true} and ${module.submodule.enabled:true}"
