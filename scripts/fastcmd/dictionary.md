@@ -656,6 +656,24 @@ uglifyjs jquery-3.2.1.js --compress --mangle --output jquery-3.2.1.min.js
 
 glifyjs jquery-3.2.1.js --compress sequences=true,conditionals=true,booleans=true --mangle --output jquery-3.2.1.min.js
 --------------------------------------------------------------------------------------------------------
+sudo apt install kodi
+sudo apt install software-properties-common
+sudo add-apt-repository ppa:team-xbmc/ppa
+sudo apt update
+sudo apt install kodi
+
+sudo apt update
+sudo apt install kodi
+
+sudo dnf install https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+sudo gedit /etc/selinux/config
+sudo dnf install kodi
+
+pacman -Syu
+pacman -S kodi
+
+
+--------------------------------------------------------------------------------------------------------
 mkdir /var/www/testsite.com
 echo "Hello World" > /var/www/testsite.com/index.php
 chmod -R 755 /var/www/testsite.com
@@ -2070,6 +2088,265 @@ mvn clean package -Pprod
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
 #### DEVELOPMENT
+--------------------------------------------------------------------------------------------------------
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(
+  classes = AppConfig.class,
+  loader = AnnotationConfigContextLoader.class)
+public class SpringRetryTest {
+    @Autowired
+    private MyService myService;
+
+    @Autowired
+    private RetryTemplate retryTemplate;
+
+    @Test(expected = RuntimeException.class)
+    public void givenTemplateRetryService_whenCallWithException_thenRetry() {
+        retryTemplate.execute(arg0 -> {
+            myService.templateRetryService();
+            return null;
+        });
+    }
+}
+    @Autowired
+    private RetryTemplate retryTemplate;
+
+    retryTemplate.execute(arg0 -> {
+            myService.templateRetryService();
+            return null;
+        });               
+
+   retryTemplate.execute(new RetryCallback<Void, RuntimeException>() {
+    @Override
+    public Void doWithRetry(RetryContext arg0) {
+        myService.templateRetryService();
+    }
+});
+--------------------------------------------------------------------------------------------------------
+1. Change Number of Content Processes
+
+Do you like to work with a lot of tabs open at any one time, or do you rarely have more than, say, 5 tabs open? The more content processes you have, the more CPU resources will be assigned to each tab (which will also use more RAM).
+
+If you have a powerful PC, then you can set this at a reasonably high number, which should improve the stability and performance of each open tab in Firefox. The name of this setting in about:config is dom.ipc.processCount
+
+Default value: 4
+
+Modified value: 7-12 (depending on number of tabs you usually have open)
+2. Disable Unnecessary Animations
+
+Animations in Firefox Quantum are not a bad thing, but if you have an old PC where every MB of RAM counts or simply don’t need these animated flourishes, you can disable them by going to toolkit.cosmeticAnimations.enabled and setting the value to “false.”
+
+Default value: true
+Modified value: false
+3. Change Minimum Tab Width
+
+It will take a more sharp-eyed Firefox user to notice this adjustment Mozilla made for Firefox Quantum. The default tab width is now just 76 pixels, whereas before it was 100. To adjust this, go to browser.tabs.tabMinWidth.
+
+Default value: 76
+Modified value: 100 if you want the same tab width as in older versions of Firefox, but really you can make this whatever you like. Just don’t go overboard!
+4. Reduce Session History Cache, Save RAM
+
+If you’re using an older machine, then even the typically speedy Firefox may slow down your PC with the default settings. This could be in part because of how it stores Web pages in its short-term memory (or RAM), which you can access using the Back and Forward buttons.
+
+firefox-about-config-sessionhistory
+
+The preference browser.sessionhistory.max_total_viewers affects how many pages Firefox stores in such a way that they load super fast.
+
+Default value: – 1 (adaptable)
+Modified value: any number, reflecting the number of pages you want to store. (We recommend less than 4 if your PC is struggling for speed, while those with 4GB plus can go for 8 or more.)
+
+The preference browser.sessionhistory.max_entries affects how many pages each tab stores in its Back/Forward history altogether.
+
+Default value: 50
+Modified value:If your PC is struggling, lower this to 25, check if it helps, then adjust accordingly.
+5. Disable Extension Compatibility Checks
+
+Compatibility checks. Who needs ’em, right? Actually they’re pretty handy as a general reference of which extensions will work with your version of Firefox and which won’t, but Firefox doesn’t always get it right. If you want to see whether an extension that Firefox claims is incompatible may actually work, do the following:
+
+    Right-click anywhere on the about:config page, then click “New -> Boolean”
+    Type extensions.checkCompatibility into the box, click OK, then select “false” and click OK again.
+    This preference will now exist in your list, and you can disable it at any time by right-clicking it and clicking “Reset.”
+
+about-config-disable-compatibility-check
+6. Change Firefox Download Location
+
+By default, Firefox downloads go to the Windows “Downloads” folder, but you can change this by tweaking browser.download.folderList
+
+Default value: 1
+Modified values:
+
+    0 – Saves all downloads to the desktop
+    2 – Saves to the same location as the previous download
+
+7. Get Asked Where You Want Each Download Saved
+
+If you want to have more direct control over your downloads and decide what directory you want each one to be saved in, change the preference browser.download.useDownloadDir to “false.”
+
+Default value: true
+Modified value: false – prompts you where to save each download
+
+about-config-firefox-tricks-download-locations
+8. Open New Tab for Search Box Results
+
+By default, the things you search for in the Firefox search box open in the current tab. To open in a new tab instead, you’ll need to modify browser.search.openintab
+
+Default value: false – opens search results in current tab
+Modified value: true – opens search results in new tab
+9. New Tabs Page
+
+Firefox’s New Tabs page organizes all the sites you’ve bookmarked and are most likely to visit in a convenient grid. Best of all, you can tweak how big this grid is, so while it uses 3×3 thumbnails by default, you can change it thanks to the browser.newtabpage.rows and browser.newtabpage.columns preferences.
+
+Default value: 3 in “rows,” 5 in “columns”
+Modified values: Whatever number you like!
+
+about-config-firefox-tricks-change-columns
+10. Adjust the Smart Location Bar’s Number of Suggestions
+
+In Firefox when you start typing in the location (or URL) bar, a dropdown list of suggested sites will be shown. If you want it to show more (or less) than ten suggestions, you can adjust the browser.urlbar.maxRichResults keys and get it to show the number you want.
+
+Default value: 10
+Modified value: Set to your desired number of suggestions. If you want to disable it altogether, set it to -1.
+11. Adjust the Session Restore Saving Frequency
+
+Firefox saves your session every fifteen seconds by default, but you can change the value of browser.sessionstore.interval so that Firefox will save the session at a longer interval.
+
+Default: 15000 (in msecs, equivalent to fifteen seconds)
+Modified value: Set it to your desired value. 1000 means one sec, and 60000 means one minute
+12. Extend Scripts’ Execution Time
+
+In Firefox a script is only given ten seconds to respond, after which it will issue an unresponsive script warning. If you are stuck on a slow network connection, you might want to increase the script execution time via dom.max_script_run_time to cut down on the frequency of the no-script warning.
+
+Default value: 10 (in secs)
+Modified value: 20, or any value greater than 10
+13. Handling JavaScript Popups
+
+When you come across a site that executes a javascript, open a new window function, and if the popup window is without all the usual window features, e.g. back/forward/reload buttons, status bar, etc., Firefox will automatically treat it as a popup and will not open it as a new tab. However, if you find this to be a nuisance and want to open all new windows in new tabs, you can specify it via the browser.link.open_newwindow.restriction setting.
+
+Default value: 2 – Open all JavaScript windows the same way you have Firefox handle new windows unless the JavaScript call specifies how to display the window
+
+Modified values:
+
+    0 – open all links the way you have Firefox handle new windows
+    1 – do not open any new windows
+    2 – open all links the way you have Firefox handle new windows unless Javascript specifies how to display the window
+
+14. Enable Spell-Checking in All Text Fields
+
+The default spell-checking function only checks for multi-line text boxes. You can change the option in layout.spellcheckDefault to get it to spell-check for single line text boxes as well.
+
+Default value: 1 (spellcheck for multi-line text boxes only)
+Modified values:
+
+    0 – disable spellcheck
+    2 – enable spell-check for all text boxes
+
+about-config-firefox-tricks-spellcheck
+15. Lower Memory Usage When Minimized
+
+This tweak is mainly for Windows users. When you minimize Firefox, it will send Firefox to your virtual memory and free up your physical memory for other programs to use. Firefox will reduce its physical memory usage, when minimized, to approximately 10MB (give or take some), and when you maximize Firefox it will take back the memory that it needs.
+
+The preference name does not exist and needs to be created.
+
+Right-click on the background and select “New -> Boolean.”
+
+Enter the name when prompted: config.trim_on_minimize
+
+Enter the value: True
+16. Increase/Decrease the Amount of Disk Cache
+
+When a page is loaded, Firefox will cache it into the hard disk so that it doesn’t need to be downloaded again the next time it is loaded. The bigger the storage size you cater for Firefox, the more pages it can cache.
+
+Before you increase the disk cache size, make sure that browser.cache.disk.enable is set to “True.”
+
+Config name: browser.cache.disk.capacity
+Default value: 50000 (in KB)
+Modified value:
+
+    0 – disable disk caching
+    Any value lower than 50000 reduces the disk cache
+    Any value higher than 50000 increases the disk cache
+
+17. Select All Text When You Click on the URL Bar
+
+In Windows and Mac Firefox highlights all text when you click on the URL bar. In Linux it does not select all the text. Instead, it places the cursor at the insertion point. Regardless of which platform you are using, you can tweak browser.urlbar.clickSelectsAll to either select all or place the cursor at the insertion point.
+
+Modified value:
+
+    False – place cursor at the insertion point
+    True – select all text when you click
+
+18. Same Zoom Level for Every Site
+
+Firefox remembers your zoom preference for each site and sets it to your preferences whenever you load the page. If you want the zoom level to be consistent from site to site, you can toggle the value of browser.zoom.siteSpecific from “True” to “False.”
+
+Default value: True
+Modified value: False (enable same zoom preferences for every site)
+19. Setting Your Zoom Limit
+
+If you find that the max/min zoom level is still not sufficient for your viewing, you can change the zoom limit to suit your viewing habits.
+
+Config name: zoom.maxPercent
+Default value: 300 (percent)
+Modified value: any value higher than 300
+
+Config name: zoom.minPercent
+Default value: 30 (percent)
+Modified value: any value
+20. Configure Your Backspace Button
+
+In Firefox you can set your backspace by getting it to either go back to the previous page or scroll up a page if it’s a scrolling site. Holding Shift as a modifier will go forward a page if the value is set to 0 and scroll down if the value is set to 1.
+
+Config name: browser.backspace_action
+Default value: 0 – goes back a page
+Modified value: 1 – scrolls up a page
+
+about-config-firefox-tricks-backspace-config
+21. Increase Offline Cache
+
+If you do not have access to the Internet most of the time, you might want to increase the offline cache so that you can continue to work offline. By default, Firefox caches 500MB of data from supported offline web apps. You can change that value to any amount you like.
+
+Config name: browser.cache.offline.capacity
+Default value: 512000 (in KB)
+Modified value: any value higher than 512000 will increase the cache value
+22. Disable Delay Time When Installing Add-ons
+
+Every time you install a Firefox add-on, you will have to wait for several seconds before the actual installation starts. To cut down on this waiting time, you can turn the preference security.dialog_enable_delay off so that the installation will begin immediately.
+
+Default value: 1000 (in msec)
+Modified value:
+
+    0 – starts installation immediately
+    any other value (in msec)
+
+about-config-firefox-tricks-security-dialog-delay
+23. View Source in Your Favorite Editor
+
+This is very useful for developers who are always using the “view source” function. This tweak allows you to view the source code of a given website in an external editor.
+
+There are two configurations that need to be made:
+
+Config name: view_source.editor.external
+Default value: False
+Modified value: True (enable view source using external text editor)
+
+Config name: view_source.editor.path
+Default value: blank
+Modified value: insert the file path to your editor here
+24. Increasing “Save Link As” Timeout Value
+
+When you right-click and select “Save Link As … ” the browser will request the content disposition header from the URL to determine the filename. If the URL does not deliver the header within one second, Firefox will issue a timeout value. This could happen very frequently in a slow network connection environment. To prevent this issue from happening frequently, you can increase the timeout value to reduce the possibility of a timeout by editing Browser.download.saveLinkAsFilenameTimeout
+
+Default value: 4000 (4 seconds)
+Modified value: any value higher than 1000 (value is in msec)
+25. Autohide Toolbar in Fullscreen Mode
+
+In fullscreen mode the toolbar is set to autohide and appear only when you hover over it with your mouse. If you want, you can choose to have it visible all the time instead by toggling the value of browser.fullscreen.autohide to “False” to always show the toolbar.
+
+Default value: True (always autohide)
+Modified value: False (always show the toolbar)
+26. Increase Add-on Search Result
+
+If you go to “Tools -> Add-ons -> Get Add-ons” and perform a search, Firefox will display fifteen matching results. If you want more or less results here, you can adjust extensions.getAddons.maxResults
 --------------------------------------------------------------------------------------------------------
 spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation=true
  
