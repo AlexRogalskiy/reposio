@@ -2789,6 +2789,194 @@ SearchTerm term = new SearchTerm() {
     }
 };
 --------------------------------------------------------------------------------------------------------
+spring.data.web.pageable.size-parameter=size
+spring.data.web.pageable.page-parameter=page
+spring.data.web.pageable.default-page-size=10
+spring.data.web.pageable.one-indexed-parameters=false
+spring.data.web.pageable.max-page-size=2000
+spring.data.web.pageable.prefix=
+spring.data.web.pageable.qualifier-delimiter=_
+
+	@GetMapping(path = "/characters/page")
+	Page<MovieCharacter> loadCharactersPage(
+			@PageableDefault(page = 0, size = 20)
+			@SortDefault.SortDefaults({
+					@SortDefault(sort = "name", direction = Sort.Direction.DESC),
+					@SortDefault(sort = "id", direction = Sort.Direction.ASC)
+			})
+		Pageable pageable) {
+		return characterRepository.findAllPage(pageable);
+	}
+--------------------------------------------------------------------------------------------------------
+@PostConstruct
+public void postConstruct(){
+  logger.info("SECURITY MODULE LOADED!");
+}
+  
+  
+import org.springframework.boot.context.properties.ConfigurationPropertiesBinding;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+@EnableConfigurationProperties(MailModuleProperties.class)
+class MailModuleConfiguration {
+
+	@Bean
+	@ConfigurationPropertiesBinding
+	public WeightConverter weightConverter() {
+		return new WeightConverter();
+	}
+
+}
+
+@DeprecatedConfigurationProperty(reason = "not needed anymore", replacement = "none")
+public String getDefaultSubject() {
+  return defaultSubject;
+}
+--------------------------------------------------------------------------------------------------------
+	ext {
+		springBootVersion = '1.5.4.RELEASE'
+	}
+	repositories {
+		mavenCentral()
+	}
+	dependencies {
+		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+	}
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'org.springframework.boot'
+
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = 11
+
+repositories {
+	mavenLocal()
+	mavenCentral()
+}
+
+dependencies {
+	compile('org.springframework.boot:spring-boot-starter-web')
+	compile project(':spring-boot:modular:security-module')
+	compile project(':spring-boot:modular:booking-module')
+	testCompile('org.springframework.boot:spring-boot-starter-test')
+}
+
+bootRun{
+	jvmArgs = ["-Xdebug", "-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5006"]
+	systemProperties = System.properties
+}
+--------------------------------------------------------------------------------------------------------
+## db.changelog-master.yaml
+
+databaseChangeLog:
+- preConditions:
+  - runningAs:
+      username: sa
+
+- changeSet:
+    id: 1
+    author: hombergs
+    changes:
+    - createTable:
+        tableName: booking
+        columns:
+        - column:
+            name: id
+            type: bigint
+            autoIncrement: true
+            constraints:
+              primaryKey: true
+              nullable: false
+        - column:
+            name: customer_id
+            type: bigint
+        - column:
+            name: flight_number
+            type: varchar(50)
+            constraints:
+              nullable: false
+
+- changeSet:
+    id: 2
+    author: hombergs
+    changes:
+    - createTable:
+        tableName: customer
+        columns:
+        - column:
+            name: id
+            type: bigint
+            autoIncrement: true
+            constraints:
+              primaryKey: true
+              nullable: false
+        - column:
+            name: name
+            type: varchar(50)
+            constraints:
+              nullable: false
+
+- changeSet:
+    id: 3
+    author: hombergs
+    changes:
+    - createTable:
+        tableName: flight
+        columns:
+        - column:
+            name: flight_number
+            type: varchar(50)
+            constraints:
+              nullable: false
+        - column:
+            name: airline
+            type: varchar(50)
+            constraints:
+              nullable: false
+
+
+- changeSet:
+    id: 4
+    author: hombergs
+    changes:
+    - createTable:
+        tableName: user
+        columns:
+        - column:
+            name: id
+            type: bigint
+            autoIncrement: true
+            constraints:
+              primaryKey: true
+              nullable: false
+        - column:
+            name: name
+            type: varchar(50)
+            constraints:
+              nullable: false
+        - column:
+            name: email
+            type: varchar(50)
+            constraints:
+              nullable: false
+        - column:
+            name: registration_date
+            type: timestamp
+            constraints:
+              nullable: false
+
+- changeSet:
+    id: 5
+    author: hombergs
+    changes:
+    - createSequence:
+        sequenceName: hibernate_sequence
+--------------------------------------------------------------------------------------------------------
 import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
 import javax.validation.Validation;
