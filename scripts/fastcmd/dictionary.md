@@ -2808,6 +2808,69 @@ spring.data.web.pageable.qualifier-delimiter=_
 		return characterRepository.findAllPage(pageable);
 	}
 --------------------------------------------------------------------------------------------------------
+@ResponseBody
+@RequestMapping(value="/upload/", method=RequestMethod.POST, 
+        produces = "text/plain")
+public String uploadFile(MultipartHttpServletRequest request) 
+        throws IOException {
+
+  Iterator<String> itr = request.getFileNames();
+
+  MultipartFile file = request.getFile(itr.next());
+  MultiValueMap<String, Object> parts = 
+          new LinkedMultiValueMap<String, Object>();
+  parts.add("file", new ByteArrayResource(file.getBytes()));
+  parts.add("filename", file.getOriginalFilename());
+
+  RestTemplate restTemplate = new RestTemplate();
+  HttpHeaders headers = new HttpHeaders();
+  headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+  HttpEntity<MultiValueMap<String, Object>> requestEntity =
+          new HttpEntity<MultiValueMap<String, Object>>(parts, headers);
+
+  // file upload path on destination server
+  parts.add("destination", "./");
+
+  ResponseEntity<String> response =
+          restTemplate.exchange("http://localhost:8080/pi", 
+                  HttpMethod.POST, requestEntity, String.class);
+
+  if (response != null && !response.getBody().trim().equals("")) {
+    return response.getBody();
+  }
+
+  return "error";
+}
+
+curl --form file=@test.dat localhost:8080/upload/
+--------------------------------------------------------------------------------------------------------
+@Service
+public class MyService {
+ 
+  @Retryable(value = {FooException.class, BarException.class}, maxAttempts = 5)
+  public void retryWithException() {
+    // perform operation that is likely to fail
+  }
+ 
+  @Recover
+  public void recover(FooException exception) {
+    // recover from FooException
+  }
+}
+--------------------------------------------------------------------------------------------------------
+final BusinessOperation<String> op = new Retry<>(
+    new FindCustomer(
+        "1235",
+        new CustomerNotFoundException("not found"),
+        new CustomerNotFoundException("still not found"),
+        new CustomerNotFoundException("don't give up yet!")
+    ),
+    5,
+    100,
+    e -> CustomerNotFoundException.class.isAssignableFrom(e.getClass())
+);
+--------------------------------------------------------------------------------------------------------
 @PostConstruct
 public void postConstruct(){
   logger.info("SECURITY MODULE LOADED!");
