@@ -2348,6 +2348,49 @@ Modified value: False (always show the toolbar)
 
 If you go to “Tools -> Add-ons -> Get Add-ons” and perform a search, Firefox will display fifteen matching results. If you want more or less results here, you can adjust extensions.getAddons.maxResults
 --------------------------------------------------------------------------------------------------------
+  @Pattern(regexp = "^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$")
+  private String ipAddress;
+--------------------------------------------------------------------------------------------------------
+import javax.validation.ConstraintViolation;
+import javax.validation.ConstraintViolationException;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
+
+import java.util.Set;
+
+import io.reflectoring.validation.Input;
+import org.springframework.stereotype.Service;
+
+@Service
+public class ProgrammaticallyValidatingService {
+
+  private Validator validator;
+
+  public ProgrammaticallyValidatingService(Validator validator) {
+    this.validator = validator;
+  }
+
+  public void validateInput(Input input) {
+    ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+    Validator validator = factory.getValidator();
+    Set<ConstraintViolation<Input>> violations = validator.validate(input);
+    if (!violations.isEmpty()) {
+      throw new ConstraintViolationException(violations);
+    }
+  }
+
+  public void validateInputWithInjectedValidator(Input input) {
+    Set<ConstraintViolation<Input>> violations = validator.validate(input);
+    if (!violations.isEmpty()) {
+      throw new ConstraintViolationException(violations);
+    }
+  }
+}
+--------------------------------------------------------------------------------------------------------
+        this.externalFileIds = Stream.concat(this.externalFileIds.stream(), externalFileIds.stream())
+                .collect(Collectors.toList());
+--------------------------------------------------------------------------------------------------------
 spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation=true
  
 /*
