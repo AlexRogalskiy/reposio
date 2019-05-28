@@ -671,8 +671,211 @@ sudo dnf install kodi
 
 pacman -Syu
 pacman -S kodi
+--------------------------------------------------------------------------------------------------------
+Manifest-Version: 1.0
+Export-Package: com.netflix.hystrix;version="1.5.12";uses:="com.netfli
+ x.hystrix.collapser,com.netflix.hystrix.metric,com.netflix.hystrix.st
+ rategy.concurrency,com.netflix.hystrix.strategy.properties,com.netfli
+ x.hystrix.util,rx,rx.functions",com.netflix.hystrix.collapser;version
+ ="1.5.12";uses:="com.netflix.hystrix,com.netflix.hystrix.strategy.con
+ currency,com.netflix.hystrix.util,rx",com.netflix.hystrix.config;vers
+ ion="1.5.12";uses:="com.netflix.hystrix,rx",com.netflix.hystrix.excep
+ tion;version="1.5.12";uses:="com.netflix.hystrix",com.netflix.hystrix
+ .metric;version="1.5.12";uses:="com.netflix.hystrix,com.netflix.hystr
+ ix.strategy.concurrency,org.HdrHistogram,rx,rx.functions",com.netflix
+ .hystrix.metric.consumer;version="1.5.12";uses:="com.netflix.hystrix,
+ com.netflix.hystrix.metric,org.HdrHistogram,rx,rx.functions",com.netf
+ lix.hystrix.metric.sample;version="1.5.12";uses:="com.netflix.hystrix
+ ,rx",com.netflix.hystrix.strategy;version="1.5.12";uses:="com.netflix
+ .hystrix.strategy.concurrency,com.netflix.hystrix.strategy.eventnotif
+ ier,com.netflix.hystrix.strategy.executionhook,com.netflix.hystrix.st
+ rategy.metrics,com.netflix.hystrix.strategy.properties",com.netflix.h
+ ystrix.strategy.concurrency;version="1.5.12";uses:="com.netflix.hystr
+ ix,com.netflix.hystrix.strategy.properties,rx,rx.functions",com.netfl
+ ix.hystrix.strategy.eventnotifier;version="1.5.12";uses:="com.netflix
+ .hystrix",com.netflix.hystrix.strategy.executionhook;version="1.5.12"
+ ;uses:="com.netflix.hystrix,com.netflix.hystrix.exception",com.netfli
+ x.hystrix.strategy.metrics;version="1.5.12";uses:="com.netflix.hystri
+ x",com.netflix.hystrix.strategy.properties;version="1.5.12";uses:="co
+ m.netflix.config,com.netflix.hystrix",com.netflix.hystrix.strategy.pr
+ operties.archaius;version="1.5.12";uses:="com.netflix.hystrix.strateg
+ y.properties",com.netflix.hystrix.util;version="1.5.12";uses:="com.ne
+ tflix.hystrix,com.netflix.hystrix.strategy.properties"
+Implementation-Title: com.netflix.hystrix#hystrix-core;1.5.12
+Change: a7b66ca
+Built-By: jenkins
+Tool: Bnd-3.2.0.201605172007
+Gradle-Version: 3.1
+Built-OS: Linux
+Build-Host: https://netflixoss.ci.cloudbees.com/
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.6))"
+Module-Source: /hystrix-core
+Build-Number: 72
+Module-Origin: git@github.com:Netflix/Hystrix.git
+Bundle-SymbolicName: com.netflix.hystrix.core
+Build-Id: 72
+Eclipse-ExtensibleAPI: true
+X-Compile-Target-JDK: 1.6
+Implementation-Version: 1.5.12
+Module-Owner: netflixoss@netflix.com
+Bundle-Name: hystrix-core
+Created-By: 1.7.0_79-b15 (Oracle Corporation)
+Build-Job: NetflixOSS/Hystrix/Hystrix-release
+Build-Date: 2017-05-16_16:00:19
+X-Compile-Source-JDK: 1.6
+Build-Java-Version: 1.7.0_79
+Bundle-Vendor: Netflix
+Built-Status: integration
+Bundle-Version: 1.5.12
+Branch: master
+Bnd-LastModified: 1494975639000
+Bundle-ManifestVersion: 2
+Module-Email: netflixoss@netflix.com
+Import-Package: com.netflix.config,com.netflix.hystrix;version="[1.5,2
+ )",com.netflix.hystrix.collapser;version="[1.5,2)",com.netflix.hystri
+ x.exception;version="[1.5,2)",com.netflix.hystrix.metric;version="[1.
+ 5,2)",com.netflix.hystrix.metric.consumer;version="[1.5,2)",com.netfl
+ ix.hystrix.strategy;version="[1.5,2)",com.netflix.hystrix.strategy.co
+ ncurrency;version="[1.5,2)",com.netflix.hystrix.strategy.eventnotifie
+ r;version="[1.5,2)",com.netflix.hystrix.strategy.executionhook;versio
+ n="[1.5,2)",com.netflix.hystrix.strategy.metrics;version="[1.5,2)",co
+ m.netflix.hystrix.strategy.properties;version="[1.5,2)",com.netflix.h
+ ystrix.util;version="[1.5,2)",org.HdrHistogram;version="[2.1,3)",org.
+ slf4j;version="[1.7,2)",rx;version="[1.2,2)",rx.functions;version="[1
+ .2,2)",rx.internal.schedulers;version="[1.2,2)",rx.observables;versio
+ n="[1.2,2)",rx.observers;version="[1.2,2)",rx.schedulers;version="[1.
+ 2,2)",rx.subjects;version="[1.2,2)",rx.subscriptions;version="[1.2,2)
+ ",sun.misc]
+Embed-Dependency: *;scope=compile
+Bundle-DocURL: https://github.com/Netflix/Hystrix
+--------------------------------------------------------------------------------------------------------
+	static {
+		WEAVING_MODE = System.getProperty("weavingMode", WeavingMode.RUNTIME.name()).toUpperCase();
+	}
+--------------------------------------------------------------------------------------------------------
+<ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="ehcache.xsd" 
+	updateCheck="true"
+	monitoring="autodetect" 
+	dynamicConfig="true">
 
+	<diskStore path="java.io.tmpdir" />
+	
+	<cache name="movieFindCache" 
+		maxEntriesLocalHeap="10000"
+		maxEntriesLocalDisk="1000" 
+		eternal="false" 
+		diskSpoolBufferSizeMB="20"
+		timeToIdleSeconds="300" timeToLiveSeconds="600"
+		memoryStoreEvictionPolicy="LFU" 
+		transactionalMode="off">
+		<persistence strategy="localTempSwap" />
+	</cache>
 
+</ehcache>
+
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.ehcache.EhCacheCacheManager;
+import org.springframework.cache.ehcache.EhCacheManagerFactoryBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
+
+@Configuration
+@EnableCaching
+@ComponentScan({ "com.mkyong.*" })
+public class AppConfig {
+
+	@Bean
+	public CacheManager cacheManager() {
+		return new EhCacheCacheManager(ehCacheCacheManager().getObject());
+	}
+
+	@Bean
+	public EhCacheManagerFactoryBean ehCacheCacheManager() {
+		EhCacheManagerFactoryBean cmfb = new EhCacheManagerFactoryBean();
+		cmfb.setConfigLocation(new ClassPathResource("ehcache.xml"));
+		cmfb.setShared(true);
+		return cmfb;
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import org.ehcache.event.CacheEvent;
+import org.ehcache.event.CacheEventListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class CacheEventLogger implements CacheEventListener<Object, Object> {
+
+    private static final Logger log = LoggerFactory.getLogger(CacheEventLogger.class);
+
+    @Override
+    public void onEvent(CacheEvent<? extends Object, ? extends Object> cacheEvent) {
+        log.info("Cache event {} for item with key {}. Old value = {}, New value = {}", cacheEvent.getType(), cacheEvent.getKey(), cacheEvent.getOldValue(), cacheEvent.getNewValue());
+    }
+}
+
+spring.cache.jcache.config=classpath:ehcache.xml
+
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="http://www.ehcache.org/v3"
+    xmlns:jsr107="http://www.ehcache.org/v3/jsr107"
+    xsi:schemaLocation="
+            http://www.ehcache.org/v3 http://www.ehcache.org/schema/ehcache-core-3.0.xsd
+            http://www.ehcache.org/v3/jsr107 http://www.ehcache.org/schema/ehcache-107-ext-3.0.xsd">
+
+    <cache alias="squareCache">
+        <key-type>java.lang.Long</key-type>
+        <value-type>java.math.BigDecimal</value-type>
+        <expiry>
+            <ttl unit="seconds">30</ttl>
+        </expiry>
+
+        <listeners>
+            <listener>
+                <class>com.baeldung.cachetest.config.CacheEventLogger</class>
+                <event-firing-mode>ASYNCHRONOUS</event-firing-mode>
+                <event-ordering-mode>UNORDERED</event-ordering-mode>
+                <events-to-fire-on>CREATED</events-to-fire-on>
+                <events-to-fire-on>EXPIRED</events-to-fire-on>
+            </listener>
+        </listeners>
+
+        <resources>
+            <heap unit="entries">2</heap>
+            <offheap unit="MB">10</offheap>
+        </resources>
+    </cache>
+
+</config>
+--------------------------------------------------------------------------------------------------------
+apply plugin: 'java'
+apply plugin: 'eclipse-wtp'
+ 
+version = '1.0'
+
+// Uses JDK 7
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
+// Get dependencies from Maven central repository
+repositories {
+	mavenCentral()
+}
+
+//Project dependencies
+dependencies {
+	compile 'org.springframework:spring-context:4.1.4.RELEASE'
+	compile 'org.springframework:spring-context-support:4.1.4.RELEASE'
+	compile 'net.sf.ehcache:ehcache:2.9.0'
+	compile 'ch.qos.logback:logback-classic:1.0.13'
+}
+--------------------------------------------------------------------------------------------------------
+@CacheResult(cacheName="books", exceptionCacheName="failures"
+            cachedExceptions = InvalidIsbnNotFoundException.class)
+public Book findBook(ISBN isbn)
 --------------------------------------------------------------------------------------------------------
 mkdir /var/www/testsite.com
 echo "Hello World" > /var/www/testsite.com/index.php
