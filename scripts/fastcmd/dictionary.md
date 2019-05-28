@@ -2723,6 +2723,44 @@ public class EmailReceiver {
     }
 }
 --------------------------------------------------------------------------------------------------------
+@Configuration
+@ComponentScan
+@PropertySource( "classpath:application.properties" )
+public class ApplicationContext {
+
+  @Bean
+  public FixedBackOffPolicy getBackOffPolicy( final Environment env ) {
+
+    final FixedBackOffPolicy policy = new FixedBackOffPolicy();
+    policy.setBackOffPeriod( Long.valueOf( env.getRequiredProperty( "retry.interval" ) ) );
+
+    return policy;
+  }
+
+  @Bean
+  public ExceptionClassifierRetryPolicy getRetryPolicy( final Environment env ) {
+
+    final Map< Class< ? extends Throwable >, RetryPolicy > policyMap =
+      new HashMap< Class< ? extends Throwable >, RetryPolicy >();
+
+    final SimpleRetryPolicy simpleRetryPolicy = new SimpleRetryPolicy();
+    simpleRetryPolicy.setMaxAttempts( Integer.valueOf( env.getRequiredProperty( "retry.count" ) ) );
+
+    // Determine the policy per exception
+    policyMap.put( ApplicationException.class, simpleRetryPolicy );
+
+    final ExceptionClassifierRetryPolicy retryPolicy = new ExceptionClassifierRetryPolicy();
+    retryPolicy.setPolicyMap( policyMap );
+
+    return retryPolicy;
+  }
+
+  @Bean
+  public WebServiceClientSimulation getWebServiceClient() {
+    return new WebServiceClientSimulation();
+  }
+}
+--------------------------------------------------------------------------------------------------------
 package net.codejava.mail;
  
 import java.io.IOException;
