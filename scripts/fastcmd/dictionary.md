@@ -2761,6 +2761,15 @@ public class ApplicationContext {
   }
 }
 --------------------------------------------------------------------------------------------------------
+    @Bean()
+    public ThreadPoolTaskScheduler taskScheduler(){
+        ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
+        taskScheduler.setPoolSize(2);
+        return  taskScheduler;
+    }
+
+    public static final Class<Void> TYPE = (Class<Void>) Class.getPrimitiveClass("void");
+--------------------------------------------------------------------------------------------------------
 package net.codejava.mail;
  
 import java.io.IOException;
