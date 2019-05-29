@@ -2785,6 +2785,381 @@ public class ApplicationContext {
   }
 }
 --------------------------------------------------------------------------------------------------------
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.integration.channel.DirectChannel;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHandler;
+import org.springframework.messaging.MessagingException;
+
+public class Main {
+
+    public static void main(String args[]) {
+
+        ApplicationContext ac = new AnnotationConfigApplicationContext(ImapConfig.class);
+        DirectChannel inputChannel = ac.getBean("messageChannel", DirectChannel.class);
+        inputChannel.subscribe(new MessageHandler() {
+            public void handleMessage(Message<?> message) throws MessagingException {
+
+                System.out.println(message);
+
+            }
+        });
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.sun.mail.smtp.SMTPMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import java.io.IOException;
+import java.util.Properties;
+
+import static com.paragonsoftware.srs.parser.util.ParserUtils.getBody;
+import static com.paragonsoftware.srs.parser.util.ParserUtils.getNullalbleSubject;
+
+@Component
+public class Sender {
+
+    private static final Logger logger = LoggerFactory.getLogger(Sender.class);
+
+    @Value("${mail.smtp.host}")
+    private String host;
+    @Value("${mail.smtp.port}")
+    private int port;
+    @Value("${support.abandoned}")
+    private String supportAbandoned;
+
+    private Properties getProperties() {
+        Properties props = new Properties();
+        props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.smtp.auth", "false");
+        props.put("mail.smtp.host", host);
+        props.put("mail.smtp.port", port);
+        props.put("mail.smtp.timeout", 5000);
+        props.put("mail.smtp.connectiontimeout", 5000);
+        props.put("mail.transport.protocol", "smtp");
+        return props;
+    }
+
+    public boolean sendMail(Message msg) throws NullPointerException {
+        logger.info("[SEND] SEND MAIL");
+
+        Session session = Session.getInstance(getProperties());
+        try {
+            String from = ((InternetAddress) msg.getFrom()[0]).getAddress();
+            String subject = getNullalbleSubject(msg);
+            Message message = new SMTPMessage(session);
+            message.setFrom(new InternetAddress(from));
+            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(supportAbandoned));
+            message.setSubject(subject);
+            message.setText(getBody(msg));
+            Transport.send(message);
+            logger.info("Sent message successfully....");
+            return true;
+        } catch (MessagingException mex) {
+            logger.error("Error MessagingException in SEND MAIL", mex);
+        } catch (NullPointerException npe) {
+            logger.error("Error NullPointerException in SEND MAIL", npe);
+            throw npe;
+        } catch (IOException e) {
+            logger.error("Error IOException in SEND MAIL", e);
+        }
+
+        return false;
+    }
+
+    public boolean sendErrorMail(Message msg) {
+        logger.info("[SEND] SEND ERROR MAIL");
+
+        Session session = Session.getInstance(getProperties());
+        try {
+            String from = ((InternetAddress) msg.getFrom()[0]).getAddress();
+            String subject = getNullalbleSubject(msg);
+            Message message = new SMTPMessage(session);
+            message.setFrom(new InternetAddress(from));
+            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(supportAbandoned));
+            message.setSubject(subject);
+
+            message.setText("An error occured while reading message body. See 'with-errors' mailbox to find original email");
+
+            Transport.send(message);
+            logger.info("Sent error message successfully....");
+            return true;
+        } catch (MessagingException mex) {
+            logger.error("Error MessagingException in SEND ERROR MAIL", mex);
+        }
+        return false;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@Component
+public class MessageReceiver {
+
+    @StreamListener("SampleQueueA")
+    public void onQueueAReceived(DemoMessage msg) {
+        System.out.println("Message from A: "+msg);
+    }
+
+    @StreamListener("SampleQueueB")
+    public void onQueueBReceived(DemoMessage msg) {
+        System.out.println("Message from B: "+msg);
+    }
+
+}
+and Having Simple Message Channel
+
+[public interface MessageChannels {
+
+
+    @Input("SampleQueueA")
+    SubscribableChannel queueA();
+
+    @Input("SampleQueueB")
+    SubscribableChannel queueB();
+}](url)
+application.yml
+
+spring:
+  rabbitmq:
+    host: 127.0.0.1
+    virtual-host: /defaultVH
+    username: guest
+    password: guest
+  cloud:
+    stream:
+      bindings:
+        SampleQueueA:
+          binder: rabbit-A
+          contentType: application/x-java-object
+          group: groupA
+          destination: SampleQueueA
+        SampleQueueB:
+          binder: rabbit-B
+          contentType: application/x-java-object
+          group: groupB
+          destination: SampleQueueB
+      binders:
+        rabbit-A:
+          defaultCandidate: false
+          inheritEnvironment: false
+          type: rabbit
+          environment:
+            spring:
+              rabbitmq:
+                host: 127.0.0.1
+                virtualHost: /vhA
+                username: guest
+                password: guest
+                port: 5672
+                connection-timeout: 10000
+        rabbit-B:
+          defaultCandidate: false
+          inheritEnvironment: false
+          type: rabbit
+          environment:
+            spring:
+              rabbitmq:
+                host: 127.0.0.1
+                virtualHost: /vhB
+                username: guest
+                password: guest
+                port: 5672
+                connection-timeout: 10000
+bootstrap.yml
+
+############################################
+# default settings
+############################################
+spring:
+  main:
+    banner-mode: "off"
+  application:
+    name: demo-service
+  cloud:
+    config:
+      enabled: true #change this to use config-service
+      retry:
+        maxAttempts: 3
+      discovery:
+        enabled: false
+      fail-fast: true
+      override-system-properties: false
+
+server:
+  port: 8080
+--------------------------------------------------------------------------------------------------------
+@EnableZipkinStreamServer
+@SpringBootApplication
+public class ZipkinStreamServerApplication {
+public static void main(String[] args) {
+SpringApplication.run(ZipkinStreamServerApplication.class,args);
+}
+}
+============↓ this is my application.properties===========
+server.port=11020
+spring.application.name=microservice-zipkin-stream-server
+spring.sleuth.enabled=false
+zipkin.storage.type=mysql
+spring.datasource.schema[0]=classpath:/zipkin.sql
+--------------------------------------------------------------------------------------------------------
+    private Properties getProperties() {
+        Properties props = new Properties();
+        props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.smtp.auth", "false");
+        props.put("mail.smtp.host", host);
+        props.put("mail.smtp.port", port);
+        props.put("mail.smtp.timeout", 5000);
+        props.put("mail.smtp.connectiontimeout", 5000);
+        props.put("mail.transport.protocol", "smtp");
+        return props;
+    }
+--------------------------------------------------------------------------------------------------------
+        Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider());
+
+        props.setProperty("mail.pop3.port", "995");
+        props.setProperty("mail.pop3.socketFactory.port", "995");
+        props.setProperty("mail.pop3.socketFactory.fallback", "false");
+        props.setProperty("mail.pop3.connectiontimeout", "5000");
+        props.setProperty("mail.pop3.timeout", "5000");
+    }
+--------------------------------------------------------------------------------------------------------
+import java.util.Properties;
+
+import javax.mail.Address;
+import javax.mail.Message;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+
+
+public class EmailSender {
+    public EmailSender() {
+    }
+
+    public static void sendEmail( String to, String subject, String from, String content) throws Exception{
+        Properties props = new Properties();
+        props.setProperty("mail.transport.protocol", "smtp");
+        props.setProperty("mail.host", "localhost"); 
+        props.setProperty("mail.user", "coa-web"); 
+        props.setProperty("mail.password", "");
+
+        Session mailSession = Session.getDefaultInstance(props, null);
+        Transport transport = mailSession.getTransport();
+
+        MimeMessage message = new MimeMessage(mailSession);
+        message.addFrom(new Address[] { new InternetAddress("coa-web@localhost",from)});  // the reply to email address and a logical descriptor of the sender of the email!
+
+        message.setSubject(subject);
+        message.setContent(content, "text/plain");
+        message.addRecipient(Message.RecipientType.TO,
+             new InternetAddress(to));
+
+        transport.connect();
+        transport.sendMessage(message,
+            message.getRecipients(Message.RecipientType.TO));
+        transport.close();
+        }
+        
+        public static void main (String[] args) throws Exception {
+            String content = "Some test content.";
+            EmailSender.sendEmail("coa-backoffice@localhost","An interesting message","THE APP",content);
+        }
+   }
+   
+   package nl.amis.util;
+
+import java.io.*;
+import java.util.*;
+import javax.mail.*;
+import javax.mail.internet.*;
+
+public class EmailClient  extends Authenticator
+{
+  public static final int SHOW_MESSAGES = 1;
+  public static final int CLEAR_MESSAGES = 2;
+  public static final int SHOW_AND_CLEAR =
+    SHOW_MESSAGES + CLEAR_MESSAGES;
+  
+  protected String from;
+  protected Session session;
+  protected PasswordAuthentication authentication;
+  
+  public EmailClient(String user, String host)   {
+    this(user, host, false);
+  }
+  
+  public EmailClient(String user, String host, boolean debug)  {
+    from = user + '@' + host;
+    authentication = new PasswordAuthentication(user, user);
+    Properties props = new Properties();
+    props.put("mail.user", user);
+    props.put("mail.host", host);
+    props.put("mail.debug", debug ? "true" : "false");
+    props.put("mail.store.protocol", "pop3");
+    props.put("mail.transport.protocol", "smtp");
+    session = Session.getInstance(props, this);
+  }
+  
+  public PasswordAuthentication getPasswordAuthentication()  {
+    return authentication;
+  }
+   
+  public void checkInbox(int mode)
+    throws MessagingException, IOException  {
+    if (mode == 0) return;
+    boolean show = (mode & SHOW_MESSAGES) > 0;
+    boolean clear = (mode & CLEAR_MESSAGES) > 0;
+    String action =
+      (show ? "Show" : "") +
+      (show && clear ? " and " : "") +
+      (clear ? "Clear" : "");
+    System.out.println(action + " INBOX for " + from);
+    Store store = session.getStore();
+    store.connect();
+    Folder root = store.getDefaultFolder();
+    Folder inbox = root.getFolder("Inbox");
+    inbox.open(Folder.READ_WRITE);
+    Message[] msgs = inbox.getMessages();
+    if (msgs.length == 0 && show)
+    {
+      System.out.println("No messages in inbox");
+    }
+    for (int i = 0; i < msgs.length; i++)
+    {
+      MimeMessage msg = (MimeMessage)msgs[i];
+      if (show)
+      {
+        System.out.println("    From: " + msg.getFrom()[0]);
+        System.out.println(" Subject: " + msg.getSubject());
+        System.out.println(" Content: " + msg.getContent());
+      }
+      if (clear)
+      {
+        msg.setFlag(Flags.Flag.DELETED, true);
+      }
+    }
+    inbox.close(true);
+    store.close();
+    System.out.println();
+  }
+  public static void main(String[] args) throws Exception{
+      // CREATE CLIENT INSTANCES
+      EmailClient emailClient = new EmailClient("coa-backoffice", "localhost", false);
+         
+      // LIST MESSAGES FOR email client
+      emailClient.checkInbox(EmailClient.SHOW_MESSAGES);
+  }
+}
+--------------------------------------------------------------------------------------------------------
     @Bean()
     public ThreadPoolTaskScheduler taskScheduler(){
         ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
@@ -2793,6 +3168,24 @@ public class ApplicationContext {
     }
 
     public static final Class<Void> TYPE = (Class<Void>) Class.getPrimitiveClass("void");
+--------------------------------------------------------------------------------------------------------
+Входящая почта
+адрес почтового сервера — pop.yandex.ru;
+защита соединения — SSL;
+порт — 995.
+Исходящая почта
+адрес почтового сервера — smtp.yandex.ru;
+защита соединения — SSL;
+порт — 465.
+
+Входящая почта
+адрес почтового сервера — imap.yandex.ru;
+защита соединения — SSL;
+порт — 993.
+Исходящая почта
+адрес почтового сервера — smtp.yandex.ru;
+защита соединения — SSL;
+порт — 465.
 --------------------------------------------------------------------------------------------------------
 package net.codejava.mail;
  
