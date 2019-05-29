@@ -877,6 +877,30 @@ dependencies {
             cachedExceptions = InvalidIsbnNotFoundException.class)
 public Book findBook(ISBN isbn)
 --------------------------------------------------------------------------------------------------------
+@RequestMapping(value = "stepOne")
+public String stepOne(@Validated(Account.ValidationStepOne.class) Account account) {...}
+
+@RequestMapping(value = "stepTwo")
+public String stepTwo(@Validated(Account.ValidationStepTwo.class) Account account) {...}
+
+public class Account {
+
+    @NotBlank(groups = {ValidationStepOne.class})
+    private String username;
+
+    @Email(groups = {ValidationStepOne.class})
+    @NotBlank(groups = {ValidationStepOne.class})
+    private String email;
+
+    @NotBlank(groups = {ValidationStepTwo.class})
+    @StrongPassword(groups = {ValidationStepTwo.class})
+    private String password;
+
+    @NotBlank(groups = {ValidationStepTwo.class})
+    private String confirmedPassword;
+
+}
+--------------------------------------------------------------------------------------------------------
 mkdir /var/www/testsite.com
 echo "Hello World" > /var/www/testsite.com/index.php
 chmod -R 755 /var/www/testsite.com
