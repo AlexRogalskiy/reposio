@@ -356,6 +356,8 @@ git -c diff.mnemonicprefix=false -c core.quotepath=false --no-optional-locks sta
 git -c diff.mnemonicprefix=false -c core.quotepath=false --no-optional-locks fetch origin
 git -c diff.mnemonicprefix=false -c core.quotepath=false --no-optional-locks pull --no-commit origin master
 --------------------------------------------------------------------------------------------------------
+spring init --name=scheduler-demo scheduler-demo 
+--------------------------------------------------------------------------------------------------------
 git config merge.tool vimdiff
 git config merge.conflictstyle diff3
 git config mergetool.prompt false
@@ -3009,6 +3011,30 @@ spring.application.name=microservice-zipkin-stream-server
 spring.sleuth.enabled=false
 zipkin.storage.type=mysql
 spring.datasource.schema[0]=classpath:/zipkin.sql
+--------------------------------------------------------------------------------------------------------
+@Configuration
+@EnableAsync
+public class SpringAsyncConfig implements AsyncConfigurer {
+     
+    @Override
+    public Executor getAsyncExecutor() {
+        return new ThreadPoolTaskExecutor();
+    }    
+}
+public class CustomAsyncExceptionHandler
+  implements AsyncUncaughtExceptionHandler {
+ 
+    @Override
+    public void handleUncaughtException(
+      Throwable throwable, Method method, Object... obj) {
+  
+        System.out.println("Exception message - " + throwable.getMessage());
+        System.out.println("Method name - " + method.getName());
+        for (Object param : obj) {
+            System.out.println("Parameter value - " + param);
+        }
+    }
+}
 --------------------------------------------------------------------------------------------------------
     private Properties getProperties() {
         Properties props = new Properties();
