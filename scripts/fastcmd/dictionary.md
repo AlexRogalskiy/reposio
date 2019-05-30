@@ -5737,6 +5737,25 @@ public class AppIoProperties {
 	}
 }
 --------------------------------------------------------------------------------------------------------
+curl -X POST "http://vdlg-pba11-auth-1.pba.internal:20025/api/v1/crm-adapter/mails" -H "accept: application/json;charset=UTF-8" -H "Content-Type: application/json" -d "{ \"AttachedId\": [ \"string\" ], \"Locale\": \"string\", \"ResponseData\": {}, \"ResponseId\": \"string\", \"Subject\": \"string\", \"TemplateName\": \"string\", \"UserId\": \"string\"}"
+--------------------------------------------------------------------------------------------------------
+things.stream().filter(filtersCollection.stream().<Predicate>map(f -> f::test)
+                       .reduce(Predicate::or).orElse(t->false));
+--------------------------------------------------------------------------------------------------------
+public interface DomainOperations<T> {
+  default List<T> filter(Predicate<T> predicate) {
+    return persons.stream().filter( predicate )
+      .collect(Collectors.<Person>toList());
+ }
+}
+--------------------------------------------------------------------------------------------------------
+public static void main(String[] args) {
+Optional<Employee> maxSalaryEmp=employeeList.stream()
+    .reduce((Employee a, Employee b) -> a.getSalary() < b.getSalary() ? b:a);
+if(maxSalaryEmp.isPresent())
+  System.out.println("Employee with max salary: "+maxSalaryEmp.get());
+}
+--------------------------------------------------------------------------------------------------------
 public class CacheManager {
     public static final List<CacheManager> ALL_CACHE_MANAGERS = new CopyOnWriteArrayList<CacheManager>();
 ....
