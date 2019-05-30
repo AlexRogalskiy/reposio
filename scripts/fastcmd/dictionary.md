@@ -5742,6 +5742,19 @@ curl -X POST "http://vdlg-pba11-auth-1.pba.internal:20025/api/v1/crm-adapter/mai
 things.stream().filter(filtersCollection.stream().<Predicate>map(f -> f::test)
                        .reduce(Predicate::or).orElse(t->false));
 --------------------------------------------------------------------------------------------------------
+@RestControllerAdvice
+public class GlobalResponseEntityExceptionHandler extends ResponseEntityExceptionHandler {
+
+    @Override
+    protected ResponseEntity<Object> handleMissingServletRequestParameter(MissingServletRequestParameterException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
+        return errorResponse(HttpStatus.BAD_REQUEST, "Required request params missing");
+    }
+
+    private ResponseEntity<Object> errorResponse(HttpStatus status, String message) {
+        return ResponseEntity.status(status).body(message);
+    }
+}
+--------------------------------------------------------------------------------------------------------
 public interface DomainOperations<T> {
   default List<T> filter(Predicate<T> predicate) {
     return persons.stream().filter( predicate )
