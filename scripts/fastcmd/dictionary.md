@@ -5766,6 +5766,164 @@ public class AppIoProperties {
 --------------------------------------------------------------------------------------------------------
 curl -X POST "http://vdlg-pba11-auth-1.pba.internal:20025/api/v1/crm-adapter/mails" -H "accept: application/json;charset=UTF-8" -H "Content-Type: application/json" -d "{ \"AttachedId\": [ \"string\" ], \"Locale\": \"string\", \"ResponseData\": {}, \"ResponseId\": \"string\", \"Subject\": \"string\", \"TemplateName\": \"string\", \"UserId\": \"string\"}"
 --------------------------------------------------------------------------------------------------------
+// Асинхронно запускаем задачу, заданную объектом Runnable
+CompletableFuture<Void> future = CompletableFuture.runAsync(new Runnable() {
+    @Override
+    public void run() {
+        // Имитация длительной работы
+        try {
+            TimeUnit.SECONDS.sleep(1);
+        } catch (InterruptedException e) {
+            throw new IllegalStateException(e);
+        }
+        System.out.println("Я буду работать в отдельном потоке, а не в главном.");
+    }
+});
+ 
+// Блокировка и ожидание завершения Future
+future.get();
+
+// Запуск асинхронной задачи, заданной объектом Supplier
+CompletableFuture<String> future = CompletableFuture.supplyAsync(new Supplier<String>() {
+    @Override
+    public String get() {
+        try {
+            TimeUnit.SECONDS.sleep(1);
+        } catch (InterruptedException e) {
+            throw new IllegalStateException(e);
+        }
+        return "Результат асинхронной задачи";
+    }
+});
+
+CompletableFuture<User> getUsersDetail(String userId) {
+    return CompletableFuture.supplyAsync(() -> {
+        UserService.getUserDetails(userId);
+    });
+}
+ 
+CompletableFuture<Double> getCreditRating(User user) {
+    return CompletableFuture.supplyAsync(() -> {
+        CreditRatingService.getCreditRating(user);
+    });
+}
+
+CompletableFuture<CompletableFuture<Double>> result = getUserDetail(userId)
+        .thenApply(user -> getCreditRating(user));
+
+СompletableFuture<String> future = CompletableFuture.supplyAsync(() -> {
+    try {
+        TimeUnit.SECONDS.sleep(1);
+    } catch (InterruptedException e) {
+        throw new IllegalStateException(e);
+    }
+    return "Результат асинхронной задачи";
+}, executor);
+
+System.out.println("Получение веса.");
+CompletableFuture<Double> weightInKgFuture = CompletableFuture.supplyAsync(() -> {
+    try {
+        TimeUnit.SECONDS.sleep(1);
+    } catch (InterruptedException e) {
+       throw new IllegalStateException(e);
+    }
+    return 65.0;
+});
+ 
+System.out.println("Получение роста.");
+CompletableFuture<Double> heightInCmFuture = CompletableFuture.supplyAsync(() -> {
+    try {
+        TimeUnit.SECONDS.sleep(1);
+    } catch (InterruptedException e) {
+       throw new IllegalStateException(e);
+    }
+    return 177.8;
+});
+ 
+System.out.println("Расчёт индекса массы тела.");
+CompletableFuture<Double> combinedFuture = weightInKgFuture
+        .thenCombine(heightInCmFuture, (weightInKg, heightInCm) -> {
+    Double heightInMeter = heightInCm / 100;
+    return weightInKg/(heightInMeter * heightInMeter);
+});
+ 
+System.out.println("Ваш индекс массы тела - " + combinedFuture.get());
+
+// Когда все задачи завершены, вызываем future.join(), чтобы получить результаты и собрать их в список
+CompletableFuture<List<String>> allPageContentsFuture = allFutures.thenApply(v -> {
+   return pageContentFutures.stream()
+           .map(pageContentFuture -> pageContentFuture.join())
+           .collect(Collectors.toList());
+});
+
+CompletableFuture<String> future1 = CompletableFuture.supplyAsync(() -> {
+    try {
+        TimeUnit.SECONDS.sleep(2);
+    } catch (InterruptedException e) {
+       throw new IllegalStateException(e);
+    }
+    return "Результат Future 1";
+});
+ 
+CompletableFuture<String> future2 = CompletableFuture.supplyAsync(() -> {
+    try {
+        TimeUnit.SECONDS.sleep(1);
+    } catch (InterruptedException e) {
+       throw new IllegalStateException(e);
+    }
+    return "Результат Future 2";
+});
+ 
+CompletableFuture<String> future3 = CompletableFuture.supplyAsync(() -> {
+    try {
+        TimeUnit.SECONDS.sleep(3);
+    } catch (InterruptedException e) {
+       throw new IllegalStateException(e);
+    }
+    return "Результат Future 3";
+});
+ 
+CompletableFuture<Object> anyOfFuture = CompletableFuture.anyOf(future1, future2, future3);
+ 
+System.out.println(anyOfFuture.get()); // Результат Future 2
+
+
+CompletableFuture<String> maturityFuture = CompletableFuture.supplyAsync(() -> {
+    if (age < 0) {
+        throw new IllegalArgumentException("Возраст не может быть отрицательным");
+    }
+    if (age > 18) {
+        return "Взрослый";
+    } else {
+        return "Ребёнок";
+    }
+}).exceptionally(ex -> {
+    System.out.println("Ой! У нас тут исключение - " + ex.getMessage());
+    return "Неизвестно!";
+});
+
+
+Integer age = -1;
+ 
+CompletableFuture<String> maturityFuture = CompletableFuture.supplyAsync(() -> {
+    if (age < 0) {
+        throw new IllegalArgumentException("Возраст не может быть отрицательным");
+    }
+    if (age > 18) {
+        return "Взрослый";
+    } else {
+        return "Ребёнок";
+    }
+}).handle((res, ex) -> {
+    if (ex != null) {
+        System.out.println("Ой! У нас тут исключение - " + ex.getMessage());
+        return "Неизвестно!";
+    }
+    return res;
+});
+ 
+System.out.println("Зрелость: " + maturityFuture.get());
+--------------------------------------------------------------------------------------------------------
 things.stream().filter(filtersCollection.stream().<Predicate>map(f -> f::test)
                        .reduce(Predicate::or).orElse(t->false));
 --------------------------------------------------------------------------------------------------------
@@ -5780,6 +5938,22 @@ public class GlobalResponseEntityExceptionHandler extends ResponseEntityExceptio
     private ResponseEntity<Object> errorResponse(HttpStatus status, String message) {
         return ResponseEntity.status(status).body(message);
     }
+}
+--------------------------------------------------------------------------------------------------------
+@Override
+protected ResponseEntity<Object> handleExceptionInternal(Exception ex, Object body,
+                             HttpHeaders headers, HttpStatus status, WebRequest request) {
+    if (body == null) {
+        body = ImmutableMap.builder()
+                   .put("timestamp", LocalDateTime.now().atZone(ZoneId.systemDefault()).toEpochSecond())
+                   .put("status", status.value())
+                   .put("error", status.getReasonPhrase())
+                   .put("message", ex.getMessage())
+                   .put("exception", ex.getClass().getSimpleName())  // can show FQCN like spring with getName()
+                   .put("path", ((ServletWebRequest)request).getRequest().getRequestURI())
+                   .build();
+    }
+    return super.handleExceptionInternal(ex, body, headers, status, request);
 }
 --------------------------------------------------------------------------------------------------------
 public interface DomainOperations<T> {
