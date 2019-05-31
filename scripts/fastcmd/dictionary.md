@@ -3662,6 +3662,33 @@ public String getDefaultSubject() {
   return defaultSubject;
 }
 --------------------------------------------------------------------------------------------------------
+@Test
+public void givenListOfCustomers_whenTransformed_thenListOfAddress() {
+    Collection<Address> addressCol = CollectionUtils.collect(list1, 
+      new Transformer<Customer, Address>() {
+        public Address transform(Customer customer) {
+            return customer.getAddress();
+        }
+    });
+     
+    List<Address> addressList = new ArrayList<>(addressCol);
+    assertTrue(addressList.size() == 3);
+    assertTrue(addressList.get(0).getLocality().equals("locality1"));
+}
+@Test
+public void givenCustomerList_WhenFiltered_thenCorrectSize() {
+     
+    boolean isModified = CollectionUtils.filter(linkedList1, 
+      new Predicate<Customer>() {
+        public boolean evaluate(Customer customer) {
+            return Arrays.asList("Daniel","Kyle").contains(customer.getName());
+        }
+    });
+      
+    assertTrue(linkedList1.size() == 2);
+}
+
+--------------------------------------------------------------------------------------------------------
 	ext {
 		springBootVersion = '1.5.4.RELEASE'
 	}
