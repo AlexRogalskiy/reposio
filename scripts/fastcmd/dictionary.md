@@ -588,6 +588,10 @@ $ rm -rf ~/Library/Preferences/IntelliJIdea15
 --------------------------------------------------------------------------------------------------------
 curl -I https://yourzone-1c6b.kxcdn.com/assets/css/style.css
 --------------------------------------------------------------------------------------------------------
+Dism /Split-Image /ImageFile:J:\sources\install.wim /SWMFile:H:\CustomInstall\install.swm /FileSize:1000
+--------------------------------------------------------------------------------------------------------
+readelf -s file
+--------------------------------------------------------------------------------------------------------
 cd ~/.ssh
 ssh-keygen -o
 ssh-add /path/to/your/private.key
@@ -5765,6 +5769,47 @@ public class AppIoProperties {
 }
 --------------------------------------------------------------------------------------------------------
 curl -X POST "http://vdlg-pba11-auth-1.pba.internal:20025/api/v1/crm-adapter/mails" -H "accept: application/json;charset=UTF-8" -H "Content-Type: application/json" -d "{ \"AttachedId\": [ \"string\" ], \"Locale\": \"string\", \"ResponseData\": {}, \"ResponseId\": \"string\", \"Subject\": \"string\", \"TemplateName\": \"string\", \"UserId\": \"string\"}"
+--------------------------------------------------------------------------------------------------------
+    ThreadFactory threadFactory =
+        new ThreadFactory() {
+
+          private final AtomicInteger threadNumber = new AtomicInteger(0);
+
+          @Override
+          public Thread newThread(@Nonnull Runnable r) {
+            return new Thread(
+                r, ThreadUtil.THREAD_NAME + "-PoolService-" + threadNumber.getAndIncrement());
+          }
+        };
+--------------------------------------------------------------------------------------------------------
+Manifest-Version: 1.0
+Archiver-Version: Plexus Archiver
+Created-By: Apache Maven
+Built-By: ceki
+Build-Jdk: 1.7.0_17
+Bundle-Description: The slf4j API
+Bundle-Version: 1.7.16
+Implementation-Version: 1.7.16
+X-Compile-Source-JDK: 1.5
+X-Compile-Target-JDK: 1.5
+Implementation-Title: slf4j-api
+Bundle-ManifestVersion: 2
+Bundle-SymbolicName: slf4j.api
+Bundle-Name: slf4j-api
+Bundle-Vendor: SLF4J.ORG
+Bundle-RequiredExecutionEnvironment: J2SE-1.5
+Export-Package: org.slf4j;version=1.7.16, org.slf4j.spi;version=1.7.16
+ , org.slf4j.helpers;version=1.7.16, org.slf4j.event;version=1.7.16
+Import-Package: org.slf4j.impl;version=1.6.0
+
+Manifest-Version: 1.0
+Ant-Version: Apache Ant 1.7.1
+Created-By: 14.3-b01-101 (Apple Inc.)
+Premain-Class: lombok.launch.Agent
+Agent-Class: lombok.launch.Agent
+Can-Redefine-Classes: true
+Main-Class: lombok.launch.Main
+Lombok-Version: 1.18.4
 --------------------------------------------------------------------------------------------------------
 // Асинхронно запускаем задачу, заданную объектом Runnable
 CompletableFuture<Void> future = CompletableFuture.runAsync(new Runnable() {
