@@ -5993,6 +5993,59 @@ public class AppIoProperties {
 	}
 }
 --------------------------------------------------------------------------------------------------------
+import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.startsWith;
+
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+public class TestExy {
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
+
+    @Test
+    public void shouldThrow() {
+        TestThing testThing = new TestThing();
+        thrown.expect(NotFoundException.class);
+        thrown.expectMessage(startsWith("some Message"));
+        thrown.expect(hasProperty("response", hasProperty("status", is(404))));
+        testThing.chuck();
+    }
+
+    private class TestThing {
+        public void chuck() {
+            Response response = Response.status(Status.NOT_FOUND).entity("Resource not found").build();
+            throw new NotFoundException("some Message", response);
+        }
+    }
+}
+
+@Rule
+public ExpectedException thrown = ExpectedException.none();
+
+@Test
+public void shouldTestExceptionMessage() throws IndexOutOfBoundsException {
+    List<Object> list = new ArrayList<Object>();
+ 
+    thrown.expect(IndexOutOfBoundsException.class);
+    thrown.expectMessage("Index: 0, Size: 0");
+    list.get(0); // execution will never get past this line
+}
+--------------------------------------------------------------------------------------------------------
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::        (v2.1.4.RELEASE)
+--------------------------------------------------------------------------------------------------------
 curl -X POST "http://vdlg-pba11-auth-1.pba.internal:20025/api/v1/crm-adapter/mails" -H "accept: application/json;charset=UTF-8" -H "Content-Type: application/json" -d "{ \"AttachedId\": [ \"string\" ], \"Locale\": \"string\", \"ResponseData\": {}, \"ResponseId\": \"string\", \"Subject\": \"string\", \"TemplateName\": \"string\", \"UserId\": \"string\"}"
 --------------------------------------------------------------------------------------------------------
     ThreadFactory threadFactory =
@@ -6060,6 +6113,30 @@ Created-By: 1.8.0_162 (Oracle Corporation 25.162-b12)
 Specification-Version: 1.1.1
 --------------------------------------------------------------------------------------------------------
 mvn clean install -Dspring.profiles.active="profile_name".
+--------------------------------------------------------------------------------------------------------
+@Test
+public void whenExceptionThrown_thenAssertionSucceeds() {
+    String test = null;
+    assertThrows(NullPointerException.class, () -> {
+        test.length();
+    });
+}
+@Test(expected = NullPointerException.class)
+public void whenExceptionThrown_thenExpectationSatisfied() {
+    String test = null;
+    test.length();
+}
+@Rule
+public ExpectedException exceptionRule = ExpectedException.none();
+ 
+@Test
+public void whenExceptionThrown_thenRuleIsApplied() {
+    exceptionRule.expect(NumberFormatException.class);
+    exceptionRule.expectMessage("For input string");
+    Integer.parseInt("1a");
+}
+
+
 --------------------------------------------------------------------------------------------------------
 "file.separator"	Character that separates components of a file path. This is “/” on UNIX and “\” on Windows.
 "java.class.path"	Path used to find directories and JAR archives containing class files. Elements of the class path are separated by a platform-specific character specified in the path.separator property.
