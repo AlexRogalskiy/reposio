@@ -6038,6 +6038,101 @@ public void shouldTestExceptionMessage() throws IndexOutOfBoundsException {
     list.get(0); // execution will never get past this line
 }
 --------------------------------------------------------------------------------------------------------
+@TestPropertySource(
+        properties = {
+                "spring.jpa.hibernate.ddl-auto=validate",
+                "liquibase.enabled=false"
+        }
+)
+
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class AddressFieldsTest {
+
+    @InjectMocks
+    AddressFieldsValidator addressFieldsValidator;
+
+    @Autowired
+    AddressFieldsConfig addressFieldsConfig;
+    ...........
+
+    @Before
+    public void setUp() throws Exception{
+        MockitoAnnotations.initMocks(this);
+        ReflectionTestUtils.setField(addressFieldsValidator,"addressFieldsConfig", addressFieldsConfig);
+    }
+
+}
+
+@Data
+@Component
+@RefreshScope
+@ConfigurationProperties(prefix = "address.fields.regex")
+public class AddressFieldsConfig {
+
+    private int firstName;
+    private int lastName;
+    .........
+	
+@SpringBootTest(
+        properties = ["spring.profiles.active=test"],
+        classes = Application.class,
+)
+public class MyIntTest {
+--------------------------------------------------------------------------------------------------------
+final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
+final Set<ConstraintViolation<Object>> violations = validator
+    .forExecutables()
+    .validateParameters(
+    object,
+    method,
+    args
+);
+import javax.validation.constraints.NotNull;
+interface Foo {
+    void test(@NotNull(message = "foo") String value);
+}
+
+class Bar implements Foo {
+    @Override
+    public void test(@NotNull final String value) {
+        System.out.println(value);
+    }
+}
+
+import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.startsWith;
+
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+public class TestExy {
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
+
+    @Test
+    public void shouldThrow() {
+        TestThing testThing = new TestThing();
+        thrown.expect(NotFoundException.class);
+        thrown.expectMessage(startsWith("some Message"));
+        thrown.expect(hasProperty("response", hasProperty("status", is(404))));
+        testThing.chuck();
+    }
+
+    private class TestThing {
+        public void chuck() {
+            Response response = Response.status(Status.NOT_FOUND).entity("Resource not found").build();
+            throw new NotFoundException("some Message", response);
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
   .   ____          _            __ _ _
  /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
 ( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
