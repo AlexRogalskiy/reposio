@@ -5993,6 +5993,157 @@ public class AppIoProperties {
 	}
 }
 --------------------------------------------------------------------------------------------------------
+@RunWith(SpringRunner.class) 
+@WebMvcTest
+@AutoConfigureMockMvc
+public class UserControllerIntegrationTest {
+ 
+    @MockBean
+    private UserRepository userRepository;
+     
+    @Autowired
+    UserController userController;
+ 
+    @Autowired
+    private MockMvc mockMvc;
+ 
+    //...
+     
+}
+
+@Test
+public void whenPostRequestToUsersAndValidUser_thenCorrectResponse() throws Exception {
+    MediaType textPlainUtf8 = new MediaType(MediaType.TEXT_PLAIN, Charset.forName("UTF-8"));
+    String user = "{\"name\": \"bob\", \"email\" : \"bob@domain.com\"}";
+    mockMvc.perform(MockMvcRequestBuilders.post("/users")
+      .content(user)
+      .contentType(MediaType.APPLICATION_JSON_UTF8))
+      .andExpect(MockMvcResultMatchers.status().isOk())
+      .andExpect(MockMvcResultMatchers.content()
+        .contentType(textPlainUtf8));
+}
+--------------------------------------------------------------------------------------------------------
+String user = URLEncoder.encode(mailUserEmail, ConstantUtil.CHARACTER_ENCODING);
+--------------------------------------------------------------------------------------------------------
+function createUUID() {
+    return uuid.v4();
+}
+
+// version 4
+// createUUID.regex = '^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[89abAB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$';
+createUUID.regex = '^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$';
+
+createUUID.is = function (str) {
+    return new RegExp(createUUID.regex).test(str);
+};
+
+const uuidV4Regex = /^[A-F\d]{8}-[A-F\d]{4}-4[A-F\d]{3}-[89AB][A-F\d]{3}-[A-F\d]{12}$/i;
+// compared to:     /^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4{1}[a-fA-F0-9]{3}-[89abAB]{1}[a-fA-F0-9]{3}-[a-fA-F0-9]{12}$/
+
+const isValidV4UUID = uuid => uuidV4Regex.test(uuid);
+--------------------------------------------------------------------------------------------------------
+IOUtils.toString(Thread.currentThread().getContextClassLoader().getResourceAsStream("rsb-configuration-default.json"))
+--------------------------------------------------------------------------------------------------------
+import static org.hamcrest.CoreMatchers.is; 
+import static org.hamcrest.CoreMatchers.nullValue; 
+import static org.junit.Assert.assertThat; 
+import static org.mockito.Mockito.mock; 
+import static org.mockito.Mockito.when; 
+ 
+import java.io.File; 
+import java.net.URI; 
+import java.net.URISyntaxException; 
+import java.util.Arrays; 
+import java.util.Calendar; 
+import java.util.Collections; 
+import java.util.GregorianCalendar; 
+import java.util.TimeZone; 
+ 
+import javax.ws.rs.core.HttpHeaders; 
+import javax.xml.datatype.XMLGregorianCalendar; 
+ 
+import org.junit.Test; 
+ 
+/**
+ * @author "OpenAnalytics <rsb.development@openanalytics.eu>" 
+ */ 
+public class UtilTestCase 
+{ 
+    @Test 
+    public void isValidApplicationName() 
+    { 
+        assertThat(Util.isValidApplicationName("test123"), is(true)); 
+        assertThat(Util.isValidApplicationName("123ABC"), is(true)); 
+        assertThat(Util.isValidApplicationName("123_ABC"), is(true)); 
+        assertThat(Util.isValidApplicationName("123-ABC"), is(false)); 
+        assertThat(Util.isValidApplicationName(null), is(false)); 
+        assertThat(Util.isValidApplicationName(""), is(false)); 
+        assertThat(Util.isValidApplicationName("-test"), is(false)); 
+        assertThat(Util.isValidApplicationName("1 2 3"), is(false)); 
+    } 
+ 
+    @SuppressWarnings("unchecked") 
+    @Test 
+    public void getSingleHeader() 
+    { 
+        final HttpHeaders httpHeaders = mock(HttpHeaders.class); 
+        assertThat(Util.getSingleHeader(httpHeaders, "missing"), is(nullValue())); 
+ 
+        when(httpHeaders.getRequestHeader("missing_too")).thenReturn(Collections.EMPTY_LIST); 
+        assertThat(Util.getSingleHeader(httpHeaders, "missing_too"), is(nullValue())); 
+ 
+        when(httpHeaders.getRequestHeader("single_value")).thenReturn(Collections.singletonList("bingo")); 
+        assertThat(Util.getSingleHeader(httpHeaders, "single_value"), is("bingo")); 
+ 
+        when(httpHeaders.getRequestHeader("multi_value")).thenReturn(Arrays.asList("bingo_too", "ignored")); 
+        assertThat(Util.getSingleHeader(httpHeaders, "multi_value"), is("bingo_too")); 
+    } 
+ 
+    @Test 
+    public void getMimeType() 
+    { 
+        assertThat(Util.getMimeType(new File("test.zip")).toString(), is(Constants.ZIP_MIME_TYPE.toString())); 
+        assertThat(Util.getMimeType(new File("test.err.txt")).toString(), 
+            is(Constants.TEXT_MIME_TYPE.toString())); 
+        assertThat(Util.getMimeType(new File("test.pdf")).toString(), is(Constants.PDF_MIME_TYPE.toString())); 
+        assertThat(Util.getMimeType(new File("test.foo")).toString(), is("application/octet-stream")); 
+    } 
+ 
+    @Test 
+    public void getResourceType() 
+    { 
+        assertThat(Util.getResourceType(Constants.ZIP_MIME_TYPE), is("zip")); 
+        assertThat(Util.getResourceType(Constants.PDF_MIME_TYPE), is("pdf")); 
+        assertThat(Util.getResourceType(Constants.TEXT_MIME_TYPE), is("txt")); 
+        assertThat(Util.getResourceType(Constants.DEFAULT_MIME_TYPE), is("dat")); 
+    } 
+ 
+    @Test 
+    public void convertToXmlDate() 
+    { 
+        final GregorianCalendar gmtMinus8Calendar = new GregorianCalendar( 
+            TimeZone.getTimeZone(TimeZone.getAvailableIDs(-8 * 60 * 60 * 1000)[0])); 
+        gmtMinus8Calendar.set(2010, Calendar.JULY, 21, 11, 35, 48); 
+        gmtMinus8Calendar.set(GregorianCalendar.MILLISECOND, 456); 
+ 
+        final XMLGregorianCalendar xmlDate = Util.convertToXmlDate(gmtMinus8Calendar); 
+        assertThat(xmlDate.getTimezone(), is(0)); 
+        assertThat(xmlDate.toXMLFormat(), is("2010-07-21T18:35:48.456Z")); 
+    } 
+ 
+    @Test(expected = IllegalArgumentException.class) 
+    public void newURIFailure() 
+    { 
+        Util.newURI(" a b c "); 
+    } 
+ 
+    @Test 
+    public void newURISuccess() throws URISyntaxException 
+    { 
+        assertThat(Util.newURI("foo://bar"), is(new URI("foo://bar"))); 
+    } 
+}
+--------------------------------------------------------------------------------------------------------
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.startsWith;
