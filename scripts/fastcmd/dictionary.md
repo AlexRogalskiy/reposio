@@ -1480,6 +1480,359 @@ exit
 		return (obj == null ? "" : "@" + Integer.toHexString(System.identityHashCode(obj)));
 	}
 --------------------------------------------------------------------------------------------------------
+java -Xmx64m -server \
+  -cp target/classes:target/test-classes:lib/\* \
+-Xrunhprof:cpu=samples,depth=10,verbose=n,interval=2 \
+--------------------------------------------------------------------------------------------------------
+System.out.println(ReflectionToStringBuilder.toString(user, ToStringStyle.MULTI_LINE_STYLE));
+--------------------------------------------------------------------------------------------------------
+GodMode.{ED7BA470-8E54-465E-825C-99712043E01C}
+--------------------------------------------------------------------------------------------------------
+String propertiesFilename = "server.properties";
+Properties prop = new Properties();
+try (var inputStream = getClass().getClassLoader().getResourceAsStream(propertiesFilename)) {
+    if (inputStream == null) {
+        throw new FileNotFoundException(propertiesFilename);
+    }
+    prop.load(inputStream);
+} catch (IOException e) {
+    throw new RuntimeException(
+                "Could not read " + propertiesFilename + " resource file: " + e);
+}
+--------------------------------------------------------------------------------------------------------
+public class BookYAMLParser implements Parser<Book> {
+    String filename;
+
+    public BookYAMLParser(String filename) {
+        this.filename = filename;
+    }
+
+    @Override
+    public void serialize(Book book) {
+        try {
+            DumperOptions options = new DumperOptions();
+            options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+            Yaml yaml = new Yaml(options);
+            FileWriter writer = new FileWriter(filename);
+            yaml.dump(book, writer);
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public Book deserialize() {
+        try {
+            InputStream input = new FileInputStream(new File(filename));
+            Yaml yaml = new Yaml();
+            Book data = (Book) yaml.load(input);
+            input.close();
+
+            return data;
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (YamlException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            String message = "Exception in file " + filename + ", ";
+            throw new Exception(message + e.getMessage());
+        }
+        return null;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+public class BookJSONParser implements Parser<Book> {
+
+    String filename;
+    public BookJSONParser(String filename) {
+        this.filename = filename;
+    }
+
+    @Override
+    public void serialize(Book book) {
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();;
+
+        try {
+            FileWriter writer = new FileWriter(filename);
+            String json = gson.toJson(book);
+            writer.write(json);
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public Book deserialize() {
+        Gson gson = new Gson();
+
+        try {
+            BufferedReader br = new BufferedReader(
+                    new FileReader(filename));
+
+            JsonReader jsonReader = new JsonReader(br);
+            Book book = gson.fromJson(jsonReader, Book.class);
+            return book;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+package com.javasampleapproach.java9flow.pubsub;
+ 
+public class MainApp {
+ 
+  public static void main(String[] args) throws InterruptedException {
+    
+    MyPublisher publisher = new MyPublisher();
+    MySubscriber subscriberA = new MySubscriber("A");
+    MySubscriber subscriberB = new MySubscriber("B");
+    
+    publisher.subscribe(subscriberA);
+    publisher.subscribe(subscriberB);
+    
+    publisher.waitUntilTerminated();
+  }
+}
+
+package com.javasampleapproach.java9flow.pubprocsub;
+ 
+public class MainApp {
+ 
+  public static void main(String[] args) throws InterruptedException {
+    
+    MyPublisher publisher = new MyPublisher();
+    
+    MySubscriber subscriber = new MySubscriber();
+    subscriber.setDEMAND(...); // MUST set number of items to be requested here!
+    
+    MyProcessor processor = new MyProcessor();
+    processor.setDEMAND(...); // MUST set number of items to be requested here!
+    
+    publisher.subscribe(processor);
+    processor.subscribe(subscriber);
+    
+    publisher.waitUntilTerminated();
+    
+  }
+}
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+ 
+public class MainApp {
+ 
+  public static void main(String[] args) {
+ 
+    final int MAX_BUFFER_CAPACITY = 128;
+    final ExecutorService executor = Executors.newFixedThreadPool(4);
+ 
+    MyPublisher publisher = new MyPublisher(executor, MAX_BUFFER_CAPACITY, 200, TimeUnit.MILLISECONDS);
+    
+    MySubscriber subscriberA = new MySubscriber("A");
+    subscriberA.setDEMAND(3);
+ 
+    MySubscriber subscriberB = new MySubscriber("B");
+    subscriberB.setDEMAND(6);
+ 
+    publisher.subscribe(subscriberA);
+    publisher.subscribe(subscriberB);
+  }
+}
+package com.javasampleapproach.java9flow.submissionpublisher;
+ 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+ 
+public class MainApp {
+ 
+  public static void main(String[] args) {
+ 
+    final int MAX_BUFFER_CAPACITY = 128;
+    final ExecutorService executor = Executors.newFixedThreadPool(4);
+ 
+    MyPublisher publisher = new MyPublisher(executor, MAX_BUFFER_CAPACITY, 200, TimeUnit.MILLISECONDS);
+ 
+    publisher.consume((data) -> process(data));
+  }
+ 
+  static void process(Integer i) {
+    System.out.println("consume() testing: " + i.toString());
+  }
+}
+--------------------------------------------------------------------------------------------------------
+import org.yaml.snakeyaml.Yaml;
+
+import java.io.IOException;
+import java.io.InputStream;
+
+public class LoadAsJavaObjectList {
+
+    public static void main(String[] args) throws IOException {
+        Yaml yaml = new Yaml();
+        try (InputStream in = LoadAsJavaObject.class.getResourceAsStream("/persons.yml")) {
+            Persons persons = yaml.loadAs(in, Persons.class);
+            for (Person person : persons.getPersons()) {
+                System.out.println(person);
+            }
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+ 
+import javax.naming.InitialContext;                                                                          
+import javax.jms.Topic;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+import javax.jms.TopicPublisher;
+import javax.jms.DeliveryMode;
+import javax.jms.TopicSession;
+import javax.jms.TopicConnection;
+import javax.jms.TopicConnectionFactory;
+                                                                            
+public class Publisher
+{
+    public static void main(String[] args) throws Exception
+    {
+       // get the initial context
+       InitialContext ctx = new InitialContext();
+                                                                           
+       // lookup the topic object
+       Topic topic = (Topic) ctx.lookup("topic/topic0");
+                                                                           
+       // lookup the topic connection factory
+       TopicConnectionFactory connFactory = (TopicConnectionFactory) ctx.
+           lookup("topic/connectionFactory");
+                                                                           
+       // create a topic connection
+       TopicConnection topicConn = connFactory.createTopicConnection();
+                                                                           
+       // create a topic session
+       TopicSession topicSession = topicConn.createTopicSession(false,
+           Session.AUTO_ACKNOWLEDGE);
+                                                                           
+       // create a topic publisher
+       TopicPublisher topicPublisher = topicSession.createPublisher(topic);
+       topicPublisher.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+                                                                           
+       // create the "Hello World" message
+       TextMessage message = topicSession.createTextMessage();
+       message.setText("Hello World");
+                                                                           
+       // publish the messages
+       topicPublisher.publish(message);
+                                                                           
+       // print what we did
+       System.out.println("Message published: " + message.getText());
+                                                                           
+       // close the topic connection
+       topicConn.close();
+    }
+}
+import javax.naming.InitialContext;                                                                          
+import javax.jms.Topic;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+import javax.jms.TopicSession;
+import javax.jms.TopicSubscriber;
+import javax.jms.TopicConnection;
+import javax.jms.TopicConnectionFactory;
+                                                                            
+public class Subscriber
+{
+    public static void main(String[] args) throws Exception
+    {
+       // get the initial context
+       InitialContext ctx = new InitialContext();
+                                                                           
+       // lookup the topic object
+       Topic topic = (Topic) ctx.lookup("topic/topic0");
+                                                                           
+       // lookup the topic connection factory
+       TopicConnectionFactory connFactory = (TopicConnectionFactory) ctx.
+           lookup("topic/connectionFactory");
+                                                                           
+       // create a topic connection
+       TopicConnection topicConn = connFactory.createTopicConnection();
+                                                                           
+       // create a topic session
+       TopicSession topicSession = topicConn.createTopicSession(false,
+           Session.AUTO_ACKNOWLEDGE);
+                                                                           
+       // create a topic subscriber
+       TopicSubscriber topicSubscriber = topicSession.createSubscriber(topic);
+                                                                           
+       // start the connection
+       topicConn.start();
+                                                                           
+       // receive the message
+       TextMessage message = (TextMessage) topicSubscriber.receive();
+                                                                           
+       // print the message
+       System.out.println("Message received: " + message.getText());
+                                                                           
+       // close the topic connection
+       topicConn.close();
+    }
+}
+
+--------------------------------------------------------------------------------------------------------
+    public static void main(String[] args) {
+
+        try (InputStream input = App3.class.getClassLoader().getResourceAsStream("config.properties")) {
+
+            Properties prop = new Properties();
+
+            if (input == null) {
+                System.out.println("Sorry, unable to find config.properties");
+                return;
+            }
+
+            //load a properties file from class path, inside static method
+            prop.load(input);
+
+            //get the property value and print it out
+            System.out.println(prop.getProperty("db.url"));
+            System.out.println(prop.getProperty("db.user"));
+            System.out.println(prop.getProperty("db.password"));
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
+    }
+--------------------------------------------------------------------------------------------------------
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+
+public class LoadContacts {
+
+  private static String yamlLocation = "path_to/../contacts.yml";
+
+  public static void main(String[] args) throws IOException {
+    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+
+    try {
+      List<Contact> contactList = mapper.readValue(new File(yamlLocation), new TypeReference<List<Contact>>(){});
+      contactList.forEach(System.out::println);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
+}
+--------------------------------------------------------------------------------------------------------
 Eclipse Public License - v 2.0
 ==============================
 
