@@ -1784,6 +1784,124 @@ public class Subscriber
 }
 
 --------------------------------------------------------------------------------------------------------
+check if single element is in a collection
+1
+2
+3
+	
+List<String> collection = Lists.newArrayList("ab", "cd", "ef");
+assertThat(collection, hasItem("cd"));
+assertThat(collection, not(hasItem("zz")));
+
+check if multiple elements are in a collection
+1
+2
+	
+List<String> collection = Lists.newArrayList("ab", "cd", "ef");
+assertThat(collection, hasItems("cd", "ef"));
+
+check all elements in a collection
+
+– with strict order
+1
+2
+	
+List<String> collection = Lists.newArrayList("ab", "cd", "ef");
+assertThat(collection, contains("ab", "cd", "ef"));
+
+– with any order
+1
+2
+	
+List<String> collection = Lists.newArrayList("ab", "cd", "ef");
+assertThat(collection, containsInAnyOrder("cd", "ab", "ef"));
+
+check if collection is empty
+1
+2
+	
+List<String> collection = Lists.newArrayList();
+assertThat(collection, empty());
+
+check if array is empty
+1
+2
+	
+String[] array = new String[] { "ab" };
+assertThat(array, not(emptyArray()));
+
+check if Map is empty
+1
+2
+	
+Map<String, String> collection = Maps.newHashMap();
+assertThat(collection, equalTo(Collections.EMPTY_MAP));
+
+check if Iterable is empty
+1
+2
+	
+Iterable<String> collection = Lists.newArrayList();
+assertThat(collection, emptyIterable());
+
+check size of a collection
+1
+2
+	
+List<String> collection = Lists.newArrayList("ab", "cd", "ef");
+assertThat(collection, hasSize(3));
+
+checking size of an iterable
+1
+2
+	
+Iterable<String> collection = Lists.newArrayList("ab", "cd", "ef");
+assertThat(collection, Matchers.<String> iterableWithSize(3));
+
+check condition on every item
+1
+2
+	
+List<Integer> collection = Lists.newArrayList(15, 20, 25, 30);
+assertThat(collection, everyItem(greaterThan(10)));
+--------------------------------------------------------------------------------------------------------
+    @Size(min = 5, message ="The name '${validatedValue}' must be at least {min}" +
+                        " characters long. Length found : ${validatedValue.length()}")
+    private String name;
+	
+     Validator validator = getValidator();
+     validator.validate(testBean).stream().forEach(ValidatedValueExample::printError);
+--------------------------------------------------------------------------------------------------------
+sudo hcitool lescan
+
+Подключение к BLE устройство через Mac адрес и получение списка служб и дескрипторов:
+
+sudo gatttool -b YOUR_MAC -I -t random
+
+Подробнее: https://www.securitylab.ru/analytics/499344.php
+sudo hciconfig hci0 reset
+
+Подробнее: https://www.securitylab.ru/analytics/499344.php
+--------------------------------------------------------------------------------------------------------
+	@Override
+	public <C> C unwrap(Class<C> type) {
+		// Keep backward compatibility
+		if ( type.isAssignableFrom( ConstraintViolation.class ) ) {
+			return type.cast( this );
+		}
+		if ( type.isAssignableFrom( HibernateConstraintViolation.class ) ) {
+			return type.cast( this );
+		}
+		throw LOG.getTypeNotSupportedForUnwrappingException( type );
+	}
+--------------------------------------------------------------------------------------------------------
+assertThat(strings, 
+   allOf(
+     iterableWithSize(greaterThan(2)),
+     hasItem("string two")
+   )
+);
+--------------------------------------------------------------------------------------------------------
     public static void main(String[] args) {
 
         try (InputStream input = App3.class.getClassLoader().getResourceAsStream("config.properties")) {
