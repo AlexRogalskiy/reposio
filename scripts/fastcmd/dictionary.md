@@ -6368,6 +6368,169 @@ RUN adduser -D -S -G test -u 1000 -s /bin/ash test
 USER test
 WORKDIR /home/test
 --------------------------------------------------------------------------------------------------------
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = Application.class, webEnvironment = WebEnvironment.DEFINED_PORT)
+@TestPropertySource(properties = 
+ "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration")
+public class ExcludeAutoConfigIntegrationTest {
+    // ...
+}
+
+
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = Application.class, webEnvironment = WebEnvironment.DEFINED_PORT)
+@ActiveProfiles("test")
+public class ExcludeAutoConfigIntegrationTest {
+    // ...
+}
+spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+
+
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = Application.class, webEnvironment = WebEnvironment.DEFINED_PORT)
+@EnableAutoConfiguration(exclude=SecurityAutoConfiguration.class)
+public class ExcludeAutoConfigIntegrationTest {
+ 
+    @Test
+    public void givenSecurityConfigExcluded_whenAccessHome_thenNoAuthenticationRequired() {
+        int statusCode = RestAssured.get("http://localhost:8080/").statusCode();
+         
+        assertEquals(HttpStatus.OK.value(), statusCode);
+    }
+}
+
+
+@SpringBootApplication(exclude=SecurityAutoConfiguration.class)
+public class TestApplication {
+ 
+    public static void main(String[] args) {
+        SpringApplication.run(TestApplication.class, args);
+    }
+}
+
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = TestApplication.class, webEnvironment = WebEnvironment.DEFINED_PORT)
+public class ExcludeAutoConfigIntegrationTest {
+    // ...
+}
+
+---
+spring:
+  profiles: test
+  autoconfigure.exclude: org.springframework.boot.autoconfigure.session.SessionAutoConfiguration
+--------------------------------------------------------------------------------------------------------
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = { MyConfigurationPropertiesTest_1.TestConfiguration.class })
+@ActiveProfiles("happy-path")
+public class MyConfigurationPropertiesTest_1 {
+ 
+    @Autowired
+    private MyConfigurationProperties properties;
+ 
+    @Test
+    public void should_Populate_MyConfigurationProperties() {
+        assertThat(properties.getSomeMandatoryProperty()).isEqualTo("123456");
+        assertThat(properties.getSomeOptionalProperty()).isEqualTo("abcdef");
+        assertThat(properties.getSomeDefaultProperty()).isEqualTo("overwritten");
+    }
+ 
+    @EnableConfigurationProperties(MyConfigurationProperties.class)
+    public static class TestConfiguration {
+        // nothing
+    }
+}
+ 
+application-happy-path.yml:
+    my:
+      properties:
+        some_mandatory_property: "123456"
+        some_optional_property: "abcdef"
+        some_default_property: "overwritten"
+--------------------------------------------------------------------------------------------------------
+@TestPropertySource(properties={"spring.autoconfigure.exclude=comma.seperated.ClassNames,com.example.FooAutoConfiguration"})
+@EnableAutoConfiguration(exclude = IntegrationAutoConfiguration.class)
+
+javax.mail.StoreClosedException: * BYE JavaMail Exception: java.io.IOException: Connection dropped by server?
+	at com.sun.mail.imap.IMAPFolder.throwClosedException(IMAPFolder.java:3732)
+	at com.sun.mail.imap.IMAPFolder.doCommand(IMAPFolder.java:3866)
+	at com.sun.mail.imap.IMAPFolder.exists(IMAPFolder.java:590)
+	at org.springframework.integration.mail.AbstractMailReceiver.openFolder(AbstractMailReceiver.java:324)
+	at org.springframework.integration.mail.ImapMailReceiver.waitForNewMessages(ImapMailReceiver.java:170)
+	at org.springframework.integration.mail.ImapIdleChannelAdapter$IdleTask.run(ImapIdleChannelAdapter.java:289)
+	at org.springframework.integration.mail.ImapIdleChannelAdapter$ReceivingTask.run(ImapIdleChannelAdapter.java:254)
+	at org.springframework.scheduling.support.DelegatingErrorHandlingRunnable.run(DelegatingErrorHandlingRunnable.java:54)
+	at org.springframework.scheduling.concurrent.ReschedulingRunnable.run(ReschedulingRunnable.java:93)
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.access$201(ScheduledThreadPoolExecutor.java:180)
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:293)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at java.lang.Thread.run(Thread.java:748)
+	
+java.lang.IllegalStateException: Failure in 'idle' task. Will resubmit.
+	at org.springframework.integration.mail.ImapIdleChannelAdapter$IdleTask.run(ImapIdleChannelAdapter.java:305)
+	at org.springframework.integration.mail.ImapIdleChannelAdapter$ReceivingTask.run(ImapIdleChannelAdapter.java:254)
+	at org.springframework.scheduling.support.DelegatingErrorHandlingRunnable.run(DelegatingErrorHandlingRunnable.java:54)
+	at org.springframework.scheduling.concurrent.ReschedulingRunnable.run(ReschedulingRunnable.java:93)
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.access$201(ScheduledThreadPoolExecutor.java:180)
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:293)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at java.lang.Thread.run(Thread.java:748)
+Caused by: javax.mail.StoreClosedException: * BYE JavaMail Exception: java.io.IOException: Connection dropped by server?
+	at com.sun.mail.imap.IMAPFolder.throwClosedException(IMAPFolder.java:3732)
+	at com.sun.mail.imap.IMAPFolder.doCommand(IMAPFolder.java:3866)
+	at com.sun.mail.imap.IMAPFolder.exists(IMAPFolder.java:590)
+	at org.springframework.integration.mail.AbstractMailReceiver.openFolder(AbstractMailReceiver.java:324)
+	at org.springframework.integration.mail.ImapMailReceiver.waitForNewMessages(ImapMailReceiver.java:170)
+	at org.springframework.integration.mail.ImapIdleChannelAdapter$IdleTask.run(ImapIdleChannelAdapter.java:289)
+	... 10 common frames omitted
+--------------------------------------------------------------------------------------------------------
+@Configuration
+@Profile("dev")
+public class StandaloneDataConfig {
+
+	@Bean
+	public DataSource dataSource() {
+		return new EmbeddedDatabaseBuilder()
+			.setType(EmbeddedDatabaseType.HSQL)
+			.addScript("classpath:com/bank/config/sql/schema.sql")
+			.addScript("classpath:com/bank/config/sql/test-data.sql")
+			.build();
+	}
+}
+--------------------------------------------------------------------------------------------------------
+package com.example;
+
+@RunWith(SpringJUnit4ClassRunner.class)
+// ApplicationContext will be loaded from the static inner ContextConfiguration class
+@ContextConfiguration(loader=AnnotationConfigContextLoader.class)
+public class OrderServiceTest {
+
+    @Configuration
+    static class ContextConfiguration {
+
+        // this bean will be injected into the OrderServiceTest class
+        @Bean
+        public OrderService orderService() {
+            OrderService orderService = new OrderServiceImpl();
+            // set properties, etc.
+            return orderService;
+        }
+    }
+
+    @Autowired
+    private OrderService orderService;
+
+    @Test
+    public void testOrderService() {
+        // test the orderService
+    }
+}
+--------------------------------------------------------------------------------------------------------
 import com.paragon.microservices.crmmailadapter.test.annotation.SpringBootTestConfiguration;
 import org.junit.Ignore;
 import org.junit.Test;
