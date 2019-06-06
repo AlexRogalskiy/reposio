@@ -317,6 +317,30 @@ sudo flatpak install winepak com.blizzard.Overwatch
 --------------------------------------------------------------------------------------------------------
 ip a | grep inet
 --------------------------------------------------------------------------------------------------------
+git log --oneline
+git log --stat
+git log -p
+git show
+git show 97a7c5f0d
+
+git show 97a7c5f0d --stat
+
+git shortlog
+git shortlog -s
+git shortlog -n
+git shortlog -s -n
+git log --pretty="%cn committed %h on %cd"
+git log --author="Dan Abramov"
+git log --author="Dan Abramov" --oneline
+git log -4 --oneline
+git log --after="1-7-2017"
+git log --before="1-7-2017"
+git log --after="1-7-2017" --oneline --pretty="%cn committed %h on %cd"
+git log --before="a week ago" --oneline --pretty="%cn committed %h on %cd"
+git log --merges
+git log --decorate --oneline
+
+--------------------------------------------------------------------------------------------------------
 spring:
   profiles:
     include: regex
