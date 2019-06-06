@@ -6404,6 +6404,74 @@ public class ActuatorInfoTest {
     }
 }
 --------------------------------------------------------------------------------------------------------
+ArgumentCaptor<MyFunctionalInterface> lambdaCaptor = ArgumentCaptor.forClass(MyFunctionalInterface.class);
+
+verify(bar).useLambda(lambdaCaptor.capture());
+
+// Not retrieve captured arg (which is reference to lamdba).
+MyFuntionalRef usedLambda = lambdaCaptor.getValue();
+
+// Now you have reference to actual lambda that was passed, validate its behavior.
+verifyMyLambdaBehavior(usedLambda);
+--------------------------------------------------------------------------------------------------------
+@RunWith(SpringRunner.class)
+@WebMvcTest(CarServiceController.class)
+public class CarServiceControllerTests {
+
+    @Autowired
+    private MockMvc mvc;
+
+    @MockBean
+    private CarService carService;
+
+    @Test
+    public void getCarShouldReturnCarDetails() {
+        given(this.carService.schedulePickup(new Date(), new Route());)
+            .willReturn(new Date());
+
+        this.mvc.perform(get("/schedulePickup")
+            .accept(MediaType.JSON)
+            .andExpect(status().isOk());
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@Configuration
+public class RetryTemplateBeanPostProcessor implements BeanPostProcessor {
+
+    public static final String DEFAULT_RETRY_TEMPLATE_BEAN_NAME = "retryTemplate";
+
+    @Nullable
+    @Override
+    public Object postProcessAfterInitialization(final Object bean, final String beanName) throws BeansException {
+        if (StringUtils.equalsIgnoreCase(beanName, DEFAULT_RETRY_TEMPLATE_BEAN_NAME)) {
+            ((RetryTemplate) bean).setThrowLastExceptionOnExhausted(true);
+        }
+        return bean;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@SpringBootApplication
+@Import({ProcessExecutorConfig.class})
+public class App {
+ 
+	public static void main(String[] args) {
+		SpringApplication app = new SpringApplication(App.class);
+		app.addInitializers(new CustomAppCtxInitializer());
+		ConfigurableApplicationContext ctx = app.run();
+	}
+ 
+	private static class CustomAppCtxInitializer
+			implements ApplicationContextInitializer<GenericApplicationContext> {
+ 
+		@Override
+		public void initialize(GenericApplicationContext applicationContext) {
+			applicationContext
+					.getDefaultListableBeanFactory()
+					.setAllowBeanDefinitionOverriding(false);
+		} 
+	}
+}
+--------------------------------------------------------------------------------------------------------
 spring.main.allow-bean-definition-overriding=true
 --------------------------------------------------------------------------------------------------------
   /*
