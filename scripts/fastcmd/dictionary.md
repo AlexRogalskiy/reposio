@@ -567,6 +567,7 @@ for /f "tokens=*" %%G in ('dir /b /s /a:d "C:\Work\reports*"') do echo Found %%G
 --------------------------------------------------------------------------------------------------------
 find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
 --------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
 git fetch --unshallow || true
 git fetch --tags
 --------------------------------------------------------------------------------------------------------
@@ -4597,6 +4598,19 @@ public class ProgrammaticallyValidatingService {
 --------------------------------------------------------------------------------------------------------
         this.externalFileIds = Stream.concat(this.externalFileIds.stream(), externalFileIds.stream())
                 .collect(Collectors.toList());
+--------------------------------------------------------------------------------------------------------
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = TestApplication.class, webEnvironment = WebEnvironment.DEFINED_PORT)
+public class ExcludeAutoConfigIntegrationTest {
+    // ...
+}
+@SpringBootApplication(exclude=SecurityAutoConfiguration.class)
+public class TestApplication {
+ 
+    public static void main(String[] args) {
+        SpringApplication.run(TestApplication.class, args);
+    }
+}
 --------------------------------------------------------------------------------------------------------
 spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation=true
  
