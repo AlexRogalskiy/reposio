@@ -6423,6 +6423,98 @@ spring:
   profiles: test
   autoconfigure.exclude: org.springframework.boot.autoconfigure.session.SessionAutoConfiguration
 --------------------------------------------------------------------------------------------------------
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties="spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.mongo.embedded.EmbeddedMongoAutoConfiguration")
+--------------------------------------------------------------------------------------------------------
+@Configuration
+@EnableCaching
+@EnableScheduling
+public class CachingConfig {
+    public static final String GAMES = "GAMES";
+    @Bean
+    public CacheManager cacheManager() {
+        ConcurrentMapCacheManager cacheManager = new ConcurrentMapCacheManager(GAMES);
+
+        return cacheManager;
+    }
+
+@CacheEvict(allEntries = true, value = {GAMES})
+@Scheduled(fixedDelay = 10 * 60 * 1000 ,  initialDelay = 500)
+public void reportCacheEvict() {
+    System.out.println("Flush Cache " + dateFormat.format(new Date()));
+}
+
+@Configuration
+@EnableCaching
+public class CacheConfig {
+
+   public final static String CACHE_ONE = "cacheOne";
+   public final static String CACHE_TWO = "cacheTwo";
+
+   @Bean
+   public Cache cacheOne() {
+      return new GuavaCache(CACHE_ONE, CacheBuilder.newBuilder()
+            .expireAfterWrite(60, TimeUnit.MINUTES)
+            .build());
+   }
+
+   @Bean
+   public Cache cacheTwo() {
+      return new GuavaCache(CACHE_TWO, CacheBuilder.newBuilder()
+            .expireAfterWrite(60, TimeUnit.SECONDS)
+            .build());
+   }
+}
+@Service
+public class CachedService extends WebServiceGatewaySupport implements CachedService {
+
+    @Inject
+    private RestTemplate restTemplate;
+
+
+    @Cacheable(CacheConfig.CACHE_ONE)
+    public String getCached() {
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<String> reqEntity = new HttpEntity<>("url", headers);
+
+        ResponseEntity<String> response;
+
+        String url = "url";
+        response = restTemplate.exchange(
+                url,
+                HttpMethod.GET, reqEntity, String.class);
+
+        return response.getBody();
+    }
+}
+
+@EnableCaching
+@Configuration
+public class CacheConfiguration implements CachingConfigurer {
+
+    @Override
+    public CacheManager cacheManager() {
+        ConcurrentMapCacheManager cacheManager = new ConcurrentMapCacheManager() {
+
+            @Override
+            protected Cache createConcurrentMapCache(final String name) {
+                return new ConcurrentMapCache(name,
+                    CacheBuilder.newBuilder().expireAfterWrite(30, TimeUnit.MINUTES).maximumSize(100).build().asMap(), false);
+            }
+        };
+
+        return cacheManager;
+    }
+
+    @Override
+    public KeyGenerator keyGenerator() {
+        return new DefaultKeyGenerator();
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
 package com.mkyong;
 
 import java.io.BufferedReader;
