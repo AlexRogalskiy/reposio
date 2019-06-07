@@ -315,6 +315,10 @@ sudo flatpak remote-add --if-not-exists winepak https://dl.winepak.org/repo/wine
 flatpak search overwatch
 sudo flatpak install winepak com.blizzard.Overwatch
 --------------------------------------------------------------------------------------------------------
+.cursor {cursor: url(cursor.svg) 3 3, pointer;}
+.cursor {cursor: url(cursor.svg), url(path/to/image.png), wait;}
+.cursor {cursor: url('path/to/image.png'), auto;}
+--------------------------------------------------------------------------------------------------------
 ip a | grep inet
 --------------------------------------------------------------------------------------------------------
 git log --oneline
