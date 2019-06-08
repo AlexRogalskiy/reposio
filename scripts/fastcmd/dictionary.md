@@ -295,6 +295,12 @@ route print
 --------------------------------------------------------------------------------------------------------
 #### MISC
 --------------------------------------------------------------------------------------------------------
+npm: npm install infinite-scroll
+
+Bower: bower install infinite-scroll --save
+
+Yarn: yarn add infinite-scroll
+--------------------------------------------------------------------------------------------------------
 curl -X GET "http://vdlg-pba11-auth-1.pba.internal:5000/api/internal/v1/users/alexander.rogalskiy%40paragon-software.com" -H "accept: text/plain"
 --------------------------------------------------------------------------------------------------------
 Note: Should you find difficulties connecting to the WebDAV directory, update the Basic Authentication Level in Windows Registry.
