@@ -295,6 +295,387 @@ route print
 --------------------------------------------------------------------------------------------------------
 #### MISC
 --------------------------------------------------------------------------------------------------------
+    Cp1251:
+        Windows-1251 
+    Cp866:
+        IBM866
+        IBM-866
+        866
+        CP866
+        CSIBM866 
+    KOI8_R:
+        KOI8-R
+        KOI8
+        CSKOI8R 
+    ISO8859_5:
+        ISO8859-5
+        ISO-8859-5
+        ISO_8859-5
+        ISO_8859-5:1988
+        ISO-IR-144
+        8859_5
+        Cyrillic
+        CSISOLatinCyrillic
+        IBM915
+        IBM-915
+        Cp915
+        915 
+--------------------------------------------------------------------------------------------------------
+CREATE DATABASE 'E:\ProjectHolding\DataBase\HOLDING.GDB' PAGE_SIZE 4096
+DEFAULT CHARACTER SET UNICODE_FSS;
+
+CREATE TABLE RUSSIAN_WORD
+(
+ "NAME1"  VARCHAR(40) CHARACTER SET UNICODE_FSS NOT NULL,
+ "NAME2"  VARCHAR(40) CHARACTER SET WIN1251 NOT NULL,
+ PRIMARY KEY ("NAME1")
+);
+--------------------------------------------------------------------------------------------------------
+import java.util.Properties;
+
+import javax.mail.Session;
+import javax.mail.Message;
+import javax.mail.Transport;
+import javax.mail.internet.MimeMessage;
+import javax.mail.internet.InternetAddress;
+
+public class MailTest
+{
+ static final String ENCODING = "koi8-r";
+ static final String FROM = "myaccount@mydomail.ru";
+ static final String TO = "myaccount@mydomail.ru";
+
+ public static void main(String args[]) throws Exception
+ {
+  Properties mailProps = new Properties();
+
+  mailProps.put("mail.store.protocol","pop3");
+  mailProps.put("mail.transport.protocol","smtp");
+  mailProps.put("mail.user","myaccount");
+
+  mailProps.put("mail.pop3.host","mail.mydomail.ru");
+  mailProps.put("mail.smtp.host","mail.mydomail.ru");
+
+  Session session = Session.getDefaultInstance(mailProps);
+
+  MimeMessage message = new MimeMessage(session);
+  message.setFrom(new InternetAddress(FROM));
+  message.setRecipient(Message.RecipientType.TO, new InternetAddress(TO));
+
+  message.setSubject("Тестовое письмо",ENCODING);
+  message.setText("Текст тестового письма",ENCODING);
+
+  Transport.send(message);
+ }
+}
+--------------------------------------------------------------------------------------------------------
+mode con cp select=1251
+new String(mailInfo.getBody().getBytes("cp1251"), StandardCharsets.UTF_16)
+javac -encoding=KOI8_R
+--------------------------------------------------------------------------------------------------------
+POST /test/servertest.jsp HTTP/1.1
+Host: center:1001
+Accept-Language: en,ru-ru;q=0.8,ru;q=0.5,en-us;q=0.3
+Accept-Encoding: gzip,deflate
+Accept-Charset: windows-1251,utf-8;q=0.7,*;q=0.7
+Content-Type: multipart/form-data; boundary=---------------------------265001916915724
+Content-Length: 927
+ 
+-----------------------------265001916915724
+Content-Disposition: form-data; name="txt_1"
+ 
+Гравитация
+-----------------------------265001916915724
+Content-Disposition: form-data; name="user[]"
+ 
+ 
+-----------------------------265001916915724
+Content-Disposition: form-data; name="user[]"
+ 
+ 
+-----------------------------265001916915724
+Content-Disposition: form-data; name="foto"; filename=""
+Content-Type: application/octet-stream
+ 
+ 
+-----------------------------265001916915724
+Content-Disposition: form-data; name="pics[]"; filename=""
+Content-Type: application/octet-stream
+ 
+ 
+-----------------------------265001916915724
+Content-Disposition: form-data; name="pics[]"; filename=""
+Content-Type: application/octet-stream
+ 
+ 
+-----------------------------265001916915724
+Content-Disposition: form-data; name="btnsubmit"
+ 
+Send
+-----------------------------265001916915724--
+
+IOUtils.toString(in, StandardCharsets.UTF_8);
+IOUtils.toByteArray(is), charset
+IOUtils.toString(mailInfo.getBody().getBytes(), StandardCharsets.US_ASCII.name);
+
+IOUtils.toString(fileContent.getBytes("us-ascii"), "cp1251");
+
+IOUtils.toString(fileContent.getBytes("utf-8"), "us-ascii");
+--------------------------------------------------------------------------------------------------------
+
+
+I am trying to add Spring Integration to a REST MVC Spring app I have been writing. I am using the latest Spring 4.2.x for core, integration and mvc. The idea is to create separate application contexts as on the Dynamic FTP example. The reason why is because I can send emails from 2 separated accounts as well as listen from 2 separated accounts hence having separate application contexts as well as environment variables to aid on bean creation for each context helps a bunch.
+
+I apologize for the newbie questions, but I am having a hard time with the manual as well as trying to figure out how to setup SMTP email configuration class without XML.
+
+I want to have both receive and send integration channels. All email settings will be configured from enviroment variables so I have injected the enviroment: @Autowired Environment env;
+
+I can define:
+
+    A MailSender bean
+    A MailSendingMessageHandler bean
+    A MessageChannel for the SMTP (outbound)
+
+Now, on XML configurations you have an outbound-channel-adapter where you wire the mail-sender bean as well as the MessageChannel
+
+My goal is to have configurations for:
+
+    Send emails.
+    Listen to IMAP emails and process them.
+
+For sending emails, the idea is to get from a rest endpoint, calling a service and that service is what will put a message to Integration SMTP outbound channel to send an email. Looks like, by using the MailSendingMessageHandler it will get the Integration Message and convert to a Mail Message for the MailSender. I have no idea on how to wire the MailSendingMessageHandler to the outbound channel so that an email can be send. Also I do not know how to, from my @Service class that is called by the rest endpoint how to create the messages and send them through the outbound SMTP channel so emails can be send. On one rest call I send all email recipients I want to reach. Before, each email message body is properly formatted so that I can create each Integration Message (as an email) that will be handled and converted by MailSendingMessageHandler. I have tried to find examples online without success on how to accomplish this.
+
+Any examples you could redirect me? Thanks in advance!
+
+So far I have for the configuration:
+
+import java.util.Properties;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import org.springframework.integration.annotation.InboundChannelAdapter;
+import org.springframework.integration.config.EnableIntegration;
+import org.springframework.integration.annotation.Poller;
+import org.springframework.integration.channel.DirectChannel;
+import org.springframework.integration.channel.QueueChannel;
+import org.springframework.integration.core.MessageSource;
+import org.springframework.integration.mail.MailReceiver;
+import org.springframework.integration.mail.MailReceivingMessageSource;
+import org.springframework.integration.mail.MailSendingMessageHandler;
+import org.springframework.mail.MailMessage;
+import org.springframework.mail.MailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessagingException;
+
+
+import org.springframework.core.env.Environment;
+
+@Configuration
+@EnableIntegration
+public class IntegrationEmailConfig {
+
+@Autowired 
+Environment env;
+
+@Bean
+public static PropertySourcesPlaceholderConfigurer pspc() {
+    return new PropertySourcesPlaceholderConfigurer();
+}
+
+@Bean
+@InboundChannelAdapter(value = "emailInboundChannel", poller = @Poller(fixedDelay = "5000") )
+public MailReceivingMessageSource mailMessageSource(MailReceiver imapMailReceiver) {
+    return new MailReceivingMessageSource(imapMailReceiver);
+}
+
+private Properties additionalMailProperties() { 
+    Properties properties = new Properties();
+    if (env.containsProperty("mail.smtp.auth")) {
+        properties.setProperty("mail.smtp.auth",env.getProperty("mail.smtp.auth"));
+    }
+    if (env.containsProperty("mail.smtp.starttls.enable")) {
+        properties.setProperty("mail.smtp.starttls.enable",env.getProperty("mail.smtp.starttls.enable"));
+    }
+    return properties; 
+} 
+
+
+@Bean
+public MailSender mailSender() throws Exception {
+    JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
+    if (env.containsProperty("mail.server.host")) {
+        mailSender.setHost(env.getProperty("mail.server.host"));
+    } else {
+        throw new Exception("Missing mail.server.host property");
+    }
+    if (env.containsProperty("mail.server.port")) {
+        mailSender.setPort(Integer.parseInt(env.getProperty("mail.server.port")));
+    } else {
+        throw new Exception("Missing mail.server.port property");
+    }
+    if (env.containsProperty("mail.server.username")) {
+        mailSender.setUsername(env.getProperty("mail.server.username"));
+    } else {
+        throw new Exception("Missing mail.server.username property");
+    }
+    if (env.containsProperty("mail.server.password")) {
+        mailSender.setPassword(env.getProperty("mail.server.password"));
+    } else {
+        throw new Exception("Missing mail.server.password property");
+    }
+    mailSender.setJavaMailProperties(additionalMailProperties());
+    return mailSender;
+}
+
+@Bean
+public MailSendingMessageHandler mailSendingMessageHandler() throws Exception {
+    MailSendingMessageHandler mailSendingMessageHandler = new MailSendingMessageHandler(mailSender());
+    //mailSendingMessageHandler.setChannelResolver(channelResolver);
+    return mailSendingMessageHandler;
+}
+
+/*    @Bean
+public DirectChannel outboundMail() {
+    DirectChannel outboundChannel = new DirectChannel();
+    return outboundChannel;
+}
+*/    
+@Bean
+public MessageChannel smtpChannel() {
+    return new DirectChannel();
+}
+
+
+/*    @Bean
+@Value("${imap.url}")
+public MailReceiver imapMailReceiver(String imapUrl) {
+//      ImapMailReceiver imapMailReceiver = new ImapMailReceiver(imapUrl);
+//      imapMailReceiver.setShouldMarkMessagesAsRead(true);
+//      imapMailReceiver.setShouldDeleteMessages(false);
+//      // other setters here
+//      return imapMailReceiver;
+    MailReceiver receiver = mock(MailReceiver.class);
+    MailMessage message = mock(Message.class);
+    when(message.toString()).thenReturn("Message from " + imapUrl);
+    Message[] messages = new Message[] {message};
+    try {
+        when(receiver.receive()).thenReturn(messages);
+    }
+    catch (MessagingException e) {
+        e.printStackTrace();
+    }
+    return receiver;
+}*/
+--------------------------------------------------------------------------------------------------------
+curl -Lo jsoup.zip https://github.com/jhy/jsoup/archive/master.zip
+unzip jsoup.zip
+cd jsoup-master
+mvn install
+--------------------------------------------------------------------------------------------------------
+String cleanedHTML = Jsoup.clean(strHTML, Whitelist.none());
+String cleanedHTML = Jsoup.clean(strHTML, Whitelist.relaxed());
+String str = Jsoup.clean(strHTML, Whitelist.none().addTags("div"));
+--------------------------------------------------------------------------------------------------------
+(?:\*?\.)+(?:[a-z\d](?:[a-z\d-]{0,63}[a-z\d])?\.)+[a-z\d][a-z\d-]{0,63}[a-z\d]|(?:[a-z\d](?:[a-z\d-]{0,63}[a-z\d])?\.)+[a-z\d][a-z\d-]{0,63}[a-z\d]
+domain
+^https:\/\/(.*\.)*wired\.com$
+(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])
+^((?!(10))[0-9]{11})$
+
+String target = someString.replaceAll("<[^>]*>", "");
+String target = someString.replaceAll("(?i)<td[^>]*>", "");
+String target = someString.replaceAll("(?i)<td[^>]*>", " ").replaceAll("\\s+", " ").trim();
+String noHTMLString = htmlString.replaceAll("\\<.*?\\>", "");
+
+body.getContentAsString().replaceAll("\\<.*?\\>", "");
+new HtmlToPlainText().getPlainText(Jsoup.parse(html))
+--------------------------------------------------------------------------------------------------------
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+ 
+public class UsernameValidator{
+ 
+	  private Pattern pattern;
+	  private Matcher matcher;
+ 
+	  private static final String USERNAME_PATTERN = "^[a-z0-9_-]{3,15}$";
+ 
+	  public UsernameValidator(){
+		  pattern = Pattern.compile(USERNAME_PATTERN);
+	  }
+ 
+	  /**
+	   * Validate username with regular expression
+	   * @param username username for validation
+	   * @return true valid username, false invalid username
+	   */
+	  public boolean validate(final String username){
+ 
+		  matcher = pattern.matcher(username);
+		  return matcher.matches();
+ 
+	  }
+}
+--------------------------------------------------------------------------------------------------------
+       String pathValue = null;
+        // extract Path annotation value
+        List<AnnotationSource<JavaClassSource>> listAnnotations = javaClass.getAnnotations();
+        for (AnnotationSource annotation :listAnnotations) {
+            if (annotation.getName().equals("Path")) {
+                pathValue = annotation.getStringValue();
+            }
+        }
+        AnnotationSource<JavaClassSource> apiAnnotation = javaClass.addAnnotation("com.wordnik.swagger.annotations.Api");
+        apiAnnotation.setLiteralValue("\"" + pathValue + "\"") ;
+
+        List<MethodSource<JavaClassSource>> methods = javaClass.getMethods();
+
+        for (MethodSource<JavaClassSource> method: methods) {
+           for (AnnotationSource annotation: method.getAnnotations()) {
+               if (annotation.getName().equals("DELETE") || annotation.getName().equals("GET")
+                       || annotation.getName().equals("POST") || annotation.getName().equals("PUT")) {
+                   String returnTypeClass = method.getReturnType().getQualifiedName();
+                   AnnotationSource<JavaClassSource> apiOperation = method.addAnnotation("com.wordnik.swagger.annotations.ApiOperation");
+                   apiOperation.setLiteralValue("value", "\"value\"");
+                   apiOperation.setLiteralValue("response", "\"" + returnTypeClass + ".class\"");
+
+               }
+           }
+        }
+--------------------------------------------------------------------------------------------------------
+@Configuration
+    public class SwaggerConfiguration implements WebMvcConfigurer {
+
+      private final String swaggerUILocation = "whatEverLocationYouWant";
+      private final String swaggerApiDocsLocation = "whatEverLocationYouWant";
+
+      @Override
+      public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler(swaggerUILocation + "**")
+            .addResourceLocations("classpath:/swagger-ui/");
+        registry.addResourceHandler(swaggerApiDocsLocation + "**")
+            .addResourceLocations("classpath:/swagger/");
+      }
+    }
+--------------------------------------------------------------------------------------------------------
+<style type=text/css>
+<!--
+ body 
+ { scrollbar-face-color: #006000;
+   scrollbar-highlight-color: #9999999;
+   scrollbar-shadow-color: #666666;
+   scrollbar-3dlight-color: #666666;
+   scrollbar-arrow-color: #ffffff;
+   scrollbar-track-color: #e0efe0;
+   scrollbar-darkshadow-color: #666666;
+ }
+//-->
+</style>
+--------------------------------------------------------------------------------------------------------
 npm: npm install infinite-scroll
 
 Bower: bower install infinite-scroll --save
