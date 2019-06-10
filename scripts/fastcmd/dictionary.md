@@ -7781,6 +7781,129 @@ void last_parallel_unsized_with_skip() throws Exception {
             LOGGER.info(message);
         }
 --------------------------------------------------------------------------------------------------------
+  private static Logger LOGGER = null;
+
+  static {
+      InputStream stream = MyClass.class.getClassLoader().
+              getResourceAsStream("logging.properties");
+      try {
+          LogManager.getLogManager().readConfiguration(stream);
+          LOGGER= Logger.getLogger(MyClass.class.getName());
+
+      } catch (IOException e) {
+          e.printStackTrace();
+      }
+  }
+  
+  
+  
+    private static Logger LOGGER = null;
+
+  static {
+      System.setProperty("java.util.logging.SimpleFormatter.format",
+              "[%1$tF %1$tT] [%4$-7s] %5$s %n");
+      LOGGER = Logger.getLogger(MyClass2.class.getName());
+  }
+  
+  
+  
+    private static Logger LOGGER = null;
+
+  static {
+      Logger mainLogger = Logger.getLogger("com.logicbig");
+      mainLogger.setUseParentHandlers(false);
+      ConsoleHandler handler = new ConsoleHandler();
+      handler.setFormatter(new SimpleFormatter() {
+          private static final String format = "[%1$tF %1$tT] [%2$-7s] %3$s %n";
+
+          @Override
+          public synchronized String format(LogRecord lr) {
+              return String.format(format,
+                      new Date(lr.getMillis()),
+                      lr.getLevel().getLocalizedName(),
+                      lr.getMessage()
+              );
+          }
+      });
+      mainLogger.addHandler(handler);
+      LOGGER = Logger.getLogger(MyClass3.class.getName());
+  }
+  
+  @Import({MailCacheConfiguration.class})
+--------------------------------------------------------------------------------------------------------
+ public static void main (String[] args) {
+        List<String> list = new ArrayList<>();
+
+        Spliterator<String> s = list.spliterator();
+
+        if(s.hasCharacteristics(Spliterator.ORDERED)){
+            System.out.println("ORDERED");
+        }
+        if(s.hasCharacteristics(Spliterator.DISTINCT)){
+            System.out.println("DISTINCT");
+        }
+        if(s.hasCharacteristics(Spliterator.SORTED)){
+            System.out.println("SORTED");
+        }
+        if(s.hasCharacteristics(Spliterator.SIZED)){
+            System.out.println("SIZED");
+        }
+
+        if(s.hasCharacteristics(Spliterator.CONCURRENT)){
+            System.out.println("CONCURRENT");
+        }
+        if(s.hasCharacteristics(Spliterator.IMMUTABLE)){
+            System.out.println("IMMUTABLE");
+        }
+        if(s.hasCharacteristics(Spliterator.NONNULL)){
+            System.out.println("NONNULL");
+        }
+        if(s.hasCharacteristics(Spliterator.SUBSIZED)){
+            System.out.println("SUBSIZED");
+        }
+    }
+--------------------------------------------------------------------------------------------------------
+Stream<Integer> unfolded = StreamUtils.unfold(1, i ->
+    (i < 10)
+        ? Optional.of(i + 1)
+        : Optional.empty());
+
+assertThat(unfolded.collect(Collectors.toList()),
+           contains(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
+		   
+Stream<String> streamA = Stream.of("A", "B", "C");
+Stream<String> streamB  = Stream.of("Apple", "Banana", "Carrot", "Doughnut");
+
+List<String> zipped = StreamUtils.zip(streamA,
+                                      streamB,
+                                      (a, b) -> a + " is for " + b)
+                                 .collect(Collectors.toList());
+
+assertThat(zipped,
+           contains("A is for Apple", "B is for Banana", "C is for Carrot"));
+		   
+Stream<Integer> ints = Stream.of(1,2,3,4,5,6,7,8,9,10);
+Stream<Integer> skipped = StreamUtils.skipWhile(ints, i -> i < 4);
+
+List<Integer> collected = skipped.collect(Collectors.toList());
+
+assertThat(collected,
+           contains(4, 5, 6, 7, 8, 9, 10));
+		   
+Stream<Integer> infiniteInts = Stream.iterate(0, i -> i + 1);
+Stream<Integer> finiteInts = StreamUtils.takeWhile(infiniteInts, i -> i < 10);
+
+assertThat(finiteInts.collect(Collectors.toList()),
+           hasSize(10));
+		   
+
+--------------------------------------------------------------------------------------------------------
+ public static void main (String[] args) {
+     int[] ints = {3,4,6,7};
+     Spliterator.OfInt s = Arrays.spliterator(ints);
+     s.forEachRemaining((IntConsumer) System.out::println);
+ }
+--------------------------------------------------------------------------------------------------------
 List<Item> operatedList = new ArrayList<>();
 itemList.stream()
   .filter(item -> item.isQualified())
