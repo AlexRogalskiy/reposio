@@ -7776,6 +7776,11 @@ void last_parallel_unsized_with_skip() throws Exception {
     assertThat(count).hasValue(9_950_000L);
 }
 --------------------------------------------------------------------------------------------------------
+        if(LOGGER.isInfoEnabled()) {
+            String message = MessageFormat.format("Bad experience for user {0} at time {1} while accessing {2}", user, Calendar.getInstance().getTime(), application);
+            LOGGER.info(message);
+        }
+--------------------------------------------------------------------------------------------------------
 List<Item> operatedList = new ArrayList<>();
 itemList.stream()
   .filter(item -> item.isQualified())
