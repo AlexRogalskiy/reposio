@@ -4613,6 +4613,10 @@ public class Sender {
     }
 }
 --------------------------------------------------------------------------------------------------------
+			return Arrays.stream(messageArray)
+					.filter(Objects::nonNull)
+					.toArray(Message[]::new);
+--------------------------------------------------------------------------------------------------------
 @Component
 public class MessageReceiver {
 
