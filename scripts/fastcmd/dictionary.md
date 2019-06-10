@@ -4616,6 +4616,31 @@ public class Sender {
 			return Arrays.stream(messageArray)
 					.filter(Objects::nonNull)
 					.toArray(Message[]::new);
+-------------------------------------------------------------------------------------------------------
+List<String> valueList = new ArrayList<>();
+valueList.add("Joe");
+valueList.add("John");
+valueList.add("Sean");
+ 
+Stream<String> stream = valueList.stream();
+stream.reduce((first, second) -> second)
+  .orElse(null);
+  
+  
+List<String> valueList = new ArrayList<String>();
+valueList.add("Joe");
+valueList.add("John");
+valueList.add("Sean");
+ 
+long count = valueList.stream().count();
+Stream<String> stream = valueList.stream();
+    
+stream.skip(count - 1).findFirst().get();
+
+
+
+Stream<Integer> stream = Stream.iterate(0, i -> i + 1);
+stream.reduce((first, second) -> second).orElse(null);
 --------------------------------------------------------------------------------------------------------
 @Component
 public class MessageReceiver {
