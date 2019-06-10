@@ -7470,6 +7470,339 @@ public class CacheConfiguration implements CachingConfigurer {
 
 }
 --------------------------------------------------------------------------------------------------------
+public static <T> Optional<T> last(Stream<? extends T> stream) {
+    Objects.requireNonNull(stream, "stream");
+
+    Spliterator<? extends T> spliterator = stream.spliterator();
+    Spliterator<? extends T> lastSpliterator = spliterator;
+
+    // Note that this method does not work very well with:
+    // unsized parallel streams when used with skip methods.
+    // on that cases it will answer Optional.empty.
+
+    // Find the last spliterator with estimate size
+    // Meaningfull only on unsized parallel streams
+    if(spliterator.estimateSize() == Long.MAX_VALUE) {
+        for (Spliterator<? extends T> prev = spliterator.trySplit(); prev != null; prev = spliterator.trySplit()) {
+            lastSpliterator = prev;
+        }
+    }
+
+    // Find the last spliterator on sized streams
+    // Meaningfull only on parallel streams (note that unsized was transformed in sized)
+    for (Spliterator<? extends T> prev = lastSpliterator.trySplit(); prev != null; prev = lastSpliterator.trySplit()) {
+        if (lastSpliterator.estimateSize() == 0) {
+            lastSpliterator = prev;
+            break;
+        }
+    }
+
+    // Find the last element of the last spliterator
+    // Parallel streams only performs operation on one element
+    AtomicReference<T> last = new AtomicReference<>();
+    lastSpliterator.forEachRemaining(last::set);
+
+    return Optional.ofNullable(last.get());
+}
+Unit testing using junit 5:
+
+@Test
+@DisplayName("last sequential sized")
+void last_sequential_sized() throws Exception {
+    long expected = 10_000_000L;
+    AtomicLong count = new AtomicLong();
+    Stream<Long> stream = LongStream.rangeClosed(1, expected).boxed();
+    stream = stream.skip(50_000).peek(num -> count.getAndIncrement());
+
+    assertThat(Streams.last(stream)).hasValue(expected);
+    assertThat(count).hasValue(9_950_000L);
+}
+
+@Test
+@DisplayName("last sequential unsized")
+void last_sequential_unsized() throws Exception {
+    long expected = 10_000_000L;
+    AtomicLong count = new AtomicLong();
+    Stream<Long> stream = LongStream.rangeClosed(1, expected).boxed();
+    stream = StreamSupport.stream(((Iterable<Long>) stream::iterator).spliterator(), stream.isParallel());
+    stream = stream.skip(50_000).peek(num -> count.getAndIncrement());
+
+    assertThat(Streams.last(stream)).hasValue(expected);
+    assertThat(count).hasValue(9_950_000L);
+}
+
+@Test
+@DisplayName("last parallel sized")
+void last_parallel_sized() throws Exception {
+    long expected = 10_000_000L;
+    AtomicLong count = new AtomicLong();
+    Stream<Long> stream = LongStream.rangeClosed(1, expected).boxed().parallel();
+    stream = stream.skip(50_000).peek(num -> count.getAndIncrement());
+
+    assertThat(Streams.last(stream)).hasValue(expected);
+    assertThat(count).hasValue(1);
+}
+
+@Test
+@DisplayName("getLast parallel unsized")
+void last_parallel_unsized() throws Exception {
+    long expected = 10_000_000L;
+    AtomicLong count = new AtomicLong();
+    Stream<Long> stream = LongStream.rangeClosed(1, expected).boxed().parallel();
+    stream = StreamSupport.stream(((Iterable<Long>) stream::iterator).spliterator(), stream.isParallel());
+    stream = stream.peek(num -> count.getAndIncrement());
+
+    assertThat(Streams.last(stream)).hasValue(expected);
+    assertThat(count).hasValue(1);
+}
+
+@Test
+@DisplayName("last parallel unsized with skip")
+void last_parallel_unsized_with_skip() throws Exception {
+    long expected = 10_000_000L;
+    AtomicLong count = new AtomicLong();
+    Stream<Long> stream = LongStream.rangeClosed(1, expected).boxed().parallel();
+    stream = StreamSupport.stream(((Iterable<Long>) stream::iterator).spliterator(), stream.isParallel());
+    stream = stream.skip(50_000).peek(num -> count.getAndIncrement());
+
+    // Unfortunately unsized parallel streams does not work very well with skip
+    //assertThat(Streams.last(stream)).hasValue(expected);
+    //assertThat(count).hasValue(1);
+
+    // @Holger implementation gives wrong answer!!
+    //assertThat(Streams.getLast(stream)).hasValue(9_950_000L); //!!!
+    //assertThat(count).hasValue(1);
+
+    // This is also not a very good answer better
+    assertThat(Streams.last(stream)).isEmpty();
+    assertThat(count).hasValue(0);
+}
+
+public static <T> Optional<T> last(Stream<? extends T> stream) {
+    Objects.requireNonNull(stream, "stream");
+
+    Spliterator<? extends T> spliterator = stream.spliterator();
+
+    // Find the last spliterator with estimate size (sized parallel streams)
+    if(spliterator.hasCharacteristics(Spliterator.SIZED|Spliterator.SUBSIZED)) {
+        // Find the last spliterator on sized streams (parallel streams)
+        for (Spliterator<? extends T> prev = spliterator.trySplit(); prev != null; prev = spliterator.trySplit()) {
+            if (spliterator.getExactSizeIfKnown() == 0) {
+                spliterator = prev;
+                break;
+            }
+        }
+    }
+
+    // Find the last element of the spliterator
+    //AtomicReference<T> last = new AtomicReference<>();
+    //spliterator.forEachRemaining(last::set);
+
+    //return Optional.ofNullable(last.get());
+
+    // A better one that supports native parallel streams
+    return (Optional<T>) StreamSupport.stream(spliterator, stream.isParallel())
+            .reduce((a, b) -> b);
+}
+
+
+
+Parallel unsized streams with 'skip' methods are tricky and the @Holger's implementation gives a wrong answer. Also @Holger's implementation is a bit slower because it uses iterators.
+
+An optimisation of @Holger answer:
+
+public static <T> Optional<T> last(Stream<? extends T> stream) {
+    Objects.requireNonNull(stream, "stream");
+
+    Spliterator<? extends T> spliterator = stream.spliterator();
+    Spliterator<? extends T> lastSpliterator = spliterator;
+
+    // Note that this method does not work very well with:
+    // unsized parallel streams when used with skip methods.
+    // on that cases it will answer Optional.empty.
+
+    // Find the last spliterator with estimate size
+    // Meaningfull only on unsized parallel streams
+    if(spliterator.estimateSize() == Long.MAX_VALUE) {
+        for (Spliterator<? extends T> prev = spliterator.trySplit(); prev != null; prev = spliterator.trySplit()) {
+            lastSpliterator = prev;
+        }
+    }
+
+    // Find the last spliterator on sized streams
+    // Meaningfull only on parallel streams (note that unsized was transformed in sized)
+    for (Spliterator<? extends T> prev = lastSpliterator.trySplit(); prev != null; prev = lastSpliterator.trySplit()) {
+        if (lastSpliterator.estimateSize() == 0) {
+            lastSpliterator = prev;
+            break;
+        }
+    }
+
+    // Find the last element of the last spliterator
+    // Parallel streams only performs operation on one element
+    AtomicReference<T> last = new AtomicReference<>();
+    lastSpliterator.forEachRemaining(last::set);
+
+    return Optional.ofNullable(last.get());
+}
+Unit testing using junit 5:
+
+@Test
+@DisplayName("last sequential sized")
+void last_sequential_sized() throws Exception {
+    long expected = 10_000_000L;
+    AtomicLong count = new AtomicLong();
+    Stream<Long> stream = LongStream.rangeClosed(1, expected).boxed();
+    stream = stream.skip(50_000).peek(num -> count.getAndIncrement());
+
+    assertThat(Streams.last(stream)).hasValue(expected);
+    assertThat(count).hasValue(9_950_000L);
+}
+
+@Test
+@DisplayName("last sequential unsized")
+void last_sequential_unsized() throws Exception {
+    long expected = 10_000_000L;
+    AtomicLong count = new AtomicLong();
+    Stream<Long> stream = LongStream.rangeClosed(1, expected).boxed();
+    stream = StreamSupport.stream(((Iterable<Long>) stream::iterator).spliterator(), stream.isParallel());
+    stream = stream.skip(50_000).peek(num -> count.getAndIncrement());
+
+    assertThat(Streams.last(stream)).hasValue(expected);
+    assertThat(count).hasValue(9_950_000L);
+}
+
+@Test
+@DisplayName("last parallel sized")
+void last_parallel_sized() throws Exception {
+    long expected = 10_000_000L;
+    AtomicLong count = new AtomicLong();
+    Stream<Long> stream = LongStream.rangeClosed(1, expected).boxed().parallel();
+    stream = stream.skip(50_000).peek(num -> count.getAndIncrement());
+
+    assertThat(Streams.last(stream)).hasValue(expected);
+    assertThat(count).hasValue(1);
+}
+
+@Test
+@DisplayName("getLast parallel unsized")
+void last_parallel_unsized() throws Exception {
+    long expected = 10_000_000L;
+    AtomicLong count = new AtomicLong();
+    Stream<Long> stream = LongStream.rangeClosed(1, expected).boxed().parallel();
+    stream = StreamSupport.stream(((Iterable<Long>) stream::iterator).spliterator(), stream.isParallel());
+    stream = stream.peek(num -> count.getAndIncrement());
+
+    assertThat(Streams.last(stream)).hasValue(expected);
+    assertThat(count).hasValue(1);
+}
+
+@Test
+@DisplayName("last parallel unsized with skip")
+void last_parallel_unsized_with_skip() throws Exception {
+    long expected = 10_000_000L;
+    AtomicLong count = new AtomicLong();
+    Stream<Long> stream = LongStream.rangeClosed(1, expected).boxed().parallel();
+    stream = StreamSupport.stream(((Iterable<Long>) stream::iterator).spliterator(), stream.isParallel());
+    stream = stream.skip(50_000).peek(num -> count.getAndIncrement());
+
+    // Unfortunately unsized parallel streams does not work very well with skip
+    //assertThat(Streams.last(stream)).hasValue(expected);
+    //assertThat(count).hasValue(1);
+
+    // @Holger implementation gives wrong answer!!
+    //assertThat(Streams.getLast(stream)).hasValue(9_950_000L); //!!!
+    //assertThat(count).hasValue(1);
+
+    // This is also not a very good answer better
+    assertThat(Streams.last(stream)).isEmpty();
+    assertThat(count).hasValue(0);
+}
+The only solution to support both's scenarios is to avoid detecting the last spliterator on unsized parallel streams. The consequence is that the solution will perform operations on all elements but it will give always the right answer.
+
+Note that in sequential streams, it will anyway perform operations on all elements.
+
+public static <T> Optional<T> last(Stream<? extends T> stream) {
+    Objects.requireNonNull(stream, "stream");
+
+    Spliterator<? extends T> spliterator = stream.spliterator();
+
+    // Find the last spliterator with estimate size (sized parallel streams)
+    if(spliterator.hasCharacteristics(Spliterator.SIZED|Spliterator.SUBSIZED)) {
+        // Find the last spliterator on sized streams (parallel streams)
+        for (Spliterator<? extends T> prev = spliterator.trySplit(); prev != null; prev = spliterator.trySplit()) {
+            if (spliterator.getExactSizeIfKnown() == 0) {
+                spliterator = prev;
+                break;
+            }
+        }
+    }
+
+    // Find the last element of the spliterator
+    //AtomicReference<T> last = new AtomicReference<>();
+    //spliterator.forEachRemaining(last::set);
+
+    //return Optional.ofNullable(last.get());
+
+    // A better one that supports native parallel streams
+    return (Optional<T>) StreamSupport.stream(spliterator, stream.isParallel())
+            .reduce((a, b) -> b);
+}
+With regard to the unit testing for that implementation, the first three tests are exactly the same (sequential & sized parallel). The tests for unsized parallel are here:
+
+@Test
+@DisplayName("last parallel unsized")
+void last_parallel_unsized() throws Exception {
+    long expected = 10_000_000L;
+    AtomicLong count = new AtomicLong();
+    Stream<Long> stream = LongStream.rangeClosed(1, expected).boxed().parallel();
+    stream = StreamSupport.stream(((Iterable<Long>) stream::iterator).spliterator(), stream.isParallel());
+    stream = stream.peek(num -> count.getAndIncrement());
+
+    assertThat(Streams.last(stream)).hasValue(expected);
+    assertThat(count).hasValue(10_000_000L);
+}
+
+@Test
+@DisplayName("last parallel unsized with skip")
+void last_parallel_unsized_with_skip() throws Exception {
+    long expected = 10_000_000L;
+    AtomicLong count = new AtomicLong();
+    Stream<Long> stream = LongStream.rangeClosed(1, expected).boxed().parallel();
+    stream = StreamSupport.stream(((Iterable<Long>) stream::iterator).spliterator(), stream.isParallel());
+    stream = stream.skip(50_000).peek(num -> count.getAndIncrement());
+
+    assertThat(Streams.last(stream)).hasValue(expected);
+    assertThat(count).hasValue(9_950_000L);
+}
+--------------------------------------------------------------------------------------------------------
+List<Item> operatedList = new ArrayList<>();
+itemList.stream()
+  .filter(item -> item.isQualified())
+  .forEach(item -> {
+    item.operate();
+    operatedList.add(item);
+});
+itemList.removeAll(operatedList);
+--------------------------------------------------------------------------------------------------------
+List<Integer> integers = Lists.mutable.with(1, 2, 3, 4, 5);
+int index = Iterate.detectIndex(integers, i -> i > 2);
+if (index > -1) {
+    integers.remove(index);
+}
+
+Assert.assertEquals(Lists.mutable.with(1, 2, 4, 5), integers);
+--------------------------------------------------------------------------------------------------------
+Map<Boolean, List<String>> classifiedElements = names
+    .stream()
+    .collect(Collectors.partitioningBy((String e) -> 
+      !e.startsWith("A")));
+ 
+String matching = String.join(",",
+  classifiedElements.get(true));
+String nonMatching = String.join(",",
+  classifiedElements.get(false));
+--------------------------------------------------------------------------------------------------------
 package com.mkyong;
 
 import java.io.BufferedReader;
