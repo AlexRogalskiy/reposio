@@ -8884,6 +8884,15 @@ public class UtilTestCase
     } 
 }
 --------------------------------------------------------------------------------------------------------
+private SearchTerm fromAndNotSeenTerm(final Flags supportedFlags, final Folder folder) {
+    try {
+        final FromTerm fromTerm = new FromTerm(new InternetAddress("bar@baz"));
+        return new AndTerm(fromTerm, new FlagTerm(new Flags(Flags.Flag.SEEN), false));
+    } catch (AddressException e) {
+        throw new RuntimeException(e);
+    }
+}
+--------------------------------------------------------------------------------------------------------
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.startsWith;
