@@ -7677,7 +7677,182 @@ RUN adduser -D -S -G test -u 1000 -s /bin/ash test
 
 USER test
 WORKDIR /home/test
---------------------------------------------------------------------------------------------------------import java.util.Base64;
+--------------------------------------------------------------------------------------------------------
+import lombok.experimental.ExtensionMethod;
+
+@ExtensionMethod({java.util.Arrays.class, Extensions.class})
+public class ExtensionMethodExample {
+  public String test() {
+    int[] intArray = {5, 3, 8, 2};
+    intArray.sort();
+    
+    String iAmNull = null;
+    return iAmNull.or("hELlO, WORlD!".toTitleCase());
+  }
+}
+
+class Extensions {
+  public static <T> T or(T obj, T ifNull) {
+    return obj != null ? obj : ifNull;
+  }
+  
+  public static String toTitleCase(String in) {
+    if (in.isEmpty()) return in;
+    return "" + Character.toTitleCase(in.charAt(0)) +
+        in.substring(1).toLowerCase();
+  }
+}
+
+
+ public class ExtensionMethodExample {
+  public String test() {
+    int[] intArray = {5, 3, 8, 2};
+    java.util.Arrays.sort(intArray);
+    
+    String iAmNull = null;
+    return Extensions.or(iAmNull, Extensions.toTitleCase("hELlO, WORlD!"));
+  }
+}
+
+class Extensions {
+  public static <T> T or(T obj, T ifNull) {
+    return obj != null ? obj : ifNull;
+  }
+  
+  public static String toTitleCase(String in) {
+    if (in.isEmpty()) return in;
+    return "" + Character.toTitleCase(in.charAt(0)) +
+        in.substring(1).toLowerCase();
+  }
+}
+--------------------------------------------------------------------------------------------------------
+import com.intellij.database.model.DasTable
+import com.intellij.database.util.Case
+import com.intellij.database.util.DasUtil
+
+/*
+ * Available context bindings:
+ *   SELECTION   Iterable<DasObject>
+ *   PROJECT     project
+ *   FILES       files helper
+ */
+
+packageName = "com.sample;"
+typeMapping = [
+  (~/(?i)int/)                      : "long",
+  (~/(?i)float|double|decimal|real/): "double",
+  (~/(?i)datetime|timestamp/)       : "java.sql.Timestamp",
+  (~/(?i)date/)                     : "java.sql.Date",
+  (~/(?i)time/)                     : "java.sql.Time",
+  (~/(?i)/)                         : "String"
+]
+
+FILES.chooseDirectoryAndSave("Choose directory", "Choose where to store generated files") { dir ->
+  SELECTION.filter { it instanceof DasTable }.each { generate(it, dir) }
+}
+
+def generate(table, dir) {
+  def className = javaName(table.getName(), true)
+  def fields = calcFields(table)
+  new File(dir, className + ".java").withPrintWriter { out -> generate(out, className, fields) }
+}
+
+def generate(out, className, fields) {
+  out.println "package $packageName"
+  out.println ""
+  out.println ""
+  out.println "public class $className {"
+  out.println ""
+  fields.each() {
+    if (it.annos != "") out.println "  ${it.annos}"
+    out.println "  private ${it.type} ${it.name};"
+  }
+  out.println ""
+  fields.each() {
+    out.println ""
+    out.println "  public ${it.type} get${it.name.capitalize()}() {"
+    out.println "    return ${it.name};"
+    out.println "  }"
+    out.println ""
+    out.println "  public void set${it.name.capitalize()}(${it.type} ${it.name}) {"
+    out.println "    this.${it.name} = ${it.name};"
+    out.println "  }"
+    out.println ""
+  }
+  out.println "}"
+}
+
+def calcFields(table) {
+  DasUtil.getColumns(table).reduce([]) { fields, col ->
+    def spec = Case.LOWER.apply(col.getDataType().getSpecification())
+    def typeStr = typeMapping.find { p, t -> p.matcher(spec).find() }.value
+    fields += [[
+                 name : javaName(col.getName(), false),
+                 type : typeStr,
+                 annos: ""]]
+  }
+}
+
+def javaName(str, capitalize) {
+  def s = com.intellij.psi.codeStyle.NameUtil.splitNameIntoWords(str)
+    .collect { Case.LOWER.apply(it).capitalize() }
+    .join("")
+    .replaceAll(/[^\p{javaJavaIdentifierPart}[_]]/, "_")
+  capitalize || s.length() == 1? s : Case.LOWER.apply(s[0]) + s[1..-1]
+}
+--------------------------------------------------------------------------------------------------------
+/*
+ * Available context bindings:
+ *   COLUMNS     List<DataColumn>
+ *   ROWS        Iterable<DataRow>
+ *   OUT         { append() }
+ *   FORMATTER   { format(row, col); formatValue(Object, col) }
+ *   TRANSPOSED  Boolean
+ * plus ALL_COLUMNS, TABLE, DIALECT
+ *
+ * where:
+ *   DataRow     { rowNumber(); first(); last(); data(): List<Object>; value(column): Object }
+ *   DataColumn  { columnNumber(), name() }
+ */
+
+
+import java.util.regex.Pattern
+
+NEWLINE = System.getProperty("line.separator")
+
+pattern = Pattern.compile("[^\\w\\d]")
+def escapeTag(name) {
+  name = pattern.matcher(name).replaceAll("_")
+  return name.isEmpty() || !Character.isLetter(name.charAt(0)) ? "_$name" : name
+}
+def printRow = { values, rowTag, namer, valueToString ->
+  OUT.append("$NEWLINE<$rowTag>$NEWLINE")
+  values.eachWithIndex { it, index ->
+    def tag = namer(it, index)
+    def str = valueToString(it)
+    OUT.append("  <$tag>$str</$tag>$NEWLINE")
+  }
+  OUT.append("</$rowTag>")
+}
+
+OUT.append(
+"""<?xml version="1.0" encoding="UTF-8"?>
+<data>""")
+
+if (!TRANSPOSED) {
+  ROWS.each { row -> printRow(COLUMNS, "row", {it, _ -> escapeTag(it.name())}) { FORMATTER.format(row, it) } }
+}
+else {
+  def values = COLUMNS.collect { new ArrayList<String>() }
+  ROWS.each { row -> COLUMNS.eachWithIndex { col, i -> values[i].add(FORMATTER.format(row, col)) } }
+  values.eachWithIndex { it, index -> printRow(it, escapeTag(COLUMNS[index].name()), { _, i -> "row${i + 1}" }, { it }) }
+}
+
+OUT.append("""
+</data>
+""")
+--------------------------------------------------------------------------------------------------------
+import java.util.Base64;
 import java.util.UUID;
 import java.io.UnsupportedEncodingException;
 
