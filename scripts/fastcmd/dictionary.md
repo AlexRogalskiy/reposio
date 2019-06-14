@@ -1789,6 +1789,8 @@ or
 % gpg --import KEYS
 % gpg --verify apache-ant-1.10.5-bin.tar.gz.asc
 --------------------------------------------------------------------------------------------------------
+postcss --use autoprefixer -c options.json -o main.css css/*.css
+--------------------------------------------------------------------------------------------------------
 find ~/.IntelliJIdea* -type d -exec touch -t $(date +"%Y%m%d%H%M") {} ;
 --------------------------------------------------------------------------------------------------------
 sudo service rsyslog restart
@@ -5894,6 +5896,55 @@ databaseChangeLog:
     - createSequence:
         sequenceName: hibernate_sequence
 --------------------------------------------------------------------------------------------------------
+package org.afc.petstore.ssl;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSession;
+
+public class AcceptAllHostnameVerifier implements HostnameVerifier {
+
+	@Override
+	public boolean verify(String hostname, SSLSession session) {
+		return true;
+	}
+}
+--------------------------------------------------------------------------------------------------------
+package org.afc.petstore.ssl;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+
+import org.springframework.cloud.commons.httpclient.OkHttpClientFactory;
+
+public class SSLSocketFactoryUtil {
+
+	public static SSLSocketFactory newAcceptAll() {
+		try {
+			TrustManager[] tm = new TrustManager[] { new OkHttpClientFactory.DisableValidationTrustManager() };
+			SSLContext context = SSLContext.getInstance("TLS");
+			context.init(null, tm, null);
+			return context.getSocketFactory();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+}
+--------------------------------------------------------------------------------------------------------
+package org.afc.petstore;
+
+import org.afc.env.Environment;
+import org.afc.util.ClasspathUtil;
+
+public class PetstoreLocal {
+
+	public static void main(String[] args) throws Exception {
+		Environment.set("petstore", "local", "vi", "default", "vi1");
+		ClasspathUtil.addSystemClasspath("target/config");
+		Petstore.main(new String[] {"--spring.profiles.active=local,default,vi,vi1"});
+	}
+}
+--------------------------------------------------------------------------------------------------------
 import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
 import javax.validation.Validation;
@@ -5946,6 +5997,101 @@ public class TestApplication {
         SpringApplication.run(TestApplication.class, args);
     }
 }
+--------------------------------------------------------------------------------------------------------
+<configuration>
+	<include resource="logback-appender.xml" />
+	<include resource="env/${sys.env}/logback-logger.xml" optional="true" />
+
+	<appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+		<appender-ref ref="MAIN" />
+	</appender>
+
+	<root level="INFO">
+		<appender-ref ref="ASYNC" />
+	</root>
+</configuration>
+--------------------------------------------------------------------------------------------------------
+service-config.json
+{
+	"basePackage": "org.afc.petstore",
+	"apiPackage": "org.afc.petstore.api",
+	"configPackage": "org.afc.petstore.config",
+	"modelPackage": "org.afc.petstore.model",
+	"delegatePattern": "true",
+	"hideGenerationTimestamp": "true"
+}
+--------------------------------------------------------------------------------------------------------
+	@Bean
+    public Docket swaggerSpringMvcPlugin() {
+        return new Docket(DocumentationType.SWAGGER_2)
+        		.select()
+        		.apis(RequestHandlerSelectors.withMethodAnnotation(ApiOperation.class))
+        		.build()
+        		.securitySchemes(Collections.singletonList(new ApiKey("Bearer", "Authorization", "header")));
+    }
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.stereotype.Component;
+import org.tuckey.web.filters.urlrewrite.Conf;
+import org.tuckey.web.filters.urlrewrite.UrlRewriteFilter;
+
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import java.io.IOException;
+
+
+@Component
+public class MyUrlRewriteFilter extends UrlRewriteFilter {
+
+    private static final String CONFIG_LOCATION = "classpath:/urlrewrite.xml";
+
+    //Inject the Resource from the given location
+    @Value(CONFIG_LOCATION)
+    private Resource resource;
+
+    //Override the loadUrlRewriter method, and write your own implementation
+    @Override
+    protected void loadUrlRewriter(FilterConfig filterConfig) throws ServletException {
+        try {
+            //Create a UrlRewrite Conf object with the injected resource
+            Conf conf = new Conf(filterConfig.getServletContext(), resource.getInputStream(), resource.getFilename(), "@@yourOwnSystemId@@");
+            checkConf(conf);
+        } catch (IOException ex) {
+            throw new ServletException("Unable to load URL rewrite configuration file from " + CONFIG_LOCATION, ex);
+        }
+    }
+}
+
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE urlrewrite PUBLIC "-//tuckey.org//DTD UrlRewrite 4.0//EN"
+        "http://www.tuckey.org/res/dtds/urlrewrite4.0.dtd">
+<urlrewrite>
+    <rule>
+        <from>/users/swagger-ui.html</from>
+        <to type="passthrough">/swagger-ui.html</to>
+    </rule>
+
+    <rule>
+        <from>/users/webjars/(.*)</from>
+        <to type="passthrough">/webjars/$1</to>
+    </rule>
+
+    <rule>
+        <from>/users/api-docs</from>
+        <to type="passthrough">/api-docs</to>
+    </rule>
+
+    <rule>
+    <from>/users/configuration/(.*)</from>
+    <to type="passthrough">/configuration/$1</to>
+    </rule>
+
+    <rule>
+    <from>/users/swagger-resources</from>
+    <to type="passthrough">/swagger-resources</to>
+</rule>
+</urlrewrite>
 --------------------------------------------------------------------------------------------------------
 spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation=true
  
