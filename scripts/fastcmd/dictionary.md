@@ -1339,6 +1339,49 @@ Private-Package: org.assertj.core.internal,org.assertj.core.internal.byt
 Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))"
 Tool: Bnd-3.0.0.201509101326
 --------------------------------------------------------------------------------------------------------
+awk '{print toupper(substr($0,1,1)) tolower(substr($0,2)) }'
+--------------------------------------------------------------------------------------------------------
+Stream<String> streamGenerated =
+  Stream.generate(() -> "element").limit(10);
+  
+Stream<Integer> streamIterated = Stream.iterate(40, n -> n + 2).limit(20);
+
+int reducedParallel = Arrays.asList(1, 2, 3).parallelStream()
+    .reduce(10, (a, b) -> a + b, (a, b) -> {
+       log.info("combiner was called");
+       return a + b;
+    });
+
+String listToString = productList.stream().map(Product::getName)
+  .collect(Collectors.joining(", ", "[", "]"));
+
+int summingPrice = productList.stream()
+  .collect(Collectors.summingInt(Product::getPrice));
+  
+  Collector<Product, ?, LinkedList<Product>> toLinkedList =
+  Collector.of(LinkedList::new, LinkedList::add, 
+    (first, second) -> { 
+       first.addAll(second); 
+       return first; 
+    });
+ 
+LinkedList<Product> linkedListOfPersons =
+  productList.stream().collect(toLinkedList);
+  
+int reducedParallel = Arrays.asList(1, 2, 3).parallelStream()
+    .reduce(10, (a, b) -> a + b, (a, b) -> {
+       log.info("combiner was called");
+       return a + b;
+    });
+	
+Stream<String> streamOfString =
+  Pattern.compile(", ").splitAsStream("a, b, c");
+  
+Stream<Integer> streamIterated = Stream.iterate(40, n -> n + 2).limit(20);
+
+Stream<String> streamBuilder =
+  Stream.<String>builder().add("a").add("b").add("c").build();
+--------------------------------------------------------------------------------------------------------
         <plugins>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
