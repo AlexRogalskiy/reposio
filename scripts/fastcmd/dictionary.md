@@ -5896,6 +5896,70 @@ databaseChangeLog:
     - createSequence:
         sequenceName: hibernate_sequence
 --------------------------------------------------------------------------------------------------------
+@RunWith(SpringJUnit4ClassRunner.class)
+@WebAppConfiguration
+@ContextConfiguration(classes = MyWebConfig.class)
+public class ControllerTest {
+
+    @Autowired
+    private WebApplicationContext wac;
+    private MockMvc mockMvc;
+
+    @Before
+    public void setup () {
+        DefaultMockMvcBuilder builder = MockMvcBuilders.webAppContextSetup(this.wac);
+        this.mockMvc = builder.build();
+    }
+
+    @Test
+    public void testUserController () throws Exception {
+        MockHttpServletRequestBuilder builder =
+                                      MockMvcRequestBuilders.post("/test")
+                                        .header("testHeader",
+                                                "headerValue")
+                                        .content("test body");
+        this.mockMvc.perform(builder)
+                    .andExpect(MockMvcResultMatchers.status()
+                                                    .isOk())
+                    .andDo(MockMvcResultHandlers.print());
+--------------------------------------------------------------------------------------------------------
+@RunWith(SpringJUnit4ClassRunner.class)
+@WebAppConfiguration
+@ContextConfiguration(classes = MyWebConfig.class)
+public class ControllerTest {
+
+    @Autowired
+    private WebApplicationContext wac;
+    private MockMvc mockMvc;
+
+    @Before
+    public void setup () {
+        DefaultMockMvcBuilder builder = MockMvcBuilders.webAppContextSetup(this.wac);
+        this.mockMvc = builder.build();
+    }
+
+    @Test
+    public void testUserController () throws Exception {
+
+        MockHttpServletRequestBuilder builder =
+                                   MockMvcRequestBuilders.post("/user")
+                                        .header("testHeader",
+                                                "headerValue")
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(createUserInJson("joe",
+                                                            "joe@example.com"));
+        this.mockMvc.perform(builder)
+                    .andExpect(MockMvcResultMatchers.status()
+                                                    .isOk())
+                    .andDo(MockMvcResultHandlers.print());
+    }
+
+    private static String createUserInJson (String name, String email) {
+        return "{ \"name\": \"" + name + "\", " +
+                            "\"emailAddress\":\"" + email + "\"}";
+    }
+}
+--------------------------------------------------------------------------------------------------------
 package org.afc.petstore.ssl;
 
 import javax.net.ssl.HostnameVerifier;
