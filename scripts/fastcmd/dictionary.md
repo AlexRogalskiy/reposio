@@ -7769,6 +7769,37 @@ class Extensions {
   }
 }
 --------------------------------------------------------------------------------------------------------
+	headers.add(new InternetHeader("Return-Path", null));
+	headers.add(new InternetHeader("Received", null));
+	headers.add(new InternetHeader("Resent-Date", null));
+	headers.add(new InternetHeader("Resent-From", null));
+	headers.add(new InternetHeader("Resent-Sender", null));
+	headers.add(new InternetHeader("Resent-To", null));
+	headers.add(new InternetHeader("Resent-Cc", null));
+	headers.add(new InternetHeader("Resent-Bcc", null));
+	headers.add(new InternetHeader("Resent-Message-Id", null));
+	headers.add(new InternetHeader("Date", null));
+	headers.add(new InternetHeader("From", null));
+	headers.add(new InternetHeader("Sender", null));
+	headers.add(new InternetHeader("Reply-To", null));
+	headers.add(new InternetHeader("To", null));
+	headers.add(new InternetHeader("Cc", null));
+	headers.add(new InternetHeader("Bcc", null));
+	headers.add(new InternetHeader("Message-Id", null));
+	headers.add(new InternetHeader("In-Reply-To", null));
+	headers.add(new InternetHeader("References", null));
+	headers.add(new InternetHeader("Subject", null));
+	headers.add(new InternetHeader("Comments", null));
+	headers.add(new InternetHeader("Keywords", null));
+	headers.add(new InternetHeader("Errors-To", null));
+	headers.add(new InternetHeader("MIME-Version", null));
+	headers.add(new InternetHeader("Content-Type", null));
+	headers.add(new InternetHeader("Content-Transfer-Encoding", null));
+	headers.add(new InternetHeader("Content-MD5", null));
+	headers.add(new InternetHeader(":", null));
+	headers.add(new InternetHeader("Content-Length", null));
+	headers.add(new InternetHeader("Status", null));
+--------------------------------------------------------------------------------------------------------
 import com.intellij.database.model.DasTable
 import com.intellij.database.util.Case
 import com.intellij.database.util.DasUtil
