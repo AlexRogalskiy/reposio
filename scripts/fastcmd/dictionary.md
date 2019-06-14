@@ -1838,6 +1838,8 @@ $ bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1
 $ bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic filtered
 $ bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic greeting
 --------------------------------------------------------------------------------------------------------
+docker run -e "JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,address=5005,server=y,suspend=n" -p 8080:8080 -p 5005:5005 -t springio/gs-spring-boot-docker
+--------------------------------------------------------------------------------------------------------
 % pgpk -a KEYS
 % pgpv apache-ant-1.10.5-bin.tar.gz.asc
 or
@@ -1846,6 +1848,8 @@ or
 or
 % gpg --import KEYS
 % gpg --verify apache-ant-1.10.5-bin.tar.gz.asc
+--------------------------------------------------------------------------------------------------------
+postcss --use autoprefixer -c options.json -o main.css css/*.css
 --------------------------------------------------------------------------------------------------------
 find ~/.IntelliJIdea* -type d -exec touch -t $(date +"%Y%m%d%H%M") {} ;
 --------------------------------------------------------------------------------------------------------
@@ -5952,6 +5956,119 @@ databaseChangeLog:
     - createSequence:
         sequenceName: hibernate_sequence
 --------------------------------------------------------------------------------------------------------
+@RunWith(SpringJUnit4ClassRunner.class)
+@WebAppConfiguration
+@ContextConfiguration(classes = MyWebConfig.class)
+public class ControllerTest {
+
+    @Autowired
+    private WebApplicationContext wac;
+    private MockMvc mockMvc;
+
+    @Before
+    public void setup () {
+        DefaultMockMvcBuilder builder = MockMvcBuilders.webAppContextSetup(this.wac);
+        this.mockMvc = builder.build();
+    }
+
+    @Test
+    public void testUserController () throws Exception {
+        MockHttpServletRequestBuilder builder =
+                                      MockMvcRequestBuilders.post("/test")
+                                        .header("testHeader",
+                                                "headerValue")
+                                        .content("test body");
+        this.mockMvc.perform(builder)
+                    .andExpect(MockMvcResultMatchers.status()
+                                                    .isOk())
+                    .andDo(MockMvcResultHandlers.print());
+--------------------------------------------------------------------------------------------------------
+@RunWith(SpringJUnit4ClassRunner.class)
+@WebAppConfiguration
+@ContextConfiguration(classes = MyWebConfig.class)
+public class ControllerTest {
+
+    @Autowired
+    private WebApplicationContext wac;
+    private MockMvc mockMvc;
+
+    @Before
+    public void setup () {
+        DefaultMockMvcBuilder builder = MockMvcBuilders.webAppContextSetup(this.wac);
+        this.mockMvc = builder.build();
+    }
+
+    @Test
+    public void testUserController () throws Exception {
+
+        MockHttpServletRequestBuilder builder =
+                                   MockMvcRequestBuilders.post("/user")
+                                        .header("testHeader",
+                                                "headerValue")
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(createUserInJson("joe",
+                                                            "joe@example.com"));
+        this.mockMvc.perform(builder)
+                    .andExpect(MockMvcResultMatchers.status()
+                                                    .isOk())
+                    .andDo(MockMvcResultHandlers.print());
+    }
+
+    private static String createUserInJson (String name, String email) {
+        return "{ \"name\": \"" + name + "\", " +
+                            "\"emailAddress\":\"" + email + "\"}";
+    }
+}
+--------------------------------------------------------------------------------------------------------
+package org.afc.petstore.ssl;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSession;
+
+public class AcceptAllHostnameVerifier implements HostnameVerifier {
+
+	@Override
+	public boolean verify(String hostname, SSLSession session) {
+		return true;
+	}
+}
+--------------------------------------------------------------------------------------------------------
+package org.afc.petstore.ssl;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+
+import org.springframework.cloud.commons.httpclient.OkHttpClientFactory;
+
+public class SSLSocketFactoryUtil {
+
+	public static SSLSocketFactory newAcceptAll() {
+		try {
+			TrustManager[] tm = new TrustManager[] { new OkHttpClientFactory.DisableValidationTrustManager() };
+			SSLContext context = SSLContext.getInstance("TLS");
+			context.init(null, tm, null);
+			return context.getSocketFactory();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+}
+--------------------------------------------------------------------------------------------------------
+package org.afc.petstore;
+
+import org.afc.env.Environment;
+import org.afc.util.ClasspathUtil;
+
+public class PetstoreLocal {
+
+	public static void main(String[] args) throws Exception {
+		Environment.set("petstore", "local", "vi", "default", "vi1");
+		ClasspathUtil.addSystemClasspath("target/config");
+		Petstore.main(new String[] {"--spring.profiles.active=local,default,vi,vi1"});
+	}
+}
+--------------------------------------------------------------------------------------------------------
 import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
 import javax.validation.Validation;
@@ -6004,6 +6121,101 @@ public class TestApplication {
         SpringApplication.run(TestApplication.class, args);
     }
 }
+--------------------------------------------------------------------------------------------------------
+<configuration>
+	<include resource="logback-appender.xml" />
+	<include resource="env/${sys.env}/logback-logger.xml" optional="true" />
+
+	<appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+		<appender-ref ref="MAIN" />
+	</appender>
+
+	<root level="INFO">
+		<appender-ref ref="ASYNC" />
+	</root>
+</configuration>
+--------------------------------------------------------------------------------------------------------
+service-config.json
+{
+	"basePackage": "org.afc.petstore",
+	"apiPackage": "org.afc.petstore.api",
+	"configPackage": "org.afc.petstore.config",
+	"modelPackage": "org.afc.petstore.model",
+	"delegatePattern": "true",
+	"hideGenerationTimestamp": "true"
+}
+--------------------------------------------------------------------------------------------------------
+	@Bean
+    public Docket swaggerSpringMvcPlugin() {
+        return new Docket(DocumentationType.SWAGGER_2)
+        		.select()
+        		.apis(RequestHandlerSelectors.withMethodAnnotation(ApiOperation.class))
+        		.build()
+        		.securitySchemes(Collections.singletonList(new ApiKey("Bearer", "Authorization", "header")));
+    }
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.stereotype.Component;
+import org.tuckey.web.filters.urlrewrite.Conf;
+import org.tuckey.web.filters.urlrewrite.UrlRewriteFilter;
+
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import java.io.IOException;
+
+
+@Component
+public class MyUrlRewriteFilter extends UrlRewriteFilter {
+
+    private static final String CONFIG_LOCATION = "classpath:/urlrewrite.xml";
+
+    //Inject the Resource from the given location
+    @Value(CONFIG_LOCATION)
+    private Resource resource;
+
+    //Override the loadUrlRewriter method, and write your own implementation
+    @Override
+    protected void loadUrlRewriter(FilterConfig filterConfig) throws ServletException {
+        try {
+            //Create a UrlRewrite Conf object with the injected resource
+            Conf conf = new Conf(filterConfig.getServletContext(), resource.getInputStream(), resource.getFilename(), "@@yourOwnSystemId@@");
+            checkConf(conf);
+        } catch (IOException ex) {
+            throw new ServletException("Unable to load URL rewrite configuration file from " + CONFIG_LOCATION, ex);
+        }
+    }
+}
+
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE urlrewrite PUBLIC "-//tuckey.org//DTD UrlRewrite 4.0//EN"
+        "http://www.tuckey.org/res/dtds/urlrewrite4.0.dtd">
+<urlrewrite>
+    <rule>
+        <from>/users/swagger-ui.html</from>
+        <to type="passthrough">/swagger-ui.html</to>
+    </rule>
+
+    <rule>
+        <from>/users/webjars/(.*)</from>
+        <to type="passthrough">/webjars/$1</to>
+    </rule>
+
+    <rule>
+        <from>/users/api-docs</from>
+        <to type="passthrough">/api-docs</to>
+    </rule>
+
+    <rule>
+    <from>/users/configuration/(.*)</from>
+    <to type="passthrough">/configuration/$1</to>
+    </rule>
+
+    <rule>
+    <from>/users/swagger-resources</from>
+    <to type="passthrough">/swagger-resources</to>
+</rule>
+</urlrewrite>
 --------------------------------------------------------------------------------------------------------
 spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation=true
  
@@ -7778,6 +7990,250 @@ RUN adduser -D -S -G test -u 1000 -s /bin/ash test
 
 USER test
 WORKDIR /home/test
+--------------------------------------------------------------------------------------------------------
+import lombok.experimental.ExtensionMethod;
+
+@ExtensionMethod({java.util.Arrays.class, Extensions.class})
+public class ExtensionMethodExample {
+  public String test() {
+    int[] intArray = {5, 3, 8, 2};
+    intArray.sort();
+    
+    String iAmNull = null;
+    return iAmNull.or("hELlO, WORlD!".toTitleCase());
+  }
+}
+
+class Extensions {
+  public static <T> T or(T obj, T ifNull) {
+    return obj != null ? obj : ifNull;
+  }
+  
+  public static String toTitleCase(String in) {
+    if (in.isEmpty()) return in;
+    return "" + Character.toTitleCase(in.charAt(0)) +
+        in.substring(1).toLowerCase();
+  }
+}
+
+
+ public class ExtensionMethodExample {
+  public String test() {
+    int[] intArray = {5, 3, 8, 2};
+    java.util.Arrays.sort(intArray);
+    
+    String iAmNull = null;
+    return Extensions.or(iAmNull, Extensions.toTitleCase("hELlO, WORlD!"));
+  }
+}
+
+class Extensions {
+  public static <T> T or(T obj, T ifNull) {
+    return obj != null ? obj : ifNull;
+  }
+  
+  public static String toTitleCase(String in) {
+    if (in.isEmpty()) return in;
+    return "" + Character.toTitleCase(in.charAt(0)) +
+        in.substring(1).toLowerCase();
+  }
+}
+--------------------------------------------------------------------------------------------------------
+	headers.add(new InternetHeader("Return-Path", null));
+	headers.add(new InternetHeader("Received", null));
+	headers.add(new InternetHeader("Resent-Date", null));
+	headers.add(new InternetHeader("Resent-From", null));
+	headers.add(new InternetHeader("Resent-Sender", null));
+	headers.add(new InternetHeader("Resent-To", null));
+	headers.add(new InternetHeader("Resent-Cc", null));
+	headers.add(new InternetHeader("Resent-Bcc", null));
+	headers.add(new InternetHeader("Resent-Message-Id", null));
+	headers.add(new InternetHeader("Date", null));
+	headers.add(new InternetHeader("From", null));
+	headers.add(new InternetHeader("Sender", null));
+	headers.add(new InternetHeader("Reply-To", null));
+	headers.add(new InternetHeader("To", null));
+	headers.add(new InternetHeader("Cc", null));
+	headers.add(new InternetHeader("Bcc", null));
+	headers.add(new InternetHeader("Message-Id", null));
+	headers.add(new InternetHeader("In-Reply-To", null));
+	headers.add(new InternetHeader("References", null));
+	headers.add(new InternetHeader("Subject", null));
+	headers.add(new InternetHeader("Comments", null));
+	headers.add(new InternetHeader("Keywords", null));
+	headers.add(new InternetHeader("Errors-To", null));
+	headers.add(new InternetHeader("MIME-Version", null));
+	headers.add(new InternetHeader("Content-Type", null));
+	headers.add(new InternetHeader("Content-Transfer-Encoding", null));
+	headers.add(new InternetHeader("Content-MD5", null));
+	headers.add(new InternetHeader(":", null));
+	headers.add(new InternetHeader("Content-Length", null));
+	headers.add(new InternetHeader("Status", null));
+--------------------------------------------------------------------------------------------------------
+import com.intellij.database.model.DasTable
+import com.intellij.database.util.Case
+import com.intellij.database.util.DasUtil
+
+/*
+ * Available context bindings:
+ *   SELECTION   Iterable<DasObject>
+ *   PROJECT     project
+ *   FILES       files helper
+ */
+
+packageName = "com.sample;"
+typeMapping = [
+  (~/(?i)int/)                      : "long",
+  (~/(?i)float|double|decimal|real/): "double",
+  (~/(?i)datetime|timestamp/)       : "java.sql.Timestamp",
+  (~/(?i)date/)                     : "java.sql.Date",
+  (~/(?i)time/)                     : "java.sql.Time",
+  (~/(?i)/)                         : "String"
+]
+
+FILES.chooseDirectoryAndSave("Choose directory", "Choose where to store generated files") { dir ->
+  SELECTION.filter { it instanceof DasTable }.each { generate(it, dir) }
+}
+
+def generate(table, dir) {
+  def className = javaName(table.getName(), true)
+  def fields = calcFields(table)
+  new File(dir, className + ".java").withPrintWriter { out -> generate(out, className, fields) }
+}
+
+def generate(out, className, fields) {
+  out.println "package $packageName"
+  out.println ""
+  out.println ""
+  out.println "public class $className {"
+  out.println ""
+  fields.each() {
+    if (it.annos != "") out.println "  ${it.annos}"
+    out.println "  private ${it.type} ${it.name};"
+  }
+  out.println ""
+  fields.each() {
+    out.println ""
+    out.println "  public ${it.type} get${it.name.capitalize()}() {"
+    out.println "    return ${it.name};"
+    out.println "  }"
+    out.println ""
+    out.println "  public void set${it.name.capitalize()}(${it.type} ${it.name}) {"
+    out.println "    this.${it.name} = ${it.name};"
+    out.println "  }"
+    out.println ""
+  }
+  out.println "}"
+}
+
+def calcFields(table) {
+  DasUtil.getColumns(table).reduce([]) { fields, col ->
+    def spec = Case.LOWER.apply(col.getDataType().getSpecification())
+    def typeStr = typeMapping.find { p, t -> p.matcher(spec).find() }.value
+    fields += [[
+                 name : javaName(col.getName(), false),
+                 type : typeStr,
+                 annos: ""]]
+  }
+}
+
+def javaName(str, capitalize) {
+  def s = com.intellij.psi.codeStyle.NameUtil.splitNameIntoWords(str)
+    .collect { Case.LOWER.apply(it).capitalize() }
+    .join("")
+    .replaceAll(/[^\p{javaJavaIdentifierPart}[_]]/, "_")
+  capitalize || s.length() == 1? s : Case.LOWER.apply(s[0]) + s[1..-1]
+}
+--------------------------------------------------------------------------------------------------------
+/*
+ * Available context bindings:
+ *   COLUMNS     List<DataColumn>
+ *   ROWS        Iterable<DataRow>
+ *   OUT         { append() }
+ *   FORMATTER   { format(row, col); formatValue(Object, col) }
+ *   TRANSPOSED  Boolean
+ * plus ALL_COLUMNS, TABLE, DIALECT
+ *
+ * where:
+ *   DataRow     { rowNumber(); first(); last(); data(): List<Object>; value(column): Object }
+ *   DataColumn  { columnNumber(), name() }
+ */
+
+
+import java.util.regex.Pattern
+
+NEWLINE = System.getProperty("line.separator")
+
+pattern = Pattern.compile("[^\\w\\d]")
+def escapeTag(name) {
+  name = pattern.matcher(name).replaceAll("_")
+  return name.isEmpty() || !Character.isLetter(name.charAt(0)) ? "_$name" : name
+}
+def printRow = { values, rowTag, namer, valueToString ->
+  OUT.append("$NEWLINE<$rowTag>$NEWLINE")
+  values.eachWithIndex { it, index ->
+    def tag = namer(it, index)
+    def str = valueToString(it)
+    OUT.append("  <$tag>$str</$tag>$NEWLINE")
+  }
+  OUT.append("</$rowTag>")
+}
+
+OUT.append(
+"""<?xml version="1.0" encoding="UTF-8"?>
+<data>""")
+
+if (!TRANSPOSED) {
+  ROWS.each { row -> printRow(COLUMNS, "row", {it, _ -> escapeTag(it.name())}) { FORMATTER.format(row, it) } }
+}
+else {
+  def values = COLUMNS.collect { new ArrayList<String>() }
+  ROWS.each { row -> COLUMNS.eachWithIndex { col, i -> values[i].add(FORMATTER.format(row, col)) } }
+  values.eachWithIndex { it, index -> printRow(it, escapeTag(COLUMNS[index].name()), { _, i -> "row${i + 1}" }, { it }) }
+}
+
+OUT.append("""
+</data>
+""")
+--------------------------------------------------------------------------------------------------------
+import java.util.Base64;
+import java.util.UUID;
+import java.io.UnsupportedEncodingException;
+
+public class HelloWorld {
+
+   public static void main(String args[]) {
+
+      try {
+		
+         // Encode using basic encoder
+         String base64encodedString = Base64.getEncoder().encodeToString(
+            "TutorialsPoint?java8".getBytes("utf-8"));
+         System.out.println("Base64 Encoded String (Basic) :" + base64encodedString);
+		
+         // Decode
+         byte[] base64decodedBytes = Base64.getDecoder().decode(base64encodedString);
+		
+         System.out.println("Original String: " + new String(base64decodedBytes, "utf-8"));
+         base64encodedString = Base64.getUrlEncoder().encodeToString(
+            "TutorialsPoint?java8".getBytes("utf-8"));
+         System.out.println("Base64 Encoded String (URL) :" + base64encodedString);
+		
+         StringBuilder stringBuilder = new StringBuilder();
+		
+         for (int i = 0; i < 10; ++i) {
+            stringBuilder.append(UUID.randomUUID().toString());
+         }
+		
+         byte[] mimeBytes = stringBuilder.toString().getBytes("utf-8");
+         String mimeEncodedString = Base64.getMimeEncoder().encodeToString(mimeBytes);
+         System.out.println("Base64 Encoded String (MIME) :" + mimeEncodedString);
+
+      } catch(UnsupportedEncodingException e) {
+         System.out.println("Error :" + e.getMessage());
+      }
+   }
+}
 --------------------------------------------------------------------------------------------------------
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Application.class, webEnvironment = WebEnvironment.DEFINED_PORT)
