@@ -373,6 +373,8 @@ mode con cp select=1251
 new String(mailInfo.getBody().getBytes("cp1251"), StandardCharsets.UTF_16)
 javac -encoding=KOI8_R
 --------------------------------------------------------------------------------------------------------
+git -c diff.mnemonicprefix=false -c core.quotepath=false stash apply stash@{0}
+--------------------------------------------------------------------------------------------------------
 POST /test/servertest.jsp HTTP/1.1
 Host: center:1001
 Accept-Language: en,ru-ru;q=0.8,ru;q=0.5,en-us;q=0.3
