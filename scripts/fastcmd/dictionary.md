@@ -375,6 +375,143 @@ javac -encoding=KOI8_R
 --------------------------------------------------------------------------------------------------------
 git -c diff.mnemonicprefix=false -c core.quotepath=false stash apply stash@{0}
 --------------------------------------------------------------------------------------------------------
+curl -i http://localhost:8080/spring-rest/ex/foos
+curl -i -X POST http://localhost:8080/spring-rest/ex/foos
+curl -i -H "key:val" http://localhost:8080/spring-rest/ex/foos
+curl -i -d id=100 http://localhost:8080/spring-rest/ex/bars
+curl -H "Accept:application/json,text/html" http://localhost:8080/spring-rest/ex/foos
+curl -i -H "key1:val1" -H "key2:val2" http://localhost:8080/spring-rest/ex/foos
+
+@RequestMapping(value = "/ex/foos", headers = "key=val", method = GET)
+@ResponseBody
+public String getFoosWithHeader() {
+    return "Get some Foos with Header";
+}
+
+@RequestMapping(
+  value = "/ex/foos", 
+  method = GET, 
+  headers = "Accept=application/json")
+@ResponseBody
+public String getFoosAsJsonFromBrowser() {
+    return "Get some Foos with Header Old";
+}
+
+@RequestMapping(
+  value = "/ex/foos", 
+  method = GET,
+  produces = { "application/json", "application/xml" }
+)
+
+@RequestMapping(value = "/ex/bars/{numericId:[\\d]+}", method = GET)
+@ResponseBody
+public String getBarsBySimplePathWithPathVariable(
+  @PathVariable long numericId) {
+    return "Get a specific Bar with id=" + numericId;
+}
+
+@RequestMapping(value = "/ex/bars", method = GET)
+@ResponseBody
+public String getBarBySimplePathWithRequestParam(
+  @RequestParam("id") long id) {
+    return "Get a specific Bar with id=" + id;
+}
+
+@RequestMapping(
+  value = "/ex/bars", 
+  params = { "id", "second" }, 
+  method = GET)
+@ResponseBody
+public String getBarBySimplePathWithExplicitRequestParams(
+  @RequestParam("id") long id) {
+    return "Narrow Get a specific Bar with id=" + id;
+}
+
+@RequestMapping(
+  value = { "/ex/advanced/bars", "/ex/advanced/foos" }, 
+  method = GET)
+@ResponseBody
+public String getFoosOrBarsByPath() {
+    return "Advanced - Get some Foos or Bars";
+}
+
+@RequestMapping(
+  value = "/ex/foos/multiple", 
+  method = { RequestMethod.PUT, RequestMethod.POST }
+)
+@ResponseBody
+public String putAndPostFoos() {
+    return "Advanced - PUT and POST within single method";
+}
+
+@RequestMapping(value = "*", method = RequestMethod.GET)
+@ResponseBody
+public String getFallback() {
+    return "Fallback for GET Requests";
+}
+
+@RequestMapping(
+  value = "*", 
+  method = { RequestMethod.GET, RequestMethod.POST ... })
+@ResponseBody
+public String allFallback() {
+    return "Fallback for All Requests";
+}
+
+@GetMapping(value = "foos/duplicate", produces = MediaType.APPLICATION_XML_VALUE)
+public String duplicate() {
+    return "Duplicate";
+}
+ 
+@GetMapping(value = "foos/duplicate", produces = MediaType.APPLICATION_JSON_VALUE)
+public String duplicateEx() {
+    return "Duplicate";
+}
+--------------------------------------------------------------------------------------------------------
+gradle install -Dmaven.repo.local=the/path/of/the/folder
+--------------------------------------------------------------------------------------------------------
+apply plugin: 'java'
+ 
+repositories {
+    mavenCentral()
+}
+ 
+dependencies {
+    compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
+    compile group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.25'
+}
+
+jar {
+    manifest {
+        attributes "Main-Class": "com.baeldung.fatjar.Application"
+    }
+ 
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+task customFatJar(type: Jar) {
+    manifest {
+        attributes 'Main-Class': 'com.baeldung.fatjar.Application'
+    }
+    baseName = 'all-in-one-jar'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.1'
+    }
+}
+ 
+apply plugin: 'java'
+apply plugin: 'com.github.johnrengelman.shadow'
+--------------------------------------------------------------------------------------------------------
 POST /test/servertest.jsp HTTP/1.1
 Host: center:1001
 Accept-Language: en,ru-ru;q=0.8,ru;q=0.5,en-us;q=0.3
