@@ -5934,6 +5934,157 @@ public class InlineImageEmailTester {
     }
 }
 --------------------------------------------------------------------------------------------------------
+private static final String[] CLASSPATH_RESOURCE_LOCATIONS = {
+		"classpath:/META-INF/resources/", "classpath:/resources/",
+		"classpath:/static/", "classpath:/public/" };
+		
+@Override
+public void addResourceHandlers(ResourceHandlerRegistry registry) {
+	if (!registry.hasMappingForPattern("/webjars/**")) {
+		registry.addResourceHandler("/webjars/**").addResourceLocations(
+				"classpath:/META-INF/resources/webjars/");
+	}
+	if (!registry.hasMappingForPattern("/**")) {
+		registry.addResourceHandler("/**").addResourceLocations(
+				RESOURCE_LOCATIONS);
+	}
+}
+
+   @Override
+   public void addResourceHandlers(ResourceHandlerRegistry registry) {
+
+      // Register resource handler for CSS and JS
+      registry.addResourceHandler("/resources/**").addResourceLocations("classpath:/statics/", "D:/statics/")
+            .setCacheControl(CacheControl.maxAge(2, TimeUnit.HOURS).cachePublic());
+
+      // Register resource handler for images
+      registry.addResourceHandler("/images/**").addResourceLocations("/WEB-INF/images/")
+            .setCacheControl(CacheControl.maxAge(2, TimeUnit.HOURS).cachePublic());
+   }
+--------------------------------------------------------------------------------------------------------
+@Service
+class InternalRequestRewriteFilter(
+        @Value("\${server.servlet.context-path}") private val contextPath: String): WebFilter {
+    private val pathMatcher = AntPathMatcher()
+    private val swaggerPaths = setOf("swagger-ui.html", "webjars/springfox-*/**", "swagger-resources/**", "v2/api-docs")
+    private val logger = getLogger(javaClass)
+
+    override fun filter(exchange: ServerWebExchange, chain: WebFilterChain): Mono<Void> {
+        // Get the path of the request
+        val path = exchange.request.path.pathWithinApplication().value()
+        // If the path leads to an swagger element -> remove the context path for the internal processing
+        val modifiedExchange = if (isSwaggerRequest(exchange.request)) {
+            logger.debug("""Swagger request detected for path "$path"""")
+            exchange.mutate().request(exchange.request.mutate().path(path.replaceFirst(contextPath, "")).build()).build()
+        } else {
+            exchange
+        }
+        // Execute the normal filter chain
+        return chain.filter(modifiedExchange)
+    }
+
+    private fun isSwaggerRequest(request: ServerHttpRequest): Boolean {
+        // Get the path of the request
+        val path = request.path.pathWithinApplication().value()
+
+        return swaggerPaths.any {swaggerPath -> pathMatcher.match("$contextPath/$swaggerPath", path)}
+    }
+}
+--------------------------------------------------------------------------------------------------------
+String ResultString = null;
+
+Pattern regex = Pattern.compile("^.*\\\\", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+Matcher regexMatcher = regex.matcher(subjectString);
+if (regexMatcher.find()) {
+	ResultString = regexMatcher.group();
+--------------------------------------------------------------------------------------------------------
+@EnableAutoConfiguration
+public class ReplaceDefaultLocationsExample {
+
+    public static void main (String[] args) {
+
+        SpringApplication app =
+                  new SpringApplication(ReplaceDefaultLocationsExample.class);
+
+        Properties properties = new Properties();
+        properties.setProperty("spring.resources.static-locations",
+                          "classpath:/newLocation1/, classpath:/newLocation2/");
+        app.setDefaultProperties(properties);
+        app.run(args);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+package com.javacodegeeks.snippets.enterprise;
+ 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+ 
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.AbstractController;
+ 
+public class HelloWorldController extends AbstractController{
+ 
+    @Override
+    protected ModelAndView handleRequestInternal(HttpServletRequest request,
+            HttpServletResponse response) throws Exception {
+ 
+        ModelAndView model = new ModelAndView("helloWorld");
+        model.addObject("msg", "hello world!");
+         
+        return model;
+    }
+         
+}
+--------------------------------------------------------------------------------------------------------
+    @Bean
+    WebMvcConfigurer configurer () {
+        return new WebMvcConfigurerAdapter() {
+            @Override
+            public void addResourceHandlers (ResourceHandlerRegistry registry) {
+                registry.addResourceHandler("/pages/**").
+                          addResourceLocations("classpath:/my-custom-location/");
+            }
+        };
+    }
+--------------------------------------------------------------------------------------------------------
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Rest Doc</title>
+  <link rel="stylesheet" type="text/css" href="https://raw.githubusercontent.com/swagger-api/swagger-ui/master/dist/swagger-ui.css"
+        th:href="@{/webjars/swagger-ui/3.0.17/swagger-ui.css}">
+</head>
+<body>
+
+<div id="swagger-ui"></div>
+
+<script src="https://raw.githubusercontent.com/swagger-api/swagger-ui/master/dist/swagger-ui-bundle.js"
+        th:src="@{/webjars/swagger-ui/3.0.17/swagger-ui-bundle.js}">
+</script>
+<script src="https://raw.githubusercontent.com/swagger-api/swagger-ui/master/dist/swagger-ui-standalone-preset.js"
+        th:src="@{/webjars/swagger-ui/3.0.17/swagger-ui-standalone-preset.js}"></script>
+<script>
+  window.onload = function () {
+
+    // Build a system
+    window.ui = SwaggerUIBundle({
+      url: "/v2/api-docs",
+      dom_id: '#swagger-ui',
+      presets: [
+        SwaggerUIBundle.presets.apis,
+        SwaggerUIStandalonePreset
+      ],
+      plugins: [
+        SwaggerUIBundle.plugins.DownloadUrl
+      ],
+      layout: "StandaloneLayout"
+    })
+  }
+</script>
+</body>
+</html>
+--------------------------------------------------------------------------------------------------------
 package net.codejava.mail;
  
 import javax.mail.Address;
