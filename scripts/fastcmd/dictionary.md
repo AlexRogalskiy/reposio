@@ -673,6 +673,25 @@ gradle install -Dmaven.repo.local=the/path/of/the/folder
    See the License for the specific language governing permissions and
    limitations under the License.
 --------------------------------------------------------------------------------------------------------
+    /**
+     * Provide a String representation of this validator.
+     *
+     * @return A String representation of this validator
+     */
+    @Override
+    public String toString() {
+        StringBuilder buffer = new StringBuilder();
+        buffer.append("RegexValidator{");
+        for (int i = 0; i < this.patterns.length; i++) {
+            if (i > 0) {
+                buffer.append(",");
+            }
+            buffer.append(this.patterns[i].pattern());
+        }
+        buffer.append("}");
+        return buffer.toString();
+    }
+--------------------------------------------------------------------------------------------------------
 PeriodFormat.space=\u0020
 PeriodFormat.comma=,
 PeriodFormat.commandand=,\u0438
