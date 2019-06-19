@@ -8753,6 +8753,162 @@ idea {
     }
 }
 --------------------------------------------------------------------------------------------------------
+ObjectMapper mapper = new ObjectMapper();
+SimpleModule module = 
+  new SimpleModule("CustomCarSerializer", new Version(1, 0, 0, null, null, null));
+module.addSerializer(Car.class, new CustomCarSerializer());
+mapper.registerModule(module);
+Car car = new Car("yellow", "renault");
+String carJson = mapper.writeValueAsString(car);
+
+String json = "{ \"color\" : \"Black\", \"type\" : \"BMW\" }";
+ObjectMapper mapper = new ObjectMapper();
+SimpleModule module =
+  new SimpleModule("CustomCarDeserializer", new Version(1, 0, 0, null, null, null));
+module.addDeserializer(Car.class, new CustomCarDeserializer());
+mapper.registerModule(module);
+Car car = mapper.readValue(json, Car.class);
+
+ObjectMapper objectMapper = new ObjectMapper();
+DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm a z");
+objectMapper.setDateFormat(df);
+String carAsString = objectMapper.writeValueAsString(request);
+// output: {"car":{"color":"yellow","type":"renault"},"datePurchased":"2016-07-03 11:43 AM CEST"}
+
+String jsonCarArray = 
+  "[{ \"color\" : \"Black\", \"type\" : \"BMW\" }, { \"color\" : \"Red\", \"type\" : \"FIAT\" }]";
+ObjectMapper objectMapper = new ObjectMapper();
+objectMapper.configure(DeserializationFeature.USE_JAVA_ARRAY_FOR_JSON_ARRAY, true);
+Car[] cars = objectMapper.readValue(jsonCarArray, Car[].class);
+// print cars
+
+String jsonCarArray = 
+  "[{ \"color\" : \"Black\", \"type\" : \"BMW\" }, { \"color\" : \"Red\", \"type\" : \"FIAT\" }]";
+ObjectMapper objectMapper = new ObjectMapper();
+List<Car> listCar = objectMapper.readValue(jsonCarArray, new TypeReference<List<Car>>(){});
+// print cars
+
+import java.util.Calendar;
+
+import lombok.Builder;
+import lombok.Value;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+
+@Builder
+@Value
+@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
+public class JacksonExample {
+    private String fieldOne;
+    @JsonIgnore
+    private String fieldTwo;
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
+    private Calendar someDate;
+}
+--------------------------------------------------------------------------------------------------------
+public class BaeldungSynchronizedMethods {
+ 
+    private int sum = 0;
+ 
+    public void calculate() {
+        setSum(getSum() + 1);
+    }
+ 
+    // standard setters and getters
+}
+
+@Test
+public void givenMultiThread_whenNonSyncMethod() {
+    ExecutorService service = Executors.newFixedThreadPool(3);
+    BaeldungSynchronizedMethods summation = new BaeldungSynchronizedMethods();
+ 
+    IntStream.range(0, 1000)
+      .forEach(count -> service.submit(summation::calculate));
+    service.awaitTermination(1000, TimeUnit.MILLISECONDS);
+ 
+    assertEquals(1000, summation.getSum());
+}
+
+@Test
+public void givenMultiThread_whenStaticSyncBlock() {
+    ExecutorService service = Executors.newCachedThreadPool();
+ 
+    IntStream.range(0, 1000)
+      .forEach(count -> 
+        service.submit(BaeldungSynchronizedBlocks::performStaticSyncTask));
+    service.awaitTermination(100, TimeUnit.MILLISECONDS);
+ 
+    assertEquals(1000, BaeldungSynchronizedBlocks.getStaticCount());
+}
+--------------------------------------------------------------------------------------------------------
+public class SafeCounterWithoutLock {
+    private final AtomicInteger counter = new AtomicInteger(0);
+     
+    public int getValue() {
+        return counter.get();
+    }
+    public void increment() {
+        while(true) {
+            int existingValue = getValue();
+            int newValue = existingValue + 1;
+            if(counter.compareAndSet(existingValue, newValue)) {
+                return;
+            }
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@Test
+public void testWorkDelegatesMethodCall() throws Exception {
+    // given
+    AtomicInteger counter = new AtomicInteger(0);
+    MessageWorker<String, Integer> uut = new MessageWorker<String, Integer>() {
+        @Override
+        public Integer work(String object) {
+            return counter.incrementAndGet();
+        }
+    };
+    MessageHeaders messageHeaders = mock(MessageHeaders.class);
+
+    // when
+    uut.work("dummy value", messageHeaders);
+
+    // then
+    assertEquals(1, counter.intValue());
+    verifyZeroInteractions(messageHeaders);
+}
+--------------------------------------------------------------------------------------------------------
+@Test
+public void testSendMessageToEntity() throws Exception {
+    entityService.sendMessageToEntity(entity, output);
+
+    verify(simpMessagingTemplate).convertAndSendToUser(
+            eq("stompUsername"),
+            eq("/queue/output"),
+            eq(output),
+            messageHeadersArgumentCaptor.capture());
+
+    MessageHeaders headers = messageHeadersArgumentCaptor.getValue();
+    SimpMessageHeaderAccessor accessor = SimpMessageHeaderAccessor.getAccessor(headers, SimpMessageHeaderAccessor.class);
+
+    assertEquals("stompSessionId", accessor.getSessionId());
+    assertTrue(accessor.isMutable());
+}
+--------------------------------------------------------------------------------------------------------
+curl -X POST \
+  http://localhost:8080/addToBasket \
+  -H 'content-type: application/json' \
+  -d '{
+    "detail": {
+      "product": "car",
+      "code": "car-02"
+    },
+    "amount": 1
+   }'
+--------------------------------------------------------------------------------------------------------
 import java.util.List;
 
 import org.joda.time.LocalDate; import org.springframework.beans.factory.annotation.Autowired; import org.springframework.context.annotation.Bean; import org.springframework.context.annotation.ComponentScan; import org.springframework.context.annotation.Configuration; import org.springframework.http.ResponseEntity; import org.springframework.web.bind.annotation.RequestMethod; import org.springframework.web.context.request.async.DeferredResult; import org.springframework.web.servlet.config.annotation.EnableWebMvc;
