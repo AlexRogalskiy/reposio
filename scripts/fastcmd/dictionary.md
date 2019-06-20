@@ -673,6 +673,112 @@ gradle install -Dmaven.repo.local=the/path/of/the/folder
    See the License for the specific language governing permissions and
    limitations under the License.
 --------------------------------------------------------------------------------------------------------
+
+
+---
+
+- &CENTER { x: 1, y: 2 }
+
+- &LEFT { x: 0, y: 2 }
+
+- &BIG { r: 10 }
+
+- &SMALL { r: 1 }
+
+ 
+
+# All the following maps are equal:
+
+ 
+
+- # Explicit keys
+
+  x: 1
+
+  y: 2
+
+  r: 10
+
+  label: center/big
+
+ 
+
+- # Merge one map
+
+  << : *CENTER
+
+  r: 10
+
+  label: center/big
+
+ 
+
+- # Merge multiple maps
+
+  << : [ *CENTER, *BIG ]
+
+  label: center/big
+
+ 
+
+- # Override
+
+  << : [ *BIG, *LEFT, *SMALL ]
+
+  x: 1
+
+  label: center/big
+--------------------------------------------------------------------------------------------------------
+default: &DEFAULT
+
+  URL:          stooges.com
+
+  throw_pies?:  true 
+
+  stooges:  &stooge_list
+
+    larry:  first_stooge
+
+    moe:    second_stooge
+
+    curly:  third_stooge
+
+ 
+
+development:
+
+  <<: *DEFAULT
+
+  URL:      stooges.local
+
+  stooges:
+
+    shemp: fourth_stooge
+
+ 
+
+test:
+
+  <<: *DEFAULT
+
+  URL:    test.stooges.qa
+
+  stooges:
+
+    <<: *stooge_list
+
+    shemp: fourth_stooge
+--------------------------------------------------------------------------------------------------------
+Map<String, Integer> map = Stream.of(new Object[][] { 
+    { "data1", 1 }, 
+    { "data2", 2 }, 
+}).collect(Collectors.toMap(data -> (String) data[0], data -> (Integer) data[1]));
+
+Map<String, String> map = Stream.of(new String[][] {
+  { "Hello", "World" }, 
+  { "John", "Doe" }, 
+}).collect(Collectors.toMap(data -> data[0], data -> data[1]));
+--------------------------------------------------------------------------------------------------------
     /**
      * Provide a String representation of this validator.
      *
