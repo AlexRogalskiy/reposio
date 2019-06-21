@@ -769,6 +769,19 @@ test:
 
     shemp: fourth_stooge
 --------------------------------------------------------------------------------------------------------
+@Async
+public Future<?> consumeSegmentEvents() {
+    final ParameterizedTypeReference<ServerSentEvent<String>> type = new ParameterizedTypeReference<>() {
+    };
+    final Flux<ServerSentEvent<String>> eventStream = this.client.get()
+        .uri("/api/pem/segments/stream")
+        .accept(MediaType.TEXT_EVENT_STREAM)
+        .retrieve()
+        .bodyToFlux(type);
+    return new AsyncResult<Flux<?>>(eventStream);
+    //eventStream.subscribe(content -> log.info("Current time: {} - Received SSE: name[{}], id [{}], content[{}] ", LocalTime.now(), content.event(), content.id(), content.data()), error -> log.error("Error receiving SSE: {}", error), () -> log.info("Completed!!!"));
+}
+--------------------------------------------------------------------------------------------------------
 Map<String, Integer> map = Stream.of(new Object[][] { 
     { "data1", 1 }, 
     { "data2", 2 }, 
