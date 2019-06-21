@@ -8859,6 +8859,203 @@ idea {
     }
 }
 --------------------------------------------------------------------------------------------------------
+@ExtendWith(SpringExtension.class)
+@WebMvcTest(controllers = ValidateRequestBodyController.class)
+class ValidateRequestBodyControllerTest {
+
+  @Autowired
+  private MockMvc mvc;
+
+  @Autowired
+  private ObjectMapper objectMapper;
+
+  @Test
+  void whenInputIsInvalid_thenReturnsStatus400() throws Exception {
+    Input input = invalidInput();
+    String body = objectMapper.writeValueAsString(input);
+
+    mvc.perform(post("/validateBody")
+            .contentType("application/json")
+            .content(body))
+            .andExpect(status().isBadRequest());
+  }
+}
+--------------------------------------------------------------------------------------------------------
+## swagger-codegen
+
+UploadedImage:
+    type: object
+    properties:
+      data:
+        type: string
+        format: byte
+      mime_type:
+        type: string
+        enum: [image/bmp,image/jpeg,image/png]
+      url:
+        type: string
+and I see that Swagger-codegen has generated the following class for it:
+
+package com.github.ghost93.model;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
+import io.swagger.annotations.ApiModelProperty;
+import java.util.Objects;
+import javax.validation.constraints.Pattern;
+
+/**
+ * UploadedImage
+ */
+@javax.annotation.Generated(value = "io.swagger.codegen.languages.SpringCodegen", date = "2017-08-17T22:15:18.867+03:00")
+
+public class UploadedImage {
+
+  @JsonProperty("data")
+  private byte[] data = null;
+  @JsonProperty("mime_type")
+  private MimeTypeEnum mimeType = null;
+  @JsonProperty("url")
+  private String url = null;
+
+  public UploadedImage data(byte[] data) {
+    this.data = data;
+    return this;
+  }
+
+  /**
+   * Get data
+   *
+   * @return data
+   **/
+  @ApiModelProperty(value = "")
+
+  @Pattern(regexp = "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$")
+  public byte[] getData() {
+    return data;
+  }
+
+  public void setData(byte[] data) {
+    this.data = data;
+  }
+
+  public UploadedImage mimeType(MimeTypeEnum mimeType) {
+    this.mimeType = mimeType;
+    return this;
+  }
+
+  /**
+   * Get mimeType
+   *
+   * @return mimeType
+   **/
+  @ApiModelProperty(value = "")
+
+  public MimeTypeEnum getMimeType() {
+    return mimeType;
+  }
+
+  public void setMimeType(MimeTypeEnum mimeType) {
+    this.mimeType = mimeType;
+  }
+
+  public UploadedImage url(String url) {
+    this.url = url;
+    return this;
+  }
+
+  /**
+   * Get url
+   *
+   * @return url
+   **/
+  @ApiModelProperty(value = "")
+
+  public String getUrl() {
+    return url;
+  }
+
+  public void setUrl(String url) {
+    this.url = url;
+  }
+
+  @Override
+  public boolean equals(java.lang.Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    UploadedImage uploadedImage = (UploadedImage) o;
+    return Objects.equals(this.data, uploadedImage.data) &&
+        Objects.equals(this.mimeType, uploadedImage.mimeType) &&
+        Objects.equals(this.url, uploadedImage.url);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(data, mimeType, url);
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    sb.append("class UploadedImage {\n");
+
+    sb.append("    data: ").append(toIndentedString(data)).append("\n");
+    sb.append("    mimeType: ").append(toIndentedString(mimeType)).append("\n");
+    sb.append("    url: ").append(toIndentedString(url)).append("\n");
+    sb.append("}");
+    return sb.toString();
+  }
+
+  /**
+   * Convert the given object to string with each line indented by 4 spaces (except the first
+   * line).
+   */
+  private String toIndentedString(java.lang.Object o) {
+    if (o == null) {
+      return "null";
+    }
+    return o.toString().replace("\n", "\n    ");
+  }
+
+  /**
+   * Gets or Sets mimeType
+   */
+  public enum MimeTypeEnum {
+    BMP("image/bmp"),
+
+    JPEG("image/jpeg"),
+
+    PNG("image/png");
+
+    private String value;
+
+    MimeTypeEnum(String value) {
+      this.value = value;
+    }
+
+    @JsonCreator
+    public static MimeTypeEnum fromValue(String text) {
+      for (MimeTypeEnum b : MimeTypeEnum.values()) {
+        if (String.valueOf(b.value).equals(text)) {
+          return b;
+        }
+      }
+      return null;
+    }
+
+    @Override
+    @JsonValue
+    public String toString() {
+      return String.valueOf(value);
+    }
+  }
+}
+--------------------------------------------------------------------------------------------------------
 ObjectMapper mapper = new ObjectMapper();
 SimpleModule module = 
   new SimpleModule("CustomCarSerializer", new Version(1, 0, 0, null, null, null));
