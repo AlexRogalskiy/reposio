@@ -1864,6 +1864,9 @@ object Aggregator {
   }
 }
 --------------------------------------------------------------------------------------------------------
+javac --release 8 com/baeldung/MajorMinorApp.java
+javac -bootclasspath "C:\Apps\Java\jdk1.8.0_31\jre\lib\rt.jar" -source 1.8 -target 1.8 com/baeldung/MajorMinorApp.java
+--------------------------------------------------------------------------------------------------------
 CREATE VIEW widened AS
   SELECT
     ev."event"              AS "event",
