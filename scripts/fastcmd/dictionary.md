@@ -8092,6 +8092,57 @@ public class MyUrlRewriteFilter extends UrlRewriteFilter {
 </rule>
 </urlrewrite>
 --------------------------------------------------------------------------------------------------------
+server:
+  port: ${random:int(4)}
+  
+java -jar spring-boot-app.jar -Dserver.port=2020
+--------------------------------------------------------------------------------------------------------
+Map<String, Integer> map = Stream.of(
+  new AbstractMap.SimpleEntry<>("idea", 1), 
+  new AbstractMap.SimpleEntry<>("mobile", 2))
+  .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+  
+Map<String, String> map = Stream.of(new String[][] { 
+    { "Hello", "World" }, 
+    { "John", "Doe" },
+}).collect(Collectors.collectingAndThen(
+    Collectors.toMap(data -> data[0], data -> data[1]), 
+    Collections::<String, String> unmodifiableMap));
+--------------------------------------------------------------------------------------------------------
+@Autowired
+private WebApplicationContext wac;
+
+@Autowired
+private FilterChainProxy filterChain;
+
+private MockMvc mockMvc;
+
+@Before
+public void setup() {
+    this.mockMvc = MockMvcBuilders.webAppContextSetup(this.wac)
+      .addFilter(filterChain).build();
+}
+
+@Test
+public void testSession() throws Exception {
+    // Login and save the cookie
+    MvcResult result = mockMvc.perform(post("/session")
+      .param("username", "john").param("password", "s3cr3t")).andReturn();
+    Cookie c = result.getResponse().getCookie("my-cookie");
+    assertThat(c.getValue().length(), greaterThan(10));
+
+    // No cookie; 401 Unauthorized
+    mockMvc.perform(get("/personal").andExpect(status().isUnauthorized());
+
+    // With cookie; 200 OK
+    mockMvc.perform(get("/personal").cookie(c)).andExpect(status().isOk());
+
+    // Logout, and ensure we're told to wipe the cookie
+    result = mockMvc.perform(delete("/session").andReturn();
+    c = result.getResponse().getCookie("my-cookie");
+    assertThat(c.getValue().length(), is(0));
+}
+--------------------------------------------------------------------------------------------------------
 spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation=true
  
 /*
