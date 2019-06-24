@@ -769,6 +769,1207 @@ test:
 
     shemp: fourth_stooge
 --------------------------------------------------------------------------------------------------------
+mvn <goals> -rf :diffy-processor
+--------------------------------------------------------------------------------------------------------
+-Djavax.net.debug=ssl,handshake -Djavax.net.ssl.keyStoreType=PKCS12 -Djavax.net.ssl.keyStore=our-client-certs -Djavax.net.ssl.trustStoreType=jks -Djavax.net.ssl.trustStore=their-server-certs
+keytool -keystore ..\lib\security\cacerts -import -alias your.ssl.server.name -file .\relative-path-to-cert-file\your.ssl.server.name.crt
+
+java -Djavax.net.ssl.trustStore="C:/Program Files/Java/jdk1.8.0_66/jre/lib/security/cacerts" -jar jenkins.war 
+java -Djavax.net.ssl.trustStore -jar jenkins.war
+--------------------------------------------------------------------------------------------------------
+#!/bin/sh
+cd $(dirname $0)
+
+cd ../complete
+
+mvn clean package
+ret=$?
+if [ $ret -ne 0 ]; then
+exit $ret
+fi
+rm -rf target
+
+./gradlew build
+ret=$?
+if [ $ret -ne 0 ]; then
+exit $ret
+fi
+rm -rf build
+
+cd ../initial
+
+mvn clean compile
+ret=$?
+if [ $ret -ne 0 ]; then
+exit $ret
+fi
+rm -rf target
+
+./gradlew compileJava
+ret=$?
+if [ $ret -ne 0 ]; then
+exit $ret
+fi
+rm -rf build
+
+exit
+--------------------------------------------------------------------------------------------------------
+@if "%DEBUG%" == "" @echo off
+@rem ##########################################################################
+@rem
+@rem  Gradle startup script for Windows
+@rem
+@rem ##########################################################################
+
+@rem Set local scope for the variables with windows NT shell
+if "%OS%"=="Windows_NT" setlocal
+
+set DIRNAME=%~dp0
+if "%DIRNAME%" == "" set DIRNAME=.
+set APP_BASE_NAME=%~n0
+set APP_HOME=%DIRNAME%
+
+@rem Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
+set DEFAULT_JVM_OPTS=
+
+@rem Find java.exe
+if defined JAVA_HOME goto findJavaFromJavaHome
+
+set JAVA_EXE=java.exe
+%JAVA_EXE% -version >NUL 2>&1
+if "%ERRORLEVEL%" == "0" goto init
+
+echo.
+echo ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH.
+echo.
+echo Please set the JAVA_HOME variable in your environment to match the
+echo location of your Java installation.
+
+goto fail
+
+:findJavaFromJavaHome
+set JAVA_HOME=%JAVA_HOME:"=%
+set JAVA_EXE=%JAVA_HOME%/bin/java.exe
+
+if exist "%JAVA_EXE%" goto init
+
+echo.
+echo ERROR: JAVA_HOME is set to an invalid directory: %JAVA_HOME%
+echo.
+echo Please set the JAVA_HOME variable in your environment to match the
+echo location of your Java installation.
+
+goto fail
+
+:init
+@rem Get command-line arguments, handling Windows variants
+
+if not "%OS%" == "Windows_NT" goto win9xME_args
+if "%@eval[2+2]" == "4" goto 4NT_args
+
+:win9xME_args
+@rem Slurp the command line arguments.
+set CMD_LINE_ARGS=
+set _SKIP=2
+
+:win9xME_args_slurp
+if "x%~1" == "x" goto execute
+
+set CMD_LINE_ARGS=%*
+goto execute
+
+:4NT_args
+@rem Get arguments from the 4NT Shell from JP Software
+set CMD_LINE_ARGS=%$
+
+:execute
+@rem Setup the command line
+
+set CLASSPATH=%APP_HOME%\gradle\wrapper\gradle-wrapper.jar
+
+@rem Execute Gradle
+"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %GRADLE_OPTS% "-Dorg.gradle.appname=%APP_BASE_NAME%" -classpath "%CLASSPATH%" org.gradle.wrapper.GradleWrapperMain %CMD_LINE_ARGS%
+
+:end
+@rem End local scope for the variables with windows NT shell
+if "%ERRORLEVEL%"=="0" goto mainEnd
+
+:fail
+rem Set variable GRADLE_EXIT_CONSOLE if you need the _script_ return code instead of
+rem the _cmd.exe /c_ return code!
+if  not "" == "%GRADLE_EXIT_CONSOLE%" exit 1
+exit /b 1
+
+:mainEnd
+if "%OS%"=="Windows_NT" endlocal
+
+:omega
+--------------------------------------------------------------------------------------------------------
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.web.client.RestTemplate;
+
+@RunWith(SpringRunner.class)
+//@DataJpaTest
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, classes = { com.ubs.api.rest.jenkins.loader.AppLoader })
+public class BaseTest {
+
+	@After
+	public void init(){
+	}
+
+	@Before
+	public void destroy(){
+	}
+	
+	@Autowired
+	private RestTemplate restTemplate;
+
+	@Test
+	public void contextLoads() {
+		assertThat(restTemplate).isNotNull();
+	}
+}
+--------------------------------------------------------------------------------------------------------
+imports:
+    ansible: ansible
+    ansible_playbooks: oss-playbooks
+
+curl module ansible:
+    # Equivalent of git cloning tags/v1.6.6 but much, much faster
+    url: https://codeload.github.com/ansible/ansible/zip/69d85c22c7475ccf8169b6ec9dee3ee28c92a314
+    unpack: zip
+    export: ansible-69d85c22c7475ccf8169b6ec9dee3ee28c92a314
+
+git module ansible_playbooks:
+    url: https://github.com/snowplow/ansible-playbooks.git
+    # Comment out to fetch a specific rev instead of master:
+    # rev: xxx
+--------------------------------------------------------------------------------------------------------
+#!/bin/bash -e
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+# This script will download, setup, start, and stop servers for Kafka, YARN, and ZooKeeper,
+# as well as downloading, building and locally publishing Samza
+
+export JAVA_HOME="$(dirname $(dirname $(readlink -f `which javac`)))"
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+BASE_DIR=$(dirname $DIR)
+DEPLOY_ROOT_DIR=$BASE_DIR/vagrant/grid-deploy
+DOWNLOAD_CACHE_DIR=$HOME/.samza/download
+COMMAND=$1
+SYSTEM=$2
+
+DOWNLOAD_KAFKA=http://www.us.apache.org/dist/kafka/0.8.2.1/kafka_2.10-0.8.2.1.tgz
+DOWNLOAD_YARN=https://archive.apache.org/dist/hadoop/common/hadoop-2.4.0/hadoop-2.4.0.tar.gz
+DOWNLOAD_ZOOKEEPER=http://archive.apache.org/dist/zookeeper/zookeeper-3.4.3/zookeeper-3.4.3.tar.gz
+
+bootstrap() {
+  echo "Bootstrapping the system..."
+  stop_all
+  rm -rf "$DEPLOY_ROOT_DIR"
+  mkdir "$DEPLOY_ROOT_DIR"
+  install_all
+  start_all
+  exit 0
+}
+
+install_all() {
+  $DIR/grid install zookeeper
+  $DIR/grid install yarn
+  $DIR/grid install kafka
+}
+
+install_zookeeper() {
+  mkdir -p "$DEPLOY_ROOT_DIR"
+  install zookeeper $DOWNLOAD_ZOOKEEPER zookeeper-3.4.3
+  cp "$DEPLOY_ROOT_DIR/zookeeper/conf/zoo_sample.cfg" "$DEPLOY_ROOT_DIR/zookeeper/conf/zoo.cfg"
+}
+
+install_yarn() {
+  mkdir -p "$DEPLOY_ROOT_DIR"
+  install yarn $DOWNLOAD_YARN hadoop-2.4.0
+  cp "$BASE_DIR/vagrant/etc/yarn-site.xml" "$DEPLOY_ROOT_DIR/yarn/etc/hadoop/yarn-site.xml"
+  if [ ! -f "$HOME/.samza/conf/yarn-site.xml" ]; then
+    mkdir -p "$HOME/.samza/conf"
+    cp "$BASE_DIR/vagrant/etc/yarn-site.xml" "$HOME/.samza/conf/yarn-site.xml"
+  fi
+}
+
+install_kafka() {
+  mkdir -p "$DEPLOY_ROOT_DIR"
+  install kafka $DOWNLOAD_KAFKA kafka_2.10-0.8.2.1
+  # have to use SIGTERM since nohup on appears to ignore SIGINT
+  # and Kafka switched to SIGINT in KAFKA-1031.
+  sed -i.bak 's/SIGINT/SIGTERM/g' $DEPLOY_ROOT_DIR/kafka/bin/kafka-server-stop.sh
+  # in order to simplify the wikipedia-stats example job, set topic to have just 1 partition by default
+  sed -i.bak 's/^num\.partitions *=.*/num.partitions=1/' $DEPLOY_ROOT_DIR/kafka/config/server.properties
+}
+
+install() {
+  DESTINATION_DIR="$DEPLOY_ROOT_DIR/$1"
+  DOWNLOAD_URL=$2
+  PACKAGE_DIR="$DOWNLOAD_CACHE_DIR/$3"
+  PACKAGE_FILE="$DOWNLOAD_CACHE_DIR/$(basename $DOWNLOAD_URL)"
+  if [ -f "$PACKAGE_FILE" ]; then
+    echo "Using previously downloaded file $PACKAGE_FILE"
+  else
+    echo "Downloading $(basename $DOWNLOAD_URL)..."
+    mkdir -p $DOWNLOAD_CACHE_DIR
+    curl "$DOWNLOAD_URL" > "${PACKAGE_FILE}.tmp"
+    mv "${PACKAGE_FILE}.tmp" "$PACKAGE_FILE"
+  fi
+  rm -rf "$DESTINATION_DIR" "$PACKAGE_DIR"
+  tar -xf "$PACKAGE_FILE" -C $DOWNLOAD_CACHE_DIR
+  mv "$PACKAGE_DIR" "$DESTINATION_DIR"
+}
+
+start_all() {
+  $DIR/grid start zookeeper
+  $DIR/grid start yarn
+  $DIR/grid start kafka
+}
+
+start_zookeeper() {
+  if [ -f $DEPLOY_ROOT_DIR/$SYSTEM/bin/zkServer.sh ]; then
+    cd $DEPLOY_ROOT_DIR/$SYSTEM
+    bin/zkServer.sh start
+    cd - > /dev/null
+  else
+    echo 'Zookeeper is not installed. Run: bin/grid install zookeeper'
+  fi
+}
+
+start_yarn() {
+  if [ -f $DEPLOY_ROOT_DIR/$SYSTEM/sbin/yarn-daemon.sh ]; then
+    $DEPLOY_ROOT_DIR/$SYSTEM/sbin/yarn-daemon.sh start resourcemanager
+    $DEPLOY_ROOT_DIR/$SYSTEM/sbin/yarn-daemon.sh start nodemanager
+  else
+    echo 'YARN is not installed. Run: bin/grid install yarn'
+  fi
+}
+
+start_kafka() {
+  if [ -f $DEPLOY_ROOT_DIR/$SYSTEM/bin/kafka-server-start.sh ]; then
+    mkdir -p $DEPLOY_ROOT_DIR/$SYSTEM/logs
+    cd $DEPLOY_ROOT_DIR/$SYSTEM
+    nohup bin/kafka-server-start.sh config/server.properties > logs/kafka.log 2>&1 &
+    cd - > /dev/null
+  else
+    echo 'Kafka is not installed. Run: bin/grid install kafka'
+  fi
+}
+
+stop_all() {
+  $DIR/grid stop kafka
+  $DIR/grid stop yarn
+  $DIR/grid stop zookeeper
+}
+
+stop_zookeeper() {
+  if [ -f $DEPLOY_ROOT_DIR/$SYSTEM/bin/zkServer.sh ]; then
+    cd $DEPLOY_ROOT_DIR/$SYSTEM
+    bin/zkServer.sh stop
+    cd - > /dev/null
+  else
+    echo 'Zookeeper is not installed. Run: bin/grid install zookeeper'
+  fi
+}
+
+stop_yarn() {
+  if [ -f $DEPLOY_ROOT_DIR/$SYSTEM/sbin/yarn-daemon.sh ]; then
+    $DEPLOY_ROOT_DIR/$SYSTEM/sbin/yarn-daemon.sh stop resourcemanager
+    $DEPLOY_ROOT_DIR/$SYSTEM/sbin/yarn-daemon.sh stop nodemanager
+  else
+    echo 'YARN is not installed. Run: bin/grid install yarn'
+  fi
+}
+
+stop_kafka() {
+  if [ -f $DEPLOY_ROOT_DIR/$SYSTEM/bin/kafka-server-stop.sh ]; then
+    cd $DEPLOY_ROOT_DIR/$SYSTEM
+    bin/kafka-server-stop.sh || true # tolerate nonzero exit status if Kafka isn't running
+    cd - > /dev/null
+  else
+    echo 'Kafka is not installed. Run: bin/grid install kafka'
+  fi
+}
+
+# Check arguments
+if [ "$COMMAND" == "bootstrap" ] && test -z "$SYSTEM"; then
+  bootstrap
+  exit 0
+elif (test -z "$COMMAND" && test -z "$SYSTEM") \
+  || ( [ "$COMMAND" == "help" ] || test -z "$COMMAND" || test -z "$SYSTEM"); then
+  echo
+  echo "  Usage.."
+  echo
+  echo "  $ grid"
+  echo "  $ grid bootstrap"
+  echo "  $ grid install [yarn|kafka|zookeeper|all]"
+  echo "  $ grid start [yarn|kafka|zookeeper|all]"
+  echo "  $ grid stop [yarn|kafka|zookeeper|all]"
+  echo
+  exit 1
+else
+  echo "EXECUTING: $COMMAND $SYSTEM"
+
+  "$COMMAND"_"$SYSTEM"
+fi
+--------------------------------------------------------------------------------------------------------
+#!/bin/bash
+set -e
+
+vagrant_dir=/vagrant/vagrant
+bashrc=/home/vagrant/.bashrc
+
+echo "========================================"
+echo "INSTALLING PERU AND ANSIBLE DEPENDENCIES"
+echo "----------------------------------------"
+apt-get update
+apt-get install -y language-pack-en git unzip libyaml-dev python3-pip python-yaml python-paramiko python-jinja2
+
+echo "==============="
+echo "INSTALLING PERU"
+echo "---------------"
+sudo pip3 install peru
+
+echo "======================================="
+echo "CLONING ANSIBLE AND PLAYBOOKS WITH PERU"
+echo "---------------------------------------"
+cd ${vagrant_dir} && peru sync -v
+echo "... done"
+
+env_setup=${vagrant_dir}/ansible/hacking/env-setup
+hosts=${vagrant_dir}/ansible.hosts
+
+echo "==================="
+echo "CONFIGURING ANSIBLE"
+echo "-------------------"
+touch ${bashrc}
+echo "source ${env_setup}" >> ${bashrc}
+echo "export ANSIBLE_HOSTS=${hosts}" >> ${bashrc}
+echo "... done"
+
+echo "=========================================="
+echo "RUNNING PLAYBOOKS WITH ANSIBLE*"
+echo "* no output while each playbook is running"
+echo "------------------------------------------"
+while read pb; do
+    su - -c "source ${env_setup} && ${vagrant_dir}/ansible/bin/ansible-playbook ${vagrant_dir}/${pb} --connection=local --inventory-file=${hosts}" vagrant
+done <${vagrant_dir}/up.playbooks
+
+guidance=${vagrant_dir}/up.guidance
+
+if [ -f ${guidance} ]; then
+    echo "==========="
+    echo "PLEASE READ"
+    echo "-----------"
+    cat $guidance
+fi
+--------------------------------------------------------------------------------------------------------
+/* 
+ * Copyright (c) 2015 Tim Harper.
+ */
+import sbt._
+import Keys._
+
+import xerial.sbt.Pack._
+
+object SamzaTasks {
+
+  private object RenderConfigTask {
+    val key = TaskKey[Unit]("renderConfig", "Samza: renders the config file template", rank = KeyRanks.ATask)
+    val setting = key := {
+      val s = streams.value
+      val packPath = pack.value
+      for (f <- ((sourceDirectory in Compile).value / "config" * "*.properties").get) yield {
+        val output = packPath / "config" / f.getName
+        val template = IO.read(f)
+
+        IO.write(
+          output,
+          template.
+            replace("${target}", (target in Compile).value.getCanonicalPath).
+            replace("${project.artifactId}", name.value).
+            replace("${pom.version}", version.value)
+        )
+        s.log.info(s"Generated ${output} from ${f}")
+      }
+    }
+  }
+
+  private object GetSamzaShellTask {
+    val key = TaskKey[File]("getSamzaShell", "Samza: sources the samza-shell artifact", rank = KeyRanks.ATask)
+    val setting = key := {
+      val samzaShellFile = (target in Compile).value / s"samza-shell-0.9.1-dist.tgz"
+      if (! samzaShellFile.exists)
+        url(s"http://repo1.maven.org/maven2/org/apache/samza/samza-shell/0.9.1/${samzaShellFile.name}") #> samzaShellFile !
+
+      samzaShellFile
+    }
+  }
+
+  private object ExtractSamzaShellTask {
+    val key = TaskKey[Unit]("extractSamzaShell", "Samza: extracts the samza-shell artifact", rank = KeyRanks.ATask)
+    val setting = key := {
+      val log = streams.value.log
+      val packPath = pack.value
+      val shellPath = GetSamzaShellTask.key.value
+      val binPath = packPath / "bin"
+
+      binPath.mkdir()
+
+      log.info(s"Extracting ${shellPath} to ${binPath}")
+      shellPath #> s"tar xz -C ${binPath}" ! log
+    }
+  }
+
+  private object PackageTgzTask {
+    val key = TaskKey[File]("packageJob", "Samza: produces a tarball artifact for our job", rank = KeyRanks.ATask)
+    val setting = key := {
+      RenderConfigTask.key.value
+      ExtractSamzaShellTask.key.value
+      val packPath = pack.value
+      val output = (target in Compile).value / s"${name.value}-${version.value}-dist.tar.gz"
+
+      s"tar zc -C ${packPath.getCanonicalPath} ./" #> output !
+
+      output
+    }
+  }
+
+  lazy val tasks = Seq(
+    RenderConfigTask.setting,
+    GetSamzaShellTask.setting,
+    ExtractSamzaShellTask.setting,
+    PackageTgzTask.setting
+  )
+}
+--------------------------------------------------------------------------------------------------------
+#!/usr/bin/env python
+
+import os, datetime, socket, json, uuid, time
+from boto import kinesis
+
+def get_filesystem_metrics(path):
+  stats = os.statvfs(path)
+  block_size = stats.f_frsize
+  return (block_size * stats.f_blocks, # Filesystem size in bytes
+    block_size * stats.f_bfree,        # Free bytes
+    block_size * stats.f_bavail)       # Free bytes excluding reserved space
+
+def get_agent_version():
+  return "0.1.0"
+
+def get_hostname():
+  return socket.gethostname()
+
+def get_event_time():
+  return datetime.datetime.now().isoformat()
+
+def get_event_id():
+  return str(uuid.uuid4())
+
+def create_event():
+  size, free, avail = get_filesystem_metrics("/")
+  event_id = get_event_id()
+  return (event_id, {
+    "id": event_id,
+    "subject": {
+      "agent": {
+        "version": get_agent_version()
+      }
+    },
+    "verb": "read",
+    "direct_object": {
+      "filesystem_metrics": {
+        "size": size,
+        "free": free,
+        "available": avail
+      }
+    },
+    "at": get_event_time(),
+    "on": {
+      "server": {
+        "hostname": get_hostname()
+      }
+    }
+  })
+
+def write_event(conn, stream_name):
+  event_id, event_payload = create_event()
+  event_json = json.dumps(event_payload)
+  conn.put_record(stream_name, event_json, event_id)
+  return event_id
+
+if __name__ == '__main__':                                        # a
+  conn = kinesis.connect_to_region(region_name="us-east-1",
+    profile_name="ulp")
+  while True:                                                     # b
+    event_id = write_event(conn, "events")
+    print "Wrote event: {}".format(event_id)
+    time.sleep(10)                                                # c
+--------------------------------------------------------------------------------------------------------
+#!/usr/bin/env python
+
+import json, time
+from threading import Thread
+from boto import kinesis
+from boto.kinesis.exceptions import ProvisionedThroughputExceededException
+
+class ShardReader(Thread):
+  def __init__(self, name, stream_name, shard_id):
+    super(ShardReader, self).__init__(None, name)
+    self.name = name
+    self.stream_name = stream_name
+    self.shard_id = shard_id
+
+  @staticmethod
+  def detect_incident(event):
+    decoded = json.loads(event)
+    passed = None, None
+    try:
+      server = decoded['on']['server']['hostname']
+      metrics = decoded['direct_object']['filesystem_metrics']
+      pct_avail = metrics['available'] * 100 / metrics['size']
+      return (server, pct_avail) if pct_avail <= 20 else passed
+    except KeyError:
+      return passed
+
+  def run(self):
+    try:
+      next_iterator = conn.get_shard_iterator(self.stream_name,
+        self.shard_id, 'TRIM_HORIZON')['ShardIterator']
+      while True:
+        response = conn.get_records(next_iterator, limit=10)
+        for event in response['Records']:
+          print '{} read event {}'.format(self.name,
+            event['PartitionKey'])
+          s, a = self.detect_incident(event['Data'])              # a
+          if a:
+            print '{} has only {}% disk available!'.format(s, a)  # b
+        next_iterator = response['NextShardIterator']
+        time.sleep(5)
+    except ProvisionedThroughputExceededException as ptee:
+       print 'Caught: {}'.format(ptee.message)
+       time.sleep(5)
+
+if __name__ == '__main__':
+  conn = kinesis.connect_to_region(region_name="us-east-1",
+    profile_name="ulp")
+  stream = conn.describe_stream('events')
+  shards = stream['StreamDescription']['Shards']
+
+  threads = []                                                    # c
+  for shard in shards:
+    shard_id = shard['ShardId']
+    reader_name = 'Reader-{}'.format(shard_id)
+    reader = ShardReader(reader_name, 'events', shard_id)
+    reader.start()
+    threads.append(reader)                                        # c
+
+  for thread in threads:                                          # d
+    thread.join()
+--------------------------------------------------------------------------------------------------------
+package forex
+
+import scalaz._
+import Scalaz._
+
+object AmountValidator {
+
+  def validateAmount(raw: String): Validation[String, Double] = {  // a
+
+    try {
+      Success(raw.toDouble)                                        // b
+    } catch {
+      case nfe: NumberFormatException =>
+        Failure("Amount must be parseable to Double, not " + raw)  // c
+    }
+  }
+}
+
+
+package forex
+
+object Currency extends Enumeration {                              // a
+  type Currency = Value
+  val Usd = Value("USD")
+  val Gbp = Value("GBP")
+  val Eur = Value("EUR")
+}
+
+case class UnsupportedCurrencyException(raw: String)
+  extends Exception("Currency must be USD/EUR/GBP, not " + raw)    // b
+
+object CurrencyValidator1 {                                        // c
+
+  @throws(classOf[UnsupportedCurrencyException])
+  def validateCurrency(raw: String): Currency.Value = {
+
+    val rawUpper = raw.toUpperCase(java.util.Locale.ENGLISH)
+    try {
+      Currency.withName(rawUpper)                                  // d
+    } catch {
+      case nsee: NoSuchElementException =>                         // e
+        throw new UnsupportedCurrencyException(raw)
+    }
+  }
+}
+
+
+package forex
+
+import scalaz._                                                    // a
+import Scalaz._                                                    // a
+
+object CurrencyValidator2 {
+
+  def validateCurrency(raw: String):
+    Validation[String, Currency.Value] = {                         // b
+
+    val rawUpper = raw.toUpperCase(java.util.Locale.ENGLISH)
+    try {
+      Success(Currency.withName(rawUpper))                         // c
+    } catch {
+      case nsee: NoSuchElementException =>
+        Failure("Currency must be USD/EUR/GBP, not " + raw)        // d
+    }
+  }
+}
+
+
+package forex
+
+import scalaz._
+import Scalaz._
+
+case class OrderTotal(currency: Currency.Value, amount: Double)    // a
+
+object OrderTotal {
+
+  def parse(rawCurrency: String, rawAmount: String):
+    Validation[NonEmptyList[String], OrderTotal] = {               // b
+
+    val c = CurrencyValidator2.validateCurrency(rawCurrency)       // c
+    val a = AmountValidator.validateAmount(rawAmount)              // d
+
+    (c.toValidationNel |@| a.toValidationNel) {                    // e
+      OrderTotal(_, _)
+    }
+  }
+}
+
+package nile
+
+import org.apache.spark.{SparkContext, SparkConf}
+import SparkContext._
+import org.apache.spark.sql._
+import functions._
+import org.apache.hadoop.io.BytesWritable
+
+object ShopperAnalysisJob {
+
+  def main(args: Array[String]) {
+
+    val (inFile, outFolder) = {                                    // a
+      val a = args.toList
+      (a(0), a(1))
+    }
+
+    val sparkConf = new SparkConf()
+      .setAppName("ShopperAnalysis")
+      .setJars(List(SparkContext.jarOfObject(this).get))           // b
+    val sparkContext = new SparkContext(sparkConf)
+
+    val file = sparkContext.sequenceFile[Long, BytesWritable](inFile)
+    val jsons = file.map {
+      case (_, bw) => toJson(bw)
+    }
+
+    val sqlContext = new SQLContext(sparkContext)
+    val events = sqlContext.jsonRDD(jsons)
+
+    val (shopper, item, order) =
+      ("subject.shopper", "directObject.item", "directObject.order")
+    val analysis = events
+      .filter(s"${shopper} is not null")
+      .groupBy(shopper)
+      .agg(
+        col(shopper),
+        sum(s"${item}.quantity"),
+        sum(col(s"${item}.quantity") * col(s"${item}.price")),
+        count(order),
+        sum(s"${order}.value")
+      )
+
+    analysis.rdd.saveAsTextFile(outFolder)                         // c
+  }
+
+  private def toJson(bytes: BytesWritable): String =               // d
+    new String(bytes.getBytes, 0, bytes.getLength, "UTF-8")
+}
+--------------------------------------------------------------------------------------------------------
+#!/usr/bin/env python
+
+import random, datetime, json, copy, time, sys
+from boto import kinesis
+
+class Jsonable:
+  def to_json(self):
+    return json.dumps(self, default=lambda o: o.__dict__, 
+        sort_keys=True, separators=(',',':'))
+
+class Employee(Jsonable):
+  def __init__(self, id, job_role):
+    self.id = id
+    self.jobRole = job_role
+
+  def promote(self):
+    if self.jobRole == "JNR_MECHANIC":
+      self.jobRole = "SNR_MECHANIC"
+    elif self.jobRole == "JNR_DRIVER":
+      self.jobRole = "SNR_DRIVER"
+
+class Vehicle(Jsonable):
+  def __init__(self, vin, mileage):
+    self.vin = vin
+    self.mileage = mileage
+
+  def step_miles(self, clock_direction):
+    self.mileage += (clock_direction * random.randint(0,30))
+    return self
+
+class Location(Jsonable):
+  def __init__(self, latitude, longitude, elevation):
+    self.longitude = longitude
+    self.latitude = latitude
+    self.elevation = elevation
+
+class Package(Jsonable):
+  def __init__(self, id):
+    self.id = id
+
+class Customer(Jsonable):
+  def __init__(self, id, is_vip):
+    self.id = id
+    self.isVip = is_vip
+
+class Event(object, Jsonable):
+  def __init__(self, event, timestamp):
+    self.event = event
+    self.timestamp = timestamp.isoformat() + "Z"
+
+class TruckArrivesEvent(Event):
+  def __init__(self, timestamp, vehicle, location):
+    self.vehicle = copy.copy(vehicle)
+    self.location = location
+    super(TruckArrivesEvent, self).__init__("TRUCK_ARRIVES", timestamp)
+
+class TruckDepartsEvent(Event):
+  def __init__(self, timestamp, vehicle, location):
+    self.vehicle = copy.copy(vehicle)
+    self.location = location
+    super(TruckDepartsEvent, self).__init__("TRUCK_DEPARTS", timestamp)
+
+class MechanicChangesOil(Event):
+  def __init__(self, timestamp, employee, vehicle):
+    self.employee = copy.copy(employee)
+    self.vehicle = copy.copy(vehicle)
+    super(MechanicChangesOil, self).__init__("MECHANIC_CHANGES_OIL", timestamp)
+
+class DriverDeliversPackage(Event):
+  def __init__(self, timestamp, employee, package, customer, location):
+    self.employee = copy.copy(employee)
+    self.package = package
+    self.customer = copy.copy(customer)
+    self.location = location
+    super(DriverDeliversPackage, self).__init__("DRIVER_DELIVERS_PACKAGE", timestamp)
+
+class DriverMissesCustomer(Event):
+  def __init__(self, timestamp, employee, package, customer, location):
+    self.employee = employee
+    self.package = package
+    self.customer = customer
+    self.location = location
+    super(DriverMissesCustomer, self).__init__("DRIVER_MISSES_CUSTOMER", timestamp)
+
+class Clock:
+  def __init__(self, timestamp):
+    self.timestamp = timestamp
+
+  def step(self, clock_direction):
+    self.timestamp += datetime.timedelta(0, 0, 0, 0, (clock_direction * random.randint(0,300)))
+    return self.timestamp
+
+MECHANICS = [
+  Employee("f2caa6a0-2ce8-49d6-b793-b987f13cfad9", "SNR_MECHANIC"),
+  Employee("f6381390-32be-44d5-9f9b-e05ba810c1b7", "JNR_MECHANIC")
+]
+
+DRIVERS = [
+  Employee("3b99f162-6a36-49a4-ba2a-375e8a170928", "SNR_DRIVER"),
+  Employee("54997a47-252d-499f-a54e-1522ac49fa48", "JNR_DRIVER"),
+  Employee("c4b843f2-0ef6-4666-8f8d-91ac2e366571", "JNR_DRIVER")
+]
+
+TRUCKS = [
+  Vehicle("1HGCM82633A004352", 32332),
+  Vehicle("JH4TB2H26CC000000", 7839),
+  Vehicle("19UYA31581L000000", 6754)
+]
+
+LOCATIONS = [
+  Location(51.5228340, -0.0818130, 7),
+  Location(51.5208046, -0.1592323, -25),
+  Location(51.4972997, -0.0955459, 102),
+  Location(51.4704679, -0.1176902, 15),
+  Location(51.4865047, -0.0639602, 4)
+]
+
+CUSTOMERS = [
+  Customer("b39a2b30-049b-436a-a45d-46d290df65d3", True),
+  Customer("4594f1a1-a7a2-4718-bfca-6e51e73cc3e7", False),
+  Customer("b1e5d874-963b-4992-a232-4679438261ab", False)
+]
+
+PACKAGES = [
+  Package("c09e4ee4-52a7-4cdb-bfbf-6025b60a9144"),
+  Package("ec99793d-94e7-455f-8787-1f8ebd76ef61"),
+  Package("14a714cf-5a89-417e-9c00-f2dba0d1844d"),
+  Package("834bc3e0-595f-4a6f-a827-5580f3d346f7"),
+  Package("79fee326-aaeb-4cc6-aa4f-f2f98f443271")
+]
+
+clock = Clock(datetime.datetime(2015, 1, 1))
+
+def write_event(conn, stream_name, clock_direction):
+  global clock
+
+  mechanic = random.choice(MECHANICS)
+  driver = random.choice(DRIVERS)
+  truck = random.choice(TRUCKS).step_miles(clock_direction)
+  location = random.choice(LOCATIONS)
+  customer = random.choice(CUSTOMERS)
+  package = random.choice(PACKAGES)
+  timestamp = clock.step(clock_direction)
+
+  event = random.choice([
+    TruckDepartsEvent(timestamp, truck, location),
+    TruckArrivesEvent(timestamp, truck, location),
+    MechanicChangesOil(timestamp, mechanic, truck),
+    DriverMissesCustomer(timestamp, driver, package, customer, location),
+    DriverDeliversPackage(timestamp, driver, package, customer, location)
+    ])
+
+  conn.put_record(stream_name, event.to_json(), str(random.random()))
+  return (event.__class__.__name__, timestamp)
+
+if __name__ == '__main__':
+  conn = kinesis.connect_to_region(region_name="us-east-1",
+    profile_name="ulp")
+
+  if len(sys.argv) >= 2 and sys.argv[1] == "backwards":
+    step_direction = -1
+  else:
+    step_direction = 1
+
+  while True:
+    event, ts = write_event(conn, "oops-events", step_direction)
+    print "Wrote {} with timestamp {}".format(event, ts)
+    time.sleep(1)
+--------------------------------------------------------------------------------------------------------
+package aowlambda
+
+import java.util.UUID, org.joda.time.DateTime
+import org.json4s._, org.json4s.jackson.JsonMethods._
+
+case class EventSniffer(event: String)                              // a
+case class Employee(id: UUID, jobRole: String)
+case class Vehicle(vin: String, mileage: Int)
+case class Location(latitude: Double, longitude: Double, elevation: Int)
+case class Package(id: UUID)
+case class Customer(id: UUID, isVip: Boolean)
+
+sealed trait Event                                                  // b
+case class TruckArrives(timestamp: DateTime, vehicle: Vehicle, 
+  location: Location) extends Event
+case class TruckDeparts(timestamp: DateTime, vehicle: Vehicle, 
+  location: Location) extends Event
+case class MechanicChangesOil(timestamp: DateTime, employee: Employee, 
+  vehicle: Vehicle) extends Event
+case class DriverDeliversPackage(timestamp: DateTime, employee: Employee,   
+  `package`: Package, customer: Customer, location: Location) extends Event
+case class DriverMissesCustomer(timestamp: DateTime, employee: Employee,   
+  `package`: Package, customer: Customer, location: Location) extends Event
+
+object Event {
+
+  def fromBytes(byteArray: Array[Byte]): Event = {
+    implicit val formats = DefaultFormats ++ ext.JodaTimeSerializers.all ++
+      ext.JavaTypesSerializers.all
+    val raw = parse(new String(byteArray, "UTF-8"))
+    raw.extract[EventSniffer].event match {                        // c
+      case "TRUCK_ARRIVES" => raw.extract[TruckArrives]
+      case "TRUCK_DEPARTS" => raw.extract[TruckDeparts]
+      case "MECHANIC_CHANGES_OIL" => raw.extract[MechanicChangesOil]
+      case "DRIVER_DELIVERS_PACKAGE" => raw.extract[DriverDeliversPackage]
+      case "DRIVER_MISSES_CUSTOMER" => raw.extract[DriverMissesCustomer]
+      case e => throw new RuntimeException("Didn't expect " + e)   // d
+    }
+  }
+}
+
+
+package aowlambda
+
+import com.amazonaws.services.lambda.runtime.events.KinesisEvent
+import scala.collection.JavaConverters._
+
+class LambdaFunction {
+
+  def recordHandler(microBatch: KinesisEvent) {
+
+    val allRows = for {                                            // a
+      recs <- microBatch.getRecords.asScala.toList
+      bytes = recs.getKinesis.getData.array 
+      event = Event.fromBytes(bytes)
+      row = Aggregator.map(event)
+    } yield row
+
+    val reducedRows = Aggregator.reduce(allRows)                   // b
+
+    for (row <- reducedRows) {                                     // c
+      Writer.conditionalWrite(row)
+    }
+  }
+}
+
+
+package aowlambda
+
+import awscala._, dynamodbv2.{AttributeValue => AttrVal, _}
+import com.amazonaws.services.dynamodbv2.model._
+import scala.collection.JavaConverters._
+
+object Writer {
+  private val ddb = DynamoDB.at(Region.US_EAST_1)
+
+  private def updateIf(key: AttributeValue, updExpr: String,
+    condExpr: String, values: Map[String, AttributeValue],
+    names: Map[String, String]) {                                  // a
+
+    val updateRequest = new UpdateItemRequest()
+      .withTableName("oops-trucks")
+      .addKeyEntry("vin", key)
+      .withUpdateExpression(updExpr)
+      .withConditionExpression(condExpr)
+      .withExpressionAttributeValues(values.asJava)
+      .withExpressionAttributeNames(names.asJava)
+
+    try {
+      ddb.updateItem(updateRequest)
+    } catch { case ccfe: ConditionalCheckFailedException => }      // b
+  }
+
+  def conditionalWrite(row: Row) {
+    val vin = AttrVal.toJavaValue(row.vin)
+
+    updateIf(vin, "SET #m = :m",
+      "attribute_not_exists(#m) OR #m < :m",
+      Map(":m" -> AttrVal.toJavaValue(row.mileage)),
+      Map("#m" -> "mileage"))                                      // c
+
+    for (maoc <- row.mileageAtOilChange) {                         // d
+      updateIf(vin, "SET #maoc = :maoc",
+        "attribute_not_exists(#maoc) OR #maoc < :maoc",
+        Map(":maoc" -> AttrVal.toJavaValue(maoc)),
+        Map("#maoc" -> "mileage-at-oil-change"))
+    }
+
+    for ((loc, ts) <- row.locationTs) {                            // e
+      updateIf(vin, "SET #ts = :ts, #lat = :lat, #long = :long",
+        "attribute_not_exists(#ts) OR #ts < :ts",
+        Map(":ts"   -> AttrVal.toJavaValue(ts.toString),
+            ":lat"  -> AttrVal.toJavaValue(loc.latitude),
+            ":long" -> AttrVal.toJavaValue(loc.longitude)),
+        Map("#ts"   -> "location-timestamp", "#lat" -> "latitude",
+            "#long" -> "longitude"))
+    }
+  }
+}
+
+
+package aowlambda
+
+import org.joda.time.DateTime, aowlambda.{TruckArrives => TA},
+  aowlambda.{TruckDeparts => TD}, aowlambda.{MechanicChangesOil => MCO}
+
+case class Row(vin: String, mileage: Int, mileageAtOilChange: Option[Int],
+  locationTs: Option[(Location, DateTime)])                        // a
+
+object Aggregator {
+
+  def map(event: Event): Option[Row] = event match {               // b
+    case TA(ts, v, loc) => Some(Row(v.vin, v.mileage, None, Some(loc, ts)))
+    case TD(ts, v, loc) => Some(Row(v.vin, v.mileage, None, Some(loc, ts)))
+    case MCO(ts, _, v)  => Some(Row(v.vin, v.mileage,Some(v.mileage),None))
+    case _              => None
+  }
+
+  def reduce(events: List[Option[Row]]): List[Row] =               // c
+    events
+      .collect { case Some(r) => r }
+      .groupBy(_.vin)
+      .values
+      .toList
+      .map(_.reduceLeft(merge))
+
+  private val merge: (Row, Row) => Row = (a, b) => {               // d
+
+    val m = math.max(a.mileage, b.mileage)
+    val maoc = (a.mileageAtOilChange, b.mileageAtOilChange) match {
+      case (l @ Some(_), None) => l
+      case (l @ Some(lMaoc), Some(rMaoc)) if lMaoc > rMaoc => l
+      case (_, r) => r
+    }
+    val locTs = (a.locationTs, b.locationTs) match {
+      case (l @ Some(_), None) => l
+      case (l @ Some((_, lTs)), Some((_, rTs))) if lTs.isAfter(rTs) => l
+      case (_, r) => r
+    }
+    Row(a.vin, m, maoc, locTs)
+  }
+}
+--------------------------------------------------------------------------------------------------------
+CREATE VIEW widened AS
+  SELECT
+    ev."event"              AS "event",
+    ev."timestamp"          AS "timestamp",
+    ev."customer.id"        AS "customer.id",
+    ev."customer.is_vip"    AS "customer.is_vip",
+    c."name"                AS "customer.name",
+    c."zip_code"            AS "customer.zip_code",
+    ev."employee.id"        AS "employee.id",
+    ev."employee.job_role"  AS "employee.job_role",
+    e."name"                AS "employee.name",
+    e."dob"                 AS "employee.dob",
+    ev."location.latitude"  AS "location.latitude",
+    ev."location.longitude" AS "location.longitude",
+    ev."location.elevation" AS "location.elevation",
+    ev."package.id"         AS "package.id",
+    p."weight"              AS "package.weight",
+    ev."vehicle.vin"        AS "vehicle.vin",
+    ev."vehicle.mileage"    AS "vehicle.mileage",
+    v."make"                AS "vehicle.make",
+    v."model"               AS "vehicle.model",
+    v."year"                AS "vehicle.year"
+  FROM events ev
+    LEFT JOIN vehicles v  ON ev."vehicle.vin" = v.vin
+    LEFT JOIN employees e ON ev."employee.id" = e.id
+    LEFT JOIN packages p  ON ev."package.id"  = p.id
+    LEFT JOIN customers c ON ev."customer.id" = c.id;
+--------------------------------------------------------------------------------------------------------
+  public static Boolean isAbandoned(Instant timestamp) {      // c
+    Instant cutoff = Instant.now()
+      .minusSeconds(ABANDONED_AFTER_SECS);
+    return timestamp.isBefore(cutoff);
+  }
+--------------------------------------------------------------------------------------------------------
+apply plugin: 'java'
+apply plugin: 'application'
+
+sourceCompatibility = '1.8'                           // a
+
+mainClassName = 'nile.StreamApp'
+
+repositories {
+  mavenCentral()
+}
+
+version = '0.2.0'
+
+dependencies {                                        // b
+  compile 'org.apache.kafka:kafka-clients:0.9.0.0'
+  compile 'com.maxmind.geoip:geoip-api:1.2.14'
+  compile 'com.fasterxml.jackson.core:jackson-databind:2.6.3'
+  compile 'org.slf4j:slf4j-api:1.7.5'
+}
+
+jar {                                                 // c
+  manifest {
+    attributes 'Main-Class': mainClassName
+  }
+
+  from {
+    configurations.compile.collect {
+      it.isDirectory() ? it : zipTree(it)
+    }
+  } {
+    exclude "META-INF/*.SF"
+    exclude "META-INF/*.DSA"
+    exclude "META-INF/*.RSA"
+  }
+}
+--------------------------------------------------------------------------------------------------------
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga'); #a
+
+  ga('create', 'UA-34290195-2', 'test.com'); #b
+  ga('send', 'pageview'); #c
+  ga('send', 'event', 'video', 'play', 'doge-video-01');
+
+</script>
+--------------------------------------------------------------------------------------------------------
+Vagrant.configure("2") do |config|
+
+  config.vm.box = "ubuntu/trusty64"
+  config.vm.hostname = "ulp"
+  config.ssh.forward_agent = true
+
+  # Forward guest ports for YARN
+  config.vm.network "forwarded_port", guest: 8088, host: 8088
+  config.vm.network "forwarded_port", guest: 8042, host: 8042
+
+  config.vm.provider :virtualbox do |vb|
+    vb.name = Dir.pwd().split("/")[-1] + "-" + Time.now.to_f.to_i.to_s
+    vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+    vb.customize [ "guestproperty", "set", :id, "--timesync-threshold", 10000 ]
+    # Scala is memory-hungry
+    vb.memory = 3200
+  end
+
+  config.vm.provision :shell do |sh|
+    sh.path = "vagrant/up.bash"
+  end
+
+end
+--------------------------------------------------------------------------------------------------------
 @Async
 public Future<?> consumeSegmentEvents() {
     final ParameterizedTypeReference<ServerSentEvent<String>> type = new ParameterizedTypeReference<>() {
@@ -781,6 +1982,22 @@ public Future<?> consumeSegmentEvents() {
     return new AsyncResult<Flux<?>>(eventStream);
     //eventStream.subscribe(content -> log.info("Current time: {} - Received SSE: name[{}], id [{}], content[{}] ", LocalTime.now(), content.event(), content.id(), content.data()), error -> log.error("Error receiving SSE: {}", error), () -> log.info("Completed!!!"));
 }
+--------------------------------------------------------------------------------------------------------
+    @Override
+    public PageWrapper<E> getAll(int page, int size) {
+        final ParameterizedTypeReference<List<E>> responseType = new ParameterizedTypeReference<>() {};
+        final UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(QUICK_POLL_URI_2).queryParam("page", page).queryParam("size", size);
+        final ResponseEntity responseEntity = restTemplate.exchange(builder.build().toUri(), HttpMethod.GET, null, responseType);
+        final PageWrapper<E> allPolls = responseEntity.getBody();
+        return allPolls;
+    }
+
+    @Override
+    public List<E> getAll() {
+        final ParameterizedTypeReference<List<E>> responseType = new ParameterizedTypeReference<>() {};
+        final ResponseEntity<List<E>> responseEntity = restTemplate.exchange(QUICK_POLL_URI_V1, HttpMethod.GET, null, responseType);
+        return responseEntity.getBody();
+    }
 --------------------------------------------------------------------------------------------------------
 Map<String, Integer> map = Stream.of(new Object[][] { 
     { "data1", 1 }, 
