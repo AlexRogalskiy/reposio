@@ -6069,6 +6069,225 @@ token = token.replace(/\+/g, '-').replace(/\//g, '_').replace(/\=/g, '');
 // return secure token
 console.log('http://demo-1.kxcdn.com' + path + '?token=' + token + '&expire=' + expire);
 --------------------------------------------------------------------------------------------------------
+spring.cloud.stream.kafka.binder.headers=bar
+spring.cloud.stream.bindings.output.destination=foobar
+spring.cloud.stream.bindings.input.destination=foobar
+spring.cloud.stream.bindings.input.group=foo
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.messaging.Processor;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.integration.support.MessageBuilder;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHandler;
+import org.springframework.messaging.MessagingException;
+
+@SpringBootApplication
+@EnableBinding(Processor.class)
+public class So38961697Application {
+
+    public static void main(String[] args) throws Exception {
+        ConfigurableApplicationContext context = SpringApplication.run(So38961697Application.class, args);
+        Foo foo = context.getBean(Foo.class);
+        foo.start();
+        foo.send();
+        Thread.sleep(30000);
+        context.close();
+    }
+
+    @Bean
+    public Foo foo() {
+        return new Foo();
+    }
+
+    private static class Foo {
+
+        @Autowired
+        Processor processor;
+
+        public void send() {
+            Message<?> m = MessageBuilder.withPayload("foo")
+                    .setHeader("bar", "baz")
+                    .build();
+            processor.output().send(m);
+        }
+
+        public void start() {
+            this.processor.input().subscribe(new MessageHandler() {
+
+                @Override
+                public void handleMessage(Message<?> m) throws MessagingException {
+                    System.out.println(m);
+                }
+
+            });
+        }
+
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+buildscript {
+
+    ext {
+        springBootVersion = '1.3.0.RELEASE'
+    }
+
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+        mavenLocal()
+        mavenCentral()
+}
+
+    dependencies {
+        classpath ("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}") 
+        classpath ("io.spring.gradle:dependency-management-plugin:0.5.2.RELEASE")
+        classpath ("mysql:mysql-connector-java:5.1.34")
+        classpath ("org.sonarqube.gradle:gradle-sonarqube-plugin:1.1")
+    }
+}
+
+repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+            url "https://repo.spring.io/snapshot"
+            url "https://repo.spring.io/milestone"
+        }
+        mavenLocal()
+        mavenCentral()
+}
+
+
+apply plugin: 'java'
+apply plugin: 'eclipse-wtp'
+apply plugin: 'idea'
+apply plugin: 'spring-boot' 
+apply plugin: 'io.spring.dependency-management' 
+apply plugin: 'org.sonarqube'
+apply plugin: "jacoco"
+apply plugin: "sonar-runner"
+
+
+group    = 'com.api'
+
+def build_version=project.properties['build_version'] ?: "SNAPSHOT"
+version  = "${build_version}"
+
+ext.packaging = 'jar'
+
+jar {
+   baseName = "userassociations-v1"
+}
+
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+sourceSets {
+    generated {
+        java {
+            srcDirs = ['src/main/generated']
+        }
+    }
+}
+
+
+configurations {
+    providedRuntime
+     querydslapt
+}
+
+jacoco {
+
+    reportsDir = file("build/tmp/jacoco.exec")
+}
+
+test{
+    ignoreFailures = true    
+}
+
+sonarqube {
+  properties {
+    property "sonar.projectName", "User-associations-V1"
+    property "sonar.projectKey", "org.sonarqube:User-associations-V1"
+    property "sonar.sourceEncoding", "UTF-8"
+    property "sonar.host.url", "${sonar_host}"
+    property "sonar.login", "${sonar_username}"
+    property "sonar.password", "${sonar_password}"
+    property "sonar.jacoco.reportPath", "build/jacoco/test.exec"
+    property "sonar.java.source property", "1.8"
+
+  }
+}
+
+dependencyManagement {
+    imports { 
+        mavenBom "org.springframework.cloud:spring-cloud-starter-parent:Brixton.RC1" 
+    }
+}
+
+dependencies {
+    compile         ("org.springframework.boot:spring-boot-starter-actuator")
+    compile         ("org.springframework.cloud:spring-cloud-starter-eureka")
+    compile         ("org.springframework.cloud:spring-cloud-config-client")
+    compile("org.springframework.cloud:spring-cloud-starter-hystrix:1.0.6.RELEASE")
+    compile("org.springframework.cloud:spring-cloud-starter-bus-amqp:1.0.6.RELEASE")
+    compile("org.springframework.cloud:spring-cloud-netflix-hystrix-amqp:1.0.6.RELEASE")
+    compile         ("org.codehaus.sonar-plugins.java:sonar-jacoco-plugin:2.3")
+    compile         ("org.springframework.boot:spring-boot-starter-web")
+    compile         ("org.codehaus.jackson:jackson-mapper-asl:1.9.2")
+    compile         ("mysql:mysql-connector-java:5.1.34")
+    compile         ("org.springframework:spring-webmvc:4.2.2.RELEASE")
+    compile         ("org.springframework.boot:spring-boot-starter-data-jpa")
+    providedRuntime ("org.springframework.boot:spring-boot-starter-tomcat")
+    testCompile     ("org.springframework.boot:spring-boot-starter-test") 
+    querydslapt     ("org.hibernate:hibernate-jpamodelgen:5.0.5.Final")
+    compile 'org.springframework.cloud:spring-cloud-starter-sleuth:1.0.0.M1'
+    compile 'org.springframework.cloud:spring-cloud-sleuth-core:1.0.0.M1' 
+}
+
+
+eclipse {
+    classpath {
+         containers.remove('org.eclipse.jdt.launching.JRE_CONTAINER')
+         containers ('org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8')
+    }
+}
+
+task generateQueryDSL(type: JavaCompile, group: 'build', description: 'Generates the QueryDSL query types') {
+    source = sourceSets.main.java
+    classpath = configurations.compile + configurations.querydslapt
+    options.compilerArgs = [
+            "-proc:only"
+    ]
+    destinationDir = sourceSets.generated.java.srcDirs.iterator().next()
+}
+
+compileJava {
+    dependsOn generateQueryDSL
+    source generateQueryDSL.destinationDir
+}
+
+compileGeneratedJava {
+    dependsOn generateQueryDSL
+    options.warnings = false
+    classpath += sourceSets.main.runtimeClasspath
+}
+
+clean {
+    delete sourceSets.generated.java.srcDirs
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.9'
+}
+--------------------------------------------------------------------------------------------------------
 require 'digest/md5'
 require 'base64'
 
@@ -8165,6 +8384,133 @@ databaseChangeLog:
     - createSequence:
         sequenceName: hibernate_sequence
 --------------------------------------------------------------------------------------------------------
+Size.customer.firstName=First Name must be longer than {min} characters
+Size.customer.lastName=Last Name must be longer than {min} characters
+Size.customer.description=Description must be longer than {min} characters
+Size.customer.branch=Branch must be longer than {min} characters
+
+Min.customer.age=Age must be greater than {value}
+Max.customer.age=Age must be less than {value}
+
+BranchCode.customer.branch=Branch must start with {value}
+--------------------------------------------------------------------------------------------------------
+import com.luv2code.springdemo.models.Customer;
+import org.springframework.beans.propertyeditors.StringTrimmerEditor;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import javax.validation.Valid;
+
+@Controller
+@RequestMapping("/customer")
+public class CustomerController {
+
+    @RequestMapping("/")
+    public String index() {
+        return "customer/list/index";
+    }
+
+    @RequestMapping("/add")
+    public String add(
+        Model model
+    ) {
+        model.addAttribute("customer", new Customer());
+        return "customer/add/index";
+    }
+
+    // TODO: Using POST as I dislike gets for this, even if they are easier...
+    @PostMapping("/add/process")
+    public String addProcess(
+        @Valid @ModelAttribute("customer") Customer customer,
+        BindingResult bindingResult,
+        final RedirectAttributes redirectAttributes
+    ) {
+        // TODO: DEBUG
+        System.out.println(bindingResult);
+        if (bindingResult.hasErrors()) {
+            return "customer/add/index";
+        }
+        // TODO: TEMP as this example does not include persistence
+        redirectAttributes.addAttribute("firstName", customer.getFirstName());
+        redirectAttributes.addAttribute("lastName", customer.getLastName());
+        redirectAttributes.addAttribute("description", customer.getDescription());
+        redirectAttributes.addAttribute("age", customer.getAge());
+        redirectAttributes.addAttribute("zipCode", customer.getZipCode());
+        redirectAttributes.addAttribute("branch", customer.getBranch());
+        return "redirect:/customer/add/success";
+    }
+
+    @RequestMapping("/add/success")
+    public String success(
+        @RequestParam(value = "firstName") String firstName,
+        @RequestParam(value = "lastName") String lastName,
+        @RequestParam(value = "description") String description,
+        @RequestParam(value = "age") String age,
+        @RequestParam(value = "zipCode") String zipCode,
+        @RequestParam(value = "branch") String branch,
+        Model model
+    ) {
+        model.addAttribute("customer", new Customer(
+            firstName,
+            lastName,
+            description,
+            Integer.parseInt(age),
+            zipCode,
+            branch
+        ));
+        return "customer/add/success";
+    }
+
+    /**
+     * Add an initBinder to handle strings that are empty
+     *
+     * @param dataBinder
+     */
+    @InitBinder
+    public void initBinder(WebDataBinder dataBinder) {
+        dataBinder.registerCustomEditor(String.class, new StringTrimmerEditor(true));
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+
+import javax.validation.Valid;
+
+/**
+ * Created by Javier on 23/12/2015.
+ */
+
+@Controller
+public class PersonController {
+
+    @RequestMapping(value = "/form", method = RequestMethod.GET)
+    public String showForm(Person person){
+        return "form";
+    }
+
+    @RequestMapping(value = "/form", method = RequestMethod.POST)
+    public String checkPersonInfo(@Valid Person person, BindingResult bindingResult, Model model){
+        if(bindingResult.hasErrors()){
+            return "form";
+        }
+
+        return "redirect:/results";
+    }
+
+    @RequestMapping("/results")
+    public String result(){
+        return "results";
+    }
+}
+--------------------------------------------------------------------------------------------------------
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
 @ContextConfiguration(classes = MyWebConfig.class)
@@ -9904,6 +10250,67 @@ public class OAuth2CookieHelperTest {
         Assert.assertNull(name);
     }
 }
+
+
+@Test
+    public void test_send_ProductsBatchRequest_Operation() throws Exception {
+        final ProductsBatchController productsBatchController = mock(ProductsBatchController.class);
+        final String expectedBatchDescriptorAsJson =
+                "{\n" +
+                        "  \"reportId\": \"123\",\n" +
+                        "  \"locale\": \"de_DE\",\n" +
+                        "  \"kind\": \"PRODUCTS_BATCH\",\n" +
+                        "  \"mode\": \"DRY_RUN\"\n" +
+                        "}";
+
+        final List<Request> addRequestList = this.buildAddRequest(5);
+        final List<Request> deleteRequestList = this.buildDeleteRequest(0);
+        final List<Request> updateRequestList = this.buildUpdateRequest(4);
+        final List<Request> allRequests = buildRequest(addRequestList, deleteRequestList, updateRequestList);
+
+        final BatchRequestExt request = new BatchRequestExt(
+                DEFAULT_LOCALE,
+                BatchKind.PRODUCTS_BATCH,
+                BatchMode.DRY_RUN,
+                allRequests,
+                DEFAULT_REPORT_ID);
+
+        final BatchDescriptor expected = this.getBatchDescriptor(expectedBatchDescriptorAsJson);
+        final URI uri = this.buildURI("https://localhost:8093", "/google-shopping/products/batches");
+        final RequestEntity<BatchRequestExt> requestEntity = new RequestEntity<>(request, HttpMethod.POST, uri);
+
+        final MultiValueMap<String, String> headers = new LinkedMultiValueMap<>();
+        headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
+
+        when(productsBatchController.start(any(BatchRequestExt.class))).thenReturn(expected);
+        when(this.restTemplate.exchange(requestEntity, BatchDescriptor.class)).thenReturn(new ResponseEntity(expected, headers, HttpStatus.OK));
+
+        final ResponseEntity<BatchDescriptor> response = this.restTemplate.exchange(requestEntity, BatchDescriptor.class);
+        assertThat(response, is(not(nullValue())));
+
+        final BatchDescriptor descriptor = response.getBody();
+        assertThat(descriptor, is(not(nullValue())));
+        assertThat(descriptor.getLocale(), IsEqual.equalTo(DEFAULT_LOCALE));
+        assertThat(descriptor.getKind(), IsEqual.equalTo(BatchKind.PRODUCTS_BATCH));
+        assertThat(descriptor.getMode(), IsEqual.equalTo(BatchMode.DRY_RUN));
+        assertThat(descriptor.getReportId(), IsEqual.equalTo(DEFAULT_REPORT_ID));
+        assertThat(descriptor.getStart(), is(nullValue()));
+        assertThat(descriptor.getFinish(), is(nullValue()));
+
+        final HttpHeaders responseHeaders = response.getHeaders();
+        assertThat(responseHeaders, is(not(nullValue())));
+        assertThat(responseHeaders.getContentType(), IsEqual.equalTo(MediaType.APPLICATION_JSON_UTF8));
+
+        verify(productsBatchController).start(ArgumentMatchers.eq(request));
+        verify(productsBatchController, only()).start(request);
+        verify(productsBatchController).start(this.batchRequestExtArgumentCaptor.capture());
+
+        final BatchRequestExt capturedArgument = this.batchRequestExtArgumentCaptor.getValue();
+        assertThat(capturedArgument, is(not(nullValue())));
+        assertThat(capturedArgument, IsEqual.equalTo(requestEntity));
+
+        verifyNoMoreInteractions(productsBatchController);
+    }
 
  
  
