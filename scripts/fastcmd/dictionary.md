@@ -1867,6 +1867,340 @@ object Aggregator {
 javac --release 8 com/baeldung/MajorMinorApp.java
 javac -bootclasspath "C:\Apps\Java\jdk1.8.0_31\jre\lib\rt.jar" -source 1.8 -target 1.8 com/baeldung/MajorMinorApp.java
 --------------------------------------------------------------------------------------------------------
+java -Xmx32m -version
+echo "MAVEN_OPTS='-Xmx2048m -XX:MaxPermSize=512m'" > ~/.mavenrc
+sudo add-apt-repository -y ppa:linuxuprising/java
+pip install --user codecov
+
+--------------------------------------------------------------------------------------------------------
+public class MainScreenProperties {
+  @Min(1)
+  private int refreshRate;
+  @Min(50)
+  @Max(1000)
+  private int width;
+  @Min(50)
+  @Max(600)
+  private int height;
+    .............
+}
+
+    @Pattern(regexp = "\\d{3}-\\d{3}-\\d{4}")
+    private String value;
+    @Pattern(regexp = "(?i)cell|house|work")
+    private String type;
+--------------------------------------------------------------------------------------------------------
+var bound = binder.bind("person.date-of-birth",
+	Bindable.of(LocalDate.class));
+
+// Return LocalDate or throws if not bound
+bound.get();
+
+// Return a formatted date or "No DOB"
+bound.map(dateFormatter::format).orElse("No DOB");
+
+// Return LocalDate or throws a custom exception
+bound.orElseThrow(NoDateOfBirthException::new);
+--------------------------------------------------------------------------------------------------------
+@Component
+@PropertySource("classpath:global.properties")
+@ConfigurationProperties
+public class GlobalProperties {
+
+    private int threadPool;
+    private String email;
+
+    //getters and setters
+
+}
+--------------------------------------------------------------------------------------------------------
+logging:
+  level:
+    org.springframework.web: ERROR
+    com.mkyong: DEBUG
+email: test@mkyong.com
+thread-pool: 10
+app:
+  menus:
+    - title: Home
+      name: Home
+      path: /
+    - title: Login
+      name: Login
+      path: /login
+  compiler:
+    timeout: 5
+    output-folder: /temp/
+  error: /error/
+--------------------------------------------------------------------------------------------------------
+my.secret=${random.value}
+my.number=${random.int}
+my.bignumber=${random.long}
+my.uuid=${random.uuid}
+my.number.less.than.ten=${random.int(10)}
+my.number.in.range=${random.int[1024,65536]}
+--------------------------------------------------------------------------------------------------------
+If you do not want command line properties to be added to the Environment, you can disable them by using SpringApplication.setAddCommandLineProperties(false).
+
+app.name=MyApp
+app.description=${app.name} is a Spring Boot application
+
+environments:
+	dev:
+		url: https://dev.example.com
+		name: Developer Setup
+	prod:
+		url: https://another.example.com
+		name: My Cool App
+		
+server:
+	address: 192.168.1.100
+---
+spring:
+	profiles: development
+server:
+	address: 127.0.0.1
+---
+spring:
+	profiles: production & eu-central
+server:
+	address: 192.168.1.120
+	
+acme:
+  map:
+    "[/key1]": value1
+    "[/key2]": value2
+    /key3: value3
+	
+acme:
+  list:
+    - name: my name
+      description: my description
+    - name: another name
+      description: another description
+---
+spring:
+  profiles: dev
+acme:
+  list:
+    - name: my another name
+	
+acme:
+  map:
+    key1:
+      name: my name 1
+      description: my description 1
+---
+spring:
+  profiles: dev
+acme:
+  map:
+    key1:
+      name: dev name 1
+    key2:
+      name: dev name 2
+      description: dev description 2
+--------------------------------------------------------------------------------------------------------
+@ConfigurationProperties("app.system")
+public class AppSystemProperties {
+
+	@DurationUnit(ChronoUnit.SECONDS)
+	private Duration sessionTimeout = Duration.ofSeconds(30);
+
+	private Duration readTimeout = Duration.ofMillis(1000);
+
+	public Duration getSessionTimeout() {
+		return this.sessionTimeout;
+	}
+
+	public void setSessionTimeout(Duration sessionTimeout) {
+		this.sessionTimeout = sessionTimeout;
+	}
+
+	public Duration getReadTimeout() {
+		return this.readTimeout;
+	}
+
+	public void setReadTimeout(Duration readTimeout) {
+		this.readTimeout = readTimeout;
+	}
+}
+
+@ConfigurationProperties("app.io")
+public class AppIoProperties {
+
+	@DataSizeUnit(DataUnit.MEGABYTES)
+	private DataSize bufferSize = DataSize.ofMegabytes(2);
+
+	private DataSize sizeThreshold = DataSize.ofBytes(512);
+
+	public DataSize getBufferSize() {
+		return this.bufferSize;
+	}
+
+	public void setBufferSize(DataSize bufferSize) {
+		this.bufferSize = bufferSize;
+	}
+
+	public DataSize getSizeThreshold() {
+		return this.sizeThreshold;
+	}
+
+	public void setSizeThreshold(DataSize sizeThreshold) {
+		this.sizeThreshold = sizeThreshold;
+	}
+}
+--------------------------------------------------------------------------------------------------------
+@RunWith(SpringRunner.class) 
+@WebMvcTest
+@AutoConfigureMockMvc
+public class UserControllerIntegrationTest {
+ 
+    @MockBean
+    private UserRepository userRepository;
+     
+    @Autowired
+    UserController userController;
+ 
+    @Autowired
+    private MockMvc mockMvc;
+ 
+    //...
+     
+}
+
+@Test
+public void whenPostRequestToUsersAndValidUser_thenCorrectResponse() throws Exception {
+    MediaType textPlainUtf8 = new MediaType(MediaType.TEXT_PLAIN, Charset.forName("UTF-8"));
+    String user = "{\"name\": \"bob\", \"email\" : \"bob@domain.com\"}";
+    mockMvc.perform(MockMvcRequestBuilders.post("/users")
+      .content(user)
+      .contentType(MediaType.APPLICATION_JSON_UTF8))
+      .andExpect(MockMvcResultMatchers.status().isOk())
+      .andExpect(MockMvcResultMatchers.content()
+        .contentType(textPlainUtf8));
+}
+ 
+@Test
+public void whenPostRequestToUsersAndInValidUser_thenCorrectResponse() throws Exception {
+    String user = "{\"name\": \"\", \"email\" : \"bob@domain.com\"}";
+    mockMvc.perform(MockMvcRequestBuilders.post("/users")
+      .content(user)
+      .contentType(MediaType.APPLICATION_JSON_UTF8))
+      .andExpect(MockMvcResultMatchers.status().isBadRequest())
+      .andExpect(MockMvcResultMatchers.jsonPath("$.name", Is.is("Name is mandatory")))
+      .andExpect(MockMvcResultMatchers.content()
+        .contentType(MediaType.APPLICATION_JSON_UTF8));
+    }
+}
+--------------------------------------------------------------------------------------------------------
+    @RestController
+    @RequestMapping("users")
+    public class UserController {
+        @Autowired
+        UserService userService;
+     
+        @PostMapping
+        public UserRest createUser(@RequestBody UserDetailsRequestModel requestUserDetails) {
+            UserRest returnValue = new UserRest();
+    // THROW EXCEPTION NOW JUST FOR DEMONSTRATION PURPOSES
+                    
+            if(true) throw new MissingRequiredFieldException("One of the required fields is missing");
+    /////
+            UserDto userDto = new UserDto();
+            BeanUtils.copyProperties(requestUserDetails, userDto);
+            UserDto createdUser = userService.createUser(userDto);
+            BeanUtils.copyProperties(createdUser, returnValue);
+            returnValue.setHref("/users/" + createdUser.getUserId());
+            return returnValue;
+        }
+        @ResponseStatus(HttpStatus.BAD_REQUEST)
+        @ExceptionHandler(MissingRequiredFieldException.class)
+        public ErrorMessage handleBadRequest(HttpServletRequest req, Exception ex) {
+           return new ErrorMessage(new Date(), ex.getMessage(), req.getRequestURI());
+        }
+    }
+--------------------------------------------------------------------------------------------------------
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import javax.validation.Valid;
+
+@Controller
+@RequestMapping
+final class FormController {
+
+    @GetMapping
+    public String displayForm(Model model) {
+        model.addAttribute("form", new Form());
+        return "form";
+    }
+
+    @PostMapping
+    public String processForm(@Valid Form form, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
+        if (bindingResult.hasErrors()) {
+            return "form";
+        }
+        redirectAttributes.addFlashAttribute("form", form);
+        return "redirect:/success";
+    }
+
+    @GetMapping("/success")
+    public String successPage(Model model, @ModelAttribute("form") Form form) {
+        model.addAttribute("form", form);
+        return "success";
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@Controller
+public class CustomerController {
+
+    @GetMapping("/customer")
+    public String getCustomer(final Model model) {
+        model.addAttribute("customer", new Customer());
+        return "customer";
+    }
+
+    @PostMapping("/customer")
+    public String createCustomer(@Valid Customer customer, BindingResult bindingResult,Model model){
+
+        if(bindingResult.hasErrors()){
+            return "customer";
+        }
+        model.addAttribute("msg", "Customer added");
+        model.addAttribute("customer", customer);
+        return "customer";
+    }
+}
+--------------------------------------------------------------------------------------------------------
+interface Condition {
+    companion object {
+        const val PREFIX = "touchstone.condition"
+    }
+
+    enum class Phase {
+        PRE, POST
+    }
+
+    fun run(chunkContext: ChunkContext): ExitStatus
+
+    fun phase(): Phase = Phase.PRE
+
+    fun order(): Int = 1
+
+    fun shouldRun(): Boolean = true
+
+    val qualifiedName: String
+        get() = listOf(PREFIX, phase().name, javaClass.simpleName)
+                .joinToString(separator = ".") { it.toLowerCase(Locale.ENGLISH) }
+}
+--------------------------------------------------------------------------------------------------------
 CREATE VIEW widened AS
   SELECT
     ev."event"              AS "event",
