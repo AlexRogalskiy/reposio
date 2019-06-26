@@ -6357,6 +6357,192 @@ private static int random_5_output_2() {
 
     }
 --------------------------------------------------------------------------------------------------------
+   @Bean
+        @ConditionalOnMissingBean(name = "redisTemplate")
+        public RedisTemplate<Object, Object> redisTemplate(
+                RedisConnectionFactory redisConnectionFactory)
+                        throws UnknownHostException {
+            RedisTemplate<Object, Object> template = new RedisTemplate<Object, Object>();
+            template.setConnectionFactory(redisConnectionFactory);
+            return template;
+        }
+--------------------------------------------------------------------------------------------------------
+spring.main.allow-bean-definition-overriding=true
+
+@LoadBalanced
+--------------------------------------------------------------------------------------------------------
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-sleuth-zipkin2</artifactId>
+    <version>2.0.0.M4</version>
+</dependency>
+--------------------------------------------------------------------------------------------------------
+@PreAuthorize("#username == authentication.principal.username")
+@PostAuthorize("returnObject.username == authentication.principal.nickName")
+public CustomUser securedLoadUserDetail(String username) {
+    return userRoleRepository.loadUserByUserName(username);
+}
+--------------------------------------------------------------------------------------------------------
+Test
+@WithMockUser(username = "john", roles = { "VIEWER" })
+public void givenRoleViewer_whenCallGetUsername_thenReturnUsername() {
+    String userName = userRoleService.getUsername();
+     
+    assertEquals("john", userName);
+}
+--------------------------------------------------------------------------------------------------------
+random.number=${random.int}
+random.long=${random.long}
+random.uuid=${random.uuid}
+--------------------------------------------------------------------------------------------------------
+package examples;
+
+public class ExampleBean {
+
+    // Fields omitted
+
+    @ConstructorProperties({"years", "ultimateAnswer"})
+    public ExampleBean(int years, String ultimateAnswer) {
+        this.years = years;
+        this.ultimateAnswer = ultimateAnswer;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@ContextConfiguration
+@TestPropertySource("/my-test.properties")
+public class IntegrationTests {
+    // tests
+}
+
+@ContextConfiguration
+@TestPropertySource("foo=bar", "bar=foo")
+public class IntegrationTests {
+    // tests
+}
+
+@SpringBootTest(properties = {"foo=bar", "bar=foo"})
+public class IntegrationTests {
+    // tests
+}
+--------------------------------------------------------------------------------------------------------
+#!/bin/bash
+
+set -o errexit
+
+mkdir -p target
+
+REPO_URL="https://github.com/spring-cloud-samples/sleuth-documentation-apps.git"
+BRANCH_NAME="master"
+
+pushd target
+git clone "${REPO_URL}"
+
+pushd sleuth-documentation-apps
+./scripts/runAcceptanceTests.sh
+
+popd
+popd
+
+
+
+#!/bin/bash
+
+set -o errexit
+
+mkdir -p target
+
+SCRIPT_URL="https://raw.githubusercontent.com/spring-cloud-samples/brewery/master/runAcceptanceTests.sh"
+AT_WHAT_TO_TEST="SLEUTH"
+BRANCH_NAME="master"
+
+cd target
+
+curl "${SCRIPT_URL}" --output runAcceptanceTests.sh
+
+chmod +x runAcceptanceTests.sh
+
+echo "Killing all running apps"
+./runAcceptanceTests.sh -t "${AT_WHAT_TO_TEST}" -n -br "${BRANCH_NAME}"
+
+./runAcceptanceTests.sh --whattotest "${AT_WHAT_TO_TEST}" --killattheend -br "${BRANCH_NAME}"
+
+
+
+#!/bin/bash
+
+set -o errexit
+
+mkdir -p target
+
+SCRIPT_URL="https://raw.githubusercontent.com/spring-cloud-samples/brewery/master/runAcceptanceTests.sh"
+AT_WHAT_TO_TEST="SLEUTH_STREAM"
+BRANCH_NAME="master"
+
+cd target
+
+curl "${SCRIPT_URL}" --output runAcceptanceTests.sh
+
+chmod +x runAcceptanceTests.sh
+
+echo "Killing all running apps"
+./runAcceptanceTests.sh -t "${AT_WHAT_TO_TEST}" -n -br "${BRANCH_NAME}"
+
+./runAcceptanceTests.sh --whattotest "${AT_WHAT_TO_TEST}" --killattheend -br "${BRANCH_NAME}"
+
+
+#!/bin/bash
+
+echo "Running JMH Benchmarks"
+./mvnw clean install -DskipTests --projects benchmarks --also-make -Pbenchmarks,jmh
+java -Djmh.ignoreLock=true -jar benchmarks/target/benchmarks.jar org.springframework.cloud.sleuth.benchmarks.jmh.* -rf csv -rff jmh-result.csv | tee target/benchmarks.log
+
+
+#!/bin/bash
+
+echo "Killing the remaining apps - if something went wrong previously"
+pkill -f SleuthBenchmarkingSpringApp || echo "No apps to kill"
+
+echo "Running JMeter Benchmarks"
+./mvnw clean verify --projects benchmarks --also-make -Pbenchmarks,jmeter
+echo "Killing the remaining apps - if something went wrong after the tests"
+pkill -f SleuthBenchmarkingSpringApp || echo "No apps to kill"
+--------------------------------------------------------------------------------------------------------
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+	"-//Puppy Crawl//DTD Suppressions 1.1//EN"
+	"https://www.puppycrawl.com/dtds/suppressions_1_1.dtd">
+<suppressions>
+	<suppress files=".*/test/.*" checks="JavadocVariable"/>
+	<suppress files=".*FinishedSpanHandlerTests.*" checks="LineLengthCheck"/>
+	<suppress files=".*GrpcTracingIntegrationTests.*" checks="LineLengthCheck"/>
+	<suppress files=".*IgnoreAutoConfiguredSkipPatternsIntegrationTests.*" checks="LineLengthCheck"/>
+	<suppress files=".*RestTemplateTraceAspectIntegrationTests.*" checks="LineLengthCheck"/>
+	<suppress files=".*SkipEndPointsIntegrationTestsWithContextPathWithBasePath.*" checks="LineLengthCheck"/>
+	<suppress files=".*SkipEndPointsIntegrationTestsWithContextPathWithoutBasePath.*" checks="LineLengthCheck"/>
+	<suppress files=".*SkipEndPointsIntegrationTestsWithoutContextPathWithBasePath.*" checks="LineLengthCheck"/>
+	<suppress files=".*SkipEndPointsIntegrationTestsWithoutContextPathWithoutBasePath.*" checks="LineLengthCheck"/>
+	<suppress files=".*SleuthNewSpanParserAnnotationDisableTests.*" checks="LineLengthCheck"/>
+	<suppress files=".*SpanAdjusterTests.*" checks="LineLengthCheck"/>
+	<suppress files=".*SpringDataInstrumentationTests.*" checks="LineLengthCheck"/>
+	<suppress files=".*TagPropagationFinishedSpanHandlerTest.*" checks="LineLengthCheck"/>
+	<suppress files=".*TraceAsyncIntegrationTests.*" checks="LineLengthCheck"/>
+	<suppress files=".*TraceAutoConfigurationWithDisabledSleuthTests.*" checks="LineLengthCheck"/>
+	<suppress files=".*TraceFilterIntegrationTests.*" checks="LineLengthCheck"/>
+	<suppress files=".*TraceFilterWebIntegrationMultipleFiltersTests.*" checks="LineLengthCheck"/>
+	<suppress files=".*TraceFilterWebIntegrationTests.*" checks="LineLengthCheck"/>
+	<suppress files=".*TraceMessagingAutoConfiguration.*" checks="LineLengthCheck"/>
+	<suppress files=".*TraceMessagingAutoConfigurationTests.*" checks="LineLengthCheck"/>
+	<suppress files=".*TraceRequestHttpHeadersFilter.*" checks="LineLengthCheck"/>
+	<suppress files=".*TraceWebAutoConfiguration.*" checks="LineLengthCheck"/>
+	<suppress files=".*TraceWebClientBeanPostProcessor.*" checks="LineLengthCheck"/>
+	<suppress files=".*TracingFeignClient.*" checks="LineLengthCheck"/>
+	<suppress files=".*WebClientTests.*" checks="LineLengthCheck"/>
+	<suppress files=".*TraceReactorAutoConfigurationAccessorConfiguration.*" checks="LineLengthCheck"/>
+	<suppress files=".*SamplerAutoConfiguration.*" checks="HideUtilityClassConstructorCheck"/>
+	<suppress files=".*TraceReactorAutoConfiguration.*" checks="HideUtilityClassConstructorCheck"/>
+	<suppress files=".*grpc.stubs.*" checks=".*"/>
+</suppressions>
+--------------------------------------------------------------------------------------------------------
 <dependencyManagement>
     <dependencies>
         <dependency>
@@ -10356,7 +10542,7 @@ public class OAuth2CookieHelperTest {
 }
 
 
-@Test
+	@Test
     public void test_send_ProductsBatchRequest_Operation() throws Exception {
         final ProductsBatchController productsBatchController = mock(ProductsBatchController.class);
         final String expectedBatchDescriptorAsJson =
