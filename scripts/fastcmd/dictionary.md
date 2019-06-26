@@ -295,6 +295,8 @@ route print
 --------------------------------------------------------------------------------------------------------
 #### MISC
 --------------------------------------------------------------------------------------------------------
+mvn dependency:purge-local-repository
+--------------------------------------------------------------------------------------------------------
     Cp1251:
         Windows-1251 
     Cp866:
@@ -4859,6 +4861,37 @@ echo.
 echo It took you %guessnum% guesses.
 echo.
 pause
+--------------------------------------------------------------------------------------------------------
+language: java
+jdk:
+  - oraclejdk8
+sudo: false
+before_install:
+  - git config user.name "$GIT_NAME"
+  - git config user.email "$GIT_EMAIL"
+  - git config credential.helper "store --file=.git/credentials"
+  - echo "https://$GH_TOKEN:@github.com" > .git/credentials
+  - gem install asciidoctor
+install:
+- ./mvnw install -P docs -q -U -DskipTests=true -Dmaven.test.redirectTestOutputToFile=true
+- 'if [ "${TRAVIS_PULL_REQUEST}" = "false" ] && [ "${TRAVIS_BRANCH}" = "master" ]; then ./docs/src/main/asciidoc/ghpages.sh; fi'
+env:
+  global:
+  - GIT_NAME="Spencer Gibb"
+  - GIT_EMAIL=sgibb@pivotal.io
+  - CI_DEPLOY_USERNAME=sgibb
+  - secure: dxec/7oFht2WMaw4GNFNvuWHlnkm1wmFagE3ZrtCcU2SHUW/P2FgG5tiNW9hT2eXHf2H0YUF1ROkL4BrH5qpIlOBtYd0J8Q/67vBqyB112IN2FqoB/F6Erkfp1FKMBBrXXYaGoSvqzmJs6zqS3JRpyr010W2aU8klK0QfqRoJ0g=
+  - TERM=dumb
+script: |
+  echo "Current Branch: ${TRAVIS_BRANCH}"
+  echo "Pull Request: ${TRAVIS_PULL_REQUEST}"
+  if [ "${TRAVIS_BRANCH}" = master ] && [ "${TRAVIS_PULL_REQUEST}" = "false" ]; then
+    echo "[Publishing] Pushing snapshot to Sonatype"
+    ./mvnw -s .settings.xml deploy -nsu
+  else
+    echo "[Installing] Intalling snapshot to local maven repo"
+    ./mvnw install -nsu
+  fi
 --------------------------------------------------------------------------------------------------------
 @echo off
 :Start2
