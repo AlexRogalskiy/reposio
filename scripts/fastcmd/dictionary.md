@@ -6288,6 +6288,110 @@ task wrapper(type: Wrapper) {
     gradleVersion = '2.9'
 }
 --------------------------------------------------------------------------------------------------------
+int rand7()
+{
+    int vals[5][5] = {
+        { 1, 2, 3, 4, 5 },
+        { 6, 7, 1, 2, 3 },
+        { 4, 5, 6, 7, 1 },
+        { 2, 3, 4, 5, 6 },
+        { 7, 0, 0, 0, 0 }
+    };
+
+    int result = 0;
+    while (result == 0)
+    {
+        int i = rand5();
+        int j = rand5();
+        result = vals[i-1][j-1];
+    }
+    return result;
+}
+
+int i;
+do
+{
+  i = 5 * (rand5() - 1) + rand5();  // i is now uniformly random between 1 and 25
+} while(i > 21);
+// i is now uniformly random between 1 and 21
+return i % 7 + 1;  // result is now uniformly random between 1 and 7
+
+public static int random_7() {
+    int returnValue = 0;
+    while (returnValue == 0) {
+        for (int i = 1; i <= 3; i++) {
+            returnValue = (returnValue << 1) + random_5_output_2();
+        }
+    }
+    return returnValue;
+}
+
+private static int random_5_output_2() {
+    while (true) {
+        int flip = random_5();
+
+        if (flip < 3) {
+            return 0;
+        }
+        else if (flip > 3) {
+            return 1;
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@Bean
+    public TomcatServletWebServerFactory containerFactory() {
+        return new TomcatServletWebServerFactory() {
+            protected void customizeConnector(Connector connector) {
+                int maxSize = 50000000;
+                super.customizeConnector(connector);
+                connector.setMaxPostSize(maxSize);
+                connector.setMaxSavePostSize(maxSize);
+                if (connector.getProtocolHandler() instanceof AbstractHttp11Protocol) {
+
+                    ((AbstractHttp11Protocol <?>) connector.getProtocolHandler()).setMaxSwallowSize(maxSize);
+                    logger.info("Set MaxSwallowSize "+ maxSize);
+                }
+            }
+        };
+
+    }
+--------------------------------------------------------------------------------------------------------
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-sleuth</artifactId>
+            <version>${spring-cloud-sleuth.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+<dependencies>
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-sleuth</artifactId>
+    </dependency>
+</dependencies>
+--------------------------------------------------------------------------------------------------------
+dist: trusty
+sudo: required
+language: java
+
+addons:
+  sonarcloud:
+    organization: "cristinanegrean-github"
+    token:
+      secure: "6r3ebBo7DU9F1pInqogy4crDOWO9pAJHkVBugWTq89gfzaDJT+o/Sut7lwLkPEQqd8dPf/N5mkOKxPaK0cjtyJq55ZFPDeOkWeEnyg6ljlHlcafP4Qt2IjdCgeTcbl+UxIDP1QXQa/g9pnLNn2CynY1AiFqL1VoTDgE6GbIn8byfg7xvJRyyLJHKVSK0Ohs/cwlLy28YjIq09rTp2CP/axZhKoq5UQgkPKiUycULAEzZ2bl/52b4WuKajHelyJ7GzPhlTxTyYpLQPmk2ruuYPg0R0MFZUcFo9G+E2XHzEOftwjiH1zAkhCW0mcCz6BALsZmIo38eK+oQipicO35gHh4p7sd9JQU+0kjltvZSryQYtjXiGzqsC8NRh7LP8eU+HX3OoFeVIUwtyZvAkoZFUjKdjikvLqjVjPF4aC3IO56tgeFcZ1Aaom2g0smJphtA0V62XOW+p+ConIUOjQCfLWB1TxnS3MD9uNJoCIvBqkluMjTseJVbAylRWAN6ZLIuhpPJvSj4HuiL2Zcu/HNn7X/XrQW44VqcvJXTJ43PXN4D/3GH0nQ6WTkOFcfEBOGJmiaHt/rvnn1TKJerqrKvvA9Yp4CUDTZoDpicKk1miB6gSAE6l5E4if7OIPJKCRVELzQJsEhXv6TW46PhLiF6gmeTbNw9G6s6ZczxjZXjF9M="
+
+jdk: oraclejdk8
+services:
+  - docker
+
+script:
+  - ./gradlew clean build docker coveralls sonarqube
+--------------------------------------------------------------------------------------------------------
 require 'digest/md5'
 require 'base64'
 
