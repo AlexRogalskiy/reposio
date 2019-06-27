@@ -4893,6 +4893,32 @@ script: |
     ./mvnw install -nsu
   fi
 --------------------------------------------------------------------------------------------------------
+Locale locale = new Locale("pl", "PL");
+ResourceBundle exampleBundle = ResourceBundle.getBundle("package.ExampleResource", locale);
+ 
+assertEquals(exampleBundle.getString("currency"), "polish zloty");
+assertEquals(exampleBundle.getObject("toUsdRate"), new BigDecimal("3.401")); 
+assertArrayEquals(exampleBundle.getStringArray("cities"), new String[]{"Warsaw", "Cracow"});
+
+
+    Label_pl_PL_UNIX
+    Label_pl_PL
+    Label_pl
+    Label_en_US
+    Label_en
+    Label
+
+#resource.properties
+cancelButton = cancel
+ 
+#resource_pl.properties
+continueButton = dalej
+ 
+#resource_pl_PL.properties
+backButton = cofnij
+
+native2ascii -encoding UTF-8 utf8.properties nonUtf8.properties
+--------------------------------------------------------------------------------------------------------
 @echo off
 :Start2
 cls
