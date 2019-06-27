@@ -11007,6 +11007,166 @@ RUN adduser -D -S -G test -u 1000 -s /bin/ash test
 USER test
 WORKDIR /home/test
 --------------------------------------------------------------------------------------------------------
+import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
+
+@Test
+public void test1()  {
+        //  create mock
+        MyClass test = mock(MyClass.class);
+
+        // define return value for method getUniqueId()
+        when(test.getUniqueId()).thenReturn(43);
+
+        // use mock in test....
+        assertEquals(test.getUniqueId(), 43);
+}
+
+
+// demonstrates the return of multiple values
+@Test
+public void testMoreThanOneReturnValue()  {
+        Iterator<String> i= mock(Iterator.class);
+        when(i.next()).thenReturn("Mockito").thenReturn("rocks");
+        String result= i.next()+" "+i.next();
+        //assert
+        assertEquals("Mockito rocks", result);
+}
+
+// this test demonstrates how to return values based on the input
+@Test
+public void testReturnValueDependentOnMethodParameter()  {
+        Comparable<String> c= mock(Comparable.class);
+        when(c.compareTo("Mockito")).thenReturn(1);
+        when(c.compareTo("Eclipse")).thenReturn(2);
+        //assert
+        assertEquals(1, c.compareTo("Mockito"));
+}
+
+// this test demonstrates how to return values independent of the input value
+
+@Test
+public void testReturnValueInDependentOnMethodParameter()  {
+        Comparable<Integer> c= mock(Comparable.class);
+        when(c.compareTo(anyInt())).thenReturn(-1);
+        //assert
+        assertEquals(-1, c.compareTo(9));
+}
+
+// return a value based on the type of the provide parameter
+
+@Test
+public void testReturnValueInDependentOnMethodParameter2()  {
+        Comparable<Todo> c= mock(Comparable.class);
+        when(c.compareTo(isA(Todo.class))).thenReturn(0);
+        //assert
+        assertEquals(0, c.compareTo(new Todo(1)));
+}
+--------------------------------------------------------------------------------------------------------
+@EnableWebMvc
+@ComponentScan("io.github.d2edev.mywebapp.web")
+public class WebDispatcherConfig extends WebMvcConfigurerAdapter {
+public static final String WEBAPP_PREFIX="/web";
+public static final String PREFIX_NAME="wepbrefix";
+
+@Bean
+public ViewResolver viewResolver() {
+    InternalResourceViewResolver resolver = new InternalResourceViewResolver();
+    resolver.setPrefix("/WEB-INF/jsp/");
+    resolver.setSuffix(".jsp");
+    resolver.setExposeContextBeansAsAttributes(true);
+    return resolver;
+}
+
+
+
+@Override
+public void configureDefaultServletHandling(DefaultServletHandlerConfigurer configurer) {
+    configurer.enable();
+}
+
+@Override
+public void addResourceHandlers(ResourceHandlerRegistry registry) {
+    registry.addResourceHandler("/resources/**").addResourceLocations("/resources/");
+}
+--------------------------------------------------------------------------------------------------------
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(classes={WebDispatcherConfig.class,DataConfig.class})
+@WebAppConfiguration
+public class HomeControllerTest {
+
+private MockMvc mockMvc;
+
+@Autowired
+private WebApplicationContext wac ;
+
+@Before
+public void setUp() {
+    this.mockMvc = webAppContextSetup(wac).build();
+    System.out.println(Arrays.toString(wac.getBeanDefinitionNames()));
+
+}
+
+@Test
+public void testHome() throws Exception {
+
+
+    mockMvc
+    .perform(get(WebDispatcherConfig.WEBAPP_PREFIX))
+    .andExpect(view().name(HomeController.HOME))
+    .andExpect(model().attributeExists(WebDispatcherConfig.PREFIX_NAME));
+}
+
+}
+--------------------------------------------------------------------------------------------------------
+## Let’s generate a unique key using ‘SHA-256’ and a random UUID:
+
+MessageDigest salt = MessageDigest.getInstance("SHA-256");
+salt.update(UUID.randomUUID().toString().getBytes("UTF-8"));
+String digest = bytesToHex(salt.digest());
+--------------------------------------------------------------------------------------------------------
+Case-1: Few junk characters
+@Test
+public void testUUIDFormat_JunkCharacters()
+{
+    String uuidInStr = "abc";
+    UUID uuid = UUID.fromString(uuidInStr);
+}
+This test will result an exception: java.lang.IllegalArgumentException: Invalid UUID string: abc
+    at java.util.UUID.fromString(UUID.java:194)
+
+Case-2: Valid UUID
+@Test
+public void testUUIDFormat_ProperFormat()
+{
+    String uuidInStr = "3dd4fa6e-2899-4429-b818-d34fe8df5dd0";
+    UUID uuid = UUID.fromString(uuidInStr);
+    Assert.assertEquals(uuidInStr, uuid.toString());
+    System.out.println(uuid);
+}
+If you pass a valid UUID, it works fine.
+
+Case-3: Few characters missing in 1st & 5th group
+@Test
+public void testUUIDFormat_MissingCharacters()
+{
+    String uuidInStr = "3dd4fa-2899-4429-b818-d34fe8df5d";
+    UUID uuid = UUID.fromString(uuidInStr);
+    System.out.println(uuid);
+    Assert.assertEquals(uuidInStr, uuid.toString());
+}
+If you observe, resulted string was “003dd4fa-2899-4429-b818-00d34fe8df5d”; 0’s added at the beginning. So when you compare, it fails the test case.
+
+Case-4: Few extra characters in 1st & 5th group
+@Test
+public void testUUIDFormat_MoreCharacters()
+{
+    String uuidInStr = "3dd5ee1234-2899-4429-b818-d34fe8df5ee123";
+    UUID uuid = UUID.fromString(uuidInStr);
+    System.out.println(uuid);
+    Assert.assertEquals(uuidInStr, uuid.toString());
+} 
+--------------------------------------------------------------------------------------------------------
 # Initializers
 org.springframework.context.ApplicationContextInitializer=\
 org.springframework.boot.autoconfigure.SharedMetadataReaderFactoryContextInitializer,\
