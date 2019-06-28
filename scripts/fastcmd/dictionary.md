@@ -13525,6 +13525,229 @@ public class TestExy {
     }
 }
 --------------------------------------------------------------------------------------------------------
+@Bean
+    public TomcatServletWebServerFactory containerFactory() {
+        return new TomcatServletWebServerFactory() {
+            protected void customizeConnector(Connector connector) {
+                int maxSize = 50000000;
+                super.customizeConnector(connector);
+                connector.setMaxPostSize(maxSize);
+                connector.setMaxSavePostSize(maxSize);
+                if (connector.getProtocolHandler() instanceof AbstractHttp11Protocol) {
+
+                    ((AbstractHttp11Protocol <?>) connector.getProtocolHandler()).setMaxSwallowSize(maxSize);
+                    logger.info("Set MaxSwallowSize "+ maxSize);
+                }
+            }
+        };
+
+    }
+--------------------------------------------------------------------------------------------------------
+package com.spring.mvc.demo.exception.advice;
+ 
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.servlet.ModelAndView;
+ 
+import com.spring.mvc.demo.exception.MyException;
+ 
+@ControllerAdvice
+public class ExceptionControllerAdvice {
+ 
+    @ExceptionHandler(MyException.class)
+    public ModelAndView handleMyException(MyException mex) {
+ 
+        ModelAndView model = new ModelAndView();
+        model.addObject("errCode", mex.getErrCode());
+        model.addObject("errMsg", mex.getErrMsg());
+        model.setViewName("error/generic_error");
+        return model;
+    }
+ 
+    @ExceptionHandler(Exception.class)
+    public ModelAndView handleException(Exception ex) {
+ 
+        ModelAndView model = new ModelAndView();
+        model.addObject("errMsg", "This is a 'Exception.class' message.");
+        model.setViewName("error/generic_error");
+        return model;
+ 
+    }
+}
+
+package com.jcombat.controller;
+  
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+  
+import com.jcombat.bean.ErrorResponse;
+  
+@ControllerAdvice
+public class ExceptionControllerAdvice {
+  
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> exceptionHandler(Exception ex) {
+        ErrorResponse error = new ErrorResponse();
+        error.setErrorCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        error.setMessage("Please contact your administrator");
+        return new ResponseEntity<ErrorResponse>(error, HttpStatus.OK);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@Controller
+@RequestMapping("/myworld")
+public class MyWorldController {
+	@Autowired
+	private UserValidator userValidator;
+	@RequestMapping(value="signup", method = RequestMethod.GET)
+	public ModelAndView user(){
+		return new ModelAndView("user","user",new User());
+	}
+	@InitBinder
+	public void dataBinding(WebDataBinder binder) {
+		binder.addValidators(userValidator);
+	}
+	@RequestMapping(value="save", method = RequestMethod.POST)
+	public String createUser(@ModelAttribute("user") @Valid User user,BindingResult result, ModelMap model) 
+			                                                throws FileNotFoundException {
+	    if(result.hasErrors()) {
+	    	return "user";
+	    }
+	    if(user.getName().equals("exception")) {
+	        throw new FileNotFoundException("Error found.");	
+	    }
+	    System.out.println("Name:"+ user.getName());
+	    System.out.println("Date of Birth:"+ user.getDob());
+	    return "success";
+	}	
+} 
+--------------------------------------------------------------------------------------------------------
+ValidationMessages_en_US.properties
+--------------------------------------------------------------------------------------------------------
+@SpringBootApplication
+@ComponentScan(basePackages = { "com.myname" },
+              excludeFilters = @ComponentScan.Filter(type = FilterType.ASPECTJ, pattern = "com.myname.configs.*"))
+public class DemoWebappApplication {...}  
+--------------------------------------------------------------------------------------------------------
+@Configuration
+@PropertiesValueSource("classpath:com/acme/db.properties")
+public class AppConfig {
+    @ExternalValue("datasource.username") String username;
+
+    @Bean
+    public TestBean testBean() {
+        return new TestBean(username);
+    }
+}
+
+@Configuration
+@EnvironmentValueSource
+@SystemPropertiesValueSource
+@PropertiesValueSource("classpath:com/acme/db.properties")
+public class AppConfig {
+    @ExternalValue("datasource.username") String username;
+
+    @Bean
+    public TestBean testBean() {
+        return new TestBean(username);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+package com.paragon.microservices.confirmationlink.callback.system.configuration;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.convert.ConversionService;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.core.convert.support.DefaultConversionService;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.servlet.HandlerExceptionResolver;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolver;
+
+import java.util.List;
+
+@Configuration
+@EnableWebMvc
+public class ConfirmationLinkCallbackConfiguration implements WebMvcConfigurer {
+
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
+
+    @Bean
+    public ConversionService conversionService(final List<Converter> converters) {
+        final DefaultConversionService dcs = new DefaultConversionService();
+        converters.forEach(dcs::addConverter);
+        return dcs;
+    }
+
+    @Override
+    public void configureHandlerExceptionResolvers(final List<HandlerExceptionResolver> exceptionResolvers) {
+        exceptionResolvers.add(new DefaultHandlerExceptionResolver());
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@ControllerAdvice("my.chosen.package")
+@ControllerAdvice(value = "my.chosen.package")
+@ControllerAdvice(basePackages = "my.chosen.package")
+@ControllerAdvice(assignableTypes = MyController.class)
+@ControllerAdvice(basePackageClasses = MyClass.class)
+
+--------------------------------------------------------------------------------------------------------
+@ControllerAdvice
+public class GlobalExceptionHandler {
+    /** Provides handling for exceptions throughout this service. */
+    @ExceptionHandler({ UserNotFoundException.class, ContentNotAllowedException.class })
+    public final ResponseEntity<ApiError> handleException(Exception ex, WebRequest request) {
+        HttpHeaders headers = new HttpHeaders();
+
+        if (ex instanceof UserNotFoundException) {
+            HttpStatus status = HttpStatus.NOT_FOUND;
+            UserNotFoundException unfe = (UserNotFoundException) ex;
+
+            return handleUserNotFoundException(unfe, headers, status, request);
+        } else if (ex instanceof ContentNotAllowedException) {
+            HttpStatus status = HttpStatus.BAD_REQUEST;
+            ContentNotAllowedException cnae = (ContentNotAllowedException) ex;
+
+            return handleContentNotAllowedException(cnae, headers, status, request);
+        } else {
+            HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+            return handleExceptionInternal(ex, null, headers, status, request);
+        }
+    }
+
+    /** Customize the response for UserNotFoundException. */
+    protected ResponseEntity<ApiError> handleUserNotFoundException(UserNotFoundException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
+        List<String> errors = Collections.singletonList(ex.getMessage());
+        return handleExceptionInternal(ex, new ApiError(errors), headers, status, request);
+    }
+
+    /** Customize the response for ContentNotAllowedException. */
+    protected ResponseEntity<ApiError> handleContentNotAllowedException(ContentNotAllowedException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
+        List<String> errorMessages = ex.getErrors()
+                .stream()
+                .map(contentError -> contentError.getObjectName() + " " + contentError.getDefaultMessage())
+                .collect(Collectors.toList());
+
+        return handleExceptionInternal(ex, new ApiError(errorMessages), headers, status, request);
+    }
+
+    /** A single place to customize the response body of all Exception types. */
+    protected ResponseEntity<ApiError> handleExceptionInternal(Exception ex, ApiError body, HttpHeaders headers, HttpStatus status, WebRequest request) {
+        if (HttpStatus.INTERNAL_SERVER_ERROR.equals(status)) {
+            request.setAttribute(WebUtils.ERROR_EXCEPTION_ATTRIBUTE, ex, WebRequest.SCOPE_REQUEST);
+        }
+
+        return new ResponseEntity<>(body, headers, status);
+    }
+}
+--------------------------------------------------------------------------------------------------------
   .   ____          _            __ _ _
  /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
 ( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
