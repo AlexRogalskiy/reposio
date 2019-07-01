@@ -11007,6 +11007,1047 @@ RUN adduser -D -S -G test -u 1000 -s /bin/ash test
 USER test
 WORKDIR /home/test
 --------------------------------------------------------------------------------------------------------
+String complexString = "3ifhuq023hjk@jka$ksoap";
+complexString.replaceAll("\\D", "")
+
+
+String complexString = "3ifhuq023hjk@jka$ksoap";
+complexString.replaceAll("\\d", "")
+
+str.replaceAll("[^\\p{Alnum}\\s]", "")
+--------------------------------------------------------------------------------------------------------
+
+import browser.BrowserGetter;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.support.PageFactory;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+import pageobjects.waiter.WaiterPage;
+import waiter.Waiter;
+
+public class ClickTest {
+    private Waiter waiter = new Waiter();
+    private WaiterPage page;
+    private WebDriver driver;
+    private BrowserGetter browserGetter = new BrowserGetter();
+
+    @BeforeClass
+    public void beforeClass() {
+        //initialize the Chrome browser here
+        driver = browserGetter.getChromeDriver();
+        //initialize page object class
+        page = PageFactory.initElements(driver, WaiterPage.class);
+    }
+
+    @AfterClass
+    public void afterClass() {
+        driver.quit();
+    }
+
+    @Test
+    public void clickTest() {
+        waiter.get("https://imalittletester.com", driver);
+        waiter.click(page.searchButton, driver);
+        waiter.click(page.menuLink, driver);
+    }
+
+    @Test
+    public void clickTestSpecifiedTimeout() {
+        waiter.get("https://imalittletester.com", driver);
+        waiter.click(page.searchButton, driver, 5);
+        waiter.click(page.menuLink, driver, 20);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import browser.BrowserGetter;
+import org.openqa.selenium.Keys;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.support.PageFactory;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+import pageobjects.waiter.WaiterPage;
+import waiter.Waiter;
+
+public class UrlTest {
+    private Waiter waiter = new Waiter();
+    private WaiterPage page;
+    private WebDriver driver;
+    private BrowserGetter browserGetter = new BrowserGetter();
+
+    @BeforeClass
+    public void beforeClass() {
+        //initialize the Chrome browser here
+        driver = browserGetter.getChromeDriver();
+        //initialize page object class
+        page = PageFactory.initElements(driver, WaiterPage.class);
+    }
+
+    @AfterClass
+    public void afterClass() {
+        driver.quit();
+    }
+
+    @Test
+    public void waitForUrlEqualsOrContains() {
+        waiter.get("https://imalittletester.com", driver);
+
+        waiter.click(page.searchButton, driver);
+        page.searchField.sendKeys("checkstyle");
+        page.searchField.sendKeys(Keys.ENTER);
+        waiter.waitForUrl("https://imalittletester.com/?s=checkstyle", driver);
+
+        waiter.click(page.searchButton, driver);
+        page.searchField.clear();
+        page.searchField.sendKeys("waiter");
+        page.searchField.sendKeys(Keys.ENTER);
+        waiter.waitForUrlContains("waiter", driver);
+
+        waiter.click(page.searchButton, driver);
+        page.searchField.clear();
+        page.searchField.sendKeys("CheckStyle");
+        page.searchField.sendKeys(Keys.ENTER);
+        //the actual URL that will open here is: https://imalittletester.com/?s=checkstyle
+        waiter.waitForUrl_IgnoreCase("https://imalittletester.com/?s=checkstyle", driver);
+
+        waiter.click(page.searchButton, driver);
+        page.searchField.clear();
+        page.searchField.sendKeys("WAITER");
+        page.searchField.sendKeys(Keys.ENTER);
+        //the actual url that will open is: https://imalittletester.com/?s=WAITER
+        waiter.waitForUrlContains_IgnoreCase("waiter", driver);
+
+    }
+
+    @Test
+    public void urlStartsWith() {
+        waiter.get("http://imalittletester.com", driver);
+        waiter.waitForUrlStartsWith("https", driver);
+    }
+
+    @Test
+    public void waitForUrlEqualsOrContainsWithSpecifiedTimeout() {
+        waiter.get("https://imalittletester.com", driver);
+
+        waiter.click(page.searchButton, driver);
+        page.searchField.sendKeys("checkstyle");
+        page.searchField.sendKeys(Keys.ENTER);
+        waiter.waitForUrl("https://imalittletester.com/?s=checkstyle", driver, 15);
+
+        waiter.click(page.searchButton, driver);
+        page.searchField.clear();
+        page.searchField.sendKeys("waiter");
+        page.searchField.sendKeys(Keys.ENTER);
+        waiter.waitForUrlContains("waiter", driver, 15);
+
+        waiter.click(page.searchButton, driver);
+        page.searchField.clear();
+        page.searchField.sendKeys("CheckStyle");
+        page.searchField.sendKeys(Keys.ENTER);
+        //the actual URL that will open here is: https://imalittletester.com/?s=checkstyle
+        waiter.waitForUrl_IgnoreCase("https://imalittletester.com/?s=checkstyle", driver, 15);
+
+        waiter.click(page.searchButton, driver);
+        page.searchField.clear();
+        page.searchField.sendKeys("WAITER");
+        page.searchField.sendKeys(Keys.ENTER);
+        //the actual url that will open is: https://imalittletester.com/?s=WAITER
+        waiter.waitForUrlContains_IgnoreCase("waiter", driver, 15);
+
+    }
+
+    @Test
+    public void urlStartsWithAndSpecifiedTimeout() {
+        waiter.get("http://imalittletester.com", driver);
+        waiter.waitForUrlStartsWith("https", driver, 5);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import browser.BrowserGetter;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.support.PageFactory;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+import pageobjects.waiter.WaiterPage;
+import waiter.Waiter;
+
+public class GetTest {
+    private Waiter waiter = new Waiter();
+    private WaiterPage page;
+    private WebDriver driver;
+    private BrowserGetter browserGetter = new BrowserGetter();
+
+    @BeforeClass
+    public void beforeClass() {
+        //initialize the Chrome browser here
+        driver = browserGetter.getChromeDriver();
+        //initialize page object class
+        page = PageFactory.initElements(driver, WaiterPage.class);
+    }
+
+    @AfterClass
+    public void afterClass() {
+        driver.quit();
+    }
+
+    /**
+     * A test that opens a page and waits for it to be fully loaded
+     * Uses implicit timeout of 30 seconds which is set in the Waiter class
+     */
+    @Test
+    public void getTest() {
+        waiter.get("http://www.google.com", driver);
+    }
+
+    /**
+     * A test that opens a page and waits for it to be fully loaded for 10 seconds
+     */
+    @Test
+    public void getTestTimeout10Seconds() {
+        waiter.get("http://www.google.com", driver, 10);
+    }
+
+    /**
+     * A test that opens a page and waits for it to be fully loaded
+     * Then it waits for a WebElement, declared in the WaiterPage class, to be displayed
+     * Uses implicit timeout of 30 seconds which is set in the Waiter class
+     */
+    @Test
+    public void getAndWaitForElementToBeDisplayedTest() {
+        waiter.getAndWaitForElementToBeDisplayed("http://www.bing.com", page.bingSearchField, driver);
+    }
+
+    /**
+     * A test that opens a page and waits for it to be fully loaded for 10 seconds
+     * Then it waits for a WebElement, declared in the WaiterPage class, to be displayed, for 10 seconds
+     */
+    @Test
+    public void getAndWaitForElementToBeDisplayedTestTimeout10Seconds() {
+        waiter.getAndWaitForElementToBeDisplayed("http://www.bing.com", page.bingSearchField, driver, 10);
+    }
+
+    /**
+     * A test that opens a URL in the browser, but waits for another URL to load.
+     * This is useful when some redirects are being made and you are interested in landing on the second provided URL.
+     * Also waits for the final URL's page to load completely, for the default timeout value of 30 seconds
+     */
+    @Test
+    public void getUrlAndWaitForUrl() {
+        waiter.getUrlAndWaitForUrl("http://imalittletester.com/", "https://imalittletester.com/", driver);
+    }
+
+    /**
+     * A test that opens a URL in the browser, but waits for another URL to load.
+     * This is useful when some redirects are being made and you are interested in landing on the second provided URL.
+     * Also waits for the final URL's page to load completely, for the specified timeout of 5 seconds
+     */
+    @Test
+    public void getUrlAndWaitForUrlTimeout5Seconds() {
+        waiter.getUrlAndWaitForUrl("http://imalittletester.com/", "https://imalittletester.com/", driver, 5);
+    }
+
+    /**
+     * This test illustrates how to use the waitForPageLoadComplete method on its own.
+     * The test just opens a page, refreshes it, and waits for it to load completely after the refresh.
+     * Uses the default timeout value from thewaiter library
+     */
+    @Test
+    public void waitForPageLoadComplete() {
+        waiter.get("http://www.google.com", driver);
+        driver.navigate().refresh();
+        waiter.waitForPageLoadComplete(driver);
+    }
+
+    /**
+     * This test illustrates how to use the waitForPageLoadComplete method on its own.
+     * The test just opens a page, refreshes it, and waits for it to load completely after the refresh.
+     * Waits for 10 seconds for the page to load after the refresh
+     */
+    @Test
+    public void waitForPageLoadCompleteTimeout10Seconds() {
+        waiter.get("http://www.google.com", driver);
+        driver.navigate().refresh();
+        waiter.waitForPageLoadComplete(driver, 10);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import browser.BrowserGetter;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.support.PageFactory;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+import pageobjects.waiter.WaiterPage;
+import waiter.Waiter;
+
+public class ClickTest {
+    private Waiter waiter = new Waiter();
+    private WaiterPage page;
+    private WebDriver driver;
+    private BrowserGetter browserGetter = new BrowserGetter();
+
+    @BeforeClass
+    public void beforeClass() {
+        //initialize the Chrome browser here
+        driver = browserGetter.getChromeDriver();
+        //initialize page object class
+        page = PageFactory.initElements(driver, WaiterPage.class);
+    }
+
+    @AfterClass
+    public void afterClass() {
+        driver.quit();
+    }
+
+    @Test
+    public void clickTest() {
+        waiter.get("https://imalittletester.com", driver);
+        waiter.click(page.searchButton, driver);
+        waiter.click(page.menuLink, driver);
+    }
+
+    @Test
+    public void clickTestSpecifiedTimeout() {
+        waiter.get("https://imalittletester.com", driver);
+        waiter.click(page.searchButton, driver, 5);
+        waiter.click(page.menuLink, driver, 20);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
+
+public class Module {
+    private Image image;
+    private String h2Text;
+
+    public Module(Image image, String h2Text) {
+        this.image = image;
+        this.h2Text = h2Text;
+    }
+
+    public Module(WebElement element) {
+        this.image = new Image(element.findElement(By.cssSelector("img")));
+        this.h2Text = element.findElement(By.cssSelector("h2")).getText();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+
+        Module module = (Module) o;
+
+        if (image != null ? !image.equals(module.image) : module.image != null)
+            return false;
+        return h2Text != null ? h2Text.equals(module.h2Text) : module.h2Text == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = image != null ? image.hashCode() : 0;
+        result = 31 * result + (h2Text != null ? h2Text.hashCode() : 0);
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "Module{" +
+                "image=" + image +
+                ", h2Text='" + h2Text + '\'' +
+                '}';
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import browser.BrowserGetter;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.support.PageFactory;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+import pageobjects.stpcon17.ModulesPage;
+
+import java.io.File;
+
+import static org.testng.Assert.assertEquals;
+
+public class ModulesTest {
+
+    private final Image readingModuleImage = new Image("https://c1.staticflickr.com/8/7494/27510788280_a9f43c3845_s" +
+            ".jpg", "125", "125");
+    private final Image travelModuleImage = new Image("https://farm2.staticflickr.com/1642/25881055090_e29679a37d_q" +
+            ".jpg", "125", "125");
+    private final Image photoModuleImage = new Image("https://farm1.staticflickr.com/612/32840145345_4bdf828d8f_q" +
+            ".jpg", "125", "125");
+
+    private final Module readingModule = new Module(readingModuleImage, "Go ahead. Read something!");
+    private final Module travelModule = new Module(travelModuleImage, "Go out, do some sightseeing!");
+    private final Module photoModule = new Module(photoModuleImage, "Chill. Look at some photos!");
+
+    //webDriver instance
+    private WebDriver webDriver;
+    //class used for initializing browser
+    private BrowserGetter browserGetter = new BrowserGetter();
+    //page object class
+    private ModulesPage page;
+
+    @BeforeClass
+    public void beforeClass() {
+        //initialize the Chrome browser here
+        webDriver = browserGetter.getChromeDriver();
+        //initialize page object class
+        page = PageFactory.initElements(webDriver, ModulesPage.class);
+        webDriver.get(new File("src/test/resources/htmls/testconlt17/newPage.html").getAbsolutePath());
+    }
+
+    @AfterClass
+    public void afterClass() {
+        webDriver.quit();
+    }
+
+    @Test
+    public void images() throws InterruptedException {
+        assertEquals(new Image(page.readingModuleImageElement), readingModuleImage);
+        assertEquals(new Image(page.travelModuleImageElement), travelModuleImage);
+        assertEquals(new Image(page.photoModuleImageElement), photoModuleImage);
+    }
+
+
+    @Test
+    public void modules() {
+        assertEquals(new Module(page.readingModuleElement), readingModule);
+        assertEquals(new Module(page.travelModuleElement), travelModule);
+        assertEquals(new Module(page.photoModuleElement), photoModule);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
+
+public class Module {
+    private Image image;
+    private String h2Text;
+    private Link link;
+
+    public Module(Image image, String h2Text, Link link) {
+        this.image = image;
+        this.h2Text = h2Text;
+        this.link = link;
+    }
+
+    public Module(WebElement element) {
+        this.image = new Image(element.findElement(By.cssSelector("img")));
+        this.h2Text = element.findElement(By.cssSelector("h2")).getText();
+        this.link = new Link(element.findElement(By.cssSelector("a")));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Module module = (Module) o;
+
+        if (image != null ? !image.equals(module.image) : module.image != null) return false;
+        if (h2Text != null ? !h2Text.equals(module.h2Text) : module.h2Text != null) return false;
+        return link != null ? link.equals(module.link) : module.link == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = image != null ? image.hashCode() : 0;
+        result = 31 * result + (h2Text != null ? h2Text.hashCode() : 0);
+        result = 31 * result + (link != null ? link.hashCode() : 0);
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "Module{" +
+                "image=" + image +
+                ", h2Text='" + h2Text + '\'' +
+                ", link=" + link +
+                '}';
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import browser.BrowserGetter;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.support.PageFactory;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+import pageobjects.stpcon17.ModulesPage;
+
+import java.io.File;
+
+import static org.testng.Assert.assertEquals;
+
+public class ModulesTest {
+
+    private final Image readingModuleImage = new Image("https://c1.staticflickr.com/8/7494/27510788280_a9f43c3845_s" +
+            ".jpg", "125", "125");
+    private final Image travelModuleImage = new Image("https://farm2.staticflickr.com/1642/25881055090_e29679a37d_q" +
+            ".jpg", "125", "125");
+    private final Image photoModuleImage = new Image("https://farm1.staticflickr.com/612/32840145345_4bdf828d8f_q" +
+            ".jpg", "125", "125");
+
+    private final Link readingModuleLink = new Link("http://iamalittletester.wordpress.com/", "Read about testing",
+            "_blank");
+    private final Link travelModuleLink = new Link("http://travelwithcori.wordpress.com/", "Read a travel blog",
+            "_blank");
+    private final Link photoModuleLink = new Link("https://www.flickr.com/photos/capreoara", "Look at photos",
+            "_blank");
+
+    private final Module readingModule = new Module(readingModuleImage, "Go ahead. Read something!", readingModuleLink);
+    private final Module travelModule = new Module(travelModuleImage, "Go out, do some sightseeing!", travelModuleLink);
+    private final Module photoModule = new Module(photoModuleImage, "Chill. Look at some photos!", photoModuleLink);
+
+    //webDriver instance
+    private WebDriver webDriver;
+    //class used for initializing browser
+    private BrowserGetter browserGetter = new BrowserGetter();
+    //page object class
+    private ModulesPage page;
+
+    @BeforeClass
+    public void beforeClass() {
+        //initialize the Chrome browser here
+        webDriver = browserGetter.getChromeDriver();
+        //initialize page object class
+        page = PageFactory.initElements(webDriver, ModulesPage.class);
+        webDriver.get(new File("src/test/resources/htmls/stpcon17/fullPage.html").getAbsolutePath());
+    }
+
+    @AfterClass
+    public void afterClass() {
+        webDriver.quit();
+    }
+
+    @Test
+    public void images() throws InterruptedException {
+        assertEquals(new Image(page.readingModuleImageElement), readingModuleImage);
+        assertEquals(new Image(page.travelModuleImageElement), travelModuleImage);
+        assertEquals(new Image(page.photoModuleImageElement), photoModuleImage);
+    }
+
+    @Test
+    public void links() {
+        assertEquals(new Link(page.readingModuleLinkElement), readingModuleLink);
+        assertEquals(new Link(page.travelModuleLinkElement), travelModuleLink);
+        assertEquals(new Link(page.photoModuleLinkElement), photoModuleLink);
+    }
+
+    @Test
+    public void modules() {
+        assertEquals(new Module(page.readingModuleElement), readingModule);
+        assertEquals(new Module(page.travelModuleElement), travelModule);
+        assertEquals(new Module(page.photoModuleElement), photoModule);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+# mssql
+DROP TABLE logging_event_property 
+DROP TABLE logging_event_exception 
+DROP TABLE logging_event 
+
+CREATE TABLE logging_event 
+  ( 
+    timestmp         DECIMAL(20) NOT NULL,
+   	formatted_message  VARCHAR(4000) NOT NULL,
+    logger_name       VARCHAR(254) NOT NULL,
+    level_string      VARCHAR(254) NOT NULL,
+    thread_name       VARCHAR(254),
+    reference_flag    SMALLINT,
+    arg0              VARCHAR(254),
+    arg1              VARCHAR(254),
+    arg2              VARCHAR(254),
+    arg3              VARCHAR(254),
+    caller_filename   VARCHAR(254) NOT NULL,
+    caller_class      VARCHAR(254) NOT NULL,
+    caller_method     VARCHAR(254) NOT NULL,
+    caller_line       CHAR(4) NOT NULL,
+    event_id          DECIMAL(40) NOT NULL identity,
+    PRIMARY KEY(event_id) 
+  ) 
+
+CREATE TABLE logging_event_property 
+  ( 
+    event_id          DECIMAL(40) NOT NULL, 
+    mapped_key        VARCHAR(254) NOT NULL, 
+    mapped_value      VARCHAR(1024), 
+    PRIMARY KEY(event_id, mapped_key), 
+    FOREIGN KEY (event_id) REFERENCES logging_event(event_id) 
+  ) 
+
+CREATE TABLE logging_event_exception 
+  ( 
+    event_id         DECIMAL(40) NOT NULL, 
+    i                SMALLINT NOT NULL, 
+    trace_line       VARCHAR(254) NOT NULL, 
+    PRIMARY KEY(event_id, i), 
+    FOREIGN KEY (event_id) REFERENCES logging_event(event_id) 
+  ) 
+  
+# hsqldb
+DROP TABLE logging_event_exception IF EXISTS;
+DROP TABLE logging_event_property IF EXISTS;
+DROP TABLE logging_event IF EXISTS;
+
+CREATE TABLE logging_event (
+  timestmp BIGINT NOT NULL,
+  formatted_message LONGVARCHAR NOT NULL,
+  logger_name VARCHAR(256) NOT NULL,
+  level_string VARCHAR(256) NOT NULL,
+  thread_name VARCHAR(256),
+  reference_flag SMALLINT,
+  arg0 VARCHAR(256),
+  arg1 VARCHAR(256),
+  arg2 VARCHAR(256),
+  arg3 VARCHAR(256),
+  caller_filename VARCHAR(256), 
+  caller_class VARCHAR(256), 
+  caller_method VARCHAR(256), 
+  caller_line CHAR(4),
+  event_id BIGINT NOT NULL IDENTITY);
+
+
+CREATE TABLE logging_event_property (
+  event_id BIGINT NOT NULL,
+  mapped_key  VARCHAR(254) NOT NULL,
+  mapped_value LONGVARCHAR,
+  PRIMARY KEY(event_id, mapped_key),
+  FOREIGN KEY (event_id) REFERENCES logging_event(event_id));
+
+CREATE TABLE logging_event_exception (
+  event_id BIGINT NOT NULL,
+  i SMALLINT NOT NULL,
+  trace_line VARCHAR(256) NOT NULL,
+  PRIMARY KEY(event_id, i),
+  FOREIGN KEY (event_id) REFERENCES logging_event(event_id));
+  
+# h2
+DROP TABLE logging_event_exception IF EXISTS;
+DROP TABLE logging_event_property IF EXISTS;
+DROP TABLE logging_event IF EXISTS;
+
+CREATE TABLE logging_event (
+  timestmp BIGINT NOT NULL,
+  formatted_message LONGVARCHAR NOT NULL,
+  logger_name VARCHAR(256) NOT NULL,
+  level_string VARCHAR(256) NOT NULL,
+  thread_name VARCHAR(256),
+  reference_flag SMALLINT,
+  arg0 VARCHAR(256),
+  arg1 VARCHAR(256),
+  arg2 VARCHAR(256),
+  arg3 VARCHAR(256),
+  caller_filename VARCHAR(256), 
+  caller_class VARCHAR(256), 
+  caller_method VARCHAR(256), 
+  caller_line CHAR(4),
+  event_id IDENTITY NOT NULL);
+
+
+CREATE TABLE logging_event_property (
+  event_id BIGINT NOT NULL,
+  mapped_key  VARCHAR(254) NOT NULL,
+  mapped_value LONGVARCHAR,
+  PRIMARY KEY(event_id, mapped_key),
+  FOREIGN KEY (event_id) REFERENCES logging_event(event_id));
+
+CREATE TABLE logging_event_exception (
+  event_id BIGINT NOT NULL,
+  i SMALLINT NOT NULL,
+  trace_line VARCHAR(256) NOT NULL,
+  PRIMARY KEY(event_id, i),
+  FOREIGN KEY (event_id) REFERENCES logging_event(event_id));
+
+# db2
+DROP TABLE  logging_event_property;
+DROP TABLE  logging_event_exception;
+DROP TABLE  logging_event;
+
+CREATE TABLE logging_event 
+  (
+    timestmp          BIGINT NOT NULL,
+   	formatted_message VARCHAR(4000) NOT NULL,
+    logger_name       VARCHAR(254) NOT NULL,
+    level_string      VARCHAR(254) NOT NULL,
+    thread_name       VARCHAR(254),
+    reference_flag    SMALLINT,
+    arg0              VARCHAR(254),
+    arg1              VARCHAR(254),
+    arg2              VARCHAR(254),
+    arg3              VARCHAR(254),
+    caller_filename   VARCHAR(254) NOT NULL,
+    caller_class      VARCHAR(254) NOT NULL,
+    caller_method     VARCHAR(254) NOT NULL,
+    caller_line       CHAR(4) NOT NULL,
+    event_id           INTEGER GENERATED ALWAYS AS IDENTITY (START WITH 1)
+  );
+
+CREATE TABLE logging_event_property
+  (
+    event_id	      INTEGER NOT NULL,
+    mapped_key        VARCHAR(254) NOT NULL,
+    mapped_value      VARCHAR(1024),
+    PRIMARY KEY(event_id, mapped_key),
+    FOREIGN KEY (event_id) REFERENCES logging_event(event_id)
+  );
+
+CREATE TABLE logging_event_exception
+  (
+    event_id         INTEGER NOT NULL,
+    i                SMALLINT NOT NULL,
+    trace_line       VARCHAR(254) NOT NULL,
+    PRIMARY KEY(event_id, i),
+    FOREIGN KEY (event_id) REFERENCES logging_event(event_id)
+  );
+
+# mysql
+BEGIN;
+DROP TABLE IF EXISTS logging_event_property;
+DROP TABLE IF EXISTS logging_event_exception;
+DROP TABLE IF EXISTS logging_event;
+COMMIT;
+
+
+BEGIN;
+CREATE TABLE logging_event 
+  (
+    timestmp         BIGINT NOT NULL,
+    formatted_message  TEXT NOT NULL,
+    logger_name       VARCHAR(254) NOT NULL,
+    level_string      VARCHAR(254) NOT NULL,
+    thread_name       VARCHAR(254),
+    reference_flag    SMALLINT,
+    arg0              VARCHAR(254),
+    arg1              VARCHAR(254),
+    arg2              VARCHAR(254),
+    arg3              VARCHAR(254),
+    caller_filename   VARCHAR(254) NOT NULL,
+    caller_class      VARCHAR(254) NOT NULL,
+    caller_method     VARCHAR(254) NOT NULL,
+    caller_line       CHAR(4) NOT NULL,
+    event_id          BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY
+  );
+COMMIT;
+
+BEGIN;
+CREATE TABLE logging_event_property
+  (
+    event_id	      BIGINT NOT NULL,
+    mapped_key        VARCHAR(254) NOT NULL,
+    mapped_value      TEXT,
+    PRIMARY KEY(event_id, mapped_key),
+    FOREIGN KEY (event_id) REFERENCES logging_event(event_id)
+  );
+COMMIT;
+
+BEGIN;
+CREATE TABLE logging_event_exception
+  (
+    event_id         BIGINT NOT NULL,
+    i                SMALLINT NOT NULL,
+    trace_line       VARCHAR(254) NOT NULL,
+    PRIMARY KEY(event_id, i),
+    FOREIGN KEY (event_id) REFERENCES logging_event(event_id)
+  );
+COMMIT;
+
+# oracle
+CREATE SEQUENCE logging_event_id_seq MINVALUE 1 START WITH 1;
+
+CREATE TABLE logging_event 
+  (
+    timestmp         NUMBER(20) NOT NULL,
+    formatted_message  VARCHAR2(4000) NOT NULL,
+    logger_name       VARCHAR(254) NOT NULL,
+    level_string      VARCHAR(254) NOT NULL,
+    thread_name       VARCHAR(254),
+    reference_flag    SMALLINT,
+    arg0              VARCHAR(254),
+    arg1              VARCHAR(254),
+    arg2              VARCHAR(254),
+    arg3              VARCHAR(254),
+    caller_filename   VARCHAR(254) NOT NULL,
+    caller_class      VARCHAR(254) NOT NULL,
+    caller_method     VARCHAR(254) NOT NULL,
+    caller_line       CHAR(4) NOT NULL,
+    event_id          NUMBER(10) PRIMARY KEY
+  );
+
+
+-- the / suffix may or may not be needed depending on your SQL Client
+-- Some SQL Clients, e.g. SQuirrel SQL has trouble with the following
+-- trigger creation command, while SQLPlus (the basic SQL Client which
+-- ships with Oracle) has no trouble at all.
+
+CREATE TRIGGER logging_event_id_seq_trig
+  BEFORE INSERT ON logging_event
+  FOR EACH ROW  
+  BEGIN  
+    SELECT logging_event_id_seq.NEXTVAL 
+    INTO   :NEW.event_id 
+    FROM   DUAL;  
+  END;
+/
+
+
+CREATE TABLE logging_event_property
+  (
+    event_id	      NUMBER(10) NOT NULL,
+    mapped_key        VARCHAR2(254) NOT NULL,
+    mapped_value      VARCHAR2(1024),
+    PRIMARY KEY(event_id, mapped_key),
+    FOREIGN KEY (event_id) REFERENCES logging_event(event_id)
+  );
+  
+CREATE TABLE logging_event_exception
+  (
+    event_id         NUMBER(10) NOT NULL,
+    i                SMALLINT NOT NULL,
+    trace_line       VARCHAR2(254) NOT NULL,
+    PRIMARY KEY(event_id, i),
+    FOREIGN KEY (event_id) REFERENCES logging_event(event_id)
+  );
+  
+# postgresql
+DROP TABLE    logging_event_property;
+DROP TABLE    logging_event_exception;
+DROP TABLE    logging_event;
+DROP SEQUENCE logging_event_id_seq;
+
+
+CREATE SEQUENCE logging_event_id_seq MINVALUE 1 START 1;
+
+
+CREATE TABLE logging_event 
+  (
+    timestmp         BIGINT NOT NULL,
+    formatted_message  TEXT NOT NULL,
+    logger_name       VARCHAR(254) NOT NULL,
+    level_string      VARCHAR(254) NOT NULL,
+    thread_name       VARCHAR(254),
+    reference_flag    SMALLINT,
+    arg0              VARCHAR(254),
+    arg1              VARCHAR(254),
+    arg2              VARCHAR(254),
+    arg3              VARCHAR(254),
+    caller_filename   VARCHAR(254) NOT NULL,
+    caller_class      VARCHAR(254) NOT NULL,
+    caller_method     VARCHAR(254) NOT NULL,
+    caller_line       CHAR(4) NOT NULL,
+    event_id          BIGINT DEFAULT nextval('logging_event_id_seq') PRIMARY KEY
+  );
+
+CREATE TABLE logging_event_property
+  (
+    event_id	      BIGINT NOT NULL,
+    mapped_key        VARCHAR(254) NOT NULL,
+    mapped_value      VARCHAR(1024),
+    PRIMARY KEY(event_id, mapped_key),
+    FOREIGN KEY (event_id) REFERENCES logging_event(event_id)
+  );
+
+CREATE TABLE logging_event_exception
+  (
+    event_id         BIGINT NOT NULL,
+    i                SMALLINT NOT NULL,
+    trace_line       VARCHAR(254) NOT NULL,
+    PRIMARY KEY(event_id, i),
+    FOREIGN KEY (event_id) REFERENCES logging_event(event_id)
+  );
+
+# sqllite
+BEGIN;
+DROP TABLE IF EXISTS logging_event_property;
+DROP TABLE IF EXISTS logging_event_exception;
+DROP TABLE IF EXISTS logging_event;
+COMMIT;
+
+
+BEGIN;
+CREATE TABLE logging_event
+  (
+    timestmp         BIGINT NOT NULL,
+    formatted_message  TEXT NOT NULL,
+    logger_name       VARCHAR(254) NOT NULL,
+    level_string      VARCHAR(254) NOT NULL,
+    thread_name       VARCHAR(254),
+    reference_flag    SMALLINT,
+    arg0              VARCHAR(254),
+    arg1              VARCHAR(254),
+    arg2              VARCHAR(254),
+    arg3              VARCHAR(254),
+    caller_filename   VARCHAR(254) NOT NULL,
+    caller_class      VARCHAR(254) NOT NULL,
+    caller_method     VARCHAR(254) NOT NULL,
+    caller_line       CHAR(4) NOT NULL,
+    event_id          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT
+  );
+COMMIT;
+
+BEGIN;
+CREATE TABLE logging_event_property
+  (
+    event_id	      BIGINT NOT NULL,
+    mapped_key        VARCHAR(254) NOT NULL,
+    mapped_value      TEXT,
+    PRIMARY KEY(event_id, mapped_key),
+    FOREIGN KEY (event_id) REFERENCES logging_event(event_id)
+  );
+COMMIT;
+
+BEGIN;
+CREATE TABLE logging_event_exception
+  (
+    event_id         BIGINT NOT NULL,
+    i                SMALLINT NOT NULL,
+    trace_line       VARCHAR(254) NOT NULL,
+    PRIMARY KEY(event_id, i),
+    FOREIGN KEY (event_id) REFERENCES logging_event(event_id)
+  );
+COMMIT;
+
+# sybase
+DROP TABLE logging_event_property 
+DROP TABLE logging_event_exception 
+DROP TABLE logging_event 
+
+CREATE TABLE logging_event 
+( 
+  timestmp         bigint NOT NULL,
+  formatted_message  LONG VARCHAR NOT NULL,
+  logger_name       VARCHAR(254) NOT NULL,
+  level_string      VARCHAR(254) NOT NULL,
+  thread_name       VARCHAR(254),
+  reference_flag    SMALLINT,
+  arg0              VARCHAR(254),
+  arg1              VARCHAR(254),
+  arg2              VARCHAR(254),
+  arg3              VARCHAR(254),  
+  caller_filename   VARCHAR(254) NOT NULL,
+  caller_class      VARCHAR(254) NOT NULL,
+  caller_method     VARCHAR(254) NOT NULL,
+  caller_line       varCHAR(4) NOT NULL,
+  event_id          int NOT NULL DEFAULT AUTOINCREMENT,
+  PRIMARY KEY(event_id) 
+) 			
+
+CREATE TABLE logging_event_property 
+  ( 
+	event_id          int NOT NULL REFERENCES logging_event(event_id), 
+	mapped_key        VARCHAR(254) NOT NULL, 
+	mapped_value      LONG VARCHAR, 
+	PRIMARY KEY(event_id, mapped_key) 
+  ) 
+
+CREATE TABLE logging_event_exception 
+  ( 
+	event_id         int NOT NULL REFERENCES logging_event(event_id) , 
+	i                SMALLINT NOT NULL, 
+	trace_line       VARCHAR(254) NOT NULL, 
+	PRIMARY KEY(event_id, i) 
+  )
+--------------------------------------------------------------------------------------------------------
+  public Platform getPlatform() {
+    return Stream.of("platform", "platformName")
+        .map(this::getCapability)
+        .filter(Objects::nonNull)
+        .map(cap -> {
+          if (cap instanceof Platform) {
+            return (Platform) cap;
+          }
+
+          try {
+            return Platform.fromString((String.valueOf(cap)));
+          } catch (WebDriverException e) {
+            return null;
+          }
+        })
+        .filter(Objects::nonNull)
+        .findFirst()
+        .orElse(null);
+  }
+--------------------------------------------------------------------------------------------------------
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-pmd-plugin</artifactId>
+                    <version>3.6</version>
+                    <configuration>
+                        <failOnViolation>true</failOnViolation>
+                        <excludeRoots>
+                            <excludeRoot>target/generated-sources/plugin</excludeRoot>
+                        </excludeRoots>
+                        <excludes>
+                            <exclude>**/HelpMojo.java</exclude>
+                        </excludes>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>check</goal>
+                                <goal>cpd-check</goal>
+                            </goals>
+                            <configuration>
+                                <failOnViolation>true</failOnViolation>
+                                <excludes>
+                                    <exclude>**/HelpMojo.java</exclude>
+                                </excludes>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+--------------------------------------------------------------------------------------------------------
+@TestPropertySource(properties = { "spring.config.location = classpath:<path-to-your-yml-file>" }
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+        </dependency>
+--------------------------------------------------------------------------------------------------------
+import org.testng.annotations.Test;
+
+public class ReplaceAllTest {
+
+    @Test
+    public void replaceAllExamples() {
+        String complexString = "3ifhuq023hjk@jka$ksoap";
+        String withWhiteSpacesString = "This is a string\n " +
+                "that streches on several lines.\n" +
+                "to demo how to remove whitespaces and newlines\n " +
+                "from a\n" +
+                "string\n";
+        String phraseString = "This is just a phrase String.";
+        //removing all alphabetical characters from a string
+        System.out.println(complexString.replaceAll("\\D", ""));
+        //removing all numeric characters from a string
+        System.out.println(complexString.replaceAll("\\d", ""));
+
+        //output of what the string with newlines looks like on the console
+        System.out.println("String with new line characters before replace: " + withWhiteSpacesString);
+        //removing the new lines from the string
+        System.out.println("String with new line characters before replacing new lines: " + withWhiteSpacesString
+                .replaceAll("\n", ""));
+        //removing all whitespace characters from string (including new line, space)
+        System.out.println("String with new line characters before replacing all white space: " + withWhiteSpacesString
+                .replaceAll("\\s", ""));
+
+        System.out.println("String whose small a letters became capital letter: " + phraseString.replaceAll
+                ("a", "A"));
+        System.out.println("String whose small a letters became capital letter: " + complexString.replaceAll
+                ("\\d", " "));
+        System.out.println(complexString.replaceAll("jk", "_"));
+    }
+}
+--------------------------------------------------------------------------------------------------------
 import static org.mockito.Mockito.*;
 import static org.junit.Assert.*;
 
