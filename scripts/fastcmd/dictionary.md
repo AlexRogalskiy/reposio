@@ -13655,6 +13655,243 @@ public class AppConfig {
     }
 }
 --------------------------------------------------------------------------------------------------------
+    private val server: KafkaServer
+    private val zkClient: ZkClient
+    private val zkServer: EmbeddedZookeeper
+
+    init {
+        zkServer = EmbeddedZookeeper()
+        val zkConnect = "127.0.0.1:${zkServer.port()}"
+
+        val props = Properties()
+        props.setProperty("zookeeper.connect", zkConnect)
+        props.setProperty("broker.id", "0")
+        props.setProperty("log.dirs", Files.createTempDirectory("kafka-").toAbsolutePath().toString())
+        props.setProperty("listeners", "PLAINTEXT://127.0.0.1:$port")
+        props.setProperty("offsets.topic.replication.factor", "1")
+
+        server = KafkaServer(KafkaConfig(props), Time.SYSTEM, Option.apply("kafka-broker"), JavaConversions.asScalaBuffer(emptyList()))
+        server.startup()
+
+        zkClient = ZkClient(zkConnect, 30000, 30000, `ZKStringSerializer$`.`MODULE$`)
+        val zkUtils = ZkUtils.apply(zkClient, false)
+        AdminUtils.createTopic(zkUtils, topic, 1, 1, Properties(), RackAwareMode.`Disabled$`.`MODULE$`)
+
+        TestUtils.waitUntilMetadataIsPropagated(scala.collection.JavaConversions.asScalaBuffer(listOf(server)), topic, 0, 5000);
+
+    }
+
+    override fun close() {
+        server.shutdown()
+        server.awaitShutdown()
+        zkClient.close()
+        zkServer.shutdown()
+    }
+}
+--------------------------------------------------------------------------------------------------------
+language: java
+jdk:
+  - oraclejdk8
+sudo: false
+cache:
+  directories:
+    - $HOME/.m2
+install: true
+
+## Define kafka versions to build against
+env:
+-
+  KAFKA_VERSION=0.11.0.3
+  EXCLUDE_KAFKA_TESTS=1_0_x
+-
+  KAFKA_VERSION=1.0.2
+  EXCLUDE_KAFKA_TESTS=NOT-USED
+-
+  KAFKA_VERSION=1.1.1
+  EXCLUDE_KAFKA_TESTS=NOT-USED
+-
+  KAFKA_VERSION=2.0.1
+  EXCLUDE_KAFKA_TESTS=0_11_0_x
+script:
+  ## Generate dummy SSL Certificates used in tests
+  - script/generateCertificatesForTests.sh
+  ## Run CheckStyle and License Header checks, compile, and install locally
+  - mvn clean install -DskipTests=true -DskipCheckStyle=false -Dmaven.javadoc.skip=true -B -V -DkafkaVersion=$KAFKA_VERSION -Dtests.excluded=$EXCLUDE_KAFKA_TESTS
+  ## Run test suite
+  - mvn test -B -DkafkaVersion=$KAFKA_VERSION -Dtests.excluded=$EXCLUDE_KAFKA_TESTS -DskipCheckStyle=true -Djava.security.auth.login.config=${PWD}/kafka-junit-core/src/test/resources/jaas.conf
+--------------------------------------------------------------------------------------------------------
+FROM confluentinc/cp-kafka
+
+VOLUME ["/var/lib/${COMPONENT}/data", "/etc/${COMPONENT}/secrets"]
+
+COPY include/etc/confluent/docker /etc/confluent/docker
+
+CMD ["/etc/confluent/docker/run"]
+
+ENTRYPOINT ["/docker_entrypoint.sh"]
+
+
+docker-compose -f kafka-single-node.yml up -d
+
+docker exec -it compose_kafka_1 bash
+
+kafka-topics --zookeeper zookeeper:2181 --list
+
+kafka-console-consumer --bootstrap-server kafka:29092 --topic demo-topic-1 --from-beginning
+
+docker-compose -f kafka-single-node.yml down
+--------------------------------------------------------------------------------------------------------
+@BeforeClass
+public static void setUpBeforeClass() {
+    System.setProperty("spring.kafka.bootstrap-servers", embeddedKafka.getBrokersAsString());
+    System.setProperty("spring.cloud.stream.kafka.binder.zkNodes", embeddedKafka.getZookeeperConnectionString());
+}
+--------------------------------------------------------------------------------------------------------
+spring:
+  kafka:
+    producer:
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+--------------------------------------------------------------------------------------------------------
+        <!-- TestContainers library dependency -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>${testcontainers.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>kafka</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+--------------------------------------------------------------------------------------------------------
+javac src/main/java/org/hibernate/validator/ap/demo/Car.java \
+   -cp /path/to/validation-api-1.0.0.GA.jar \ 
+   -processorpath /path/to/validation-api-1.0.0.GA.jar:/path/to/hibernate-validator-annotation-processor-4.1.0.Final.jar    
+   
+<javac srcdir="src/main"
+       destdir="build/classes"
+       classpath="/path/to/validation-api-1.0.0.GA.jar">
+       <compilerarg value="-processorpath" />
+       <compilerarg value="/path/to/validation-api-1.0.0.GA.jar:/path/to/hibernate-validator-annotation-processor-4.1.0.Final.jar"/>
+</javac>
+
+<dependency>
+    <groupId>org.hibernate</groupId>
+    <artifactId>hibernate-validator-annotation-processor</artifactId>
+    <version>4.1.0.Final</version>
+    <scope>compile</scope>
+</dependency>
+
+<pluginRepositories>
+    <pluginRepository>
+        <id>maven-annotation-plugin-repo</id>
+        <url>http://maven-annotation-plugin.googlecode.com/svn/trunk/mavenrepo</url>
+    </pluginRepository>
+</pluginRepositories>
+
+validation-api-1.0.0.GA.jar
+
+hibernate-validator-annotation-processor-4.1.0.Final.jar
+--------------------------------------------------------------------------------------------------------
+import javax.validation.Validator;
+
+import com.couchbase.client.java.Bucket;
+
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
+import org.springframework.boot.autoconfigure.couchbase.CouchbaseAutoConfiguration;
+import org.springframework.boot.autoconfigure.validation.ValidationAutoConfiguration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.data.couchbase.core.mapping.event.ValidatingCouchbaseEventListener;
+import org.springframework.data.couchbase.repository.CouchbaseRepository;
+
+/**
+ * {@link EnableAutoConfiguration Auto-configuration} for Spring Data's Couchbase support.
+ *
+ * @author Eddú Meléndez
+ * @author Stephane Nicoll
+ * @since 1.4.0
+ */
+@Configuration
+@ConditionalOnClass({ Bucket.class, CouchbaseRepository.class })
+@AutoConfigureAfter({ CouchbaseAutoConfiguration.class,
+		ValidationAutoConfiguration.class })
+@EnableConfigurationProperties(CouchbaseDataProperties.class)
+@Import({ CouchbaseConfigurerAdapterConfiguration.class,
+		SpringBootCouchbaseDataConfiguration.class })
+public class CouchbaseDataAutoConfiguration {
+
+	@Configuration
+	@ConditionalOnClass(Validator.class)
+	public static class ValidationConfiguration {
+
+		@Bean
+		@ConditionalOnSingleCandidate(Validator.class)
+		public ValidatingCouchbaseEventListener validationEventListener(final Validator validator) {
+			return new ValidatingCouchbaseEventListener(validator);
+		}
+
+	}
+}
+
+import javax.validation.constraints.NotNull;
+
+public class Car {
+
+    @NotNull
+    private String manufacturer;
+
+    @AssertTrue
+    private boolean isRegistered;
+
+    public Car(String manufacturer, boolean isRegistered) {
+        super();
+        this.manufacturer = manufacturer;
+        this.isRegistered = isRegistered;
+    }
+}
+
+ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+Validator validator = factory.getValidator();
+
+Car car = new Car(null);
+
+Set<ConstraintViolation<Car>> constraintViolations = validator.validate(car);
+
+assertEquals(1, constraintViolations.size());
+assertEquals("may not be null", constraintViolations.iterator().next().getMessage());
+
+
+Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
+
+Car car = new Car(null);
+
+Set<ConstraintViolation<Car>> constraintViolations = validator.validateProperty(car, "manufacturer");
+
+assertEquals(1, constraintViolations.size());
+assertEquals("may not be null", constraintViolations.iterator().next().getMessage());
+
+Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
+
+
+Set<ConstraintViolation<Car>> constraintViolations = validator.validateValue(Car.class, "manufacturer", null);
+
+assertEquals(1, constraintViolations.size());
+assertEquals("may not be null", constraintViolations.iterator().next().getMessage());
+--------------------------------------------------------------------------------------------------------
 package com.paragon.microservices.confirmationlink.callback.system.configuration;
 
 import org.springframework.context.annotation.Bean;
