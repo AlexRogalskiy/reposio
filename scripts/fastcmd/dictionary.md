@@ -13719,6 +13719,115 @@ if(LOGGER.isInfoEnabled()) {
   
   @Import({MailCacheConfiguration.class})
 --------------------------------------------------------------------------------------------------------
+mvn archetype:create -DarchetypeGroupId=org.hibernate \
+                     -DarchetypeArtifactId=hibernate-validator-quickstart-archetype \
+                     -DarchetypeVersion=4.1.0.Final \
+                     -DgroupId=com.mycompany 
+                     -DartifactId=hv-quickstart
+--------------------------------------------------------------------------------------------------------
+spring:
+  redis:
+#    sentinel:
+#      master: mc2
+#      nodes: mc2-redis-1.paragon-software.com:26379,mc2-redis-2.paragon-software.com:26379,mc2-redis-3.paragon-software.com:26379
+    host: localhost
+    port: 6379
+--------------------------------------------------------------------------------------------------------
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class MailingRecoverer implements KafkaRetryRecoverer {
+
+    private final MailingStatusPublisher mailingStatusPublisher;
+
+    @Override
+    public void recover(final ConsumerRecord<?, ?> consumerRecord, final Exception e) {
+        final Object value = consumerRecord.value();
+        if (value instanceof AnonymizedMailMessage) {
+            final AnonymizedMailMessage mailMessage = (AnonymizedMailMessage) value;
+            final MailingStatus mailingStatus = new MailingStatus();
+            mailingStatus.setTaskId(mailMessage.getTaskId());
+
+            final MailingStatus.Status status = new MailingStatus.Status();
+            status.setSuccess(false);
+            status.setErrorCode(resolveErrorCode(e));
+            mailingStatus.setStatus(status);
+            this.mailingStatusPublisher.publish(mailingStatus, mailMessage.getResponseType());
+        }
+        final String message = getOriginalMessage(e);
+        log.error("Max failures reached for: {}, message: {}", consumerRecord, message, e);
+    }
+
+    private MailingErrorCode resolveErrorCode(final Exception e) {
+        String source = null;
+        if (e instanceof ServiceUnavailableException) {
+            source = ((ServiceUnavailableException) e).getSource();
+        } else if (e instanceof ServiceCallException) {
+            source = ((ServiceCallException) e).getSource();
+        }
+        return MailingErrorCode.findByCode(source);
+    }
+
+    private String getOriginalMessage(final Exception e) {
+        return (e instanceof ListenerExecutionFailedException) ? e.getCause().getMessage() : e.getMessage();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+<constraint-mappings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                     xsi:schemaLocation="http://jboss.org/xml/ns/javax/validation/mapping validation-mapping-1.0.xsd"
+                     xmlns="http://jboss.org/xml/ns/javax/validation/mapping">
+    <default-package>org.hibernate.validator.quickstart</default-package>
+    <bean class="Car" ignore-annotations="true">
+        <field name="manufacturer">
+            <constraint annotation="javax.validation.constraints.NotNull"/>
+        </field>
+        <field name="licensePlate">
+            <constraint annotation="javax.validation.constraints.NotNull"/>
+        </field>
+        <field name="seatCount">
+            <constraint annotation="javax.validation.constraints.Min">
+                <element name="value">2</element>
+            </constraint>
+        </field>
+        <field name="driver">
+            <valid/>
+        </field>
+        <getter name="passedVehicleInspection" ignore-annotations="true">
+            <constraint annotation="javax.validation.constraints.AssertTrue">
+                <message>The car has to pass the vehicle inspection first</message>
+                <groups>
+                    <value>CarChecks</value>
+                </groups>
+                <element name="max">10</element>
+            </constraint>
+        </getter>
+    </bean>
+    <bean class="RentalCar" ignore-annotations="true">
+        <class ignore-annotations="true">
+            <group-sequence>
+                <value>RentalCar</value>
+                <value>CarChecks</value>
+            </group-sequence>
+        </class>
+    </bean>
+    <constraint-definition annotation="org.mycompany.CheckCase" include-existing-validator="false">
+        <validated-by include-existing-validators="false">
+            <value>org.mycompany.CheckCaseValidator</value>
+        </validated-by>
+    </constraint-definition>
+</constraint-mappings>
+--------------------------------------------------------------------------------------------------------
+if (spouseIsMale.orElse(false)) {
+    System.out.println("There is a male spouse.");
+}
+filterValue.ifPresentOrElse(value -> {
+    if(value){
+        method1();
+    } else {
+        method2();
+    }
+}, () -> method3());
+--------------------------------------------------------------------------------------------------------
  public static void main (String[] args) {
         List<String> list = new ArrayList<>();
 
