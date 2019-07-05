@@ -13773,6 +13773,26 @@ public class MailingRecoverer implements KafkaRetryRecoverer {
     }
 }
 --------------------------------------------------------------------------------------------------------
+To help you with the logback-spring.xml, import the build-info.properties into logback-spring.xml as shown below. This allows each key in build-info.properties to be accessed using logback place-holders. (DO NOT CONFUSE THIS WITH SPRING PROPERTY PLACEHOLDERS OR SPRING-EXPRESSIONS)
+
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration>
+  <springProperty scope="context" name="appLogTarget" source="app.log.target"
+    defaultValue="CONSOLE"/>
+  <property resource="META-INF/build-info.properties" />
+
+
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <layout class="ch.qos.logback.classic.PatternLayout">
+      <Pattern>[${build.version}] %d{ISO8601}" %-5p [%c{3}"] \(%t:%X{}"\) %m%n</Pattern>
+    </layout>
+  </appender>
+ <root>
+    <level value="DEBUG"/>
+    <appender-ref ref="CONSOLE"/>
+  </root>
+</xml>
+--------------------------------------------------------------------------------------------------------
 <constraint-mappings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                      xsi:schemaLocation="http://jboss.org/xml/ns/javax/validation/mapping validation-mapping-1.0.xsd"
                      xmlns="http://jboss.org/xml/ns/javax/validation/mapping">
