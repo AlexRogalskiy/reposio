@@ -9218,6 +9218,182 @@ class RetryableDataSource extends AbstractDataSource {
     }
 }
 --------------------------------------------------------------------------------------------------------
+@ExceptionHandler(MethodArgumentNotValidException.class)
+@ResponseBody
+@ResponseStatus(HttpStatus.BAD_REQUEST)
+public Map<String, String> validationExceptionCaught(
+        MethodArgumentNotValidException e) {
+    return Collections.singletonMap("message", messageSource.getMessage(
+            e.getBindingResult().getFieldError().getDefaultMessage()));
+}
+ 
+/**
+ * for debugging
+ */
+@ExceptionHandler(MethodArgumentTypeMismatchException.class)
+@ResponseBody
+@ResponseStatus(HttpStatus.BAD_REQUEST)
+public Map<String, String> validationExceptionCaught(
+        MethodArgumentTypeMismatchException e) {
+    return Collections.singletonMap("message", e.getMessage());
+}
+ 
+@ExceptionHandler(ConstraintViolationException.class)
+@ResponseBody
+@ResponseStatus(HttpStatus.BAD_REQUEST)
+public Map<String, String> validationExceptionCaught(
+        ConstraintViolationException e) {
+    return Collections.singletonMap("message",
+            messageSource.getMessage(
+                    e.getConstraintViolations().stream().findFirst()
+                            .map(ConstraintViolation::getMessageTemplate)
+                            .orElse(e.getMessage())));
+}
+--------------------------------------------------------------------------------------------------------
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+    <entry key="app.name">test de regroupement de ressources invoquÃ© par {0}</entry>
+</properties>
+--------------------------------------------------------------------------------------------------------
+   <scm>
+      <connection>scm:svn:svn+ssh://janey@svn.java.net/hk2~svn/tags/osgi-resource-locator-1.0.1</connection>
+      <developerConnection>scm:svn:svn+ssh://janey@svn.java.net/hk2~svn/tags/osgi-resource-locator-1.0.1</developerConnection>             
+    </scm>
+	
+	   <!-- override distributionManagement from parent pom -->
+    <distributionManagement>
+        <!-- our internal staging repository, to be pushed to http://download.java.net/maven/glassfish/ -->
+        <repository>            
+            <uniqueVersion>false</uniqueVersion>
+            <!-- the ID maps to ~/.m2/settings.xml, so don't change the ID -->
+            <id>rator.sfbay</id>
+            <url>dav:http://glassfish-maven-repository.us.oracle.com/maven/repositories/glassfish/</url>
+        </repository>
+    </distributionManagement>
+--------------------------------------------------------------------------------------------------------
+    <profiles>
+        <profile>
+            <id>jdk5</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+                <jdk>1.5</jdk>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>javax.xml.stream</groupId>
+                    <artifactId>stax-api</artifactId>
+                    <scope>provided</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>jdk8-</id>
+            <activation>
+                <jdk>(,1.8)</jdk>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                          <groupId>org.apache.maven.plugins</groupId>
+                          <artifactId>maven-compiler-plugin</artifactId>
+                          <executions>
+                                <execution>
+                                    <id>default-testCompile</id>
+                                    <configuration>
+                                          <testExcludes>
+                                              <testExclude>**/lambda/*</testExclude>
+                                          </testExcludes>
+                                    </configuration>
+                                </execution>
+                          </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>jdk8+</id>
+            <activation>
+                <jdk>[1.8,)</jdk>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                          <groupId>org.apache.maven.plugins</groupId>
+                          <artifactId>maven-compiler-plugin</artifactId>
+                          <executions>
+                                <execution>
+                                    <id>default-testCompile</id>
+                                    <configuration>
+                                          <source>1.8</source>
+                                          <target>1.8</target>
+                                    </configuration>
+                                </execution>
+                          </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+--------------------------------------------------------------------------------------------------------
+/**
+ * Print extra information about a compiled automaton file.
+ */
+@Parameters(
+    commandNames = "fsa_info",
+    commandDescription = "Print extra information about a compiled automaton file.")
+public class FSAInfo extends CliTool {
+  @Parameter(
+      names = {"-i", "--input"},
+      description = "The input automaton.", 
+      required = true,
+      validateValueWith = ValidateFileExists.class)
+  private Path input;
+
+  FSAInfo() {
+  }
+
+  public FSAInfo(Path input) {
+    this.input = checkNotNull(input);
+  }
+
+  @Override
+  public ExitStatus call() throws Exception {
+    final FSA fsa;
+    try (InputStream is = new BufferedInputStream(Files.newInputStream(input))) {
+      fsa = FSA.read(is);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+# {0} - status code; {1} - status reason message
+exception.sending.error.response=I/O exception occurred while sending "{0}/{1}" error response.
+# {0} - exception message
+failed.to.start.server=Failed to start Grizzly HTTP server: {0}
+--------------------------------------------------------------------------------------------------------
+    @Bean                 
+    public LocaleResolver localeResolver() {
+
+        SessionLocaleResolver localResolver=new SessionLocaleResolver();
+        localResolver.setDefaultLocale(Locale.US);
+        return localResolver;
+    }
+--------------------------------------------------------------------------------------------------------
+    @NullOrNotBlank(message = "{personalData.language.nullOrNotBlank}")
+    private String language;
+--------------------------------------------------------------------------------------------------------
+    public static void main (String[] args) {
+        String[] appArgs = {"--debug"};
+        //String[] appArgs = {"--debug", "--spring.jmx.enabled=false"};
+  /*      String[] appArgs = {"--debug", "--spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration"};*/
+
+        SpringApplication app = new SpringApplication(ExcludeConfigExample.class);
+        app.setBannerMode(Banner.Mode.OFF);
+        app.setLogStartupInfo(false);
+        app.run(appArgs);
+    }
+--------------------------------------------------------------------------------------------------------
 import org.hamcrest.Description;
 import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
