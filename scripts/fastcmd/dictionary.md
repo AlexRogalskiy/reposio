@@ -9338,6 +9338,68 @@ public Map<String, String> validationExceptionCaught(
         </profile>
     </profiles>
 --------------------------------------------------------------------------------------------------------
+<?php
+/**
+ * Check if a given string is a valid UUID
+ * 
+ * @param   string  $uuid   The string to check
+ * @return  boolean
+ */
+function isValidUuid( $uuid ) {
+    
+    if (!is_string($uuid) || (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/', $uuid) !== 1)) {
+        return false;
+    }
+    return true;
+}
+--------------------------------------------------------------------------------------------------------
+<dependencies>
+    <!-- Other dependencies... -->
+    <!-- Add dependency for Rest Assured (has to go before JUnit to work) -->
+    <dependency>
+        <groupId>io.rest-assured</groupId>
+        <artifactId>rest-assured</artifactId>
+        <version>3.0.6</version>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>4.10</version>
+        <scope>test</scope>
+    </dependency>
+    <!-- Other dependencies... -->
+</dependencies>
+
+package Tests.GameTests;
+
+import Tests.TestModel;
+import com.github.fge.jsonschema.cfg.ValidationConfiguration;
+import com.github.fge.jsonschema.main.JsonSchemaFactory;
+import org.testng.annotations.Test;
+
+import static com.github.fge.jsonschema.SchemaVersion.DRAFTV4;
+import static io.restassured.RestAssured.when;
+import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
+
+public class GameTest extends TestModel {
+
+    @Test
+    public void testGameSchema() {
+        JsonSchemaFactory jsonSchemaFactory = JsonSchemaFactory.newBuilder().
+            setValidationConfiguration(ValidationConfiguration.
+            newBuilder().
+            setDefaultVersion(DRAFTV4).freeze()).freeze();
+
+        when().
+            get("/games/114").
+            then().
+            assertThat().
+            body(matchesJsonSchemaInClasspath("game_schema.json").
+                    using(jsonSchemaFactory));
+    }
+}
+--------------------------------------------------------------------------------------------------------
 /**
  * Print extra information about a compiled automaton file.
  */
