@@ -9338,6 +9338,19 @@ public Map<String, String> validationExceptionCaught(
         </profile>
     </profiles>
 --------------------------------------------------------------------------------------------------------
+fsutil hardlink list
+--------------------------------------------------------------------------------------------------------
+@SpringBootApplication
+@ComponentScan(
+    excludeFilters = {
+        // Exclude the default message service
+        @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = DefaultMessageService.class),
+        // Exclude the default boot application or it's
+        // @ComponentScan will pull in the default message service
+        @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = IntegrationTestDemo.class)
+    }
+)
+--------------------------------------------------------------------------------------------------------
 <?php
 /**
  * Check if a given string is a valid UUID
@@ -9399,6 +9412,456 @@ public class GameTest extends TestModel {
                     using(jsonSchemaFactory));
     }
 }
+
+@SpringBootApplication
+@ComponentScan(
+    excludeFilters = {
+        // Exclude the default message service
+        @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = DefaultMessageService.class),
+        // Exclude the default boot application or it's
+        // @ComponentScan will pull in the default message service
+        @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = IntegrationTestDemo.class)
+    }
+)
+public class TestConfig {
+
+    @Bean
+    // Define our own test message service
+    MessageService mockMessageService() {
+        return new MessageService() {
+            @Override
+            public String getMessage() {
+                return "This is a test message";
+            }
+        };
+    }
+}
+
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(classes = {
+ ... // any required Spring config
+)
+@WebAppConfiguration
+public class RestControllerTest {
+
+    @Autowired
+    private WebApplicationContext context;
+
+    private MockMvc mockMvc;
+
+    @Before
+    public void setup() {
+        mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
+    }
+
+
+    @Test
+    public void getUserList() throws Exception {
+        mockMvc.perform(get("/user"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType("application/json;charset=UTF-8")) 
+            .andExpect(content().encoding("UTF-8"))
+            .andExpect(jsonPath("$", hasSize(8)))
+            .andExpect(jsonPath("$[0].id").exists())
+            .andExpect(jsonPath("$[0].alias").exists())
+            .andExpect(jsonPath("$[0].name").exists())
+        );
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.junit.*;
+import org.junit.runner.*;
+import org.springframework.beans.factory.annotation.*;
+import org.springframework.boot.test.autoconfigure.json.*;
+import org.springframework.boot.test.context.*;
+import org.springframework.boot.test.json.*;
+import org.springframework.test.context.junit4.*;
+
+import static org.assertj.core.api.Assertions.*;
+
+@RunWith(SpringRunner.class)
+@JsonTest
+public class MyJsonTests {
+
+	@Autowired
+	private JacksonTester<VehicleDetails> json;
+
+	@Test
+	public void testSerialize() throws Exception {
+		VehicleDetails details = new VehicleDetails("Honda", "Civic");
+		// Assert against a `.json` file in the same package as the test
+		assertThat(this.json.write(details)).isEqualToJson("expected.json");
+		// Or use JSON path based assertions
+		assertThat(this.json.write(details)).hasJsonPathStringValue("@.make");
+		assertThat(this.json.write(details)).extractingJsonPathStringValue("@.make")
+				.isEqualTo("Honda");
+	}
+
+	@Test
+	public void testDeserialize() throws Exception {
+		String content = "{\"make\":\"Ford\",\"model\":\"Focus\"}";
+		assertThat(this.json.parse(content))
+				.isEqualTo(new VehicleDetails("Ford", "Focus"));
+		assertThat(this.json.parseObject(content).getMake()).isEqualTo("Ford");
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import org.junit.*;
+import org.junit.runner.*;
+import org.springframework.beans.factory.annotation.*;
+import org.springframework.boot.test.autoconfigure.web.servlet.*;
+import org.springframework.boot.test.mock.mockito.*;
+
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.BDDMockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@RunWith(SpringRunner.class)
+@WebMvcTest(UserVehicleController.class)
+public class MyControllerTests {
+
+	@Autowired
+	private MockMvc mvc;
+
+	@MockBean
+	private UserVehicleService userVehicleService;
+
+	@Test
+	public void testExample() throws Exception {
+		given(this.userVehicleService.getVehicleDetails("sboot"))
+				.willReturn(new VehicleDetails("Honda", "Civic"));
+		this.mvc.perform(get("/sboot/vehicle").accept(MediaType.TEXT_PLAIN))
+				.andExpect(status().isOk()).andExpect(content().string("Honda Civic"));
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import com.gargoylesoftware.htmlunit.*;
+import org.junit.*;
+import org.junit.runner.*;
+import org.springframework.beans.factory.annotation.*;
+import org.springframework.boot.test.autoconfigure.web.servlet.*;
+import org.springframework.boot.test.mock.mockito.*;
+
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.BDDMockito.*;
+
+@RunWith(SpringRunner.class)
+@WebMvcTest(UserVehicleController.class)
+public class MyHtmlUnitTests {
+
+	@Autowired
+	private WebClient webClient;
+
+	@MockBean
+	private UserVehicleService userVehicleService;
+
+	@Test
+	public void testExample() throws Exception {
+		given(this.userVehicleService.getVehicleDetails("sboot"))
+				.willReturn(new VehicleDetails("Honda", "Civic"));
+		HtmlPage page = this.webClient.getPage("/sboot/vehicle.html");
+		assertThat(page.getBody().getTextContent()).isEqualTo("Honda Civic");
+	}
+}
+
+@RunWith(SpringRunner.class)
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+public class SampleWebClientTests {
+
+	@Autowired
+	private TestRestTemplate template;
+
+	@Test
+	public void testRequest() {
+		HttpHeaders headers = this.template.getForEntity("/example", String.class).getHeaders();
+		assertThat(headers.getLocation()).hasHost("other.example.com");
+	}
+
+	@TestConfiguration
+	static class Config {
+
+		@Bean
+		public RestTemplateBuilder restTemplateBuilder() {
+			return new RestTemplateBuilder().setConnectTimeout(Duration.ofSeconds(1))
+					.setReadTimeout(Duration.ofSeconds(1));
+		}
+	}
+}
+--------------------------------------------------------------------------------------------------------
+HttpHeaders headers = new HttpHeaders();
+headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
+
+UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url)
+        .queryParam("msisdn", msisdn)
+        .queryParam("email", email)
+        .queryParam("clientVersion", clientVersion)
+        .queryParam("clientType", clientType)
+        .queryParam("issuerName", issuerName)
+        .queryParam("applicationName", applicationName);
+
+HttpEntity<?> entity = new HttpEntity<>(headers);
+
+HttpEntity<String> response = restTemplate.exchange(
+        builder.toUriString(), 
+        HttpMethod.GET, 
+        entity, 
+        String.class);
+		
+Map<String, String> vars = new HashMap<>();
+vars.put("hotel", "42");
+vars.put("room", "21");
+
+restTemplate.getForObject("http://example.com/hotels/{hotel}/rooms/{hotel}", 
+    String.class, vars);
+	
+  @Value("${endpoint.url}")
+  private String endpointURL;
+  // you can use variable args feature in Java
+  public String requestParamMethodNameHere(String value1, String value2) {
+    RestTemplate restTemplate = new RestTemplate();
+    restTemplate
+           .getMessageConverters()
+           .add(new MappingJackson2HttpMessageConverter());
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
+    HttpEntity<String> entity = new HttpEntity<>(headers);
+
+    try {
+      String formatted_URL = MessageFormat.format(endpointURL, value1, value2);
+      ResponseEntity<String> response = restTemplate.exchange(
+                    formatted_URL ,
+                    HttpMethod.GET,
+                    entity,
+                    String.class);
+     return response.getBody();
+    } catch (Exception e) { e.printStackTrace(); }
+	
+    String uri = http://my-rest-url.org/rest/account/{account};
+
+    Map<String, String> uriParam = new HashMap<>();
+    uriParam.put("account", "my_account");
+
+    UriComponents builder = UriComponentsBuilder.fromHttpUrl(uri)
+                .queryParam("pageSize","2")
+                        .queryParam("page","0")
+                        .queryParam("name","my_name").build();
+
+    HttpEntity<String> requestEntity = new HttpEntity<>(null, getHeaders());
+
+    ResponseEntity<String> strResponse = restTemplate.exchange(builder.toUriString(),HttpMethod.GET, requestEntity,
+                        String.class,uriParam);
+
+    //final URL: http://my-rest-url.org/rest/account/my_account?pageSize=2&page=0&name=my_name
+--------------------------------------------------------------------------------------------------------
+@Test
+public void whenModifyingOriginalObject_thenGsonCloneShouldNotChange() {
+    Address address = new Address("Downing St 10", "London", "England");
+    User pm = new User("Prime", "Minister", address);
+    Gson gson = new Gson();
+    User deepCopy = gson.fromJson(gson.toJson(pm), User.class);
+ 
+    address.setCountry("Great Britain");
+ 
+    assertThat(deepCopy.getAddress().getCountry())
+      .isNotEqualTo(pm.getAddress().getCountry());
+}
+
+@Test
+public void whenModifyingOriginalObject_thenJacksonCopyShouldNotChange() throws IOException {
+    Address address = new Address("Downing St 10", "London", "England");
+    User pm = new User("Prime", "Minister", address);
+    ObjectMapper objectMapper = new ObjectMapper();
+     
+    User deepCopy = objectMapper
+      .readValue(objectMapper.writeValueAsString(pm), User.class);
+ 
+    address.setCountry("Great Britain");
+ 
+    assertThat(deepCopy.getAddress().getCountry())
+      .isNotEqualTo(pm.getAddress().getCountry());
+}
+
+@Test
+public void givenListOfCustomers_whenTransformed_thenListOfAddress() {
+    Collection<Address> addressCol = CollectionUtils.collect(list1, 
+      new Transformer<Customer, Address>() {
+        public Address transform(Customer customer) {
+            return customer.getAddress();
+        }
+    });
+     
+    List<Address> addressList = new ArrayList<>(addressCol);
+    assertTrue(addressList.size() == 3);
+    assertTrue(addressList.get(0).getLocality().equals("locality1"));
+}
+
+@Test
+public void givenCustomerList_WhenFiltered_thenCorrectSize() {
+     
+    boolean isModified = CollectionUtils.filter(linkedList1, 
+      new Predicate<Customer>() {
+        public boolean evaluate(Customer customer) {
+            return Arrays.asList("Daniel","Kyle").contains(customer.getName());
+        }
+    });
+      
+    assertTrue(linkedList1.size() == 2);
+}
+
+@Test
+public void givenCustomerListAndASubcollection_whenChecked_thenTrue() {
+    assertTrue(CollectionUtils.isSubCollection(list3, list1));
+}
+@Test
+public void givenTwoLists_whenIntersected_thenCheckSize() {
+    Collection<Customer> intersection = CollectionUtils.intersection(list1, list3);
+    assertTrue(intersection.size() == 2);
+}
+@Test
+public void givenTwoLists_whenSubtracted_thenCheckElementNotPresentInA() {
+    Collection<Customer> result = CollectionUtils.subtract(list1, list3);
+    assertFalse(result.contains(customer1));
+}
+@Test
+public void givenTwoLists_whenUnioned_thenCheckElementPresentInResult() {
+    Collection<Customer> union = CollectionUtils.union(list1, list2);
+  
+    assertTrue(union.contains(customer1));
+    assertTrue(union.contains(customer4));
+}
+@Test
+public void givenTwoSortedLists_whenCollated_thenSorted() {
+    List<Customer> sortedList = CollectionUtils.collate(list1, list2);
+ 
+    assertEquals(6, sortedList.size()); 
+    assertTrue(sortedList.get(0).getName().equals("Bob"));
+    assertTrue(sortedList.get(2).getName().equals("Daniel"));
+}
+@Test
+public void givenList_whenAddIgnoreNull_thenNoNullAdded() {
+    CollectionUtils.addIgnoreNull(list1, null);
+  
+    assertFalse(list1.contains(null));
+}
+--------------------------------------------------------------------------------------------------------
+import static org.fest.assertions.Assertions.assertThat;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static org.powermock.api.mockito.PowerMockito.verifyStatic;
+
+import java.util.List;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.MockitoAnnotations;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(HelperClass.class)
+public class MyClassTest {
+
+    private MyClass classUnderTest;
+
+    @Captor
+    private ArgumentCaptor<String> fileNameCaptor;
+
+    @Captor
+    private ArgumentCaptor<List<String>> dataCaptor;
+
+    @Before
+    public void setup() {
+        MockitoAnnotations.initMocks(this);
+        mockStatic(HelperClass.class);
+        classUnderTest = new MyClass();
+    }
+
+    @Test
+    public void shouldMakeNastyStaticCall() {
+        classUnderTest.testMethod();
+
+        verifyStatic();
+        HelperClass.nastyStaticCall(fileNameCaptor.capture(), dataCaptor.capture());
+
+        assertThat(fileNameCaptor.getValue()).isEqualTo("FILENAME");
+        assertThat(dataCaptor.getValue()).containsOnly("Data");
+    }
+}
+--------------------------------------------------------------------------------------------------------
+    <dependency>
+        <groupId>org.unitils.objectvalidation</groupId>
+        <artifactId>unitils-objectvalidation</artifactId>
+        <version>1.1.4</version>
+    </dependency>
+--------------------------------------------------------------------------------------------------------
+ComparatorChain chain = new ComparatorChain(Arrays.asList(
+   new BeanComparator("size"), 
+   new BeanComparator("nrOfToppings"), 
+   new BeanComparator("name")));
+
+Collections.sort(pizzas, chain);
+
+Collections.sort(pizzas, new Comparator<Pizza>() {  
+    @Override  
+    public int compare(Pizza p1, Pizza p2) {  
+        return ComparisonChain.start().compare(p1.size, p2.size).compare(p1.nrOfToppings, p2.nrOfToppings).compare(p1.name, p2.name).result();  
+        // or in case the fields can be null:  
+        /* 
+        return ComparisonChain.start() 
+           .compare(p1.size, p2.size, Ordering.natural().nullsLast()) 
+           .compare(p1.nrOfToppings, p2.nrOfToppings, Ordering.natural().nullsLast()) 
+           .compare(p1.name, p2.name, Ordering.natural().nullsLast()) 
+           .result(); 
+        */  
+    }  
+});
+
+class MultiComparator<T> implements Comparator<T> {
+    private final List<Comparator<T>> comparators;
+
+    public MultiComparator(List<Comparator<? super T>> comparators) {
+        this.comparators = comparators;
+    }
+
+    public MultiComparator(Comparator<? super T>... comparators) {
+        this(Arrays.asList(comparators));
+    }
+
+    public int compare(T o1, T o2) {
+        for (Comparator<T> c : comparators) {
+            int result = c.compare(o1, o2);
+            if (result != 0) {
+                return result;
+            }
+        }
+        return 0;
+    }
+
+    public static <T> void sort(List<T> list, Comparator<? super T>... comparators) {
+        Collections.sort(list, new MultiComparator<T>(comparators));
+    }
+}
+--------------------------------------------------------------------------------------------------------
+RestTemplate restTemplate = new RestTemplate();
+ResponseEntity<List<Employee>> response = restTemplate.exchange(
+  "http://localhost:8080/employees/",
+  HttpMethod.GET,
+  null,
+  new ParameterizedTypeReference<List<Employee>>(){});
+List<Employee> employees = response.getBody();
+
+List<Employee> newEmployees = new ArrayList<>();
+newEmployees.add(new Employee(3, "Intern"));
+newEmployees.add(new Employee(4, "CEO"));
+ 
+restTemplate.postForObject(
+  "http://localhost:8080/employees",
+  new EmployeeList(newEmployees),
+  ResponseEntity.class);
 --------------------------------------------------------------------------------------------------------
 /**
  * Print extra information about a compiled automaton file.
@@ -10019,6 +10482,739 @@ public void testSession() throws Exception {
     c = result.getResponse().getCookie("my-cookie");
     assertThat(c.getValue().length(), is(0));
 }
+--------------------------------------------------------------------------------------------------------
+@RunWith(SpringRunner.class)
+@SpringBootTest(webEnvironment=WebEnvironment.RANDOM_PORT)
+@AutoConfigureMockMvc
+public class SBTest {
+    @Autowired
+    private TestRestTemplate restTemplate;
+
+    @Autowired
+    private MockMvc mvc;
+
+   // tests
+}
+--------------------------------------------------------------------------------------------------------
+mockRestServiceServer.expect(requestTo("/number")).andExpect(method(HttpMethod.GET))
+    .anyNumberOfTimes()
+    .andRespond(withSuccess("1", MediaType.TEXT_PLAIN));
+	
+mockRestServiceServer.expect(requestTo("/number")).andExpect(method(HttpMethod.GET))
+    .times(2)
+    .andRespond(withSuccess("4", MediaType.TEXT_PLAIN));
+--------------------------------------------------------------------------------------------------------
+@Service
+public class DetailsServiceClient {
+ 
+    private final RestTemplate restTemplate;
+ 
+    public DetailsServiceClient(RestTemplateBuilder restTemplateBuilder) {
+        restTemplate = restTemplateBuilder.build();
+    }
+ 
+    public Details getUserDetails(String name) {
+        return restTemplate.getForObject("/{name}/details",
+          Details.class, name);
+    }
+}
+RunWith(SpringRunner.class)
+@RestClientTest(DetailsServiceClient.class)
+public class DetailsServiceClientTest {
+ 
+    @Autowired
+    private DetailsServiceClient client;
+ 
+    @Autowired
+    private MockRestServiceServer server;
+ 
+    @Autowired
+    private ObjectMapper objectMapper;
+ 
+    @Before
+    public void setUp() throws Exception {
+        String detailsString = 
+          objectMapper.writeValueAsString(new Details("John Smith", "john"));
+         
+        this.server.expect(requestTo("/john/details"))
+          .andRespond(withSuccess(detailsString, MediaType.APPLICATION_JSON));
+    }
+ 
+    @Test
+    public void whenCallingGetUserDetails_thenClientMakesCorrectCall() 
+      throws Exception {
+ 
+        Details details = this.client.getUserDetails("john");
+ 
+        assertThat(details.getLogin()).isEqualTo("john");
+        assertThat(details.getName()).isEqualTo("John Smith");
+    }
+}
+--------------------------------------------------------------------------------------------------------
+    @Test
+    public void testGetMessage_500() {
+        mockServer.expect(requestTo("http://google.com"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withServerError());
+
+        String result = simpleRestService.getMessage();
+
+        mockServer.verify();
+        assertThat(result, allOf(containsString("FAILED"),
+                       containsString("500")));
+    }
+	    @Test
+    public void testGetMessage_404() {
+        mockServer.expect(requestTo("http://google.com"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+        String result = simpleRestService.getMessage();
+
+        mockServer.verify();
+        assertThat(result, allOf(containsString("FAILED"),
+                       containsString("404")));
+    }
+	
+	    @Test
+    public void testGetMessage() {
+        mockServer.expect(requestTo("http://google.com"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess("resultSuccess", MediaType.TEXT_PLAIN));
+
+        String result = simpleRestService.getMessage();
+
+        mockServer.verify();
+        assertThat(result, allOf(containsString("SUCCESS"),
+                       containsString("resultSuccess")));
+    }
+--------------------------------------------------------------------------------------------------------
+@ContextConfiguration
+@TestExecutionListeners({
+    MyCustomTestExecutionListener.class,
+    ServletTestExecutionListener.class,
+    DirtiesContextBeforeModesTestExecutionListener.class,
+    DependencyInjectionTestExecutionListener.class,
+    DirtiesContextTestExecutionListener.class,
+    TransactionalTestExecutionListener.class,
+    SqlScriptsTestExecutionListener.class
+})
+public class MyTest {
+    // class body...
+}
+@ContextConfiguration
+@TestExecutionListeners(
+    listeners = MyCustomTestExecutionListener.class,
+    mergeMode = MERGE_WITH_DEFAULTS
+)
+public class MyTest {
+    // class body...
+}
+
+@RunWith(SpringRunner.class)
+// ApplicationContext will be loaded from the
+// static nested Config class
+@ContextConfiguration 
+public class OrderServiceTest {
+
+    @Configuration
+    static class Config {
+
+        // this bean will be injected into the OrderServiceTest class
+        @Bean
+        public OrderService orderService() {
+            OrderService orderService = new OrderServiceImpl();
+            // set properties, etc.
+            return orderService;
+        }
+    }
+
+    @Autowired
+    private OrderService orderService;
+
+    @Test
+    public void testOrderService() {
+        // test the orderService
+    }
+
+}
+
+https://docs.spring.io/spring/docs/current/spring-framework-reference/testing.html#testcontext-tel-config
+--------------------------------------------------------------------------------------------------------
+@Configuration
+@Profile("default")
+public class DefaultDataConfig {
+
+    @Bean
+    public DataSource dataSource() {
+        return new EmbeddedDatabaseBuilder()
+            .setType(EmbeddedDatabaseType.HSQL)
+            .addScript("classpath:com/bank/config/sql/schema.sql")
+            .build();
+    }
+}
+
+@Configuration
+@Profile("production")
+public class JndiDataConfig {
+
+    @Bean(destroyMethod="")
+    public DataSource dataSource() throws Exception {
+        Context ctx = new InitialContext();
+        return (DataSource) ctx.lookup("java:comp/env/jdbc/datasource");
+    }
+}
+
+@Configuration
+@Profile("dev")
+public class StandaloneDataConfig {
+
+    @Bean
+    public DataSource dataSource() {
+        return new EmbeddedDatabaseBuilder()
+            .setType(EmbeddedDatabaseType.HSQL)
+            .addScript("classpath:com/bank/config/sql/schema.sql")
+            .addScript("classpath:com/bank/config/sql/test-data.sql")
+            .build();
+    }
+}
+
+// "dev" profile overridden with "production"
+@ActiveProfiles(profiles = "production", inheritProfiles = false)
+public class ProductionTransferServiceTest extends AbstractIntegrationTest {
+    // test body
+}
+@ContextConfiguration
+@TestPropertySource(properties = {"timezone = GMT", "port: 4242"}) 
+public class MyIntegrationTests {
+    // class body...
+}
+
+@RunWith(SpringRunner.class)
+@ContextConfiguration
+@WebAppConfiguration
+public class SessionScopedBeanTests {
+
+    @Autowired UserService userService;
+    @Autowired MockHttpSession session;
+
+    @Test
+    public void sessionScope() throws Exception {
+        session.setAttribute("theme", "blue");
+
+        Results results = userService.processUserPreferences();
+        // assert results
+    }
+}
+
+@RunWith(SpringRunner.class)
+@ContextConfiguration(classes = TestConfig.class)
+@Transactional
+public class HibernateUserRepositoryTests {
+
+    @Autowired
+    HibernateUserRepository repository;
+
+    @Autowired
+    SessionFactory sessionFactory;
+
+    JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    public void setDataSource(DataSource dataSource) {
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
+    @Test
+    public void createUser() {
+        // track initial state in test database:
+        final int count = countRowsInTable("user");
+
+        User user = new User(...);
+        repository.save(user);
+
+        // Manual flush is required to avoid false positive in test
+        sessionFactory.getCurrentSession().flush();
+        assertNumUsers(count + 1);
+    }
+
+    protected int countRowsInTable(String tableName) {
+        return JdbcTestUtils.countRowsInTable(this.jdbcTemplate, tableName);
+    }
+
+    protected void assertNumUsers(int expected) {
+        assertEquals("Number of rows in the [user] table.", expected, countRowsInTable("user"));
+    }
+}
+
+@ContextConfiguration
+@Transactional(transactionManager = "txMgr")
+@Commit
+public class FictitiousTransactionalTest {
+
+    @BeforeTransaction
+    void verifyInitialDatabaseState() {
+        // logic to verify the initial state before a transaction is started
+    }
+
+    @Before
+    public void setUpTestDataWithinTransaction() {
+        // set up test data within the transaction
+    }
+
+    @Test
+    // overrides the class-level @Commit setting
+    @Rollback
+    public void modifyDatabaseWithinTransaction() {
+        // logic which uses the test data and modifies database state
+    }
+
+    @After
+    public void tearDownWithinTransaction() {
+        // execute "tear down" logic within the transaction
+    }
+
+    @AfterTransaction
+    void verifyFinalDatabaseState() {
+        // logic to verify the final state after transaction has rolled back
+    }
+}
+
+@Test
+public void databaseTest {
+    ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
+    populator.addScripts(
+            new ClassPathResource("test-schema.sql"),
+            new ClassPathResource("test-data.sql"));
+    populator.setSeparator("@@");
+    populator.execute(this.dataSource);
+    // execute code that uses the test schema and data
+}
+
+@SpringJUnitConfig
+@Sql("/test-schema.sql")
+class DatabaseTests {
+
+    @Test
+    void emptySchemaTest {
+        // execute code that uses the test schema without any test data
+    }
+
+    @Test
+    @Sql({"/test-schema.sql", "/test-user-data.sql"})
+    void userTest {
+        // execute code that uses the test schema and test data
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.stereotype.Repository;
+import ru.kacit.demo.test.server.dao.EmployeeDao;
+import ru.kacit.demo.test.server.model.Employee;
+import ru.kacit.demo.test.server.model.Employee_;
+
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
+import java.util.List;
+
+/**
+ * @author Serge Petunin
+ *         18.03.12 0:42
+ */
+@Repository
+public class JpaEmployeeDao implements EmployeeDao {
+
+    @PersistenceContext
+    private EntityManager em;
+    
+    public Employee get(Long id) {
+        return em.find(Employee.class, id);
+    }
+
+    public List<Employee> list(String nameStartsWith) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Employee> query = cb.createQuery(Employee.class);
+        Root<Employee> employeeRoot = query.from(Employee.class);
+        if (nameStartsWith != null && !nameStartsWith.isEmpty()) {
+            query.where(cb.like(cb.lower(employeeRoot.get(Employee_.name)), nameStartsWith.toLowerCase() + '%'));
+        }
+        return em.createQuery(query).getResultList();
+    }
+    
+    public void saveOrUpdate(Employee employee) {
+        if (employee.getId() == null) {
+            em.persist(employee);
+        } else {
+            em.merge(employee);
+        }
+    }
+
+    public void delete(Employee employee) {
+        em.remove(employee);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@Test
+@SqlGroup({
+    @Sql(scripts = "/test-schema.sql", config = @SqlConfig(commentPrefix = "`")),
+    @Sql("/test-user-data.sql")
+)}
+public void userTest {
+    // execute code that uses the test schema and test data
+}
+--------------------------------------------------------------------------------------------------------
+@echo off
+
+start "" http://www.cnn.com
+start "" http://www.abc.com
+start "" http://www.msnbc.com
+start "" http://www.bbc.com
+start "" http://www.huffingtonpost.com
+start "" http://www.aljazeera.com
+start "" https://news.google.com/
+
+@echo off
+
+rem For each file in your folder
+for %%a in (".\*") do (
+rem check if the file has an extension and if it is not our script
+if "%%~xa" NEQ "" if "%%~dpxa" NEQ "%~dpx0" (
+rem check if extension folder exists, if not it is created
+if not exist "%%~xa" mkdir "%%~xa"
+rem Move the file to directory
+move "%%a" "%%~dpa%%~xa\"
+))
+--------------------------------------------------------------------------------------------------------
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+
+/**
+ * @author Serge Petunin
+ *         18.03.12 3:12
+ */
+public class JpaTest {
+    
+    @PersistenceContext
+    private EntityManager em;
+
+    protected <T> T get(Class<T> objectClass, Long id) {
+        return em.find(objectClass, id);
+    }
+
+    protected <T> long count(Class<T> objectClass) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Long> query = cb.createQuery(Long.class);
+        query.select(cb.count(query.from(objectClass)));
+        return em.createQuery(query).getSingleResult();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+ curl -k -d "grant_type=password&username=test&password=test" -H 
+"Authorization: Basic QU01dE04MXFrdzg5ZFNFTjk2Vm0waGgwWnBNYTpzeHcxbko3c2gzdm5NVVlmUDEzVmV1bWtsbTRh, 
+Content-Type: application/x-www-form-urlencoded" https://XXXXXX:8243/token
+--------------------------------------------------------------------------------------------------------
+# Vault
+spring.cloud.vault.host=localhost
+spring.cloud.vault.port=8200
+spring.cloud.vault.scheme=http
+spring.cloud.vault.authentication=token
+spring.cloud.vault.token=
+--------------------------------------------------------------------------------------------------------
+
+import static org.junit.Assert.assertEquals;
+import static org.springframework.test.web.client.ExpectedCount.once;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.support.RestGatewaySupport;
+
+import com.javacodegeeks.example.service.ExampleRestService;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class ExampleRestServiceTestViaRestGateway {
+	
+	@Autowired
+	RestTemplate restTemplate;
+
+	@Autowired
+	ExampleRestService service;
+
+	private MockRestServiceServer mockServer;
+
+	@Before
+	public void setUp() {
+		RestGatewaySupport gateway = new RestGatewaySupport();
+		gateway.setRestTemplate(restTemplate);
+		mockServer = MockRestServiceServer.createServer(gateway);
+	}
+	
+	@Test
+	public void testGetRootResourceOnce() {
+		mockServer.expect(once(), requestTo("http://localhost:8080"))
+			.andRespond(withSuccess("{message : 'under construction'}", MediaType.APPLICATION_JSON));
+
+		String result = service.getRootResource();
+		System.out.println("testGetRootResourceOnce: " + result);
+
+		mockServer.verify();
+		assertEquals("{message : 'under construction'}", result);
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import static org.junit.Assert.assertEquals;
+ 
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.client.RestTemplate;
+ 
+import com.javacodegeeks.example.service.ExampleRestService;
+ 
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withBadRequest;
+import static org.springframework.test.web.client.ExpectedCount.once;
+import static org.springframework.test.web.client.ExpectedCount.times;
+ 
+@RunWith(SpringRunner.class) //SpringRunner is an alias for the SpringJUnit4ClassRunner
+@SpringBootTest
+public class ExampleRestServiceTest {
+ 
+    @Autowired
+    RestTemplate restTemplate;
+ 
+    @Autowired
+    ExampleRestService service;
+ 
+    private MockRestServiceServer mockServer;
+ 
+    @Before
+    public void setUp() {
+        mockServer = MockRestServiceServer.createServer(restTemplate);
+    }
+ 
+    @Test
+    public void testGetRootResource() {
+        mockServer.expect(requestTo("http://localhost:8080")).andRespond(withSuccess("hello", MediaType.TEXT_PLAIN));
+ 
+        String result = service.getRootResource();
+        System.out.println("testGetRootResource: " + result);
+ 
+        mockServer.verify();
+        assertEquals("hello", result);
+    }
+     
+    @Test
+    public void testGetRootResourceOnce() {
+        mockServer.expect(once(), requestTo("http://localhost:8080"))
+            .andRespond(withSuccess("{message : 'under construction'}", MediaType.APPLICATION_JSON));
+ 
+        String result = service.getRootResource();
+        System.out.println("testGetRootResourceOnce: " + result);
+ 
+        mockServer.verify();
+        assertEquals("{message : 'under construction'}", result);
+    }
+     
+    @Test
+    public void testGetRootResourceTimes() {
+        mockServer.expect(times(2), requestTo("http://localhost:8080"))
+            .andRespond(withSuccess("{message : 'under construction'}", MediaType.APPLICATION_JSON));
+ 
+        String result = service.getRootResource();
+        System.out.println("testGetRootResourceTimes: " + result);
+ 
+        mockServer.verify(); // should fail because this test expects RestTemplate.getForObject to be called twice 
+        assertEquals("{message : 'under construction'}", result);
+    }
+     
+    @Test
+    public void testAddComment() {
+        mockServer.expect(requestTo("http://localhost/add-comment")).andExpect(method(HttpMethod.POST))
+            .andRespond(withSuccess("{post : 'success'}", MediaType.APPLICATION_JSON));
+ 
+        String result = service.addComment("cute puppy");
+        System.out.println("testAddComment: " + result);
+ 
+        mockServer.verify();
+        assertEquals("{post : 'success'}", result);
+    }
+     
+    @Test
+    public void testAddCommentClientError() {
+        mockServer.expect(requestTo("http://localhost/add-comment")).andExpect(method(HttpMethod.POST))
+            .andRespond(withBadRequest());
+ 
+        String result = service.addComment("cute puppy");
+        System.out.println("testAddCommentClientError: " + result);
+ 
+        mockServer.verify();
+        assertEquals("400 Bad Request", result);
+    }
+     
+    @Test
+    public void testReset() {
+        mockServer.expect(requestTo("http://localhost/add-comment")).andExpect(method(HttpMethod.POST))
+            .andRespond(withSuccess("{post : 'success'}", MediaType.APPLICATION_JSON));
+ 
+        String result = service.addComment("cute puppy");
+        System.out.println("testReset 1st: " + result);
+ 
+        mockServer.verify();
+        assertEquals("{post : 'success'}", result);
+         
+        mockServer.reset();
+         
+        mockServer.expect(requestTo("http://localhost:8080")).andRespond(withSuccess("hello", MediaType.TEXT_PLAIN));
+ 
+        result = service.getRootResource();
+        System.out.println("testReset 2nd: " + result);
+ 
+        mockServer.verify();
+        assertEquals("hello", result);
+    }
+}
+
+mport java.util.concurrent.ExecutionException;
+ 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.util.concurrent.ListenableFuture;
+import org.springframework.web.client.AsyncRestTemplate;
+import org.springframework.web.client.HttpServerErrorException;
+ 
+@Service
+public class AsyncExampleRestService {
+ 
+    @Autowired
+    private AsyncRestTemplate asyncRestTemplate;
+     
+    public String deleteAllSuspendedUsers() {
+        ListenableFuture future = asyncRestTemplate.delete("http://localhost/delete-all-suspended-users");
+        // doing some long process here...
+        Object result = null;
+        String returnValue = "";
+        try {
+            result = future.get(); //The Future will return a null result upon completion.
+            if (result == null) {
+                returnValue = "{result:'success'}";
+            } else {
+                returnValue = "{result:'fail'}";
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            if (e.getCause() instanceof HttpServerErrorException) {
+                returnValue = "{result: 'server error'}";
+            }
+        }
+        System.out.println("deleteAllSuspendedUsers: " + result);
+         
+        return returnValue;
+    }
+}
+
+import static org.junit.Assert.assertEquals;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
+ 
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpMethod;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.client.AsyncRestTemplate;
+ 
+import com.javacodegeeks.example.service.AsyncExampleRestService;
+ 
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class AsyncExampleRestServiceTest {
+ 
+    @Autowired
+    AsyncRestTemplate asyncRestTemplate;
+ 
+    @Autowired
+    AsyncExampleRestService service;
+ 
+    private MockRestServiceServer mockServer;
+ 
+    @Before
+    public void setUp() {
+        mockServer = MockRestServiceServer.createServer(asyncRestTemplate);
+    }
+ 
+    @Test
+    public void testDeleteAllSuspendedUsers() {
+        mockServer.expect(requestTo("http://localhost/delete-all-suspended-users")).andExpect(method(HttpMethod.DELETE))
+            .andRespond(withServerError());
+ 
+        String result = service.deleteAllSuspendedUsers();
+        System.out.println("testDeleteAllSuspendedUsers: " + result);
+ 
+        mockServer.verify();
+        assertEquals("{result: 'server error'}", result);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+	@Test // SPR-14694
+	public void repeatedAccessToResponseViaResource() {
+
+		Resource resource = new ClassPathResource("ludwig.json", this.getClass());
+
+		RestTemplate restTemplate = new RestTemplate();
+		restTemplate.setInterceptors(Collections.singletonList(new ContentInterceptor(resource)));
+
+		MockRestServiceServer mockServer = MockRestServiceServer.bindTo(restTemplate)
+				.ignoreExpectOrder(true)
+				.bufferContent()  // enable repeated reads of response body
+				.build();
+
+		mockServer.expect(requestTo("/composers/42")).andExpect(method(HttpMethod.GET))
+				.andRespond(withSuccess(resource, MediaType.APPLICATION_JSON));
+
+		restTemplate.getForObject("/composers/{id}", Person.class, 42);
+
+		mockServer.verify();
+	}
+	
+	@Test
+	public void expectNeverViolated() {
+
+		String responseBody = "{\"name\" : \"Ludwig van Beethoven\", \"someDouble\" : \"1.6035\"}";
+
+		this.mockServer.expect(once(), requestTo("/composers/42")).andExpect(method(HttpMethod.GET))
+				.andRespond(withSuccess(responseBody, MediaType.APPLICATION_JSON));
+		this.mockServer.expect(never(), requestTo("/composers/43")).andExpect(method(HttpMethod.GET))
+				.andRespond(withSuccess(responseBody, MediaType.APPLICATION_JSON));
+
+		this.restTemplate.getForObject("/composers/{id}", Person.class, 42);
+		assertThatExceptionOfType(AssertionError.class).isThrownBy(() ->
+				this.restTemplate.getForObject("/composers/{id}", Person.class, 43));
+	}
 --------------------------------------------------------------------------------------------------------
 spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation=true
  
