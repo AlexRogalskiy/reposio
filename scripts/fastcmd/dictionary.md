@@ -8809,6 +8809,178 @@ public static <K, V> Matcher<Map<K, V>> hasSize(final int size) {
     };
 }
 --------------------------------------------------------------------------------------------------------
+package com.tdd;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+public class CustomerServiceTest {
+    @Mock
+    private CustomerDao daoMock;
+    @InjectMocks
+    private CustomerService service;
+    @Before
+    public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
+    }
+     @Test
+        public void testAddCustomer_returnsNewCustomer() {
+            when(daoMock.save(any(Customer.class))).thenReturn(new Customer());
+            Customer customer = new Customer();
+            assertThat(service.addCustomer(customer), is(notNullValue()));
+        }
+    //Using Answer to set an id to the customer which is passed in as a parameter to the mock method.
+    @Test
+    public void testAddCustomer_returnsNewCustomerWithId() {
+        when(daoMock.save(any(Customer.class))).thenAnswer(new Answer<Customer>() {
+            @Override
+            public Customer answer(InvocationOnMock invocation) throws Throwable {
+                Object[] arguments = invocation.getArguments();
+                if (arguments != null && arguments.length > 0 && arguments[0] != null){
+                    Customer customer = (Customer) arguments[0];
+                    customer.setId(1);
+                    return customer;
+                }
+                return null;
+            }
+        });
+        Customer customer = new Customer();
+        assertThat(service.addCustomer(customer), is(notNullValue()));
+    }
+    //Throwing an exception from the mocked method
+     @Test(expected = RuntimeException.class)
+        public void testAddCustomer_throwsException() {
+            when(daoMock.save(any(Customer.class))).thenThrow(RuntimeException.class);
+            Customer customer = new Customer();
+            service.addCustomer(customer);//
+        }
+}
+--------------------------------------------------------------------------------------------------------
+@Test
+    public void testUpdate() {
+        doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation) throws Throwable {
+                Object[] arguments = invocation.getArguments();
+                if (arguments != null && arguments.length > 1 && arguments[0] != null && arguments[1] != null) {
+                    Customer customer = (Customer) arguments[0];
+                    String email = (String) arguments[1];
+                    customer.setEmail(email);
+                }
+                return null;
+            }
+        }).when(daoMock).updateEmail(any(Customer.class), any(String.class));
+        // calling the method under test
+        Customer customer = service.changeEmail("old@test.com", "new@test.com");
+        //some asserts
+        assertThat(customer, is(notNullValue()));
+        assertThat(customer.getEmail(), is(equalTo("new@test.com")));
+    }
+    @Test(expected = RuntimeException.class)
+    public void testUpdate_throwsException() {
+        doThrow(RuntimeException.class).when(daoMock).updateEmail(any(Customer.class), any(String.class));
+        // calling the method under test
+        Customer customer = service.changeEmail("old@test.com", "new@test.com");
+    }
+}
+--------------------------------------------------------------------------------------------------------
+package com.tdd;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+public class CustomerServiceTest {
+    @Mock
+    private CustomerDao daoMock;
+    @InjectMocks
+    private CustomerService service;
+    @Before
+    public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
+    }
+    @Test
+    public void test() {
+        when(daoMock.save(any(Customer.class))).thenReturn(true);
+        Customer customer=new Customer();
+        assertThat(service.addCustomer(customer), is(true));
+        //verify that the save method has been invoked
+        verify(daoMock).save(any(Customer.class));
+        //the above is similar to :  verify(daoMock, times(1)).save(any(Customer.class));
+        //verify that the exists method is invoked one time
+        verify(daoMock, times(1)).exists(anyString());
+        //verify that the delete method has never been  invoked
+        verify(daoMock, never()).delete(any(Customer.class));
+    }
+}
+--------------------------------------------------------------------------------------------------------
+package com.service;
+import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.verify;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import com.dao.CustomerDao;
+import com.entity.Customer;
+public class CustomerServiceTest {
+    @Mock
+    private CustomerDao doaMock;
+    @InjectMocks
+    private CustomerService service;
+    @Captor
+    private ArgumentCaptor<Customer> customerArgument;
+    public CustomerServiceTest() {
+        MockitoAnnotations.initMocks(this);
+    }
+    @Test
+    public void testRegister() {
+        //Requirement: we want to register a new customer. Every new customer should be assigned a random token before saving in the database.
+        service.register(new Customer());
+        //captures the argument which was passed in to save method.
+        verify(doaMock).save(customerArgument.capture());
+        //make sure a token is assigned by the register method before saving.
+        assertThat(customerArgument.getValue().getToken(), is(notNullValue()));
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InjectMocks;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
+public class CustomerServiceTestV2 {
+    @Spy
+    private CustomerDaoImpl daoSpy;
+    @InjectMocks
+    private CustomerService service;
+    @Before
+    public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
+    }
+    @Test
+    public void test() {
+        Customer customer = new Customer();
+        assertThat(service.addCustomer(customer), is(false));
+        verify(daoSpy).save(any(Customer.class));
+        verify(daoSpy, times(1)).exists(anyString());
+        verify(daoSpy, never()).delete(any(Customer.class));
+    }
+}
+--------------------------------------------------------------------------------------------------------
 package org.baeldung.hamcrest;
 
 import org.junit.Test;
