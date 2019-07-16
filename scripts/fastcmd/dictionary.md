@@ -10761,6 +10761,147 @@ public class DetailsServiceClientTest {
                        containsString("resultSuccess")));
     }
 --------------------------------------------------------------------------------------------------------
+    public static void main (String[] args) {
+        final int[] ints = IntStream.range(0, 5).toArray();
+        PerformanceTestUtil.runTest("forEach() method", () -> {
+            Arrays.stream(ints).parallel().forEach(i -> doSomething(i));
+        });
+
+        PerformanceTestUtil.runTest("forEachOrdered() method", () -> {
+            Arrays.stream(ints).parallel().forEachOrdered(i -> doSomething(i));
+        });
+    }
+	
+	public class SideEffectWrongUse {
+
+    public static void main (String[] args) {
+        List<Integer> results = new ArrayList<>();
+        IntStream.range(0, 150)
+                 .parallel()
+                 .filter(s -> s % 2 == 0)
+                 .forEach(s -> results.add(s));//stateful side effect
+        //not thread safe
+        System.out.println(results);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations = {"classpath*:/test-dao-rest.xml"})
+public class TestEmployeeRestDao {
+
+  @Autowired
+  private EmployeeDao employeeRestDao;
+
+  @Autowired
+  private RestTemplate mockRestTemplate;
+
+  private MockRestServiceServer mockServer;
+
+  /**
+   * Sets up.
+   */
+  @Before
+  public void setUp() {
+    mockServer = MockRestServiceServer.bindTo(mockRestTemplate).build();
+  }
+
+  @Test
+  public void testGetEmployeeById() {
+    when(mockRestTemplate.getForObject(url + 1, Employee.class)).thenReturn(emp2);
+    mockServer.expect(times(1), requestTo(url + 1))
+        .andExpect(method(HttpMethod.GET))
+    Employee employee = employeeRestDao.getEmployeeById(1L);
+    assertNotNull(employee);
+    mockServer.verify();
+  }
+--------------------------------------------------------------------------------------------------------
+public class OtherJUnit4Test {
+
+  @Rule
+  public final TemporaryFolder folder = new TemporaryFolder();
+
+  @Rule
+  public final Timeout timeout = new Timeout(1000);
+
+  @Rule
+  public final ExpectedException thrown = ExpectedException.none();
+
+  @Ignore
+  @Test
+  public void anotherInfinity() {
+    while (true);
+  }
+
+  @Test
+  public void testFileWriting() throws IOException {
+    final File log = folder.newFile("debug.log");
+    final FileWriter logWriter = new FileWriter(log);
+    logWriter.append("Hello, ");
+    logWriter.append("World!!!");
+    logWriter.flush();
+    logWriter.close();
+  }
+
+  @Test
+  public void testExpectedException() throws IOException {
+    thrown.expect(NullPointerException.class);
+    StringUtils.toHexString(null);
+  }
+}
+--------------------------------------------------------------------------------------------------------
+@Autowired
+private RestTemplate restTemplate;
+
+private MockRestServiceServer mockServer;
+
+@Before
+public void setup() {
+    this.mockServer = MockRestServiceServer.createServer(this.restTemplate);
+}
+
+@Test
+public void testDefaultMethod() throws Exception {
+    this.mockServer.expect(requestTo("/testApps/httpMethod"))
+            .andExpect(method(HttpMethod.POST))
+            .andRespond(withSuccess(HttpMethod.POST.name(), MediaType.TEXT_PLAIN));
+
+    this.defaultChannel.send(new GenericMessage<String>("Hello"));
+    Message<?> message = this.replyChannel.receive(5000);
+    assertNotNull(message);
+    assertEquals("POST", message.getPayload());
+
+    this.mockServer.verify();
+
+@Configuration
+public class RestClientTestApplicationConfig {
+    @Bean
+    @Qualifier("httpRequestChannel")
+    public MessageChannel httpRequestChannel() { return new QueueChannel(); }
+
+    @Bean
+    @Qualifier("httpReplyChannel")
+    public MessageChannel httpReplyChannel() { return new QueueChannel(); }
+
+    @Bean
+    public RestTemplate restTemplate() { return new RestTemplate(); }
+
+    @Bean
+    @InboundChannelAdapter(value="httpRequestChannel", poller=@Poller(fixedDelay = "1000"))
+    public MessageSource<String> httpRequestTrigger() { return new ExpressionEvaluatingMessageSource<>(new LiteralExpression(""), String.class); }
+
+    @Bean
+    @ServiceActivator(inputChannel="httpRequestChannel", poller=@Poller(fixedDelay = "1000"))
+    public MessageHandler messageHandler(
+        RestTemplate restTemplate,
+        @Qualifier("httpReplyChannel") MessageChannel messageChannel,
+        @Value("${url}") String url
+    ) {
+        HttpRequestExecutingMessageHandler messageHandler = new HttpRequestExecutingMessageHandler(url, restTemplate);
+        messageHandler.setOutputChannel(messageChannel);
+        return messageHandler;
+    }
+} 
+--------------------------------------------------------------------------------------------------------
 @ContextConfiguration
 @TestExecutionListeners({
     MyCustomTestExecutionListener.class,
@@ -10812,6 +10953,8 @@ public class OrderServiceTest {
 }
 
 https://docs.spring.io/spring/docs/current/spring-framework-reference/testing.html#testcontext-tel-config
+--------------------------------------------------------------------------------------------------------
+docker run -d --name axonserver -p 8024:8024 -p 8124:8124 axoniq/axonserver
 --------------------------------------------------------------------------------------------------------
 @Configuration
 @Profile("default")
