@@ -10161,6 +10161,118 @@ fi
 MessageFormat format = new MessageFormat("The number is {0, number}", Locale.GERMAN);
 String s = format.format(new Object[] {number});
 --------------------------------------------------------------------------------------------------------
+// class name is awful for this example, but it will make more sense if you
+//  read further
+public interface MetaDataKey<T extends Serializable> extends Serializable
+{
+    T getValue();
+}
+
+public final class TypeSafeKeys
+{
+    static enum StringKeys implements MetaDataKey<String>
+    {
+        A1("key1");
+
+        private final String value;
+
+        StringKeys(String value) { this.value = value; }
+
+        @Override
+        public String getValue() { return value; }
+    }
+
+    static enum IntegerKeys implements MetaDataKey<Integer>
+    {
+        A2(0);
+
+        private final Integer value;
+
+        IntegerKeys (Integer value) { this.value = value; }
+
+        @Override
+        public Integer getValue() { return value; }
+    }
+
+    public static final MetaDataKey<String> A1 = StringKeys.A1;
+    public static final MetaDataKey<Integer> A2 = IntegerKeys.A2;
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+@EnableAutoConfiguration
+@EnableConfigurationProperties
+public class MapBindingSample {
+
+    public static void main(String[] args) throws Exception {
+        System.out.println(SpringApplication.run(MapBindingSample.class, args)
+                .getBean(Test.class).getInfo());
+    }
+
+    @Bean
+    @ConfigurationProperties
+    public Test test() {
+        return new Test();
+    }
+
+    public static class Test {
+
+        private Map<String, Object> info = new HashMap<String, Object>();
+
+        public Map<String, Object> getInfo() {
+            return this.info;
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+# Basic function options
+x-function: &function
+  labels:
+    function: "true"
+  depends_on:
+    - gateway
+  networks:
+    - functions
+# Linux placement
+x-linux: &linux-only
+  deploy:
+    placement:
+      constraints:
+        - 'node.platform.os == linux'
+# Windows placement
+x-windows: &windows-only
+  deploy:
+    placement:
+      constraints:
+        - 'node.platform.os == windows'
+services:
+  # Node.js gives OS info about the node (Host)
+  nodeinfo:
+    <<: *function
+    <<: *linux-only
+    image: functions/nodeinfo:latest
+    environment:
+      no_proxy: "gateway"
+      https_proxy: $https_proxy
+  # Uses `cat` to echo back response, fastest function to execute.
+  echoit:
+    <<: *function
+    <<: *linux-only
+    image: functions/alpine:health
+    environment:
+      fprocess: "cat"
+      no_proxy: "gateway"
+      https_proxy: $https_proxy
+--------------------------------------------------------------------------------------------------------
 HttpHeaders headers = new HttpHeaders();
 headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
 
