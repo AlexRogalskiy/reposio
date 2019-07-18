@@ -10234,6 +10234,79 @@ public class MapBindingSample {
     }
 }
 --------------------------------------------------------------------------------------------------------
+@Value("#{systemProperties['priority']}")
+private String spelValue;
+
+@Value("#{systemProperties['unknown'] ?: 'some default'}")
+private String spelSomeDefault;
+
+@Value("#{someBean.someValue}")
+private Integer someBeanValue;
+
+@Value("#{'${listOfValues}'.split(',')}")
+private List<String> valuesList;
+
+@Value("#{${valuesMap}}")
+private Map<String, Integer> valuesMap;
+
+@Value("#{${valuesMap}.key1}")
+private Integer valuesMapKey1;
+
+@Value("#{${unknownMap : {key1: '1', key2: '2'}}}")
+private Map<String, Integer> unknownMap;
+ 
+@Value("#{${valuesMap}['unknownKey'] ?: 5}")
+private Integer unknownMapKeyWithDefaultValue;
+
+@Value("#{${valuesMap}.?[value>'1']}")
+private Map<String, Integer> valuesMapFiltered;
+
+@Value("#{systemProperties}")
+private Map<String, String> systemPropertiesMap;
+--------------------------------------------------------------------------------------------------------
+docker pull greenmail/standalone:1.5.10
+docker run -t -i -p 3025:3025 -p 3110:3110 -p 3143:3143 \
+                 -p 3465:3465 -p 3993:3993 -p 3995:3995 \
+                 greenmail/standalone:1.5.10
+docker run -t -i \
+           -e GREENMAIL_OPTS='-Dgreenmail.setup.test.all -Dgreenmail.hostname=0.0.0.0 -Dgreenmail.auth.disabled -Dgreenmail.verbose' \
+           -e JAVA_OPTS='-Djava.net.preferIPv4Stack=true -Xmx512m' \
+           -p 3025:3025 -p 3110:3110 -p 3143:3143 \
+           -p 3465:3465 -p 3993:3993 -p 3995:3995 \
+           greenmail/standalone:1.5.4
+--------------------------------------------------------------------------------------------------------
+        <plugin>
+          <!-- http://maven.apache.org/plugins/maven-surefire-plugin/plugin-info.html -->
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>3.0.0-M3</version>
+          <configuration>
+            <forkCount>1</forkCount>
+            <reuseForks>true</reuseForks>
+            <!-- cli -->
+            <workingDirectory>target</workingDirectory>
+            <!-- Fix https://talk.openmrs.org/t/error-could-not-find-or-load-main-class-org-apache-maven-surefire-booter-forkedbooter/20509 -->
+            <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+          </configuration>
+        </plugin>
+--------------------------------------------------------------------------------------------------------
+<argLine>-Xmx512m -enableassertions</argLine>
+--------------------------------------------------------------------------------------------------------
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary=frontier
+
+This is a message with multiple parts in MIME format.
+--frontier
+Content-Type: text/plain
+
+This is the body of the message.
+--frontier
+Content-Type: application/octet-stream
+Content-Transfer-Encoding: base64
+
+PGh0bWw+CiAgPGhlYWQ+CiAgPC9oZWFkPgogIDxib2R5PgogICAgPHA+VGhpcyBpcyB0aGUg
+Ym9keSBvZiB0aGUgbWVzc2FnZS48L3A+CiAgPC9ib2R5Pgo8L2h0bWw+Cg==
+--frontier--
+--------------------------------------------------------------------------------------------------------
 # Basic function options
 x-function: &function
   labels:
