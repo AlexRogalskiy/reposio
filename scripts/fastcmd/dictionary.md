@@ -10938,6 +10938,90 @@ public class CityControllerTest {
     }
     return this.customizerInvoker.customize(builder.build());
 --------------------------------------------------------------------------------------------------------
+secondArray = Arrays.stream(array)
+              .flatMapToInt(i -> Arrays.stream(i)) //преобразовываем Stream<int[]> в Stream
+              .toArray(); // преобразовываем Stream в int[] 
+--------------------------------------------------------------------------------------------------------
+	<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-failsafe-plugin</artifactId>
+					<version>2.5</version>
+					<configuration>
+						<argLine>-Xms512m -Xmx1024m -XX:PermSize=128m</argLine>
+					</configuration>
+				</plugin>
+--------------------------------------------------------------------------------------------------------
+/set options +HISTORY_DISCLOSED
+--------------------------------------------------------------------------------------------------------
+@Component
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+public class MyBean {
+
+    @InjectRandomInt
+    private int value1;
+
+    @InjectRandomInt(min = 100, max = 200)
+    private int value2;
+
+    private int value3;
+
+    @Override
+    public String toString() {
+        return "MyBean{" +
+                "value1=" + value1 +
+                ", value2=" + value2 +
+                ", value3=" + value3 +
+                '}';
+    }
+}
+--------------------------------------------------------------------------------------------------------
+#' @importFrom utils savehistory
+
+get_history_tail <- function(n) {
+  savehistory(tmp <- tempfile())
+  on.exit(unlink(tmp))
+  tail(readLines(tmp), n)
+}
+
+drop_comment_char <- function(x) {
+  sub("^(\\s*git\\s+)#?", "\\1", x)
+}
+
+echo_command <- function(x) {
+  ## Current prompt, can be multiple lines, take the last
+  pr <- tail(strsplit(getOption("prompt"), "\n")[[1]], 1)
+  cat(pr, x, "\n", sep = "")
+}
+
+find_parent <- function(name, pkg = NULL) {
+  if (!is.null(pkg)) name <- call("::", pkg, name)
+  calls <- sys.calls()
+  for (i in seq_along(calls)) {
+    if (identical(calls[[i]][[1]], name)) return(i)
+  }
+  NA_integer_
+}
+--------------------------------------------------------------------------------------------------------
+private rule Macho
+{
+    meta:
+        description = "private rule to match Mach-O binaries (copied from Apple's XProtect)"
+    condition:
+        uint32(0) == 0xfeedface or uint32(0) == 0xcefaedfe or uint32(0) == 0xfeedfacf or uint32(0) == 0xcffaedfe or uint32(0) == 0xcafebabe or uint32(0) == 0xbebafeca
+}
+
+rule ZoomDaemon
+{
+    meta:
+        description = "ZoomDaemon and its whitelabels"
+    strings:
+        $ = "zLocalHostWrapper"
+        $ = "ZMClientHelper"
+        $ = "ZMLocalHostMgr"
+    condition:
+        Macho and all of them
+}
+--------------------------------------------------------------------------------------------------------
 //        final StringBuilder sb = new StringBuilder();
 //        sb.append("From: foo@bar.com\r\n");
 //        sb.append("To: someone@else.com\r\n");
