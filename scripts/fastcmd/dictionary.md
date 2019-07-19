@@ -10965,6 +10965,32 @@ public class ProgrammaticallyValidatingService {
   }
 }
 --------------------------------------------------------------------------------------------------------
+import com.memorynotfound.kafka.producer.Sender;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class SpringKafkaApplication implements CommandLineRunner {
+
+    public static void main(String[] args) {
+        SpringApplication.run(SpringKafkaApplication.class, args);
+    }
+
+    @Autowired
+    private Sender sender;
+
+    @Override
+    public void run(String... strings) throws Exception {
+        for (int i = 1; i < 13; i++){
+            sender.send("message-" + i);
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+about:preferences#search
+--------------------------------------------------------------------------------------------------------
         this.externalFileIds = Stream.concat(this.externalFileIds.stream(), externalFileIds.stream())
                 .collect(Collectors.toList());
 --------------------------------------------------------------------------------------------------------
