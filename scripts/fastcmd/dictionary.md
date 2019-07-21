@@ -10969,6 +10969,250 @@ public class ControllerTest {
     }
 }
 --------------------------------------------------------------------------------------------------------
+multiliners:
+    ugly_multiline: "ugly\nugly\nugly\nugly\n"
+
+    multiline_with_line_ending: |
+        multiline text
+        with ending
+
+    multiline_without_line_ending: |-
+        multiline text
+        without ending
+		
+singleliners:
+    simple: 
+        single
+        line
+        text
+
+    single-line-text: >-
+        single
+        line
+        text
+
+    single-line-text-with-line-ending: >
+        single
+        line
+        text
+		
+commands:
+    - do something with --a long --list of --parameters 
+    - do something 
+      with 
+      --a long 
+      --list of 
+      --parameters 
+	  
+json:
+    vm-profiles-yaml:
+        small:
+            cpu:  2
+            ram:  2
+            disk: 10
+            os: rhel6 
+        large:
+            cpu:  4
+            ram:  4
+            disk: 10
+            os: rhel6 
+
+    vm-profiles-json:
+        small:  { cpu: 2, ram: 2, disk: 10, os: rhel6 } 
+        large:  { cpu: 4, ram: 4, disk: 10, os: rhel6 } 
+		
+matrices:
+    matrix_json_style: [
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1],
+    ]
+    matrix_yaml_style: 
+      - [1, 0, 0]
+      - [0, 1, 0]
+      - [0, 0, 1]
+	  
+inheritance:
+    _basic: &basic
+        cpu:  2
+        ram:  2
+        disk: 10
+        os: rhel6 
+
+    vm-profiles:
+        small: 
+            <<: *basic
+            cpu: 1
+        large: 
+            <<: *basic
+            cpu: 4
+			
+inheritance:
+    _basic: &basic
+        cpu:  2
+        ram:  2
+        disk: 10
+        os: rhel6 
+
+    vm-profiles:
+        small: {<<: *basic,  cpu: 1}
+        large: {<<: *basic,  cpu: 4}
+		
+references:
+    value1: &reference "Don't repeat yourself!"  
+    value2: *reference 
+	
+# requires PyYAML
+alias yaml2json='python -c "import sys,yaml,json;sys.tracebacklimit=0;print(json.dumps(yaml.load(open(sys.argv[1]).read()), indent=2))"'
+--------------------------------------------------------------------------------------------------------
+import com.google.common.collect.Lists;
+import java.util.Arrays;
+import java.util.List;
+
+// Convert List<String> to List<Integer>
+class ListUtil
+{
+	// Program to convert List of String to List of Integer using Guava
+	public static void main(String args[])
+	{
+		List<String> list = Arrays.asList("-1", "2", "3", "4", "5");
+
+		List<Integer> newList = Lists.transform(list, Integer::parseInt);
+		System.out.println(newList);
+	}
+}
+
+import com.google.common.base.Function;
+import com.google.common.collect.Iterables;
+import java.util.Arrays;
+import java.util.List;
+
+class ListUtil
+{
+	// Program to Convert List<String> to Iterable<Integer> using Guava
+	public static void main(String args[])
+	{
+		List<String> list = Arrays.asList("-1", "2", "3", "4", "5");
+
+		Iterable<Integer> iterable = Iterables.transform(list, 
+														Integer::valueOf);
+
+		System.out.println(iterable);
+	}
+}
+
+Iterables.transform(list, new Function<String, Object>() {
+	@Override
+	public Integer apply(String s) {
+		return Integer.valueOf(s);
+	}
+});
+
+import com.google.common.collect.Collections2;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+
+class ListUtil
+{
+	// Program to Convert List<String> to Collection<Integer> using Guava
+	public static void main(String args[])
+	{
+		List<String> list = Arrays.asList("-1", "2", "3", "4", "5");
+
+		Collection<Integer> collection = Collections2.transform(list,
+															Integer::valueOf);
+
+		System.out.println(collection);
+	}
+}
+--------------------------------------------------------------------------------------------------------
+#!/usr/bin/env bash
+
+if [ "$#" -ne 1 ]
+then
+  echo "Usage: yaml2html <name without .yaml extension>"
+  exit 1
+fi
+
+cat $1.yaml | yaml2yeast | yeast2html > $1.html
+
+#!/usr/bin/env bash
+# build docker image to run Yaml reference
+docker build -t yaml-reference .
+--------------------------------------------------------------------------------------------------------
+FROM haskell:7.10.3
+MAINTAINER Andrey Somov <public.somov@gmail.com>
+
+ENV YAML_REF=YamlReference-0.10.0
+
+RUN apt-get update && apt-get install -y \
+   build-essential \
+   ca-certificates \
+   less            \
+   netbase         \
+   vim
+
+# install YamlReference
+ADD http://hackage.haskell.org/package/${YAML_REF}/${YAML_REF}.tar.gz ${YAML_REF}.tar.gz 
+RUN tar xvzf ${YAML_REF}.tar.gz
+
+# add yeast2html to PATH
+ENV PATH=${PATH}:/${YAML_REF}
+
+WORKDIR /${YAML_REF}
+#RUN stack upgrade
+RUN stack setup && stack init && stack build && stack install
+
+RUN cp /root/.local/bin/yaml2yeast ./yaml2yeast -R
+RUN chmod o=rwx --recursive /${YAML_REF}
+
+CMD ["bash"]
+--------------------------------------------------------------------------------------------------------
+ public String toString()
+  {
+    return ToStringBuilder.reflectionToString(this, ToStringStyle.MULTI_LINE_STYLE);
+  }
+--------------------------------------------------------------------------------------------------------
+    protected Class<?> getClassForName(String name) throws ClassNotFoundException {
+        try {
+            return Class.forName(name, true, Thread.currentThread().getContextClassLoader());
+        } catch (ClassNotFoundException e) {
+            return Class.forName(name);
+        }
+    }
+--------------------------------------------------------------------------------------------------------
+/* We need a constructor to tell SnakeYaml that the type parameter of
+ * the 'name' List is String
+ * (SnakeYAML cannot figure it out itself due to type erasure)
+ */
+Constructor constructor = new Constructor(Config.class);
+TypeDescription configDesc = new TypeDescription(Config.class);
+configDesc.putListPropertyType("name", String.class);
+constructor.addTypeDescription(configDesc);
+
+// Now we use our constructor to tell SnakeYAML how to load the YAML
+Yaml yaml = new Yaml(constructor);
+Config config = yaml.loadAs(in, Config.class);
+
+// You can now easily access your strings
+List<String> values = config.name;
+
+class Config {
+    public List<String> name;
+}
+--------------------------------------------------------------------------------------------------------
+@Test
+public void whenCollectorsJoining_thenPrintCustom() {
+    List<Integer> intList = Arrays.asList(1, 2, 3);
+    String result = intList.stream()
+      .map(n -> String.valueOf(n))
+      .collect(Collectors.joining("-", "{", "}"));
+  
+    System.out.println(result);
+}
+--------------------------------------------------------------------------------------------------------
 package org.afc.petstore.ssl;
 
 import javax.net.ssl.HostnameVerifier;
