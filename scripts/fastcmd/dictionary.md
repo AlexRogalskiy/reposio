@@ -10383,6 +10383,211 @@ Save 10 screenshots in a loop, and wait 60 seconds between the screenshot save c
 Wait until Firefox is closed, and then say "Firefox was closed"	nircmd.exe waitprocess firefox.exe speak text "Firefox was closed"
 Run RegEdit with SYSTEM user (On Windows 7/8/Vista/2008), which allows you to view all hidden system Registry keys	nircmd.exe elevatecmd runassystem c:\windows\regedit.exe
 --------------------------------------------------------------------------------------------------------
+final String html = "<div>Hello jsoup world</div>";
+
+Document doc = Jsoup.parse(html, "", Parser.xmlParser());
+Element tag = doc;
+--------------------------------------------------------------------------------------------------------
+Document doc = Jsoup.connect("http://example.com").get();
+doc.select("p").forEach(System.out::println);
+
+Document docCustomConn = Jsoup.connect(blogUrl)
+  .userAgent("Mozilla")
+  .timeout(5000)
+  .cookie("cookiename", "val234")
+  .cookie("anothercookie", "ilovejsoup")
+  .referrer("http://google.com")
+  .header("headersecurity", "xyz123")
+  .get();
+  
+Elements links = doc.select("a");
+Elements sections = doc.select("section");
+Elements logo = doc.select(".spring-logo--container");
+Elements pagination = doc.select("#pagination_control");
+Elements divsDescendant = doc.select("header div");
+Elements divsDirect = doc.select("header > div");
+
+Element pag = doc.getElementById("pagination_control");
+Elements desktopOnly = doc.getElementsByClass("desktopOnly");
+
+Element firstSection = sections.first();
+Element lastSection = sections.last();
+Element secondSection = sections.get(2);
+Elements allParents = firstSection.parents();
+Element parent = firstSection.parent();
+Elements children = firstSection.children();
+Elements siblings = firstSection.siblingElements();
+
+
+Elements sectionParagraphs = firstSection.select(".paragraph");
+Element firstArticle = doc.select("article").first();
+Element timeElement = firstArticle.select("time").first();
+String dateTimeOfFirstArticle = timeElement.attr("datetime");
+Element sectionDiv = firstArticle.select("section div").first();
+String sectionDivText = sectionDiv.text();
+String articleHtml = firstArticle.html();
+String outerHtml = firstArticle.outerHtml();
+
+
+timeElement.attr("datetime", "2016-12-16 15:19:54.3");
+sectionDiv.text("foo bar");
+firstArticle.select("h2").html("<div><span></span></div>");
+
+Element link = new Element(Tag.valueOf("a"), "")
+  .text("Checkout this amazing website!")
+  .attr("href", "http://baeldung.com")
+  .attr("target", "_blank");
+firstArticle.appendChild(link);
+
+
+doc.select("li.navbar-link").remove();
+firstArticle.select("img").remove();
+--------------------------------------------------------------------------------------------------------
+private void convertTablesToLists(final Document document) {
+ // If a two column table, where the first col is always the same (and non-alphabetic), then drop
+ // it and convert the other row to a list.
+ document.select("table").forEach(table -> {
+  String firstColumnValue = null;
+  for (final Element tr : table.select("tr")) {
+   final Elements cells = tr.select("td");
+   if (cells.size() != 2) {
+    return;
+   }
+   final Element cell = cells.first();
+   final String first = cell.text().trim();
+   if (firstColumnValue != null) {
+    if (!firstColumnValue.equals(first)) {
+     return;
+    }
+   } else {
+    firstColumnValue = first;
+   }
+  }
+  // If we are here then all the first columns are the same...
+  // So we convert to a list...
+  final Element ul = new Element(Tag.valueOf("ul"), "");
+  for (final Element tr : table.select("tr")) {
+   final Elements cells = tr.select("td");
+   ul.appendElement("li").html(cells.last().html());
+  }
+  table.replaceWith(ul);
+ });
+}
+
+ import org.jsoup.*;
+import org.jsoup.nodes.*;
+import org.jsoup.select.*;
+
+public class MyJsoupExample {
+  public static void main(String args[]) {
+    String inputText = "<html><head></head><body><p><img src=\"getCustomers.do?custCode=2&customerId=3334&param1=123\"/></p>"
+      + "<p>someText <img src=\"getCustomers.do?custCode=2&customerId=3340&param2=456\"/></p></body></html>";
+    Document doc = Jsoup.parse(inputText);
+    Elements myImgs = doc.select("img[src*=customerId=3340");
+    for (Element element : myImgs) {
+      element.replaceWith(new TextNode("my replaced text", ""));
+    }
+    System.out.println(doc.toString());
+  }
+}
+
+private Element changeElementTag(Element e, String newTag) {
+  Element newElement = document.createElement(newTag);
+  /* JSoup gives us the live child list, so we need to make a copy. */
+  List<Node> copyOfChildNodeList = new ArrayList<Node>();
+  copyOfChildNodeList.addAll(e.childNodes());
+  for (Node n : copyOfChildNodeList) {
+    n.remove();
+    newElement.appendChild(n);
+  }
+  e.replaceWith(newElement);
+  return newElement;
+}
+--------------------------------------------------------------------------------------------------------
+/**
+ * Finds a set of elements through a CSS selector and swaps its tag with
+ * that from its parent.
+ * 
+ * @param root
+ *            body element with source divisions to upgrade
+ * @param selector
+ *            CSS selector for the elements to swap with its parent
+ */
+public final void swapTagWithParent(final Element root,
+    final String selector) {
+  final Iterable<Element> elements; // Selected elements
+  Element parent;                   // Parent element
+  String text;                      // Preserved text
+  checkNotNull(root, "Received a null pointer as root element");
+  checkNotNull(selector, "Received a null pointer as selector");
+  // Selects and iterates over the elements
+  elements = root.select(selector);
+  for (final Element element : elements) {
+    parent = element.parent();
+    // Takes the text out of the element
+    text = element.text();
+    element.text("");
+    // Swaps elements
+    parent.replaceWith(element);
+    element.appendChild(parent);
+    // Sets the text into what was the parent element
+    parent.text(text);
+  }
+}
+
+Elements elements = doc.select("img[src$=a.gif]");
+ for(Element element : elements)
+ {
+  element.replaceWith(new TextNode("A", null));
+ }
+--------------------------------------------------------------------------------------------------------
+ File input = new File("your.html");
+Document doc = Jsoup.parse(input, "UTF-8");
+
+Elements links = doc.select("a[href]");
+
+while (links.hasNext()) {
+ Element link = iterator.next();
+ Element bold = doc.createElement("b").appendText(link.text());
+ link.replaceWith(bold);
+}
+
+Elements elements = doc.select("img[src$=a.gif]");
+ for(Element element : elements)
+ {
+  element.replaceWith(new TextNode("A", null));
+ }
+ 
+  Document doc = Jsoup.parse(html);
+for (Element small: doc.select("small")) {
+ small.replaceWith(new Element(Tag.valueOf("span"), "").text(small.text()));
+}
+System.out.println(doc.html()); // prints html with <small> replaced by <span>
+
+ for (Element elem : document.select(".singolo-contenuto a")) {
+  if(elem.parents().hasClass("list_attachments")) continue;
+  String href = elem.attr("href");
+  String text = elem.text();
+  elem.replaceWith(new TextNode(href + " " + text, ""));
+}
+String result = document.select(".singolo-contenuto").text();
+
+
+
+ Document doc = Jsoup.parse(inputHtml);
+Elements links = doc.select("a");
+String baseUri = links.get(0).baseUri();
+for(Element link : links) {
+  Node linkText = new TextNode(link.html(), baseUri);
+  // optionally wrap it in a tag instead:
+  // Element linkText = doc.createElement("span");
+  // linkText.html(link.html());
+  link.replaceWith(linkText);
+}
+
+
+
+--------------------------------------------------------------------------------------------------------
 https://github.com/spring-projects/spring-kafka/blob/654d3bf5c7c59514b3191bf1cf8218c9370987fa/spring-kafka/src/test/java/org/springframework/kafka/listener/TransactionalContainerTests.java
 Compare a Set of Files
 
