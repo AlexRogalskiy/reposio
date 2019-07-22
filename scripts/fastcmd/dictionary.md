@@ -11142,6 +11142,862 @@ cat $1.yaml | yaml2yeast | yeast2html > $1.html
 # build docker image to run Yaml reference
 docker build -t yaml-reference .
 --------------------------------------------------------------------------------------------------------
+import io.grpc.stub.StreamObserver;
+
+/**
+ * Author: marc
+ */
+public class SynchronizedStreamObserver<T>
+        implements StreamObserver<T> {
+
+    private final StreamObserver<T> delegate;
+
+    public SynchronizedStreamObserver(
+            StreamObserver<T> delegate) {
+        this.delegate = delegate;
+    }
+
+    @Override
+    public void onNext(T t) {
+        synchronized (delegate) {
+            delegate.onNext(t);
+        }
+    }
+
+    @Override
+    public void onError(Throwable throwable) {
+        delegate.onError(throwable);
+    }
+
+    @Override
+    public void onCompleted() {
+        delegate.onCompleted();
+    }
+}
+
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+/**
+ * Composite of {@link MessageDispatchInterceptor}s that apply all interceptors in the order of registration.
+ *
+ * @author Sara Pellegrini
+ * @since 4.0
+ */
+public class DispatchInterceptors<M extends Message<?>> {
+
+    private final List<MessageDispatchInterceptor<? super M>> dispatchInterceptors = new CopyOnWriteArrayList<>();
+
+    public Registration registerDispatchInterceptor(MessageDispatchInterceptor<? super M> dispatchInterceptor) {
+        dispatchInterceptors.add(dispatchInterceptor);
+        return () -> dispatchInterceptors.remove(dispatchInterceptor);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends M> T intercept(T message) {
+        T messageToDispatch = message;
+        for (MessageDispatchInterceptor<? super M> interceptor : dispatchInterceptors) {
+            messageToDispatch = (T) interceptor.handle(messageToDispatch);
+        }
+        return messageToDispatch;
+    }
+}
+
+import io.axoniq.axonserver.grpc.ErrorMessage;
+
+import static org.axonframework.common.ObjectUtils.getOrDefault;
+
+/**
+ * Author: marc
+ */
+public class ExceptionSerializer {
+
+    public static ErrorMessage serialize(String client, Throwable t) {
+        ErrorMessage.Builder builder = ErrorMessage.newBuilder().setLocation(getOrDefault(client, "")).setMessage(
+                t.getMessage() == null ? t.getClass().getName() : t.getMessage());
+        builder.addDetails(t.getMessage() == null ? t.getClass().getName() : t.getMessage());
+        while (t.getCause() != null) {
+            t = t.getCause();
+            builder.addDetails(t.getMessage() == null ? t.getClass().getName() : t.getMessage());
+        }
+        return builder.build();
+    }
+}
+
+   /**
+     * A {@link StreamObserver} implementation used to return a single result, upon which it completes the given
+     * {@link CompletableFuture}.
+     *
+     * @param <T> the type of the single result
+     */
+    private class SingleResultStreamObserver<T> implements StreamObserver<T> {
+
+        private final String context;
+        private final CompletableFuture<T> future;
+
+        private SingleResultStreamObserver(String context, CompletableFuture<T> future) {
+            this.context = context;
+            this.future = future;
+        }
+
+        @Override
+        public void onNext(T t) {
+            future.complete(t);
+        }
+
+        @Override
+        public void onError(Throwable throwable) {
+            checkConnectionException(throwable, context);
+            future.completeExceptionally(GrpcExceptionParser.parse(throwable));
+        }
+
+        @Override
+        public void onCompleted() {
+            if (!future.isDone()) {
+                future.completeExceptionally(new AxonServerException(
+                        "AXONIQ-0001", "Async call completed before answer"
+                ));
+            }
+        }
+    }
+--------------------------------------------------------------------------------------------------------
+   public static List<DomainEventMessage<?>> createEvents(int numberOfEvents) {
+        return IntStream.range(0, numberOfEvents)
+                        .mapToObj(sequenceNumber -> createEvent(TYPE,
+                                                                IdentifierFactory.getInstance().generateIdentifier(),
+                                                                AGGREGATE,
+                                                                sequenceNumber,
+                                                                PAYLOAD + sequenceNumber,
+                                                                METADATA))
+                        .collect(Collectors.toList());
+    }
+--------------------------------------------------------------------------------------------------------
+    private static class StubTrackingEventStream implements TrackingEventStream {
+
+
+        private final Queue<TrackedEventMessage<?>> eventMessages;
+
+        public StubTrackingEventStream(long... tokens) {
+            GapAwareTrackingToken lastToken = GapAwareTrackingToken.newInstance(-1, emptySortedSet());
+            eventMessages = new LinkedList<>();
+            for (Long seq : tokens) {
+                lastToken = lastToken.advanceTo(seq, 1000);
+                eventMessages.add(new GenericTrackedEventMessage<>(lastToken, createEvent(seq)));
+            }
+        }
+
+        @Override
+        public Optional<TrackedEventMessage<?>> peek() {
+            if (eventMessages.isEmpty()) {
+                return Optional.empty();
+            }
+            return Optional.of(eventMessages.peek());
+        }
+
+        @Override
+        public boolean hasNextAvailable(int timeout, TimeUnit unit) {
+            return !eventMessages.isEmpty();
+        }
+
+        @Override
+        public TrackedEventMessage<?> nextAvailable() {
+            return eventMessages.poll();
+        }
+
+        @Override
+        public void close() {
+
+        }
+    }
+--------------------------------------------------------------------------------------------------------
+select 1 from dual
+--------------------------------------------------------------------------------------------------------
+    /**
+     * Publish a collection of events on this bus (one, or multiple). The events will be dispatched to all subscribed
+     * listeners.
+     * <p>
+     * Implementations may treat the given {@code events} as a single batch and distribute the events as such to
+     * all subscribed EventListeners.
+     *
+     * @param events The collection of events to publish
+     */
+    default void publish(EventMessage<?>... events) {
+        publish(Arrays.asList(events));
+    }
+
+    /**
+     * Publish a collection of events on this bus (one, or multiple). The events will be dispatched to all subscribed
+     * listeners.
+     * <p>
+     * Implementations may treat the given {@code events} as a single batch and distribute the events as such to
+     * all subscribed EventListeners.
+     *
+     * @param events The collection of events to publish
+     */
+    void publish(List<? extends EventMessage<?>> events);
+--------------------------------------------------------------------------------------------------------
+   @JsonGetter("upperSegmentToken")
+    @JsonTypeInfo(use = JsonTypeInfo.Id.MINIMAL_CLASS)
+    public TrackingToken upperSegmentToken() {
+        return upperSegmentToken;
+    }
+--------------------------------------------------------------------------------------------------------
+/**
+ * Singleton ErrorHandler implementation that does not do anything.
+ *
+ * @author Rene de Waele
+ */
+public enum PropagatingErrorHandler implements ErrorHandler, ListenerInvocationErrorHandler {
+
+    /**
+     * Singleton instance of a {@link PropagatingErrorHandler}.
+     */
+    INSTANCE;
+
+    /**
+     * Singleton instance of a {@link PropagatingErrorHandler}.
+     *
+     * @return the singleton instance of {@link PropagatingErrorHandler}
+     */
+    public static PropagatingErrorHandler instance() {
+        return INSTANCE;
+    }
+
+    @Override
+    public void onError(Exception exception, EventMessage<?> event, EventMessageHandler eventHandler) throws Exception {
+        throw exception;
+    }
+
+    @Override
+    public void handleError(ErrorContext errorContext) throws Exception {
+        Throwable error = errorContext.error();
+        if (error instanceof Error) {
+            throw (Error) error;
+        } else if (error instanceof Exception) {
+            throw (Exception) error;
+        } else {
+            throw new EventProcessingException("An error occurred while handling an event", error);
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.monitoring.NoOpMessageMonitor;
+
+/**
+ * Implementation of the {@link EventBus} that dispatches events in the thread the publishes them.
+ *
+ * @author Allard Buijze
+ * @since 0.5
+ */
+public class SimpleEventBus extends AbstractEventBus {
+
+    /**
+     * Instantiate a Builder to be able to create a {@link SimpleEventBus}.
+     * <p>
+     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor} and the {@code queueCapacity} to
+     * {@link Integer#MAX_VALUE}.
+     *
+     * @return a Builder to be able to create a {@link SimpleEventBus}
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Instantiate a {@link SimpleEventBus} based on the fields contained in the {@link Builder}.
+     *
+     * @param builder the {@link Builder} used to instantiate a {@link SimpleEventBus} instance
+     */
+    protected SimpleEventBus(Builder builder) {
+        super(builder);
+    }
+
+    /**
+     * Builder class to instantiate a {@link SimpleEventBus}.
+     * <p>
+     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor}.
+     */
+    public static class Builder extends AbstractEventBus.Builder {
+
+        @Override
+        public Builder messageMonitor(MessageMonitor<? super EventMessage<?>> messageMonitor) {
+            super.messageMonitor(messageMonitor);
+            return this;
+        }
+
+        /**
+         * Initializes a {@link SimpleEventBus} as specified through this Builder.
+         *
+         * @return a {@link SimpleEventBus} as specified through this Builder
+         */
+        public SimpleEventBus build() {
+            return new SimpleEventBus(this);
+        }
+
+        /**
+         * Validates whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        @Override
+        protected void validate() throws AxonConfigurationException {
+            super.validate();
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+import org.axonframework.common.Priority;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.annotation.AbstractAnnotatedParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolver;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
+
+import java.time.Instant;
+
+/**
+ * AbstractAnnotatedParameterResolverFactory that accepts parameters with type {@link Instant} that are annotated
+ * with the {@link Timestamp} annotation and assigns the timestamp of the EventMessage.
+ *
+ * @author Allard Buijze
+ * @since 2.0
+ */
+@Priority(Priority.HIGH)
+public final class TimestampParameterResolverFactory
+        extends AbstractAnnotatedParameterResolverFactory<Timestamp, Instant> {
+
+    private final ParameterResolver<Instant> resolver;
+
+    /**
+     * Initializes a {@link ParameterResolverFactory} for {@link Timestamp}
+     * annotated parameters
+     */
+    public TimestampParameterResolverFactory() {
+        super(Timestamp.class, Instant.class);
+        resolver = new TimestampParameterResolver();
+    }
+
+    @Override
+    protected ParameterResolver<Instant> getResolver() {
+        return resolver;
+    }
+
+    /**
+     * ParameterResolver that resolved Timestamp parameters
+     */
+    static class TimestampParameterResolver implements ParameterResolver<Instant> {
+
+        @Override
+        public Instant resolveParameterValue(Message message) {
+            if (message instanceof EventMessage) {
+                return ((EventMessage) message).getTimestamp();
+            }
+            return null;
+        }
+
+        @Override
+        public boolean matches(Message message) {
+            return message instanceof EventMessage;
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+    private abstract class Instruction implements Runnable {
+
+        private final CompletableFuture<Boolean> result;
+        public Instruction(CompletableFuture<Boolean> result) {
+            this.result = result;
+        }
+
+        public void run() {
+            try {
+                executeWithRetry(() -> transactionManager.executeInTransaction(() -> result.complete(runSafe())),
+                                 re -> ExceptionUtils.findException(re, UnableToClaimTokenException.class).isPresent(),
+                                 tokenClaimInterval, MILLISECONDS, 10);
+            } catch (Exception e) {
+                result.completeExceptionally(e);
+            }
+        }
+
+        protected abstract boolean runSafe();
+    }
+--------------------------------------------------------------------------------------------------------
+   @ConditionalOnMissingQualifiedBean(beanClass = Serializer.class, qualifier = "!eventSerializer,messageSerializer")
+   
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnBean(GlobalMetricRegistry.class)
+    @ConditionalOnProperty(value = "axon.metrics.auto-configuration.enabled", matchIfMissing = true)
+    public static MetricsConfigurerModule metricsConfigurerModule(GlobalMetricRegistry globalMetricRegistry) {
+        return new MetricsConfigurerModule(globalMetricRegistry);
+    }
+--------------------------------------------------------------------------------------------------------
+import com.codahale.metrics.MetricRegistry;
+import org.axonframework.metrics.GlobalMetricRegistry;
+import org.axonframework.metrics.MetricsConfigurerModule;
+import org.axonframework.springboot.MetricsProperties;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+/**
+ * Auto configuration to set up Metrics for the infrastructure components.
+ *
+ * @author Steven van Beelen
+ * @since 3.2
+ */
+@Configuration
+@AutoConfigureBefore(AxonAutoConfiguration.class)
+@ConditionalOnMissingBean(MicrometerMetricsAutoConfiguration.class)
+@ConditionalOnClass(name = {
+        "com.codahale.metrics.MetricRegistry",
+        "org.axonframework.metrics.GlobalMetricRegistry"
+})
+@EnableConfigurationProperties(MetricsProperties.class)
+public class MetricsAutoConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean(MetricRegistry.class)
+    public static MetricRegistry metricRegistry() {
+        return new MetricRegistry();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnBean(MetricRegistry.class)
+    public static GlobalMetricRegistry globalMetricRegistry(MetricRegistry metricRegistry) {
+        return new GlobalMetricRegistry(metricRegistry);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnBean(GlobalMetricRegistry.class)
+    @ConditionalOnProperty(value = "axon.metrics.auto-configuration.enabled", matchIfMissing = true)
+    public static MetricsConfigurerModule metricsConfigurerModule(GlobalMetricRegistry globalMetricRegistry) {
+        return new MetricsConfigurerModule(globalMetricRegistry);
+    }
+}
+
+    @Bean
+    @ConditionalOnMissingBean(MetricsConfigurerModule.class)
+    @ConditionalOnBean(GlobalMetricRegistry.class)
+    @ConditionalOnProperty(value = "axon.metrics.auto-configuration.enabled", matchIfMissing = true)
+    public static MetricsConfigurerModule metricsConfigurerModule(GlobalMetricRegistry globalMetricRegistry) {
+        return new MetricsConfigurerModule(globalMetricRegistry);
+    }
+--------------------------------------------------------------------------------------------------------
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.axonframework.springboot.SerializerProperties;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+@AutoConfigureBefore(AxonAutoConfiguration.class)
+@AutoConfigureAfter(name = "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration")
+@ConditionalOnClass(name = "com.fasterxml.jackson.databind.ObjectMapper")
+@EnableConfigurationProperties(value = SerializerProperties.class)
+public class ObjectMapperAutoConfiguration {
+
+    @Bean("defaultAxonObjectMapper")
+    @ConditionalOnMissingBean
+    @ConditionalOnExpression("'${axon.serializer.general}' == 'jackson' || '${axon.serializer.events}' == 'jackson' || '${axon.serializer.messages}' == 'jackson'")
+    public ObjectMapper defaultAxonObjectMapper() {
+        return new ObjectMapper().findAndRegisterModules();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.axonframework.samples.trader.infra.config.CQRSInfrastructureConfig;
+import org.axonframework.samples.trader.infra.config.PersistenceInfrastructureConfig;
+import org.axonframework.samples.trader.listener.config.ExternalListenersConfig;
+import org.axonframework.samples.trader.orders.config.OrderConfig;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.ImportResource;
+
+@Configuration
+@Import({
+        CQRSInfrastructureConfig.class,
+        PersistenceInfrastructureConfig.class,
+        OrderConfig.class,
+        ExternalListenersConfig.class
+})
+@ImportResource("classpath:META-INF/spring/security-context.xml")
+public class AppConfig {
+
+}
+
+public enum TransactionState {
+    STARTED, CONFIRMED, CANCELLED, EXECUTED, PARTIALLY_EXECUTED
+}
+
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseFactoryBean;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+
+@Configuration
+public class PersistenceInfrastructureConfig {
+
+    @Bean
+    @Profile("hsqldb")
+    public EmbeddedDatabaseFactoryBean dataSource() {
+        EmbeddedDatabaseFactoryBean embeddedDatabaseFactoryBean = new EmbeddedDatabaseFactoryBean();
+        embeddedDatabaseFactoryBean.setDatabaseType(EmbeddedDatabaseType.HSQL);
+
+        return embeddedDatabaseFactoryBean;
+    }
+}
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.socket.config.annotation.EnableWebSocket;
+import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
+
+@Configuration
+@EnableWebSocket
+public class WebSocketConfig implements WebSocketConfigurer {
+
+    @Autowired
+    private ExecutedTradesBroadcaster executedTradesBroadcaster;
+
+    @Override
+    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+        registry.addHandler(executedTradesBroadcaster, "/eventbus")
+                .withSockJS();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.web.socket.CloseStatus;
+import org.springframework.web.socket.TextMessage;
+import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.socket.handler.ConcurrentWebSocketSessionDecorator;
+import org.springframework.web.socket.handler.TextWebSocketHandler;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+
+class BroadcastingTextWebSocketHandler extends TextWebSocketHandler {
+
+    private static final Logger logger = LoggerFactory.getLogger(BroadcastingTextWebSocketHandler.class);
+    private Map<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
+
+    @Override
+    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
+        super.afterConnectionEstablished(session);
+
+        sessions.put(session.getId(),
+                     new ConcurrentWebSocketSessionDecorator(session, (int) TimeUnit.SECONDS.toMillis(10), 5 * 1024));
+    }
+
+    @Override
+    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
+        super.afterConnectionClosed(session, status);
+
+        sessions.remove(session.getId());
+    }
+
+    protected void broadcast(String data) {
+        final TextMessage message = new TextMessage(data);
+        sessions.forEach((key, session) -> {
+            try {
+                session.sendMessage(message);
+            } catch (IOException e) {
+                logger.warn("An error occurred while trying to send a message to a WebSocket", e);
+            }
+        });
+    }
+}
+--------------------------------------------------------------------------------------------------------
+Присоединяюсь к поздравлениям коллег. Ольга, поздравляю с Днем Рождения! Желаю исполнения желаний и удачи в достижении поставленных целей!
+
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  org.axonframework.extensions.springcloud.autoconfig.RoutingStrategyAutoConfiguration,\
+  org.axonframework.extensions.springcloud.autoconfig.SpringCloudAutoConfiguration
+--------------------------------------------------------------------------------------------------------
+@Bean(initMethod = "start", destroyMethod = "shutDown")
+--------------------------------------------------------------------------------------------------------
+#!/bin/sh
+export IDEA="/C/Program Files (x86)/JetBrains/IntelliJ IDEA 14.1"
+if [ ! -e "$IDEA" ]
+then
+    export IDEA="/Applications/IntelliJ IDEA 14.app/Contents"
+fi
+if [ ! -e "$IDEA" ]
+then
+    export IDEA="/Applications/IntelliJ IDEA CE.app/Contents"
+fi
+if [ ! -e "$IDEA" ]
+then
+    echo "IDEA libraries not found!"
+    echo "Checked: /C/Program Files (x86)/JetBrains/IntelliJ IDEA 14.1"
+    echo "Checked: /Applications/IntelliJ IDEA 14.app/Contents"
+    echo "Checked: /Applications/IntelliJ IDEA CE.app/Contents"
+    echo ""
+    echo "Try installing the IDEA Community Edition"
+    exit 1
+fi
+
+export IDEA_VERSION=LOCAL
+mvn install:install-file -Dfile="$IDEA/lib/annotations.jar" -DgroupId=com.intellij.idea -DartifactId=annotations -Dversion=$IDEA_VERSION -Dpackaging=jar
+mvn install:install-file -Dfile="$IDEA/lib/idea.jar" -DgroupId=com.intellij.idea -DartifactId=idea -Dpackaging=jar -DgeneratePom=true -DcreateChecksum=true -Dversion=$IDEA_VERSION
+mvn install:install-file -Dfile="$IDEA/lib/openapi.jar" -DgroupId=com.intellij.idea -DartifactId=openapi -Dpackaging=jar -DgeneratePom=true -DcreateChecksum=true -Dversion=$IDEA_VERSION
+mvn install:install-file -Dfile="$IDEA/lib/util.jar" -DgroupId=com.intellij.idea -DartifactId=util -Dpackaging=jar -DgeneratePom=true -DcreateChecksum=true -Dversion=$IDEA_VERSION
+mvn install:install-file -Dfile="$IDEA/lib/extensions.jar" -DgroupId=com.intellij.idea -DartifactId=extensions -Dpackaging=jar -DgeneratePom=true -DcreateChecksum=true -Dversion=$IDEA_VERSION
+
+git update-index --assume-unchanged META-INF/plugin.xml
+--------------------------------------------------------------------------------------------------------
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+
+@Profile("distributed")
+@EnableDiscoveryClient
+@Configuration
+public class DistributedConfiguration {
+
+}
+--------------------------------------------------------------------------------------------------------
+import org.apache.commons.lang3.ArrayUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
+import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.web.socket.config.annotation.AbstractWebSocketMessageBrokerConfigurer;
+import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
+import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
+
+@Configuration
+@EnableWebSocketMessageBroker
+public class WebSocketConfig extends AbstractWebSocketMessageBrokerConfigurer {
+
+    @Autowired
+    private Environment environment;
+
+    @Override
+    public void configureMessageBroker(MessageBrokerRegistry config) {
+        if (ArrayUtils.contains(environment.getActiveProfiles(), "distributed-command-bus")) {
+            config.enableStompBrokerRelay("/topic")
+                  .setRelayHost("rabbitmq");
+        } else {
+            config.enableSimpleBroker("/topic");
+        }
+        config.setApplicationDestinationPrefixes("/app");
+    }
+
+    @Override
+    public void registerStompEndpoints(StompEndpointRegistry registry) {
+        registry.addEndpoint("/websocket")
+                .withSockJS();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.mongodb.DBObject;
+import com.mongodb.util.JSON;
+import org.axonframework.serialization.ContentTypeConverter;
+
+/**
+ * ContentTypeConverter implementation that converts a DBObject structure into a String containing its Binary JSON
+ * representation.
+ *
+ * @author Allard Buijze
+ * @since 2.0
+ */
+public class DBObjectToStringContentTypeConverter implements ContentTypeConverter<DBObject,String> {
+
+    @Override
+    public Class<DBObject> expectedSourceType() {
+        return DBObject.class;
+    }
+
+    @Override
+    public Class<String> targetType() {
+        return String.class;
+    }
+
+    @Override
+    public String convert(DBObject original) {
+        return JSON.serialize(original);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+/**
+ * Auto configuration for {@link RoutingStrategy}.
+ *
+ * @author Milan Savic
+ * @since 3.1.1
+ */
+@Configuration
+@AutoConfigureBefore(SpringCloudAutoConfiguration.class)
+@ConditionalOnExpression("${axon.distributed.enabled:false}")
+public class RoutingStrategyAutoConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean
+    public RoutingStrategy routingStrategy() {
+        return new AnnotationRoutingStrategy(UnresolvedRoutingKeyPolicy.RANDOM_KEY);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib-jdk8</artifactId>
+            <version>${kotlin.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-test</artifactId>
+            <version>${kotlin.version}</version>
+            <scope>test</scope>
+        </dependency>
+		
+            <plugin>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-maven-plugin</artifactId>
+                <version>${kotlin.version}</version>
+                <executions>
+                    <execution>
+                        <id>compile</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>test-compile</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>test-compile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <jvmTarget>1.8</jvmTarget>
+                </configuration>
+            </plugin>
+--------------------------------------------------------------------------------------------------------
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
+import java.io.Serializable;
+
+/**
+ * Token that identifies a single scheduled Event. This token can be used to refer to a specific scheduled event to
+ * cancel that timer.
+ *
+ * @author Allard Buijze
+ * @since 0.7
+ */
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class")
+public interface ScheduleToken extends Serializable {
+
+}
+--------------------------------------------------------------------------------------------------------
+        this.objectMapper.registerModule(
+                new SimpleModule("Axon-Jackson Module").addDeserializer(MetaData.class, new MetaDataDeserializer())
+        );
+--------------------------------------------------------------------------------------------------------
+/**
+ * Default IdentifierFactory implementation that uses generates random {@code java.util.UUID} based identifiers.
+ * Although the performance of this strategy is not the best out there, it has native supported on all JVMs.
+ * <p/>
+ * This implementations selects a random identifier out of about 3 x 10<sup>38</sup> possible values, making the chance
+ * to get a duplicate incredibly small.
+ *
+ * @author Allard Buijze
+ * @since 1.2
+ */
+public class DefaultIdentifierFactory extends IdentifierFactory {
+
+    /**
+     * {@inheritDoc}
+     * <p/>
+     * This implementation creates identifiers based on pseudo-random UUIDs.
+     */
+    @Override
+    public String generateIdentifier() {
+        return UUID.randomUUID().toString();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@RunWith(SpringJUnit4ClassRunner.class)
+@EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
+@ContextConfiguration(locations = "classpath:/META-INF/spring/insertion-read-order-test-context.xml")
+public class JpaStorageEngineInsertionReadOrderTest {
+--------------------------------------------------------------------------------------------------------
+jdbc.driverclass=org.hsqldb.jdbcDriver
+jdbc.url=jdbc:hsqldb:mem:addressbook
+jdbc.username=sa
+jdbc.password=
+hibernate.sql.dialect=org.hibernate.dialect.HSQLDialect
+hibernate.sql.generateddl=true
+javax.schema.generation=drop-and-create
+hibernate.sql.show=false
+
+jdbc.driverclass=com.mysql.jdbc.Driver
+jdbc.url=jdbc:mysql://localhost:3306/axon_benchmark?useUnicode=true&characterEncoding=utf8&characterSetResults=utf8&rewriteBatchedStatements=true
+jdbc.username=build
+jdbc.password=build
+hibernate.sql.dialect=org.hibernate.dialect.MySQL5InnoDBDialect
+javax.schema.generation=drop-and-create
+hibernate.sql.show=false
+
+jdbc.driverclass=com.mysql.jdbc.Driver
+jdbc.url=jdbc:mysql://localhost:3306/axon?useUnicode=true&characterEncoding=utf8&characterSetResults=utf8
+jdbc.username=build
+jdbc.password=build
+hibernate.sql.dialect=org.hibernate.dialect.MySQL5InnoDBDialect
+hibernate.sql.generateddl=true
+hibernate.sql.show=true
+--------------------------------------------------------------------------------------------------------
+            <plugins>
+                <plugin>
+                    <!--
+                        Creates a report by running "mvn japicmp:cmp"
+                        Note: you need to install the jars before running the japicmp command.
+                    -->
+                    <groupId>com.github.siom79.japicmp</groupId>
+                    <artifactId>japicmp-maven-plugin</artifactId>
+                    <version>0.9.3</version>
+                    <configuration>
+                        <oldVersion>
+                            <dependency>
+                                <groupId>${project.groupId}</groupId>
+                                <artifactId>${project.artifactId}</artifactId>
+                                <version>1.1.0.Final</version>
+                            </dependency>
+                        </oldVersion>
+                        <newVersion>
+                            <file>
+                                <path>${project.build.directory}/${project.artifactId}-${project.version}.${project.packaging}</path>
+                            </file>
+                        </newVersion>
+                        <parameter>
+                            <onlyModified>true</onlyModified>
+                        </parameter>
+                    </configuration>
+                </plugin>
+            </plugins>
+--------------------------------------------------------------------------------------------------------
 FROM haskell:7.10.3
 MAINTAINER Andrey Somov <public.somov@gmail.com>
 
