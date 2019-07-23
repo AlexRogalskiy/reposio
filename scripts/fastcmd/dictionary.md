@@ -10504,6 +10504,15 @@ private Element changeElementTag(Element e, String newTag) {
   return newElement;
 }
 --------------------------------------------------------------------------------------------------------
+DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
+		KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf);
+		template.setDefaultTopic(topic4);
+		template.sendDefault(0, 0, "foo");
+		template.flush();
+		pf.destroy();
+		
+		Instant.now().plusMillis(this.replyTimeout)
+--------------------------------------------------------------------------------------------------------
 /**
  * Finds a set of elements through a CSS selector and swaps its tag with
  * that from its parent.
