@@ -11799,6 +11799,1217 @@ public class MetricsAutoConfiguration {
         return new MetricsConfigurerModule(globalMetricRegistry);
     }
 --------------------------------------------------------------------------------------------------------
+apply plugin: "java"
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  testCompile 'org.junit.jupiter:junit-jupiter-api:5.2.0'
+  testRuntime 'org.junit.jupiter:junit-jupiter-engine:5.2.0'
+}
+
+test {
+  useJUnitPlatform()
+
+  reports {
+    html.enabled = true
+  }
+}
+
+def junitJupiterVersion = '5.3.2'
+
+apply plugin: "java"
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  testCompile "org.junit.jupiter:junit-jupiter-api:$junitJupiterVersion"
+  testCompile "org.junit.jupiter:junit-jupiter-params:$junitJupiterVersion"
+  testRuntime "org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion"
+}
+
+test {
+  useJUnitPlatform()
+
+  reports {
+    html.enabled = true
+  }
+
+  systemProperties = System.properties
+}
+
+--------------------------------------------------------------------------------------------------------
+@Test
+@DisplayName("Should assert all person attributes at once")
+void shouldAssertAllPersonAttributes() {
+  assertAll("person",
+    () -> assertEquals("josdem", person.getNickname()),
+    () -> assertEquals("joseluis.delacruz@gmail.com", person.getEmail())
+  );
+}
+
+@Test
+@DisplayName("Should throw an exception")
+public void shouldThrowNullPointerException() {
+  Person person = null;
+  assertThrows(NullPointerException.class, () -> person.getNickname());
+}
+
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.logging.Logger;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+
+class StandardTest {
+
+  private static final Logger log = Logger.getLogger(StandardTest.class.getName());
+
+  @BeforeAll
+  static void setup() {
+    log.info("Before any test execution");
+  }
+
+  @BeforeEach
+  void init() {
+    log.info("Before each test execution");
+  }
+
+  @Test
+  @DisplayName("succeed test case")
+  void succeedingTest(TestInfo testInfo) {
+    log.info(String.format("Running %s ...", testInfo.getDisplayName()));
+    assertTrue(true, () -> "Always passing this test");
+  }
+
+  @AfterEach
+  void finish() {
+    log.info("After each test execution");
+  }
+
+  @AfterAll
+  static void tearDown() {
+    log.info("After all test execution");
+  }
+
+}
+
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.junit.jupiter.api.Assumptions.assumingThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
+
+import java.util.logging.Logger;
+
+class AssumptionShowTest {
+
+  private final Logger log = Logger.getLogger(AssumptionShowTest.class.getName());
+  private final Person person = new Person("josdem", "joseluis.delacruz@gmail.com");
+
+  @Test
+  @DisplayName("Assume that is a Gmail account")
+  void shouldKnowIfIsGmailAccount(){
+    assumeTrue(person.getEmail().endsWith("gmail.com"));
+    log.info("Test continues ...");
+    assertEquals("josdem", person.getNickname());
+  }
+
+   @Test
+   @DisplayName("Assuming something based in conditions")
+   void testAssumingThat() {
+     assumingThat(2 > 1, () -> log.info("This should happen!"));
+     assumingThat(2 < 1, () -> log.info("This should never happen!"));
+   }
+
+}
+
+@Test
+@DisplayName("Should run if DEV environment")
+@EnabledIfSystemProperty(named = "environment", matches = "DEV")
+void shouldRunIfDevelopmentEnvironment(){
+  log.info("Running: Conditions if is development");
+  assertTrue(true);
+}
+@Test
+@DisplayName("Should run if Monday")
+@EnabledIf("(java.time.LocalDate).now().getDayOfWeek() == 'MONDAY'")
+void shouldRunIfMonday() {
+  log.info("Running: Conditions if is Monday");
+  assertTrue(true);
+}
+@Test
+@EnabledOnOs({ LINUX, MAC })
+void shouldRunOnLinuxOrMac() {
+  log.info("Running: Conditions if Linux or Mac");
+  assertTrue(true);
+}
+
+
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import java.util.EnumSet;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.CsvFileSource;
+
+import java.util.logging.Logger;
+
+class ParameterizedShowTest {
+
+  private PalindromeEvaluator evaluator = new PalindromeEvaluator();
+  private final Logger log = Logger.getLogger(ParameterizedShowTest.class.getName());
+
+  @DisplayName("Allow string as parameters")
+  @ParameterizedTest
+  @ValueSource(strings = { "radar", "anitalavalatina" })
+  void shouldAllowStringAsParamters(String word) {
+    log.info("Running: Parameters as string");
+    assertTrue(evaluator.isPalindrome(word));
+  }
+
+  @DisplayName("Allow enum as parameters")
+  @ParameterizedTest
+  @EnumSource(Environment.class)
+  void shouldAllowEnumAsParameters(Environment environment) {
+    assertNotNull(environment);
+  }
+
+  @DisplayName("Allow certain enum as parameters")
+  @ParameterizedTest
+  @EnumSource(value = Environment.class, names = {"DEVELOPMENT", "QA"})
+  void shouldAllowCertainEnumAsParameters(Environment environment) {
+    assertTrue(EnumSet.of(Environment.DEVELOPMENT, Environment.QA).contains(environment));
+  }
+
+  @DisplayName("Allow csv files as parameters")
+  @ParameterizedTest
+  @CsvFileSource(resources = "/csv.txt", numLinesToSkip = 1)
+  void shouldAllowCsvFileSource(int id, String nickname, String email) {
+    assertNotNull(id);
+    assertTrue(nickname.length() > 3);
+    assertTrue(email.endsWith("email.com"));
+  }
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.stream.IntStream;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
+
+public class ExecutorAtomic {
+
+	private final static Integer MAX_PERIOD_TIME = 30;
+	private AtomicInteger atomic = new AtomicInteger(0);
+	private ExecutorService executor = Executors.newFixedThreadPool(3);
+
+	private Integer start() throws InterruptedException {
+		IntStream.range(0, 3).forEach(i -> executor.submit(atomic::incrementAndGet));
+		executor.shutdown();
+
+		executor.awaitTermination(MAX_PERIOD_TIME, TimeUnit.SECONDS);
+		return atomic.get();
+	}
+
+	public static void main(String[] args) throws InterruptedException {
+		Integer result = new ExecutorAtomic().start();
+		System.out.println("I have been counting: " + result + " times");
+	}
+}
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletableFuture;
+
+public class ExecutorCompletableFuture {
+
+  private final static Integer MAX_PERIOD_TIME = 30;
+
+  private ExecutorService executor = Executors.newFixedThreadPool(3);
+
+  private void start() throws InterruptedException, ExecutionException {
+    CompletableFuture<Integer> completableFuture  = new CompletableFuture<Integer>();
+
+    executor.submit(() -> {
+      try{
+        final Integer wait = 3;
+        TimeUnit.SECONDS.sleep(wait);
+        completableFuture.complete(wait);
+      } catch (InterruptedException ie){
+        System.out.println("InterruptedException: " + ie.getMessage());
+      }
+    });
+
+    final Integer result = completableFuture.get();
+    executor.shutdown();
+
+    System.out.println("I have been sleeping: " + result + " seconds");
+    executor.awaitTermination(MAX_PERIOD_TIME, TimeUnit.SECONDS);
+  }
+
+  public static void main(String[] args) throws InterruptedException, ExecutionException {
+    new ExecutorCompletableFuture().start();
+  }
+}
+
+
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletableFuture;
+
+public class CompletableFutureRunAsync {
+
+  private void start() throws InterruptedException, ExecutionException {
+    CompletableFuture<Void> completableFuture  = CompletableFuture.runAsync( () -> {
+      try{
+        TimeUnit.SECONDS.sleep(3);
+      } catch(InterruptedException ie){
+        System.out.println("InterruptedException: " + ie.getMessage());
+      }
+    });
+    completableFuture.get();
+    System.out.println("I have been sleeping: 3 seconds");
+  }
+
+  public static void main(String[] args) throws InterruptedException, ExecutionException {
+    new CompletableFutureRunAsync().start();
+  }
+
+}
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletableFuture;
+
+public class CompletableFutureSupplyAsync {
+
+  private void start() throws InterruptedException, ExecutionException {
+    CompletableFuture<String> completableFuture  = CompletableFuture.supplyAsync( () -> {
+      try{
+        TimeUnit.SECONDS.sleep(3);
+      } catch(InterruptedException ie){
+        System.out.println("InterruptedException: " + ie.getMessage());
+      }
+      return "3 seconds";
+    }).thenApply(message -> {
+      return "I have been sleeping " + message;
+    });
+    System.out.println(completableFuture.get());
+  }
+
+  public static void main(String[] args) throws InterruptedException, ExecutionException {
+    new CompletableFutureSupplyAsync().start();
+  }
+
+}
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletableFuture;
+
+public class CompletableFutureThenApplyAsync {
+
+  private void start() throws InterruptedException, ExecutionException {
+    CompletableFuture<Integer> completableFuture  = CompletableFuture.completedFuture(3).thenApplyAsync(wait -> {
+      try{
+        TimeUnit.SECONDS.sleep(wait);
+      } catch(InterruptedException ie){
+        System.out.println("InterruptedException: " + ie.getMessage());
+      }
+      return wait;
+    });
+
+    final Integer result = completableFuture.get();
+    System.out.println("I have been sleeping: " + result + " seconds");
+  }
+
+  public static void main(String[] args) throws InterruptedException, ExecutionException {
+    new CompletableFutureThenApplyAsync().start();
+  }
+}
+
+--------------------------------------------------------------------------------------------------------
+def configurationDirectory = "${System.getProperty('user.home')}/.mailboxi-reader"
+
+buildscript {
+  ext {
+    springBootVersion = '1.5.1.RELEASE'
+    cglibVersion = '3.2.4'
+    javaMailVersion = '1.4'
+    ewsJavaApiVersion = '2.0'
+  }
+  repositories {
+    mavenCentral()
+  }
+  dependencies {
+    classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+  }
+}
+
+apply plugin: "groovy"
+apply plugin: "application"
+apply plugin: 'org.springframework.boot'
+
+jar {
+  baseName = 'mailbox-reader'
+  version = '0.0.1-SNAPSHOT'
+}
+
+sourceCompatibility = 1.8
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  compile 'org.springframework.boot:spring-boot-starter'
+  compile 'org.codehaus.groovy:groovy'
+  compile "javax.mail:mail:$javaMailVersion"
+  compile "com.microsoft.ews-java-api:ews-java-api:$ewsJavaApiVersion"
+  testCompile 'org.springframework.boot:spring-boot-starter-test'
+  testCompile 'org.spockframework:spock-spring'
+  testCompile "cglib:cglib-nodep:$cglibVersion"
+}
+
+task settingEnvironment(type:Copy) {
+  from configurationDirectory
+  into 'src/main/resources'
+  include "application.properties"
+}
+
+processResources.dependsOn "settingEnvironment"
+
+--------------------------------------------------------------------------------------------------------
+
+import org.springframework.stereotype.Service
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.beans.factory.annotation.Autowired
+
+import microsoft.exchange.webservices.data.core.ExchangeService
+import microsoft.exchange.webservices.data.core.PropertySet
+import microsoft.exchange.webservices.data.core.service.item.Item
+import microsoft.exchange.webservices.data.core.service.folder.Folder
+import microsoft.exchange.webservices.data.core.service.item.EmailMessage
+import microsoft.exchange.webservices.data.credential.WebCredentials
+import microsoft.exchange.webservices.data.credential.ExchangeCredentials
+import microsoft.exchange.webservices.data.misc.ImpersonatedUserId
+import microsoft.exchange.webservices.data.search.ItemView
+import microsoft.exchange.webservices.data.search.FindItemsResults
+import microsoft.exchange.webservices.data.property.complex.Mailbox
+import microsoft.exchange.webservices.data.property.complex.FolderId
+import microsoft.exchange.webservices.data.core.enumeration.misc.ConnectingIdType
+import microsoft.exchange.webservices.data.autodiscover.IAutodiscoverRedirectionUrl
+import microsoft.exchange.webservices.data.core.enumeration.property.WellKnownFolderName
+
+import javax.annotation.PostConstruct
+
+import com.jos.dem.mailbox.reader.service.InboxReader
+
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+@Service
+class InboxReaderExchange implements InboxReader {
+
+  private static final Integer MAX_ITEMS=50
+
+  @Value('${ews.username}')
+  String username
+  @Value('${ews.password}')
+  String password
+  @Value('${ews.server}')
+  String server
+  @Value('${ews.protocol}')
+  String protocol
+
+  ExchangeService service = new ExchangeService()
+
+  Logger log = LoggerFactory.getLogger(this.class)
+
+  @PostConstruct
+  void setup(){
+    service.setUrl(new URI(server))
+    ExchangeCredentials credentials = new WebCredentials(username, password)
+    service.setCredentials(credentials)
+    service.autodiscoverUrl(username,  new RedirectionUrlCallback(protocol))
+  }
+
+  void read(){
+    Folder folder = Folder.bind(service, WellKnownFolderName.Inbox)
+    FindItemsResults<Item> results = service.findItems(folder.getId(), new ItemView(MAX_ITEMS))
+    for (Item item : results) {
+      EmailMessage emailMessage = EmailMessage.bind(service, item.getId())
+      log.info("Sender: ${emailMessage.getSender()}")
+      log.info("Subject: ${emailMessage.getSubject()}")
+    }
+  }
+
+}
+
+class RedirectionUrlCallback implements IAutodiscoverRedirectionUrl {
+
+  String protocol
+
+  RedirectionUrlCallback(String protocol){
+    this.protocol = protocol
+  }
+  public boolean autodiscoverRedirectionUrlValidationCallback(
+    String redirectionUrl) {
+    return redirectionUrl.toLowerCase().startsWith(protocol)
+  }
+
+}
+
+username=user@gmail.com
+password=secret
+pop3.server=pop.gmail.com
+pop3.port=995
+imap.server=imap.gmail.com
+imap.port=993
+ews.username=user@outlook.com
+ews.password=secret
+ews.server=https://exchange/EWS/Exchange.asmx
+ews.protocol=https://
+--------------------------------------------------------------------------------------------------------
+def configurationDirectory = "${System.getProperty('user.home')}/.mailbox-reader"
+
+buildscript {
+  ext {
+    springBootVersion = '1.5.1.RELEASE'
+    cglibVersion = '3.2.4'
+    javaMailVersion = '1.4'
+  }
+  repositories {
+    mavenCentral()
+  }
+  dependencies {
+    classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+  }
+}
+
+apply plugin: "groovy"
+apply plugin: "application"
+apply plugin: 'org.springframework.boot'
+
+jar {
+  baseName = 'mailbox-reader'
+  version = '0.0.1-SNAPSHOT'
+}
+
+sourceCompatibility = 1.8
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  compile 'org.springframework.boot:spring-boot-starter'
+  compile 'org.codehaus.groovy:groovy'
+  compile "javax.mail:mail:$javaMailVersion"
+  testCompile 'org.springframework.boot:spring-boot-starter-test'
+  testCompile 'org.spockframework:spock-spring'
+  testCompile "cglib:cglib-nodep:$cglibVersion"
+}
+
+task settingEnvironment(type:Copy) {
+  from configurationDirectory
+  into 'src/main/resources'
+  include "application.properties"  
+}
+
+processResources.dependsOn "settingEnvironment"
+
+package com.jos.dem.mailbox.reader.service.impl
+
+import org.springframework.stereotype.Service
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.beans.factory.annotation.Autowired
+
+import javax.mail.Folder
+import javax.mail.Message
+import javax.mail.MessagingException
+import javax.mail.NoSuchProviderException
+import javax.mail.Session
+import javax.mail.Store
+import javax.annotation.PostConstruct
+
+import com.jos.dem.mailbox.reader.service.InboxReader
+
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+@Service
+class InboxReaderImap implements InboxReader {
+
+  @Value('${username}')
+  String username
+  @Value('${password}')
+  String password
+  @Value('${imap.server}')
+  String server
+  @Value('${imap.port}')
+  String port
+
+  Properties properties = new Properties()
+  Folder sentFolder
+  Store store
+
+  Logger log = LoggerFactory.getLogger(this.class)
+	
+  @PostConstruct
+  void setup() {
+  	properties.put("mail.imap.host", server);
+  	properties.put("mail.imap.port", port);
+  	properties.put("mail.store.protocol", "imaps");
+  	Session emailSession = Session.getDefaultInstance(properties)
+  	Store store = emailSession.getStore('imaps')
+  	store.connect(server, username, password)
+  	sentFolder = store.getFolder('[Gmail]/Sent Mail')
+  	sentFolder.open(Folder.READ_ONLY)
+  	log.info "Inbox Type: ${sentFolder.getType()}"
+  	log.info "Folders: ${store.getDefaultFolder().list('*')}"
+  }
+
+  void read(){
+  	Message[] messages = sentFolder.getMessages();
+	log.info("messages.length---" + messages.length);
+	for (int i = 0; i < messages.length; i++) {
+	  Message message = messages[i];
+	  log.info("--------------------------------")
+	  log.info("Email Number " + (i + 1))
+	  log.info("From: " + message.getFrom()[0])
+	  log.info("Subject: " + message.getSubject())
+	}
+	sentFolder.close(false)
+  }  
+	
+}
+
+username=user@gmail.com
+password=secret
+pop3.server=pop.gmail.com
+pop3.port=995
+imap.server=imap.gmail.com
+imap.port=993
+--------------------------------------------------------------------------------------------------------
+spring init --build=gradle --language=groovy excel-filter-reader
+
+buildscript {
+	ext {
+		springBootVersion = '1.5.1.RELEASE'
+		apachePoiVersion = '3.15'
+		spockVersion = '1.1-groovy-2.4-rc-3'
+	}
+	repositories {
+		mavenCentral()
+	}
+	dependencies {
+		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+	}
+}
+
+apply plugin: 'groovy'
+apply plugin: 'org.springframework.boot'
+
+jar {
+	baseName = 'apache-filter-reader'
+	version = '0.0.1-SNAPSHOT'
+}
+
+sourceCompatibility = 1.8
+
+repositories {
+	mavenCentral()
+}
+
+
+dependencies {
+	compile 'org.springframework.boot:spring-boot-starter'
+	compile 'org.codehaus.groovy:groovy'
+	compile "org.apache.poi:poi:$apachePoiVersion"
+	compile "org.apache.poi:poi-ooxml:$apachePoiVersion"
+	testCompile "org.spockframework:spock-core:$spockVersion"
+	testCompile 'org.springframework.boot:spring-boot-starter-test'
+}
+
+import org.apache.poi.ss.usermodel.Row
+import org.apache.poi.ss.usermodel.Cell
+import org.apache.poi.ss.usermodel.Sheet
+import org.apache.poi.ss.usermodel.Workbook
+import org.apache.poi.ss.usermodel.CellType
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
+
+class ExcelFilterReader {
+
+	List<String> readRows(Integer numberOfRows, File excelFile){
+		List content = new ArrayList<ArrayList<String>>()
+		List line = new ArrayList<String>()
+		try{
+			FileInputStream fileInputStream = new FileInputStream(excelFile)
+			Workbook workbook = new XSSFWorkbook(fileInputStream)
+			Sheet sheet = workbook.getSheetAt(0)
+
+			for (Row row : sheet) {
+				line = new ArrayList<String>()
+				if(!isHidden(row)){
+					for (Cell cell : row) {
+						if (cell.getCellTypeEnum() == CellType.STRING) {
+							line.add(cell.getStringCellValue())
+							} else if (cell.getCellTypeEnum() == CellType.NUMERIC) {
+								line.add(String.valueOf(cell.getNumericCellValue()))
+							}
+						}
+						content.add(line)
+					}
+				}
+		} catch(FileNotFoundException fne){
+			  throw new ExcelException(fne.getMessage(), fne)
+		} catch(IOException ioe){
+				throw new ExcelException(ioe.getMessage(), ioe)
+		}
+
+		return content
+  }
+
+  private Boolean isHidden(Row row){
+    row.getZeroHeight()
+  }
+
+}
+
+class ExcelException extends RuntimeException {
+
+	ExcelException(String message){
+		super(message)
+	}
+
+	ExcelException(String message, Throwable cause){
+		super(message, cause)
+	}
+	
+}
+
+
+import spock.lang.Specification
+
+class ExcelFilterReaderSpec extends Specification {
+
+  ExcelFilterReader excelReader = new ExcelFilterReader()
+
+	void "should read filtered Excel rows"(){
+		given:"Rows to read"
+      Integer numberOfRows = 5
+    and:"An excel file"
+      File excelFile = new File("src/test/resources/input.xlsx")
+    when:"We read rows"
+      List<List<String>> result = excelReader.readRows(numberOfRows, excelFile)
+    then:"We expect to get content"
+    result.size() == 3
+    result.get(0) == ['Name', 'Email', 'Ranking']
+    result.get(1) == ['josdem','joseluis.delacruz@gmail.com','5.0']
+    result.get(2) == ['martin','martinv@email.com','5.0']
+  }	
+
+} 
+--------------------------------------------------------------------------------------------------------
+lazybones create java-basic excel-reader
+
+ext.apachePoiVersion = '3.15'
+ext.groovyVersion = '2.4.8'
+ext.spockVersion = '1.1-groovy-2.4-rc-3'
+
+apply plugin: "java"
+apply plugin: 'groovy'
+apply plugin: "application"
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  compile "org.apache.poi:poi:$apachePoiVersion"
+  compile "org.apache.poi:poi-ooxml:$apachePoiVersion"
+  testCompile "org.codehaus.groovy:groovy:$groovyVersion"
+  testCompile "org.spockframework:spock-core:$spockVersion"
+}
+
+import java.util.List;
+import java.util.ArrayList;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.FileNotFoundException;
+
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+public class ExcelReader {
+
+  List<String> readRows(Integer numberOfRows, File excelFile){
+    List content = new ArrayList<ArrayList<String>>();
+    List line = new ArrayList<String>();
+    try{
+      FileInputStream fileInputStream = new FileInputStream(excelFile);
+      Workbook workbook = new XSSFWorkbook(fileInputStream);
+      Sheet sheet = workbook.getSheetAt(0);
+
+      for (Row row : sheet) {
+        line = new ArrayList<String>();
+        for (Cell cell : row) {
+          if (cell.getCellTypeEnum() == CellType.STRING) {
+            line.add(cell.getStringCellValue());
+          } else if (cell.getCellTypeEnum() == CellType.NUMERIC) {
+            line.add(String.valueOf(cell.getNumericCellValue()));
+          }
+        }
+        content.add(line);
+      }
+    } catch(FileNotFoundException fne){
+      throw new ExcelException(fne.getMessage(), fne);
+    } catch(IOException ioe){
+      throw new ExcelException(ioe.getMessage(), ioe);
+    }
+
+    return content;
+  }
+
+}
+
+public class ExcelException extends RuntimeException {
+
+  ExcelException(String message){
+    super(message);
+  }
+
+  ExcelException(String message, Throwable cause){
+    super(message, cause);
+  }
+
+}
+
+
+import spock.lang.Specification
+
+class ExcelReaderSpec extends Specification {
+
+  ExcelReader excelReader = new ExcelReader()
+
+  void "should read Excel rows"(){
+    given:"Rows to read"
+      Integer numberOfRows = 5
+    and:"An excel file"
+      File excelFile = new File("src/test/resources/input.xlsx")
+    when:"We read rows"
+      List<List<String>> result = excelReader.readRows(numberOfRows, excelFile)
+    then:"We expect to get content"
+    result.size() == 4
+    result.get(0) == ['Name', 'Email', 'Ranking']
+    result.get(1) == ['josdem','joseluis.delacruz@gmail.com','5.0']
+    result.get(2) == ['eric','erich@email.com','5.0']
+    result.get(3) == ['martin','martinv@email.com','5.0']
+  }
+
+}
+--------------------------------------------------------------------------------------------------------
+lazybones create java-basic csv-apache-commons
+
+ext.apacheCSVVersion = '1.4'
+ext.groovyVersion = '2.4.8'
+ext.spockVersion = '1.1-groovy-2.4-rc-3'
+
+apply plugin: "java"
+apply plugin: "groovy"
+apply plugin: "application"
+
+version = '0.0.1'
+
+task buildJar(type: Jar) {
+  manifest {
+    attributes 'Implementation-Title': 'Read Write an CSV file with Apache Commons',
+    'Implementation-Version': version,
+    'Main-Class': 'example.Application'
+  }
+  baseName = project.name + '-all'
+  from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+  with jar
+}
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  compile "org.apache.commons:commons-csv:$apacheCSVVersion"
+  testCompile "org.codehaus.groovy:groovy:$groovyVersion"
+  testCompile "org.spockframework:spock-core:$spockVersion"
+}
+
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.List;
+import java.util.ArrayList;
+
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVRecord;
+
+public class CsvFileReader {
+
+  public List<List<String>> read(String path){
+    List elements = new ArrayList<List<String>>();
+    try{
+      FileReader input = new FileReader(path);
+      Iterable<CSVRecord> records = CSVFormat.TDF.withHeader("id", "name", "email").parse(input);
+      for (CSVRecord record : records) {
+        List<String> row = new ArrayList<String>();
+        String id = record.get("id");
+        String name = record.get("name");
+        String email = record.get("email");
+        row.add(id);
+        row.add(name);
+        row.add(email);
+        elements.add(row);
+      }
+    } catch(IOException ioe){
+      throw new CsvException(ioe.getMessage());
+    }
+    return elements;
+  }
+
+}
+
+import java.lang.RuntimeException;
+
+public class CsvException extends RuntimeException {
+
+  CsvException(String message){
+    super(message);
+  }
+
+}
+
+public class Target {
+  private String id;
+  private String name;
+  private String email;
+
+  public void setId(String id){
+    this.id = id;
+  }
+
+  public String getId(){
+    return id;
+  }
+
+  public void setName(String name){
+    this.name = name;
+  }
+
+  public String getName(){
+    return name;
+  }
+
+  public void setEmail(String email){
+    this.email = email;
+  }
+
+  public String getEmail(){
+    return email;
+  }
+
+}import java.io.FileWriter;
+import java.io.IOException;
+import java.util.List;
+import java.util.ArrayList;
+
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.csv.CSVPrinter;
+
+public class CsvFileWriter {
+
+  private static final String NEW_LINE_SEPARATOR = "\n";
+
+  public void write(List<Target> targets, String path){
+    List elements = new ArrayList<List<String>>();
+    try{
+      FileWriter output = new FileWriter(path);
+      CSVPrinter printer = CSVFormat.TDF.withHeader("id", "name", "email").withRecordSeparator(NEW_LINE_SEPARATOR).print(output);
+
+      for(Target target: targets){
+        List<String> record = new ArrayList<String>();
+        record.add(target.getId());
+        record.add(target.getName());
+        record.add(target.getEmail());
+        printer.printRecord(record);
+      }
+
+      output.flush();
+      output.close();
+    } catch(IOException ioe){
+      throw new CsvException(ioe.getMessage());
+    }
+  }
+
+}
+
+import spock.lang.Specification;
+
+class CsvFileReaderSpec extends Specification {
+
+  CsvFileReader reader = new CsvFileReader()
+
+  void "Should read csv file"(){
+    given:"A path"
+    String path = 'src/test/resources/csv.txt'
+    when:
+    def result = reader.read(path);
+    then:
+    result.size() == 4
+    result.get(0) == ['id','name','email']
+    result.get(1) == ['1','eric','erich@email.com']
+    result.get(2) == ['2','martin','martinv@email.com']
+    result.get(3) == ['3','josdem','josdem@email.com']
+  }
+
+}
+
+
+import spock.lang.Specification;
+
+class CsvFileWriterSpec extends Specification {
+
+  CsvFileWriter writer = new CsvFileWriter()
+
+  void "Should write to a csv file"(){
+    given:"A path"
+      String path = 'src/test/resources/csv_written.txt'
+    and:"Some targets"
+      Target t1 = new Target(id:'1',name:'eric',email:'erich@email.com')
+      Target t2 = new Target(id:'2',name:'martin',email:'martinv@email.com')
+      Target t3 = new Target(id:'3',name:'josdem',email:'josdem@email.com')
+      List<Target> targets = [t1,t2,t3]
+    when:
+    writer.write(targets,path);
+    File file = new File(path)
+    then:"We expect file exist"
+    List<String> lines = []
+    file.eachLine { line ->
+      lines << line
+    }
+    lines.get(0) == 'id name  email'
+    lines.get(1) == '1  eric  erich@email.com'
+    lines.get(2) == '2  martin  martinv@email.com'
+    lines.get(3) == '3  josdem  josdem@email.com'
+  }
+}
+--------------------------------------------------------------------------------------------------------
+import java.io.File;
+
+import org.apache.commons.configuration2.Configuration;
+import org.apache.commons.configuration2.builder.fluent.Configurations;
+import org.apache.commons.configuration2.ex.ConfigurationException;
+
+public class ConfigurationLauncher {
+
+  private void readProperties(){
+    Configurations configurations = new Configurations();
+    try{
+      Configuration configuration = configurations.properties(new File("configuration.properties"));
+      String username = configuration.getString("username");
+      String password = configuration.getString("password");
+      System.out.println("{username:" + username + ",password:"+ password + "}");
+    } catch (ConfigurationException cex) {
+      System.out.println("Error: " + cex.getMessage());
+    }
+  }
+
+  public static void main(String[] args){
+    new ConfigurationLauncher().readProperties();
+  }
+}
+--------------------------------------------------------------------------------------------------------
+
+import java.io.InputStream;
+import com.amazonaws.services.lambda.runtime.events.S3Event;
+import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.LambdaLogger;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+
+public class BucketFileTransfer implements RequestHandler<S3Event, Integer> {
+
+  @Override
+  public Integer handleRequest(S3Event event, Context context) {
+    LambdaLogger logger = context.getLogger();
+    logger.log("STARTING to copy file");
+
+    MetadataFileHelper metadataFileHelper = new MetadataFileHelper(event);
+    String sourceBucket = metadataFileHelper.getSourceBucketName();
+    String sourceKey = metadataFileHelper.getSourceBucketKey();
+    String destinationBucket = metadataFileHelper.getDestinationBucketName();;
+    String destinationKey = metadataFileHelper.getDestinationBucketKey();
+
+    AWSClient awsClient = new AWSClient(sourceBucket, sourceKey);
+    InputStream objectData = awsClient.getS3Object().getObjectContent();
+    ObjectMetadata meta = awsClient.getS3Object().getObjectMetadata();
+    awsClient.getS3Client().putObject(destinationBucket, destinationKey, objectData, meta);
+    return ResultCode.OK;
+  }
+
+}
+
+import com.amazonaws.services.lambda.runtime.events.S3Event;
+import com.amazonaws.services.s3.event.S3EventNotification.S3Entity;
+
+public class MetadataFileHelper {
+
+  private S3Event event;
+
+  public MetadataFileHelper(S3Event event){
+    this.event = event;
+  }
+
+  private S3Entity getBucketEntity(){
+    return this.event.getRecords().get(0).getS3();
+  }
+
+  public String getSourceBucketName() {
+    return getBucketEntity().getBucket().getName();
+  }
+
+  public String getSourceBucketKey() {
+    return getBucketEntity().getObject().getKey();
+  }
+
+  public String getDestinationBucketName() {
+    return "bucket-s3-destination";
+  }
+
+  public String getDestinationBucketKey() {
+    return "copied-" + getBucketEntity().getObject().getKey();
+  }
+
+}
+
+
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.GetObjectRequest;
+
+public class AWSClient {
+
+  String sourceBucket;
+  String sourceKey;
+  AmazonS3 s3Client;
+
+  public AWSClient(String sourceBucket, String sourceKey){
+    this.sourceBucket = sourceBucket;
+    this.sourceKey = sourceKey;
+    AWSCredentials credentials = new BasicAWSCredentials("Access Key ID", "Secret Access Key");
+    ClientConfiguration clientConfig = new ClientConfiguration();
+    this.s3Client = new AmazonS3Client(credentials, clientConfig);
+  }
+
+  public S3Object getS3Object() {
+    return getS3Client().getObject(new GetObjectRequest(sourceBucket, sourceKey));
+  }
+
+  public AmazonS3 getS3Client(){
+    return this.s3Client;
+  }
+}
+
+aws lambda invoke \
+--invocation-type Event \
+--function-name s3-aws-lambda \
+--region us-west-1 \
+--payload file://inputfile.txt \
+outputfile.txt
+--------------------------------------------------------------------------------------------------------
+lazybones create java-basic hello-aws-lambda
+
+apply plugin: "java"
+apply plugin: "application"
+
+version = '0.0.1'
+
+task buildJar(type: Jar) {
+  manifest {
+    attributes 'Implementation-Title': 'Hello AWS Lambda',
+    'Implementation-Version': version,
+    'Main-Class': 'example.Hello'
+  }
+  baseName = project.name + '-all'
+  from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+  with jar
+}
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  compile 'com.amazonaws:aws-lambda-java-core:1.1.0'
+  compile 'com.amazonaws:aws-lambda-java-events:1.1.0'
+}
+
+import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
+
+public class Hello implements RequestHandler<HelloRequest, HelloResponse> {
+
+  @Override
+  public HelloResponse handleRequest(HelloRequest input, Context context) {
+    return new HelloResponse(input.getInput());
+  }
+
+}
+
+public class HelloRequest {
+
+  private String input;
+
+  public HelloRequest(String input) {
+    this.input = input;
+  }
+
+  public HelloRequest() {
+  }
+
+  public String getInput() {
+    return input;
+  }
+
+  public void setInput(String input) {
+    this.input = input;
+  }
+}
+--------------------------------------------------------------------------------------------------------
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.springboot.SerializerProperties;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
