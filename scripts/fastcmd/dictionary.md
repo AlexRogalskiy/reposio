@@ -13019,6 +13019,504 @@ public class HelloRequest {
   }
 }
 --------------------------------------------------------------------------------------------------------
+Document doc = Jsoup.connect("http://stackoverflow.com").userAgent("Mozilla").get(); for (Element e: doc.select("a.question-hyperlink")) {     System.out.println(e.attr("abs:href"));     System.out.println(e.text());     System.out.println(); }
+Document doc = Jsoup.parseBodyFragment(bodyFragment);     String link = doc             .select("div > a")             .first()             .attr("href");
+
+// load file     File inputFile = new File(filePath);     // parse file as HTML document     Document doc = Jsoup.parse(filePath, ENCODING);     // select element by <a>     Elements elements = doc.select("a");
+
+Connection.Response loginResponse = Jsoup.connect("yourWebsite.com/loginUrl")                                         .userAgent(USER_AGENT)                                         .data("username", "yourUsername")                                         .data("password", "yourPassword")                                         .method(Method.POST)                                         .execute();
+
+// # Constants used in this example final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"; final String LOGIN_FORM_URL = "https://github.com/login"; final String LOGIN_ACTION_URL = "https://github.com/session"; final String USERNAME = "yourUsername"; final String PASSWORD = "yourPassword"; // # Go to login page and grab cookies sent by server Connection.Response loginForm = Jsoup.connect(LOGIN_FORM_URL)                                      .method(Connection.Method.GET)                                      .userAgent(USER_AGENT)                                      .execute(); Document loginDoc = loginForm.parse(); // this is the document containing response html HashMap<String, String> cookies = new HashMap<>(loginForm.cookies()); // save the cookies to be passed on to next request // # Prepare login credentials String authToken = loginDoc.select("#login > form > div:nth-child(1) > 
+
+input[type=\"hidden\"]:nth-child(2)")                            .first()                            .attr("value"); HashMap<String, String> formData = new HashMap<>(); formData.put("commit", "Sign in"); formData.put("utf8", "e2 9c 93"); formData.put("login", USERNAME); formData.put("password", PASSWORD); formData.put("authenticity_token", authToken); // # Now send the form for login Connection.Response homePage = Jsoup.connect(LOGIN_ACTION_URL)      .cookies(cookies)      .data(formData)      .method(Connection.Method.POST)      .userAgent(USER_AGENT)      .execute(); System.out.println(homePage.parse().html()); 
+
+// # Constants used in this example final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"; final String LOGIN_FORM_URL = "https://github.com/login"; final String USERNAME = "yourUsername"; final String PASSWORD = "yourPassword"; // # Go to login page Connection.Response loginFormResponse = Jsoup.connect(LOGIN_FORM_URL)                                              .method(Connection.Method.GET)                                              .userAgent(USER_AGENT)                                              .execute(); // # Fill the login form // ## Find the form first... FormElement loginForm = (FormElement)loginFormResponse.parse()                                          .select("div#login > form").first(); checkElement("Login Form", loginForm); // ## ... then "type" the username ... Element loginField = loginForm.select("#login_field").first(); checkElement("Login Field", loginField); loginField.val(USERNAME); // ## ... and "type" the password Element passwordField = loginForm.select("#password").first(); checkElement("Password Field", passwordField); passwordField.val(PASSWORD); // # Now send the form for login Connection.Response loginActionResponse = loginForm.submit()          .cookies(loginFormResponse.cookies())          .userAgent(USER_AGENT)
+.execute(); System.out.println(loginActionResponse.parse().html()); public static void checkElement(String name, Element elem) {     if (elem == null) {         throw new RuntimeException("Unable to find " + name);     } }
+
+// load source from file     Document doc = Jsoup.parse(new File("page.html"), "UTF-8");     // iterate over row and col     for (Element row : doc.select("table#data > tbody > tr"))         for (Element col : row.select("td"))             // print results             System.out.println(col.ownText());
+
+// load page using HTML Unit and fire scripts     WebClient webClient = new WebClient();     HtmlPage myPage = webClient.getPage(new File("page.html").toURI().toURL());     // convert page to generated HTML and convert to document     doc = Jsoup.parse(myPage.asXml());     // iterate row and col     for (Element row : doc.select("table#data > tbody > tr"))         for (Element col : row.select("td"))             // print results             System.out.println(col.ownText());     // clean up resources     webClient.close();
+
+String html = "<!DOCTYPE html>" +               "<html>" +                 "<head>" +                   "<title>Hello world!</title>" +                 "</head>" +                 "<body>" +                   "<h1>Hello there!</h1>" +                   "<p>First paragraph</p>" +                   "<p class=\"not-first\">Second paragraph</p>" +                   "<p class=\"not-first third\">Third <a href=\"page.html\">paragraph</a></p>" +                 "</body>" +               "</html>";
+
+// Parse the document Document doc = Jsoup.parse(html); // Get document title String title = doc.select("head > title").first().text(); System.out.println(title); // Hello world! Element firstParagraph = doc.select("p").first(); // Get all paragraphs except from the first Elements otherParagraphs = doc.select("p.not-first"); // Same as otherParagraphs = doc.select("p"); otherParagraphs.remove(0); // Get the third paragraph (second in the list otherParagraphs which // excludes the first paragraph) Element thirdParagraph = otherParagraphs.get(1); // Alternative: thirdParagraph = doc.select("p.third"); // You can also select within elements, e.g. anchors with a href attribute // within the third paragraph. Element link = thirdParagraph.select("a[href]"); // or the first <h1> element in the document body Element headline = doc.select("body").first().select("h1").first();
+--------------------------------------------------------------------------------------------------------
+# A Makefile for fusing Google Test and building a sample test against it.
+#
+# SYNOPSIS:
+#
+#   make [all]  - makes everything.
+#   make TARGET - makes the given target.
+#   make check  - makes everything and runs the built sample test.
+#   make clean  - removes all files generated by make.
+
+# Points to the root of fused Google Test, relative to where this file is.
+FUSED_GTEST_DIR = output
+
+# Paths to the fused gtest files.
+FUSED_GTEST_H = $(FUSED_GTEST_DIR)/gtest/gtest.h
+FUSED_GTEST_ALL_CC = $(FUSED_GTEST_DIR)/gtest/gtest-all.cc
+
+# Where to find the sample test.
+SAMPLE_DIR = ../../samples
+
+# Where to find gtest_main.cc.
+GTEST_MAIN_CC = ../../src/gtest_main.cc
+
+# Flags passed to the preprocessor.
+# We have no idea here whether pthreads is available in the system, so
+# disable its use.
+CPPFLAGS += -I$(FUSED_GTEST_DIR) -DGTEST_HAS_PTHREAD=0
+
+# Flags passed to the C++ compiler.
+CXXFLAGS += -g
+
+all : sample1_unittest
+
+check : all
+	./sample1_unittest
+
+clean :
+	rm -rf $(FUSED_GTEST_DIR) sample1_unittest *.o
+
+$(FUSED_GTEST_H) :
+	../fuse_gtest_files.py $(FUSED_GTEST_DIR)
+
+$(FUSED_GTEST_ALL_CC) :
+	../fuse_gtest_files.py $(FUSED_GTEST_DIR)
+
+gtest-all.o : $(FUSED_GTEST_H) $(FUSED_GTEST_ALL_CC)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(FUSED_GTEST_DIR)/gtest/gtest-all.cc
+
+gtest_main.o : $(FUSED_GTEST_H) $(GTEST_MAIN_CC)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(GTEST_MAIN_CC)
+
+sample1.o : $(SAMPLE_DIR)/sample1.cc $(SAMPLE_DIR)/sample1.h
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(SAMPLE_DIR)/sample1.cc
+
+sample1_unittest.o : $(SAMPLE_DIR)/sample1_unittest.cc \
+                     $(SAMPLE_DIR)/sample1.h $(FUSED_GTEST_H)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(SAMPLE_DIR)/sample1_unittest.cc
+
+sample1_unittest : sample1.o sample1_unittest.o gtest-all.o gtest_main.o
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
+--------------------------------------------------------------------------------------------------------
+os: Visual Studio 2015
+
+shallow_clone: true
+
+environment:
+  CONFIG: Release
+  matrix:
+    - BUILD: Kodi
+    # - ADDONS: audiodecoder
+    # - ADDONS: audioencoder
+    # - ADDONS: pvr
+    # - ADDONS: screensaver
+    # - ADDONS: visualization
+
+init:
+  - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
+install:
+  - SET PATH=C:\Program Files (x86)\CMake\bin;C:\msys64\bin;C:\msys64\usr\bin;%PATH%
+  - bash -lc "pacman --needed --noconfirm -Sy"
+  - mklink /j %APPVEYOR_BUILD_FOLDER%\project\BuildDependencies\msys64 C:\msys64
+
+build_script:
+  # Setup Visual Studio compiler environment
+  - ps: $ErrorActionPreference= 'silentlycontinue'
+
+  # Setup Visual Studio compiler environment
+  - call "%VS140COMNTOOLS%..\..\VC\bin\vcvars32.bat"
+
+  #
+  # Build Kodi
+  #
+  - ps: |
+      if ($env:BUILD -eq "Kodi") {
+        # Download dependencies
+        cd $env:APPVEYOR_BUILD_FOLDER\tools\buildsteps\windows\win32
+        & .\download-dependencies.bat
+        # We are using AppVeyor's already installed msys64 environment,
+        # no need to install msys/mingw environment.
+        # Download precompiled mingw32 libraries
+        # To run make-mingwlibs.bat on AppVeyor takes too long,
+        # we must use precompiled libs to speed up build
+        bash -c "wget -O - http://repo.msys2.org/mingw/i686/mingw-w64-i686-ffmpeg-3.3-1-any.pkg.tar.xz | tar xJv"
+        bash -c "wget -O - http://repo.msys2.org/mingw/i686/mingw-w64-i686-libdvdcss-1.4.0-1-any.pkg.tar.xz | tar xJv"
+        bash -c "wget -O - http://repo.msys2.org/mingw/i686/mingw-w64-i686-libdvdnav-5.0.3-1-any.pkg.tar.xz | tar xJv"
+        bash -c "wget -O - http://repo.msys2.org/mingw/i686/mingw-w64-i686-libdvdread-5.0.3-1-any.pkg.tar.xz | tar xJv"
+        # Rename all precompiled lib*.dll.a -> *.lib, so MSVC will find them
+        Get-ChildItem mingw32\lib\lib*.dll.a | %{
+          $new_name = $_.Name.SubString(3) -replace ".dll.a", ".lib"
+          $new_fullname = Join-Path $_.DirectoryName $new_name
+          Rename-Item $_.FullName $new_fullname
+        }
+        # Copy all libs and includes under Kodi's dependencies folder
+        xcopy /s /y mingw32\*.* .
+        xcopy /s /y mingw32\bin\*.dll $env:APPVEYOR_BUILD_FOLDER\system\
+        # Build
+        mkdir $env:APPVEYOR_BUILD_FOLDER\kodi-build
+        cd $env:APPVEYOR_BUILD_FOLDER\kodi-build
+        cmd /c 'cmake -G "Visual Studio 14" .. 2>&1'
+        cmd /c 'cmake --build . --target all_build --config RelWithDebInfo 2>&1'
+      }
+  #
+  # Build Addons
+  #
+  - ps: |
+      if ($env:ADDONS.length -ne 0 -and $env:BUILD -ne "Kodi") {
+        # Bootstrap
+        cd $env:APPVEYOR_BUILD_FOLDER\tools\buildsteps\windows\win32
+        & .\bootstrap-addons.bat
+        # Create build folder
+        md -Force $env:APPVEYOR_BUILD_FOLDER\build | out-null
+        cd $env:APPVEYOR_BUILD_FOLDER\build
+        # Configure
+        cmake -DADDONS_TO_BUILD="$env:ADDONS".* `
+              -G "NMake Makefiles" `
+              -DCMAKE_BUILD_TYPE="$env:CONFIG" `
+              -DCMAKE_INSTALL_PREFIX="$env:APPVEYOR_BUILD_FOLDER"\addons `
+              $env:APPVEYOR_BUILD_FOLDER\cmake\addons
+        # Build selected addons one by one
+        $addons_success=""
+        $addons_failed=""
+        nmake supported_addons | %{
+          if ($_ -like "ALL_ADDONS_BUILDING: *") {
+            $_.SubString(21).Split(" ") | %{
+              Write-Host "Building " $_
+              nmake $_
+              if ($LASTEXITCODE -eq 0) {
+                $addons_success += $_ + " "
+              } else {
+                $addons_failed += $_  + " "
+              }
+            }
+          }
+        }
+        # Print succesful and failed addons
+        Write-Host "--------------------------------------------------"
+        if ($addons_success -ne "") {
+          $addons_success.Split(" ") | %{
+            if ($_ -ne "") {
+              Write-Host [SUCCESS] $_ -ForegroundColor Green
+            }
+          }
+        }
+        if ($addons_failed -ne "") {
+          $addons_failed.Split(" ") | %{
+            if ($_ -ne "") {
+              Write-Host [ ERROR ] $_ -ForegroundColor Red
+            }
+          }
+          exit 1
+        }
+      }
+test: off
+--------------------------------------------------------------------------------------------------------
+# Kodi's travis-ci.org integration file
+
+# TODO:
+# integrate with slack
+# make it perfect... or not ;-r
+
+
+language: cpp
+
+# Define the build matrix
+#
+# Travis defaults to building on Ubuntu Precise when building on Linux. We need Trusty in order to get up
+# to date versions of cmake and g++.
+#
+os: linux
+dist: xenial
+sudo: required
+compiler:
+  - gcc
+  - clang
+
+env:
+  - BUILD=Kodi TOOLS=CMake
+#  - ADDONS=audiodecoder
+#  - ADDONS=audioencoder
+#  - ADDONS=pvr
+#  - ADDONS=screensaver
+#  - ADDONS=visualization
+
+matrix:
+  fast_finish: true
+  allow_failures:
+#    - env: ADDONS=audiodecoder
+#    - env: ADDONS=audioencoder
+#    - env: ADDONS=pvr
+#    - env: ADDONS=screensaver
+#    - env: ADDONS=visualization
+
+# Prepare system
+#
+# Prepare the system to install prerequisites or dependencies
+#
+before_install:
+# Prune non-root Python from PATH. Solves https://github.com/travis-ci/travis-ci/issues/4948
+# see: https://github.com/travis-ci/travis-ci/issues/5326
+  - export PATH=$(echo $PATH | tr ':' "\n" | sed '/\/opt\/python/d' | tr "\n" ":" | sed "s|::|:|g")
+
+# Linux
+#
+# Install team-xbmc/xbmc-ppa-build-depends for some dependencies and ppa:wsnipex/vaapi for libda-dev 1.6.0.
+# Stupid libda-dev 1.3.0 does not work on Trusty.
+
+  - if [[ "$TRAVIS_OS_NAME" == "linux" && "$BUILD" == "Kodi" ]]; then
+      sudo add-apt-repository -y ppa:team-xbmc/xbmc-ppa-build-depends &&
+      sudo add-apt-repository -y ppa:wsnipex/vaapi &&
+      sudo add-apt-repository -y ppa:pulse-eight/libcec &&
+      sudo apt-get update -qq;
+    fi
+
+# Install dependencies
+#
+# Install any prerequisites or dependencies necessary to run our builds
+#
+install:
+
+# Linux dependencies
+#
+  - if [[ "$TRAVIS_OS_NAME" == "linux" && "$BUILD" == "Kodi" ]]; then
+      sudo apt-get install -qq automake autopoint build-essential cmake curl default-jre gawk gdb gdc
+      gettext git-core gperf libasound2-dev libass-dev libbluray-dev libbz2-dev libcap-dev libcdio-dev libcec4-dev libcrossguid-dev libcurl3
+      libcurl4-openssl-dev libdbus-1-dev libegl1-mesa-dev libfmt3-dev libfontconfig-dev libfreetype6-dev libfribidi-dev libfstrcmp-dev libgif-dev libgl1-mesa-dev
+      libglu1-mesa-dev libiso9660-dev libjpeg-dev liblcms2-dev libltdl-dev liblzo2-dev libmicrohttpd-dev libmysqlclient-dev libnfs-dev
+      libpcre3-dev libplist-dev libpng-dev libpulse-dev libsmbclient-dev libsqlite3-dev
+      libssl-dev libtag1-dev libtinyxml-dev libtool libudev-dev libusb-dev libva-dev libvdpau-dev
+      libxml2-dev libxmu-dev libxrandr-dev libxrender-dev libxslt1-dev libxt-dev mesa-utils
+      nasm pmount python-dev python-imaging python-sqlite rapidjson-dev swig unzip uuid-dev yasm zip zlib1g-dev;
+    fi
+
+# Prepare builds
+#
+before_script:
+
+# Linux
+#
+  - if [[ "$TRAVIS_OS_NAME" == "linux" && "$BUILD" == "Kodi" ]]; then
+      ulimit -c unlimited -S;
+      mkdir $TRAVIS_BUILD_DIR/build &&
+      cd $TRAVIS_BUILD_DIR/build;
+    fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" && "$BUILD" == "Kodi" && "$CXX" == "g++" ]]; then
+      cmake -DCMAKE_BUILD_TYPE=Debug ..;
+    fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" && "$BUILD" == "Kodi" && "$CXX" == "clang++" ]]; then
+      cmake -DCMAKE_CXX_FLAGS="-Qunused-arguments" ..;
+    fi
+  - if [[ "$BUILD" != "Kodi" ]] && [[ "$ADDONS" == "audiodecoder" || "$ADDONS" == "audioencoder" ||
+          "$ADDONS" == "pvr" || "$ADDONS" == "screensaver" || "$ADDONS" == "visualization" ]]; then
+      cd $TRAVIS_BUILD_DIR/cmake/addons &&
+      mkdir -p build &&
+      cd build/ &&
+      cmake ../bootstrap -DCMAKE_BUILD_TYPE=Debug &&
+      make -j4;
+    fi
+
+# Actually build
+#
+script:
+  - if [[ "$BUILD" == "Kodi" ]]; then
+      make -j4 &&
+      make check;
+    fi
+  - if [[ "$BUILD" != "Kodi" ]] && [[ "$ADDONS" == "audiodecoder" || "$ADDONS" == "audioencoder" ||
+          "$ADDONS" == "pvr" || "$ADDONS" == "screensaver" || "$ADDONS" == "visualization" ]]; then
+      cd $TRAVIS_BUILD_DIR/ &&
+      mkdir -p build &&
+      cmake -DADDONS_TO_BUILD="$ADDONS".* -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../addons $TRAVIS_BUILD_DIR/cmake/addons &&
+      make -j4;
+    fi
+
+after_failure:
+  - COREFILE=$(find . -maxdepth 1 -name "core*" | head -n 1)
+  - if [[ -f "$COREFILE" ]]; then
+      gdb -c "$COREFILE" kodi-test -ex "thread apply all bt" -ex "set pagination 0" -batch;
+    fi
+
+# Disable annoying emails
+
+notifications:
+  email: false
+--------------------------------------------------------------------------------------------------------
+Install-Package Dapper -Version 1.42.0
+--------------------------------------------------------------------------------------------------------
+import java.io.File;
+import java.io.IOException;
+import nu.xom.Builder;
+import nu.xom.Document;
+import nu.xom.Element;
+import nu.xom.Elements;
+import nu.xom.ParsingException;
+
+public class XMLReader {
+    
+    public static void main(String[] args) throws ParsingException, IOException{
+        File file = new File("insert path here");
+        // builder builds xml data
+        Builder builder = new Builder();
+        Document doc = builder.build(file);
+        
+        // get the root element <example>
+        Element root = doc.getRootElement();
+        
+        // gets all element with tag <person>
+        Elements people = root.getChildElements("person");
+        
+        for (int q = 0; q < people.size(); q++){
+            // get the current person element
+            Element person = people.get(q);
+            
+            // get the name element and its children: first and last
+            Element nameElement = person.getFirstChildElement("name");
+            Element firstNameElement = nameElement.getFirstChildElement("first");
+            Element lastNameElement = nameElement.getFirstChildElement("last");
+            
+            // get the age element
+            Element ageElement = person.getFirstChildElement("age");
+            
+            // get the favorite color element
+            Element favColorElement = person.getFirstChildElement("fav_color");
+            
+            String fName, lName, ageUnit, favColor;
+            int age;
+            
+            try {
+                fName = firstNameElement.getValue();
+                lName = lastNameElement.getValue();
+                age = Integer.parseInt(ageElement.getValue());
+                ageUnit = ageElement.getAttributeValue("unit");
+                favColor = favColorElement.getValue();
+                
+                System.out.println("Name: " + lName + ", " + fName);
+                System.out.println("Age: " + age + " (" + ageUnit + ")");
+                System.out.println("Favorite Color: " + favColor);
+                System.out.println("----------------");
+                
+            } catch (NullPointerException ex){
+                ex.printStackTrace();
+            } catch (NumberFormatException ex){
+                ex.printStackTrace();
+            }
+        }
+    }   
+}
+--------------------------------------------------------------------------------------------------------
+import com.haulmont.chile.core.annotations.MetaClass;
+import com.haulmont.cuba.core.entity.annotation.UnavailableInSecurityConstraints;
+import com.haulmont.cuba.core.global.UuidProvider;
+
+import javax.persistence.Column;
+import javax.persistence.Id;
+import javax.persistence.MappedSuperclass;
+import java.util.UUID;
+
+/**
+ * Base class for entities with UUID identifier.
+ * <p>
+ * Inherit from it if you need an entity without optimistic locking, create, update and soft deletion info.
+ */
+@MappedSuperclass
+@MetaClass(name = "sys$BaseUuidEntity")
+@UnavailableInSecurityConstraints
+public abstract class BaseUuidEntity extends BaseGenericIdEntity<UUID> implements HasUuid {
+
+    private static final long serialVersionUID = -2217624132287086972L;
+
+    @Id
+    @Column(name = "ID")
+    protected UUID id;
+
+    public BaseUuidEntity() {
+        id = UuidProvider.createUuid();
+    }
+
+    @Override
+    public UUID getId() {
+        return id;
+    }
+
+    @Override
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    @Override
+    public UUID getUuid() {
+        return id;
+    }
+
+    public void setUuid(UUID uuid) {
+        this.id = uuid;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.context.ApplicationEvent;
+
+import javax.annotation.Nullable;
+
+public class HealthCheckEvent extends ApplicationEvent {
+
+    protected String response;
+
+    /**
+     * Create a new ApplicationEvent.
+     *
+     * @param source the object on which the event initially occurred (never {@code null})
+     */
+    public HealthCheckEvent(Object source) {
+        super(source);
+    }
+
+    @Nullable
+    public String getResponse() {
+        return response;
+    }
+
+    public void setResponse(String response) {
+        this.response = response;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+// create HTML with JavaScript data     StringBuilder html = new StringBuilder(); 
+html.append("<!DOCTYPE html> <html> <head> <title>Hello Jsoup!</title>");     html.append("<script>");     html.append("StackExchange.docs.comments.init({");     html.append("highlightColor: '#F4A83D',");     html.append("backgroundColor:'#FFF',");     html.append("});");     html.append("</script>");     html.append("<script>");     html.append("document.write(<style type='text/css'>div,iframe { top: 0; position:absolute; }</style>');");     html.append("</script>\n");     html.append("</head><body></body> </html>");     // parse as HTML document     Document doc = Jsoup.parse(html.toString());     String defaultBackground = "backgroundColor:'#FFF'";     // get <script>     for (Element scripts : doc.getElementsByTag("script")) {         // get data from <script>         for (DataNode dataNode : scripts.dataNodes()) {             // find data which contains backgroundColor:'#FFF'             if (dataNode.getWholeData().contains(defaultBackground)) {                 // replace '#FFF' -> '#ddd'                 String newData = dataNode.getWholeData().replaceAll(defaultBackground, "backgroundColor:'#ddd'");                 // set new data contents                 dataNode.setWholeData(newData);             }         }     }     System.out.println(doc.toString());
+--------------------------------------------------------------------------------------------------------4
+import com.haulmont.cuba.core.global.TimeSource;
+
+import javax.validation.ClockProvider;
+import java.time.Clock;
+import java.time.ZonedDateTime;
+
+public class CubaValidationTimeProvider implements ClockProvider {
+
+    protected TimeSource timeSource;
+
+    public CubaValidationTimeProvider(TimeSource timeSource) {
+        this.timeSource = timeSource;
+    }
+
+    @Override
+    public Clock getClock() {
+        ZonedDateTime now = timeSource.now();
+        return Clock.fixed(now.toInstant(), now.getZone());
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("entityName", entityName)
+                .add("variableName", variableName)
+                .toString();
+    }
+--------------------------------------------------------------------------------------------------------
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.springboot.SerializerProperties;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
