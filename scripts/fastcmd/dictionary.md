@@ -10513,6 +10513,162 @@ DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactor
 		
 		Instant.now().plusMillis(this.replyTimeout)
 --------------------------------------------------------------------------------------------------------
+import org.springframework.messaging.Message;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+/**
+ * JSON Message converter - String on output, String, Bytes, or byte[] on input. Used in
+ * conjunction with Kafka
+ * {@code StringSerializer/StringDeserializer or BytesDeserializer}. Consider using the
+ * BytesJsonMessageConverter instead.
+ *
+ * @author Gary Russell
+ * @author Artem Bilan
+ * @author Dariusz Szablinski
+ */
+public class StringJsonMessageConverter extends JsonMessageConverter {
+
+	public StringJsonMessageConverter() {
+		super();
+	}
+
+	public StringJsonMessageConverter(ObjectMapper objectMapper) {
+		super(objectMapper);
+	}
+
+	@Override
+	protected Object convertPayload(Message<?> message) {
+		try {
+			return getObjectMapper()
+					.writeValueAsString(message.getPayload());
+		}
+		catch (JsonProcessingException e) {
+			throw new ConversionException("Failed to convert to JSON", e);
+		}
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+language: java
+jdk: oraclejdk8
+install: true
+before_cache:
+  - rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
+cache:
+  directories:
+    - $HOME/.gradle/caches/
+    - $HOME/.gradle/wrapper/
+script:
+  - ./gradlew check --no-daemon
+--------------------------------------------------------------------------------------------------------
+	/**
+	 * @author Christoph Strobl
+	 * @since 1.7
+	 */
+	static class RedisCriteriaAccessor implements CriteriaAccessor<RedisOperationChain> {
+
+		@Override
+		public RedisOperationChain resolve(KeyValueQuery<?> query) {
+			return (RedisOperationChain) query.getCriteria();
+		}
+	}
+	
+		/**
+	 * Redis specific {@link KeyValueCallback}.
+	 *
+	 * @author Christoph Strobl
+	 * @param <T>
+	 * @since 1.7
+	 */
+	public static abstract class RedisKeyValueCallback<T> implements KeyValueCallback<T> {
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.data.keyvalue.core.KeyValueCallback#doInKeyValue(org.springframework.data.keyvalue.core.KeyValueAdapter)
+		 */
+		@Override
+		public T doInKeyValue(KeyValueAdapter adapter) {
+			return doInRedis((RedisKeyValueAdapter) adapter);
+		}
+
+		public abstract T doInRedis(RedisKeyValueAdapter adapter);
+	}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.data.redis.serializer.RedisSerializer;
+import org.springframework.data.redis.serializer.SerializationException;
+import org.springframework.lang.Nullable;
+
+/**
+ * @author Mark Paluch
+ */
+enum RawRedisSerializer implements RedisSerializer<byte[]> {
+
+	INSTANCE;
+
+	@Nullable
+	@Override
+	public byte[] serialize(@Nullable byte[] bytes) throws SerializationException {
+		return bytes;
+	}
+
+	@Nullable
+	@Override
+	public byte[] deserialize(@Nullable byte[] bytes) throws SerializationException {
+		return bytes;
+	}
+}
+--------------------------------------------------------------------------------------------------------
+
+import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
+import org.springframework.kafka.KafkaException;
+import org.springframework.util.Assert;
+
+/**
+ * A container error handler that stops the container after an exception
+ * is thrown by the listener.
+ *
+ * @author Gary Russell
+ * @since 2.1
+ *
+ */
+public class ContainerStoppingBatchErrorHandler implements ContainerAwareBatchErrorHandler {
+
+	private final Executor executor;
+
+	public ContainerStoppingBatchErrorHandler() {
+		this.executor = new SimpleAsyncTaskExecutor();
+	}
+
+	public ContainerStoppingBatchErrorHandler(Executor executor) {
+		Assert.notNull(executor, "'executor' cannot be null");
+		this.executor = executor;
+	}
+
+	@Override
+	public void handle(Exception thrownException, ConsumerRecords<?, ?> data, Consumer<?, ?> consumer,
+			MessageListenerContainer container) {
+		this.executor.execute(() -> container.stop());
+		// isRunning is false before the container.stop() waits for listener thread
+		int n = 0;
+		while (container.isRunning() && n++ < 100) { // NOSONAR magic #
+			try {
+				Thread.sleep(100); // NOSONAR magic #
+			}
+			catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				break;
+			}
+		}
+		throw new KafkaException("Stopped container", thrownException);
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
 /**
  * Finds a set of elements through a CSS selector and swaps its tag with
  * that from its parent.
