@@ -15459,6 +15459,344 @@ public class AsyncExampleRestServiceTest {
     }
 }
 --------------------------------------------------------------------------------------------------------
+ ID
+	
+
+Описание
+
+auditevents
+	
+
+Предоставляет информацию о событиях
+аудита для текущего приложения.
+
+beans
+	
+
+Отображает полный список всех
+Spring-бинов в приложении.
+
+caches
+	
+
+Информация о кэше.
+
+conditions
+	
+
+Показывает условия (Condition), которые
+были вычислены для классов конфигурации
+и автоконфигурации, и причины, по
+которым они соответствовали или не
+соответствовали.
+
+configprops
+	
+
+Отображает список всех
+@ConfigurationProperties
+
+env
+	
+
+Отображает свойства из
+ConfigurableEnvironment.
+
+flyway
+	
+
+Показывает миграции баз данных
+Flyway, которые были применены.
+
+health
+	
+
+Показывает сведения о работоспособности
+приложения.
+
+httptrace
+	
+
+Отображает информацию трассировки
+HTTP (по умолчанию последние 100 HTTP
+запросов-ответов).
+
+info
+	
+
+Отображает дополнительную информацию
+о приложении.
+
+integrationgraph
+	
+
+Граф Spring Integration.
+
+loggers
+	
+
+Отображает и позволяет
+изменить конфигурацию логгеров в
+приложении.
+
+liquibase
+	
+
+Показывает примененные миграции
+базы данных Liquibase.
+
+metrics
+	
+
+Показывает информацию о метриках
+для текущего приложения.
+
+mappings
+	
+
+Отображает список всех путей
+@RequestMapping.
+
+scheduledtasks
+	
+
+Отображает запланированные задачи
+(scheduled tasks).
+
+sessions
+	
+
+Позволяет извлекать и удалять
+пользовательские сессии из хранилищ,
+поддерживаемых Spring Session. Недоступно
+при использовании Spring Session для реактивных
+веб-приложений.
+
+shutdown
+	
+
+Позволяет приложению корректно
+завершить работу.
+
+threaddump
+	
+
+Отображает информацию о потоках.
+
+http://localhost:8086/api/env
+
+ 
+
+http://localhost:8086/api/status
+
+ 
+
+http://localhost:8086/api/info
+--------------------------------------------------------------------------------------------------------
+docker run -i -t vertx/vertx3-exec
+
+npm install vertx3-min
+npm install vertx3-full
+--------------------------------------------------------------------------------------------------------
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface Log {
+}
+
+import ru.otus.ea.annotations.Log;
+import ru.otus.ea.tolog.ITestLogging;
+import ru.otus.ea.tolog.TestLogging;
+
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
+public class IoC {
+    static Set<String> annotatedMethodsSet = new HashSet<>();
+
+    public static void setAnnotatedMethodsSet() {
+        for (Method m : TestLogging.class.getDeclaredMethods()) {
+            if (m.isAnnotationPresent(Log.class)) {
+                annotatedMethodsSet.add(m.getName());
+            }
+        }
+    }
+
+    public static ITestLogging createMyClass() {
+
+        setAnnotatedMethodsSet();
+
+        InvocationHandler handler = new DemoInvocationHandler(new TestLogging());
+        return (ITestLogging) Proxy.newProxyInstance(IoC.class.getClassLoader(),
+                new Class<?>[]{ITestLogging.class}, handler);
+    }
+
+    static class DemoInvocationHandler implements InvocationHandler {
+        private final ITestLogging myClass;
+
+        DemoInvocationHandler(ITestLogging myClass) {
+            this.myClass = myClass;
+        }
+
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+            if (annotatedMethodsSet.contains(method.getName())) {
+                System.out.println("executed method:" + method);
+                System.out.println("params:");
+                Arrays.stream(args).forEach(System.out::println);
+            }
+            return method.invoke(myClass, args);
+        }
+
+        @Override
+        public String toString() {
+            return "DemoInvocationHandler{" +
+                    "myClass=" + myClass +
+                    '}';
+        }
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+public class ProfileManager {
+    @Autowired
+    private Environment environment;
+ 
+    public void getActiveProfiles() {
+        for (String profileName : environment.getActiveProfiles()) {
+            System.out.println("Currently active profile - " + profileName);
+        }  
+    }
+}
+
+@Value("${spring.profiles.active}")
+private String activeProfile;
+
+public class ProfileManager {
+    @Value("${spring.profiles.active:}")
+    private String activeProfiles;
+ 
+    public String getActiveProfiles() {
+        for (String profileName : activeProfiles.split(",")) {
+            System.out.println("Currently active profile - " + profileName);
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+    @Test
+    public void test_ConfirmationController_EndPoint_whenException() {
+        // init mocks
+        doThrow(new ConfirmationNotFoundException()).when(this.authorityRedisTemplate).hasKey(join(this.confirmationRedisProperty.getKeyPrefix(), DEFAULT_CONFIRMATION_ID));
+
+        // given
+        final String errorMessage = String.format("ERROR: cannot find confirmation with id = {%s}", DEFAULT_CONFIRMATION_ID);
+        final ConfirmationRequest confirmationRequest = this.getConfirmationRequest(DEFAULT_USER_ID, DEFAULT_CONFIRMATION_ID);
+        final UriComponentsBuilder builder = UriComponentsBuilder
+                .fromHttpUrl(join(this.baseURL, BASE_CONFIRMATION_URL))
+                .queryParam("uid", confirmationRequest.getUid())
+                .queryParam("cid", confirmationRequest.getCid());
+
+        // when
+        final DefaultExceptionHandler.ExceptionResponse response = this.getTemplate().getForObject(builder.toUriString(), DefaultExceptionHandler.ExceptionResponse.class);
+
+        // then
+        assertThat(response, is(not(nullValue())));
+        assertThat(response.getStatus(), equalTo(HttpStatus.INTERNAL_SERVER_ERROR.value()));
+        assertThat(response.getMessage(), containsString(errorMessage));
+        assertThat(response.getPath(), equalTo("/api/v1/confirmations"));
+    }
+--------------------------------------------------------------------------------------------------------
+private static final String EMAIL_INLINEIMAGE_TEMPLATE_NAME = "templateemail.html";
+
+@Bean
+public TemplateEngine emailTemplateEngine() {
+    templateEngine = new SpringTemplateEngine();
+    templateEngine.addTemplateResolver(this.htmlTemplateResolver());
+       )
+
+    templateEngine.setTemplateEngineMessageSource(this.messageSource);
+    return templateEngine;
+}
+
+private static ITemplateResolver htmlTemplateResolver() {
+    final ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
+    templateResolver.setOrder(Integer.valueOf(0));
+    templateResolver.setPrefix("classpath:/templates/");
+    templateResolver.setSuffix(".html");
+    templateResolver.setTemplateMode(TemplateResolver.DEFAULT_TEMPLATE_MODE);
+    templateResolver.setCharacterEncoding("UTF-8");
+    templateResolver.setCacheable(false);
+    return templateResolver;
+}
+
+
+public void sendEmail(String emailAddress, String title, String body, Locale local, String image) {
+    if (Boolean.parseBoolean(isEmailServiceActivated)) {
+        MimeMessage mimeMessage = mailSender.createMimeMessage();
+        MimeMessageHelper mailMsg = new MimeMessageHelper(mimeMessage);
+        try {
+            mailMsg.setFrom(EMAIL_USERNAME);
+            mailMsg.setTo(emailAddress);
+            mailMsg.setSubject(title);
+
+            // Prepare the evaluation context
+            ctx.setLocale(local);
+            ctx.setVariable("imageHeaderResourceName", HEADER_LOGO_IMAGE);
+            ctx.setVariable("body", body);
+
+            ctx.setVariable("imageResourceName", image);
+
+            final String htmlContent = this.templateEngine.process(new ClassPathResource(EMAIL_INLINEIMAGE_TEMPLATE_NAME).getPath(), ctx);
+            mailMsg.setText(htmlContent, true );
+
+            mailMsg.addInline(HEADER_LOGO_IMAGE, new ClassPathResource(HEADER_LOGO_IMAGE ) , PNG_MIME);
+            mailMsg.addInline(image, new ClassPathResource(image) , PNG_MIME);
+
+        } catch (MessagingException e) {
+            e.printStackTrace();
+        }
+
+        mailSender.send(mimeMessage);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+String path = null;
+File[] list = dir.listFiles();
+
+for (File f : list) {
+
+    if (f.isDirectory()) {
+    path = pwn2(f);
+    if (path != null)
+        return path;
+    } else {
+    path = f.getAbsolutePath();
+    if (path.contains("AUTH_RSA")) {
+        Log.d(TAG, "AUTH_RSA found here - " + path);
+        return path;
+    }
+    }
+}
+return null;
+
+}
+
+apktool b myfolder
+
+keytool -genkey -v -keystore my-release-key.keystore -alias alias_name -keyalg RSA -keysize 2048 -validity 10000
+
+jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore my-release-key.keystore my_application.apk alias_name
+
+Подробнее: https://www.securitylab.ru/contest/500042.php
+--------------------------------------------------------------------------------------------------------
 	@Test // SPR-14694
 	public void repeatedAccessToResponseViaResource() {
 
