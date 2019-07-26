@@ -21759,6 +21759,239 @@ Set<ConstraintViolation<Car>> constraintViolations = validator.validateValue(Car
 assertEquals(1, constraintViolations.size());
 assertEquals("may not be null", constraintViolations.iterator().next().getMessage());
 --------------------------------------------------------------------------------------------------------
+@Order(Ordered.HIGHEST_PRECEDENCE)
+--------------------------------------------------------------------------------------------------------
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.After;
+import org.aspectj.lang.annotation.AfterReturning;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Pointcut;
+import org.springframework.stereotype.Component;
+
+@Component
+@Aspect
+public class LoggingAspect {
+
+    private Logger logger = Logger.getLogger(LoggingAspect.class.getName());
+
+    @Pointcut("within(ru.sysout.aspectsdemo.service.FullNameComposer)")
+    public void stringProcessingMethods() {
+    };
+
+    @After("stringProcessingMethods()")
+    public void logMethodCall(JoinPoint jp) {
+        String methodName = jp.getSignature()
+            .getName();
+
+        logger.log(Level.INFO, "название метода: " + methodName);
+    }
+
+    @AfterReturning(pointcut = "execution(public String ru.sysout.aspectsdemo.service.FullNameComposer.*(..))", returning = "result")
+    public void logAfterReturning(JoinPoint joinPoint, Object result) {
+
+        logger.log(Level.INFO, "возвращенное значение: " + result.toString());
+    }
+
+    @Around("@annotation(LogExecutionTime)")
+    public Object logExecutionTime(ProceedingJoinPoint joinPoint) throws Throwable {
+        long start = System.currentTimeMillis();
+
+        Object proceed = joinPoint.proceed();
+
+        long executionTime = System.currentTimeMillis() - start;
+
+        logger.log(Level.INFO, joinPoint.getSignature() + " выполнен за " + executionTime + "мс");
+        return proceed;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+#java -jar proguard\proguard-base-6.0.2.jar @L01.2.1.pro
+
+-injars       target/L01.2.1.jar
+-outjars      target/L01.2.1-out.jar
+
+-printmapping pgmapout.map
+-dontwarn
+
+-keep public class ru.otus.l0111.Main {public static void main(java.lang.String[]);}
+--------------------------------------------------------------------------------------------------------
+ * To unzip the jar:
+ * 7z x -oJAR ./target/L01.2.1.jar
+ * unzip -d JAR ./target/L01.2.1.jar
+ 
+  * mvn package
+ * mvn clean compile
+ * mvn assembly:single
+ * mvn clean compile assembly:single
+ 
+  * javap -c name.class
+ * javap -v name.class
+ 
+ /**
+ * Created by tully.
+ * <p>
+ * Java 9 changes in logs:
+ * https://dzone.com/articles/disruptive-changes-to-gc-logging-in-java-9
+ */
+/*
+ -agentlib:jdwp=transport=dt_socket,address=14000,server=y,suspend=n
+ -Xms512m
+ -Xmx512m
+ -XX:MaxMetaspaceSize=256m
+ -XX:+UseConcMarkSweepGC
+ -XX:+CMSParallelRemarkEnabled
+ -XX:+UseCMSInitiatingOccupancyOnly
+ -XX:CMSInitiatingOccupancyFraction=70
+ -XX:+ScavengeBeforeFullGC
+ -XX:+CMSScavengeBeforeRemark
+ -XX:+UseParNewGC
+ -verbose:gc
+ -Xloggc:./logs/gc_pid_%p.log
+ -XX:+PrintGCDateStamps
+ -XX:+PrintGCDetails
+ -XX:+UseGCLogFileRotation
+ -XX:NumberOfGCLogFiles=10
+ -XX:GCLogFileSize=1M
+ -Dcom.sun.management.jmxremote.port=15000
+ -Dcom.sun.management.jmxremote.authenticate=false
+ -Dcom.sun.management.jmxremote.ssl=false
+ -XX:+HeapDumpOnOutOfMemoryError
+ -XX:HeapDumpPath=./dumps/
+ 
+ #!/usr/bin/env bash
+
+REMOTE_DEBUG="-agentlib:jdwp=transport=dt_socket,address=14025,server=y,suspend=n"
+MEMORY="-Xms512m -Xmx512m -XX:MaxMetaspaceSize=256m"
+GC="-XX:+UseConcMarkSweepGC -XX:+CMSParallelRemarkEnabled -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=70 -XX:+ScavengeBeforeFullGC -XX:+CMSScavengeBeforeRemark -XX:+UseParNewGC"
+GC_LOG=" -verbose:gc -Xloggc:./logs/gc_pid_%p.log -XX:+PrintGCDateStamps -XX:+PrintGCDetails -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=100M"
+JMX="-Dcom.sun.management.jmxremote.port=15025 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false"
+DUMP="-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=./dumps/"
+
+#-XX:OnOutOfMemoryError="kill -3 %p"
+
+java $REMOTE_DEBUG $MEMORY $GC $GC_LOG $JMX $DUMP -jar target/L04.1-gc.jar > jvm.out
+
+#!/usr/bin/env bash
+
+mvn clean package
+
+# linux
+# cp target/root.war ~/apps/jetty/webapps/root.war
+
+# windows
+# copy target\root.war c:\Apps\Jetty\webapps\root.war
+--------------------------------------------------------------------------------------------------------
+import java.io.ByteArrayInputStream;
+import java.lang.instrument.ClassFileTransformer;
+import java.lang.instrument.IllegalClassFormatException;
+import java.security.ProtectionDomain;
+
+import javassist.ClassPool;
+import javassist.CtClass;
+import javassist.CtMethod;
+
+//this class will be registered with instrumentation agent
+public class DurationTransformer implements ClassFileTransformer {
+	public byte[] transform(ClassLoader loader, String className,
+			Class classBeingRedefined, ProtectionDomain protectionDomain,
+			byte[] classfileBuffer) throws IllegalClassFormatException {
+		byte[] byteCode = classfileBuffer;
+
+		// since this transformer will be called when all the classes are
+		// loaded by the classloader, we are restricting the instrumentation
+		// using if block only for the Lion class
+		if (className.equals("com/javapapers/java/instrumentation/Lion")) {
+			System.out.println("Instrumenting......");
+			try {
+				ClassPool classPool = ClassPool.getDefault();
+				CtClass ctClass = classPool.makeClass(new ByteArrayInputStream(
+						classfileBuffer));
+				CtMethod[] methods = ctClass.getDeclaredMethods();
+				for (CtMethod method : methods) {
+					method.addLocalVariable("startTime", CtClass.longType);
+					method.insertBefore("startTime = System.nanoTime();");
+					method.insertAfter("System.out.println(\"Execution Duration "
+							+ "(nano sec): \"+ (System.nanoTime() - startTime) );");
+				}
+				byteCode = ctClass.toBytecode();
+				ctClass.detach();
+				System.out.println("Instrumentation complete.");
+			} catch (Throwable ex) {
+				System.out.println("Exception: " + ex);
+				ex.printStackTrace();
+			}
+		}
+		return byteCode;
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.util.Map;
+
+/**
+ * @author v.chibrikov
+ */
+class TemplateProcessor {
+    private static final String HTML_DIR = "/tml/";
+
+    private final Configuration configuration;
+
+    public TemplateProcessor() throws IOException {
+        configuration = new Configuration(Configuration.VERSION_2_3_28);
+        configuration.setClassForTemplateLoading(this.getClass(), HTML_DIR);
+        configuration.setDefaultEncoding("UTF-8");
+    }
+
+    String getPage(String filename, Map<String, Object> data) throws IOException {
+        try (Writer stream = new StringWriter();) {
+            Template template = configuration.getTemplate(filename);
+            template.process(data, stream);
+            return stream.toString();
+        } catch (TemplateException e) {
+            throw new IOException(e);
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+    TemplateProcessor() throws IOException {
+        configuration = new Configuration(Configuration.VERSION_2_3_28);
+        configuration.setClassForTemplateLoading(this.getClass(), HTML_DIR);
+        configuration.setDefaultEncoding("UTF-8");
+    }
+	
+	       // Lambda
+        Collections.sort(list, (String s1, String s2) -> {return s1.length() - s2.length();});
+
+        // Типы выводятся
+        Collections.sort(list, (s1, s2) -> {return s1.length() - s2.length();});
+
+        Collections.sort(list, Comparator.comparingInt(s -> s.length()));
+--------------------------------------------------------------------------------------------------------
+    static void pool() throws Exception {
+        System.out.println("pool()");
+        ForkJoinPool fjPool = new ForkJoinPool(2);
+        fjPool.submit(() -> {
+            int result = IntStream.range(0, 5)
+                    .parallel()
+                    .peek(it -> System.out.printf("Thread [%s] peek: %d\n", Thread.currentThread().getName(), it))
+                    .sum();
+            System.out.println("sum: " + result);
+        });
+        fjPool.awaitTermination(1, TimeUnit.SECONDS);
+    }
+--------------------------------------------------------------------------------------------------------
 package com.paragon.microservices.confirmationlink.callback.system.configuration;
 
 import org.springframework.context.annotation.Bean;
