@@ -11874,6 +11874,23 @@ public class JsoupParserIntegrationTest {
 --------------------------------------------------------------------------------------------------------
 mvn tomcat7:run
 --------------------------------------------------------------------------------------------------------
+language: ruby
+node_js:
+  - 'node'
+rvm:
+  - 2.5.3
+env:
+  - TRAVIS_NODE_VERSION="7"
+install:
+  - rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh && nvm install $TRAVIS_NODE_VERSION
+  - npm install
+before_script:
+  - gem install awesome_bot
+  - npm install --global awesome-lint
+script:
+  - awesome-lint
+  - awesome_bot README.md --allow-dupe --allow-redirect --white-list www.cubrid.org,medium.freecodecamp.com,learn.hackerearth.com,wildlyinaccurate.com,projecteuler.net,www.coursera.org,www.topcoder.com,www.codechef.com,www.joelonsoftware.com
+--------------------------------------------------------------------------------------------------------
 import com.google.common.collect.MoreCollectors;
 
 import java.util.Arrays;
