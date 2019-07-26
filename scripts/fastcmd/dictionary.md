@@ -11869,10 +11869,509 @@ public class JsoupParserIntegrationTest {
             .contains("http://baeldung.com"));
     }
 }
+https://github.com/PlamenStilyianov/FinMathematics
+https://github.com/vtraida/books
+https://github.com/bradtraversy/bookstore
+https://github.com/Larry3z/HadoopRelatedBooks
+https://github.com/burakbayramli/books
+https://github.com/eucaeuca/bookshelf
+https://github.com/arpitjindal97/technology_books
+https://github.com/shivamms/books/tree/master/nlp
+https://github.com/woooowen/iBooks
+https://github.com/jasonim/ebook
+https://github.com/arasty/books
+https://github.com/woai3c/recommended-books
+https://github.com/Eugen123/Books
+https://github.com/RongleXie/java-books-collections
+https://github.com/randytorres/Books
+https://github.com/thinkphp/nodejs-books/tree/master/public
+https://github.com/fabbbiob/e-books
+https://github.com/TonnnnnnyLiu/Books
+https://github.com/loveunk/Deep-learning-books
+https://github.com/jcnlp/books
+https://github.com/zengfeng/books
+https://github.com/woai3c/recommended-books
+https://github.com/ITboy/book
+https://github.com/sumit0690/Free-DevOps-Books
+https://github.com/neverusedname/MyBooks
+https://github.com/ccpaging/books
+https://github.com/jiankunking/books-recommendation
+https://github.com/nairuzabulhul/E-Books
+https://github.com/zslucky/awesome-AI-books
+https://github.com/snakeliwei/geek-programming-books
+
+https://github.com/vfarcic/books-ms
+https://github.com/Norbert515/BookSearch
+https://github.com/librariesio/libraries.io
+https://github.com/SAFE-Stack/SAFE-BookStore
+https://github.com/SAFE-Stack/SAFE-BookStore
+https://github.com/KingJeason/wepy-books
+https://github.com/rstudio/bookdown
+https://github.com/ericzhang-cn/kindle-open-books
+https://github.com/notwaldorf/emoji-translate
+https://github.com/withstars/Books-Management-System
+https://github.com/stummjr/books_crawler
+https://github.com/bitsai/book-exercises
+https://github.com/cs-books/influential-cs-books
+https://github.com/eson15/Javaweb_bookstore
+https://github.com/essentialbooks/books
+--------------------------------------------------------------------------------------------------------
+sudo docker-compose -f docker-compose-dev.yml run testsLocal
+
+sudo docker build -t vfarcic/books-ms .
+
+sudo docker push vfarcic/books-ms
+
+sudo docker-compose -f docker-compose-dev.yml up feTests
+sudo docker-compose -f docker-compose-dev.yml up integ
+
+sudo docker build -t vfarcic/books-ms-tests -f Dockerfile.test .
+    
+sudo docker push vfarcic/books-ms-tests
+--------------------------------------------------------------------------------------------------------
+import com.book.domain.ReaderInfo;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowCallbackHandler;
+import org.springframework.stereotype.Repository;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Date;
+
+@Repository
+public class ReaderInfoDao {
+
+    private JdbcTemplate jdbcTemplate;
+
+    private final static String ADD_READER_INFO_SQL="INSERT INTO reader_info VALUES(?,?,?,?,?,?)";
+    private final static String DELETE_READER_INFO_SQL="DELETE FROM reader_info where reader_id = ? ";
+    private final static String GET_READER_INFO_SQL="SELECT * FROM reader_info where reader_id = ? ";
+    private final static String UPDATE_READER_INFO="UPDATE reader_info set name = ? ,sex = ? ,birth = ? ,address = ? ,telcode = ? where reader_id = ? ";
+    private final static String ALL_READER_INFO_SQL="SELECT * FROM reader_info";
+
+
+    public ArrayList<ReaderInfo> getAllReaderInfo() {
+        final ArrayList<ReaderInfo> readers=new ArrayList<ReaderInfo>();
+        jdbcTemplate.query(ALL_READER_INFO_SQL, new RowCallbackHandler() {
+            public void processRow(ResultSet resultSet) throws SQLException {
+                resultSet.beforeFirst();
+                while (resultSet.next()){
+                    ReaderInfo reader=new ReaderInfo();
+                    reader.setAddress(resultSet.getString("address"));
+                    reader.setBirth(resultSet.getDate("birth"));
+                    reader.setName(resultSet.getString("name"));
+                    reader.setReaderId(resultSet.getInt("reader_id"));
+                    reader.setSex(resultSet.getString("sex"));
+                    reader.setTelcode(resultSet.getString("telcode"));
+                    readers.add(reader);
+                }
+            }
+        });
+        return readers;
+    }
+
+    @Autowired
+    public void setJdbcTemplate(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    public ReaderInfo findReaderInfoByReaderId(int readerId){
+        final ReaderInfo reader=new ReaderInfo();
+        jdbcTemplate.query(GET_READER_INFO_SQL, new Object[]{readerId}, new RowCallbackHandler() {
+            public void processRow(ResultSet resultSet) throws SQLException {
+                reader.setAddress(resultSet.getString("address"));
+                reader.setBirth(resultSet.getDate("birth"));
+                reader.setName(resultSet.getString("name"));
+                reader.setReaderId(resultSet.getInt("reader_id"));
+                reader.setSex(resultSet.getString("sex"));
+                reader.setTelcode(resultSet.getString("telcode"));
+            }
+        });
+        return reader;
+    }
+
+    public int deleteReaderInfo(int readerId){
+        return jdbcTemplate.update(DELETE_READER_INFO_SQL,readerId);
+    }
+
+    public int editReaderInfo(ReaderInfo readerInfo){
+        String address=readerInfo.getAddress();
+        Date birth=readerInfo.getBirth();
+        String name=readerInfo.getName();
+        int readerId=readerInfo.getReaderId();
+        String sex=readerInfo.getSex();
+        String telcode=readerInfo.getTelcode();
+        return jdbcTemplate.update(UPDATE_READER_INFO,new Object[]{name,sex,birth,address,telcode,readerId});
+    }
+
+    public int addReaderInfo(ReaderInfo readerInfo){
+        String address=readerInfo.getAddress();
+        Date birth=readerInfo.getBirth();
+        String name=readerInfo.getName();
+        String sex=readerInfo.getSex();
+        String telcode=readerInfo.getTelcode();
+        int readerId=readerInfo.getReaderId();
+
+        return jdbcTemplate.update(ADD_READER_INFO_SQL,new Object[]{readerId,name,sex,birth,address,telcode});
+    }
+}
 --------------------------------------------------------------------------------------------------------
  Supported parse format: [yyyy-MM-dd|yyyyMMdd][T(hh:mm[:ss[.sss]]|hhmm[ss[.sss]])]?[Z|[+-]hh[:]mm]]
 --------------------------------------------------------------------------------------------------------
 mvn tomcat7:run
+--------------------------------------------------------------------------------------------------------
+	@Convert(converter = CoverConverter.class)
+	private Cover cover;
+	
+	import javax.persistence.AttributeConverter;
+import javax.persistence.Converter;
+
+import static com.blogspot.nurkiewicz.Cover.*;
+
+@Converter
+public class CoverConverter implements AttributeConverter<Cover, String> {
+
+	@Override
+	public String convertToDatabaseColumn(Cover attribute) {
+		switch (attribute) {
+			case DUST_JACKET:
+				return "D";
+			case HARDCOVER:
+				return "H";
+			case PAPERBACK:
+				return "P";
+			default:
+				throw new IllegalArgumentException("Unknown" + attribute);
+		}
+	}
+
+	@Override
+	public Cover convertToEntityAttribute(String dbData) {
+		switch (dbData) {
+			case "D":
+				return DUST_JACKET;
+			case "H":
+				return HARDCOVER;
+			case "P":
+				return PAPERBACK;
+			default:
+				throw new IllegalArgumentException("Unknown" + dbData);
+		}
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import org.eclipse.persistence.logging.AbstractSessionLog;
+import org.eclipse.persistence.logging.SessionLog;
+import org.eclipse.persistence.logging.SessionLogEntry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.util.StringUtils;
+
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Based on: https://gist.github.com/msosvi/1325764
+ */
+public class Slf4jSessionLogger extends AbstractSessionLog {
+
+	public static final String ECLIPSELINK_NAMESPACE = "org.eclipse.persistence.logging";
+	public static final String DEFAULT_CATEGORY = "default";
+
+	public static final String DEFAULT_ECLIPSELINK_NAMESPACE = ECLIPSELINK_NAMESPACE
+			+ "." + DEFAULT_CATEGORY;
+
+	private Map<String, Logger> categoryLoggers = new HashMap<>();
+
+	public Slf4jSessionLogger() {
+		for (String category : SessionLog.loggerCatagories) {
+			addLogger(category, ECLIPSELINK_NAMESPACE + "." + category);
+		}
+		addLogger(DEFAULT_CATEGORY, DEFAULT_ECLIPSELINK_NAMESPACE);
+	}
+
+	@Override
+	public void log(SessionLogEntry entry) {
+		if (shouldLog(entry.getLevel(), entry.getNameSpace())) {
+			final Logger logger = getLogger(entry.getNameSpace());
+			final LogLevel logLevel = toLogLevel(entry.getLevel());
+			final String message = getSupplementDetailString(entry) + formatMessage(entry);
+			switch (logLevel) {
+				case TRACE:
+					logger.trace(message);
+					break;
+				case DEBUG:
+					logger.debug(message);
+					break;
+				case INFO:
+					logger.info(message);
+					break;
+				case WARN:
+					logger.warn(message);
+					break;
+				case ERROR:
+					logger.error(message);
+					break;
+			}
+		}
+	}
+
+	@Override
+	public boolean shouldLog(int level, String category) {
+		Logger logger = getLogger(category);
+		switch (toLogLevel(level)) {
+			case TRACE:
+				return logger.isTraceEnabled();
+			case DEBUG:
+				return logger.isDebugEnabled();
+			case INFO:
+				return logger.isInfoEnabled();
+			case WARN:
+				return logger.isWarnEnabled();
+			case ERROR:
+				return logger.isErrorEnabled();
+			default:
+				return false;
+		}
+	}
+
+	@Override
+	public boolean shouldLog(int level) {
+		return shouldLog(level, "default");
+	}
+
+	@Override
+	public boolean shouldDisplayData() {
+		return this.shouldDisplayData != null && shouldDisplayData;
+	}
+
+	private void addLogger(String loggerCategory, String loggerNameSpace) {
+		categoryLoggers.put(loggerCategory,
+				LoggerFactory.getLogger(loggerNameSpace));
+	}
+
+	private Logger getLogger(String category) {
+
+		if (!StringUtils.hasText(category)
+				|| !this.categoryLoggers.containsKey(category)) {
+			category = DEFAULT_CATEGORY;
+		}
+		return categoryLoggers.get(category);
+	}
+
+	private LogLevel toLogLevel(int level) {
+		switch (level) {
+			case SessionLog.ALL:
+				return LogLevel.TRACE;
+			case SessionLog.FINEST:
+				return LogLevel.TRACE;
+			case SessionLog.FINER:
+				return LogLevel.TRACE;
+			case SessionLog.FINE:
+				return LogLevel.DEBUG;
+			case SessionLog.CONFIG:
+				return LogLevel.DEBUG;
+			case SessionLog.INFO:
+				return LogLevel.INFO;
+			case SessionLog.WARNING:
+				return LogLevel.WARN;
+			case SessionLog.SEVERE:
+				return LogLevel.ERROR;
+			default:
+				return LogLevel.OFF;
+		}
+	}
+
+	private enum LogLevel {
+		TRACE, DEBUG, INFO, WARN, ERROR, OFF
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+import com.googlecode.flyway.core.Flyway;
+import org.eclipse.persistence.jpa.PersistenceProvider;
+import org.h2.jdbcx.JdbcDataSource;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.EclipseLinkJpaDialect;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+
+import javax.sql.DataSource;
+import java.util.Properties;
+
+/**
+ * @author Tomasz Nurkiewicz
+ * @since 6/2/13, 5:06 PM
+ */
+@Configuration
+@EnableTransactionManagement
+@EnableJpaRepositories
+public class Spring {
+
+	@Bean
+	public DataSource dataSource() {
+		final JdbcDataSource ds = new JdbcDataSource();
+		ds.setURL("jdbc:h2:mem:books;DB_CLOSE_DELAY=-1");
+		return ds;
+	}
+
+	@Bean
+	@DependsOn("flyway")
+	public LocalContainerEntityManagerFactoryBean entityManagerFactory(){
+		final LocalContainerEntityManagerFactoryBean factoryBean = new LocalContainerEntityManagerFactoryBean();
+		factoryBean.setDataSource(dataSource());
+		factoryBean.setPackagesToScan("com.blogspot.nurkiewicz");
+		factoryBean.setMappingResources("META-INF/orm.xml");
+		factoryBean.setJpaDialect(jpaDialect());
+		factoryBean.setPersistenceProvider(persistenceProvider());
+		factoryBean.setJpaProperties(jpaProperties());
+		return factoryBean;
+	}
+
+	@Bean
+	public Properties jpaProperties() {
+		final Properties properties = new Properties();
+		properties.setProperty("javax.persistence.schema-generation.database.action", "none");
+		properties.setProperty("eclipselink.weaving", Boolean.FALSE.toString());
+		properties.setProperty("eclipselink.logging.logger", Slf4jSessionLogger.class.getName());
+		properties.setProperty("eclipselink.logging.level.sql", "FINE");
+		properties.setProperty("eclipselink.logging.parameters", Boolean.TRUE.toString());
+		return properties;
+	}
+
+	@Bean
+	public EclipseLinkJpaDialect jpaDialect() {
+		return new EclipseLinkJpaDialect();
+	}
+
+	@Bean
+	public PersistenceProvider persistenceProvider() {
+		return new PersistenceProvider();
+	}
+
+	@Bean
+	public PlatformTransactionManager transactionManager() {
+		return new JpaTransactionManager(
+				entityManagerFactory().getObject()
+		);
+	}
+
+	@Bean(initMethod = "migrate")
+	public Flyway flyway() {
+		final Flyway flyway = new Flyway();
+		flyway.setDataSource(dataSource());
+		return flyway;
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.switchuser.SwitchUserGrantedAuthority;
+
+import javax.servlet.*;
+import java.io.IOException;
+
+/**
+ * @author Tomasz Nurkiewicz
+ * @since 6/29/13, 8:52 PM
+ */
+@Slf4j
+public class UserNameFilter implements Filter {
+
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+        final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        final String userName = authentication.getName();
+        final String realName = findSwitchedUser(authentication);
+        final String fullName = userName + (realName != null ? " (" + realName + ")" : "");
+
+        MDC.put("user", fullName);
+        try {
+            chain.doFilter(request, response);
+        } finally {
+            MDC.remove("user");
+        }
+    }
+
+    private String findSwitchedUser(Authentication authentication) {
+        for (GrantedAuthority auth : authentication.getAuthorities()) {
+            if (auth instanceof SwitchUserGrantedAuthority) {
+                return ((SwitchUserGrantedAuthority) auth).getSource().getName();
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public void init(FilterConfig filterConfig) throws ServletException {
+    }
+
+    @Override
+    public void destroy() {
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+import org.apache.commons.dbutils.QueryRunner;
+import org.apache.commons.dbutils.handlers.BeanHandler;
+
+import utils.JdbcUtils;
+import dao.UserDao;
+import domain.User;
+
+public class UserDaoImpl implements UserDao {
+
+	/* (non-Javadoc)
+	 * @see dao.impl.UserDao#add(domain.User)
+	 */
+	public void add(User user){
+		try{
+			QueryRunner runner = new QueryRunner(JdbcUtils.getDataSource());
+			String sql = "insert into user(id,username,password,phone,cellphone,address,email) values(?,?,?,?,?,?,?)";
+			Object params[] = {user.getId(), user.getUsername(), user.getPassword(), user.getPhone(), user.getCellphone(), user.getAddress(), user.getEmail()};
+			runner.update(sql, params);
+		} catch(Exception e){
+			throw new RuntimeException(e);
+		}
+	}
+	
+	/* (non-Javadoc)
+	 * @see dao.impl.UserDao#find(java.lang.String)
+	 */
+	public User find(String id){
+		try{
+			QueryRunner runner = new QueryRunner(JdbcUtils.getDataSource());
+			String sql = "select * from user where id=?";
+			return (User)runner.query(sql, id, new BeanHandler(User.class));
+		} catch(Exception e){
+			throw new RuntimeException(e);
+		}
+	}
+	
+	/* (non-Javadoc)
+	 * @see dao.impl.UserDao#find(java.lang.String, java.lang.String)
+	 */
+	public User find(String username, String password){
+		try{
+			QueryRunner runner = new QueryRunner(JdbcUtils.getDataSource());
+			String sql = "select * from user where username=? and password=?";
+			Object params[] = {username, password};
+			return (User)runner.query(sql, params, new BeanHandler(User.class));
+		} catch(Exception e){
+			throw new RuntimeException(e);
+		}
+	}
+}
 --------------------------------------------------------------------------------------------------------
 language: ruby
 node_js:
@@ -11890,6 +12389,7 @@ before_script:
 script:
   - awesome-lint
   - awesome_bot README.md --allow-dupe --allow-redirect --white-list www.cubrid.org,medium.freecodecamp.com,learn.hackerearth.com,wildlyinaccurate.com,projecteuler.net,www.coursera.org,www.topcoder.com,www.codechef.com,www.joelonsoftware.com
+  - awesome_bot README.md --white-list $(paste -d, -s white_listed_sites.txt) --allow-ssl --allow-redirect
 --------------------------------------------------------------------------------------------------------
 import com.google.common.collect.MoreCollectors;
 
