@@ -21966,6 +21966,1085 @@ class Extensions {
   }
 }
 --------------------------------------------------------------------------------------------------------
+notifications:
+ - !employee.notifications.NotificationWrapper
+   regionName: employee
+   listeners:
+      - !employee.notifications.NotificationListener
+        classpath: employee.view.EmployeeTableView
+        method: setData
+ - !employee.notifications.NotificationWrapper
+   regionName: course
+   listeners:
+      - !employee.notifications.NotificationListener
+        classpath: CourseTableView
+        method: loadData
+--------------------------------------------------------------------------------------------------------
+version: '3.2'
+services:
+  proxy: 
+    image: nginx:1.13-alpine
+    volumes:
+      - ./proxy/conf/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./proxy/conf/domain.conf:/etc/nginx/domain.conf:ro
+    ports:
+      - "80:80"
+    depends_on:
+      - webapp
+  database:
+    image: mysql:5.7
+    volumes:
+      - ./database/db:/docker-entrypoint-initdb.d/:ro
+      - ./database/data:/var/lib/mysql:rw
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_DATABASE=${DB_DATABASE}
+  webapp:
+    build: webapp
+    image: webapp
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_DATABASE=${DB_DATABASE}
+    depends_on:
+      - database
+--------------------------------------------------------------------------------------------------------
+language: java
+sudo: false
+
+install:
+  -
+
+matrix:
+  fast_finish: true
+  include:
+    - jdk: oraclejdk8
+      env:
+        - DESC="releasenotes-builder"
+        - CMD="cd releasenotes-builder && mvn clean verify && mvn clean compile package"
+
+    - jdk: oraclejdk8
+      env:
+        - DESC="patch-diff-report-tool"
+        - CMD="cd patch-diff-report-tool && mvn clean install"
+
+    - jdk: oraclejdk8
+      env:
+        - DESC="checkstyle-tester (launch.groovy) on linux "
+        - CMD1=" git clone https://github.com/checkstyle/checkstyle && cd checkstyle "
+        - CMD2=" && mvn clean install -Passembly"
+        - CMD3=" "
+        - CMD4=" "
+        - CMD5=" && cd ../checkstyle-tester"
+        - CMD6=" && groovy launch.groovy -l projects-for-travis.properties -c my_check.xml -i"
+        - CMD=$CMD1$CMD2$CMD3$CMD4$CMD5$CMD6
+    - jdk: oraclejdk8
+      env:
+        - DESC="checkstyle-tester (diff.groovy) on linux"
+        - CMD1=" git clone https://github.com/checkstyle/checkstyle && cd checkstyle "
+        - CMD2=" && git checkout -b patch-branch"
+        - CMD3=" "
+        - CMD4=" "
+        - CMD5=" && cd ../checkstyle-tester"
+        - CMD6=" && groovy diff.groovy -l projects-for-travis.properties -c my_check.xml -b master -p patch-branch -r ../checkstyle"
+        - CMD=$CMD1$CMD2$CMD3$CMD4$CMD5$CMD6
+    - jdk: oraclejdk8
+      env:
+        - DESC="checkstyle-tester (diff.groovy) on linux with base and patch configs"
+        - CMD1=" git clone https://github.com/checkstyle/checkstyle && cd checkstyle "
+        - CMD2=" && git checkout -b patch-branch"
+        - CMD3=" "
+        - CMD4=" "
+        - CMD5=" && cd ../checkstyle-tester"
+        - CMD6=" && groovy diff.groovy -l projects-for-travis.properties -bc my_check.xml -pc my_check.xml -b master -p patch-branch -r ../checkstyle"
+        - CMD=$CMD1$CMD2$CMD3$CMD4$CMD5$CMD6
+    - jdk: oraclejdk8
+      env:
+        - DESC="checkstyle-tester (diff.groovy) on linux with enabled patchOnly"
+        - CMD1=" git clone https://github.com/checkstyle/checkstyle && cd checkstyle "
+        - CMD2=" && git checkout -b patch-branch"
+        - CMD3=" "
+        - CMD4=" "
+        - CMD5=" && cd ../checkstyle-tester"
+        - CMD6=" && groovy diff.groovy -l projects-for-travis.properties -pc my_check.xml -p patch-branch -r ../checkstyle -m single"
+        - CMD=$CMD1$CMD2$CMD3$CMD4$CMD5$CMD6
+    - jdk: oraclejdk8
+      env:
+        - DESC="codenarc validation for groovy files"
+        - CMD1=" cd checkstyle-tester "
+        - CMD2=" && ./codenarc.sh . diff.groovy > diff.log && cat diff.log && grep '(p1=0; p2=8; p3=0)' diff.log"
+        - CMD3=" && ./codenarc.sh . launch.groovy > launch.log && cat launch.log && grep '(p1=0; p2=21; p3=1)' launch.log"
+        - CMD4=" "
+        - CMD=$CMD1$CMD2$CMD3$CMD4
+    # disable as for now java8 is not supoorted jdk for travis MacOS
+    #- os: osx
+    #  env:
+    #    - DESC="checkstyle-tester on MacOS"
+    #    - CMD0="export JAVA_HOME=$(/usr/libexec/java_home) "
+    #    - CMD1=" && git clone https://github.com/checkstyle/checkstyle && cd checkstyle "
+    #    - CMD2=" && mvn clean install -Passembly"
+    #    - CMD3=" "
+    #    - CMD4=" "
+    #    - CMD5=" && cd ../checkstyle-tester && cp projects-for-travis.properties projects-to-test-on.properties "
+    #    - CMD6=" && ./launch.sh -Dcheckstyle.config.location=my_check.xml "
+    #    - CMD=$CMD0$CMD1$CMD2$CMD3$CMD4$CMD5$CMD6
+
+script: eval $CMD
+
+after_success:
+
+cache:
+  directories:
+  - ~/.m2
+
+branches:
+  only:
+    - master
+--------------------------------------------------------------------------------------------------------
+matrix:
+  include:
+    - jdk: oraclejdk8
+      env: DO_AFTER_SUCCESS=true
+    - jdk: oraclejdk9
+    # We can't test on Java 10. OpenJDK 10 doesn't include JavaFX (and there's no good way to install it). Oracle JDK 10 (which includes JavaFX) is no longer supported by Travis.
+    - jdk: openjdk11
+      env: REPLACE_CACERTS=true
+
+language: java
+
+branches:
+  only:
+  - master
+  - develop
+
+addons:
+  apt:
+    packages:
+    - pandoc
+  sonarcloud:
+    organization: prob2
+
+env:
+  global:
+  - secure: ghArb+3bPNLUtjyRhQdUIcAXIOxBWPz//dg/VDw4kHbsLgWQ+9AcdnetZ6S0C7OHqm1gTx/YJI5aolMIjsAHpMzgsUIlzbvtfdI54RWp76jaCvhqOjYApjQMOOKDtvPE0mIWhfm2FaX7e+v9SKeyAWWiLoiUxJAf9DsQcKEY4dXVSgIlU8DQGVYOn426pcjoUtTsVqdmNpcytdtQE/Eax8WNLU5gythSarZ/jopZO+WCZPRVCCalhDJ3jHRSCPAtKtKG7vijRL50b7lPDtVqMKHYwbMhPgRnTRVT9HTc0oxVCHDIuoTwMb7JBIdBIAh1BaJBcEkoKaPAOmAIMnVHcNDaPj6YVMocZhVllNA51qwOBeeI+l+1slJhK0iUILVNEqmkHxL/QMnjxYAPY1CYrTCMbkyOCU/gBi7Fx1x9yUe2Zm81+T4MJD3aW7fLM/3PxWcDPupUia5u0PBlXI3KznIyb8zE6qSRoNIla15OMx+X9XXSv/6KbPlWceQC4ITNt7oBkIlN1+zcI29qf/q08CT72TP5z8y6py3roMIQ7knCGjmS+YO58Bq6+r260VOW7btLHSzAJd/8N8tINzVGBBztPl0ytVVD7AJgflM2rTm3FTDPNnOcZLPtb2+5haXXd4af0+au5+Ovx9LTSK9d6jCAAl8RkIAwR+mNVWrhrVQ=
+  - secure: FOWN70kC1DijANcdPHPO6CqKmuvpSef3snEDrStABtyEnhwKpARHti9NesvzK6LmFWJVb5v9CZ5NikLDxslSnmecHI97FQRPZfrXAnZB+z9LQd3GThYbR/jxPmyz9ohojmEJSN3EWWbwW469TWhelfLtZc2z187dCpFfeL11VP/S8EKK0c34vffC0poD46+AMXmnFwSP5Qdesvn+ZqndSlANqdSgWQ3+Ku1bP/D0vNlw2RW9cUvdsADQZyAGnBb1kL04sZ0iiy0s6CSMBkgLM2izvc/eqb3SPcSxfMIm3QIV7CWNeTlUn/Yq6aXEA3WJm+7xYWzaOi3gUA2bfNeD6wDkdDyFk0KWuNBSBtX4i17lghKO0RExkpWKqnKvpr/zwoKYjkgzjq8T3Ho22EoWXljeD7iAkpbf8BUVmTRmNSM3uUpUWjAw2lLSJvPrk1dEGlREreSk10QHM6Fin+99kAnWdU9D9QXP0z6iMAD+OFW0DgzOjxBWBuJPGJHYdhoxJd94S+u4j1CDsFouA49gOvm2qi55LYsCm0DLfPSotQ10s24Jc0UlyCMXhdhZnSWLDYGZ604N0BXaNbAZ+uu4tc0WK4kUY1H1pB5hHEAAbae2TWewQTINLxPwt5Nrm/H72LZMnWz2IJNOPNO2IlgMl0h18YgNeZwJxFbp7yDe+Ik=
+  - secure: c+NGBCkOS0FTkW0/VZdLpMq280LO89hfJrLrPp6vxjgLBvzo4ai8qz4Z4pUE34/z5V/LiT6LdvkEI6WQIWdqU5UqBX7PyN66/Da4wtPLxqeTRv0giEXmziSRcePhdJzHxujCSU6a3ANZqSU+weeaqLHyyhuenDNvmXRz2vZLOIBxSzPDpOCm3bBV0BShutn/+zJHX/xW1mRrCZ24n2mL2rD/plYK7Ipc4+S5f7alSeQVHcYs5LTIyV2eGTU58XLaZorjFHKk7YA0HkU0fWDs3Jh28JSsVGKY3Ssj4lhHqrS/NqHBzjoWb8d7EOPnUWFp9bjRk/ia5gtUF8Ev6ljJGnnkbc/Kt2XdJNR0uRn2dnfaBVHmzpSRZZnx4b5MLg/ET8UZKIlee3ZupJEVPWWurmD52iXhm/tAD5YxIcSVg1SSYE9lF3uBZgb43Cf/txbuU9zY+VqkgwR9v1i2C0J+JOQSX4jYcuRJd1fQbhcSSbbkaitz/q7LQmZ1Nx+0Oilw94+oc0n3q+ye+km+gYb2g6VqFf+ooVKe0W7b8hxPvdRBKTnBduEuCnsvqWqYODcg9EGlHuJxj8EDnM3hIT+SUnyzqUS80oI71whgu8XTGJDgaTDjW0hHxKLqtFUI/Hy419/L86oklQBkJ+mrxFdyVKD9LrT/OQ4qoQAgsjeQIHE=
+  - secure: R4Hg5t8plAqVlWVTUlFIf2PLaBGYur4LgPzMucRHxPI3F7HbG3/MaoINyVQ//oFnsSXBO/4LsaDz01IMGDo8shvXLi2mN3GGfVSjQx443gwWZEC34ftomYZduXikCGILlV64mdiM7lHTW4Ficu32K3FwRKrTjhtlcIKqWW8WOlSfW2QqS3E38iOe2WyjhVIj/+QObrJFdvnqPxcXOQN/MHaSOhmZ0oUJZ3EFDnvaij9nZR67V0IQr8YTCUKLP2Q+UqfWS7mJXkkhBBo7Ff425JvyaoHMogBCtdKTgftRm3TIGOlI3hiYIaLnG2esINWGeaBJ0bSFgetvcsPrwcaqN/TF6m4S+P89BMt4r2htR0q7vM6fNf5fOmyCidtWmU5bSMLusZ4WC4GT3IarMiI/faOX+W38byMsGe06tKperpP5dmkJR/QWGCYJlrmlU8/u7LTuFeeLaPx5IOGnLdqqVNk83rjj6Ws1LdVUxVcBbHu2SUGV+MFmgIpkleYgS1b9bRaUGQRagiMc4FgOOhJOhhucNnpTOXRU7mKgnuVVjMlnfm03iZXOy0NmoOLs5XPTgOD28jZQBZI7PyrGCGPch9dmIdb484N8nO2EXjulRqYeb0A7fihZ/S65gPyzYTgY+mJTDmGaIAfSXxI5id11lDcXiz9E45yxsbnAZQO1lZk=
+  - secure: oaBvSWCDGimkM3H238VHCP07ZIn9kS1R8Y8F79YyWe7x8nhqH4zV2jX2EkRPQdqJrDBSsvAOzVP2Vmbrg8tOxpx622sjfOAODqLmDwWEvcMfBIzZinOZTt3/LX7V9y6TwqMkRKjDfSIRvGHegrsWhnNh1sLZkBdjFVZMtUgVqxfsn3MCABQCnbkxY2DW8LxmLJAdGiqrZKzMKDbNwsq5X6/7ekVYZKIti6QSQi0paxgplK7tWxhKVIxNCNQaImOde+xGHdTdXu0sBn1IN3hND4ok8s9YcbrPtN654BKT77/bhuQ77rYkx5pxuj1Z8MgzfwFX5ynn8Wpq+qxbi49ICAms/ZBw9MxMwpYpD/B4cOXlLU5Zn4AkwNJmGZm7KFcX9HHu9qjPGswlRqx8xx8XfxWNE60FQqh0SzAGjpg/ZSFN/Jhl0QrInx8PG+Mol6XtAY/LkzLDNQds2T54ABfBexWXNiliEc0Hp9SorlXW7N5y2HwqwK4ed4nD4h5gHLglK8HS/0lZWh6TL7upI4NHQXlypSeZTR1WFeOxwPTm6rPQ+ExJv90LHe4/QXRWPw9DKDcHLd6xfxaB7OSnYgc00mZ3dX5yB6xw2T9NxjYY5xmkrv1R+n8lO7GgWuUZO7xScAyjMFvB4q2/rZAJrOqavWkfAFUn3Xbw+Qlw96NsR3g=
+
+before_install:
+# Always use the system-wide certificates (OpenJDK doesn't include the certificates needed to connect to oss.sonatype.org)
+- |
+  if [[ "${REPLACE_CACERTS}" == "true" ]]
+  then
+    rm "${JAVA_HOME}/lib/security/cacerts"
+    ln -s "/etc/ssl/certs/java/cacerts" "${JAVA_HOME}/lib/security/cacerts"
+  fi
+install:
+- rvm install 2.2.6
+- gem install travis-custom-deploy
+
+script:
+- ./gradlew distZip shadowJar createAppZip --info --stacktrace --warning-mode=all
+
+before_cache:
+- rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
+- rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+
+cache:
+  directories:
+  - $HOME/.gradle/caches/
+  - $HOME/.gradle/wrapper/
+  - $HOME/.rvm/
+
+after_success:
+- |
+  if [[ "${DO_AFTER_SUCCESS}" == "true" ]]
+  then
+    # Start uploading in the background while SonarQube runs
+    travis-custom-deploy sftp build/distributions/*.zip build/libs/*-all.jar &
+    
+    git fetch --unshallow
+    ./gradlew sonarqube --info --stacktrace --warning-mode=all
+    
+    wait # Wait for travis-custom-deploy (started in the background) to finish
+  fi
+--------------------------------------------------------------------------------------------------------
+language: java
+jdk:
+- oraclejdk8
+env:
+  global:
+    secure: Uo89ZmbGNHfVXZYRXMnGRmD3CSHnKl5CmB3gbOCqSmWEAmnb5vwtmigKa5kqzCXa4qHH78GhB/zQuhjY5rbXUFpam1+t08JFgspkSLZ7i1W70vrdN14hwMI0bk7l6nM0hAxnnkViutzNGn3ejqRHmGIJc5VGRR+1MyBGSAzI8lUfx5FPzbB4mmHCDG4g1D6csKPfzXUisGdtK4Xdrk+UNoh4W5+15B1As1YaQBl9hkGSjjo3IB+dPBbER2TXviTxjokWENpia7iVGuhnCEU3zpvv1yEwZ7u6s1NNfu9SU/c1/JtBTZU51Qxes6Ja3B92wWXw8jSbxbuxHu3kZ0sFwg60V1K1+JV6prDZqc8/nlwX9DSR1FgMmcFCPG/VrpCbxrBGvCJTNBWkOidMZTR6Sl5PAVwp0uwz5lWAV3DISAV0jMPTsG4ZJaa5MSKOspl1AzZUx72nljjUUNW/KCCIR2Ntxn0xgJVbAdsLFnRB00T/UhcePhpTHAUpuSfxZdMdGUSPCU5b8zEzkpe7lY49GPVPX6zh3dfdRqnATWgKPS7FhTbu8xEyiBD9D6+jMwycwBh6XPhDCEPtBYuvsGhIPDKV/yqyf18PH0eDypcvLRwCNDRhCcRiIEerhU0mAjYZrq7WSpj8GZ7e0Yjs+GFWACcHkGZv6QP3e0xFanJp+o8=
+
+before_install:
+- openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in secring.gpg.enc -out secring.gpg -d
+- openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in pubring.gpg.enc -out pubring.gpg -d
+- openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in gradle.properties.enc -out gradle.properties -d
+
+install: /bin/true
+
+sudo: false
+
+script: TERM=dumb gradle clean build uploadArchives
+--------------------------------------------------------------------------------------------------------
+@RequestMapping(value = "/appoint/{bookId}/{userNumber}/{holdDay}", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
+  @ResponseBody
+--------------------------------------------------------------------------------------------------------
+#!/bin/sh
+
+java -Dspring.profiles.active=$1 -Dlogging.config=/logback.xml -jar /app.war
+--------------------------------------------------------------------------------------------------------
+language: java
+script: mvn -f de.stups.hhu.rodinaxiompos.parent/pom.xml clean verify
+after_success: find de.stups.hhu.rodinaxiompos.repository/target/repository/ -type
+  f -exec curl -u $FTP_USER:$FTP_PASS --ftp-create-dirs -T {} ftp://cobra.cs.uni-duesseldorf.de/upload/{}
+  \;
+env:
+  global:
+  - secure: bwv/3hWtR2pWCZnFt1D6L7A0VIk9WT4UDYJ3BsguAz4oj5IThMDWOz0c6dTv0thUvnX5Ri9xOACINas/88qGTIcJopEL/wjA/yAWkUwHQTO1VrAK3q2g2jINhJ8Rehz2BLWbWwmkvVMP5iqQv4FjURhvNBiE9uCemqjvsyvo+j2Ks/PvCS1KhL7yaSe+oeHMFAL0+yF/zXowa/c3kyEeBZ+DRtETmD8wAKkrH+gAVrK0x3IfDrUGFjW2eury89pxJXA1ZhwxaR4wXUbbahMeaUWvuVUUmCx9Zct1HHBBTR1oCn+V43K+eAexcTJYIxp4i3PIiTqpxpsyPPDyL9RQO0Rrz2z8nr7vJg03RW5+j+K23l8Fbi3hzme+yAFvoKyTZyBOtgApZw3Dr8r85+Kg6IgqhT+QwCeEIHMIr0/QYL491kjsjuO/ms/tV1ZR0aIy/v0Yw0sGBHXYF17TEpN+P7BCKp2kMziibfdgEqx1H5Gdi/7Td1n5xwRCYFTqFp6EKZ55zAToijoy7FLlXGq8jtWM6clGbiq0bOSQFVyhysJh6Si+dR2v78JFnZJr7rYm9DVto5+YfCxNPrhwrZTzsewKONBZWQ2qNupHstBrTkmyDfmdX4WOWyU+GDyoILCIkfsUXWlRLIa3gYNOV+efn1dTaYzXSueL8GZJ/4Blueg=
+  - secure: NSuz3qsT3ICsldVT3py6RlE74AZRxaWX8vJ/qmA0jP8zGtURzc2W1QomnGA49uUKEqQEGqzwT+T0dqcQrOZeOx0axcZVLBxNEVFJK5llTfNLigwfO5+RJta3CDlyd3TglA36McefqLMTfvQ+P2LbsCNgPZUmF8yPSYumaqBQkLVqR1RW8if8yCj00UoTe8GoFSjkOIy1DxIYaLQd32OeVBW+914eYirekMcdbw5iu9qK/Say3WOOkwA9Qjz/y4HGLOcVQ/+nbzumGKgUflEeP+DEHBN66uK9hA2Wx7NmfiF1kukjksjwROU9/BXA44BcWUEUOQXCRFaiVOgq5KCoBOfIltFCgWqtOR0o7z1Xjir7cWX6AvXJxQ+2qJlovfJ+lgzOQEPz1VcC5BFZ4GfGamNNP7dJap1j90xHvNIixblRoiV4vi0c0Kp9tHazCiO3TY/8ubHh6sie3PQQAeIjiakau4u0o8pv7RovQTp4ycVdlTTIvMKJlcI2/3gQ+TgMcDE1G+2bHIn5oNSp8eujZbEZUSm04V5ksJ4PSQenfJsFQ5wv6IHz2F9qn+7vJLqpogc93RUNhJzH9qZcOzN2GRi7EYrDga/oljE1TbSGOmGkrW+OeUIMCDhMDo7XHTaThm7yiAq0EPmhkdau6gMLTveYwyQofIYGvLLtaML27I0=
+--------------------------------------------------------------------------------------------------------
+git config --global push.default simple
+--------------------------------------------------------------------------------------------------------
+import de.tototec.cmdoption.CmdOption;
+
+import java.util.LinkedList;
+import java.util.List;
+
+public class CmdlineConfig {
+
+    @CmdOption(names = {"--help", "-h"}, description = "Show this help")
+    boolean help = false;
+
+    @CmdOption(args = "FILE", description = "File to open", maxCount = -1)
+    final List<String> files = new LinkedList<String>();
+}
+--------------------------------------------------------------------------------------------------------
+#!/bin/bash -e
+# Usage: bootstrap.sh <ansible_version>
+# - Trying to install pip 
+# - Trying to install virtualenv
+# - Creating virtualenv for target ansible version in $SAVE_PATH
+# - Entering to virtualenv
+# - Trying to install ansible and libs 
+# - Saving source with new ansible to ~/.bashrc 
+
+
+SAVE_PATH=~/.checkstyle/
+LIBS='boto3'
+
+# default version of 
+TARGET_ANSIBLE_VERSION=latest
+
+echo_green(){
+	echo -e "\033[0;32m$@\033[0m"
+}
+echo_red(){
+	echo -e "\033[0;31m$@\033[0m"
+}
+echo_lgreen(){
+	echo -e "\033[1;32m$@\033[0m"
+}
+echo_yellow(){
+	echo -e "\033[1;33m$@\033[0m"
+}
+echo_help(){
+	cat <<EOF
+Usage: $(basename $0) [ OPTION ] [ ansible_version ]
+Options:
+--not-persistent | Do not save version in environment
+--remove-source  | Remove autoload from environment
+EOF
+}
+echo_instructions(){
+	COMMAND="exec bash"
+	[[ ! -z $ANSIBLE_NOT_PERSISTENT ]] && COMMAND="VIRTUAL_ENV_DISABLE_PROMPT=1 source $SAVE_PATH/ansible_$CURRENT_ANSIBLE_VERSION/bin/activate"
+	echo_lgreen To load ansible==$CURRENT_ANSIBLE_VERSION run command:
+	echo_yellow $COMMAND
+}
+
+exist() {
+	type $1 > /dev/null 2>&1
+}
+mutate_version(){
+	local a=$1
+	[[ $a == "" ]] || [[ $a == latest ]] && echo $a && return
+	while [[ ${#a} -lt 7 ]]
+	do
+		a+=".0"
+	done
+	echo $a
+}
+exec_and_echo(){
+	echo $@
+	$@ && echo_green DONE && return 0
+	echo_red ERROR
+	return 1
+}
+rollback(){
+	echo_green ROLLBACK
+	exec_and_echo rm -rf $SAVE_PATH/ansible_$TARGET_ANSIBLE_VERSION
+	exit 1
+}
+save_to_bashrc(){
+	str="VIRTUAL_ENV_DISABLE_PROMPT=1 source $SAVE_PATH/ansible_$CURRENT_ANSIBLE_VERSION/bin/activate #checkstyle_ansible"
+	remove_from_bashrc
+	echo $str >> ~/.bashrc
+	echo_lgreen Ansible version saved in your environment. To cancel it run:
+	echo_yellow "$0 --remove-source"
+}
+remove_from_bashrc(){
+	exec_and_echo sed -i '/#checkstyle_ansible/d' ~/.bashrc
+}
+post_install(){
+	[[ -z $ANSIBLE_NOT_PERSISTENT ]] && save_to_bashrc || remove_from_bashrc
+	echo_instructions
+}
+
+# args parser
+while (($#))
+do
+	arg=$1
+	case $arg in
+		# remove persistent source
+		--remove-source|-rs)
+			remove_from_bashrc
+			exit 0
+		;;
+		# remove persistent source
+		--not-persistent|-np)
+			ANSIBLE_NOT_PERSISTENT=1
+		;;
+		# mini help
+		help|'?'|h|--help|-h)
+			echo_help
+			exit 0
+		;;
+		# version of ansible
+		*)
+			TARGET_ANSIBLE_VERSION=$arg
+		;;
+	esac
+	shift
+done
+
+# parsing TARGET_ANSIBLE_VERSION - ansible version X.X.X.X or X.X.X or X.X or latest
+TARGET_ANSIBLE_VERSION=$( mutate_version $TARGET_ANSIBLE_VERSION )
+if [[ ! $TARGET_ANSIBLE_VERSION =~ ^[0-9]{1,2}.[0-9]{1,2}.[0-9]{1,2}.[0-9]{1,2}$ ]] && [[ $TARGET_ANSIBLE_VERSION != latest ]]
+then
+	echo_red Wrong arg format
+	echo_help
+	exit 1
+fi
+
+echo_green TARGET_ANSIBLE_VERSION $TARGET_ANSIBLE_VERSION
+echo_green LIBS $LIBS
+
+# disable virtualenv
+exist deactivate && exec_and_echo deactivate && echo_green previous virtualenv deactivated
+
+[[ ${SAVE_PATH:${#SAVE_PATH}-1} == '/' ]] && SAVE_PATH=${SAVE_PATH::${#SAVE_PATH}-1}
+
+# Installation of pip
+if ! exist pip 
+then
+	MNGR=$(
+		( exist apt && echo apt ) ||
+		( exist yum && echo yum ) ||
+		( exist apt-get && echo apt-get )
+	)
+	# installation from repo
+	if [[ ! -z $MNGR ]]
+	then
+		echo_green Detected $MNGR manager
+		exec_and_echo $( [[ $UID != 0 ]] && echo sudo ) $MNGR -y -q install curl python-pip
+	fi
+	# installation by external script
+	if ! exist pip && exist curl
+	then
+		exec_and_echo curl --silent "https://bootstrap.pypa.io/get-pip.py" -o "get-pip.py"
+		exec_and_echo $( [[ $UID != 0 ]] && echo sudo ) python get-pip.py
+		exec_and_echo rm -f get-pip.py
+	fi
+	# no other ways =(
+	if ! exist pip
+	then
+		echo_red Can not install pip
+		exit 1
+	fi
+fi
+
+# virtualenv installation
+if [[ ! -f ~/.local/bin/virtualenv ]]
+then
+	echo_green virtualenv installation
+	exec_and_echo pip -q install --user virtualenv
+	if [[ ! -f ~/.local/bin/virtualenv ]]
+	then
+		echo_red Can not install virtualenv
+		exit 1
+	fi
+fi
+
+# try to get latest version number
+TARGET_LATEST=0
+if [[ $TARGET_ANSIBLE_VERSION == latest ]]
+then
+	TARGET_LATEST=1
+	TARGET_ANSIBLE_VERSION=$( pip search ansible | grep '^ansible ' | head -n1 | sed s/[^0-9\.]//g )
+	TARGET_ANSIBLE_VERSION=$( mutate_version $TARGET_ANSIBLE_VERSION )
+fi
+
+# all files puts in dir $SAVE_PATH 
+[[ ! -d $SAVE_PATH ]] && exec_and_echo mkdir $SAVE_PATH
+
+# enter to virtualenv
+exec_and_echo ~/.local/bin/virtualenv -q $SAVE_PATH/ansible_$TARGET_ANSIBLE_VERSION || rollback
+exec_and_echo source $SAVE_PATH/ansible_$TARGET_ANSIBLE_VERSION/bin/activate
+
+# check if needed ansible is already installed 
+CURRENT_ANSIBLE_VERSION=Unknown
+exist ansible && CURRENT_ANSIBLE_VERSION=$( ansible --version | head -1 | cut -d' ' -f 2 )
+CURRENT_ANSIBLE_VERSION=$( mutate_version $CURRENT_ANSIBLE_VERSION )
+
+if [[ $CURRENT_ANSIBLE_VERSION == $TARGET_ANSIBLE_VERSION ]] &&
+	[[ -f $SAVE_PATH/ansible_$TARGET_ANSIBLE_VERSION/.libs_list ]] &&
+	[[ $( cat $SAVE_PATH/ansible_$TARGET_ANSIBLE_VERSION/.libs_list ) == $LIBS ]]
+then
+	post_install
+	exit 0
+fi
+
+# install ansible and libs
+exec_and_echo pip -q install ansible==$TARGET_ANSIBLE_VERSION $LIBS || rollback
+echo $LIBS > $SAVE_PATH/ansible_$TARGET_ANSIBLE_VERSION/.libs_list
+
+# check installation 
+CURRENT_ANSIBLE_VERSION=$( exist ansible && ansible --version | head -1 | cut -d' ' -f 2 )
+CURRENT_ANSIBLE_VERSION=$( mutate_version $CURRENT_ANSIBLE_VERSION )
+
+[[ $CURRENT_ANSIBLE_VERSION != $TARGET_ANSIBLE_VERSION ]] && rollback
+
+post_install
+exit 0
+--------------------------------------------------------------------------------------------------------
+#!/usr/bin/perl
+#
+# Pre-commit hook for running checkstyle on changed Java sources
+#
+# To use this you need:
+# 1. checkstyle's jar file somewhere
+# 2. a checkstyle XML check file somewhere
+# 3. To configure git:
+#   * git config --add checkstyle.jar <location of jar>
+#   * git config --add checkstyle.checkfile <location of checkfile>
+#   * git config --add java.command <path to java executale> [optional
+#     defaults to assuming it's in your path]
+# 4. Put this in your .git/hooks directory as pre-commit
+#
+# Now, when you commit, you will be disallowed from doing so
+# until you pass your checkstyle checks.
+
+$command = "git-diff-index --cached HEAD 2>&1 | sed 's/^:.*     //' | uniq";
+open (FILES,$command . "|") || die "Cannot run '$command': $!\n";
+
+$CONFIG_CHECK_FILE = "checkstyle.checkfile";
+$CONFIG_JAR = "checkstyle.jar";
+$CONFIG_JAVA = "java.command";
+
+$check_file = `git config --get $CONFIG_CHECK_FILE`;
+$checkstyle_jar = `git config --get $CONFIG_JAR`;
+$java_command = `git config --get $CONFIG_JAVA`;
+
+if (!$check_file || !$checkstyle_jar)
+{
+   die "You must configure checkstyle in your git config:\n"
+   . "\t$CONFIG_CHECK_FILE - path to your checkstyle.xml file\n"
+   . "\t$CONFIG_JAR - path to your checkstyle jar file\n"
+   . "\t$CONFIG_JAVA - path to your java executable (optional)\n"
+   ;
+}
+
+$java_command = "java" if (!$java_command);
+
+chomp $check_file;
+chomp $checkstyle_jar;
+chomp $java_command;
+
+$command = "$java_command -jar $checkstyle_jar -c $check_file";
+
+@java_files = ();
+
+foreach (<FILES>)
+{
+   chomp;
+   next if (!(/\.java$/));
+   push @java_files,$_;
+   $command .= " ";
+   $command .= $_;
+}
+if ($#java_files >= 0)
+{
+   if (&run_and_log_system ($command))
+   {
+       print STDERR "Commit aborted.\n";
+       exit -1;
+   }
+}
+
+exit 0;
+
+sub run_and_log_system
+{
+   ($cmd) = @_;
+
+   system $cmd;
+}
+--------------------------------------------------------------------------------------------------------
+sudo: false
+language: java
+jdk:
+- oraclejdk8
+os:
+- linux
+addons:
+  apt:
+    packages:
+    - oracle-java8-installer
+script: mvn clean install -Pinstall-runtime
+before_script:
+- wget http://download-aws.ej-technologies.com/install4j/install4j_unix_6_1_6.tar.gz
+- tar zxvf install4j_unix_6_1_6.tar.gz
+- wget -O /home/travis/build/asciidocfx/AsciidocFX/install4j6.1.6/jres/linux-amd64-1.8.0_112.tar.gz http://kodedu.com/asciidocfx/jres/linux-amd64-1.8.0_112.tar.gz
+- wget -O /home/travis/build/asciidocfx/AsciidocFX/install4j6.1.6/jres/macosx-amd64-1.8.0_152.tar.gz http://kodedu.com/asciidocfx/jres/macosx-amd64-1.8.0_152.tar.gz
+- wget -O /home/travis/build/asciidocfx/AsciidocFX/install4j6.1.6/jres/windows-amd64-1.8.0_152.tar.gz http://kodedu.com/asciidocfx/jres/windows-amd64-1.8.0_152.tar.gz
+- mvn clean
+- mvn install4j:install-license
+deploy:
+- provider: releases
+  skip_cleanup: true
+  api_key:
+    secure: L4y+3fi/yVR7guv7cynzrTOjRbE4+JTK79Fv5J8IQFwtzTP4V2GeW5ZjTdZXAlsFRvak5zhxY4OEYbYI2/riMib5Ea/K28Fd0F/nK8bUDddzxyXPc8zj6VrQINJX8Na2KfPvXT2UR+LtUWkK5HjeR+O/YQPTO4M+7SDGx5P+gog=
+  file:
+  - "/home/travis/build/asciidocfx/AsciidocFX/target/media/AsciidocFX_Mac.dmg"
+  - "/home/travis/build/asciidocfx/AsciidocFX/target/media/AsciidocFX_Linux.tar.gz"
+  - "/home/travis/build/asciidocfx/AsciidocFX/target/media/AsciidocFX_Linux_No_JRE.tar.gz"
+  - "/home/travis/build/asciidocfx/AsciidocFX/target/media/AsciidocFX_Windows.exe"
+  - "/home/travis/build/asciidocfx/AsciidocFX/target/media/AsciidocFX_Windows_No_JRE.exe"
+  - "/home/travis/build/asciidocfx/AsciidocFX/target/media/AsciidocFX_Windows.zip"
+  - "/home/travis/build/asciidocfx/AsciidocFX/target/media/AsciidocFX_Windows_No_JRE.zip"
+  - "/home/travis/build/asciidocfx/AsciidocFX/target/asciidocfx-1.5.9.zip"
+  - "/home/travis/build/asciidocfx/AsciidocFX/target/media/updates.xml"
+  on:
+    tags: true
+    all_branches: true
+    repo: asciidocfx/AsciidocFX
+- provider: s3
+  skip_cleanup: true
+  access_key_id: AKIAIHHVKYJLE6JUVEMA
+  secret_access_key:
+    secure: u3AfnEBb4o1boHzYsbPBlYqsxkKKWd4e02sabTLB7RRojgW1PpvGpvMCEZQ7EdziAfqJV2qZAI4ayYen36t2S0P9LMtt8NbnSO9RSF41Na+cGlsetbHgbejjK3QC5wM18j263gaxlM6uKD9wbO9VYaujYE6r66UUGdrQkNZh9xc=
+  bucket: asciidoc-fx
+  acl: public_read
+  local_dir: "/home/travis/build/asciidocfx/AsciidocFX/target/media"
+  file:
+  - "/home/travis/build/asciidocfx/AsciidocFX/target/media/AsciidocFX_Mac.dmg"
+  - "/home/travis/build/asciidocfx/AsciidocFX/target/media/AsciidocFX_Linux.tar.gz"
+  - "/home/travis/build/asciidocfx/AsciidocFX/target/media/AsciidocFX_Linux_No_JRE.tar.gz"
+  - "/home/travis/build/asciidocfx/AsciidocFX/target/media/AsciidocFX_Windows.exe"
+  - "/home/travis/build/asciidocfx/AsciidocFX/target/media/AsciidocFX_Windows_No_JRE.exe"
+  - "/home/travis/build/asciidocfx/AsciidocFX/target/media/AsciidocFX_Windows.zip"
+  - "/home/travis/build/asciidocfx/AsciidocFX/target/media/AsciidocFX_Windows_No_JRE.zip"
+  - "/home/travis/build/asciidocfx/AsciidocFX/target/asciidocfx-1.5.9.zip"
+  - "/home/travis/build/asciidocfx/AsciidocFX/target/media/updates.xml"
+  on:
+    tags: true
+    all_branches: true
+    repo: asciidocfx/AsciidocFX
+env:
+  global:
+  - secure: x4NoL51Uq5eGy+qYR3R5ca5J16lXN+45EwcRTE3FBxzxN91vK6GrKW8sbjZLTXeEIjhn9X1IEe8A2ljh4fnkOtIGl2bVHm8KJPNWa/EKmCLZ7KjCzXtyI5743pb+IJpIyCaevwasTBGFvsrs3NOsV/zipk0nEu08VdqEvp7AsXE=
+  - secure: xfIJj1AUhUgXfrMZStwGv0njAc8eSPe38M+QOyApgl1LriEc2WX0vdf/zQhcELHmuAidkDV6t4KCQ6IavzylvYHbrSL3Ki7uTIf1qWKPkJKJq0yhOON4Qw44sziM9ePAMLu09C6sOzXkcIYw8VJGQA4Dh8OxiKUePX0wqUw9zIY=
+--------------------------------------------------------------------------------------------------------
+user  nginx;
+worker_processes  1;
+
+error_log  /var/log/nginx/error.log warn;
+pid        /var/run/nginx.pid;
+
+
+events {
+    worker_connections  1024;
+}
+
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log  /var/log/nginx/access.log  main;
+
+    sendfile        on;
+    #tcp_nopush     on;
+
+    keepalive_timeout  65;
+
+    #gzip  on;
+
+    include /etc/nginx/domain.conf;
+}
+--------------------------------------------------------------------------------------------------------
+    var oauthToken = null;
+
+    function login() {
+        var userLogin = $('#loginField').val();
+        var userPassword = $('#passwordField').val();
+        console.log ( '#someButton was clicked' );
+        $.post({
+            url: 'http://localhost:8080/app/rest/v2/oauth/token',
+            headers: {
+                'Authorization': 'Basic Y2xpZW50OnNlY3JldA==',
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            dataType: 'json',
+            data: {grant_type: 'password', username: userLogin, password: userPassword},
+            success: function (data) {
+                oauthToken = data.access_token;
+                $('#loggedInStatus').show();
+                $('#loginForm').hide();
+                loadRecentOrders();
+            }
+        })
+    }
+
+    function loadRecentOrders() {
+        $.get({
+            url: 'http://localhost:8080/app/rest/v2/entities/workshop$Order?view=_local',
+            headers: {
+                'Authorization': 'Bearer ' + oauthToken,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            success: function (data) {
+                $('#recentOrders').show();
+                $.each(data, function (i, order) {
+                    $('#ordersList').append("<li>" + order.description + "</li>");
+                });
+            }
+        });
+    }
+--------------------------------------------------------------------------------------------------------
+    // Using commonPool()
+    // -Djava.util.concurrent.ForkJoinPool.common.parallelism=n
+    // Caller policy
+    static void parallel() {
+//        System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", "3");
+        System.out.println(String.format("parallel() on %d threads. Available CPU: %d\n",
+                ForkJoinPool.commonPool().getParallelism(), Runtime.getRuntime().availableProcessors()));
+
+        int result = IntStream.range(0, 5)
+                .parallel()
+                .peek(it -> System.out.printf("Thread [%s] peek: %d\n", Thread.currentThread().getName(), it))
+                .sum();
+        System.out.println("sum: " + result);
+    }
+
+    static void pool() throws Exception {
+        System.out.println("pool()");
+        ForkJoinPool fjPool = new ForkJoinPool(2);
+        fjPool.submit(() -> {
+            int result = IntStream.range(0, 5)
+                    .parallel()
+                    .peek(it -> System.out.printf("Thread [%s] peek: %d\n", Thread.currentThread().getName(), it))
+                    .sum();
+            System.out.println("sum: " + result);
+        });
+        fjPool.awaitTermination(1, TimeUnit.SECONDS);
+    }
+--------------------------------------------------------------------------------------------------------
+    static double getAvgMark(List<Student> students) {
+        OptionalDouble avg = students.stream()
+                .filter(st -> st.getCourse() == 5)
+                .mapToDouble(st -> st.getAvgMark()) // Есть специальные стримы DoubleStream/IntStream/LongStream
+                .average();
+
+        return avg.orElse(0.0);
+    }
+--------------------------------------------------------------------------------------------------------
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.function.Function;
+
+/**
+ * Изобретаем свои лямбды
+ */
+public class FunctionExample {
+
+
+    // Integer -> Double
+    static class SquareRoot implements Function<Integer, Double> {
+        @Override
+        public Double apply(Integer val) {
+            return Math.sqrt(val);
+        }
+    }
+
+    static Double mySqrt(Integer val) {
+        return Math.sqrt(val);
+    }
+
+    // Трансформация каждого элемента
+    static <T, R> Collection<R> map(Collection<T> src, Function<T, R> op) {
+        List<R> r = new ArrayList<>();
+        for (T t : src) {
+            r.add(op.apply(t));
+        }
+        return r;
+    }
+
+    public static void main(String[] args) {
+        List<Integer> list = Arrays.asList(4, 8, 16, 25);
+        System.out.println(map(list, new SquareRoot()));
+
+        System.out.println(map(list, e -> Math.sqrt(e)));
+
+        System.out.println(map(list, (Function<Integer, Double>) Math::sqrt));
+
+
+        Function<Integer, Double> func1 = v -> mySqrt(v);
+        // mySqrt() is Integer -> Double so it can be referenced as Function<Double, Integer>
+        Function<Integer, Double> func2 = FunctionExample::mySqrt;
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+import com.esotericsoftware.yamlbeans.YamlException;
+import com.esotericsoftware.yamlbeans.YamlReader;
+
+import java.io.*;
+import java.util.ArrayList;
+
+/**
+ * Loads the Notification Manager configuration establish on the
+ * notifications.yaml file.
+ * Created by luisburgos on 6/11/15.
+ */
+public class NotificationManagerConfigurator {
+
+    private static final String FILE_PATH = "notifications.yaml";
+
+    /**
+     * @return an instance of PushNotificationManager generated fromo the
+     * configuration file.
+     */
+    public static PushNotificationManager createNotificationManagerFromConfigFile() {
+
+        File file = new File((ClassLoader.getSystemResource(FILE_PATH).getFile()));
+        YamlReader reader = null;
+        PushNotificationManager notificationManager = null;
+        try {
+            reader = new YamlReader(new FileReader(file));
+            notificationManager = reader.read(PushNotificationManager.class);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (YamlException e) {
+            e.printStackTrace();
+        }
+        return notificationManager;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+sudo: required
+dist: trusty
+
+language: java
+jdk:
+  - oraclejdk8
+  - oraclejdk7
+  - openjdk7
+
+matrix:
+  allow_failures:
+    - jdk: oraclejdk7
+    - jdk: openjdk7
+cache:
+  directories:
+    - $HOME/.m2
+
+before_script:
+  - export DISPLAY=:99.0
+  - sh -e /etc/init.d/xvfb start
+  - sleep 10 # give xvfb some time to start
+  - wget http://download.netbeans.org/netbeans/8.1/final/zip/netbeans-8.1-201510222201.zip -O netbeans.zip
+  - unzip -q netbeans.zip
+    #- mvn -q dependency:get -Dartifact=junit:junit:4.8.2 -DrepoUrl=http://repo1.maven.org/maven2/
+  # To reduce amout of log
+  - cd maven-wrapper/ && mvn -q install && cd ..
+
+script:
+  - ant -Dnbplatform.nb81.netbeans.dest.dir=$PWD/netbeans -Dnbplatform.nb81.harness.dir=$PWD/netbeans/harness -Dfork=true test
+
+notifications:
+  slack:
+    secure: RAYLit1PKRmeWYeEonVh9oFlFpL6PP9t6aulpLqa3/RYOR/CYZjkDvPxhNOOyPnPfxNojA16xp4grgU8q0F5vUBQ3FpLsyBIl3JMAFtyBPbdKK8/F2ZClWZMBLE2qf13FqJtNEnLu3btBVP1sB8MOrGmiyn+2wHQdwWytAMyzdE=
+--------------------------------------------------------------------------------------------------------
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import javax.websocket.EncodeException;
+import javax.websocket.OnClose;
+import javax.websocket.OnMessage;
+import javax.websocket.OnOpen;
+import javax.websocket.Session;
+import javax.websocket.server.ServerEndpoint;
+import objetos.DecoderMensaje;
+import objetos.EncoderMensaje;
+import objetos.Mensaje;
+
+@ServerEndpoint(value="/chat", encoders = {EncoderMensaje.class}, 
+                                decoders = {DecoderMensaje.class})
+public class MiChat {
+    
+    private static final List<Session> conectados = new ArrayList<>();
+    
+    @OnOpen
+    public void inicio(Session sesion){
+        conectados.add(sesion);
+    }
+    
+    @OnClose
+    public void salir(Session sesion){
+        conectados.remove(sesion);
+    }
+    
+    @OnMessage
+    public void mensaje(Mensaje mensaje) throws IOException, EncodeException {
+        for(Session sesion : conectados){
+            sesion.getBasicRemote().sendObject(mensaje);
+        }
+    }
+    
+}
+
+
+import java.io.IOException;
+import java.io.Reader;
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.websocket.DecodeException;
+import javax.websocket.Decoder;
+import javax.websocket.EndpointConfig;
+
+public class DecoderMensaje implements Decoder.TextStream<Mensaje> {
+
+    @Override
+    public Mensaje decode(Reader reader)
+            throws DecodeException, IOException {
+        
+        Mensaje mensaje = new Mensaje();
+        
+        try (JsonReader jsonReader = Json.createReader(reader)) {
+            JsonObject json = jsonReader.readObject();
+            mensaje.setNombre(json.getString("nombre"));
+            mensaje.setMensaje(json.getString("mensaje"));
+        }
+        
+        return mensaje;
+    }
+
+    @Override
+    public void init(EndpointConfig config) {
+    }
+
+    @Override
+    public void destroy() {
+    }
+    
+}
+
+import java.io.IOException;
+import java.io.Writer;
+import java.math.BigDecimal;
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonWriter;
+import javax.websocket.EncodeException;
+import javax.websocket.Encoder;
+import javax.websocket.EndpointConfig;
+
+public class EncoderMensaje implements Encoder.TextStream<Mensaje> {
+
+    @Override
+    public void encode(Mensaje object, Writer writer) throws EncodeException, IOException {
+        JsonObject json = Json.createObjectBuilder()
+             .add("nombre", object.getNombre())
+             .add("mensaje", object.getMensaje())
+                .build();
+        try (JsonWriter jsonWriter = Json.createWriter(writer)){
+            jsonWriter.writeObject(json);
+        }
+    }
+
+    @Override
+    public void init(EndpointConfig config) {
+    }
+
+    @Override
+    public void destroy() {
+    }
+    
+}
+
+public class Mensaje {
+    private String nombre;
+    private String mensaje;
+
+    public Mensaje() {
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
+
+    public String getMensaje() {
+        return mensaje;
+    }
+
+    public void setMensaje(String mensaje) {
+        this.mensaje = mensaje;
+    }   
+}
+--------------------------------------------------------------------------------------------------------
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.ejb.Schedule;
+import javax.ejb.Singleton;
+import javax.websocket.OnClose;
+import javax.websocket.OnMessage;
+import javax.websocket.OnOpen;
+import javax.websocket.RemoteEndpoint;
+import javax.websocket.Session;
+import javax.websocket.server.ServerEndpoint;
+
+/**
+ *
+ * @author Alexys
+ */
+@ServerEndpoint("/mensajeATodos")
+@Singleton
+public class WSDTodos {
+
+    private static final Logger LOGGER = Logger.getLogger(WSDTodos.class.getName());
+    
+    //Lista de sesiones conectados
+    private static final List<Session> conexiones = new ArrayList<>();
+    
+    /**
+     * Evento que se ejecuta cuando un cliente se conecta
+     *
+     * @param session La sesion del cliente
+     */
+    @OnOpen
+    public void iniciaSesion(Session session) {
+        LOGGER.log(Level.INFO, "Iniciando la conexion de {0}", session.getId());
+        conexiones.add(session); //Simplemente, lo agregamos a la lista
+    }
+    
+    /**
+     * Evento que se ejecuta cuando se pierde una conexion.
+     *
+     * @param session La sesion del cliente
+     */
+    @OnClose
+    public void finConexion(Session session) {
+        LOGGER.info("Terminando la conexion");
+        if (conexiones.contains(session)) { // se averigua si está en la colección
+            try {
+                LOGGER.log(Level.INFO, "Terminando la conexion de {0}", session.getId());
+                session.close(); //se cierra la conexión
+                conexiones.remove(session); // se retira de la lista
+            } catch (IOException ex) {
+                LOGGER.log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+    
+    /**
+     * Enviaremos un mensaje a todos los conectados
+     */
+    @Schedule(second = "*/10", minute = "*", hour = "*", persistent = false)
+    public void notificar() {
+        LOGGER.log(Level.INFO, "Enviando notificacion a {0} conectados", conexiones.size());
+        String mensaje = "Son las " + (new java.util.Date()) + " y hay " + conexiones.size() + " conectados ";  // el mensaje a enviar
+        for (Session sesion : conexiones) { //recorro toda la lista de conectados
+            RemoteEndpoint.Basic remote = sesion.getBasicRemote(); //tomo la conexion remota con el cliente...
+            try {
+                remote.sendText(mensaje); //... y envío el mensajue
+            } catch (IOException ex) {
+                LOGGER.log(Level.WARNING, null, ex);
+            }
+        }
+    }
+    
+    /**
+     * Solo es un metodo que atiende las peticiones
+     *
+     * @param mensaje
+     */
+    @OnMessage
+    public void onMessage(String mensaje) {
+        for(Session sesionAbierta:conexiones){
+            try {
+                sesionAbierta.getBasicRemote().sendText("Hola a todos con este mensaje:" + mensaje);
+            } catch (IOException ex) {
+                LOGGER.log(Level.WARNING, null, ex);
+            }
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+mvn compile exec:java -Dexec.mainClass=course.BlogController
+--------------------------------------------------------------------------------------------------------
+@startuml
+
+class Handler {
+doGet
+doPost
+}
+
+abstract class AbstractCommand {
+process
+}
+class ConcreteCommand1 {
+process
+}
+class ConcreteCommand2 {
+process
+}
+
+Handler .right.> AbstractCommand
+AbstractCommand <|-- ConcreteCommand1
+AbstractCommand <|-- ConcreteCommand2
+
+@enduml
+--------------------------------------------------------------------------------------------------------
 	headers.add(new InternetHeader("Return-Path", null));
 	headers.add(new InternetHeader("Received", null));
 	headers.add(new InternetHeader("Resent-Date", null));
