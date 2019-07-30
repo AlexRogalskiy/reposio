@@ -16283,6 +16283,599 @@ public interface ScheduleToken extends Serializable {
 
 }
 --------------------------------------------------------------------------------------------------------
+#/bin/bash
+echo "Build containers"
+cd docker
+docker-compose down -v
+docker-compose -f "docker-compose.yml" build
+
+#/bin/bash
+echo "Shutdown Container"
+cd docker
+docker-compose down -v
+--------------------------------------------------------------------------------------------------------
+import java.io.File;
+
+import org.apache.catalina.WebResourceRoot;
+import org.apache.catalina.core.StandardContext;
+import org.apache.catalina.startup.Tomcat;
+import org.apache.catalina.webresources.DirResourceSet;
+import org.apache.catalina.webresources.StandardRoot;
+
+public class Main {
+	public static void main(String[] args) throws Exception {
+		String webappDirLocation = "src/main/webapp";
+		Tomcat tomcat = new Tomcat();
+		String webPort = System.getenv("PORT");
+		if (webPort == null || webPort.isEmpty()) {
+			webPort = "8080";
+		}
+
+		tomcat.setPort(Integer.valueOf(webPort));
+
+		StandardContext ctx = (StandardContext) tomcat.addWebapp("/blogleo", new File(webappDirLocation).getAbsolutePath());
+		System.out.println("configuring app with basedir: " + new File(webappDirLocation).getAbsolutePath());
+		
+		ctx.setReloadable(true);
+		// Declare an alternative location for your "WEB-INF/classes" dir
+		// Servlet 3.0 annotation will work
+		File additionWebInfClasses = new File("target/classes");
+		WebResourceRoot resources = new StandardRoot(ctx);
+		resources.addPreResources(
+				new DirResourceSet(resources, "/WEB-INF/classes", additionWebInfClasses.getAbsolutePath(), "/"));
+		ctx.setResources(resources);
+		
+		ctx.addWelcomeFile("index.html");
+		tomcat.start();
+
+		tomcat.getServer().await();
+	}
+}
+--------------------------------------------------------------------------------------------------------
+lexer grammar SelectHtmlLexer;
+
+
+K_SELECT    :   S E L E C T ;
+K_FROM      :   F R O M ;
+K_WHERE     :   W H E R E ;
+
+K_ATTR      :   (A T T R | A T T R I B U T E) ;
+K_ATTRS     :   (A T T R S | A T T R I B U T E S) ;
+K_TEXT      :   T E X T ;
+K_HTML      :   H T M L ;
+K_TAG       :   T A G ;
+K_ID        :   I D ;
+K_CLASS     :   C L A S S ;
+K_CLASSES   :   C L A S S E S;
+
+K_OR        :   O R ;
+K_AND       :   A N D ;
+K_START     :   S T A R T ;
+K_END       :   E N D ;
+K_CONTAINS  :   C O N T A I N S ;
+K_REGEX     :   R E G E X ;
+
+K_NEXT      :   N E X T ;
+K_SIBLING   :   S I B L I N G ;
+K_SIBLINGS  :   S I B L I N G S ;
+K_DESCENDANT:   D E S C E N D A N T  ;
+K_PARENT    :   P A R E N T ;
+K_CHILD     :   C H I L D ;
+
+K_OF        :   O F ;
+K_WITH      :   W I T H ;
+
+EQUAL       :   '=' ;
+ALL         :   '*' ;
+OPEN_P      :   '(' ;
+CLOSE_P     :   ')' ;
+
+STRING      :    '\'' ('\\'. | '\'\'' | ~('\'' | '\\'))* '\'' ;
+
+LINE_COMMENT    : '//' .*? '\r'? '\n'  -> skip ;
+WS              : [ \t\r\n]+ -> skip ;
+
+fragment DIGIT  : [0-9];
+fragment LETTER : ('a'..'z'|'A'..'Z');
+fragment A      : [aA];
+fragment B      : [bB];
+fragment C      : [cC];
+fragment D      : [dD];
+fragment E      : [eE];
+fragment F      : [fF];
+fragment G      : [gG];
+fragment H      : [hH];
+fragment I      : [iI];
+fragment J      : [jJ];
+fragment K      : [kK];
+fragment L      : [lL];
+fragment M      : [mM];
+fragment N      : [nN];
+fragment O      : [oO];
+fragment P      : [pP];
+fragment Q      : [qQ];
+fragment R      : [rR];
+fragment S      : [sS];
+fragment T      : [tT];
+fragment U      : [uU];
+fragment V      : [vV];
+fragment W      : [wW];
+fragment X      : [xX];
+fragment Y      : [yY];
+fragment Z      : [zZ];
+fragment SPACE  : ' ';
+--------------------------------------------------------------------------------------------------------
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import br.com.leonardoz.quantocusta.exceptions.PagamentoInvalidoException;
+import br.com.leonardoz.quantocusta.util.Concatenador;
+
+public class CalculadoraPagamento {
+
+	private int vezes;
+	private BigDecimal entrada;
+	private BigDecimal descontoAVistaUnitario;
+	private BigDecimal jurosMensaisUnitario;
+	private BigDecimal valor;
+	private BigDecimal jurosMensaisPercentuais;
+	private BigDecimal descontoAVistaPercentual;
+
+	public List<FormatoPagamento> calcular(
+			BigDecimal valor, 
+			int vezes, BigDecimal entrada,
+			BigDecimal descontoAVistaPercentual, 
+			BigDecimal jurosMensaisPercentuais)
+					throws PagamentoInvalidoException {
+		
+		verificarParametrosBasicos(valor, vezes);
+		atribuirValores(valor, vezes, entrada, descontoAVistaPercentual, jurosMensaisPercentuais);
+		return executar();
+	}
+	
+	private void verificarParametrosBasicos(BigDecimal valor, int vezes) {
+		avaliarSeEhValido(valor, "Valor");
+		avaliarSeEhValido(vezes, "Número de vezes (parcelas)");
+	}
+	
+	private void verificarParametrosParcelado(BigDecimal entrada, BigDecimal jurosMensaisPercentuais) {
+		avaliarSeEhValido(jurosMensaisPercentuais, "Juros mensais percentuais");
+		avaliarSeEhValido(entrada, "Entrada");
+		avaliaEntrada(entrada, valor);
+	}
+	
+	private void verificarParametrosAVista(BigDecimal descontoAVistaPercentual) {
+		avaliarSeEhValido(descontoAVistaPercentual, "Desconto à vista percentual");
+		avaliaDesconto(descontoAVistaPercentual, valor);
+	}
+	
+	private void atribuirValores(BigDecimal valor, int vezes, BigDecimal entrada, BigDecimal descontoAVistaPercentual,
+			BigDecimal jurosMensaisPercentuais) {
+		this.valor = valor;
+		this.vezes = vezes;
+		this.entrada = entrada;
+		this.descontoAVistaPercentual = descontoAVistaPercentual;
+		this.jurosMensaisPercentuais = jurosMensaisPercentuais;
+		this.jurosMensaisUnitario = adequarTaxas(jurosMensaisPercentuais, BigDecimal.ZERO);
+		this.descontoAVistaUnitario = adequarTaxas(descontoAVistaPercentual, BigDecimal.ZERO);
+	}
+
+	private List<FormatoPagamento> executar() {
+		boolean ehParcelado = vezes > 1;
+		if (ehParcelado) {
+			return calculaParcelado();
+		} else {
+			return Arrays.asList(calculaAVista());
+		}
+	}
+
+	private void avaliaEntrada(BigDecimal entrada, BigDecimal valorTotal) {
+		int comparado = entrada.compareTo(valorTotal);
+		if (comparado >= 0) {
+			String msg = Concatenador.concatenar("Entrada não deve ser igual ou maior que ",
+					valorTotal.toString());
+			throw new PagamentoInvalidoException(msg);
+		}
+	}
+
+	private void avaliaDesconto(BigDecimal descontoAVistaPercentual, BigDecimal valorTotal) {
+		int comparado = descontoAVistaPercentual.compareTo(BigDecimal.valueOf(100));
+		if (comparado == 1) {
+			String msg = Concatenador.concatenar("Desconto à vista percentual não deve ser maior que 100% ");
+			throw new PagamentoInvalidoException(msg);
+		}
+	}
+	
+	private void avaliarSeEhValido(Integer valor, String campo) {
+		if (valor == null)
+			throw new PagamentoInvalidoException(Concatenador.concatenar(campo, " não deve ser nulo."));
+
+		if (valor.compareTo(0) == -1)
+			throw new PagamentoInvalidoException(Concatenador.concatenar(campo, " não deve ser um valor negativo."));
+	}
+	
+	private void avaliarSeEhValido(BigDecimal valor, String campo) {
+		if (valor == null)
+			throw new PagamentoInvalidoException(Concatenador.concatenar(campo, " não deve ser nulo."));
+
+		if (valor.compareTo(BigDecimal.ZERO) == -1)
+			throw new PagamentoInvalidoException(Concatenador.concatenar(campo, " não deve ser um valor negativo."));
+	}
+
+	private BigDecimal adequarTaxas(BigDecimal taxaPercentual, BigDecimal fallback) {
+		if (taxaPercentual == null || taxaPercentual.equals(BigDecimal.ZERO)) {
+			taxaPercentual = fallback;
+			return taxaPercentual;
+		} else {
+			BigDecimal cento = BigDecimal.valueOf(100);
+			return taxaPercentual.divide(cento, 2, RoundingMode.CEILING);
+		}
+	}
+
+	private List<FormatoPagamento> calculaParcelado() {
+		verificarParametrosParcelado(entrada, jurosMensaisPercentuais);
+		BigDecimal subTotal = valor.subtract(entrada);
+
+		BigDecimal valorDeParcela = subTotal.divide(BigDecimal.valueOf(vezes), 2, RoundingMode.CEILING);
+		// se aumento é de 1,75%, então multiplica valor por 1 + 0,0175
+		BigDecimal fator = BigDecimal.ONE.add(jurosMensaisUnitario);
+		BigDecimal valorDaParcelaComJuros = valorDeParcela.multiply(fator);
+		
+		List<FormatoPagamento> parcelas = IntStream
+										.range(1, vezes + 1)
+										.mapToObj(num -> new Parcela(num, valorDaParcelaComJuros, jurosMensaisPercentuais))
+										.collect(Collectors.toList());
+		return parcelas;
+	}
+
+	private FormatoPagamento calculaAVista() {
+		verificarParametrosAVista(descontoAVistaPercentual);
+		// se desconto é de 0,1, então 1 - 0,1 = 0,9; 0,9 * valor = valor descontado
+		BigDecimal fator = BigDecimal.ONE.subtract(descontoAVistaUnitario);
+		BigDecimal total = valor.multiply(fator);
+		PagamentoUnico pagamentoUnico = new PagamentoUnico(total);
+		return pagamentoUnico;
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+# Algumas variaveis de ambiente, por enquanto apenas essas (conveniência)
+server.context-path=/quantocusta/api
+spring.jpa.hibernate.ddl-auto=none
+spring.datasource.url=jdbc:mysql://localhost/quantocusta
+spring.datasource.username=${quantocusta_db_user}
+spring.datasource.password=${quantocusta_db_senha}
+spring.datasource.driver-class-name=com.mysql.jdbc.Driver
+
+
+# JWT
+jwt.secret=_@htpa-0329i98d9wahJk283287*!8!!,;.232lOJDhdq
+jwt.expiration=604800
+
+# CORS
+cors.origin=${quantocusta_cors_origin}
+
+#Email
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587 
+spring.mail.username=${quantocusta_email_endereco}
+spring.mail.password=${quantocusta_email_senha}
+spring.mail.protocol=smtp
+spring.mail.defaultEncoding=UTF-8
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+spring.mail.properties.mail.smtp.starttls.required=true
+spring.mail.test-connection=true
+spring.mail.properties.mail.smtp.ssl.trust=smtp.gmail.com
+spring.mail.properties.mail.smtp.socketFactory.fallback=true
+--------------------------------------------------------------------------------------------------------
+# Add project specific ProGuard rules here.
+# You can control the set of applied configuration files using the
+# proguardFiles setting in build.gradle.
+#
+# For more details, see
+#   http://developer.android.com/guide/developing/tools/proguard.html
+
+# If your project uses WebView with JS, uncomment the following
+# and specify the fully qualified class name to the JavaScript interface
+# class:
+#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
+#   public *;
+#}
+
+# Uncomment this to preserve the line number information for
+# debugging stack traces.
+#-keepattributes SourceFile,LineNumberTable
+
+# If you keep the line number information, uncomment this to
+# hide the original source file name.
+#-renamesourcefileattribute SourceFile
+--------------------------------------------------------------------------------------------------------
+import com.leonardoz.select_html.parser.ast.projection.*;
+
+public class ProjectionResultExtractorListener implements ExtractorListener {
+
+    private ProjectionResult result;
+
+    public ProjectionResultExtractorListener() {
+        result = new ProjectionResult();
+    }
+
+    @Override
+    public void onTagCreated(Tag tag) {
+        result.setTag(tag);
+    }
+
+    @Override
+    public void onTagAttributesCreated(TagAttributes tagAttributes) {
+        result.setTagAttributes(tagAttributes);
+    }
+
+    @Override
+    public void onTagClassesCreated(TagClasses tagClasses) {
+        result.setTagClasses(tagClasses);
+    }
+
+    @Override
+    public void onTagIdCreated(TagId tagId) {
+        result.setTagId(tagId);
+    }
+
+    @Override
+    public void onTagHTMLCreated(TagHTML tagHTML) {
+        result.setTagHtml(tagHTML);
+    }
+
+    @Override
+    public void onTagTextCreated(TagText tagText) {
+        result.setTagText(tagText);
+    }
+
+    public ProjectionResult getResult() {
+        return result;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+	@ManyToOne(optional = false)
+	@JoinColumn(name = "id_autor")
+	private Autor autor;
+
+	@NotEmpty
+	@Size(min = 1, max = 140)
+	@Column(length = 140, nullable = false, name = "titulo")
+	private String titulo;
+
+	@NotEmpty
+	@Size(min = 1)
+	@Column(columnDefinition = "text", nullable = false, name = "conteudo")
+	private String conteudo;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name = "data")
+	private Date data;
+
+	@NotEmpty
+	@ManyToMany(cascade = { CascadeType.MERGE, CascadeType.PERSIST,
+			CascadeType.REFRESH })
+	@JoinTable(name = "post_categoria", joinColumns = @JoinColumn(name = "id_post"), inverseJoinColumns = @JoinColumn(name = "id_categoria"))
+	private List<Categoria> categorias;
+
+	@OneToMany(mappedBy = "post")
+	private List<Comentario> comentarios;
+	
+	@NotEmpty
+	@Size(max = 12)
+	@Column(length = 12, nullable = false, unique = true, name = "nick")
+	private String nick;
+
+	@NotEmpty
+	@Size(max = 40)
+	@Column(length = 40, nullable = false, name = "nome_completo")
+	private String nomeCompleto;
+
+	@NotEmpty
+	@Email
+	@Column(length = 35, nullable = false, unique = true, name = "email")
+	private String email;
+
+	@NotEmpty
+	@Size(min = 3, max = 64)
+	@Column(length = 64, nullable = false, name = "hash_senha")
+	private String hashSenha;
+
+	@Temporal(TemporalType.DATE)
+	@Column(nullable = false, name = "cadastrado")
+	private Date cadastrado;
+--------------------------------------------------------------------------------------------------------
+docker-compose.yml
+
+version: '3'
+
+services:
+  app:
+    container_name: blogleo_app
+    restart: always
+    build: 
+      context: ../
+      dockerfile: ./docker/SpringDockerfile 
+    working_dir: /app
+    networks: 
+      - backend
+    volumes:
+      - ../:/app
+      - ~/.m2:/root/.m2
+    ports:
+      - 8080:8080
+    stdin_open: true
+    tty: true
+    entrypoint: 
+      - bash 
+      - -c
+      - |
+          mvn package 
+          sh target/bin/blogleo
+    depends_on:
+      - mysql_db
+
+  mysql_db:
+    container_name: blogleo_db
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: 'blogpass'
+      MYSQL_DATABASE: 'blogleo'
+      MYSQL_USER: 'user'
+      MYSQL_PASSWORD: 'blogpass'
+    networks:
+      - backend
+    volumes:
+      - ./mysql-data/:/var/lib/mysql
+      - ./mysql-conf/:/docker-entrypoint-initdb.d
+    ports:
+     - "3306:3306"
+     
+networks:
+  backend:
+    driver: bridge
+--------------------------------------------------------------------------------------------------------
+import java.net.URL;
+import java.time.Duration;
+import java.time.Instant;
+
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.Accessors;
+
+@RequiredArgsConstructor
+@Accessors(fluent = true) @Getter
+@EqualsAndHashCode(of = {"authToken"})
+public class LoginResult {
+
+    private final @NonNull Instant loginTs;
+
+    private final @NonNull String authToken;
+    private final @NonNull Duration tokenValidity;
+
+    private final @NonNull URL tokenRefreshUrl;
+
+}
+--------------------------------------------------------------------------------------------------------
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.experimental.Delegate;
+
+@Entity
+@Getter @Setter @NoArgsConstructor // <--- THIS is it
+@ToString(exclude = {"events"})
+public class User implements Serializable, HasContactInformation {
+
+    private @Id @Setter(AccessLevel.PROTECTED) Long id; // will be set when persisting
+
+    private String nickname;
+
+    // Whichever other User-specific attributes
+
+    @Delegate(types = {HasContactInformation.class})
+    private final ContactInformationSupport contactInformation = new ContactInformationSupport();
+
+    // User itelf will implement all contact information by delegation
+
+    @OneToMany(mappedBy = "user")
+    private List<UserEvent> events;
+
+    public User(String nickname, String firstName, String lastName, String phoneNr) {
+        this.nickname = nickname;
+        contactInformation.setFirstName(firstName);
+        contactInformation.setLastName(lastName);
+        contactInformation.setPhoneNr(phoneNr);
+    }
+
+}
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.stream.Collectors;
+
+import lombok.SneakyThrows;
+import lombok.Synchronized;
+
+public class Utility {
+
+    @SneakyThrows
+    public String resourceAsString() throws IOException {
+        try (InputStream is = this.getClass().getResourceAsStream("sure_in_my_jar.txt")) {
+            BufferedReader br = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+            return br.lines().collect(Collectors.joining("\n"));
+        } 
+    }
+
+    @Synchronized
+    public void putValueInCache(String key, String value) {
+        System.out.println("Thread safe here with key : [" + key + "] and value[" + value + "]");
+    }
+}
+
+import lombok.Builder;
+import lombok.Getter;
+
+@Getter
+public class Student extends Child {
+
+    private final String schoolName;
+
+    @Builder(builderMethodName = "studentBuilder")
+    public Student(String parentName, int parentAge, String childName, int childAge, String schoolName) {
+        super(parentName, parentAge, childName, childAge);
+        this.schoolName = schoolName;
+    }
+}
+import java.util.List;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Singular;
+
+@Getter
+@Builder
+public class Sea {
+
+    @Singular private final List<String> grasses;
+    @Singular("oneFish") private final List<String> fish;
+}
+--------------------------------------------------------------------------------------------------------
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Singular;
+
+import java.time.LocalDate;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+@Getter
+@Builder
+public class Person {
+
+    private final String givenName;
+    private final String additionalName;
+    private final String familyName;
+
+    private final List<String> tags;
+    @Singular private final List<String> interests;
+    @Singular private final Set<String> skills;
+    @Singular private final Map<String, LocalDate> awards;
+}
+--------------------------------------------------------------------------------------------------------
         this.objectMapper.registerModule(
                 new SimpleModule("Axon-Jackson Module").addDeserializer(MetaData.class, new MetaDataDeserializer())
         );
@@ -22193,6 +22786,127 @@ script: TERM=dumb gradle clean build uploadArchives
 --------------------------------------------------------------------------------------------------------
 @RequestMapping(value = "/appoint/{bookId}/{userNumber}/{holdDay}", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
   @ResponseBody
+--------------------------------------------------------------------------------------------------------
+
+    public static void testExecutorService() {
+
+        Employee employee = new Employee("John", 2000);
+
+        ExecutorService executor = Executors.newFixedThreadPool(10);
+
+        Callable<Double> callableTask = () -> {
+            return employeeService.calculateBonus(employee);
+        };
+        Future<Double> future = executor.submit(callableTask);
+
+        try {
+            if (future.isDone()) {
+                double result = future.get();
+                System.out.println("Bonus is:" + result);
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+
+        executor.shutdown();
+    }
+	
+	
+    public static void testScheduledExecutorService() {
+        Employee employee = new Employee("John", 2000);
+
+        ScheduledExecutorService executor = Executors.newScheduledThreadPool(10);
+
+        Callable<Double> callableTask = () -> {
+            return employeeService.calculateBonus(employee);
+        };
+
+        Future<Double> futureScheduled = executor.schedule(callableTask, 2, TimeUnit.MILLISECONDS);
+
+        try {
+            System.out.println("Bonus:" + futureScheduled.get());
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+
+        executor.scheduleAtFixedRate(() -> System.out.println("Fixed Rate Scheduled"), 2, 2000, TimeUnit.MILLISECONDS);
+        executor.scheduleWithFixedDelay(() -> System.out.println("Fixed Delay Scheduled"), 2, 2000, TimeUnit.MILLISECONDS);
+    }
+
+    public static void testThreadPoolExecutor() {
+        ThreadPoolExecutor fixedPoolExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(10);
+        ThreadPoolExecutor cachedPoolExecutor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
+
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(4, 6, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+        executor.setMaximumPoolSize(8);
+
+        ScheduledThreadPoolExecutor scheduledExecutor = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(5);
+    }
+   public static void testThreadPoolExecutor() {
+        ThreadPoolExecutor fixedPoolExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(10);
+        ThreadPoolExecutor cachedPoolExecutor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
+
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(4, 6, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+        executor.setMaximumPoolSize(8);
+
+        ScheduledThreadPoolExecutor scheduledExecutor = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(5);
+    }
+--------------------------------------------------------------------------------------------------------
+import lombok.Builder;
+
+class ClientBuilder {
+
+    @Builder(builderMethodName = "builder")
+    public static ImmutableClient newClient(int id, String name) {
+        return new ImmutableClient(id, name);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import lombok.Builder;
+import lombok.Getter;
+
+@Getter
+@Builder(toBuilder = true)
+public class Widget {
+
+    private final String name;
+    private final int id;
+
+}
+--------------------------------------------------------------------------------------------------------
+public class PrimitiveBundleInitialized {
+    // @formatter:off
+    public byte byteValue       = (byte) 1;
+    public short shortValue     = (short) 1;
+    public int intValue         = 1;
+    public long longValue       = 1L;
+    public float floatValue     = 1.0f;
+    public double doubleValue   = 1;
+    // @formatter:on
+
+    public String toString() {
+        return "{" + "byte: " + byteValue + ", " + "short: " + shortValue + ", "
+            + "int: " + intValue + ", " + "long: " + longValue + ", "
+            + "float: " + floatValue + ", " + "double: " + doubleValue + "}";
+    }
+}
+import javax.jws.WebMethod;
+import javax.jws.WebService;
+import javax.jws.soap.SOAPBinding;
+
+import com.stackify.models.User;
+import com.stackify.models.Users;
+
+@WebService
+@SOAPBinding(style = SOAPBinding.Style.RPC)
+public interface UserService {
+
+    @WebMethod
+    public void addUser(User user);
+
+    @WebMethod
+    public Users getUsers();
+}
 --------------------------------------------------------------------------------------------------------
 #!/bin/sh
 
