@@ -11743,11 +11743,44 @@ public class AtomicLongMapTutorials {
 
         System.out.println(atomicLongMapTutorials.atomicLongMap.get("2"));
     }
-
 }
 --------------------------------------------------------------------------------------------------------
 org.flips
 stork.yml
+
+https://www.baeldung.com/flowable
+--------------------------------------------------------------------------------------------------------
+# Algumas variaveis de ambiente, por enquanto apenas essas (conveniência)
+server.context-path=/quantocusta/api
+spring.jpa.hibernate.ddl-auto=none
+spring.datasource.url=jdbc:mysql://localhost/quantocusta
+spring.datasource.username=${quantocusta_db_user}
+spring.datasource.password=${quantocusta_db_senha}
+spring.datasource.driver-class-name=com.mysql.jdbc.Driver
+
+# JWT
+jwt.secret=_@htpa-0329i98d9wahJk283287*!8!!,;.232lOJDhdq
+jwt.expiration=604800
+
+# CORS
+cors.origin=${quantocusta_cors_origin}
+
+#Email
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587 
+spring.mail.username=${quantocusta_email_endereco}
+spring.mail.password=${quantocusta_email_senha}
+spring.mail.protocol=smtp
+spring.mail.defaultEncoding=UTF-8
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+spring.mail.properties.mail.smtp.starttls.required=true
+spring.mail.test-connection=true
+spring.mail.properties.mail.smtp.ssl.trust=smtp.gmail.com
+spring.mail.properties.mail.smtp.socketFactory.fallbacktrue
+
+
+GET <host>:<port>/api/v1/confirmations/reject/uid/<uid>/cid/<cid>
 --------------------------------------------------------------------------------------------------------
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
