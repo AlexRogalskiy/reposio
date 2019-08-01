@@ -16606,6 +16606,598 @@ spring.mail.test-connection=true
 spring.mail.properties.mail.smtp.ssl.trust=smtp.gmail.com
 spring.mail.properties.mail.smtp.socketFactory.fallback=true
 --------------------------------------------------------------------------------------------------------
+mvn install:install-file -Dfile=primefaces-estoque-theme.jar -DgroupId=com.leonardoz.estoque -DartifactId=primefaces-estoque-theme -Dversion=1.0-SNAPSHOT -Dpackaging=jar
+--------------------------------------------------------------------------------------------------------
+@Column(columnDefinition = "binary(20)", nullable = false, name = "senha_hash")
+
+
+import javax.faces.component.UIComponent;
+import javax.faces.context.FacesContext;
+import javax.faces.convert.Converter;
+import javax.faces.convert.FacesConverter;
+import javax.inject.Inject;
+import javax.inject.Named;
+
+@Named
+@FacesConverter(forClass = Produto.class, value = "produtoConverter")
+public class ProdutoConverter implements Converter {
+
+    @Inject
+    private Produtos produtos;
+
+    @Override
+    public Object getAsObject(FacesContext context, UIComponent component, String value) {
+	Produto retorno = null;
+	System.out.println("O valor é " + value);
+	if (value != null && !"".equals(value)) {
+	    retorno = produtos.recuperarProduto(Long.valueOf(value)).orElseThrow(IllegalArgumentException::new);
+	    System.out.println("Voltou " + retorno.getDescricao());
+	}
+	return retorno;
+    }
+
+    @Override
+    public String getAsString(FacesContext context, UIComponent component, Object value) {
+	if (value != null) {
+	    Produto produto = ((Produto) value);
+	    return produto.getId() == null ? null : produto.getId().toString();
+	}
+	return null;
+    }
+}
+
+import javax.persistence.AttributeConverter;
+import javax.persistence.Converter;
+
+@Converter(autoApply = true)
+public class SexoJpaConverter implements AttributeConverter<Sexo, String> {
+
+    @Override
+    public String convertToDatabaseColumn(Sexo attribute) {
+	return attribute.getSigla();
+    }
+
+    @Override
+    public Sexo convertToEntityAttribute(String dbData) {
+	return Sexo.porSigla(dbData);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@SerializedName("_embedded")
+--------------------------------------------------------------------------------------------------------
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
+
+import net.sf.jasperreports.functions.annotations.Function;
+import net.sf.jasperreports.functions.annotations.FunctionCategories;
+import net.sf.jasperreports.functions.annotations.FunctionParameter;
+import net.sf.jasperreports.functions.annotations.FunctionParameters;
+
+@FunctionCategories({ com.fred.functions.FredCustomFunctions.class })
+public class CustomFunctions {
+
+	private static String NUMBER_FORMAT_DECIMAL  = "#,##0.00";
+	private static String NUMBER_FORMAT_NO_DECIMAL  = "#,##0";
+	
+	@Function("FORMAT_WITH_DECIMAL")
+	@FunctionParameters({ @FunctionParameter("number"),
+			@FunctionParameter("scale"), 
+			@FunctionParameter("prefix"),
+			@FunctionParameter("suffix") 
+	})
+	public static String formatTimeDecimal(double number,int scale,String prefix,String suffix){
+		return formatNumberValue(NUMBER_FORMAT_DECIMAL,number, scale, prefix, suffix);
+	}
+	
+	
+	@Function("FORMAT_WITHOUT_DECIMAL")
+	@FunctionParameters({ @FunctionParameter("number"),
+			@FunctionParameter("prefix"),
+			@FunctionParameter("suffix") 
+	})
+	public static String formatTimeFixed(double number,String prefix,String suffix){
+		return formatNumberValue(NUMBER_FORMAT_NO_DECIMAL,number, 0, prefix, suffix);
+	}
+
+	private static String formatNumberValue(String format,double number,int scale, String prefix, String suffix) {
+		StringBuilder builder = new StringBuilder();
+		
+		double doubleValue = new BigDecimal(number).setScale(scale, RoundingMode.HALF_UP).doubleValue();
+		
+		DecimalFormat df = new DecimalFormat(NUMBER_FORMAT_DECIMAL);
+		String formatted = df.format(doubleValue);
+		
+		builder.append(prefix);
+		builder.append(formatted);
+		builder.append(suffix);
+		return builder.toString();
+	}
+	
+import net.sf.jasperreports.functions.annotations.FunctionCategory;
+
+@FunctionCategory()
+public class FredCustomFunctions {
+}
+--------------------------------------------------------------------------------------------------------
+@EnableHypermediaSupport(type = EnableHypermediaSupport.HypermediaType.HAL)
+--------------------------------------------------------------------------------------------------------
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
+import org.springframework.cloud.netflix.zuul.EnableZuulProxy;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableOAuth2Client;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
+
+@SpringBootApplication
+@EnableEurekaClient
+@EnableZuulProxy
+@EnableOAuth2Client
+@EnableResourceServer
+public class GatewayServiceApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(GatewayServiceApplication.class, args);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.web.context.ContextLoaderListener;
+import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
+
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+
+public class WebApplicationInitializer implements org.springframework.web.WebApplicationInitializer {
+    @Override
+    public void onStartup(ServletContext servletContext) throws ServletException {
+        AnnotationConfigWebApplicationContext rootContext = new AnnotationConfigWebApplicationContext();
+        rootContext.register(SpringConfiguration.class);
+        servletContext.addListener(new ContextLoaderListener(rootContext));
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import javax.xml.bind.ValidationEvent;
+import javax.xml.bind.ValidationEventHandler;
+
+public class ErrorHandler implements ValidationEventHandler {
+
+  @Override
+  public boolean handleEvent(ValidationEvent event) {
+    boolean stop = false;
+    switch (event.getSeverity()) {
+      case ValidationEvent.WARNING:
+        stop = true;
+        break;
+      case ValidationEvent.ERROR:
+        stop = false;
+        System.err.println(event.getMessage());
+        System.err.println("line " + event.getLocator().getLineNumber());
+        System.err.println("column " + event.getLocator().getColumnNumber());
+        break;
+      case ValidationEvent.FATAL_ERROR:
+        stop = false;
+        System.err.println(event.getMessage());
+        System.err.println("line " + event.getLocator().getLineNumber());
+        System.err.println("column " + event.getLocator().getColumnNumber());
+        break;
+      default:
+        throw new RuntimeException("unknow validation error");
+    }
+    return stop;
+  }
+}
+--------------------------------------------------------------------------------------------------------
+spring:
+  application:
+    name: auth
+  data:
+    mongodb:
+      host: localhost
+      database: cinemausers
+      port: 27017
+server:
+  port: 5000
+cors:
+  origin: '*'
+logging:
+  level:
+    org:
+      springframework:
+        security: DEBUG
+--------------------------------------------------------------------------------------------------------
+mport feign.RequestInterceptor;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
+import org.springframework.cloud.netflix.feign.EnableFeignClients;
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.OAuth2RestTemplate;
+import org.springframework.security.oauth2.client.token.grant.client.ClientCredentialsResourceDetails;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableOAuth2Client;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
+import org.springframework.security.oauth2.provider.authentication.OAuth2AuthenticationDetails;
+
+@SpringBootApplication
+@EnableOAuth2Client
+@EnableResourceServer
+@EnableGlobalMethodSecurity(securedEnabled = true, prePostEnabled = true)
+@EnableFeignClients
+@EnableEurekaClient
+public class SeanceApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(SeanceApplication.class);
+    }
+
+    @Bean
+    @ConfigurationProperties(prefix = "security.oauth2.client")
+    public ClientCredentialsResourceDetails clientCredentialsResourceDetails() {
+        return new ClientCredentialsResourceDetails();
+    }
+
+    @Bean
+    public OAuth2RestTemplate clientCredentialsRestTemplate() {
+        return new OAuth2RestTemplate(clientCredentialsResourceDetails());
+    }
+
+    @Bean
+    public RequestInterceptor requestTokenBearerInterceptor() {
+        return requestTemplate -> {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            OAuth2AuthenticationDetails details = (OAuth2AuthenticationDetails) authentication.getDetails();
+            requestTemplate.header("Authorization", "Bearer " + details.getTokenValue());
+        };
+    }
+}
+--------------------------------------------------------------------------------------------------------
+    public void init(String[] args) throws Exception {
+
+        RefineServer server = new RefineServer();
+        server.init(host,port);
+
+        boolean headless = Configurations.getBoolean("refine.headless",false);
+        if (headless) {
+            System.setProperty("java.awt.headless", "true"); 
+        } else {
+            try {
+                RefineClient client = new RefineClient();
+                client.init(host,port);
+            } catch (Exception e) {
+                logger.warn("Sorry, some error prevented us from launching the browser for you.\n\n Point your browser to http://" + host + ":" + port + "/ to start using Refine.");
+            }
+        }
+        
+        // hook up the signal handlers
+        Runtime.getRuntime().addShutdownHook(
+            new Thread(new ShutdownSignalHandler(server))
+        );
+ 
+        server.join();
+    }
+	
+	class ShutdownSignalHandler implements Runnable {
+    
+    private Server _server;
+
+    public ShutdownSignalHandler(Server server) {
+        this._server = server;
+    }
+
+    @Override
+    public void run() {
+
+        // Tell the server we want to try and shutdown gracefully
+        // this means that the server will stop accepting new connections
+        // right away but it will continue to process the ones that
+        // are in execution for the given timeout before attempting to stop
+        // NOTE: this is *not* a blocking method, it just sets a parameter
+        //       that _server.stop() will rely on
+        _server.setGracefulShutdown(3000);
+
+        try {
+            _server.stop();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+    }
+
+}
+
+       @Override
+            public int compareKeys(Object key1, Object key2) {
+                double d1 = ((Number) key1).doubleValue();
+                double d2 = ((Number) key2).doubleValue();
+                return d1 < d2 ? -1 : (d1 > d2 ? 1 : 0);
+            }
+--------------------------------------------------------------------------------------------------------
+hasBeenEnabledOnStart=false
+
+if [ $1 -eq 1 ] ; then 
+    # Initial installation 
+    if [ -x /bin/systemctl ] ; then
+        /bin/systemctl daemon-reload >/dev/null 2>&1 || :
+        /bin/systemctl enable elasticsearch.service
+        /bin/systemctl start elasticsearch.service
+        hasBeenEnabledOnStart=true
+    fi
+
+    if [ -x /sbin/chkconfig -a "$hasBeenEnabledOnStart" == "false" ] ; then
+        /sbin/chkconfig --add elasticsearch
+        # older suse linux distributions do not ship with systemd
+        # but do not have an /etc/init.d/ directory
+        # this tries to start elasticsearch on these as well without failing this script
+        if [ -x /etc/init.d/elasticsearch ] ; then
+            /etc/init.d/elasticsearch start
+        elif [ -x /etc/rc.d/init.d/elasticsearch ] ; then
+            /etc/rc.d/init.d/elasticsearch start
+        fi
+    fi
+
+fi
+
+# only execute in case of package removal, not on upgrade
+if [ $1 -eq 0 ] ; then
+
+    getent passwd elasticsearch > /dev/null
+    if [ "$?" == "0" ] ; then
+        userdel elasticsearch
+    fi
+
+    getent group elasticsearch >/dev/null
+    if [ "$?" == "0" ] ; then
+        groupdel elasticsearch
+    fi
+fi
+
+exit
+
+getent group elasticsearch >/dev/null || groupadd -r elasticsearch
+getent passwd elasticsearch >/dev/null || \
+    useradd -r -g elasticsearch -d /usr/share/elasticsearch -s /sbin/nologin \
+    -c "elasticsearch user" elasticsearch
+	
+if [ $1 -eq 0 ] ; then
+    # Package removal, not upgrade
+    if [ -x /bin/systemctl ] ; then
+        /bin/systemctl --no-reload disable elasticsearch.service > /dev/null 2>&1 || :
+		/bin/systemctl stop elasticsearch.service > /dev/null 2>&1 || :
+    fi
+
+    if [ -x /sbin/chkconfig ] ; then
+        if [ -x /etc/init.d/elasticsearch ] ; then
+            /etc/init.d/elasticsearch stop
+        fi
+        /sbin/chkconfig --del elasticsearch 2> /dev/null
+    fi
+fi
+
+exit 0
+
+
+--------------------------------------------------------------------------------------------------------
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.format.FormatStyle;
+import java.util.Locale;
+
+import javax.enterprise.context.RequestScoped;
+import javax.inject.Inject;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import br.com.caelum.vraptor.Convert;
+import br.com.caelum.vraptor.converter.ConversionException;
+import br.com.caelum.vraptor.converter.ConversionMessage;
+import br.com.caelum.vraptor.converter.Converter;
+
+/**
+ * A converter for {@link LocalDateTime}.
+ *
+ * @author Lucas Cavalcanti
+ * @author Otávio Scherer Garcia
+ */
+@Convert(LocalDateTime.class)
+@RequestScoped
+public class LocalDateTimeConverter implements Converter<LocalDateTime> {
+	private static final Logger logger = LoggerFactory.getLogger(LocalDateTimeConverter.class);
+
+	private final Locale locale;
+
+	/**
+	 * @deprecated CDI eyes only
+	 */
+	protected LocalDateTimeConverter() {
+		this(null);
+	}
+
+	@Inject
+	public LocalDateTimeConverter(Locale locale) {
+		this.locale = locale;
+	}
+
+	@Override
+	public LocalDateTime convert(String value, Class<? extends LocalDateTime> type) {
+		if (isNullOrEmpty(value)) {
+			return null;
+		}
+		logger.debug("LocalDateTimeValue: " + value);
+		System.out.println("LocalDateTimeValue: " + value);
+		try {
+			return LocalDateTime.parse(value, getFormatter());
+		} catch (DateTimeParseException e) {
+//			throw new ConversionException(new ConversionMessage("is_not_a_valid_datetime", value));
+			return LocalDateTime.parse(value, DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm", locale));
+		}
+	}
+
+	protected DateTimeFormatter getFormatter() {
+		return DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM).withLocale(locale);
+	}
+}
+--------------------------------------------------------------------------------------------------------
+@Fetch(FetchMode.SUBSELECT)
+	@ElementCollection(fetch=FetchType.EAGER,targetClass = Role.class)
+	@CollectionTable(name = "account_roles", joinColumns = @JoinColumn(name = "account_id", referencedColumnName = "id") )
+	@Column(name = "role", length = 15)
+	@Enumerated(EnumType.STRING)
+	private Set<Role> roles;
+--------------------------------------------------------------------------------------------------------
+   @Convert(converter = LocalDateTimeAttributeConverter.class)
+    @Column(length = 5, name = "data_hora_envio")
+    private LocalDateTime dateHoraDeEnvio;
+--------------------------------------------------------------------------------------------------------
+import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.Table;
+
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
+
+@Entity
+@Table(name = "usuarios")
+@NamedQueries(@NamedQuery(name = "Usuario.buscaPorEmail", query = "select u from Usuario u where u.email = :email"))
+@Where(clause = "deletado = 0")
+@SQLDelete(sql = "update usuarios set deletado = 1 where id = ?")
+public class Usuario extends Entidade {
+--------------------------------------------------------------------------------------------------------
+	public Optional<Account> isValidToken(String token) {
+		ChangeToken change = new ChangeToken();
+		change.setJwt(token);
+		return isValidToken(change);
+	}
+
+	public Optional<Account> isValidToken(ChangeToken token) {
+
+		final Claims claims = Jwts.parser().setSigningKey(PasswordEncryptionService.RANDOM_KEY)
+				.parseClaimsJws(token.getJwt()).getBody();
+
+		String uuid = (String) claims.get("uuid");
+		Account account = service.getAccount(uuid);
+
+		return Optional.ofNullable(account);
+	}
+
+	public ChangeToken createToken(Account account) {
+		Instant instant = new Date().toInstant();
+		Instant validatedAt = instant.plus(Duration.ofHours(1));
+		Date date = Date.from(validatedAt);
+
+		String jwt = Jwts.builder().setSubject(account.getEmail()).claim("uuid", account.getUuid())
+				.setIssuedAt(new Date()).setExpiration(date)
+				.signWith(SignatureAlgorithm.HS256, PasswordEncryptionService.RANDOM_KEY).compact();
+		return new ChangeToken(account.getUuid(), account.getEmail(), jwt);
+	}
+--------------------------------------------------------------------------------------------------------
+nes (20 sloc) 1.79 KB
+com.fred.functions.CustomFunctions.FORMAT_WITHOUT_DECIMAL.description = Format without decimal dates
+com.fred.functions.CustomFunctions.FORMAT_WITHOUT_DECIMAL.name = Format without decimal
+
+com.fred.functions.CustomFunctions.FORMAT_WITHOUT_DECIMAL.number.description = Number to be formatted
+com.fred.functions.CustomFunctions.FORMAT_WITHOUT_DECIMAL.number.name = Number
+
+com.fred.functions.CustomFunctions.FORMAT_WITHOUT_DECIMAL.prefix.description = Number Prefix
+com.fred.functions.CustomFunctions.FORMAT_WITHOUT_DECIMAL.prefix.name = Prefix to be used before the number
+
+com.fred.functions.CustomFunctions.FORMAT_WITHOUT_DECIMAL.suffix.description = Number Suffix
+com.fred.functions.CustomFunctions.FORMAT_WITHOUT_DECIMAL.suffix.name = Suffix to be used before the number
+
+com.fred.functions.CustomFunctions.FORMAT_WITH_DECIMAL.description = Format without decimal dates
+com.fred.functions.CustomFunctions.FORMAT_WITH_DECIMAL.name = Format without decimal
+
+com.fred.functions.CustomFunctions.FORMAT_WITH_DECIMAL.number.description = Number to be formatted
+com.fred.functions.CustomFunctions.FORMAT_WITH_DECIMAL.number.name = Number
+
+com.fred.functions.CustomFunctions.FORMAT_WITH_DECIMAL.scale.description = Scale
+com.fred.functions.CustomFunctions.FORMAT_WITH_DECIMAL.scale.name = Fixs to be used in format
+
+com.fred.functions.CustomFunctions.FORMAT_WITH_DECIMAL.prefix.description = Number Prefix
+com.fred.functions.CustomFunctions.FORMAT_WITH_DECIMAL.prefix.name = Prefix to be used before the number
+
+com.fred.functions.CustomFunctions.FORMAT_WITH_DECIMAL.suffix.description = Number Suffix
+com.fred.functions.CustomFunctions.FORMAT_WITH_DECIMAL.suffix.name = Suffix to be used before the number
+
+com.fred.functions.FredCustomFunctions.name=Fred Custom Functions
+com.fred.functions.FredCustomFunctions.description=Custon functions
+--------------------------------------------------------------------------------------------------------
+    @Override
+    public boolean equals(final Object other) {
+	if (!(other instanceof PessoaJuridica)) {
+	    return false;
+	}
+	PessoaJuridica castOther = (PessoaJuridica) other;
+	return new EqualsBuilder().append(nomeFantasia, castOther.nomeFantasia)
+		.append(razaoSocial, castOther.razaoSocial).append(cnpj, castOther.cnpj)
+		.append(inscricaoEstadual, castOther.inscricaoEstadual).isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+	return new HashCodeBuilder().append(nomeFantasia).append(razaoSocial).append(cnpj).append(inscricaoEstadual)
+		.toHashCode();
+    }
+--------------------------------------------------------------------------------------------------------
+import com.edu.fatecbt.sistema.controle.AppUrls;
+import com.edu.fatecbt.sistema.controle.ServletBase;
+import java.io.IOException;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+@WebServlet(name = "LoginServlet", urlPatterns = {AppUrls.USUARIO_LOGIN})
+public class LoginServlet extends ServletBase {
+
+    private UsuarioService service;
+
+    @Override
+    public void init() throws ServletException {
+        super.init();
+        service = new UsuarioService();
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        String login = request.getParameter("login");
+        String senha = request.getParameter("senha");
+        boolean ehUsuarioLogado = service
+                .ehUsuarioLogado(login, senha, request.getSession());
+        if (ehUsuarioLogado) {
+            redirect("/main", response);
+        } else {
+            request.getSession().setAttribute("errorMessage", "Usuário não autenticado");
+            redirect("/index.jsp", response);
+        }
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+private void exercise7() throws IOException {
+		try (BufferedReader reader = Files.newBufferedReader(Paths.get("SonnetI.txt"), StandardCharsets.UTF_8)) {
+			/* YOUR CODE HERE */
+			reader.lines()
+				.flatMap(l -> Stream.of(l.split(WORD_REGEXP)))
+				.distinct()
+				.map(String::toLowerCase)
+				.sorted((a,b) -> Integer.compare(a.length(), b.length()))
+				.collect(Collectors.toList())
+				.forEach(System.out::println);
+		}
+	}
+
+--------------------------------------------------------------------------------------------------------
 # Add project specific ProGuard rules here.
 # You can control the set of applied configuration files using the
 # proguardFiles setting in build.gradle.
