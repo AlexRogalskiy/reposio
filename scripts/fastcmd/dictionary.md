@@ -11745,10 +11745,381 @@ public class AtomicLongMapTutorials {
     }
 }
 --------------------------------------------------------------------------------------------------------
+package com.baeldung.aspect;
+
+public aspect ChangeCallsToCurrentTimeInMillisMethod {
+    long around():
+            call(public static native long java.lang.System.currentTimeMillis())
+                    && within(user.code.base.pckg.*) {
+        return 0;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+class ClassWithSafeVarargs<T> {
+
+    @SafeVarargs
+    final void iterateOverVarargs(T... args) {
+        for (T x : args) {
+            // do stuff with x
+        }
+    }
+}
+
+class ClassWithSuppressWarnings {
+
+    @SuppressWarnings("deprecation")
+    void useDeprecatedMethod() {
+        ClassWithDeprecatedMethod.deprecatedMethod(); // no warning is generated here
+    }
+}
+--------------------------------------------------------------------------------------------------------
+zypper refresh
+zypper install wget
+--------------------------------------------------------------------------------------------------------
 org.flips
 stork.yml
 
 https://www.baeldung.com/flowable
+--------------------------------------------------------------------------------------------------------
+wget --no-cookies --no-check-certificate --header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" "http://download.oracle.com/otn-pub/java/jdk/8u131-b11/d54c1d3a095b4ff2b6607d096fa80163/jdk-8u131-linux-x64.rpm"
+rpm -ivh jdk-8u131-linux-x64.rpm
+
+wget http://download.jboss.org/wildfly/8.2.1.Final/wildfly-8.2.1.Final.tar.gzip
+wget 'https://onedrive.live.com/download?resid=C308FDFA0488C7FB!445569&authkey=!AP3V1xql-CohCTw&ithint=file%2czip'
+wget 'https://onedrive.live.com/download?resid=C308FDFA0488C7FB!449995&authkey=!AJUA750qwiu6L4M&ithint=file%2czip'
+
+deploy --force /путь к файлу/wmq.jmsra.rar
+
+/usr/java/jdk1.8.0_131/jre/lib/security/java.security
+
+securerandom.source=file:/dev/./urandom
+
+useradd --system --comment "WildFly Application Server" --create-home --home /opt/wildfly --user-group wildfly
+
+cd /opt/wildfly/wildfly-8.2.1.Final/bin/
+./add-user.sh admin adminpwd --silent
+
+jboss-cli.sh -c
+
+https://docs.jboss.org/author/display/WFLY/Command+Line+Interface. 
+
+module add --name=com.oracle --resources=/путь к драйверу/ojdbc7.jar --dependencies=javax.api,javax.transaction.api
+
+/subsystem=datasources/jdbc-driver=oracle:add(driver-name="oracle",driver-module-name="com.oracle",driver-class-name=oracle.jdbc.driver.OracleDriver)
+data-source add --jndi-name=java:jboss/datasources/RegisterDS --name= RegisterDS --connection-url=jdbc:oracle:thin:@<MAIN_DB_SERVER>:<MAIN_DB_PORT>/<MAIN_DB_SID> --driver-name=oracle --user-name=<MAIN_USER_NAME> --password=<MAIN_USER_PASSWORD> --enabled=true --min-pool-size=5 --max-pool-size=100 --pool-prefill=true --flush-strategy=IdleConnections --check-valid-connection-sql="select 1 from dual" --validate-on-match=false --background-validation=true --background-validation-millis=10000 --blocking-timeout-wait-millis=10000
+
+data-source add --jndi-name=java:jboss/datasources/JMSDS --name=JMSDS --connection-url=jdbc:oracle:thin:@<QUEUE_DB_SERVER>:<QUEUE_DB_PORT>/<QUEUE_DB_SID> --driver-name=oracle --user-name=<QUEUE_USER_NAME> --password=<QUEUE_USER_PASSWORD> --enabled=true --min-pool-size=5 --max-pool-size=200 --pool-prefill=true --flush-strategy=IdleConnections --check-valid-connection-sql="select 1 from dual" --validate-on-match=false --background-validation=true --background-validation-millis=10000 --blocking-timeout-wait-millis=30000 --use-fast-fail=true 
+
+•	MAIN_DB_SERVER – сетевое имя или ip-адрес сервера основной БД
+•	MAIN_DB_PORT – номер порта сервера основной БД (стандартное значение для Oracle — 1521)
+•	MAIN_DB_SID – имя сервиса основной БД или SID
+•	MAIN_USER_NAME – имя пользователя основной БД
+•	MAIN_USER_PASSWORD – пароль пользователя основной БД
+•	QUEUE_DB_SERVER – сетевое имя или ip-адрес сервера БД очередей*
+•	QUEUE_DB_PORT – номер порта сервера БД очередей (стандартное значение для Oracle — 1521)
+•	QUEUE_DB_SID – имя сервиса БД очередей или SID
+•	QUEUE_USER_NAME – имя пользователя БД очередей
+•	QUEUE_USER_PASSWORD – пароль пользователя БД очередей
+
+<datasource jndi-name="java:jboss/datasources/RegisterDS" pool-name="RegisterDS" enabled="true">
+    <connection-url>jdbc:oracle:thin:@<MAIN_DB_SERVER>:<MAIN_DB_PORT>/<MAIN_DB_SID></connection-url>
+    <driver>oracle</driver>
+    <pool>
+        <min-pool-size>5</min-pool-size>
+        <max-pool-size>100</max-pool-size>
+        <prefill>true</prefill>
+    </pool>
+    <security>
+        <user-name><MAIN_USER_NAME></user-name>
+        <password><MAIN_USER_PASSWORD></password>
+    </security>
+    <timeout>
+        <blocking-timeout-millis>10000</blocking-timeout-millis>
+    </timeout>
+ <validation>
+        <check-valid-connection-sql>select 1 from dual</check-valid-connection-sql>
+        <validate-on-match>false</validate-on-match>
+        <background-validation>true</background-validation>
+        <background-validation-millis>10000</background-validation-millis>
+    </validation>
+</datasource>
+<datasources>
+<datasource jndi-name="java:jboss/datasources/JMSDS" pool-name="JMSDS" enabled="true">
+    <connection-url>jdbc:oracle:thin:@<QUEUE_DB_SERVER>:<QUEUE_DB_PORT>/<QUEUE_DB_SID></connection-url>
+    <driver>oracle</driver>
+    <pool>
+        <min-pool-size>5</min-pool-size>
+        <max-pool-size>200</max-pool-size>
+        <prefill>true</prefill>
+        <flush-strategy>IdleConnections</flush-strategy>
+    </pool>
+    <security>
+        <user-name><QUEUE_USER_NAME></user-name>
+        <password><QUEUE_USER_PASSWORD></password>
+    </security>
+    <timeout>
+        <blocking-timeout-millis>30000</blocking-timeout-millis>
+    </timeout>
+ <validation>
+        <check-valid-connection-sql>select 1 from dual</check-valid-connection-sql>
+        <validate-on-match>false</validate-on-match>
+        <background-validation>true</background-validation>
+        <background-validation-millis>10000</background-validation-millis>
+        <use-fast-fail>true</use-fast-fail>
+    </validation>
+</datasource>
+
+
+/system-property=rir.service.user:add(value="<RIR_USER>")
+/system-property=dutydoctor.service.user:add(value="<DUTY_DOCTOR_USER>")
+/system-property=contingent.service.user:add(value="<CONTINGENT_USER>")
+/system-property=resources.service.address:add(value="<RESOURCES_URL>")
+/system-property=schedule.service.address:add(value="<SCHEDULE_URL>")
+/system-property=patient.service.address:add(value="<PATIENT_URL>")
+/system-property=area.service.address:add(value="<AREA_URL>")
+/system-property=app.time.zone:add(value="+03:00")
+/system-property=spring.profiles.active:add(value="jndi")
+/system-property=external.service.auth.token:add(value="<SERVICE_USER>")
+/system-property=dutydoctor.service.address:add(value="<DUTY_DOCTOR_URL>")
+/system-property=rir.service.user.super:add(value="<RIR_SUPER_USER>")
+/system-property=systemlog.service.address:add(value="<SYSLOG_URL>")
+/system-property=systemlog.service.user:add(value="<SYSLOG_USER>")
+/system-property=treelogger.treeview:add(value="true")
+/system-property=websphere.hostName:add(value="<WS_HOSTNAME>")
+/system-property=websphere.port:add(value="<WS_PORT>")
+/system-property=websphere.username:add(value="<WS_USERNAME>")
+/system-property=websphere.password:add(value="<WS_PASSWORD>")
+/system-property=websphere.channel:add(value="<WS_CHANEL>")
+/system-property=websphere.transportType:add(value="CLIENT")
+/system-property=websphere.queueManager:add(value="<WS_QUEUE_MANAGER>")
+/system-property=websphere.queueName:add(value="<WS_QUEUE_NAME>")
+/system-property=websphere.resource.adapter:add(value="wmq.jmsra.rar")
+/system-property=anticorruption.rmi.service.port:add(value="1200")
+/system-property=appointment.rmi.service.port:add(value="1201")
+/system-property=rir.invoke.threads.max:add(value="4")
+/system-property=rir.invoke.threads.params:add(value="20")
+
+
+<system-properties>
+    <property name="rir.service.user" value="<RIR_USER>"/>
+    <property name="dutydoctor.service.user" value="<DUTY_DOCTOR_USER>"/>
+ <property name="contingent.service.user" value="<CONTINGENT_USER>"/>
+    <property name="resources.service.address" value="<RESOURCES_URL>"/>
+    <property name="schedule.service.address" value="<SCHEDULE_URL>"/>
+	 <property name="patient.service.address" value="<PATIENT_URL>"/>
+	 <property name="area.service.address" value="<AREA_URL>"/>
+    <property name="spring.profiles.active" value="jndi"/>
+    <property name="app.time.zone" value="+03:00"/>
+	 <property name="dutydoctor.service.address" value="<DUTY_DOCTOR_URL>"/>
+	 <property name=" external.service.auth.token" value="<SERVICE_USER>"/>
+	 <property name="rir.service.user.super" value="<RIR_SUPER_USER>"/>
+	 <property name="systemlog.service.user" value="<SYSLOG_USER>"/>
+	 <property name="systemlog.service.address" value="<SYSLOG_URL>"/>
+	 <property name="treelogger.treeview" value="true"/>
+    <property name="websphere.hostName" value="<WS_HOSTNAME>"/>
+    <property name="websphere.port" value="<WS_PORT>"/>
+    <property name="websphere.username" value="<WS_USERNAME>"/>
+    <property name="websphere.password" value="<WS_PASSWORD>"/>
+    <property name="websphere.channel" value="<WS_CHANEL>"/>
+    <property name="websphere.transportType" value="CLIENT"/>
+    <property name="websphere.queueManager" value="<WS_QUEUE_MANAGER>"/>
+    <property name="websphere.queueName" value="<WS_QUEUE_NAME>"/>
+    <property name="websphere.resource.adapter" value="wmq.jmsra.rar"/>
+	 <property name=" anticorruption.rmi.service.port " value="1200"/>
+    <property name=" appointment.rmi.service.port" value="1201"/>
+    <property name="rir.invoke.threads.max" value="<MAX_THREADS>"/>
+    <property name="rir.invoke.threads.params" value="PARAMS_PER_THREAD"/>
+</system-properties>
+
+
+/subsystem=infinispan/cache-container=RegisterCache:add(default-cache=default,start="EAGER")
+/subsystem=infinispan/cache-container=RegisterCache/local-cache=default:add(batching="true",start="EAGER",module="org.infinispan")
+/subsystem=infinispan/cache-container=RegisterCache/local-cache=default/file-store=FILE_STORE:add(path="register-cache",relative-to="jboss.server.temp.dir", shared=true,preload=true,passivation=false,fetch-state=true,purge=false,singleton=false
+
+<subsystem xmlns="urn:jboss:domain:infinispan:2.0">
+<cache-container name="RegisterCache" default-cache="default" start="EAGER">
+<local-cache name="default" start="EAGER" batching="true" module="org.infinispan">
+<file-store shared="true" preload="true" passivation="false" fetch-state="true" purge="false" singleton="false" relative-to="jboss.server.temp.dir" path="register-cache"/>
+</local-cache>
+ </cache-container>
+
+
+/subsystem=logging/async-handler=logger:add(queue-length="16384",overflow-action="block",level="DEBUG")
+/subsystem=logging/async-handler=logger:assign-subhandler(name="FILE")
+
+/subsystem=logging/root-logger=ROOT:root-logger-assign-handler(name="logger")
+/subsystem=logging/root-logger=ROOT:root-logger-unassign-handler(name="CONSOLE")
+/subsystem=logging/root-logger=ROOT:root-logger-unassign-handler(name="FILE")
+
+/subsystem=logging/logger=ru.gov.emias2/:add(category=ru.gov.emias2,level=DEBUG)
+/subsystem=logging/logger=org.apache.camel/:add(category=org.apache.camel,level=DEBUG)
+
+/subsystem=logging/logger=ru.gov.emias2/:add(category=ru.gov.emias2,level=INFO)
+/subsystem=logging/logger=ru.gov.emias2/:add(category=ru.gov.emias2,level=DEBUG)
+/subsystem=logging/logger=org.apache.camel/:add(category=org.apache.camel,level=DEBUG)
+
+<subsystem xmlns="urn:jboss:domain:logging:2.0">
+    <async-handler name="logger">
+        <level name="DEBUG"/>
+        <queue-length value="16384"/>
+        <overflow-action value="block"/>
+        <subhandlers>
+            <handler name="FILE"/>
+        </subhandlers>
+    </async-handler>
+    <periodic-rotating-file-handler name="FILE" autoflush="true">
+        <formatter>
+           <named-formatter name="PATTERN"/>
+        </formatter>
+        <file relative-to="jboss.server.log.dir" path="server.log"/>
+        <suffix value=".yyyy-MM-dd"/>
+        <append value="true"/>
+    </periodic-rotating-file-handler>    
+    <logger category="org.apache.tomcat.util.modeler">
+        <level name="WARN"/>
+    </logger>
+    <logger category="org.jboss.as.config">
+        <level name="DEBUG"/>
+    </logger>
+    <logger category="sun.rmi">
+        <level name="WARN"/>
+    </logger>
+    <logger category="org.switchyard">
+        <level name="INFO"/>
+    </logger>
+    <logger category="org.apache.deltaspike.core.api.provider.BeanManagerProvider">
+        <level name="ERROR"/>
+    </logger>
+    <logger category="ru.gov.emias2">
+        <level name="DEBUG"/>
+    </logger>    
+    <root-logger>
+        <level name="INFO"/>
+        <handlers>
+            <handler name="logger"/>
+        </handlers>
+    </root-logger>
+    <formatter name="PATTERN">
+        <pattern-formatter pattern="%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n"/>
+    </formatter>
+</subsystem>
+
+
+/subsystem=undertow/server=default-server/http-listener=default:write-attribute(name="max-post-size",value="419430400")
+
+<subsystem xmlns="urn:jboss:domain:undertow:1.2">
+  <server name="default-server">
+    <http-listener name="default" socket-binding="http" max-post-size="419430400"/>
+
+/subsystem=switchyard/module=org.switchyard.component.spring.invoker:add(implClass="org.switchyard.component.spring.invoker.deploy.SpringInvokeComponent")
+
+<module identifier="org.switchyard.component.spring.invoker" implClass="org.switchyard.component.spring.invoker.deploy.SpringInvokeComponent"/>
+
+
+/subsystem=webservices/:write-attribute(name=wsdl-port,value=<domain_port>)
+/subsystem=webservices/:write-attribute(name=wsdl-host,value=<domain_address>)
+
+
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra.rar:add(archive=wmq.jmsra.rar, transaction-support=NoTransaction)
+
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra.rar/connection-definitions=MQ.CONNECTIONFACTORY.NAME:add(class-name=com.ibm.mq.connector.outbound.ManagedConnectionFactoryImpl, jndi-name=java:jboss/MQ.CONNECTIONFACTORY.NAME)
+
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra.rar/connection-definitions=MQ.CONNECTIONFACTORY.NAME/config-properties=hostName/:add(value=${websphere.hostName:etp3.sm-soft.ru})
+
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra.rar/connection-definitions=MQ.CONNECTIONFACTORY.NAME/config-properties=port/:add(value=${websphere.port:2424})
+
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra.rar/connection-definitions=MQ.CONNECTIONFACTORY.NAME/config-properties=username/:add(value=${websphere.username:emias})
+
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra.rar/connection-definitions=MQ.CONNECTIONFACTORY.NAME/config-properties=password/:add(value=${websphere.password:emias})
+
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra.rar/connection-definitions=MQ.CONNECTIONFACTORY.NAME/config-properties=channel/:add(value=${websphere.channel:CLIENT.EMIAS.SVRCONN})
+
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra.rar/connection-definitions=MQ.CONNECTIONFACTORY.NAME/config-properties=transportType/:add(value=${websphere.transportType:CLIENT})
+
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra.rar/connection-definitions=MQ.CONNECTIONFACTORY.NAME/config-properties=queueManager/:add(value=${websphere.queueManager:GU01QM})
+
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra.rar/admin-objects=MQ.QUEUE.NAME:add(class-name=com.ibm.mq.connector.outbound.MQQueueProxy, jndi-name=java:jboss/MQ.QUEUE.NAME)
+
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra.rar/admin-objects=MQ.QUEUE.NAME/config-properties=baseQueueName/:add(value=${websphere.queueName:EMIAS.SRVC.STATUS_OUT})
+
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra.rar/admin-objects=MQ.QUEUE.NAME/config-properties=baseQueueManagerName/:add(value=${websphere.queueManager:GU01QM})
+
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra.rar:activate
+
+
+<resource-adapters>
+                <resource-adapter id="wmq.jmsra.rar">
+                    <archive>
+                        wmq.jmsra.rar
+                    </archive>
+                    <transaction-support>NoTransaction</transaction-support>
+                    <connection-definitions>
+                        <connection-definition class-name="com.ibm.mq.connector.outbound.ManagedConnectionFactoryImpl" jndi-name="java:jboss/MQ.CONNECTIONFACTORY.NAME" pool-name="MQ.CONNECTIONFACTORY.NAME">
+                            <config-property name="hostName">
+                                ${websphere.hostName:etp3.sm-soft.ru}
+                            </config-property>
+                            <config-property name="port">
+                                ${websphere.port:2424}
+                            </config-property>
+                            <config-property name="username">
+                                ${websphere.username:emias}
+                            </config-property>
+                            <config-property name="password">
+                                ${websphere.password:emias}
+                            </config-property>
+                            <config-property name="channel">
+                                ${websphere.channel:CLIENT.EMIAS.SVRCONN}
+                            </config-property>
+                            <config-property name="transportType">
+                                ${websphere.transportType:CLIENT}
+                            </config-property>
+                            <config-property name="queueManager">
+                                ${websphere.queueManager:GU01QM}
+                            </config-property>
+                        </connection-definition>
+                    </connection-definitions>
+                    <admin-objects>
+                        <admin-object class-name="com.ibm.mq.connector.outbound.MQQueueProxy" jndi-name="java:jboss/MQ.QUEUE.NAME" pool-name="MQ.QUEUE.NAME">
+                            <config-property name="baseQueueName">
+                                ${websphere.queueName:EMIAS.SRVC.STATUS_OUT}
+                            </config-property>
+                            <config-property name="baseQueueManagerName">
+                                ${websphere.queueManager:GU01QM}
+                            </config-property>
+                        </admin-object>
+                    </admin-objects>
+                </resource-adapter>
+            </resource-adapters>
+
+
+ant clean sjc
+ant -Declipse.home=/path/to/eclipse clean release
+--------------------------------------------------------------------------------------------------------
+mvn validate
+mvn package -Pmigrate-emias-cluster -Ddb.url=jdbc:oracle:thin:@<ADDRESS>:<PORT>:<DATABASENAME> -Ddb.login=<LOGIN> -Ddb.password=<PASSWORD>
+--------------------------------------------------------------------------------------------------------
+Для создания резервной копии конфигурационных и war файлов выполнить:
+mkdir backup-$(date +%y%m%d-%H%M)
+
+cp  /opt/wildfly/standalone/configuration/standalone.xml <%path_to_backup_folder%>
+cp  /opt/wildfly/bin/standalone.conf  <%path_to_backup_folder%>
+
+cp pguref/register-appointment/register-appointment-anticorruption-service/target/register-appointment-anticorruption-service-1.0-SNAPSHOT.war <%path_to_backup_folder%>
+
+cp pguref/register-appointment/register-appointment-composite/target/register-appointment-composite-1.0-SNAPSHOT.war conf <%path_to_backup_folder%>
+
+cp pguref/register-appointment/register-appointment-service/target/register-appointment-service-1.0-SNAPSHOT.war  <%path_to_backup_folder%>
+
+
+deploy –-force /каталог-артефактов/register-appointment-service-1.0-SNAPSHOT.war
+deploy –-force /каталог-артефактов/ register-appointment-anticorruption-service-1.0-SNAPSHOT.war
+deploy –-force /каталог-артефактов/register-appointment-composite-1.0-SNAPSHOT.war
+
+deploy –l
+
+undeploy имя-артефакта.war
+
+quit
 --------------------------------------------------------------------------------------------------------
 # Algumas variaveis de ambiente, por enquanto apenas essas (conveniência)
 server.context-path=/quantocusta/api
