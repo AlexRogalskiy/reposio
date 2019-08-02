@@ -16736,6 +16736,492 @@ public class Main {
 	}
 }
 --------------------------------------------------------------------------------------------------------
+<plugin>
+  <description></description>
+  <groupId>org.ironjacamar</groupId>
+  <artifactId>ironjacamar-validator</artifactId>
+  <version>@VERSION.IRONJACAMAR@</version>
+  <goalPrefix>ironjacamar</goalPrefix>
+  <isolatedRealm>false</isolatedRealm>
+  <inheritedByDefault>true</inheritedByDefault>
+  <mojos>
+    <mojo>
+      <goal>validate</goal>
+      <description>Validate rar package file.</description>
+      <requiresDirectInvocation>false</requiresDirectInvocation>
+      <requiresProject>false</requiresProject>
+      <requiresReports>false</requiresReports>
+      <aggregator>false</aggregator>
+      <requiresOnline>false</requiresOnline>
+      <inheritedByDefault>true</inheritedByDefault>
+      <phase>package</phase>
+      <implementation>org.ironjacamar.validator.maven.ValidatorMojo</implementation>
+      <language>java</language>
+      <instantiationStrategy>per-lookup</instantiationStrategy>
+      <executionStrategy>once-per-session</executionStrategy>
+      <parameters>
+        <parameter>
+          <name>outputDir</name>
+          <type>java.lang.String</type>
+          <required>true</required>
+          <editable>true</editable>
+          <description>The output directory.</description>
+        </parameter>
+        <parameter>
+          <name>rarFile</name>
+          <type>java.io.File</type>
+          <required>true</required>
+          <editable>true</editable>
+          <description>The rar filename to be validated.</description>
+        </parameter>
+        <parameter>
+          <name>classpath</name>
+          <type>java.lang.String[]</type>
+          <required>false</required>
+          <editable>true</editable>
+          <description>The classpath.</description>
+        </parameter>
+      </parameters>
+    </mojo>
+  </mojos>
+  <dependencies>
+    <groupId>org.ironjacamar</groupId>
+    <artifactId>ironjacamar-validator</artifactId>
+    <version>@VERSION.IRONJACAMAR@</version>
+  </dependencies>
+</plugin>
+--------------------------------------------------------------------------------------------------------
+#!/bin/sh
+### ====================================================================== ###
+##                                                                          ##
+##  IronJacamar Script                                                      ##
+##                                                                          ##
+### ====================================================================== ###
+
+### $Id: $ ###
+
+DIRNAME=`dirname $0`
+
+# Setup IRONJACAMAR_HOME
+if [ "x$IRONJACAMAR_HOME" = "x" ]; then
+    # get the full path (without any relative bits)
+    IRONJACAMAR_HOME=`cd $DIRNAME/..; pwd`
+fi
+export IRONJACAMAR_HOME
+
+# Setup the java endorsed dirs
+IRONJACAMAR_ENDORSED_DIRS="$IRONJACAMAR_HOME/lib/endorsed"
+
+# Setup the JVM
+if [ "x$JAVA" = "x" ]; then
+    if [ "x$JAVA_HOME" != "x" ]; then
+        JAVA="$JAVA_HOME/bin/java"
+    else
+        JAVA="java"
+    fi
+fi
+
+# Setup the JVM options
+JAVA_OPTS="$JAVA_OPTS"
+
+# Display the environment
+echo "========================================================================="
+echo ""
+echo "  IronJacamar"
+echo ""
+echo "  IRONJACAMAR_HOME: $IRONJACAMAR_HOME"
+echo ""
+echo "  JAVA: $JAVA"
+echo ""
+echo "  JAVA_OPTS: $JAVA_OPTS"
+echo ""
+echo "========================================================================="
+echo ""
+
+# Start IronJacamar
+"$JAVA" $JAVA_OPTS \
+    -Djava.endorsed.dirs="$IRONJACAMAR_ENDORSED_DIRS" \
+    -Djava.util.logging.manager=org.jboss.logmanager.LogManager \
+    -Dorg.jboss.logging.Logger.pluginClass=org.jboss.logging.logmanager.LoggerPluginImpl \
+    -Dlog4j.defaultInitOverride=true \
+    -jar ../lib/ironjacamar-sjc.jar "$@"
+	
+	
+@echo off
+rem -------------------------------------------------------------------------
+rem IronJacamar Script for Windows
+rem -------------------------------------------------------------------------
+
+rem $Id: $
+
+@if not "%ECHO%" == ""  echo %ECHO%
+@if "%OS%" == "Windows_NT" setlocal
+
+if "%OS%" == "Windows_NT" (
+  set "DIRNAME=%~dp0%"
+) else (
+  set DIRNAME=.\
+)
+
+pushd %DIRNAME%..
+if "x%IRONJACAMAR_HOME%" == "x" (
+  set "IRONJACAMAR_HOME=%CD%"
+)
+popd
+
+set DIRNAME=
+
+if "%OS%" == "Windows_NT" (
+  set "PROGNAME=%~nx0%"
+) else (
+  set "PROGNAME=run.bat"
+)
+
+if "x%JAVA_HOME%" == "x" (
+  set  JAVA=java
+  echo JAVA_HOME is not set. Unexpected results may occur.
+  echo Set JAVA_HOME to the directory of your local JDK to avoid this message.
+) else (
+  set "JAVA=%JAVA_HOME%\bin\java"
+)
+
+rem Setup IronJacamar specific properties
+
+rem Setup the java endorsed dirs
+set IRONJACAMAR_ENDORSED_DIRS=%IRONJACAMAR_HOME%\lib\endorsed
+
+echo ===============================================================================
+echo.
+echo   IronJacamar
+echo.
+echo   IRONJACAMAR_HOME: %IRONJACAMAR_HOME%
+echo.
+echo   JAVA: %JAVA%
+echo.
+echo   JAVA_OPTS: %JAVA_OPTS%
+echo.
+echo ===============================================================================
+echo.
+
+:RESTART
+"%JAVA%" %JAVA_OPTS% ^
+   -Djava.endorsed.dirs="%IRONJACAMAR_ENDORSED_DIRS%" ^
+   -Djava.util.logging.manager=org.jboss.logmanager.LogManager ^
+   -Dorg.jboss.logging.Logger.pluginClass=org.jboss.logging.logmanager.LoggerPluginImpl ^
+   -Dlog4j.defaultInitOverride=true ^
+   -jar ..\lib\ironjacamar-sjc.jar %*
+
+if ERRORLEVEL 10 goto RESTART
+
+:END
+if "x%NOPAUSE%" == "x" pause
+
+:END_NO_PAUSE
+--------------------------------------------------------------------------------------------------------
+import org.ironjacamar.validator.rules.ao.AOConfigProperties;
+import org.ironjacamar.validator.rules.ao.AOConstructor;
+import org.ironjacamar.validator.rules.ao.AONull;
+import org.ironjacamar.validator.rules.ao.AORAA;
+import org.ironjacamar.validator.rules.as.AS;
+import org.ironjacamar.validator.rules.as.ASConfigProperties;
+import org.ironjacamar.validator.rules.as.ASConstructor;
+import org.ironjacamar.validator.rules.as.ASNull;
+import org.ironjacamar.validator.rules.cf.CFConstructor;
+import org.ironjacamar.validator.rules.cf.CFNull;
+import org.ironjacamar.validator.rules.cf.CFReferenceable;
+import org.ironjacamar.validator.rules.cf.CFSerializable;
+import org.ironjacamar.validator.rules.mc.MC;
+import org.ironjacamar.validator.rules.mc.MCGetMetaData;
+import org.ironjacamar.validator.rules.mcf.MCF;
+import org.ironjacamar.validator.rules.mcf.MCFConfigProperties;
+import org.ironjacamar.validator.rules.mcf.MCFConstructor;
+import org.ironjacamar.validator.rules.mcf.MCFEquals;
+import org.ironjacamar.validator.rules.mcf.MCFHashCode;
+import org.ironjacamar.validator.rules.mcf.MCFNull;
+import org.ironjacamar.validator.rules.ra.RA;
+import org.ironjacamar.validator.rules.ra.RAConfigProperties;
+import org.ironjacamar.validator.rules.ra.RAConstructor;
+import org.ironjacamar.validator.rules.ra.RAEquals;
+import org.ironjacamar.validator.rules.ra.RAHashCode;
+import org.ironjacamar.validator.rules.ra.RANull;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.ResourceBundle;
+
+/**
+ * Validator
+ */
+public class Validator
+{
+   /**
+    * The fully qualified class name of the rules
+    * as we may want to externalize them into a
+    * properties file
+    */
+   private static final Rule[] CLASS_RULES = {
+      new MCFNull(),
+      new MCF(),
+      new MCFConstructor(),
+      new MCFHashCode(),
+      new MCFEquals(),
+      new MCFConfigProperties(),
+      new MC(),
+      new MCGetMetaData(),
+      new RANull(),
+      new RA(),
+      new RAConstructor(),
+      new RAHashCode(),
+      new RAEquals(),
+      new RAConfigProperties(),
+      new CFConstructor(),
+      new CFNull(),
+      new CFSerializable(),
+      new CFReferenceable(),
+      new ASNull(),
+      new AS(),
+      new ASConstructor(),
+      new ASConfigProperties(),
+      new AONull(),
+      new AOConstructor(),
+      new AOConfigProperties(),
+      new AORAA()
+   };
+
+   private static final Rule[] OBJECT_RULES = {
+      new MCGetMetaData(),
+   };
+
+   private static Rule[] allRules;
+   static
+   {
+      List<Rule> arrayList = new ArrayList<>();
+      arrayList.addAll(Arrays.asList(CLASS_RULES));
+      arrayList.addAll(Arrays.asList(OBJECT_RULES));
+      allRules = arrayList.toArray(new Rule[CLASS_RULES.length + OBJECT_RULES.length]);
+   };
+
+   /**
+    * Constructor
+    */
+   public Validator()
+   {
+   }
+
+   /**
+    * Get the resource bundle
+    * @return The resource bundle
+    */
+   public ResourceBundle getResourceBundle()
+   {
+      return ResourceBundle.getBundle("validator", Locale.US,
+                                      SecurityActions.getClassLoader(Validator.class));
+   }
+
+   /**
+    * Validate
+    *
+    * @param objects Objects that should be validated
+    * @return The list of failures; <code>null</code> if no errors
+    */
+   public List<Failure> validate(List<Validate> objects)
+   {
+      if (objects == null || objects.isEmpty())
+         return null;
+
+      return execRulesOnValidates(objects);
+   }
+
+   /**
+    * exec rules
+    * @param objects to be validated
+    * @return The list of failures; an Empty list if no errors
+    */
+   private List<Failure> execRulesOnValidates(List<Validate> objects)
+   {
+      ResourceBundle resourceBundle = getResourceBundle();
+
+      List<Failure> result = null;
+
+      for (Rule rule : allRules)
+      {
+         for (Validate obj : objects)
+         {
+            List<Failure> failures = rule.validate(obj, resourceBundle);
+
+            if (failures != null)
+            {
+               if (result == null)
+               {
+                  result = new LinkedList<>();
+               }
+               result.addAll(failures);
+            }
+         }
+      }
+
+      return result;
+   }
+}
+--------------------------------------------------------------------------------------------------------
+
+import org.jboss.logging.BasicLogger;
+import org.jboss.logging.annotations.Cause;
+import org.jboss.logging.annotations.LogMessage;
+import org.jboss.logging.annotations.Message;
+import org.jboss.logging.annotations.MessageLogger;
+
+import static org.jboss.logging.Logger.Level.INFO;
+import static org.jboss.logging.Logger.Level.WARN;
+
+/**
+ * The deployers logger.
+ *
+ * Message ids ranging from 020000 to 029999 inclusively.
+ */
+@MessageLogger(projectCode = "IJ2")
+public interface DeployersLogger extends BasicLogger
+{
+   // ABSTRACT RESOURCE ADAPTER DEPLOYER
+
+   /**
+    * Required license terms
+    * @param url The license url
+    */
+   @LogMessage(level = INFO)
+   @Message(id = 20001, value = "Required license terms for %s")
+   public void requiredLicenseTerms(String url);
+
+   /**
+    * Deployed
+    * @param archiveName The archive name
+    */
+   @LogMessage(level = INFO)
+   @Message(id = 20002, value = "Deployed: %s")
+   public void deployed(String archiveName);
+
+   /**
+    * Changed TransactionSupport
+    * @param jndiName The JNDI name
+    */
+   @LogMessage(level = INFO)
+   @Message(id = 20003, value = "Changed TransactionSupport for %s")
+   public void changedTransactionSupport(String jndiName);
+
+   /**
+    * Validation report failure
+    * @param detail The details
+    * @param t The exception
+    */
+   @LogMessage(level = WARN)
+   @Message(id = 20004, value = "Failure during validation report generation: %s")
+   public void validationReportFailure(String detail, @Cause Throwable t);
+
+   /**
+    * Invalid archive
+    * @param archive The archive
+    */
+   @LogMessage(level = WARN)
+   @Message(id = 2005, value = "Invalid archive: %s")
+   public void validationInvalidArchive(String archive);
+}
+--------------------------------------------------------------------------------------------------------
+#include <jni.h>
+#include <string.h>
+#include <stdlib.h>
+#include "build/c/HelloWorld.h"
+
+/*
+ * Class:     org_ironjacamar_samples_helloworld_HelloWorldManagedConnection
+ * Method:    helloWorld
+ * Signature: (Ljava/lang/String;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL 
+Java_org_ironjacamar_samples_helloworld_HelloWorldManagedConnection_helloWorld(JNIEnv *env, jobject o, jstring s)
+{
+   int length = 0;
+
+   if (s != NULL)
+      length = (*env)->GetStringLength(env, s);
+
+   char *buf = (char*)malloc(16 + length);
+
+   strcpy(buf, "Hello World, ");
+
+   if (s != NULL)
+      strcat(buf, (*env)->GetStringUTFChars(env, s, 0));
+
+   strcat(buf, " !");
+
+   jstring result = (*env)->NewStringUTF(env, buf);
+
+   free(buf);
+
+   return result;
+}
+--------------------------------------------------------------------------------------------------------
+PROJECT(helloworld-native)
+
+CMAKE_MINIMUM_REQUIRED (VERSION 2.8)
+SET(CMAKE_VERBOSE_MAKEFILE 1)
+
+SET(LIBRARY_OUTPUT_PATH build)
+SET(BUILD_SHARED_LIBS ON)
+SET(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+FIND_PACKAGE(Java)
+FIND_PACKAGE(JNI)
+
+INCLUDE_DIRECTORIES(${JAVA_INCLUDE_PATH})
+INCLUDE_DIRECTORIES(${JAVA_INCLUDE_PATH2})
+
+ADD_LIBRARY(HelloWorld helloworld.c)
+--------------------------------------------------------------------------------------------------------
+# Additional logger names to configure (root logger is always configured)
+loggers=org.ironjacamar,org.jboss,org.jnp,com.arjuna
+
+# Root logger level
+logger.level=INFO
+logger.handlers=CONSOLE, FILE
+
+# org.ironjacamar
+logger.org.ironjacamar.level=TRACE
+
+# org.jgroups
+logger.org.jgroups.level=TRACE
+
+# org.jboss
+logger.org.jboss.level=INFO
+
+# org.jnp
+logger.org.jnp.level=INFO
+
+# com.arjuna
+logger.com.arjuna.level=INFO
+
+# Console handler configuration
+handler.CONSOLE=org.jboss.logmanager.handlers.ConsoleHandler
+handler.CONSOLE.properties=autoFlush
+handler.CONSOLE.level=WARN
+handler.CONSOLE.autoFlush=true
+handler.CONSOLE.formatter=PATTERN
+
+# File handler configuration
+handler.FILE=org.jboss.logmanager.handlers.FileHandler
+handler.FILE.level=TRACE
+handler.FILE.properties=autoFlush,fileName
+handler.FILE.autoFlush=true
+handler.FILE.fileName=build/test.log
+handler.FILE.formatter=PATTERN
+
+# Formatter pattern configuration
+formatter.PATTERN=org.jboss.logmanager.formatters.PatternFormatter
+formatter.PATTERN.properties=pattern
+formatter.PATTERN.pattern=%d{HH:mm:ss,SSS} %-5p [%c{1}] %m%n
+--------------------------------------------------------------------------------------------------------
 lexer grammar SelectHtmlLexer;
 
 
