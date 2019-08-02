@@ -12095,6 +12095,136 @@ data-source add --jndi-name=java:jboss/datasources/JMSDS --name=JMSDS --connecti
 ant clean sjc
 ant -Declipse.home=/path/to/eclipse clean release
 --------------------------------------------------------------------------------------------------------
+		<dependency>
+			<groupId>jdk.tools</groupId>
+			<artifactId>jdk.tools</artifactId>
+			<version>1.8</version>
+			<scope>system</scope>
+			<systemPath>${JAVA_HOME}/lib/tools.jar</systemPath>
+		</dependency>
+--------------------------------------------------------------------------------------------------------
+#!/bin/bash
+#
+# The MIT License
+# Copyright (c) 2014-2016 Ilkka Seppälä
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+#
+
+
+# Clone gh-pages
+git clone -b gh-pages "https://${GH_REF}" ghpagesclone
+cd ghpagesclone
+
+# Init and update submodule to latest
+git submodule update --init --recursive
+git submodule update --remote
+
+# Setup Git
+git config user.name "Travis-CI"
+git config user.email "travis@no.reply"
+
+# If there is a new version of the master branch
+if git status | grep patterns > /dev/null 2>&1
+then
+  # it should be committed
+  git add .
+  git commit -m ":sparkles: :up: Automagic Update via Travis-CI"
+  git push --quiet "https://${GH_TOKEN}:x-oauth-basic@${GH_REF}" gh-pages > /dev/null 2>&1
+fi
+--------------------------------------------------------------------------------------------------------
+CREATE TABLE testing.persons
+(
+  person_id  INTEGER NOT NULL,
+  last_name  VARCHAR(255),
+  first_name VARCHAR(255),
+  address    VARCHAR(255),
+  city       VARCHAR(255),
+  CONSTRAINT persons_pk PRIMARY KEY (person_id)
+);
+
+CREATE TABLE testing.orders
+(
+  order_id          INTEGER NOT NULL,
+  order_no          INTEGER NOT NULL,
+  order_date        DATE    NOT NULL,
+  shipping_datetime TIMESTAMP,
+  shipped           BOOLEAN NOT NULL,
+  person_id         INTEGER,
+  CONSTRAINT orders_pk PRIMARY KEY (order_id),
+  CONSTRAINT persons_fk FOREIGN KEY (person_id) REFERENCES persons (person_id)
+);
+
+CREATE TABLE testing.items
+(
+  item_id    INTEGER        NOT NULL,
+  item_name  VARCHAR(255)   NOT NULL,
+  item_price NUMERIC(10, 4) NOT NULL,
+  CONSTRAINT items_pk PRIMARY KEY (item_id)
+);
+
+CREATE TABLE testing.order_items(
+  order_id INTEGER NOT NULL,
+  item_id  INTEGER NOT NULL,
+  qty      INTEGER NOT NULL,
+  CONSTRAINT order_items_pk PRIMARY KEY (order_id, item_id),
+  CONSTRAINT order_fk FOREIGN KEY (order_id) REFERENCES orders (order_id),
+  CONSTRAINT items_fk FOREIGN KEY (item_id) REFERENCES items (item_id)
+);
+--------------------------------------------------------------------------------------------------------
+jOOQ
+I'm going to answer the jOOQ part of your question. As of jOOQ 3.8, there have now been quite a few additional features related to combining jOOQ with Stream. Other usages are also documented on this jOOQ page.
+
+Your suggested usage:
+You tried this:
+
+Stream<Record> stream = DSL.using(connection).fetch(resultSet).stream();
+Indeed, this doesn't work well for large result sets because fetch(ResultSet) fetches the entire result set into memory and then calls Collection.stream() on it.
+
+Better (lazy) usage:
+Instead, you could write this:
+
+try (Stream<Record> stream = DSL.using(connection).fetchStream(resultSet)) {
+    ...
+}
+... which is essentially convenience for this:
+
+try (Cursor<Record> cursor = DSL.using(connection).fetchLazy(resultSet)) {
+    Stream<Record> stream = cursor.stream();
+    ...
+}
+See also DSLContext.fetchStream(ResultSet)
+
+Of course, you could also let jOOQ execute your SQL string, rather than wrestling with JDBC:
+
+try (Stream<Record> stream = 
+     DSL.using(dataSource)
+        .resultQuery("select * from {0}", DSL.name(table)) // Prevent SQL injection
+        .fetchSize(5000)
+        .fetchStream()) {
+    ...
+}
+On try-with-resources usage
+Do note that a Stream produced by jOOQ is "resourceful", i.e. it contains a reference to an open ResultSet (and PreparedStatement). So, if you really want to return that stream outside of your method, make sure it is closed properly!
+
+shareimprove this answer
+--------------------------------------------------------------------------------------------------------
 mvn validate
 mvn package -Pmigrate-emias-cluster -Ddb.url=jdbc:oracle:thin:@<ADDRESS>:<PORT>:<DATABASENAME> -Ddb.login=<LOGIN> -Ddb.password=<PASSWORD>
 --------------------------------------------------------------------------------------------------------
