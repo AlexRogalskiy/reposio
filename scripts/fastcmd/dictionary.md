@@ -17119,6 +17119,480 @@ if "x%NOPAUSE%" == "x" pause
 
 :END_NO_PAUSE
 --------------------------------------------------------------------------------------------------------
+1. Группировка списка рабочих по их должности (деление на списки)
+
+ Map<String, List<Worker>> map1 = workers.stream()
+       .collect(Collectors.groupingBy(Worker::getPosition));
+
+
+2. Группировка списка рабочих по их должности (деление на множества)
+
+Map<String, Set<Worker>> map2 = workers.stream()
+       .collect(Collectors.groupingBy(Worker::getPosition, Collectors.toSet()));
+
+
+3. Подсчет количества рабочих, занимаемых конкретную должность
+
+Map<String, Long> map3 = workers.stream()
+       .collect(Collectors.groupingBy(Worker::getPosition, Collectors.counting()));
+
+
+4. Группировка списка рабочих по их должности, при этом нас интересуют только имена
+
+Map<String, Set<String>> map4 = workers.stream()
+       .collect(Collectors.groupingBy(Worker::getPosition, 
+              Collectors.mapping(Worker::getName, Collectors.toSet())));
+
+
+5. Расчет средней зарплаты для данной должности
+
+Map<String, Double> map5 = workers.stream()
+       .collect(Collectors.groupingBy(Worker::getPosition,
+              Collectors.averagingInt(Worker::getSalary)));
+
+
+6. Группировка списка рабочих по их должности, рабочие представлены только именами единой строкой
+
+Map<String, String> map6 = workers.stream()
+       .collect(Collectors.groupingBy(Worker::getPosition,
+              Collectors.mapping(Worker::getName, 
+                     Collectors.joining(", ", "{","}")))
+       );
+
+
+7. Группировка списка рабочих по их должности и по возрасту.
+
+Подсказал пользователь j2ck
+
+Map<String, Map<Integer, List<Worker>>> collect = workers.stream()
+       .collect(Collectors.groupingBy(Worker::getPosition, 
+              Collectors.groupingBy(Worker::getAge)));
+--------------------------------------------------------------------------------------------------------
+ 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.stream.Stream;
+
+public class ListFiles {
+    public static void main(String[] args) {
+      File folder = new File("G:\\Test");
+      ListFiles listFiles = new ListFiles();
+      System.out.println("reading files before Java8 - Using listFiles() method");
+      listFiles.listAllFiles(folder);
+      System.out.println("-------------------------------------------------");
+      System.out.println("reading files Java8 - Using Files.walk() method");
+      listFiles.listAllFiles("G:\\Test");
+
+     }
+     // Uses listFiles method  
+     public void listAllFiles(File folder){
+         System.out.println("In listAllfiles(File) method");
+         File[] fileNames = folder.listFiles();
+         for(File file : fileNames){
+             // if directory call the same method again
+             if(file.isDirectory()){
+                 listAllFiles(file);
+             }else{
+                 try {
+                     readContent(file);
+                 } catch (IOException e) {
+                     // TODO Auto-generated catch block
+                     e.printStackTrace();
+                 }
+        
+             }
+         }
+     }
+     // Uses Files.walk method   
+     public void listAllFiles(String path){
+         System.out.println("In listAllfiles(String path) method");
+         try(Stream<Path> paths = Files.walk(Paths.get(path))) {
+             paths.forEach(filePath -> {
+                 if (Files.isRegularFile(filePath)) {
+                     try {
+                         readContent(filePath);
+                     } catch (Exception e) {
+                         // TODO Auto-generated catch block
+                         e.printStackTrace();
+                     }
+                 }
+             });
+         } catch (IOException e) {
+             // TODO Auto-generated catch block
+             e.printStackTrace();
+         } 
+     }
+     
+     public void readContent(File file) throws IOException{
+         System.out.println("read file " + file.getCanonicalPath() );
+         try(BufferedReader br  = new BufferedReader(new FileReader(file))){
+               String strLine;
+               // Read lines from the file, returns null when end of stream 
+               // is reached
+               while((strLine = br.readLine()) != null){
+                System.out.println("Line is - " + strLine);
+               }
+         }
+     }
+     
+     public void readContent(Path filePath) throws IOException{
+         System.out.println("read file " + filePath);
+         List<String> fileList = Files.readAllLines(filePath);
+         System.out.println("" + fileList);
+     }    
+}
+--------------------------------------------------------------------------------------------------------
+<dependency>
+				<groupId>org.apache.isis.core</groupId>
+				<artifactId>isis</artifactId>
+				<version>${isis.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+
+			<dependency>
+				<groupId>org.apache.isis.viewer</groupId>
+				<artifactId>isis-viewer-wicket</artifactId>
+				<version>${isis.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+--------------------------------------------------------------------------------------------------------
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+
+import cucumber.api.java.en.Given;
+import cucumber.api.java.en.When;
+import domainapp.dom.modules.simple.SimpleObject;
+import domainapp.dom.modules.simple.SimpleObjects;
+import java.util.List;
+import java.util.UUID;
+import org.apache.isis.core.specsupport.specs.CukeGlueAbstract;
+
+/**
+ * Test Simple Object Operations
+ */
+public class SimpleObjectGlue extends CukeGlueAbstract {
+
+  @Given("^there are.* (\\d+) simple objects$")
+  public void thereAreNumSimpleObjects(int n) throws Throwable {
+    try {
+      final List<SimpleObject> findAll = service(SimpleObjects.class).listAll();
+      assertThat(findAll.size(), is(n));
+      putVar("list", "all", findAll);
+
+    } finally {
+      assertMocksSatisfied();
+    }
+  }
+
+  @When("^I create a new simple object$")
+  public void createNewSimpleObject() throws Throwable {
+    service(SimpleObjects.class).create(UUID.randomUUID().toString());
+  }
+
+}
+--------------------------------------------------------------------------------------------------------
+import org.junit.runner.RunWith;
+
+import cucumber.api.CucumberOptions;
+import cucumber.api.junit.Cucumber;
+
+
+/**
+ * Runs scenarios in all <tt>.feature</tt> files (this package and any subpackages).
+ */
+@RunWith(Cucumber.class)
+@CucumberOptions(format = {"html:target/cucumber-html-report", "json:target/cucumber.json"},
+    glue = {"classpath:domainapp.integtests.specglue"}, strict = true, tags = {"~@backlog",
+        "~@ignore"})
+public class RunSpecs {
+  // intentionally empty
+}
+--------------------------------------------------------------------------------------------------------
+				<plugin>
+					<groupId>org.apache.rat</groupId>
+					<artifactId>apache-rat-plugin</artifactId>
+					<version>0.10</version>
+					<configuration>
+						<addDefaultLicenseMatchers>true</addDefaultLicenseMatchers>
+						<excludeSubProjects>true</excludeSubProjects>
+						<excludes>
+							<exclude>**/target/**</exclude>
+							<exclude>**/target-ide/**</exclude>
+
+							<exclude>**/*.project</exclude>
+							<exclude>**/.classpath</exclude>
+							<exclude>**/.settings/**</exclude>
+							<exclude>**/*.launch</exclude>
+							<exclude>**/ide/eclipse/launch/**</exclude>
+							<exclude>**/ide/intellij/launch/**</exclude>
+							<exclude>src/site/resources/ide/eclipse/**</exclude>
+
+							<exclude>**/rebel.xml</exclude>
+							<exclude>**/*.gitignore</exclude>
+							<exclude>**/*.log</exclude>
+							<exclude>**/*.pdn</exclude>
+							<exclude>**/*.svg</exclude>
+							<exclude>**/*.json</exclude>
+							<exclude>**/*.min.js</exclude>
+							<exclude>**/*.js</exclude>
+
+							<exclude>**/translations.pot</exclude>
+							<exclude>**/translations*.po</exclude>
+						</excludes>
+						<licenses>
+                            <license implementation="org.apache.rat.analysis.license.SimplePatternBasedLicense">
+                                <licenseFamilyCategory>AL2</licenseFamilyCategory>
+                                <licenseFamilyName>Apache License 2.0</licenseFamilyName>
+                                <notes/>
+                                <patterns>
+                                    <pattern>Licensed to the Apache Software Foundation (ASF) under one</pattern>
+                                </patterns>
+                            </license>
+                            <license implementation="org.apache.rat.analysis.license.SimplePatternBasedLicense">
+                                <licenseFamilyCategory>JQRY</licenseFamilyCategory>
+                                <licenseFamilyName>MIT</licenseFamilyName>
+                                <notes/>
+                                <patterns>
+                                    <pattern>Dual licensed under the MIT or GPL Version 2 licenses.</pattern>
+                                </patterns>
+                            </license>
+                            <license implementation="org.apache.rat.analysis.license.SimplePatternBasedLicense">
+                                <licenseFamilyCategory>JMOCK</licenseFamilyCategory>
+                                <licenseFamilyName>JMock</licenseFamilyName>
+                                <notes/>
+                                <patterns>
+                                    <pattern>Copyright (c) 2000-2007, jMock.org</pattern>
+                                </patterns>
+                            </license>
+                            <license implementation="org.apache.rat.analysis.license.SimplePatternBasedLicense">
+                                <licenseFamilyCategory>DOCBK</licenseFamilyCategory>
+                                <licenseFamilyName>DocBook 4.5</licenseFamilyName>
+                                <notes/>
+                                <patterns>
+                                    <pattern>Permission to copy in any form is granted for use</pattern>
+                                    <pattern>Permission to use, copy, modify and distribute the DocBook DTD</pattern>
+                                    <pattern>is hereby granted in perpetuity, provided that the above copyright</pattern>
+                                    <pattern>This is the catalog data file for DocBook XML V4.5. It is provided as</pattern>
+                                    <pattern>XML Catalog data for DocBook XML V4.5</pattern>
+                                    <pattern>DocBook additional general entities V4.5</pattern>
+                                    <pattern>XML EXCHANGE TABLE MODEL DECLARATION MODULE</pattern>
+                                </patterns>
+                            </license>
+                            <license implementation="org.apache.rat.analysis.license.SimplePatternBasedLicense">
+                                <licenseFamilyCategory>W3C</licenseFamilyCategory>
+                                <licenseFamilyName>XHTML</licenseFamilyName>
+                                <notes/>
+                                <patterns>
+                                    <pattern>Copyright (c) 1998-2002 W3C (MIT, INRIA, Keio),</pattern>
+                                </patterns>
+                            </license>
+						</licenses>
+						<licenseFamilies>
+							<licenseFamily implementation="org.apache.rat.license.SimpleLicenseFamily">
+								<familyName>Apache License 2.0</familyName>
+							</licenseFamily>
+							<licenseFamily implementation="org.apache.rat.license.SimpleLicenseFamily">
+								<familyName>MIT</familyName>
+							</licenseFamily>
+							<licenseFamily implementation="org.apache.rat.license.SimpleLicenseFamily">
+								<familyName>JMock</familyName>
+							</licenseFamily>
+							<licenseFamily implementation="org.apache.rat.license.SimpleLicenseFamily">
+								<familyName>DocBook 4.5</familyName>
+							</licenseFamily>
+							<licenseFamily implementation="org.apache.rat.license.SimpleLicenseFamily">
+								<familyName>XHTML</familyName>
+							</licenseFamily>
+						</licenseFamilies>
+					</configuration>
+				</plugin>
+--------------------------------------------------------------------------------------------------------
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-antrun-plugin</artifactId>
+					<version>1.7</version>
+					<executions>
+						<execution>
+							<goals>
+								<goal>run</goal>
+							</goals>
+						</execution>
+					</executions>
+				</plugin>
+--------------------------------------------------------------------------------------------------------
+        <plugin>
+            <groupId>com.vaadin</groupId>
+            <artifactId>vaadin-maven-plugin</artifactId>
+            <version>8.4.5</version>
+            <executions>
+                <execution>
+                    <goals>
+                        <goal>update-theme</goal>
+                        <goal>compile-theme</goal>
+                        <!-- <goal>clean</goal> <goal>resources</goal> 
+                            <goal>update-widgetset</goal> 
+                            <goal>compile</goal> -->
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
+--------------------------------------------------------------------------------------------------------
+final String authorization = httpRequest.getHeader("Authorization");
+if (authorization != null && authorization.toLowerCase().startsWith("basic")) {
+    // Authorization: Basic base64credentials
+    String base64Credentials = authorization.substring("Basic".length()).trim();
+    byte[] credDecoded = Base64.getDecoder().decode(base64Credentials);
+    String credentials = new String(credDecoded, StandardCharsets.UTF_8);
+    // credentials = username:password
+    final String[] values = credentials.split(":", 2);
+}
+--------------------------------------------------------------------------------------------------------
+mvn archetype:generate  \
+    -D archetypeGroupId=org.apache.isis.archetype \
+    -D archetypeArtifactId=simpleapp-archetype \
+    -D archetypeVersion=2.0.0-M2 \
+    -D groupId=com.mycompany \
+    -D artifactId=myapp \
+    -D version=1.0-SNAPSHOT \
+    -B
+--------------------------------------------------------------------------------------------------------
+@Component
+public class FactoryMethodComponent {
+
+  private static int i;
+
+  @Bean @Qualifier("public")
+  public TestBean publicInstance() {
+      return new TestBean("publicInstance");
+  }
+
+  // use of a custom qualifier and autowiring of method parameters
+
+  @Bean @BeanAge(1)
+  protected TestBean protectedInstance(@Qualifier("public") TestBean spouse,
+                                       @Value("#{privateInstance.age}") String country) {
+      TestBean tb = new TestBean("protectedInstance", 1);
+      tb.setSpouse(tb);
+      tb.setCountry(country);
+      return tb;
+  }
+
+  @Bean @Scope(BeanDefinition.SCOPE_SINGLETON)
+  private TestBean privateInstance() {
+      return new TestBean("privateInstance", i++);
+  }
+
+  @Bean @Scope(value = WebApplicationContext.SCOPE_SESSION,
+               proxyMode = ScopedProxyMode.TARGET_CLASS)
+  public TestBean requestScopedInstance() {
+      return new TestBean("requestScopedInstance", 3);
+  }
+}
+--------------------------------------------------------------------------------------------------------
+@Component("fooFormatter")
+public class FooFormatter implements Formatter {
+ 
+    public String format() {
+        return "foo";
+    }
+}
+
+@Component("barFormatter")
+public class BarFormatter implements Formatter {
+ 
+    public String format() {
+        return "bar";
+    }
+}
+	
+public class FooService {
+     
+    @Autowired
+    private Formatter formatter;
+ 
+}
+--------------------------------------------------------------------------------------------------------
+const protobuf = require('protobufjs');
+
+const testData = {
+    name: 'Jack', 
+    age: 12
+};
+...
+// convert the object testData to protobuf
+
+console.log(<the converted protobuf>)
+--------------------------------------------------------------------------------------------------------
+Map<String, Integer> map = 
+    intList.stream().collect(toMap(i -> String.valueOf(i % 3), 
+                                   i -> i, 
+                                   Integer::sum));
+								   
+Map<String,Role> mappedRoles = Maps.uniqueIndex(yourList, new Function<Role,String>() {
+  public String apply(Role from) {
+    return from.getName(); // or something else
+  }});
+--------------------------------------------------------------------------------------------------------
+public static <K, V> Map<K, V> listAsMap(Collection<V> sourceList, ListToMapConverter<K, V> converter) {
+    Map<K, V> newMap = new HashMap<K, V>();
+    for (V item : sourceList) {
+        newMap.put( converter.getKey(item), item );
+    }
+    return newMap;
+}
+
+public static interface ListToMapConverter<K, V> {
+    public K getKey(V item);
+}
+--------------------------------------------------------------------------------------------------------
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    ObjectOutputStream oos = new ObjectOutputStream(baos);
+
+
+    oos.writeObject(obj);
+
+    oos.flush();
+    oos.close();
+
+    InputStream is = new ByteArrayInputStream(baos.toByteArray());
+--------------------------------------------------------------------------------------------------------
+@ProtoClass(ProtoObject.class)
+Class DomainClass{
+  @ProtoField
+  private String field1;
+  @ProtoField(name = "xyz") // in case proto and domain class field have different names
+  private String field2;
+}
+--------------------------------------------------------------------------------------------------------
+{
+  "name": "projectName",
+  "version": "0.0.0",
+  "description": "Blank Project for React.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "browserify": "^9.0.3",
+    "gulp": "^3.8.11",
+    "react": "^0.13.1",
+    "reactify": "^1.1.0",
+    "vinyl-source-stream": "^1.1.0"
+  }
+}
+
+ 
 import org.ironjacamar.validator.rules.ao.AOConfigProperties;
 import org.ironjacamar.validator.rules.ao.AOConstructor;
 import org.ironjacamar.validator.rules.ao.AONull;
