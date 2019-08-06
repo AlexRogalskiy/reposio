@@ -29516,6 +29516,30 @@ public class DataSourceAutoConfiguration {
 	}
 }
 --------------------------------------------------------------------------------------------------------
+"C:\Program Files\Java\jdk1.8.0_191\bin\java.exe" -Dmaven.multiModuleProjectDirectory=C:\git-project\paragon.microservices.crmmailadapter\service "-Dmaven.home=C:\Program Files\JetBrains\IntelliJ IDEA 2018.3.5\plugins\maven\lib\maven3" "-Dclassworlds.conf=C:\Program Files\JetBrains\IntelliJ IDEA 2018.3.5\plugins\maven\lib\maven3\bin\m2.conf" "-javaagent:C:\Program Files\JetBrains\IntelliJ IDEA 2018.3.5\lib\idea_rt.jar=23825:C:\Program Files\JetBrains\IntelliJ IDEA 2018.3.5\bin" -Dfile.encoding=UTF-8 -classpath "C:\Program Files\JetBrains\IntelliJ IDEA 2018.3.5\plugins\maven\lib\maven3\boot\plexus-classworlds-2.5.2.jar" org.codehaus.classworlds.Launcher -Didea.version=2018.3.5 -DskipTests=true com.github.markusmo3.urm:urm-maven-plugin:1.4.4:map
+--------------------------------------------------------------------------------------------------------
+java -jar plantuml-dependency-cli-1.4.0.jar -h
+	java -jar plantuml-dependency-cli-1.4.0.jar -o /home/test/plantuml.txt -b . -dp ^(?!net.sourceforge.plantumldependency)(.+)$ -v
+	java -jar plantuml-dependency-cli-1.4.0.jar -o /home/test/plantuml.txt -b . -i **/*.java -e **/*Test*.java -dn .*Test.* -v
+	java -jar plantuml-dependency-cli-1.4.0.jar -o /home/test/plantuml.txt -b . -i **/*.java -e **/*Test*.java -dt implementations,interfaces,extensions,imports,static_imports
+	java -jar plantuml-dependency-cli-1.4.0.jar -o myoutput.txt -b "C:\Users\PlantUML test" -i **/*Test.java
+	java -jar plantuml-dependency-cli-1.4.0.jar -version -v
+--------------------------------------------------------------------------------------------------------
+https://search.maven.org/search?q=g:de.elnarion.util
+
+"C:\Program Files\Java\jdk1.8.0_191\bin\java.exe" -Dmaven.multiModuleProjectDirectory=C:\git-project\paragon.microservices.crmmailadapter\service "-Dmaven.home=C:\Program Files\JetBrains\IntelliJ IDEA 2018.3.5\plugins\maven\lib\maven3" "-Dclassworlds.conf=C:\Program Files\JetBrains\IntelliJ IDEA 2018.3.5\plugins\maven\lib\maven3\bin\m2.conf" "-javaagent:C:\Program Files\JetBrains\IntelliJ IDEA 2018.3.5\lib\idea_rt.jar=5944:C:\Program Files\JetBrains\IntelliJ IDEA 2018.3.5\bin" -Dfile.encoding=UTF-8 -classpath "C:\Program Files\JetBrains\IntelliJ IDEA 2018.3.5\plugins\maven\lib\maven3\boot\plexus-classworlds-2.5.2.jar" org.codehaus.classworlds.Launcher -Didea.version=2018.3.5 -DskipTests=true org.springframework.boot:spring-boot-maven-plugin:2.1.4.RELEASE:build-info
+"C:\Program Files\Java\jdk1.8.0_191\bin\java.exe" -Dmaven.multiModuleProjectDirectory=C:\git-project\paragon.microservices.crmmailadapter\service "-Dmaven.home=C:\Program Files\JetBrains\IntelliJ IDEA 2018.3.5\plugins\maven\lib\maven3" "-Dclassworlds.conf=C:\Program Files\JetBrains\IntelliJ IDEA 2018.3.5\plugins\maven\lib\maven3\bin\m2.conf" "-javaagent:C:\Program Files\JetBrains\IntelliJ IDEA 2018.3.5\lib\idea_rt.jar=5944:C:\Program Files\JetBrains\IntelliJ IDEA 2018.3.5\bin" -Dfile.encoding=UTF-8 -classpath "C:\Program Files\JetBrains\IntelliJ IDEA 2018.3.5\plugins\maven\lib\maven3\boot\plexus-classworlds-2.5.2.jar" org.codehaus.classworlds.Launcher -Didea.version=2018.3.5 -DskipTests=true -Dparse.thePackage="com.paragon.microservices.crmmailadapter.mail.chain" com.github.juanmf:java2PlantUML-maven-plugin:1.0.1:parse
+mvn   -Dparse.thePackage="com.paragon.microservices.crmmailadapter.mail.chain, com.paragon.microservices.crmmailadapter.mail.chain.impl, com.paragon.microservices.crmmailadapter.mail.model, com.paragon.microservices.crmmailadapter.mail.model.enumeration, com.paragon.microservices.crmmailadapter.mail.model.constant, com.paragon.microservices.crmmailadapter.mail.model.builder, com.paragon.microservices.crmmailadapter.mail.parser, com.paragon.microservices.crmmailadapter.mail.parser.impl, com.paragon.microservices.crmmailadapter.mail.parser.impl.header, com.paragon.microservices.crmmailadapter.mail.parser.impl.body" clean compile java2PlantUML:parse
+--------------------------------------------------------------------------------------------------------
+org.slf4j.simpleLogger.defaultLogLevel=info
+org.slf4j.simpleLogger.showDateTime=false
+org.slf4j.simpleLogger.showThreadName=false
+org.slf4j.simpleLogger.showLogName=false
+org.slf4j.simpleLogger.logFile=System.out
+org.slf4j.simpleLogger.levelInBrackets=true
+org.slf4j.simpleLogger.log.Sisu=info
+org.slf4j.simpleLogger.warnLevelString=WARNING
+--------------------------------------------------------------------------------------------------------
 spring:
   # (DataSourceAutoConfiguration & DataSourceProperties)
   datasource:
