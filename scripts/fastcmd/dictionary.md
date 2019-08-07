@@ -17364,6 +17364,308 @@ public class DomainMapperMojo extends AbstractMojo {
     }
 }
 --------------------------------------------------------------------------------------------------------
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><factorypath>
+    <factorypathentry enabled="true" id="M2_REPO/org/membrane-soa/service-proxy-annot/4.6.3-SNAPSHOT/service-proxy-annot-4.6.3-SNAPSHOT.jar" kind="VARJAR" runInBatchMode="false"/>
+</factorypath>
+--------------------------------------------------------------------------------------------------------
+	public static class StreamPumpStats {
+		private static ArrayList<StreamPump> pumps = new ArrayList<StreamPump>();
+
+		public synchronized int getRunning() {
+			return pumps.size();
+		}
+		public synchronized void registerPump(StreamPump pump) {
+			pumps.add(pump);
+		}
+		public synchronized void unregisterPump(StreamPump pump) {
+			pumps.remove(pump);
+		}
+		public synchronized List<StreamPump> getStreamPumps() {
+			return new ArrayList<StreamPump>(pumps);
+		}
+		public synchronized void closeAllStreamPumps() {
+			for (StreamPump p : pumps) {
+				p.close();
+			}
+		}
+	}
+--------------------------------------------------------------------------------------------------------
+import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Function;
+import com.predic8.membrane.core.Router;
+
+public abstract class ScriptExecutorPool<T, R> implements Function<Map<String, Object>, R> {
+	private static final Logger log = LoggerFactory.getLogger(ScriptExecutorPool.class);
+
+	private static final int concurrency = Runtime.getRuntime().availableProcessors() * 2;
+	ArrayBlockingQueue<T> scripts = new ArrayBlockingQueue<T>(concurrency);
+
+	public void init(Router router) {
+		scripts.add(createOneScript());
+		router.getBackgroundInitializator().execute(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					for (int i = 1; i < concurrency; i++)
+						scripts.add(createOneScript());
+				} catch (Exception e) {
+					log.error("Error compiling script:", e);
+				}
+			}
+		});
+	}
+
+	public final Object execute(Map<String, Object> parameters) {
+		try {
+			T script = scripts.take();
+			try {
+				return invoke(script, parameters);
+			} finally {
+				scripts.put(script);
+			}
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			return null;
+		}
+	}
+
+	protected abstract Object invoke(T script, Map<String, Object> parameters);
+	protected abstract T createOneScript();
+
+}
+--------------------------------------------------------------------------------------------------------
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.RuleKey;
+import com.predic8.membrane.core.rules.StatisticCollector;
+import com.predic8.membrane.core.stats.RuleStatisticCollector;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+
+@JsonSerialize(using = FakeRule.Serializer.class)
+@JsonDeserialize(using = FakeRule.Deserializer.class)
+public class FakeRule implements Rule {
+    private final String toStringText;
+    final FakeKey key;
+
+    public static class Serializer extends JsonSerializer<FakeRule>{
+        @Override
+        public void serialize(FakeRule fakeRule, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+            jsonGenerator.writeStartObject();
+            jsonGenerator.writeStringField("name",fakeRule.toString());
+            jsonGenerator.writeNumberField("port",fakeRule.getKey().getPort());
+            jsonGenerator.writeEndObject();
+        }
+    }
+
+    public static class Deserializer extends JsonDeserializer<FakeRule>{
+        @Override
+        public FakeRule deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+            JsonNode node = jsonParser.getCodec().readTree(jsonParser);
+            return new FakeRule(String.valueOf(node.get("name").asText()),node.get("port").asInt());
+        }
+    }
+
+    public FakeRule(Rule rule) {
+        this(rule.toString(),rule.getKey().getPort());
+    }
+
+    public FakeRule(String toStringText, int port) {
+        this.toStringText = toStringText;
+        this.key = new FakeKey(port);
+    }
+
+    @Override
+    public String toString() {
+        return toStringText;
+    }
+
+    @Override
+    public List<Interceptor> getInterceptors() {
+        return null;
+    }
+
+    @Override
+    public void setInterceptors(List<Interceptor> interceptors) {
+
+    }
+
+    @Override
+    public boolean isBlockRequest() {
+        return false;
+    }
+
+    @Override
+    public boolean isBlockResponse() {
+        return false;
+    }
+
+    @Override
+    public RuleKey getKey() {
+        return key;
+    }
+
+    @Override
+    public void setKey(RuleKey ruleKey) {
+
+    }
+
+    @Override
+    public void setName(String name) {
+
+    }
+
+    @Override
+    public String getName() {
+        return null;
+    }
+
+    @Override
+    public void setBlockRequest(boolean blockStatus) {
+
+    }
+
+    @Override
+    public void setBlockResponse(boolean blockStatus) {
+
+    }
+
+    @Override
+    public RuleStatisticCollector getStatisticCollector() {
+        return null;
+    }
+
+    @Override
+    public SSLContext getSslInboundContext() {
+        return null;
+    }
+
+    @Override
+    public SSLProvider getSslOutboundContext() {
+        return null;
+    }
+
+    @Override
+    public void init(Router router) throws Exception {
+
+    }
+
+    @Override
+    public boolean isTargetAdjustHostHeader() {
+        return false;
+    }
+
+    @Override
+    public boolean isActive() {
+        return false;
+    }
+
+    @Override
+    public String getErrorState() {
+        return null;
+    }
+
+    @Override
+    public Rule clone() throws CloneNotSupportedException {
+        return null;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+import java.util.List;
+
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.rules.Rule;
+
+public class RuleUtil {
+	public static String getRuleIdentifier(Rule rule) {
+		return rule.toString() + (rule.getKey().getPort() == -1 ? "" : ":" + rule.getKey().getPort());
+	}
+
+	public static Rule findRuleByIdentifier(Router router, String name) throws Exception {
+		List<Rule> rules = router.getRuleManager().getRules();
+		for (Rule rule : rules) {
+			if ( name.equals(getRuleIdentifier(rule))) return rule;
+		}
+		return null;
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+static {
+		String version = "4"; // fallback
+		try {
+			Properties p = new Properties(); // Production
+			p.load(Constants.class.getResourceAsStream("/META-INF/maven/org.membrane-soa/service-proxy-core/pom.properties"));
+			version = p.getProperty("version");
+		} catch (Exception e) {
+			try {
+				Properties p = new Properties(); // Development
+				p.load(new FileInputStream("target/maven-archiver/pom.properties"));
+				version = p.getProperty("version") + " - DEVELOPMENT";
+			} catch (Exception e2) {
+			}
+		}
+		VERSION = version;
+	}
+--------------------------------------------------------------------------------------------------------
+<?xml version="1.0"?>
+<config>
+    <className>SubMealBuilderB</className>
+</config>
+
+import javax.xml.parsers.*;
+import org.w3c.dom.*;
+import org.xml.sax.SAXException;
+import java.io.*;
+public class XMLUtil
+{
+//该方法用于从XML配置文件中提取具体类类名，并返回一个实例对象
+	public static Object getBean()
+	{
+		try
+		{
+			//创建文档对象
+			DocumentBuilderFactory dFactory = DocumentBuilderFactory.newInstance();
+			DocumentBuilder builder = dFactory.newDocumentBuilder();
+			Document doc;							
+			doc = builder.parse(new File("config.xml")); 
+		
+			//获取包含类名的文本节点
+			NodeList nl = doc.getElementsByTagName("className");
+            Node classNode=nl.item(0).getFirstChild();
+            String cName=classNode.getNodeValue();
+            
+            //通过类名生成实例对象并将其返回
+            Class c=Class.forName(cName);
+	  	    Object obj=c.newInstance();
+            return obj;
+           }   
+           	catch(Exception e)
+           	{
+           		e.printStackTrace();
+           		return null;
+           	}
+		}
+}
+--------------------------------------------------------------------------------------------------------
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
