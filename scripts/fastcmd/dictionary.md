@@ -17588,6 +17588,455 @@ public class FakeRule implements Rule {
     }
 }
 --------------------------------------------------------------------------------------------------------
+class Fruit:
+    def __init__(self, item):
+        self.item = item
+
+
+class Fruits:
+    def __init__(self):
+        self.items = {}
+
+    def get_fruit(self, item):
+        if item not in self.items:
+            self.items[item] = Fruit(item)
+
+        return self.items[item]
+
+
+if __name__ == '__main__':
+    fruits = Fruits()
+    print(fruits.get_fruit('Apple'))
+    print(fruits.get_fruit('Lime'))
+--------------------------------------------------------------------------------------------------------
+var testModule = (function () {
+	
+	var counter = 0;
+
+	return {
+		incrementCounter: function () {
+			return counter++;
+		},
+
+		resetCounter: function () {
+			console.log( "counter value prior to reset: " + counter);
+			counter = 0;
+		}
+	};
+
+})();
+
+// Uso:
+
+// Incrementando nosso contador
+testModule.incrementCounter();
+
+// Checando o valor do contador e resetando
+// Saída: 1
+testModule.resetCounter();
+
+
+var myNamespace = (function () {
+	
+	var myPrivateVar, myPrivateMethod;
+
+	// Uma variável privada contadora
+	myPrivateVar = 0;
+
+	// Uma função privada que registra qualquer argumento
+	myPrivateMethod = function ( foo ) {
+		console.log( foo );	
+	};
+
+	return {
+
+		// Uma variável pública
+		myPublicVar: "foo",
+
+		// Uma função pública utilizando privadas
+		myPublicFunction: function ( bar ) {
+
+			// Incrementa nosso contador privado
+			myPrivateVar++;
+
+			// Chama nosso método privado usando bar
+			myPrivateMethod( bar );
+		}
+	};
+})();
+
+
+var basketModule = (function () {
+	
+	// privates
+
+	var basket = [];
+
+	function doSomethingPrivate () {
+		// ...
+	}
+
+	function doSomethingElsePrivate () {
+		// ...
+	}
+
+	// Retornando um objeto exposto ao público
+	return {
+
+		// Adiciona items ao nosso carrinho
+		addItem: function ( values ) {
+			basket.push( values );
+		},
+
+		// Pega o número de itens na cesta
+		getItemCount: function () {
+			return basket.length;
+		},
+
+		// Apelido público para uma função privada
+		doSomething: doSomethingPrivate,
+
+		// Pega o valor total dos itens na cesta
+		getTotal: function () {
+			var q = this.getItemCount(),
+				p = 0;
+
+			while ( q-- ) {
+				p += basket[q].price;
+			}
+
+			return p;
+		}
+	};
+})();
+
+var myModule = {
+	
+	myProperty: "someValue",
+
+	// objetos literais podem conter propriedades e métodos
+	// por exemplo: podemos definir um objeto adicional para o módulo de configuração:
+	myConfig: {
+		useCaching: true,
+		language: "en"
+	},
+
+	// um método bem básico
+	saySomething: function () {
+		console.log( "Where in the world is Paul Irish today?" );
+	},
+
+	// retornando um valor baseado na configuração atual
+	reportMyConfig: function () {
+		console.log( "Caching is: " + ( this.myConfig.useCaching ? "enabled" : "disabled" ) );
+	},
+
+	// sobrescrevendo a configuração atual
+	updateMyConfig: function ( newConfig ) {
+
+		if ( typeof newConfig === "object" ) {
+			this.myConfig = newConfig;
+			console.log( this.myConfig.language );
+		}
+	}
+};
+
+// Saída: Where in the world is Paul Irish today?
+myModule.saySomething();
+
+// Saída: Caching is: enabled
+myModule.reportMyConfig();
+
+// Saída: fr
+myModule.updateMyConfig({
+	language: "fr",
+	useCaching: false
+});
+
+// Saída: Caching is: disabled
+myModule.reporMyConfig();
+
+
+
+function Car ( model, year, miles ) {
+	
+	this.model = model;
+	this.year = year;
+	this.miles = miles;
+
+}
+
+
+// Note aqui que nós estamos usando 
+// Object.prototype.method em vez de
+// Object.prototype, de modo a evitar
+// a redefinição do objeto prototype
+Car.prototype.toString = function () {
+	return this.model + " has done " + this.miles + " miles";
+};
+
+// Uso
+var civic = new Car( "Honda Civic", 2009, 20000 );
+var mondeo = new Car( "Ford Mondeo", 2010, 5000 );
+
+console.log( civic.toString() );
+console.log( mondeo.toString() );
+
+
+
+
+// Cria um piloto de corrida de carro que herda do objeto person
+var driver = Object.create( person );
+
+// Configura algumas proprieadades para o piloto
+defineProp( driver, "topSpeed", "100mph" );
+
+// Pega uma propriedade heradada (1981)
+console.log( driver.dateOfBirth );
+
+// Pega a propriedade que nós configuramos (100mph)
+console.log( driver.topSpeed );
+
+
+
+// Abordagem compatível com ECMAScript 3
+
+// 1. Sintaxe de Ponto
+
+// Configura propriedades
+newObject.someKey = "Hello World";
+
+// Pega propriedade
+var value = newObject.someKey;
+
+
+// 2. Sintaxe de Colchete
+
+// Configura propriedade
+newObject["someKey"] = "Hello World";
+
+// Pega propriedade
+var value = newObject["someKey"];
+
+
+// Abordagens compatíveis somente com ECMAScript 5
+// Para mais informações veja: 
+// http://kangax.github.com/es5-compat-table/
+
+// 3. Object.defineProperty
+
+// Configura propriedades
+Object.defineProperty( newObject, "someKey", {
+	value: "para mais controle do comportamento das propriedades",
+	writable: true,
+	enumerable: true,
+	configurable: true
+});
+
+// Se o código acima parece um pouco difícil de ler, 
+// uma versão mais curta pode ser escrita assim:
+
+var defineProp = function ( obj, key, value ) {
+	var config = {
+		value: value,
+		writable: true,
+		enumerable: true,
+		configurable: true
+	};
+	Object.defineProperty( obj, key, config );
+};
+
+// Para usar, nós então criamos um novo objeto vazio "person"
+var person = Object.create( Object.prototype );
+
+// Populando, preenchendo o objeto com propriedades
+defineProp( person, "car", "Delorean" );
+defineProp( person, "dateOfBirth", "1981" );
+defineProp( person, "hasBeard", false );
+
+console.log(person);
+// Saída: Object {car: "Delorean", dateOfBirth: "1981", hasBeard: false}
+
+// 4. Object.defineProperties
+
+// Configura propriedades
+Object.defineProperties( newObject, {
+	"someKey": {
+		value: "Hello World",
+		writable: true
+	},
+
+	"anotherKey": {
+		value: "Foo bar",
+		writable: false
+	}
+});
+
+
+
+// Cada uma das opções seguintes irão criar um novo objeto vazio:
+
+var newObject = {};
+
+// ou
+var newObject = Object.create( Object.prototype );
+
+// ou
+var newObject = new Object();
+--------------------------------------------------------------------------------------------------------
+language: go
+go:
+  - 1.6.x
+  - 1.7.x
+  - 1.8.x
+  - 1.9.x
+  - master
+script:
+ - go test -v ./...
+--------------------------------------------------------------------------------------------------------
+/*
+ * 创建闭包环境
+ * 向闭包中传入模块管理对象F（~屏蔽压缩文件时，前面漏写；报错）
+ */
+~(function(F){
+	//模块缓存器 存储已创建模块
+	var moduleCache={}
+})
+((function(){
+	//创建模块管理器对象F，并保存在全局作用域中
+	return window.F={};
+})());
+/*
+ * 创建或调用模块方法
+ * @param 		url		参数为模块url
+ * @param  		deps 		参数为依赖模块
+ * @param		callback	参数为模块主函数
+ */
+F.module=function(url,modDeps,modCallback){
+	//将参数转化为数组
+	var args=[].slice.call(arguments),
+	//获取模块构造函数（参数数组中最后一个参数成员）
+	callback=args.pop(),
+	//获取依赖模块(紧邻回调函数参数，且数据类型为数组)
+	deps=(args.length&&args[args.length-1] instanceof Array)?args.pop():[],
+	url=args.length?args.pop():null,
+	params=[],
+	depsCount=0,
+	i=0,
+	len;
+	if(len==deps.length){
+		while(i<len){
+			//闭包保存i
+			(function(i){
+				depsCount++;
+				//异步加载依赖模块
+				loadModule(deps[i],function(mod){
+					params[i]=mod;
+					depsCount--;
+					//如果依赖模块全部加载
+					if (depsCount===0) {
+						//在模块缓存器中矫正该模块，并执行构造函数
+						setModule(url,params,callback);
+					}
+				});
+			})(i);
+			i++
+		}
+		//无依赖模块，直接执行回调函数
+	}else{
+		//在模块缓存器中矫正该模式，并执行构造函数
+		setModule(url,[],callback);
+	}
+}
+
+/*
+ * 异步加载依赖模块所在文件
+ * @param moduleName	模块路径（id）
+ * @param callback		模块加载完成回调函数
+ * 
+ */
+var moduleCache={},
+setModule=function(moduleName,params,callback){},
+loadModule=function(moduleName,callback){
+	var _module;
+	//如果该模块被加载过
+	if(moduleCache[moduleName]){
+		_module=moduleCache[moduleName];
+		if (_module.status==='loaded') {
+			setTimeout(callback(_module.exports),0);
+		}else{
+			//缓存该模块所处文件加载完成的回调函数
+			_module.onload.push(callback);
+		}
+	}
+	else{
+		moduleCache[moduleName]={
+			moduleName:moduleName,
+			status:'loading',
+			exports:null,
+			onload:[callback]
+		};
+		loadSript(getUrl(moduleName));
+	}
+},
+getUrl=function(){},
+loadSript=function(){};
+
+getUrl=function(moduleName){
+	return string(moduleName).replace(/\.js$/g,''+'.js');
+},
+//加载脚本文件
+loadScript=function(src){
+	var _script=document.createElement('script');
+	_script.type='text/javascript';
+	_script.charset='UTF-8';
+	_script.async=true;
+	_script.src=src;
+	document.getElementsByTagName('head')[0].appendChild(_script);
+};
+--------------------------------------------------------------------------------------------------------
+language: android
+
+jdk: oraclejdk8
+
+android:
+  components:
+    - tools
+    - platform-tools
+    - build-tools-25.0.2
+    - android-25
+    - extra-android-m2repository
+
+before_script:
+  - echo no | android create avd --force -n test -t android-18 --abi armeabi-v7a
+  - emulator -avd test -no-audio -no-window &
+  - android-wait-for-emulator
+  - adb shell input keyevent 82 &
+
+script:
+   - ./gradlew connectedAndroidTest coveralls
+--------------------------------------------------------------------------------------------------------
+import java.math.BigDecimal
+
+class SalaryCalculator(baseSalary: BigDecimal, bonuses: BigDecimal, overtime: BigDecimal) {
+
+    private val salaryData: SalaryData
+
+    val income: BigDecimal
+        get() = salaryData.basePay.add(salaryData.bonuses.add(salaryData.overtime))
+
+    init {
+        this.salaryData = SalaryData(baseSalary, bonuses, overtime)
+    }
+
+    internal inner class SalaryData(val basePay: BigDecimal, val bonuses: BigDecimal, val overtime: BigDecimal)
+}
+
+fun main(args: Array<String>) {
+    val salaryCalculator = SalaryCalculator(BigDecimal(1000), BigDecimal(100), BigDecimal(40))
+    println(salaryCalculator.income)
+}
+--------------------------------------------------------------------------------------------------------
 
 import java.util.List;
 
@@ -17607,6 +18056,26 @@ public class RuleUtil {
 		return null;
 	}
 
+}
+--------------------------------------------------------------------------------------------------------
+interface OnFinishListener {
+  fun onFinish()
+}
+
+fun runALongOperation(listener: OnFinishListener? = null) {
+  for (i in 1 until 100000000) {
+		
+	}
+    
+  listener?.onFinish()
+}
+
+fun main(args: Array<String>) {
+	runALongOperation(object: OnFinishListener{
+      override fun onFinish() {
+        println("Finish")   
+      }
+	})
 }
 --------------------------------------------------------------------------------------------------------
 static {
