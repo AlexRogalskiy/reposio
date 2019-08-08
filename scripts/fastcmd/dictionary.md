@@ -18369,6 +18369,38 @@ public class FactoryMethodComponent {
   }
 }
 --------------------------------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `articles` (
+  `article_id` int(5) NOT NULL AUTO_INCREMENT,
+  `title` varchar(200) NOT NULL,
+  `category` varchar(100) NOT NULL,
+  PRIMARY KEY (`article_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1;
+
+INSERT INTO `articles` (`article_id`, `title`, `category`) VALUES
+	(1, 'Spring REST Security', 'Spring'),
+	(2, 'Java Concurrency', 'Java'); 
+--------------------------------------------------------------------------------------------------------
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'war'
+war.archiveName 'spring-app.war'
+
+sourceCompatibility = 9
+
+repositories {
+    mavenCentral()
+}
+dependencies {
+    compile 'org.springframework.boot:spring-boot-starter-web:2.0.4.RELEASE'
+    compile 'org.springframework.boot:spring-boot-starter-data-jpa:2.0.4.RELEASE'    
+    compile 'org.springframework.boot:spring-boot-starter-data-redis:2.0.4.RELEASE'
+    compile 'mysql:mysql-connector-java:6.0.5'
+    compile 'org.apache.commons:commons-dbcp2:2.1.1'
+    compile 'javax.xml.bind:jaxb-api:2.3.0'
+    providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat:2.0.4.RELEASE'    
+} 
+--------------------------------------------------------------------------------------------------------
 @Component("fooFormatter")
 public class FooFormatter implements Formatter {
  
