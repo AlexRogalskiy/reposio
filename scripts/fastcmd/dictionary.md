@@ -17995,6 +17995,48 @@ loadScript=function(src){
 	document.getElementsByTagName('head')[0].appendChild(_script);
 };
 --------------------------------------------------------------------------------------------------------
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+
+public class InvokeBug {
+  static value class Value {
+    private final int value;
+    
+    public Value(int value) {
+      this.value = value;
+    }
+  }
+  
+  public static void method(Value value) {
+    // empty
+  }
+  
+  public static void main(String[] args) throws Throwable {
+    MethodHandle method = MethodHandles.lookup().findStatic(InvokeBug.class, "method", MethodType.methodType(void.class, Value.class));
+    method.invokeExact(new Value(42));
+  }
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.Objects;
+
+public final value class NullVT {
+  private final boolean value;
+  
+  private NullVT() {
+    value = false;
+    throw new AssertionError();
+  }
+
+  public static NullVT of() {
+    return __MakeDefault NullVT();
+  }
+  
+  public static void foo(NullVT vt) {
+    Objects.requireNonNull(vt);
+  }
+}
+--------------------------------------------------------------------------------------------------------
 language: android
 
 jdk: oraclejdk8
