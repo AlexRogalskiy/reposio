@@ -3777,6 +3777,12 @@ spring:
       - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
       - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
 --------------------------------------------------------------------------------------------------------
+ this.mockMvc.perform(get("/test"))
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.value", is("Hello!")));
+
+--------------------------------------------------------------------------------------------------------
 grep --basic-regexp "^.\{1,35\}$"
 echo "Hello" | grep --extended-regexp "^.{1,35}$"
 --------------------------------------------------------------------------------------------------------
@@ -18359,6 +18365,18 @@ public class RunSpecs {
             </executions>
         </plugin>
 --------------------------------------------------------------------------------------------------------
+RedisCluster.builder()
+                .sentinelPorts(redisSentinels) //btw, order counts here, if you set ports after setting replication groups
+                .serverPorts(redisHosts) //you will get different ports. Go figure
+                .withServerBuilder(new CustomClusterRedisServerBuilder().setting("maxmemory 128").setting("maxheap 128M")) //same goes for settings
+                .withSentinelBuilder(RedisSentinel.builder().setting("maxmemory 128").setting("maxheap 128M"))
+                .sentinelCount(3)
+                .quorumSize(2)
+                .replicationGroup("master1", 1)
+                .replicationGroup("master2", 1)
+                .replicationGroup("master3", 1)
+                .build()
+--------------------------------------------------------------------------------------------------------
 final String authorization = httpRequest.getHeader("Authorization");
 if (authorization != null && authorization.toLowerCase().startsWith("basic")) {
     // Authorization: Basic base64credentials
@@ -18368,6 +18386,10 @@ if (authorization != null && authorization.toLowerCase().startsWith("basic")) {
     // credentials = username:password
     final String[] values = credentials.split(":", 2);
 }
+--------------------------------------------------------------------------------------------------------
+Usage: ./redis-server [/path/to/redis.conf]
+       ./redis-server - (read config from stdin)
+       ./redis-server --test-memory <megabytes>
 --------------------------------------------------------------------------------------------------------
 mvn archetype:generate  \
     -D archetypeGroupId=org.apache.isis.archetype \
@@ -20560,6 +20582,358 @@ server:
   
 java -jar spring-boot-app.jar -Dserver.port=2020
 --------------------------------------------------------------------------------------------------------
+tLanguages_null_shouldReturnOk()Java
+@Test
+public void getLanguages_null_shouldReturnOk() throws Exception {
+  // Given
+  final Language mockedEsoteric = new Language("Arnoldc", "Lauri Hartikka");
+  final List<Language> mockedLanguages = Stream.concat(
+      LanguageRepository.LANGUAGES.stream(),
+      Stream.of(mockedEsoteric)).collect(Collectors.toList());
+  doReturn(mockedLanguages).when(languageService).getLanguages(null);
+
+  // When
+  final ResultActions result = mockMvc.perform(
+      get("/api/languages")
+          .accept(MimeTypeUtils.APPLICATION_JSON_VALUE));
+
+  // Then
+  result.andExpect(status().isOk());
+  result.andExpect(jsonPath("$.length()").value(mockedLanguages.size()));
+  result.andExpect(jsonPath("$[?(@.name === 'Arnoldc')]").exists());
+}
+
+@Test
+public void getLanguages_null_shouldReturnOk() throws Exception {
+  // Given
+  final Language mockedEsoteric = new Language("Arnoldc", "Lauri Hartikka");
+  final List<Language> mockedLanguages = Stream.concat(
+      LanguageRepository.LANGUAGES.stream(),
+      Stream.of(mockedEsoteric)).collect(Collectors.toList());
+  doReturn(mockedLanguages).when(languageService).getLanguages(null);
+ 
+  // When
+  final ResultActions result = mockMvc.perform(
+      get("/api/languages")
+          .accept(MimeTypeUtils.APPLICATION_JSON_VALUE));
+ 
+  // Then
+  result.andExpect(status().isOk());
+  result.andExpect(jsonPath("$.length()").value(mockedLanguages.size()));
+  result.andExpect(jsonPath("$[?(@.name === 'Arnoldc')]").exists());
+}
+--------------------------------------------------------------------------------------------------------
+@Autowired
+private MockMvc mvc;
+ 
+@Test
+public void getAllEmployeesAPI() throws Exception
+{
+  mvc.perform( MockMvcRequestBuilders
+      .get("/employees")
+      .accept(MediaType.APPLICATION_JSON))
+      .andDo(print())
+      .andExpect(status().isOk())
+      .andExpect(MockMvcResultMatchers.jsonPath("$.employees").exists())
+      .andExpect(MockMvcResultMatchers.jsonPath("$.employees[*].employeeId").isNotEmpty());
+}
+ 
+@Test
+public void getEmployeeByIdAPI() throws Exception
+{
+  mvc.perform( MockMvcRequestBuilders
+      .get("/employees/{id}", 1)
+      .accept(MediaType.APPLICATION_JSON))
+      .andDo(print())
+      .andExpect(status().isOk())
+      .andExpect(MockMvcResultMatchers.jsonPath("$.employeeId").value(1));
+}
+--------------------------------------------------------------------------------------------------------
+@EnableAutoConfiguration(
+        exclude = {
+                IntegrationAutoConfiguration.class,
+                RedisAutoConfiguration.class,
+                RedisRepositoriesAutoConfiguration.class,
+                MailSenderValidatorAutoConfiguration.class
+        }
+)
+--------------------------------------------------------------------------------------------------------
+@Test
+public void getLanguage_nonExistingLanguage_shouldReturnNotFound() throws Exception {
+  // Given
+  final String mockedLanguageName = "Arnoldc";
+  doReturn(Optional.empty()).when(languageService).getLanguage(mockedLanguageName);
+
+  // When
+  final ResultActions result = mockMvc.perform(
+      get("/api/languages/".concat(mockedLanguageName))
+          .accept(MimeTypeUtils.APPLICATION_JSON_VALUE));
+
+  // Then
+  result.andExpect(status().isNotFound());
+}
+
+@Test
+public void getLanguage_nonExistingLanguage_shouldReturnNotFound() throws Exception {
+  // Given
+  final String mockedLanguageName = "Arnoldc";
+  doReturn(Optional.empty()).when(languageService).getLanguage(mockedLanguageName);
+ 
+  // When
+  final ResultActions result = mockMvc.perform(
+      get("/api/languages/".concat(mockedLanguageName))
+          .accept(MimeTypeUtils.APPLICATION_JSON_VALUE));
+ 
+  // Then
+  result.andExpect(status().isNotFound());
+}
+--------------------------------------------------------------------------------------------------------
+@Test
+public void getLanguages_invalidAcceptHeader_shouldReturnNotAcceptable() throws Exception {
+  // Given
+  final String invalidAcceptMimeType = MimeTypeUtils.APPLICATION_XML_VALUE;
+  doReturn(LanguageRepository.LANGUAGES).when(languageService).getLanguages(null);
+ 
+  // When
+  final ResultActions result = mockMvc.perform(
+      get("/api/languages")
+          .accept(invalidAcceptMimeType));
+ 
+  // Then
+  result.andExpect(status().isNotAcceptable());
+}
+--------------------------------------------------------------------------------------------------------
+guageApiControllerApplicationIntegrationTest.javaJava
+@RunWith(SpringJUnit4ClassRunner.class)
+@WebAppConfiguration
+@ContextConfiguration(classes = {
+    SpringMockMvcConfiguration.class
+})
+public class LanguageApiControllerApplicationIntegrationTest {
+
+  @Autowired
+  private WebApplicationContext webApplicationContext;
+
+  private MockMvc mockMvc;
+
+  @Before
+  public void setUp() {
+    mockMvc = MockMvcBuilders
+        .webAppContextSetup(webApplicationContext)
+        .build();
+  }
+/*...*/
+  @Test
+  public void getLanguages_null_shouldReturnOk() throws Exception {
+    // Given
+    // Real application context
+
+    // When
+    final ResultActions result = mockMvc.perform(
+        get("/api/languages")
+            .accept(MimeTypeUtils.APPLICATION_JSON_VALUE));
+
+    // Then
+    final int expectedSize = LANGUAGES.size();
+    final String[] expectedLanguageNames = LANGUAGES.stream().map(Language::getName)
+        .collect(Collectors.toList()).toArray(new String[LANGUAGES.size()]);
+    result.andExpect(status().isOk());
+    result.andExpect(jsonPath("$.length()").value(expectedSize));
+    result.andExpect(jsonPath("$[*].name", containsInAnyOrder(expectedLanguageNames)));
+  }
+
+}
+
+guageApiControllerTest.javaJava
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(classes = {
+    LanguageApiController.class
+})
+@Import(Config.class)
+public class LanguageApiControllerTest {
+
+  @Autowired
+  private LanguageService languageService;
+
+  @Autowired
+  private LanguageApiController languageApiController;
+
+  private MockMvc mockMvc;
+
+  @Before
+  public void setUp() {
+    mockMvc = MockMvcBuilders
+        .standaloneSetup(languageApiController)
+        .build();
+  }
+
+/* ... */
+
+  @TestConfiguration
+  protected static class Config {
+
+    @Bean
+    public LanguageService languageService() {
+      return Mockito.mock(LanguageService.class);
+    }
+
+  }
+
+}
+
+
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(classes = {
+    LanguageApiController.class
+})
+@Import(Config.class)
+public class LanguageApiControllerTest {
+ 
+  @Autowired
+  private LanguageService languageService;
+ 
+  @Autowired
+  private LanguageApiController languageApiController;
+ 
+  private MockMvc mockMvc;
+ 
+  @Before
+  public void setUp() {
+    mockMvc = MockMvcBuilders
+        .standaloneSetup(languageApiController)
+        .build();
+  }
+ 
+/* ... */
+ 
+  @TestConfiguration
+  protected static class Config {
+ 
+    @Bean
+    public LanguageService languageService() {
+      return Mockito.mock(LanguageService.class);
+    }
+ 
+  }
+ 
+}
+
+
+@RunWith(SpringJUnit4ClassRunner.class)
+@WebAppConfiguration
+@ContextConfiguration(classes = {
+    SpringMockMvcConfiguration.class
+})
+public class LanguageApiControllerApplicationIntegrationTest {
+ 
+  @Autowired
+  private WebApplicationContext webApplicationContext;
+ 
+  private MockMvc mockMvc;
+ 
+  @Before
+  public void setUp() {
+    mockMvc = MockMvcBuilders
+        .webAppContextSetup(webApplicationContext)
+        .build();
+  }
+/*...*/
+  @Test
+  public void getLanguages_null_shouldReturnOk() throws Exception {
+    // Given
+    // Real application context
+ 
+    // When
+    final ResultActions result = mockMvc.perform(
+        get("/api/languages")
+            .accept(MimeTypeUtils.APPLICATION_JSON_VALUE));
+ 
+    // Then
+    final int expectedSize = LANGUAGES.size();
+    final String[] expectedLanguageNames = LANGUAGES.stream().map(Language::getName)
+        .collect(Collectors.toList()).toArray(new String[LANGUAGES.size()]);
+    result.andExpect(status().isOk());
+    result.andExpect(jsonPath("$.length()").value(expectedSize));
+    result.andExpect(jsonPath("$[*].name", containsInAnyOrder(expectedLanguageNames)));
+  }
+ 
+}
+
+@RunWith(SpringRunner.class)
+@WebMvcTest(controllers = LanguageApiController.class)
+public class LanguageApiControllerWebMvcTest {
+ 
+  @Autowired
+  private MockMvc mockMvc;
+ 
+  @Test
+  public void getLanguages_null_shouldReturnOk() throws Exception {
+    // Given
+    // Real application context
+ 
+    // When
+    final ResultActions result = mockMvc.perform(
+        get("/api/languages")
+            .accept(MimeTypeUtils.APPLICATION_JSON_VALUE));
+ 
+    // Then
+    final int expectedSize = LANGUAGES.size();
+    final String[] expectedLanguageNames = LANGUAGES.stream().map(Language::getName)
+        .collect(Collectors.toList()).toArray(new String[LANGUAGES.size()]);
+    result.andExpect(status().isOk());
+    result.andExpect(jsonPath("$.length()").value(expectedSize));
+    result.andExpect(jsonPath("$[*].name", containsInAnyOrder(expectedLanguageNames)));
+  }
+}
+--------------------------------------------------------------------------------------------------------
+  public void getLanguages_null_shouldReturnListOfStrings() throws Exception {
+    // Given
+    final String mockedEsoteric = "Arnoldc";
+    final List<String> mockedLanguages = Stream.concat(
+        LanguageRepository.LANGUAGES.stream(),
+        Stream.of(mockedEsoteric)).collect(Collectors.toList());
+    doReturn(mockedLanguages).when(languageService).getLanguages(null);
+ 
+    // When
+    final ResponseEntity<List<String>> result = languageApiController.getLanguages(null);
+ 
+    // Then
+    assertThat(result.getBody(), hasSize(mockedLanguages.size()));
+    assertThat(result.getBody(), hasItem(mockedEsoteric));
+  }
+}
+--------------------------------------------------------------------------------------------------------
+@Controller
+@RequestMapping(value = "/api", produces = MimeTypeUtils.APPLICATION_JSON_VALUE)
+public class LanguageApiController {
+ 
+  private final LanguageService languageService;
+ 
+  @Autowired
+  public LanguageApiController(
+      LanguageService languageService) {
+    this.languageService = languageService;
+  }
+ 
+  @RequestMapping(value = "/languages", method = GET)
+  public ResponseEntity<List<Language>> getLanguages(@RequestParam(value = "contains", required = false) String contains) {
+    return ResponseEntity.ok(languageService.getLanguages(contains));
+  }
+ 
+  @RequestMapping(value = "/languages/{name}", method = GET)
+  public ResponseEntity<Language> getLanguage(@PathVariable("name") String name) {
+    return ResponseEntity.ok(languageService.getLanguage(name).orElseThrow(() -> new SpringMockMvcException(
+        HttpStatus.NOT_FOUND, "Language was not found")));
+  }
+ 
+  @ExceptionHandler(SpringMockMvcException.class)
+  public ResponseEntity<String> onSpringMockMvcException(HttpServletRequest request, SpringMockMvcException ex) {
+    return ResponseEntity.status(ex.getHttpStatus()).body(String.format("%s - %s",
+        ex.getHttpStatus().value(), ex.getMessage()));
+  }
+ 
+}
+--------------------------------------------------------------------------------------------------------
 Map<String, Integer> map = Stream.of(
   new AbstractMap.SimpleEntry<>("idea", 1), 
   new AbstractMap.SimpleEntry<>("mobile", 2))
@@ -20571,6 +20945,53 @@ Map<String, String> map = Stream.of(new String[][] {
 }).collect(Collectors.collectingAndThen(
     Collectors.toMap(data -> data[0], data -> data[1]), 
     Collections::<String, String> unmodifiableMap));
+--------------------------------------------------------------------------------------------------------
+MvcResult mvcResult = super.mockMvc.perform(get("url").accept(MediaType.APPLICATION_JSON).headers(basicAuthHeaders()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id", is(6))).andReturn();
+
+String response = mvcResult.getResponse().getContentAsString();
+Integer id = JsonPath.parse(response).read("$[0].id");
+--------------------------------------------------------------------------------------------------------
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup;
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes={ Application.class })
+public class AccountControllerTest {
+  private MockMvc mockMvc;
+  @Autowired
+  private WebApplicationContext webApplicationContext;
+  @MockBean 
+  private AccountService accountServiceMock;
+  @Before
+  public void setUp() {
+    this.mockMvc = webAppContextSetup(webApplicationContext).build();
+  }
+--------------------------------------------------------------------------------------------------------
+mockMvc.perform(get("/api/users/" + id))
+    .andExpect(status().isOk())
+    .andExpect(content().string(org.hamcrest.Matchers.containsString("{\"id\":\"" + id + "\"}"))); 
+--------------------------------------------------------------------------------------------------------
+        //when
+        final MvcResult result = this.mockMvc.perform(
+                MockMvcRequestBuilders.post(uriTemplate)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asString(ticketRequest))
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                .andReturn();
+
+        final String response = result.getResponse().getContentAsString();
+        //final Integer id = JsonPath.parse(response).read("$.id");
 --------------------------------------------------------------------------------------------------------
 @Autowired
 private WebApplicationContext wac;
