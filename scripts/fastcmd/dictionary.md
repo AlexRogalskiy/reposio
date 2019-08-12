@@ -18001,6 +18001,672 @@ loadScript=function(src){
 	document.getElementsByTagName('head')[0].appendChild(_script);
 };
 --------------------------------------------------------------------------------------------------------
+	@Bean
+	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+	@ConditionalOnMissingBean(Validator.class)
+	public static LocalValidatorFactoryBean defaultValidator() {
+		LocalValidatorFactoryBean factoryBean = new LocalValidatorFactoryBean();
+		MessageInterpolatorFactory interpolatorFactory = new MessageInterpolatorFactory();
+		factoryBean.setMessageInterpolator(interpolatorFactory.getObject());
+		return factoryBean;
+	}
+--------------------------------------------------------------------------------------------------------
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>demo-test</groupId>
+	<artifactId>demo-test</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	
+	<properties>
+		<downloadSources>true</downloadSources>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+                 <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+                 <java.version>1.8</java.version>
+		
+		<version.spring.boot>2.1.3.RELEASE</version.spring.boot>
+		<version.spring.cloud.starter>2.1.1.RELEASE</version.spring.cloud.starter>
+		<version.junit>4.12</version.junit>
+	</properties>
+
+	<dependencies>
+			<!-- ***** spring boot begin -->
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-starter</artifactId>
+				<version>${version.spring.boot}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-starter-web</artifactId>
+				<version>${version.spring.boot}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-starter-actuator</artifactId>
+				<version>${version.spring.boot}</version>
+			</dependency>
+			<!-- ##### spring boot end -->
+			
+			<!-- ***** spring cloud begin -->
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-starter</artifactId>
+				<version>${version.spring.cloud.starter}</version>
+			</dependency>
+			<!-- -->
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-starter-bus-amqp</artifactId>
+				<version>${version.spring.cloud.starter}</version>
+			</dependency> 
+			
+			<!-- ##### spring cloud end -->
+			
+			<dependency>
+				<groupId>junit</groupId>
+    			<artifactId>junit</artifactId>
+				<scope>test</scope>
+				<version>${version.junit}</version>
+			</dependency>
+		</dependencies>
+	
+</project>
+--------------------------------------------------------------------------------------------------------
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+// Computes the prefix-suffix array.
+vector<int> ComputePrefixFunction(string pattern){
+    int m = pattern.length();
+    vector<int> prefixArr(m);
+    prefixArr[0] = 0;
+    int k = 0;
+
+    for(int i=1; i<m; ++i){
+        while(k > 0 && pattern[k] != pattern[i]){
+            k = prefixArr[k];
+        }
+        if(pattern[k] == pattern[i]){
+            k++;
+        }
+        prefixArr[i] = k;
+    }
+    
+    return prefixArr;
+}
+
+// Returns a vector of indicies where there is a pattern match.
+vector<int> KMP(string text, string pattern){
+    int n = text.length();
+    int m = pattern.length();
+    vector<int> prefixArr = ComputePrefixFunction(pattern);
+    int q = 0;
+
+    vector<int> results;
+
+    for (int i = 0; i < n; ++i){
+        while(q > 0 && pattern[q] != text[i]){
+            q = prefixArr[q];
+        }
+        if(pattern[q] == text[i]){
+            q++;
+        }
+        if(q == m){
+            results.push_back(i-m);
+            q = prefixArr[q];
+        }
+    }
+    
+    return results;
+}
+
+int main(){
+    string example1 = "bacbababaabacabababaabaca";
+    string pattern1 = "abaabaca";
+
+    vector<int> result = KMP(example1, pattern1);
+    vector<int>::iterator itt;
+    cout << "Matches at the following indicies..." << endl;
+    for(itt = result.begin(); itt != result.end(); ++itt){
+        cout << *itt << endl;
+    }
+    return 0;
+}
+--------------------------------------------------------------------------------------------------------
+// C++ implementation of Radix Sort 
+#include<iostream> 
+using namespace std; 
+  
+// A utility function to get maximum value in arr[] 
+int getMax(int arr[], int n) 
+{ 
+    int mx = arr[0]; 
+    for (int i = 1; i < n; i++) 
+        if (arr[i] > mx) 
+            mx = arr[i]; 
+    return mx; 
+} 
+  
+// A function to do counting sort of arr[] according to 
+// the digit represented by exp. 
+void countSort(int arr[], int n, int exp) 
+{ 
+    int output[n]; // output array 
+    int i, count[10] = {0}; 
+  
+    // Store count of occurrences in count[] 
+    for (i = 0; i < n; i++) 
+        count[ (arr[i]/exp)%10 ]++; 
+  
+    // Change count[i] so that count[i] now contains actual 
+    //  position of this digit in output[] 
+    for (i = 1; i < 10; i++) 
+        count[i] += count[i - 1]; 
+  
+    // Build the output array 
+    for (i = n - 1; i >= 0; i--) 
+    { 
+        output[count[ (arr[i]/exp)%10 ] - 1] = arr[i]; 
+        count[ (arr[i]/exp)%10 ]--; 
+    } 
+  
+    // Copy the output array to arr[], so that arr[] now 
+    // contains sorted numbers according to current digit 
+    for (i = 0; i < n; i++) 
+        arr[i] = output[i]; 
+} 
+  
+// The main function to that sorts arr[] of size n using  
+// Radix Sort 
+void radixsort(int arr[], int n) 
+{ 
+    // Find the maximum number to know number of digits 
+    int m = getMax(arr, n); 
+  
+    // Do counting sort for every digit. Note that instead 
+    // of passing digit number, exp is passed. exp is 10^i 
+    // where i is current digit number 
+    for (int exp = 1; m/exp > 0; exp *= 10) 
+        countSort(arr, n, exp); 
+} 
+  
+// A utility function to print an array 
+void print(int arr[], int n) 
+{ 
+    for (int i = 0; i < n; i++) 
+        cout << arr[i] << " "; 
+} 
+  
+// Driver program to test above functions 
+int main() 
+{ 
+    int arr[] = {170, 45, 75, 90, 802, 24, 2, 66}; 
+    int n = sizeof(arr)/sizeof(arr[0]); 
+    radixsort(arr, n); 
+    print(arr, n); 
+    return 0; 
+} 
+-------------------------------------------------------------------------------------------------------
+#!/bin/bash
+
+docker container exec -i $(docker-compose ps -q mysql) mysql -uroot -pchangeme project < ../docker/mysql/oauth.sql
+
+#!/bin/bash
+
+# Delete all containers
+docker rm $(docker ps -a -q)
+# Delete all images
+docker rmi $(docker images -q)
+
+CREATE DATABASE IF NOT EXISTS `project` CHARACTER SET utf8 COLLATE utf8_general_ci;
+GRANT ALL ON project.* TO 'db_user'@'%';
+FLUSH PRIVILEGES;
+
+heroku logs -tail -a mass-follower1
+heroku restart -a mass-follower1
+git push heroku master
+--------------------------------------------------------------------------------------------------------
+sudo npm install -g --unsafe-perm node-red
+snap install node-red
+sudo npm install -g --unsafe-perm node-red
+
+bash <(curl -sL https://raw.githubusercontent.com/node-red/raspbian-deb-package/master/resources/update-nodejs-and-nodered)
+sudo apt-get install build-essential
+node-red-pi --max-old-space-size=256
+sudo systemctl enable nodered.service
+sudo systemctl disable nodered.service
+If you are using the browser on the Pi desktop, you can open the address: http://localhost:1880.
+--------------------------------------------------------------------------------------------------------
+FROM java:8
+VOLUME /tmp
+ADD slackbot-0.0.1-SNAPSHOT.jar app.jar
+RUN bash -c 'touch /app.jar'
+EXPOSE 9119
+ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar"]
+--------------------------------------------------------------------------------------------------------
+import com.ruubel.model.Bank
+import com.ruubel.model.BankInformation
+import com.ruubel.service.factory.ScraperFactoryService
+import com.ruubel.service.observer.BankInformationPublisherService
+import com.ruubel.service.strategy.BankScraperStrategy
+import spock.lang.Specification
+
+class BankServiceSpec extends Specification {
+
+    BankService service
+    BankInformationPublisherService bankInformationPublisherService
+    ScraperFactoryService scraperFactoryService
+
+    def setup() {
+        bankInformationPublisherService = Mock(BankInformationPublisherService)
+        scraperFactoryService = Mock(ScraperFactoryService)
+        service = new BankService(bankInformationPublisherService, scraperFactoryService)
+    }
+
+    def "when empty list of strategies is defined, then scrapes none, publishes and returns empty list" () {
+        when:
+            List<BankInformation> contacts = service.getContacts()
+        then:
+            1 * service.scraperFactoryService.getStrategies() >> []
+            1 * bankInformationPublisherService.publish([])
+            contacts == []
+    }
+
+    def "when strategy is defined, then scrapes it, publishes and returns on element list" () {
+        given:
+            BankScraperStrategy scraper = Mock(BankScraperStrategy)
+            BankInformation scrapeResult = new BankInformation(Bank.SEB, "12345")
+        when:
+            List<BankInformation> contacts = service.getContacts()
+        then:
+            1 * scraperFactoryService.getStrategies() >> [scraper]
+            1 * scraper.scrape() >> scrapeResult
+            1 * bankInformationPublisherService.publish([scrapeResult])
+            contacts == [scrapeResult]
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+
+import java.io.IOException;
+
+/**
+ * A wrapper service for testing purposes
+ */
+public class HttpFetchService {
+
+    public Document get(String url) throws IOException {
+        return Jsoup.connect(url).get();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+	@Override
+	public BankInformation scrape() {
+		String number = "FAILED";
+		try {
+			Document doc = httpFetchService.get(bankUrl);
+
+			Elements content = doc.select(".field-type-text-with-summary");
+			Elements tables = content.get(0).select("table");
+			Elements tds = tables.get(0).select("td");
+			number = tds.get(3).text();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return new BankInformation(Bank.SEB, number);
+	}
+--------------------------------------------------------------------------------------------------------
+    public void sort(int[] arr)
+    {
+        int size=arr.length; 
+        for (int i=1;i<size;i++) // starting from index no 1 because it assumes first index as sorted
+        {
+            int t=i-1;
+            int temp=arr[i];
+            for (;t>=0&&arr[t]>temp;t--) 
+                {
+                    arr[t+1]=arr[t];
+                }
+            arr[t+1]=temp;
+        }
+    }
+--------------------------------------------------------------------------------------------------------
+PRAGMA foreign_keys = "1";
+SELECT type,name,sql,tbl_name,'0' AS temp FROM sqlite_master UNION SELECT type,name,sql,tbl_name,'1' AS temp FROM sqlite_temp_master;
+PRAGMA encoding
+SELECT COUNT(*) FROM (SELECT `_rowid_`,* FROM `android_metadata` ORDER BY `_rowid_` ASC);
+SELECT `_rowid_`,* FROM `android_metadata` ORDER BY `_rowid_` ASC LIMIT 0, 50000;
+SELECT COUNT(*) FROM (SELECT `_rowid_`,* FROM `android_metadata` ORDER BY `_rowid_` ASC);
+SELECT `_rowid_`,* FROM `android_metadata` ORDER BY `_rowid_` ASC LIMIT 0, 50000;
+SELECT COUNT(*) FROM (SELECT `_rowid_`,* FROM `android_metadata` ORDER BY `_rowid_` ASC);
+SELECT `_rowid_`,* FROM `android_metadata` ORDER BY `_rowid_` ASC LIMIT 0, 50000;
+--------------------------------------------------------------------------------------------------------
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Properties;
+
+public class LoggerUtils {
+
+    static {
+        configuration();
+    }
+
+    private static void configuration() {
+        Properties props = new Properties();
+        try {
+            props.load(
+                new BufferedReader(
+                    new InputStreamReader(
+                        LoggerUtils.class.getResourceAsStream("/log4jstructuraldp.properties")
+                    )
+                )
+            );
+        } catch (IOException e) {
+            System.out.println("log4jstructuraldp.properties file not configured properly");
+            System.exit(0);
+        }
+        PropertyConfigurator.configure(props);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+keytool -genkey -alias tomcat -keyalg RSA -storepass changeit -keypass changeit -dname 'CN=tomcat'
+
+<Connector port="8080" protocol="HTTP/1.1"
+   connectionTimeout="20000"
+   redirectPort="8443" />
+ 
+<Connector port="8443" protocol="org.apache.coyote.http11.Http11NioProtocol"
+   maxThreads="150" SSLEnabled="true" scheme="https" secure="true"
+   clientAuth="false" sslProtocol="TLS"
+   keystoreFile="${user.home}/.keystore" keystorePass="changeit" />
+   
+http.requiresChannel()
+  .anyRequest().requiresInsecure();
+--------------------------------------------------------------------------------------------------------
+<pluginGroup>org.sonatype.plugins</pluginGroup>
+
+mvn nexus-staging:rc-list
+mvn nexus-staging:rc-close -DserverId=nexus -
+DnexusUrl=http://localhost:8081/nexus
+
+mvn nexus-staging:rc-promote -DserverId=local-nexus -DnexusUrl=http://localhost:8081/nexus -DbuildPromotionProfileId=foo -DstagingRepositoryId=repo1,repo2 -DstagingDescription="The reason I promote these is..."
+mvn nexus-staging:rc-release -DserverId=local-nexus -DnexusUrl=http://localhost:8081/nexus -DstagingRepositoryId=repo1,repo2 -DstagingDescription="The reason I release these is..."
+mvn nexus-staging:rc-drop -DserverId=local-nexus -DnexusUrl=http://localhost:8081/nexus -DstagingRepositoryId=repo1,repo2 -DstagingDescription="The reason I drop these is..."
+mvn nexus-staging:rc-close -DserverId=local-nexus -DnexusUrl=http://localhost:8081/nexus -DstagingRepositoryId=repo1,repo2 -DstagingDescription="The reason I close these is..."
+--------------------------------------------------------------------------------------------------------
+@RequestMapping(method = RequestMethod.GET, value = "/report")
+	public List<Employee> EmployeeReport() throws ServletException, IOException {
+		// Lets say this method gets all EmployeeDetails First
+		System.out.println("Starting");
+		List<Employee> empList = new EmployeeService().getEmployees();
+
+		Runnable myrunLambda = () -> {
+			// Say there is a ReportUtil which takes the list data, does some calculations
+			// and dumps the report at a specific location
+			String reportPath = ReportUtil.generateReport();
+			// Finally say we have an email service which picks the report and send to
+			// admin.
+			EmailUtil.sendReport(reportPath);
+
+		};
+		new Thread(myrunLambda).start();
+		System.out.println("Ending");
+		// Finally return the employee's count
+		return null;
+	}
+--------------------------------------------------------------------------------------------------------
+skipNexusStagingDeployMojo
+
+<settings>
+  <mirrors>
+    <mirror>
+      <!--This sends everything else to /public -->
+      <id>nexus</id>
+      <mirrorOf>*</mirrorOf>
+      <url>http://localhost:8081/nexus/content/groups/public</url>
+    </mirror>
+  </mirrors>
+  <profiles>
+    <profile>
+      <id>nexus</id>
+      <!--Enable snapshots for the built in central repo to direct -->
+      <!--all requests to nexus via the mirror -->
+      <repositories>
+        <repository>
+          <id>central</id>
+          <url>http://central</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>true</enabled></snapshots>
+        </repository>
+      </repositories>
+     <pluginRepositories>
+        <pluginRepository>
+          <id>central</id>
+          <url>http://central</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>true</enabled></snapshots>
+        </pluginRepository>
+      </pluginRepositories>
+    </profile>
+  </profiles>
+  <activeProfiles>
+    <!--make the profile active all the time -->
+    <activeProfile>nexus</activeProfile>
+  </activeProfiles>
+</settings>
+--------------------------------------------------------------------------------------------------------
+import android.content.Context;
+import android.support.test.InstrumentationRegistry;
+import android.support.test.runner.AndroidJUnit4;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import static org.junit.Assert.*;
+
+/**
+ * Instrumentation test, which will execute on an Android device.
+ *
+ * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
+ */
+@RunWith(AndroidJUnit4.class)
+public class ExampleInstrumentedTest {
+    @Test
+    public void useAppContext() throws Exception {
+        // Context of the app under test.
+        Context appContext = InstrumentationRegistry.getTargetContext();
+
+        assertEquals("com.gohool.trymeoriginal.trymeoriginal", appContext.getPackageName());
+    }
+}
+--------------------------------------------------------------------------------------------------------
+#lang racket
+;;insertion sort implementation
+(define (sort lon)
+  (cond [(empty? lon) lon]
+        [else (insert (first lon) (sort (rest lon)))]))
+
+(define (insert n lon)
+  (cond [(empty? lon) (cons n lon)]
+        [else
+         (if (> n (first lon))
+             (cons (first lon) (insert n (rest lon)))
+             (cons n lon))]))
+--------------------------------------------------------------------------------------------------------
+spring.activemq.broker-url=tcp://172.17.42.1:61616
+--------------------------------------------------------------------------------------------------------
+#!/bin/bash
+
+intro() {
+    echo "Thank you for forking CodeZila"
+    echo "Please input any names without any special characters"
+    echo "For example: 'Insertion Sort' or 'Linked Lists'"
+    read -p "What is the name of the algorithm or design you want to implement? " algorithm
+    checkInput "$algorithm"    
+    pickLanguague "$algorithm"
+    printTree "$algorithm" "$language"
+    checkDir "$algorithm"
+}
+
+# Checks the input to see if it does not have illegal characters
+checkInput() {
+    # $1 is the string being checked
+    if [[ "$1" == *['!'@\$%^\&*()_+]* ]]
+    then
+      echo "Illegal character used"
+      exit
+    fi
+}
+
+# Asks the user that language they would like to use
+pickLanguague() {
+    echo "Select the language you want to implement "$1" in?"
+    echo "1)  C++"
+    echo "2)  C"
+    echo "3)  C#"
+    echo "4)  Java"
+    echo "5)  JavaScript"
+    echo "6)  GoLang"
+    echo "7)  Python"
+    echo "8)  Ruby"
+    echo "9)  Other"
+    read n
+    case $n in 
+        1) language='C++';;
+        2) language='C';;
+        3) language='C#';;
+        4) language='Java';;
+        5) language='JavaScript';;
+        6) language='GoLang';;
+        7) language='Python';;
+        8) language='Ruby';;
+        9) inputLanguage "$1";;
+        *) echo "Error" ; exit;;
+    esac
+
+    createDir "$1" "$language"
+}
+
+inputLanguage() {
+    read -p "What language do you want to implement '$1' in? " lang
+    checkInput "$lang"
+    createDir "$1" "$lang"
+    printTree "$1" "$lang"
+    checkDir
+    exit
+}
+
+# Shows the user the created file structure
+printTree() {
+    echo "$1"
+    echo "├── readme.md"
+    echo "└── $2"
+}
+
+# Creates the file structure
+createDir() {
+    if [ ! -d "$1" ]
+    then
+        mkdir "$1"
+    fi
+
+    if [ ! -d "$1/$2" ]
+    then
+        mkdir "$1"/$2
+    fi
+    createReadme "$1" "$2"
+}
+
+createReadme() {
+    if [ -e "$1"/"$2"/readme.md ]
+    then
+        echo "readme file already exists for '$1/$2'"
+    else
+        read -p "Do you want to create a Readme (y/n)? " response
+        case "$response" in
+            y|Y ) echo "# $1 implemented in $2" > "$1"/"$2"/readme.md;;
+            n|N ) ;;
+            * ) echo "Readme not created" ;;
+        esac
+    fi
+}
+
+# Asks the user if they want to keep the files
+checkDir() {
+    read -p "Is the file structure above correct? (y/n)? " choice
+        case "$choice" in 
+        y|Y ) echo "Enjoy Coding!";;
+        n|N ) echo "Files Deleted"; rm -rf $1 ;;
+        * ) echo "invalid - Files not deleted";;
+    esac
+}
+
+intro
+--------------------------------------------------------------------------------------------------------
+
+import java.util.Iterator;
+  
+public class DinerMenuIterator implements Iterator {
+	MenuItem[] list;
+	int position = 0;
+ 
+	public DinerMenuIterator(MenuItem[] list) {
+		this.list = list;
+	}
+ 
+	public Object next() {
+		MenuItem menuItem = list[position];
+		position = position + 1;
+		return menuItem;
+	}
+ 
+	public boolean hasNext() {
+		if (position >= list.length || list[position] == null) {
+			return false;
+		} else {
+			return true;
+		}
+	}
+  
+	public void remove() {
+		if (position <= 0) {
+			throw new IllegalStateException
+				("You can't remove an item until you've done at least one next()");
+		}
+		if (list[position-1] != null) {
+			for (int i = position-1; i < (list.length-1); i++) {
+				list[i] = list[i+1];
+			}
+			list[list.length-1] = null;
+		}
+	}
+}
+--------------------------------------------------------------------------------------------------------
+Markdown Presentations For Everyone on GitHub, GitLab, Bitbucket, GitBucket, Gitea, and Gogs.
+$ docker build -t="hello-world-java" .
+$ docker run -p 8080:8080 -it --rm hello-world-java
+$ docker inspect --format '{{ .NetworkSettings.IPAddress }}' [ContainerId]
+--------------------------------------------------------------------------------------------------------
+```ruby
+require 'redcarpet'
+markdown = Redcarpet.new("Hello World!")
+puts markdown.to_html
+```
+
+.of("security.oauth2.client.clientId:myclientid",
+          "security.oauth2.client.clientSecret:mysecret",
+          "security.oauth2.client.autoApproveScopes:read,write",
+          "security.oauth2.client.accessTokenValiditySeconds:40",
+          "security.oauth2.client.refreshTokenValiditySeconds:80")
+--------------------------------------------------------------------------------------------------------
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
