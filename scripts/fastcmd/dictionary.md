@@ -18243,6 +18243,18 @@ sudo systemctl enable nodered.service
 sudo systemctl disable nodered.service
 If you are using the browser on the Pi desktop, you can open the address: http://localhost:1880.
 --------------------------------------------------------------------------------------------------------
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("from", from)
+                    .add("to", to)
+                    .add("cc", cc)
+                    .add("subject", subject)
+                    .add("body", body)
+                    .omitNullValues()
+                    .toString();
+        }
+--------------------------------------------------------------------------------------------------------
 FROM java:8
 VOLUME /tmp
 ADD slackbot-0.0.1-SNAPSHOT.jar app.jar
