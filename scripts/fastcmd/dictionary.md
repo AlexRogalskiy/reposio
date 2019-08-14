@@ -18255,6 +18255,490 @@ If you are using the browser on the Pi desktop, you can open the address: http:/
                     .toString();
         }
 --------------------------------------------------------------------------------------------------------
+@Controller
+public class CandidateMenuController extends AbstractController{
+
+
+
+    @RequestMapping("/goToCandidateMenu")
+    public String goToCandidateMenu() {
+        return "candidateMenu";
+    }
+
+    @RequestMapping("/getAllCandidates")
+    public String getAllCandidates(Model model) {
+        model.addAttribute("candidates", candidateService.getAll());
+        return "candidates";
+    }
+
+    @RequestMapping("/findById")
+    public String findById(Model model, @RequestParam Integer id) {
+        model.addAttribute("candidate", candidateService.findById(id));
+        return "singleCandidate";
+    }
+
+    @RequestMapping("/loadCandidateById")
+    public String loadCandidateById(Model model, @RequestParam Integer id, @RequestParam(required=false) String message) {
+        model.addAttribute("candidate", candidateService.findById(id));
+        model.addAttribute("vacancies",vacancyService.getAll());
+        model.addAttribute("message",message);
+        return "candidateDetails";
+    }
+
+    @ModelAttribute(value = "vacancies")
+    public List<Vacancy> loadVacancies() {
+        return vacancyService.getAll();
+    }
+    @ModelAttribute(value = "candidateFromRequest")
+    public Candidate loadCandidateById(@RequestParam(required = false) Integer candidateId) {
+        if (candidateId!= null)
+            return candidateService.findById(candidateId);
+        return null;
+    }
+
+
+    @ModelAttribute(value = "vacanciesForCandidate")
+    public Set<Vacancy> vacanciesForCandidate(@RequestParam(required = false) List<Integer> vacanciesSelected,@ModelAttribute("vacancies")List<Vacancy> allVacancies ) {
+        if (vacanciesSelected== null)
+            return null;
+        Set<Vacancy> returnList = new  HashSet<Vacancy>();
+        for(Integer vacancyId:vacanciesSelected){
+            for(Vacancy vacancy:allVacancies){
+                if(vacancyId.equals(vacancy.getId())){
+                    returnList.add(vacancy);
+                    break;
+                }
+            }   
+        }
+        return returnList;
+    }
+
+
+    @RequestMapping("/findByName")
+    public String findByName(Model model, @RequestParam String name) {
+        model.addAttribute("candidates", candidateService.findByName(name));
+        return "candidates";
+    }
+
+    @RequestMapping("/saveCandidate")
+    public String saveCandidate(Model model,HttpServletRequest request,HttpResponse response
+            ,@ModelAttribute("candidateFromRequest") Candidate candidateFromRequest
+            ,@ModelAttribute("skillsIdList") Set<Skill> skills
+           ,@ModelAttribute("vacanciesForCandidate") Set<Vacancy> vacanciesForCandidate
+           ,RedirectAttributes redirectAttributes
+            )
+    {
+//      candidateFromRequest.setSkills(skills);
+//      candidateFromRequest.setVacancies(vacanciesForCandidate);
+//      for(Vacancy vacancy:vacanciesForCandidate){
+//          vacancy.getCandidates().add(candidateFromRequest);
+//      }
+//      candidateService.update(candidateFromRequest);
+        candidateService.linkWith(candidateFromRequest, vacanciesForCandidate, skills);
+        redirectAttributes.addAttribute("message", "Submitted Correctly");
+        redirectAttributes.addAttribute("id",candidateFromRequest.getId());
+        return "redirect:loadCandidateById";
+    }
+
+//  @RequestMapping("/addCandidate")
+//  public ModelAndView addCandidate(Model model
+//          ,@ModelAttribute Candidate myCandidate
+//          ,@ModelAttribute("skillsIdList") Set<Skill> skills
+//         ,@ModelAttribute("vacanciesForCandidate") Set<Vacancy> vacanciesForCandidate)
+//  {
+//      myCandidate.setSkills(skills);
+//      myCandidate.setVacancies(vacanciesForCandidate);
+//      candidateService.add(myCandidate);
+//      ModelAndView modelAndView = new ModelAndView("redirect:candidateMenu");
+//      //return "candidateMenu";
+//      return modelAndView;
+//  }
+
+    @RequestMapping("/findBySkills")
+    public String processSkill(Model model, @ModelAttribute SkillDTO skillDTO) {
+        List<Integer> skills = skillDTO.getSkills();
+
+        List<Candidate> candidates = candidateService.findBySkills(skills);
+        model.addAttribute("candidates", candidates);
+        return "candidates";
+    }
+
+    @RequestMapping("/loadSkillsAndGoToFindCandidates")
+    public String loadSkillsAndGoToFindCandidates(Model model) {
+        return "selectSkills";
+    }
+    @RequestMapping("/goToAddCandidate")
+    public String addCandidate() {
+        return "candidateDetailsAdd";
+    }
+     @ModelAttribute("myCandidate")
+       public Candidate getCandidate() {
+          return new Candidate();
+     }
+    @RequestMapping("/submitFormAdd")
+    public ModelAndView submitFormAdd(Model model
+            ,@ModelAttribute("myCandidate") @Valid Candidate myCandidate
+            ,BindingResult result
+            ,@ModelAttribute("skillsIdList") Set<Skill> skills
+            ,@ModelAttribute("vacanciesForCandidate") Set<Vacancy> vacanciesForCandidate
+            ,RedirectAttributes redirectAttributes){
+         if(result.hasErrors()) {
+                return new ModelAndView("candidateDetailsAdd");
+         }
+         myCandidate.setDate(new Date());
+         candidateService.add(myCandidate);
+         redirectAttributes.addAttribute("message", "added Correctly");
+         redirectAttributes.addAttribute("id",myCandidate.getId());
+         ModelAndView modelAndView = new ModelAndView("redirect:loadCandidateById");
+            //return "candidateMenu";
+        return modelAndView;
+        // return "candidateMenu";
+    }
+
+}
+
+class SkillDTO {
+
+    private List<Integer> skills;
+
+    public List<Integer> getSkills() {
+        return skills;
+    }
+
+    public void setSkills(List<Integer> skills) {
+        this.skills = skills;
+    }
+}
+java -jar proguard.jar ..... -obfuscationdictionary compact.txt
+--------------------------------------------------------------------------------------------------------
+spring.data.redis.repositories.enabled = false
+
+https://docs.spring.io/spring-data/jpa/docs/current/reference/html/#repositories.multiple-modules
+--------------------------------------------------------------------------------------------------------
+@Configuration
+@EnableJpaRepositories
+@EnableTransactionManagement
+class ApplicationConfig {
+
+  @Bean
+  public DataSource dataSource() {
+
+    EmbeddedDatabaseBuilder builder = new EmbeddedDatabaseBuilder();
+    return builder.setType(EmbeddedDatabaseType.HSQL).build();
+  }
+
+  @Bean
+  public LocalContainerEntityManagerFactoryBean entityManagerFactory() {
+
+    HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
+    vendorAdapter.setGenerateDdl(true);
+
+    LocalContainerEntityManagerFactoryBean factory = new LocalContainerEntityManagerFactoryBean();
+    factory.setJpaVendorAdapter(vendorAdapter);
+    factory.setPackagesToScan("com.acme.domain");
+    factory.setDataSource(dataSource());
+    return factory;
+  }
+
+  @Bean
+  public PlatformTransactionManager transactionManager(EntityManagerFactory entityManagerFactory) {
+
+    JpaTransactionManager txManager = new JpaTransactionManager();
+    txManager.setEntityManagerFactory(entityManagerFactory);
+    return txManager;
+  }
+}
+--------------------------------------------------------------------------------------------------------
+@Retry(maxRetries = 2)
+@CircuitBreaker
+--------------------------------------------------------------------------------------------------------
+public interface UserRepository extends JpaRepository<User, Long> {
+
+  @Query(value = "SELECT * FROM USERS WHERE LASTNAME = ?1",
+    countQuery = "SELECT count(*) FROM USERS WHERE LASTNAME = ?1",
+    nativeQuery = true)
+  Page<User> findByLastname(String lastname, Pageable pageable);
+}
+--------------------------------------------------------------------------------------------------------
+@JsonTypeInfo(
+	user = JsonTypeInfo.Id.NAME,
+	include = As.PROPERTY,
+	property = "type"
+)
+@JsonSubTypes(
+	{
+		@JsonSubTypes.Type(value = Gateway.class, name = "gateway")
+		@JsonSubTypes.Type(value = Sensor.class, name = "sensor")
+	}
+)
+public class Device {
+
+}
+
+@JsonTypeName("gateway")
+public class Gateway extends Device {
+	public string sn;
+}
+@JsonTypeName("sensor")
+public class Sensor extends Device {
+	public String gatewaySN;
+	public int channel;
+}
+--------------------------------------------------------------------------------------------------------
+class MyRepositoryImpl<T, ID extends Serializable>
+  extends SimpleJpaRepository<T, ID> {
+
+  private final EntityManager entityManager;
+
+  MyRepositoryImpl(JpaEntityInformation entityInformation,
+                          EntityManager entityManager) {
+    super(entityInformation, entityManager);
+
+    // Keep the EntityManager around to used from the newly introduced methods.
+    this.entityManager = entityManager;
+  }
+
+  @Transactional
+  public <S extends T> S save(S entity) {
+    // implementation goes here
+  }
+}
+--------------------------------------------------------------------------------------------------------
+# mysql
+spring.datasource.url=jdbc:mysql://localhost:3306/mytest?useSSL=false&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull
+spring.datasource.username=root
+spring.datasource.password=root123
+
+spring.datasource.driver-class-name=com.mysql.jdbc.Driver
+spring.datasource.hikari.connection-timeout=3000
+spring.datasource.hikari.initialization-fail-fast=true
+spring.datasource.hikari.max-lifetime=600000
+spring.datasource.hikari.maximum-pool-size=20
+spring.datasource.hikari.minimum-idle=20000
+spring.datasource.hikari.idle-timeout=300000
+spring.datasource.hikari.initialization=true
+
+
+spring.jpa.database=mysql
+spring.jpa.database-platform=org.hibernate.dialect.MySQL5InnoDBDialect
+spring.jpa.hibernate.dialect=org.hibernate.dialect.MySQL5InnoDBDialect
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.transaction.rollback-on-commit-failure=true
+
+# redis
+spring.redis.database=0
+spring.redis.host=localhost
+spring.redis.password=redis
+spring.redis.port=6379
+
+spring.redis.pool.maxActive=8
+spring.redis.pool.maxWait=-1
+spring.redis.pool.maxIdle=8
+spring.redis.pool.minIdle=0
+spring.redis.timeout=2000
+--------------------------------------------------------------------------------------------------------
+@Data
+@RequiredArgsConstructor(onConstructor = @__(@PersistenceConstructor))
+@Document
+public class Order {
+
+	private final String id;
+	private final String customerId;
+	private final Date orderDate;
+	private final List<LineItem> items;
+
+	/**
+	 * Creates a new {@link Order} for the given customer id and order date.
+	 *
+	 * @param customerId
+	 * @param orderDate
+	 */
+	public Order(String customerId, Date orderDate) {
+		this(null, customerId, orderDate, new ArrayList<LineItem>());
+	}
+
+	/**
+	 * Adds a {@link LineItem} to the {@link Order}.
+	 *
+	 * @param item
+	 * @return
+	 */
+	public Order addItem(LineItem item) {
+
+		this.items.add(item);
+		return this;
+	}
+}
+--------------------------------------------------------------------------------------------------------
+spring.h2.console.enabled=true
+spring.h2.console.path=/h2_console
+spring.datasource.url=jdbc:h2:file:~/h2/testdb
+spring.datasource.username=sa
+spring.datasource.password=
+spring.datasource.driverClassName=org.h2.Driver
+spring.jpa.hibernate.ddl-auto = update
+spring.jpa.show-sql=true
+--------------------------------------------------------------------------------------------------------
+	@Test
+	public void bindToValidatedBeanWithResourceAndNonEnumerablePropertySource() {
+		ConfigurationPropertySources.from(new PropertySource<String>("test") {
+			@Override
+			public Object getProperty(String name) {
+				return null;
+			}
+		}).forEach(this.sources::add);
+		Validator validator = new SpringValidatorAdapter(Validation.byDefaultProvider()
+				.configure().buildValidatorFactory().getValidator());
+		this.binder.bind("foo", Bindable.of(ResourceBean.class),
+				new ValidationBindHandler(validator));
+	}
+--------------------------------------------------------------------------------------------------------
+version: 2.0
+jobs:
+  build:
+    docker:
+      - image: circleci/ruby:2.4.2-jessie-node
+    steps:
+      - checkout
+      - run:
+          name: "Update Node.js and npm"
+          command: |
+            curl -sSL "https://nodejs.org/dist/v11.10.0/node-v11.10.0-linux-x64.tar.xz" | sudo tar --strip-components=2 -xJ -C /usr/local/bin/ node-v11.10.0-linux-x64/bin/node
+            curl https://www.npmjs.com/install.sh | sudo bash
+      - run:
+          name: Check current version of node
+          command: node -v
+--------------------------------------------------------------------------------------------------------
+  <licenses>
+     <license>
+        <name>Lesser General Public License (LGPL) version 3.0</name>
+        <url>https://www.gnu.org/licenses/lgpl-3.0.txt</url>
+     </license>
+     <license>
+        <name>Apache Software License (ASL) version 2.0</name>
+        <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+     </license>
+  </licenses>
+--------------------------------------------------------------------------------------------------------
+mvn help:effective-settings:
+mvn deploy -e
+
+curl -u username:password http://url/artifactory/libs-snapshot-local/com/myproject/api/1.0-SNAPSHOT/api-1.0-20160128.114425-1.jar --request PUT --data target/api-1.0-SNAPSHOT.jar
+--------------------------------------------------------------------------------------------------------
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page session="false"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@taglib prefix="spring" uri="http://www.springframework.org/tags"%>
+<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
+
+<!-- Begin Body -->
+<div class="container">
+	<div class="row">
+		<div class="span12">
+			<h2>簡單計算機</h2>
+<table>
+    <tr>
+        <td colspan="5"><input type="text" readonly="readonly" id="_result" value="0" style="text-align:right;width:95%" /></td>
+    </tr>
+    <tr>
+        <td><button id="_1" onclick="javascript: addNumber('1');">1</button></td>
+        <td><button id="_2" onclick="javascript: addNumber('2');">2</button></td>
+        <td><button id="_3" onclick="javascript: addNumber('3');">3</button></td>
+        <td colspan="2"><button id="_C" style="width:85%">C</button></td>
+    </tr>
+    <tr>
+        <td><button id="_4" onclick="javascript: addNumber('4');">4</button></td>
+        <td><button id="_5" onclick="javascript: addNumber('5');">5</button></td>
+        <td><button id="_6" onclick="javascript: addNumber('6');">6</button></td>
+        <td><button id="_Plus" onclick="javascript: addOperator('+');">+</button></td>
+        <td><button id="_Minus" onclick="javascript: addOperator('-');">-</button></td>
+    </tr>
+    <tr>
+        <td><button id="_7" onclick="javascript: addNumber('7');">7</button></td>
+        <td><button id="_8" onclick="javascript: addNumber('8');">8</button></td>
+        <td><button id="_9" onclick="javascript: addNumber('9');">9</button></td>
+        <td><button id="_Multiple" onclick="javascript: addOperator('*');">X</button></td>
+        <td><button id="_Divide" onclick="javascript: addOperator('/');">/</button></td>
+    </tr>
+    <tr>
+        <td colspan="2"><button id="_0" style="width:90%" onclick="javascript: addNumber('0');">0</button></td>
+        <td colspan="2"><button id="_Undo" style="width:90%" onclick="javascript: undo();">Undo</button></td>
+        <td colspan="2"><button id="_Equal" style="width:85%" onclick="javascript: compute();">=</button></td>
+    </tr>
+
+</table>
+<input type="hidden" id="operand" value="0"/>
+<input type="hidden" id="isReset" value="true"/>
+<input type="hidden" id="operator" value="+"/>
+		</div>
+	</div>
+</div>
+
+    <script>
+        function addNumber(number) {
+            var currentVal = parseInt($("#_result").val(), 10);
+            var isReset = $("#isReset").val();
+            if (isReset == "true") {
+                currentVal = 0;
+            }
+            var intVal = parseInt(number, 10);
+            currentVal = currentVal * 10 + intVal;
+            $("#isReset").val("false");
+            $("#_result").val(currentVal);
+        }
+        function addOperator(operator) {
+            var currentVal = parseInt($("#_result").val(), 10);
+            $("#operand").val(currentVal);
+            if ($("#operator").val() != "")
+                compute();
+            $("#operator").val(operator);
+            $("#isReset").val("true");
+        }
+        function compute() {
+            var operand = $("#operand").val();
+            var operator = $("#operator").val();
+            var inputdata = { operand: operand, operator: operator };
+            $.ajax({
+                type: 'GET',
+                url: '${pageContext.request.contextPath }/cmd/cmpt',
+                datatype: 'application/json',
+                data: inputdata,
+                async: false,
+                success: function (data) {
+                    $("#_result").val(data);
+                }
+            });
+        }
+        function undo() {
+            $.ajax({
+                type: 'GET',
+                url: '${pageContext.request.contextPath }/cmd/undo',
+                datatype: 'application/json',
+                async: false,
+                success: function (data) {
+                    $("#_result").val(data);
+                }
+            });
+        }
+        $("#_C").click(function () {
+            var inputdata = {};
+            $.ajax({
+                type: 'GET',
+                url: '${pageContext.request.contextPath }/cmd/clr',
+                datatype: 'application/json',
+                data: inputdata,
+                async: false,
+                success: function (data) {
+                    $("#_result").val(data);
+                    $("#isReset").val("true");
+                    $("#operator").val("+");
+                    $("#operand").val("0");
+                }
+            });
+        });
+    </script>
+--------------------------------------------------------------------------------------------------------
 FROM java:8
 VOLUME /tmp
 ADD slackbot-0.0.1-SNAPSHOT.jar app.jar
