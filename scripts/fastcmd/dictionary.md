@@ -18479,6 +18479,53 @@ python -m pip install --upgrade google-assistant-library
 @Retry(maxRetries = 2)
 @CircuitBreaker
 --------------------------------------------------------------------------------------------------------
+public class CompanyObjectMapper extends ObjectMapper {
+    public CompanyObjectMapper() {
+        super();
+        setVisibilityChecker(getSerializationConfig()
+                .getDefaultVisibilityChecker()
+                .withCreatorVisibility(JsonAutoDetect.Visibility.NONE)
+                .withFieldVisibility(JsonAutoDetect.Visibility.NONE)
+                .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
+                .withIsGetterVisibility(JsonAutoDetect.Visibility.NONE)
+                .withSetterVisibility(JsonAutoDetect.Visibility.DEFAULT));
+    }
+}
+--------------------------------------------------------------------------------------------------------
+spring.jackson.deserialization.<feature_name>=true|false
+spring.jackson.generator.<feature_name>=true|false
+spring.jackson.mapper.<feature_name>=true|false
+spring.jackson.parser.<feature_name>=true|false
+spring.jackson.serialization.<feature_name>=true|false
+spring.jackson.default-property-inclusion=always|non_null|non_absent|non_default|non_empty
+
+@Bean
+public Jackson2ObjectMapperBuilder jacksonBuilder() {
+    Jackson2ObjectMapperBuilder builder = new Jackson2ObjectMapperBuilder();
+    builder.indentOutput(true).dateFormat(new SimpleDateFormat("yyyy-MM-dd"));
+    return builder;
+}
+--------------------------------------------------------------------------------------------------------
+public class SpringDataRestCustomization implements RepositoryRestConfigurer {
+    @Override
+    public void configureRepositoryRestConfiguration(RepositoryRestConfiguration config) {
+        config.withEntityLookup()
+        .forRepository(UserRepo.class, User::getUsername, UserRepo::findByUsername);
+    }
+}
+
+@RepositoryRestResource(exported = true)
+public interface UserRepo extends PagingAndSortingRepository<User, Long> {
+    Optional<User> findByUsername(String username);
+}
+--------------------------------------------------------------------------------------------------------
+@Override
+public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
+    ObjectMapper objectMapper = Jackson2ObjectMapperBuilder.json().modules(new JavaTimeModule(), new Jdk8Module()).build()
+            .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+    converters.add(new MappingJackson2HttpMessageConverter(objectMapper));
+}
+--------------------------------------------------------------------------------------------------------
 public interface UserRepository extends JpaRepository<User, Long> {
 
   @Query(value = "SELECT * FROM USERS WHERE LASTNAME = ?1",
