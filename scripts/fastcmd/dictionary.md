@@ -18449,6 +18449,33 @@ class ApplicationConfig {
   }
 }
 --------------------------------------------------------------------------------------------------------
+touch /volumes/boot/ssh
+
+wpa_supplicant.conf
+country=US
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+update_config=1
+
+network = {
+	ssid = ""
+	psk = ""
+}
+
+git clone https://github.com/respeaker/seeed-voicecard
+cd seeed-voicecard
+sudo ./install.sh
+sudo reboot
+aplay -l
+arecord -l
+
+sudo apt-get update
+sudo apt-get install python3-dev python3-venv
+python3 -m venv env
+env/bin/python -m pip install --upgrade pip setuptools wheel
+source /env/bin/activate
+
+python -m pip install --upgrade google-assistant-library
+--------------------------------------------------------------------------------------------------------
 @Retry(maxRetries = 2)
 @CircuitBreaker
 --------------------------------------------------------------------------------------------------------
@@ -18459,6 +18486,58 @@ public interface UserRepository extends JpaRepository<User, Long> {
     nativeQuery = true)
   Page<User> findByLastname(String lastname, Pageable pageable);
 }
+--------------------------------------------------------------------------------------------------------
+sudo gattool install
+wsimport src/main/resources/wsdl/simple-ws.wsdl -s src/main/gen -Xnocompile
+--------------------------------------------------------------------------------------------------------
+@Component
+public class CustomDateSerializer extends StdSerializer<Ticket> {
+    private final ObjectMapper om;
+
+    public CustomDateSerializer() {
+        super(Ticket.class);
+        this.om = new ObjectMapper().enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY);
+    }
+
+    @Override
+    public void serialize(final Ticket value, JsonGenerator gen, SerializerProvider arg2) throws IOException {
+        gen.writeBinary(this.om.writeValueAsBytes(value));
+    }
+
+//    @Override
+//    public Ticket deserialize(final byte[] bytes) throws SerializationException {
+//        if (bytes == null) {
+//            return null;
+//        }
+//        try {
+//            return om.readValue(bytes, Ticket.class);
+//        } catch (Exception e) {
+//            throw new SerializationException(e.getMessage(), e);
+//        }
+//    }
+}
+--------------------------------------------------------------------------------------------------------
+//        Jackson2JsonRedisSerializer jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer(Object.class);
+//        ObjectMapper objectMapper = new ObjectMapper();
+//        objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+//        objectMapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
+//        jackson2JsonRedisSerializer.setObjectMapper(objectMapper);
+//        redisTemplate.setValueSerializer(jackson2JsonRedisSerializer);
+--------------------------------------------------------------------------------------------------------
+@Bean
+	@Scope(value="thread", proxyMode = ScopedProxyMode.TARGET_CLASS)
+	public CacheManager threadCaches() {
+		log.debug("Creating a new thread cache");
+		SimpleCacheManager cache = new SimpleCacheManager();
+		cache.setCaches(singleton(new ConcurrentMapCache("countries")));
+		return cache;
+	}
+	
+	@Bean
+	@Primary
+	public CacheManager mainCacheManager() {
+		return new CompositeCacheManager(threadCaches());
+	}
 --------------------------------------------------------------------------------------------------------
 @JsonTypeInfo(
 	user = JsonTypeInfo.Id.NAME,
