@@ -2631,6 +2631,260 @@ public MailReceiver imapMailReceiver(String imapUrl) {
     return receiver;
 }*/
 --------------------------------------------------------------------------------------------------------
+import java.io.Serializable;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.RedisOperations;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.RedisSerializer;
+import org.springframework.data.redis.serializer.SerializationException;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
+
+import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping;
+
+@SpringBootApplication
+public class App {
+
+	@Bean
+	@Primary
+	RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory rcf) {
+
+		RedisTemplate<String, Object> template = new RedisTemplate<>();
+		template.setConnectionFactory(rcf);
+		template.setKeySerializer(new StringRedisSerializer());
+		template.setValueSerializer(new JsonRedisSerializer());
+
+		return template;
+	}
+
+	static class JsonRedisSerializer implements RedisSerializer<Object> {
+
+		private final ObjectMapper om;
+
+		public JsonRedisSerializer() {
+			this.om = new ObjectMapper().enableDefaultTyping(DefaultTyping.NON_FINAL, As.PROPERTY);
+		}
+
+		@Override
+		public byte[] serialize(Object t) throws SerializationException {
+			try {
+				return om.writeValueAsBytes(t);
+			} catch (JsonProcessingException e) {
+				throw new SerializationException(e.getMessage(), e);
+			}
+		}
+
+		@Override
+		public Object deserialize(byte[] bytes) throws SerializationException {
+			
+			if(bytes == null){
+				return null;
+			}
+			
+			try {
+				return om.readValue(bytes, Object.class);
+			} catch (Exception e) {
+				throw new SerializationException(e.getMessage(), e);
+			}
+		}
+	}
+
+	public static void main(String[] args) {
+
+		RedisOperations<String, Object> redis = SpringApplication.run(App.class, args).getBean(RedisOperations.class);
+		
+		A a = new B();
+		System.out.println(a);
+		redis.opsForValue().set("foo", a);
+		
+		A aa = (A)redis.opsForValue().get("foo");
+		System.out.println(aa);
+		
+	}
+
+	public static class A implements Serializable{
+		
+		long longProperty = System.currentTimeMillis();
+		String stringProperty = "foo";
+
+		public String getStringProperty() {
+			return stringProperty;
+		}
+
+		public void setStringProperty(String stringProperty) {
+			this.stringProperty = stringProperty;
+		}
+
+		@Override
+		public String toString() {
+			return "A [stringProperty=" + stringProperty + "]";
+		}
+	}
+
+	public static class B extends A {
+
+		int intProperty = 42;
+
+		public int getIntProperty() {
+			return intProperty;
+		}
+
+		public void setIntProperty(int intProperty) {
+			this.intProperty = intProperty;
+		}
+
+		@Override
+		public String toString() {
+			return "B [intProperty=" + intProperty + ", stringProperty=" + stringProperty + "]";
+		}
+	}
+}
+--------------------------------------------------------------------------------------------------------@Component
+public class RedisObjectHelper {
+
+    @Resource
+    private RedisTemplate<String, ?> redisTemplate;
+    private HashOperations<String, byte[], byte[]> hashOperations;
+    private HashMapper<Object, byte[], byte[]> mapper;
+
+    @PostConstruct
+    public void init() {
+        mapper = new ObjectHashMapper(new CustomConversions(Arrays.asList(new Timestamp2ByteConverter(), new Byte2TimestampConverter())));
+        hashOperations = redisTemplate.opsForHash();
+    }
+    // and any methods
+}
+--------------------------------------------------------------------------------------------------------
+SimpleKeyValueRepository
+--------------------------------------------------------------------------------------------------------
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+
+import java.util.concurrent.TimeUnit;
+
+@Service
+public class RedisService {
+
+    @Autowired
+    private RedisTemplate< String, Object > template;
+
+    public Object getValue(final String key) {
+        return template.opsForValue().get(key);
+    }
+
+    public void setValue(final String key, final String value) {
+        template.opsForValue().set(key, value);
+
+        // set a expire for a message
+        template.expire(key, 5, TimeUnit.SECONDS);
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+@Override
+protected void configureJacksonObjectMapper(ObjectMapper objectMapper) {
+    objectMapper.registerModule(new SimpleModule("MyCustomModule") {
+        @Override
+        public void setupModule(SetupContext context) {
+            context.addAbstractTypeResolver(
+                new SimpleAbstractTypeResolver().addMapping(MyInterface.class,
+                                                            MyInterfaceImpl.class)
+            );
+        }
+    });
+}
+--------------------------------------------------------------------------------------------------------
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CachingConfigurerSupport;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.RedisSerializer;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
+
+/**
+ * @author cwenao
+ * @version $Id RedisConfig.java, v 0.1 2017-01-29 15:17 cwenao Exp $$
+ */
+@Configuration
+@EnableCaching
+@AutoConfigureAfter({DataConfig.class,MybatisConfig.class})
+public class RedisConfig extends CachingConfigurerSupport{
+
+    @Bean(name="redisTemplate")
+    public RedisTemplate<String, String> redisTemplate(RedisConnectionFactory factory) {
+
+        RedisTemplate<String, String> template = new RedisTemplate<>();
+
+
+        RedisSerializer<String> redisSerializer = new StringRedisSerializer();
+
+        Jackson2JsonRedisSerializer jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer(Object.class);
+        ObjectMapper om = new ObjectMapper();
+        om.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+        om.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
+        jackson2JsonRedisSerializer.setObjectMapper(om);
+
+        template.setConnectionFactory(factory);
+        //key序列化方式
+        template.setKeySerializer(redisSerializer);
+        //value序列化
+        template.setValueSerializer(jackson2JsonRedisSerializer);
+        //value hashmap序列化
+        template.setHashValueSerializer(jackson2JsonRedisSerializer);
+
+        return template;
+    }
+
+    @Bean
+    public CacheManager cacheManager(@SuppressWarnings("rawtypes")RedisTemplate redisTemplate) {
+
+        RedisCacheManager cacheManager = new RedisCacheManager(redisTemplate);
+        cacheManager.setDefaultExpiration(3000);
+        return cacheManager;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+List locally trusted certifcates
+certutil -d sql:$HOME/.pki/nssdb -L
+Add locally trusted certifcate
+certutil -d sql:$HOME/.pki/nssdb -D -t "P,," -n ~/Downloads/apps.tdlabs.local.crt -i ~/Downloads/apps.tdlabs.local.crt
+Delete locally tristed certificate
+certutil -d sql:$HOME/.pki/nssdb -D -n app1
+--------------------------------------------------------------------------------------------------------
+RedisCluster.builder()
+                .sentinelPorts(redisSentinels) //btw, order counts here, if you set ports after setting replication groups
+                .serverPorts(redisHosts) //you will get different ports. Go figure
+                .withServerBuilder(new CustomClusterRedisServerBuilder().setting("maxmemory 128").setting("maxheap 128M")) //same goes for settings
+                .withSentinelBuilder(RedisSentinel.builder().setting("maxmemory 128").setting("maxheap 128M"))
+                .sentinelCount(3)
+                .quorumSize(2)
+                .replicationGroup("master1", 1)
+                .replicationGroup("master2", 1)
+                .replicationGroup("master3", 1)
+                .build()
+--------------------------------------------------------------------------------------------------------
+Usage: ./redis-server [/path/to/redis.conf]
+       ./redis-server - (read config from stdin)
+       ./redis-server --test-memory <megabytes>
+--------------------------------------------------------------------------------------------------------
 curl -Lo jsoup.zip https://github.com/jhy/jsoup/archive/master.zip
 unzip jsoup.zip
 cd jsoup-master
