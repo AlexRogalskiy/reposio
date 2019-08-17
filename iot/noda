@@ -2331,6 +2331,582 @@ Excited to know how it works? Here we go!
 7. ***Note that after tapping either of FEEDS button, auto sync of data will be OFF, in order to turn auto sync ON to make app always fetch recently updated data (last feed), tap REFRESH button from menu bar at top.
 8. In order to delete your channel details at one go, tap DELETE button from menu bar.
 ========================================================================================================================
+
+The description of MQTT Client
+Connect to any MQTT v3.1 broker and subscribe to topics. Perform Tasker actions on message publish or publish messages on tasker events. The app still might be rough around the edges. Would be releasing the code soon on github so that the development could continue over there.
+
+
+Tasker Integration works as follows:
+
+-To publish messages from tasker simply create a action in tasker. The configuration is pretty simple. You may use tasker variables in topic and message.
+-To perform action whenever a message is received. Create a event in tasker from the plugin. In the tasker configuration screen, there'll be a topics drop-down and topic variable name field and message variable name field. The drop-down will have topics subscribed. In the topic variable name field, you can add any string in lowercase characters. Same for message variable name field. Now, whenever a message is pulblished on selected topic, two tasker local variable will be created with the names as entered in the textbox for the published topic and published message.
+
+-Multiple Brokers
+-Websockets Support!
+-Add/Remove topics easily!
+-Messages are automatically saved!
+-SSL support
+-Publish Messages
+-Support any app that supports locale SDK
+
+Github URL : https://github.com/dc297/mqttclpro
+
+Please report issues on github
+
+Feedback is highly appreciated!
+
+
+========================================================================================================================
+
+The description of MQTT Snooper
+MQTT Client :
+- Multiple topic (one click subscribe / unsubscribe)
+- One click publication replay
+- Publication filter
+- Display publication in hexadecimal if the program guess that the payload is not UTF8
+- Save a publication payload to a file
+- Allow to publish from a file
+- Automatically detect image publication (PNG/GIF/JPEG) then display a thumbnail
+- Multiple configuration supported for connection
+- Function related to publication : Delete one publication, delete all publication on one level, copy payload, view payload in hexadecimal
+- Publish in hexadecimal / utf-8
+- Run as a service, can still receive publications while in background
+- Basic statistics : Total payload received, total message received.
+- Support notification on topic change
+- Support basic secure connection (no client certificate)
+- IPv6 support
+
+Any suggestion to improve the program are welcome !
+
+========================================================================================================================
+
+The description of MQTIZER - Free MQTT Client
+MQTT is known as for Message Queue Telemetry Transport. It is a publish/subscribe, extremely simple and lightweight messaging protocol, designed for constrained devices and low-bandwidth, high-latency or unreliable networks. The design principles are to minimise network bandwidth and device resource requirements whilst also attempting to ensure reliability and some degree of assurance of delivery. These principles also turn out to make the protocol ideal of the emerging “machine-to-machine” (M2M) or “Internet of Things” world of connected devices, and for mobile applications where bandwidth and battery power are at a premium.
+
+Why use MQTIZER
+
+MQTIZER is a mobile MQTT client that can connect to any broker which shares the network with your phone, and to any broker on the cloud as well.
+
+Use without signing in
+
+Now you can use MQTIZER without authenticating from google, but you will not be able to save brokers and topics on the cloud.
+
+Login with Google
+
+You can log in with Google which is also smart lock equipped.
+Logging in will aid you to manage brokers and topics at a central cloud location.
+
+Intuitive user experience
+
+MQTIZER is an MQTT client assistant. Experience the crafted user interface, and the application will never let you get bored.
+
+Cross-device broker management
+
+If you add a broker to your profile, the broker will persist along every device you log in to.
+You can add remove and edit brokers in the app and the changes will reflect on every device you use.
+
+Multi-protocol support
+
+The app supports both the non-secured protocols, i.e. TCP and WebSockets.
+SSL support will be released soon.
+
+Message publisher and subscriber
+
+The client can be used to publish to a topic or to subscribe to a topic. You can change the
+Quality of Service, as well as enable, retain when you publish.
+
+Topics can also be saved
+
+It is very vexatious to touch-type the topic to subscribe everytime you restart the application.
+The application supports saving updating and deleting topics associated with a particular broker.
+
+Share all messages
+
+You can forward the messages you have received to any messaging or social media app.
+
+========================================================================================================================
+
+The description of MyMQTT
+Known from the german technology magazines JavaMagazin (http://goo.gl/uZzudD) and Mobile Technology (http://goo.gl/v1PDhh).
+
+Features:
+★ Connect to MQTT v3.1 Broker (optional with username and password)
+★ Subscribe to variouse topics
+★ Publish messages to a topic
+★ Save messages
+★ Filter received Messages
+
+Comming soon:
+★ Set Quality of Services for messages
+★ Show android notification if app isn't running
+★ Export and import of stored messages
+★ Connect to broker with SSL support
+
+This App is still in development!
+We would like to hear your feedback: office@instant-it.at
+
+========================================================================================================================
+
+The description of MQTT Alarm Control Panel
+MQTT Alarm Control Panel
+
+Reuse and old Android devices as a home alarm control panel that integrates with Home Assistant or any home automation platform that supports MQTT messaging.
+
+MQTT Alarm Control Panel is an alarm control panel for use with home automation platforms that support MQTT messaging. The application was originally built for Home Assistant'sMQTT Manual Control Panel. However, the application can be used with any home automation platform that supports the MQTT messaging protocol such as Jeedom, openHab, or Node-Red.
+
+The alarm control panel acts as an interface for your home alarm system and allows for two way communication using MQTT. You can set the alarm state to away or home, or disarm the alarm using a code. Your home automation system controls the sensors or automation that triggers the siren or notifies users of possible intrusion.
+
+Features
+* Stream video, detect motion, detect faces, and read QR Codes.
+* Capture and emailing images when the alarm is disabled.
+MQTT commands to remotely control the application (speak text, play audio, display notifications, alerts).
+* Device sensor data reporting over MQTT (temperature, light, pressure, battery, etc.).
+* Day/Night mode themes based on MQTT sun value.
+* Fingerprint unlock support to disable the alarm. (on supported devices).
+* Optional screensaver mode using a digital clock or Imgur images.
+* Three day MQTT Weather forecast.
+* Home Automation Platform webpage support for viewing home automation dashboards.
+
+The alarm panel is designed to be used as a dedicated device which runs continuously in full-screen mode. The alarm panel is open source and available on GitHub. There is also a version that runs on a Raspberry Pi using Android Things
+
+For the complete setup instructions and additional information, please visit the Project Home Page.
+
+Home Assistant
+Home Assistant's MQTT Manual Alarm Control Panel
+Project's Home Page
+Raspberry Pi Version
+Support: mister@thanksmister.com
+Show less 
+========================================================================================================================
+
+The description of Linear MQTT Dashboard
+Easy, customizable control panel - MQTT-client.
+The solution for your IoT, DIY devices.
+
+Source codes - https://github.com/ravendmaster/linear-mqtt-dashboard-kotlin
+
+Available widgets:
+- Header
+- Slider
+- Value
+- Switch
+- Button
+- RGB LED
+- Meter
+- Graph
+- Buttons set
+- Combo box
+
+Features:
+
+★ Tabs
+
+★ Order of widgets can be changed. Number of widgets is not limited to the size of the screen - the list can be scrolled.
+
+★ Status of network connection and MQTT broker displayed RGB LED.
+
+★ Ability to receive push notifications even when the app is closed.
+
+★ Corrective message from the widget "Value" by long press on the value (in the widget settings, you must specify the topic of publication of the new value).
+
+★ Two meanings of the text messages and the two labels are available for the widget "Button" - for the states "pressed" / "not pressed" respectively. You can also specify a "retained" for messages.
+
+★ Widget "Meter" can display the value of by a different color (alarm zone, yellow and red), if value approaches the limits of measurement. Thresholds limit values can be specified separately for the lower and upper boundaries.
+
+★ Widgets Slider and Meter can handle decimals
+
+★ Share settings
+
+★ JavaScript to represent the value of some widgets
+
+★ Graph widget displays the value of an array of double and integer types in JSON format, payload for example of payload: [1,2,100.88] or [100.5, 200, 0, 0, 0, -10]
+
+★ Graph widget in live mode
+
+★ Graph widget in 'historical' mode (1h, 4h etc.), see "Application server mode" in application serttings
+
+★ "Buttons set" widget allows place several buttons in one place
+
+★ Widget Combo box to work with a predefined list of values
+
+★ "Application server mode" - the ability to handle incoming MQTT messages using JavaScript even when the app is in the background. See OnReceive().
+
+========================================================================================================================
+
+The description of ATS MQTT Client
+Application dedicated for mqtt.ats.pl service.
+
+It allows users to monitor their devices, connected with Service, and also to control them in real-time.
+Thanks to integration with Service all user has to do is sign in with their account and all their devices will be available inside app.
+
+========================================================================================================================
+
+The description of MQTT Push Client
+The developers of the RadioShuttle LoRa peer-to-peer solutions made a universal MQTT push solution. Preliminary versions were already presented at the Maker Faire in Hannover and were awarded the “Maker of Merit” award. The “MQTT Push Client” app and the corresponding push server Internet service are now available and are offered by RadioShuttle.de.
+Practical examples are the remote control of IoT devices, e.g. light on/off or alarm system activation.The push notification then allows sending important messages such as burglary, a water problem, defective cooling, temperature statistics, etc. directly to a mobile phone or to all mobile phones of a group, e.g. a family.
+
+The MQTT Push solution can be operated universally in any MQTT environment. Messages for defined MQTT topics are automatically reported to the app users within seconds as push messages with banners, optionally with an alarm tone. App users can send predefined MQTT messages via an action menu, which can automate further processes via the MQTT server.
+
+See also:
+http://www.radioshuttle.de/en/mqtt-en/push-notification/
+http://help.radioshuttle.de/mqttapp/1.0/
+http://www.radioshuttle.de/en/mqtt-2/license-terms/
+
+========================================================================================================================
+
+The description of Homy
+Homy allows you to control your home automation server Jeedom, Domoticz, Home Assistant even when you are not at home *. Homy is also compatible with the CPL home automation modules from the manufacturer Wattlet.
+Homy also collects data and drives Arduino, ESP8266, ESP32-based connected objects using MQTT messages.
+
+With Homy, you keep control over all your private data. No home automation control transits via a tier ** server. Homy supports HTTPS and WSS protocols (Websocket secured by SSL certificate). By activating the HTTPS or WSS protocol, all the commands and all the data (states of your home automation accessories, sensor measurements ...) are exchanged with Homy in a secure and encrypted way. This is also the case with the IP CCTV camera images connected to Home Assistant.
+
+(*) requires a 3G or 4G internet connection. Also requires to use an online MQTT server or configure the router to expose your home automation server to the internet
+(**) unless you are using an online MQTT broker such as cloudMQTT
+
+► Main functions of Homy
+✓ Automatic categorization
+✓ Accessory management by: places without limitation (house, apartment), rooms, favorites, categories
+
+► Domoticz Compatibility:
+✓ Supported protocols: MQTT, HTTP, HTTPS
+✓ Automatic classification (or manual) of home automation accessories
+✓ Automatic detection of the data type
+✓ Lamps and switches (light / switch)
+✓ Selector with several positions (selector)
+✓ Bulbs with RGBW, RGBWWZ, RBGWZ partially supported
+✓ Push buttons
+✓ Light switch
+✓ Dimmer
+✓ Sensors: generic, rain, weight or scale, humidity of foliage, door closing contactor or window or connected lock, doorbell, sunshine (lux), UV (uv), meters, electric power and gas reading, electric current, dew point, soil moisture, solar radiation, noise pollution, distance, temperature, humidity, barometer, water flow, wind speed and direction, air quality (CO2), motion detector, smoke detector
+✓ Actuators: Alert with level and send message, siren, motorized shutters (all or rie, adjustable opening level, venetian blind, inverted control), text display, thermostat setpoint
+✓ Perform a scene
+✓ Customized unit
+
+► Home Assistant Compatibility:
+✓ switch: switches and connected sockets
+✓ binary_sensor: sensors with binary state (presence, movement, opening ...)
+✓ sensor: sensors with a measured physical quantity (temperature, humidity, atmospheric pressure ...)
+✓ air_quality: air quality with different pollutants (CO2, CO, NO2, SO2, AIQ ...)
+✓ fan: fans and air purifier
+✓ light: RGB connected bulbs
+✓ vacuum: robot vacuum cleaner
+✓ water_heater: water heater
+✓ climate: connected thermostats
+✓ cover: curtains and shutters
+✓ lock: connected locks
+
+► Jeedom Compatibility:
+   ✓ Automatic addition / modification of parts and accessories
+   ✓ Automatic classification of accessories
+   ✓ Activate / deactivate / start a scenario from Homy with permission request
+   ✓ Color selector
+   ✓ Hide the labels of commands that have an icon
+   ✓ Auto-fill connection parameters by reading the QRCode (official Mobile plugin required)
+   ✓ Uses custom Jeedom icons
+
+► Wattlet CPL Compatibility:
+✓ Push, Push2, Pushl
+✓ Light / Light2 (double output)
+✓ Power
+✓ Window: shutter opening control
+✓ VMC
+✓ Pilot: Pilot wire heating control. All modes are supported: comfort, comfort + 1 ° C, comfort + 2 ° C, frost free, eco, stop
+
+► Tasmota MQTT compatibility
+    ✓ Automatic order detection
+    ✓ Change state of the outputs (all supported Sonoff modules)
+
+► MQTT compatibility
+    ✓ Allows you to control your connected objects developed with Arduino, ESP8266, ESP32, Python code
+
+========================================================================================================================
+
+The description of MQTTone - Free MQTT Cloud IoT
+MQTT.One Is Hosted message broker for the Internet of Things
+You can create a new account to get Your Broker details And Manage your account with this app
+
+By this app You can do:
+*View topic details.
+*Add a new topic.
+*Delete topic.
+*Manage your mqtt.one Account.
+*And More....
+
+Why Mqtt.one?
+-MQ Telemetry Transport:
+Best lightweight messaging protocol For IOT client communication and plays an important
+role in the internet of things IoT.
+
+-Cloud service:
+Your Broker runs on an internet connection always, You will not lose contact with your ther devices.
+
+-Fast and specific :
+MQTT has guarantees delivery massege and to be delivered efficiently in milliseconds MQTT.ONE support All QoS Mode,Your devices will not lose any message.
+
+
+What is MQTT?
+MQTT stands for MQ Telemetry Transport. It is a publish/subscribe, extremely simple and lightweight messaging protocol, designed for constrained devices and low-bandwidth, high-latency or unreliable networks. The design principles are to minimise network bandwidth and device resource requirements whilst also attempting to ensure reliability and some degree of assurance of delivery. These principles also turn out to make the protocol ideal of the emerging “machine-to-machine” (M2M) or “Internet of Things” world of connected devices
+
+MQTT protocol applications and use cases:
+-internet of things
+The protocol, is used for machine-to-machine (M2M) communication Gathering or Synchronization data from a sensors in any location.
+
+-information
+text-based messaging application for real-time communication, providing and updating personal information
+
+- Unlimited cases
+Monitoring health parameters via sensors for patients leaving a hospital,system alerting people about danger, And more,,,
+
+========================================================================================================================
+
+The description of Car IoT (bridge MQTT OBD2)
+App periodically collects data from cars (speed/temperature/etc..), using bluetooth-obd2 adapters like ELM327. These data are published on MQTT, following Home Assistant's convention. MQTT broker can be private or pubblic, like http://cloudmqtt.com.
+
+Actually this app is only a beta version, so please don't kill it with bad reviews
+
+========================================================================================================================
+
+The description of Cayenne
+Start your next IoT project or prototype right from your phone with the Cayenne project builder. Now supporting Arduino, ESP8266, Raspberry Pi, over 100 LoRa-enabled devices, and any hardware brought in via MQTT API. Start your project or prototype in a fraction of the time.
+
+You can add, manage and control sensors and actuators from your phone’s dashboard from a library of drag and drop widgets.
+
+Features Include:
+
+Easily setup microcontrollers and boards
+✓ Quickly connect Arduino, ESP8266, Raspberry Pi boards and other devices to be managed remotely.
+
+Integration of LoRa-enabled devices and networks.
+✓ Provision, monitor, and control LoRa-enabled sensors on LoRaWAN™ networks.
+
+MQTT API Release.
+✓ Bring in any device (microcontroller, single board computer, sensor, motor or actuator) that is not in the Cayenne library via MQTT API.
+
+Create custom dashboards with drag and drop widgets
+✓ Customize the look of your projects with a fully flexible dashboard.
+
+Add sensors, actuators, and extensions
+✓ Create widgets to view and control the hardware connected to your project.
+
+Customizable Project Builder
+✓ Create custom projects and prototypes with mix-and- match widgets providing interoperability between devices, all on a single dashboard.
+
+Monitor data and remote control your devices and projects
+✓ Discover different ways to visualize data and control your connected hardware.
+
+Easily set up triggers and actions for your projects
+✓ Automate your project with easy to create if/then statements.
+
+Create and manage actions with Event Scheduling
+✓ Use scheduled events to trigger actuators or device actions at the time you choose
+
+Check out our community using Cayenne: http://community.mydevices.com/
+
+========================================================================================================================
+
+The description of Ariela
+Ariela is a bright and colorful Home-Assistant client, with a simple and greatly customizable interface. It provides you the love with beautiful material design.
+
++ build in MQTT front / back camera (can be used to stream images from the phone to Home Assistant)
++ build in MQTT client, meaning that you can send to Home Assistant server informations like extended battery info, wifi, device sensors, phone calls status etc
++ support for RGB entities
++ support for Alarm Panel
++ support for new AUTH system
++ ability to create widgets of favorite sensors / switches etc
++ simple configuration process
++ ability to differentiate between local network and outside network(other wifi, 3G, 4G)
++ ability to automatically connect from other networks when properly configured
++ Lovelace configuration support
++ Device Tracker support
++ push notifications
+
+Home Assistant is an open-source home automation platform running on Python 3. Track and control all devices at home and automate control. Perfect to run on a Raspberry Pi.
+Visit https://home-assistant.io/ for more info.
+
+To enable Firebase notification system please fallow the instructions from : https://github.com/MCrissDev/HANotify
+
+========================================================================================================================
+
+The description of Sensor Node Free
+*****NOW FREE*****
+Turn your phone into a sensor node for a wireless sensor network. Sensor Node make use of all your phone's amazing sensors and stream them to your PC in real time. A typical sensor node like this cost you hundreds of dollars outside. Sensor Node is available for you for free! Or use it as a wireless IMU. You can use it for your project in school or research! If you require assistance, feel free to contact the developer at mobilescino@gmail.com
+
+Each device can be given an ID to be identified by the PC. Start using your phones as a sensor node today!
+
+Sensor Node main features:
+- Stream live data from phone to PC through UDP in xml format
+- Stream live data from phone to PC through Mqtt protocol
+- View data from sensors, phone status as well as battery status
+- Log sensor data to CSV file (Excel compatible) and download it later
+- See live graphs of your phone sensors
+- Capable of setting frequency of sensor data
+
+Phone status and Battery status depends on phone hardware.
+
+Note:
+- Mqtt address should in the form of tcp://192.168.1.123:1883
+- Battery streaming only updates once a minute to reduce battery consumption
+
+Streaming of data using UDP:
+- Data sent is in XML format
+- Data is sent by UDP in real time
+- Remember to off your firewall
+- To use, create a UDP socket binding to the port you choose and poll the socket for incoming data. Example at https://www.dropbox.com/s/zgxrrje17hhn8vj/androidSensor123.py
+
+- Please comment to help me improve this application. Thank you
+
+- Please support by downloading the pro version.
+
+========================================================================================================================
+
+The description of Virtuino SE Viewer
+This app can run projects that are created by Virtuino apps without the unlock ability.
+It supports projects created by the following Virtuino apps
+Virtuino MQTT
+Virtuino Modbus
+Virtuino SE
+
+Projects created by Virtuino app are not supported of this Viewer
+
+========================================================================================================================
+
+The description of SpeaQTT: Speech Recognition to MQTT Bridge
+SpeaQTT is a simple app that creates a voice interface to a MQTT server. It translates spoken words into text and posts them to a specific topic, and subscribes to a second topic to allow messages on the topic to be spoken back to you using your phones TTS (Text To Speech) system.
+
+SpeaQTT uses the google SpeechRecogniser system and can be setup to not require an internet connection while operating if your device supports offline voice recognition and has the correct voice recognition support files installed.
+
+========================================================================================================================
+
+The description of ioBroker.paw II (Smart Home, Dashboard)
+This application allows you to control your Android device via HTTP and MQTT.
+It can send text to speech, control volume, make calls, send notifications and much more.
+
+With it, you can create control panels for your devices and applications.
+
+========================================================================================================================
+The description of Tasmota Control
+ATTENTION: This is currently still a beta version!
+
+Control your Tasmota devices with the simple app. This app controls the Tasmota devices directly via the HTTP interface. There is no necessary detour via MQTT. Perfect for testing Tasmota devices or simply controlling it via the mobile phone.
+
+Currently supported devices:
+- All relay devices (POWER commands)
+- AM2301 sensor
+- POW (Current, Voltage, Power, Energy Today, Energy Yesterday, Energy Total)
+- DS18B20 (untested)
+
+Currently tested devices:
+- Sonoff Basic
+- Sonoff TH10
+- Sonoff TH16
+- Sonoff 4CH
+- Sonoff POW
+========================================================================================================================
+
+The description of IoTBroker.Сloud
+IoTBroker.Сloud Android client is app which allows to easily integrate with IoTBroker.Сloud server via phone. But also the app can exchange messages with any other MQTT, MQTT-SN, CoAP or AMQP server. Its work is based on the latest standards defined in specifications, so the app supports all MQTT 3.1.1, MQTT-SN 1.2, CoAP - RFC 7252 and AMQP 1.0 features. The source code of the app can be found here https://github.com/mobius-software-ltd/iotbroker.cloud-android-client
+Except the features which are specific for each protocol, IoTBroker.Сloud Android client can provide you with the basic functionality which is common for all protocols:
+- Sending and receiving of messages. The app can do both subscribing and publishing of messages related to some topics.
+- Assured message delivery. You can set the highest QoS level for the messages whose loss would be critical.
+- History of messages. You can store the list of incoming and outgoing messages.
+- Keep Alive. You can check whether an endpoint is still active to eliminate the risks of being connected to the dead server.
+- Multiple accounts. You can create several accounts in the app.
+IoTBroker.Сloud Android client makes it simple to build your IoT network.
+
+========================================================================================================================
+
+The description of MQTT $SYS Console
+This app subscribes to your broker's $SYS topics and displays the information in a structured way.
+
+Source code available at https://github.com/plugdio/MQTTSYSConsole
+
+========================================================================================================================
+
+The description of Hiper
+Use Hiper as a front end to control your devices using just voice. It's great for building a privacy-first smart home or a low latency voice enabled device.
+
+Internet is not required to speak or recognize speech (although this may improve recognition).
+
+
+It works like this:
+-> You speak, Hiper converts to text and sends to your MQTT broker (maybe Mosquitto on a Raspberry Pi)
+
+->Your smart devices (light bulb, smart fan, even a talking robot) receive and process the user input
+
+-> Send text to Hiper in JSON format and it will speak it aloud.
+
+
+For source code and help visit: https://github.com/Vitorbnc/Hiper
+
+========================================================================================================================
+
+The description of Mqtt Client
+Aplicativo desenvolvido com tecnologia React Native.
+
+- Utiliza o projeto react-native-mqtt, disponível no Github: https://github.com/tuanpmt/react-native-mqtt.
+- Este projeto também tem seu código disponível no Github: https://github.com/darleikroth/MqttClient.
+
+Objetivo é realizar testes com o protocolo MQTT.
+
+========================================================================================================================
+
+The description of MQTT Patterns
+This MQTT Client provides a simple implementation, or proof of concept, capable of one connection at the time, publishing and multiple subscriptions to any given topic.
+
+It supports only a single CA file for SSL/TLS as of this version, however, work is in progress to add a client private key and certificate.
+
+The code, which is the biggest asset of this project, is open source and is based on the Paho library by Eclipse. This It is available in the following repository:
+
+https://github.com/iorobertob/MQTT-Patterns
+
+There are several ways in which this development can be used. Either by modifying the code and adapting it to any need, or by testing connectivity to an already implemented broker, such as an online server. This can be used as a tool to test other MQTT or IoT developments.
+
+This is a Beta version. Any bug, comments and suggestions reported are greatly appreciated to improve this application for further and better use.
+
+-The team at IO-Patterns-
+
+========================================================================================================================
+
+The description of d.Lab MQTT Controller
+This App support all of device which communicate by MQTT protocol. Because this App is designed for Mechanical Design class in Yuan Ze University, we will not allow users to changing topic of MQTT message. This App needs to request Android version above 4.0. If there is any problem, please feel free to contact us. Email:：jimmytai0315@hotmail.com, Tel：03-455-5726, Web：http://grc.yzu.edu.tw
+
+========================================================================================================================
+
+The description of BLE Gateway
+Publish raw data of nearby BLE devices to MQTT Broker.
+
+JSON:
+{"GatewayLocation":"Location[fused 25.027027,xxx...]",
+"GatewayTime":"2018-12-12 12:12:34",
+"BleDevice":[{"MAC":"DB:20:xx:xx:xx:xx",
+"RawData":"020106xxx...",
+"RSSI":-70,
+"Time":"2018-12-12 12:12:34"},
+{"MAC":"DE:99:xx:xx:xx:xx",
+"RawData":"020106xxx...",
+"RSSI":-74,
+"Time":"2018-12-12 12:12:34"}
+]
+}
+
+The description of SAM IoT
+Connect your smart device and start interact..! Support all IoT devices which conform to MQTT Standard Interface.
+
+It's easy to manage your devices. Simply scan your device serial number and start interacting with it. Create your own analytic and dashboard. Share easily with friends and colleagues.
+
+Features:
+* Easy connect IoT device with serial number, QR code scan, invitation.
+* Easy data acquisition with charts & widgets.
+* Design your own dashboard.
+* Capture and share analytic.
+* Easy share to friends & colleagues by share QR code, email, link.
+
+This IoT app is an Open App. It means this app can identify every Open devices circulating in the market which conform to SAM Element MQTT Standard Interface.
+
+If you are unsure with your device inclusiveness, then try to read the manual or contact your device's manufacturer to see whether they have provide their own app.
+
+
+https://github.com/eniot/mobile_mqtt_dash
 ========================================================================================================================
 ========================================================================================================================
 ========================================================================================================================

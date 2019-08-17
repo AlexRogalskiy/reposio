@@ -19166,6 +19166,82 @@ docker run -d --name graphite --restart=always -p 80:80 -p 2003-2004:2003-2004 -
 gpio -v
 gpio readall
 -------------------------------------------------------------------------------------------------------
+	private static final boolean JAVA_8_IS_PRESENT = ClassUtils.isPresent("java.time.LocalDateTime",
+			Jsr310Converters.class.getClassLoader());
+-------------------------------------------------------------------------------------------------------
+<idea-plugin>
+    <id>design.patterns.plugin</id>
+    <name>Design Patterns</name>
+    <vendor email="orestes.polyzos@gmail.com" url="https://www.linkedin.com/in/orestes-polyzos/">Orestes Polyzos</vendor>
+
+    <idea-version since-build="172.*" until-build="192.*"/>
+
+    <description>
+        <![CDATA[
+            <h2>Provides on the fly implementation of various design patterns based on user's code</h2>
+            <p>More information can be found <a href="https://github.com/OrPolyzos/design-patterns-plugin">here</a>.</p>
+            <h3>Currently supported design patterns</h3>
+            <ul>
+                <li>Behavioral</li>
+                <ul>
+                    <li>Strategy</li>
+                </ul>
+                <li>Creational</li>
+                <ul>
+                    <li>Builder (Inner)</li>
+                    <li>Factory</li>
+                    <li>Singleton</li>
+                </ul>
+            </ul>
+        ]]>
+    </description>
+
+    <change-notes>
+        <![CDATA[
+            <ul>
+                <li>
+                    <strong>2.0.3</strong>
+                    <ul>
+                        <li>Adds support for IntelliJ IDEA until build '192.*'</li>
+                    </ul>
+                </li>
+            </ul>
+        ]]>
+    </change-notes>
+
+    <depends>com.intellij.modules.lang</depends>
+    <depends>com.intellij.modules.java</depends>
+    <depends>com.intellij.modules.ultimate</depends>
+    <depends>com.intellij.modules.idea</depends>
+    <depends>com.intellij.modules.idea.ultimate</depends>
+
+    <actions>
+        <group id="design-patterns-group" text="Design Patterns" popup="true">
+            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+        </group>
+        <action id="builderDesignPattern" class="ore.plugins.idea.design.patterns.action.BuilderAction"
+                text="Builder"
+                description="Implements builder design pattern">
+            <add-to-group group-id="design-patterns-group" anchor="first"/>
+        </action>
+        <action id="singletonDesignPattern" class="ore.plugi ns.idea.design.patterns.action.SingletonAction"
+                text="Singleton"
+                description="Implements singleton design pattern">
+            <add-to-group group-id="design-patterns-group" anchor="after" relative-to-action="builderDesignPattern"/>
+        </action>
+        <action id="strategyDesignPattern" class="ore.plugins.idea.design.patterns.action.StrategyAction"
+                text="Strategy"
+                description="Implements strategy design pattern">
+            <add-to-group group-id="design-patterns-group" anchor="after" relative-to-action="singletonDesignPattern"/>
+        </action>
+        <action id="factoryDesignPattern" class="ore.plugins.idea.design.patterns.action.FactoryAction" text="Factory"
+                description="Implements factory design pattern">
+            <add-to-group group-id="design-patterns-group" anchor="last"/>
+        </action>
+    </actions>
+</idea-plugin>
+
+-------------------------------------------------------------------------------------------------------
 <div id="root"></div>
 
 
