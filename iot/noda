@@ -1,0 +1,2360 @@
+You can control 8 lamps by doing the following
+- Connect nodeMCU to 8 channel relay module in D1,D2,D4,D5,D6,D7,D9 and D10 and vin and Ground to VCC and ground of the realy then
+
+- Upload below code to your NodeMCU ESP8266 and then change x1 and x2 to your wifi ssid and password the x3 and x4 to this mobile app user name and password and x5 to your selected device name
+
+#include <ESP8266WiFi.h>
+#include <ESP8266HTTPClient.h>
+#include <ArduinoJson.h>
+const char* wifiName = "x1";
+const char* wifiPassword = "x2";
+const String mobileAppUserName="x3";
+const String mobileAppPassword="x4";
+const String deviceName="x5";
+
+pinMode(5, OUTPUT);
+pinMode(12, OUTPUT);
+pinMode(13, OUTPUT);
+pinMode(14, OUTPUT);
+pinMode(1, OUTPUT);
+}
+void loop(){
+Serial.println("test");
+if (WiFi.status() == WL_CONNECTED)
+{
+HTTPClient http; //Object of class HTTPClient
+http.begin("http://iot.somee.com/api/switch/"+mobileAppUserName+"/"+deviceName);
+int httpCode = http.GET();
+if (httpCode > 0)
+{
+const size_t capacity = JSON_OBJECT_SIZE(17) + 140;
+DynamicJsonDocument doc(capacity);
+auto error = deserializeJson(doc, http.getString());
+if (error) {
+Serial.print(F("deserializeJson() failed with code "));
+Serial.println(error.c_str());
+return;
+}
+const char* Pin0 = doc["Pin0"];
+const char* Pin1 = doc["Pin1"];
+const char* Pin2 = doc["Pin2"];
+const char* Pin3 = doc["Pin3"];
+const char* Pin4 = doc["Pin4"];
+const char* Pin5 = doc["Pin5"];
+const char* Pin6 = doc["Pin6"];
+const char* Pin7 = doc["Pin7"];
+const char* Pin8 = doc["Pin8"];
+const char* Pin9 = doc["Pin9"];
+const char* Pin10 = doc["Pin10"];
+const char* Pin11 = doc["Pin11"];
+const char* Pin12 = doc["Pin12"];
+const char* Pin13 = doc["Pin13"];
+const char* Pin14 = doc["Pin14"];
+const char* Pin15 = doc["Pin15"];
+const char* Pin16 = doc["Pin16"];
+if (strcmp(Pin1, "1") == 0)
+{
+Serial.println("High");
+digitalWrite(1,HIGH);
+}
+else if (strcmp(Pin1, "0") == 0)
+{
+Serial.println("Low");
+digitalWrite(1,LOW);
+}
+if (strcmp(Pin5, "1") == 0)
+{
+Serial.println("High");
+digitalWrite(5,HIGH);
+}
+else if (strcmp(Pin5, "0") == 0)
+{
+Serial.println("Low");
+digitalWrite(5,LOW);
+}
+if (strcmp(Pin4, "1") == 0)
+{
+Serial.println("High");
+digitalWrite(4,HIGH);
+}
+else if (strcmp(Pin4, "0") == 0)
+{
+Serial.println("Low");
+digitalWrite(4,LOW);
+}
+if (strcmp(Pin3, "1") == 0)
+{
+Serial.println("High");
+digitalWrite(3,HIGH);
+}
+else if (strcmp(Pin3, "0") == 0)
+{
+Serial.println("Low");
+digitalWrite(3,LOW);
+}
+if (strcmp(Pin2, "1") == 0)
+{
+Serial.println("High");
+digitalWrite(2,HIGH);
+}
+else if (strcmp(Pin2, "0") == 0)
+{
+Serial.println("Low");
+digitalWrite(2,LOW);
+}
+if (strcmp(Pin14, "1") == 0)
+{
+Serial.println("High");
+digitalWrite(14,HIGH);
+}
+else if (strcmp(Pin14, "0") == 0)
+{
+Serial.println("Low");
+digitalWrite(14,LOW);
+}
+if (strcmp(Pin12, "1") == 0)
+{
+Serial.println("High");
+digitalWrite(12,HIGH);
+}
+else if (strcmp(Pin12, "0") == 0)
+{
+Serial.println("Low");
+digitalWrite(12,LOW);
+}
+if (strcmp(Pin13, "1") == 0)
+{
+Serial.println("High");
+digitalWrite(13,HIGH);
+}
+else if (strcmp(Pin13, "0") == 0)
+{
+Serial.println("Low");
+digitalWrite(13,LOW);
+}
+http.end(); //Close connection
+}
+delay(2000);
+}}
+
+========================================================================================================================
+✴ This application allows you to control a RC wifi car using your smartphone.
+
+✴ To create my Wifi car, I used the NodeMCU V3 microcontroller which includes an ESP8266 Wifi module. The car can be controlled either in AP mode (Access Point) or in STA mode (Station).
+
+✴ The steps to control your car are:
+• connect your smartphone to the same wifi network as your wifi car.
+• Make sure that the application parameters are correct (IP, PORT, etc..).
+• Have fun!
+
+✴ 3 different ways to control your car:
+• buttons.
+• accelerometer.
+• voice.
+
+✴ List of default commands sent to your car server to control the motors are :
+• http://YourIP:YourPort/?State=F (Forward)
+• http://YourIP:YourPort/?State=B (Backward)
+• http://YourIP:YourPort/?State=R (TurnRight)
+• http://YourIP:YourPort/?State=L (TurnLeft)
+• http://YourIP:YourPort/?State=S (Stop)
+
+✴ The source code of my project is available here : https://github.com/lacour-vincent/wifi-car-esp8266
+========================================================================================================================
+Описание для DedoFi
+Control Nodemcu(ESP8266) , Arduino with ESP8266 and any other device which can connect to the WIFI network. (you must can program it)
+
+There is a very beautiful interface with easy and simple control. You can add Living Rooms , Dining Rooms, Bed Rooms ,Wash Room etc. After you can open id and add the electric component you want to control.
+
+This application is used TCP/Socket to communicate. Your electric component and your smart phone must connect to the same wifi network. Using IP address and relevant socket number you can send command.
+========================================================================================================================
+Описание для IoT Platform For DIY Makers
+Control your ESP8266, ESP-12, Arduino, NodeMCU or Raspberry Pi and other microcomputers with the smartphone over the cloud Internet platform.
+You can Create a Device like Switch,Sensor,water Level or GPS Tracking and more!!
+
+iotBind platform for DIY internet of thinks makers, is an innovative platform to provide solutions for creative minds to unleash their ideas and projects and connect them to a single platform that provides them with all the services of communication, control and information collection through tools created based on the tests and tests we have done We are navigating in the Internet space things we share solutions and experiences with you.
+
+iotBind APIs supported communication protocols to connect yor Device with platform like :
+- HTTP/HTTPS
+- MQTT
+- Websocket
+- CoAP
+and more protocols coming
+
+iotBind API Reference and Example Code :
+https://iotbind.com/api.html
+
+Example Device :
+- ESP8266, ESP32, NodeMCU
+- Arduino Uno, Arduino Mega, Arduino Nano , Arduino Mini , Arduino , Arduino Due, Arduino 101
+- Raspberry Pi
+- Spark Core
+- Particle Core
+- TinyDuino
+- Particle Photon
+- SparkFun Board
+- Wicked WildFire
+And any other device that supports Internet access with one of the supported protocols.
+
+What you can do with this app:
+* View all project in your account
+* Control all smart home devices connected in the project
+* Interactive data review of sensors
+* See device details
+* View History data by chart graph
+* Geographic tracking devices live on the map
+* Display time and date by timezone
+* Edit account data
+* View project data and properties
+* View departments in each project
+* View all devices in the departments
+* Add a new devices
+* Add timer on Switch devices
+* Add and delete departments
+* Add and delete devices from departments
+* Manage and display your favorite devices
+* View DIY GPS tracking devices on Google Maps
+* View and delete all your massege from project
+========================================================================================================================
+Описание для ESP8266 Loader
+A tool runs on Android platform to create an IoT project easy.
+Makes it easy to upload binary file (result of compiled Arduino IDE) to any Expressif ESP8266 development board via USB OTG or WiFi (OTA).
+
+Features:
+★ Upload/Flash bianry file via USB OTG
+★ Upload/Flash bianry file via WiFi (OTA)
+★ Support any USB chip: CDC/ACM, FTDI, PL2303, CH34X and CP210X
+★ Serial Monitor for debuging
+★ Change the Blynk token, SSID & password automatically durring upload
+★ No Ads (Pro version)
+★ Access to Google Drive storage (Pro version)
+★ Multiple upload widgets button (Pro version)
+
+Note:
+- Your device must support USB Host OTG, otherwise the program will not work
+- Use good quality OTG adapter/cable, otherwise the uploading failure
+========================================================================================================================
+Описание для NODEMCU IOT Car
+Link for YouTube video-
+https://www.youtube.com/watch?v=sqHQcd_BgLs
+
+Link for my YouTube channel-
+https://www.youtube.com/rupakpoddar
+
+Link for Arduino Code-
+https://create.arduino.cc/editor/RUPAK_Share/2ad3e8e2-c7b6-41d1-ae3d-99a95f768a12/preview
+========================================================================================================================
+Описание для Switch ESP8266
+Application to operate the ESP8266's website with NodeMcu firmware and configured web server.
+
+You only need to load the firmware NodeMcu in your ESP8266 and then with Lua programming language start a web server with which to manage GPIO outputs or what you have programmed.
+
+The program is very simple, you only have the option to configure the IP address of ESP8266 or set AutoScan option to let the app find it, it shows you both your ip such as the ESP8266 with alert in the event that the two IPs are not on the same LAN, you can add as many buttons (commands) as you wish.
+
+You can use 1 button and 2 buttons commands, 1 button for pushbuttons, there are people who only need a command and the ESP software does several things (?GPIO = 1). The two-button commands are when you have a relay and you want to control when turn it on and when off, the variable to configure would be ON,OFF (two words separated by a comma) creating two buttons one with the ON word and another with the OFF word, so you call the web server running at the ESP with an URL ended by ?ON=1 and OFF=1 respectively, being 1 the value configured (usually the GPIO to actuate).
+
+The value normally is the GPIO, but can be any character you can handle appropriately in web code.
+
+Sample code to program into ESP8266:
+
+http://37.187.4.185/server.lua
+========================================================================================================================
+
+Описание для Virtuino
+Управление Arduino через BLUETOOTH
+Управление Arduino через ИНТЕРНЕТ (шилд Ethernet или ESP8266)
+Управление Arduino через WIFI (ESP8266)
+Управление Arduino с помощью SMS
+Контроль через сервер Интернет вещей - Thingspeak
+
+Контроль более одной платы Arduino одновременно
+
+Визуализируйте ваш проект Arduino.
+Создание визуальных интерфейсов с помощью виджетов, таких как светодиоды, кнопки, переключатели, значение дисплеи, приборы, регуляторы и т.д.
+
+Легко использовать. Вам нужно добавить только две или три строки кода Arduino
+
+----------------- Как начать:
+1. Скачайте и установите следующую библиотеку для Arduino IDE.
+Virtuino Библиотека: http://iliaslamprou.mysch.gr/virtuino/virtuino.zip
+
+2. Подключите один из следующих модулей для Arduino платы
+а. модуль Bluetooth HC-05 или
+б. Ethernet шилд или модуль ESP8266
+
+3. В зависимости от подключенного модуля Arduino платы выберите соответствующий пример из библиотеки Virtuino.
+Следуйте инструкциям.
+
+4. Запустите Virtuino, в главном меню выберите: Учебники - Начало работы
+
+5. Создайте свой первый проект Virtuino. Добро пожаловать в мир Virtuino!
+
+Примеры:
+Bluetooth HC-05 + Arduino
+http://users.art.sch.gr/iliaslamprou/virtuino/virtuino_bluetooth_tutorial_1.html
+
+Ethernet шилд + Arduino
+http://users.art.sch.gr/iliaslamprou/virtuino/virtuino_ethernet_tutorial_1.html
+
+ESP8266 + Arduino
+http://users.art.sch.gr/iliaslamprou/virtuino/virtuino_esp8266_tutorial_1.html
+
+------------------ Видео Уроки:
+
+1. Как установить библиотеку Virtuino
+https://www.youtube.com/watch?v=twwEMW5BXU4
+
+2. Arduino управления Bluetooth (начало работы)
+https://www.youtube.com/watch?v=7lbTvAeSNTU
+
+3. Thingspeak IoT пример - Ethernet шилд
+https://www.youtube.com/watch?v=ng767bg2BNk
+
+4. Thingspeak IoT пример - ESP8266
+https://www.youtube.com/watch?v=4XEe0HY0j6k&t=1179s
+
+Модуль 5. ESP8266 NodeMCU
+https://www.youtube.com/watch?v=i1zZuYUfV3M
+
+Модуль 6. ESP8266 WeMos
+https://www.youtube.com/watch?v=_o8OxHk9Ulo
+
+
+Мой канал на YouTube: https://www.youtube.com/channel/UCEKKd7DJkhJ6fnQNX9mKvGw
+
+Если вы столкнулись с какой-либо проблемы при создании собственного примера, не стесняйтесь сообщить мне об этом по адресу: iliaslampr@gmail.com
+========================================================================================================================
+
+Описание для My Wifi Relay
+!!!!!!!! NEW FUNCTIONALITY!!!!!!!!!!!!
+Now it is possible to add independent timers to your relays. Set the day, the activation and deactivation time and your relay will activate at the scheduled time.
+It does not matter if the module is reset since it saves the activation parameters in the processor's flash memory (only if the firmware included in the app is used)
+
+Thanks to this App you can control the relays connected to your arduino or connected to module ESP8266 or ESP32 or similar. You can add as many relays as you want from the same module or different modules. The code is included in the application to be able to load it into the Arduino IDE and the connection scheme between the ESP and the relays.
+
+The app also receives feedback from the relays, atomically positioning ON / OFF.
+It is possible to modify the button that governs the relay so that it sends PULSES in an interval that you can prefix. (only if the firmware included in the app is used ...)
+
+In the Settings section you can modify the control word to suit your needs.
+========================================================================================================================
+Описание для ESP8266 IOT Control
+ESP8266 IOT Control is best app to control your wifi boards using http calls.
+
+You can control your ESP8266 WiFi Module ( or NodeMCU ) by just entering your device IP address
+and command to perform some action.
+========================================================================================================================
+Описание для ESP8266 SmartConfig
+ESP8266 SmartConfig
+
+Arduino Code
+
+you can simply call beginSmartConfig() like this
+
+WiFi.beginSmartConfig();
+while(1){
+delay(1000);
+if(WiFi.smartConfigDone()){
+Serial.println("SmartConfig Success");
+break;
+}
+}
+
+or the easier way is use library that support smartConfig function such as
+WiFiConnector Arduino Library: https://github.com/cmmakerclub/WiFiConnector
+========================================================================================================================
+
+Описание для ESP8266 WiFi Configurator (EWC)
+Configure your ESP8266 WiFi module with your Android device USB port. (USB OTG supported Android device, OTG cable and USB-RS232 converter required)
+
+Features:
+* Baudrate setting
+* Send AT command (AT)
+* Checks Version Information (AT+GMR)
+* Lists Available APs (AT+CWLAP)
+* Sets the IP Address of the ESP8266 Station (AT+CIPSTA)
+* Obtain the IP address of the ESP8266 Station (AT+CIPSTA?)
+* Connects to an AP (AT+CWJAP)
+* WiFi commands: CWMODE?, CWMODE=, CIPMODE?, CIPMODE=, CIPMUX?, CIPMUX=
+* Show USB log for send/receive data
+
+Hardware requirements:
+* OTG cable (To convert Micro USB to USB)
+* USB-RS232 converter
+
+Devices Supported
+Supports USB-RS232 converters with the following chips
+
+* CP210X
+* CDC
+* FTDI
+* PL2303
+* CH34x
+========================================================================================================================
+Описание для Arduino ESP8266 Projects
+The best Arduino ESP8266 Projects
+ESP8266 WiFi module is basically a microcontroller developed by Espressif Systems which is a company based out of shanghai. This microcontroller has the ability to perform WIFI related activities hence it is widely used as a WIFI module with other microcontrollers and boards such as Arduino. For tutorials to get started with ESP8266 WiFi module, check out this section of ESP8266 projects.
+Web Controlled Servo using Arduino and Wi-Fi
+Heart Beat Monitoring over Internet using Arduino and ThingSpeak
+IOT based Air Pollution Monitoring System using Arduino
+IOT Based Dumpster Monitoring using Arduino & ESP8266
+Live Temperature and Humidity Monitoring over Internet using Arduino and ThingSpeak
+Track A Vehicle on Google Maps using Arduino, ESP8266 & GPS
+How to Send Data from Arduino to Webpage using WiFi
+Controlling RGB LED using Arduino and Wi-Fi
+WiFi Controlled Robot using Arduino
+Sending Email using Arduino and ESP8266 WiFi Module
+========================================================================================================================
+Control a car robot using a Wi-Fi board Esp8266 Wifi
+by using ARDUINO IDE
+and sending commands these are: left ,right,forward,backward
+for Arduino Board compatible with it especially ESP8266 NODE MCU & WEMOS D1 and ESP32 wifi ...
+========================================================================================================================
+Описание для WiFi Controller
+INTRODUCTION:
+-WiFi Controller is used to send and receives messages to Arduino with ESP8266 WiFi module using TCP/IP Protocol.
+-To connect with device you have to add IP & PORT of device and select it.
+
+FEATURES:
+- Auto connectivity with last selected device.
+- By, Long pressing of any button you can custom your own buttons for frequent sending of same data.
+- Configurable sliders.
+- Monitor Device responses.
+- Keep Screen on/off option.
+- Remove Ads Option.
+
+Slider's Default Commands:
+- Slider 1: A0 to A255
+- Slider 2: B0 to B255
+- Slider 3: C0 to C255
+========================================================================================================================
+
+Описание для ESP Matrix - a DIY LaMetric
+ESP Matrix device is a WiFi capable smart clock & smart notification (inspired by LaMetric Time) consisting of an 8x64 LED MATRIX and ESP8266 as main controller. (Cost without case ~15$). The case comes from the 3D printer. It shows the time, weather, 5 reminder/own texts, calendar, news, advice, Bitcoin rate, instructables counter and youtube counter. Game of Life, virtual Pet and much more.
+It runs completely autonomously and be configured and controlled via an ESP Matrix app, with this application you can create Smart Clock & Smart Notification based IoT ESP8266, configure and setting ESP Matrix device very easy just using this app with a simple interface.
+
+ESP Matrix device features:
+- Display Clock with a beautiful animation icon
+- Display Reminder-1
+- Display multiple Reminder-2 to Reminder-5 (Pro Version)
+- Display Calendar (Pro Version)
+- Display Hijri Calendar (Pro Version)
+- Display Muslim Prayer times
+- Display Weather information, source: openweathermap.org (Pro Version)
+- Display News, source: newsapi.org (Pro Version)
+- Display Advice, source: adviceslip.com (Pro Version)
+- Display Bitcoin rate, source: coindesk.com (Pro Version)
+- Display Instructables Followers & Views, source: instructables.com (Pro Version)
+- Display Twitter Followers counter, source: twitter.com
+- Display Twitter Facebook Page Like counter, source: facebook.com (Pro Version)
+- Display Twitter Instagram counter, source: instagram.com (Pro Version)
+- Display Youtube Subscribers (realtime) & Views (source: youtube.com)
+- Able to configure Brightness display
+- Able to configure scroll text speed
+
+App features:
+- Upload firmware directly from your Android phone to ESP Matrix
+- Set WiFi connectivity of ESP Matrix devices through the app
+- Configure ESP Matrix device through an simple interface
+
+Tutorial to make hardware ESP Matrix:
+https://www.hackster.io/mansurkamsur/esp-matrix-iot-smart-clock-dot-matrix-use-esp8266-e770fa
+
+Note:
+* Required permission to access devices Location for WiFi discovery (not for GPS location)
+* If you get problem when upload firmware from Android to Wemos/NodeMcu you can upload firmware use Laptop/PC, download firmware here: https://github.com/bluino/ESPMatrix_firmware
+========================================================================================================================
+
+Описание для Controllium - ESP8266 IOT
+Controllium is an app that enables you to control you ESP8266 projects using your Android device.
+You can send data from the ESP to the app and vice-versa using wifi.
+You can control as many ESPs as you want with this app.
+
+Save and manage controllers configuration.
+
+The library to be used on the Arduino IDE (C++) can be downloaded here: https://github.com/artur31415/Synapse/tree/master/Controllium
+
+
+Any ideas or criticism, comment down bellow.
+
+Have fun! :D
+========================================================================================================================
+Описание для Home Auto
+Home Auto App can be connected with a home auto ESP8266 device to control ON or OFF relay switch.
+
+- Application completed for the user to access control devices with UID protected.
+
+User Access Controls
+- Control ON or OFF Relay
+- Can create a WiFi access point with changing password protective.
+- Can connect to another WiFi devices.
+
+
+Requirement
+- ESP8266 WiFi Module (nodeMCU).
+- Relay Module.
+- ESP8266 Source code.
+- Coding by Arduino IDE
+
+Contact me for more information
+Email: vonnsona@gmail.com
+========================================================================================================================
+
+Описание для Wi-PWN
+This app will NOT work without an ESP8266 running the Wi-PWN firmware.
+- See https://github.com/samdenty99/Wi-PWN for more.
+
+If you have any issues, open an issue on GitHub instead of leaving a bad review ~ this app is still in development
+- https://github.com/samdenty99/Wi-PWN/issues/new
+
+
+ESP8266 Deauther ​with clean & material design interface
+
+- Fast & responsive Material Design UI, with optional dark mode
+- Integrated Deauth Detector (with full customization)
+- WiFi client mode - Access Wi-PWN on a WiFi network
+- Info page with total packets sent, uptime, memory usage, check for updates...
+
+
+Frequently asked questions:
+
+I see a blank screen!
+- This is normal, make sure you connect to the 'Wi-PWN' network and try again.
+
+The app crashes instantly
+- Make sure you are running the latest version, if it continues open an issue on GitHub
+
+I would like to see X feature
+- Open an issue on GitHub
+
+
+The ESP8266_deauther source code is the intellectual property of Stefan Kremser, "Spacehuhn" 🚀🐔
+========================================================================================================================
+Описание для Serial USB Terminal
+'Serial USB Terminal' is a line-oriented terminal / console app for microcontrollers, arduinos and other devices with a serial / UART interface connected with a USB to serial converter to your android device.
+
+This app supports USB to serial converters based on
+- FTDI FT232, FT2232, ...
+- Prolific PL2303
+- Silabs CP2102, CP2105, ...
+- Qinheng CH340
+and devices implementing the USB CDC protocol like
+- Arduino using ATmega32U4
+- Digispark using V-USB software USB
+- BBC micro:bit using ARM mbed DAPLink firmware
+
+To connect USB to serial converters, your android device must support USB OTG aka. USB host mode. Most devices support this today, but in case of issues check with one of the various USB test apps, if host mode is enabled in your android kernel.
+
+All features in this app are free. In-App purchase is only used for the 'Donate' option.
+
+Looking for source code? Here you find a simplified variant of this app:
+https://github.com/kai-morich/SimpleUsbTerminal
+========================================================================================================================
+
+Описание для Serial WiFi Terminal
+'Serial WiFi Terminal' is a line-oriented terminal / console app for devices connected over WiFi.
+In Addition to the usual ssh and telnet protocols, it also supports raw-sockets making it an ideal terminal for devices such as ESP8266 configured as WiFi to Serial bridge.
+
+Supported protocols:
+- ssh
+- telnet
+- raw sockets
+
+For raw sockets these ESP8266 'WiFi to Serial' firmwares have been tested:
+- Arduino -> Examples -> Esp8266WiFi -> TelnetToSerial
+- GitHub -> jeelabs/esp-link
+
+This app can also be used as Linux terminal, but is not a full full-blown terminal emulator as it is line-oriented and only supports a subset of escape sequences.
+
+All features in this app are free. In-App purchase is only used for the 'Donate' option.
+
+========================================================================================================================
+
+Описание для Blynk myPlant
+This is a demo app to show how the project made with Blynk App can be branded, exported and published as a standalone application
+
+Visit http://blynk.io to learn more.
+
+You will also experience how Blynk helps with product WiFi provisioning by guiding users through all the necessary steps required to connect the product to WiFi network.
+
+IMPORTANT: You would need to flash the firmware to your hardware (this is also a part of the demo).
+
+You can use:
+SparkFun Blynk Board, NodeMCU or any other ESP8266 boards.
+
+Please follow our instructions here:
+https://github.com/blynkkk/blynk-library/blob/master/examples/Export_Demo/myPlant_ESP8266/README.md
+
+Should you have any questions - please email us at hello@blynk.cc.
+
+========================================================================================================================
+
+Описание для ArduinoDroid
+Important:
+The app takes about 210Mb as it contains IDE, compiler and uploader. Make sure you have enough free space in internal storage and it can't be installed on sd card because of Android security policy.
+
+Features:
+* open/edit Arduino sketches
+* example sketches and libraries included
+* code syntax highlighting with themes support *
+* code complete *
+* real-time diagnostics (errors and warnings) and fixes *
+* sketch navigator *
+* tiny built-in software keyboard *
+* compile sketches (no root required)
+* upload sketches (Arduino Uno/Uno_r3, Duemilanove, Nano, Mega 2560, Leonardo, Micro/Pro Micro, Pro, Pro Mini, Yun, Esplora, Robot Control, Robot Motor boards are supported, android devices with USB-host support required)
+* serial monitor
+* works offline (no internet connection required)
+* Dropbox support
+* Google Drive support
+* material design
+
+App blog:
+http://www.arduinodroid.info
+
+Troubleshooting:
+http://www.arduinodroid.info/p/troubleshooting.html
+
+Advanced paid features (marked with *) review:
+http://www.arduinodroid.info/p/advanced-features.html
+
+See also CppDroid app:
+http://www.cppdroid.info
+
+© "Arduino" is a trademark of Arduino team.
+
+========================================================================================================================
+
+Описание для NIO Visual Programming Language IDE
+🛸 Working on Web app (cross-platform Niomatic IDE) : https://user.niomatic.com/test (Alpha)
+🛸 Working on community : https://user.niomatic.com/pub/explore
+📙 Documents : https://user.niomatic.com/document
+
+Now, you are able to build your desired executable program as a mobile app in easy steps without need any additional applications installed on your smart phone.
+Sketch your idea in the mind, and at the moment, design it by NIO as a propriety software!
+For Instance, you can create an encrypted live chat system with your friends, capable of sending arbitrary data as well as text messages. Moreover, you can send your documents with a devised format titled, .nio format, by the common social networks, E-mails or messengers. Due to the power of nio format encapsulating different information, your colleagues receive text, great charts and etc. by just a few clicks. NIO also provides you with such an astonishing tool for designing an interactive catalogue attracting your customers’ attention not only because of stylish texts and figures, but also due to viewing multimedia promotions. Thus, you fabricate a live feedback framework of your products while doing your best design by simply manipulating NIO software.
+Your buddies and your robots!
+You will be surrounded by intelligent devices, ready to listen your orders. Meaning that shared chat environment, comprising your friends and smart obedient machines, comes true by NIO. Really, sharing of devices is an impressive idea.
+Hardware connection
+With NIO, well-known hardware modules such as Raspberry PI, ESP8266 and Arduino UNO can be controlled by smart phones, while commands are sent from anywhere at any time, giving you power what you would like to do. For instance, smart greenhouse or pet food system may be built plainly as well as a monitoring mobile app.
+Plugins
+◾Set of practical modules to be implemented Cloud features, Ethernet protocol, BLE , WiFi and USB communication.
+◾Set of UI modules including List views, different type of charts, maps and functional elements.
+◾Set of analysis modules.
+◾Set of data related modules supporting String, JSON format and clusters.
+◾Set of processing modules.
+◾At last but not least, set of modules compatible with Restful Web Services.
+Improve your business opportunities.
+NIO boosts your speed of both prototyping and manufacture a novel product, since all complicated sections are previously implemented. User Interface of your app is also available with help of embedded Android and Android Things platforms thanks to NIO features. Hence, you have only challenge on your market not on the excruciating design of your product.🍩
+Have a fun
+Building a remote control car might be a fascinating idea for entertainment of everyone. This would be commonplace by connecting two DC motors and a simple WiFi module, while it is controlled over your mobile phone running based upon your voice commands!
+Surprise your guests
+By NIO voice recognition, you utilize magical voice commands and indoor devices comply them accordingly. You can do awesome work in your party.
+Become a developer with lots of resources
+There are many hardware modules that can receive and send data over wireless networks and the Net. These are potential candidates to be utilized by NIO with some straightforward steps.
+Security is the main issue
+The NIO has benefited from a new inventive framework in order to improve access and security challenges. Channels are responsible for connections between Nodes and Users, in NIO world. You may specify accesses to channels for your friends by just one click. Moreover, these channels are managed by the services. Surprisingly, you have a comprehensive control over services and channels by the provided panels.
+▶Now, it’s your turn…
+The services and features of NIO are updated. Update the app regularly to discover new specifications.
+
+========================================================================================================================
+
+Описание для WiFi Robot Controller
+Resource available to make your own robot at: www.roboindia.com/tutorials
+
+========================================================================================================================
+Home automation is the automation process of home appliances and other home functions so that they can be controlled with your phone, computer, or even remotely. Below is a list of some home automation projects which are based on various microcontrollers, arduino, raspberry pi, etc. These home automation projects are covered with detailed explanation of circuit diagrams.
+RF Remote Controlled LEDs Using Raspberry Pi
+GUI Based Home Automation System
+DTMF Based Home Automation
+GSM Based Home Automation using Arduino
+PC Controlled Home Automation using Arduino.
+Bluetooth Controlled Home Automation System using 8051
+IR Remote Controlled Home Automation using Arduino
+Temperature Controlled AC Home
+IoT based Web Controlled Home Automation using Raspberry Pi
+Raspberry Pi based Smart Phone Controlled Home Automation
+RF Controlled Home Appliances
+IOT based Voice Controlled Home Automation using ESP8266 and Android App
+Smart Junction Box for Home Automation using ESP8266
+IR Remote Controlled Home Automation using PIC Microcontroller
+Temperature Controlled Automatic Switch
+Smart Phone Controlled Home Automation Using Arduino
+Voice Controlled Lights using Raspberry Pi
+========================================================================================================================
+This APP can connect Osoyoo Arduino Robot Car (V1.0) with Bluetooth and Wifi(car working as a wifi hotspot). The robot car can make forward,backward, left turn and right turn movement. Besides, it can also auto run in obstacle-avoid mode and line-tracing mode. All the movement and working mode can be controlled by this APP.
+========================================================================================================================
+
+Описание для ESPLink
+Overview:
+Control your home lights and water pump with the smartphone over your local area network (LAN) or over the internet*. This app requires a special hardware to be fully functional. if you like the app and would like to use it for your home, we offer two options:
+1) If you are familiar with ESP8266, read our guidelines and develop Arduino IDE code yourself (no support)
+2) You can purchase fully functional pre-flashed ESP8266 module with four relays from us (full support). Light sensor and humidity sensor are optional and can be plugged at any time.
+
+Technical description:
+This app communicates to WiFi enabled microcontrollers ( ESP8266, ESP32 and Arduino+ESP) via websocket connection. To establish websocket connection between app and device, both should be connected to same local area network (LAN) or directly connected with each other using microcontrollers hotspot. Once websocket connection established, data are exchanged using JSON data format. Devices can also be controlled over internet, however, that requires port forwarding, which we would not recommend due to security reasons. Since the app offers real time updates, it utilizes a bi-directional data flow of a predefined JSON structure. If microcontroller failed to send well formatted JSON data, the app simply will not work as intended.
+
+Highlights of the App:
+1) Clean interface based on material design
+2) Offers light and dark theme, which could be controlled manually or automatically based on day/night
+3) Automatically tries to connect to the last connected device, if fails start auto scan for available devices
+4) On demand scan can be started at any time, which lists all available WiFi networks/devices, offering easy connection
+5) Offers fours switches, which operate in three different mode:
+a) MANUAL Mode: user can toggle switches at any time.
+b) AUTO Mode: using light sensors, it detects ambient light and turn ON (default 10 Lux)/OFF (default 20 Lux) switches automatically .
+c) TIMER Mode: user can set ON/OFF time for each switch.
+** For water pump switch the AUTO Mode detects water level and turn ON at a set level (default 80%, can be changed from setting) and OFF (default 100%).
+6) It reports real time sensor readings (temperature, humidity, light, battery voltage)
+7) Logs all the incoming and outgoing data with time stamp. It also logs connection status, setting parameters etc.
+8) Log window also offers message (any message typed by user) broadcast to either device or to all connected clients.
+9) App offers real time data synchronization in both direction. It automatically detects WiFi and/or websocket connection loss and try to re-establish connection.
+10) Device configuration related to network (SSID, password, IP, port etc.) and sensors calibration can be modified in the settings and uploaded to device just by taping a button
+11) App can also be used to update device time in case device is not connected to internet
+
+Highlights of the Hardware:
+1) Device always try to connect to the configured WiFi network (Station/STA mode), if fails automatically switched to access point mode (AP mode). This feature is handy for configuring the device during first start or in case of WiFi loss.
+2) All the network and sensor configuration are save in SPIFFS, therefore, does not loss in case of power loss.
+3) Device also saves all the switches state and mode, so in case of system restart intentional/unintentional all the states retains
+
+========================================================================================================================
+Описание для Best Arduino Projects
+Arduino is an open-source prototyping platform based on easy-to-use hardware and software. Arduino boards are able to read inputs - light on a sensor, a finger on a button, or a Twitter message - and turn it into an output - activating a motor, turning on an LED, publishing something online. You can tell your board what to do by sending a set of instructions to the microcontroller on the board. To do so you use the Arduino programming language (based on Wiring), and the Arduino Software (IDE), based on Processing.
+That actually says it all.
+You can find the complete introduction here.
+
+Maybe a little more information about the board:
+
+The Arduino Board itself is a blue circuit board, the size of a credit card (but they also have models in other sizes). It has two rows of connectors (the 'headers'), a power connector and a USB connector. The brain of the board is an Atmel microcontroller. It's like a really small, very low power 'computer'. (It only has 32KB of storage, 2KB of RAM, and the 8-bit processor runs at only 16MHz.) For most applications, however, this is more than enough. The pins of the processor connect to the headers, and you can connect them to virtually anything you can imagine. You just need to write some lines of code to control them. The I/O pins (Input/Output) can be used as input pins, to connect buttons or knobs, temperature sensors, light sensors, or even keyboards and mouses, digital musical instruments … or they can be used as output pins, to connect LEDs, drive motors, control the lights in your home, connect to small displays or even connect to the Internet, so that it can check your mail, post tweets ... Through the USB connection you can also use it to control your computer, or use your computer to control the Arduino.
+
+As you can see, the sky's pretty much the limit !
+Arduino is a popular open-source development board for engineers and makers to develop electronics projects in an easy way. It consists of both a physical programmable development board (based on AVR series of microcontrollers) and a piece of software or IDE which runs on your computer and used to write and upload the code to the microcontroller board.
+Explore below some interesting arduino projects and tutorials based on different types of arduino baords like Arduino Uno, Arduino Pro Mini, etc. These DIY arduino projects for beginners are explained well and you can find the complete guide to DIY these projects with the help of circuit diagrams, source codes and videos. You can also browse below pages to get new arduino project ideas.
+
+========================================================================================================================
+
+Описание для Mercury Droid
+Mercury Droid is one kind of IoT(Internet of things) based "Home Weather Monitoring" Android mobile application. this application is capable of read home weather activity like Celsius, Kelvin, Fahrenheit, Heat-Index, Humidity. Basically this application can communicate with NodeMCU(ESP-8266MOD), which is and IoT wifi Module. the NodeMCU(ESP-8266MOD) is the brain of Mercury Droid IoT Embedded system which collect DHT-11 sensor Temperature and Humidity data send this sensor data to it's Webserver and then Mercury Droid android mobile application can read this data from NodeMCU(ESP-8266MOD) or Mercury Droid webserver by using a specific static IP address. By default this static IP is 192.168.0.107 . this application has also have a special feature to measure the excessive Temperature by comparing with user given Threshold value. If the threshold value is less than Celsius Temperature value than this application gives you alert if Threshold value is grater than Celsius value it not gives you alert.
+
+You can build whole system from here :
+https://www.instructables.com/id/IoT-Home-Weather-Monitoring-System-With-Android-Ap/
+
+Mercury Droid or NodeMCU(ESP-8266MOD) System Arduino IDE Code :
+https://github.com/avimallik/IoT-Home-weather-monitoring-system-NodeMCU-ESP-8266MOD-Code
+
+Basic Information :
+Mercury Droid Application can communicate with Mercury Droid System by using this Static IP Address : 192.168.0.107 . You can change this IP address from NodeMCU code
+
+Hardware or Instruments I used :
+1. NodeMCU(ESP-8266MOD)
+2. DHT-11 Temperature & Humidity Sensor
+
+========================================================================================================================
+
+Описание для IoT Smartconfig
+ESP8266, ESP32 Smartconfig application with MQTT Client over Websocket for test
+
+========================================================================================================================
+架構簡介:
+A.APP可以管理多個NodeMcu
+B.NodeMcu 也可以同時被多台手機管理
+
+Android APP
+1.提供介面來設定每塊NodeMcu的工作
+Ex:控制腳位 High、Low、PWM、監聽 高低電位變化
+2.只要能上網 註冊成功後 便能使用 無須複雜的連線設定
+3.新增裝置 只需要裝置的 ID、密碼 便能新增裝置 開始管理
+4.APP一直會更新 提供更多功能 歡迎提供建議
+5.能接受來自板子的推播通知
+Ex:裝置上線、裝置腳位電位改變、升級通知
+6.在APP上能"即時"監看NodeMcu腳位的變化
+7.同步檢查 => 當NodeMcu與APP設定同步時 會顯示已同步
+8.上線檢查 => 進入管理畫面時 能檢視裝置是否在線
+9.腳位名稱自訂義 => 腳位D0、D1.....能自己命名喜歡的名子
+10.Serial Monitor 能與裝置Serial即時對談
+11.控制裝置睡眠時間 耗電量降低至50uA
+12.紀錄腳位電位變化至伺服器資料庫
+
+NodeMcu
+1.使用WiFi連線
+2.目前腳位功能
+輸出:High、Low、PWM 、按一下 功能
+輸入:監聽 高低電位變化
+3.開機自動讀取 APP對NodeMcu最新的設定
+4.裝置OTA升級 板子也能即時得到最新的軟體升級 不必麻煩的手動刷入更新
+5.裝置定時睡眠功能 耗電量降低至50uA
+
+應用範例
+1.利用繼電器控制家電開關
+2.PWM控制 電燈亮度、風扇轉速
+3.監聽功能 利用磁簧開關 監聽房門or窗戶 是否被開啟 APP能即時收到通知
+4.使用其他 Arduino板子 讀取NodeMcu的腳位資訊 來做其他應用
+5............無限的應用方式 發揮各位Maker的想像力
+謝謝各位耐心地觀看 希望能捧場這作品
+一切完全免費使用
+下載位置
+
+NodeMcu 韌體
+http://sinyotsai.mukicloud.com/Files/NodeProject.ino.bin
+
+NodeMcu Flasher
+刷入請用下面連結程式 選擇上方的檔案
+並選擇正確的Port便能刷入
+http://sinyotsai.mukicloud.com/Files/nodemcu-flasher-master.zip
+
+初始化教學影片:
+https://drive.google.com/open?id=1HDVfSfLTHGY4QXpWtn8Byw9x9wZVmXPZ
+
+流程教學:
+1.先對NodeMcu使用NodeMcu Flasher刷入韌體
+2.安裝 智慧生活APP 並註冊登入
+3.將NodeMcu接上電源
+4.APP端 登入後 => 按下右下角的 + => 初始化裝置 => 選擇裝置(預設不須密碼) => 輸入要連線的WiFi名稱(只支援英數)、密碼(只支援英數)、裝置的新密碼(至少8位數)
+5.等待裝置連線至伺服器APP將會自動將裝置新增至清單 如果沒有 請執行步驟6、7
+
+6.APP將會收到通知 上面會有 裝置ID 請記錄下來
+或 使用Arduino Serial Monitor 連接NodeMcu 開機時會看見 裝置ID
+7.使用APP主畫面 右下的 "+" 來新增裝置 輸入ID、初始化時設定的密碼、名稱
+8.完成!!!
+========================================================================================================================
+Описание для GUI Maker for ESP8266 & ESP32 - Python Inst. Panel
+What is the purpose of this application?
+
+By arranging buttons, timers, graphs etc. and describing the processing in Iron Python, it is possible to create the operation panel for ESP 8266 and ESP 32 in a short time.
+
+What program should be written to ESP8266 / ESP32?
+
+Arduino sketch　http://rapidnack.com/?p=835
+Operation explanation - Display　http://rapidnack.com/?p=918
+Operation explanation - Graph　http://rapidnack.com/?p=945
+Sample - Color LED　http://rapidnack.com/?p=967
+Sample - Temp & Humidity　http://rapidnack.com/?p=987
+Sample - Push Switch　http://rapidnack.com/?p=1017
+AD9851 DDS module　http://rapidnack.com/?p=1164
+
+Please write the above Arduino sketch to ESP. If you connect ESP to Android and operate buttons, sliders, etc., the same content displayed in the log on the application screen is displayed on the Arduino IDE serial monitor.
+By adding timers and graphs to the application screen and changing the Arduino sketch to send measured data, you can display the measured data graphically in real time. When actually using it, add your own processing to mySetup(), myLoop(), process() at the end of the Arduino sketch.
+
+void mySetup() {
+
+}
+
+void myLoop() {
+
+}
+
+String process(String str) {
+    Serial.println(str);
+    //if (str == "Button1: Button1")
+    // return "Received!";
+    return "";
+}
+
+How do I communicate with ESP8266 / ESP32?
+
+To obtain data from ESP, write in Python as follows.
+
+if Remote.Writer != None:
+    Remote.Writer.WriteLine()
+    Remote.Writer.Flush()
+    print Remote.Reader.ReadLine()
+
+Also, if you write the event handler lineReceived (text) in the Panel setup script as follows, you can process data from ESP asynchronously.
+
+def lineReceived(text):
+    print text
+Remote.RaiseEvents = True
+
+
+The following is a sample sketch for ESP32.
+For ESP 8266, replace the Include statement.
+ESP8266：
+    #include <ESP8266WiFi.h>
+    #include <WiFiClient.h>
+ESP-WROOM-32：
+    #include <WiFi.h>
+
+------------------- from here -----------------
+#include <WiFi.h>
+
+const char* ssid = "your-ssid";
+const char* password = "your-password";
+
+WiFiServer server(2002);
+WiFiClient client;
+
+String process(String str);
+
+void setup() {
+  Serial.begin(57600);
+
+  mySetup();
+
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+  //WiFi.mode(WIFI_STA);  // Disable Access Point
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.println("WiFi connected"); 
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+
+  server.begin();
+  Serial.println("Server started");
+}
+
+void loop() {
+  myLoop();
+
+  if (!client.connected()) {
+    // try to connect to a new client
+    client = server.available();
+  } else {
+    // read data from the connected client
+    if (client.available()) {
+      String inputString = client.readStringUntil('\n');
+      inputString.trim();
+      String outputString = process(inputString);
+      if (outputString != "") {
+        client.println(outputString);       
+      }
+    }
+  }
+}
+
+void mySetup() {
+
+}
+
+void myLoop() {
+
+}
+
+String process(String str) {
+  Serial.println(str);
+  //if (str == "Button1: Button1")
+  //  return "Received!";
+  return "";
+}
+========================================================================================================================
+
+Описание для Справочник сетевого инженера
+Данное приложение содержит в себе основную информацию для начинающих IT-специалистов и инженеров в области сетевых технологий. В приложении рассмотрено несколько разделов, а именно:
+- инструменты для монтажа;
+- монтажные работы;
+- линии связи;
+- сетевые протоколы;
+- порты TCP и UDP;
+- конфигурирование оборудования;
+- сетевое оборудование;
+- видеонаблюдение.
+
+Инструменты для монтажа
+
+При проведении монтажных работ сетевой инженер использует разнообразный набор инструментов и технических устройств, а именно: стрипперы, кримперы, устройство для закладки кабеля, пистолет для монтажа кабельных стяжек, детекторы и тестеры, пирометр, инструмент для заделки кабеля, рефлектометр, сварочный аппарат для оптоволокна и т.д.
+
+Монтажные работы
+
+В этом разделе рассматриваются примеры по работе с проволочными лотками, металлическими и пластиковыми кабель-каналами.
+
+Линии связи
+
+Этот раздел рассматривает несколько типов линий связи: медные, оптические и беспроводные. Для каждого типа линий связи имеются свои технологические характеристики и особенности устройства.
+
+Сетевые протоколы
+
+Протоколы маршрутизации: EGP, EIGRP, HSRP, IGRP, RIP, OSPF, BGP-4, NARP, NHRP, TRIP.
+
+Протоколы использующиеся в телефонии: SIP, MGCP, SCCP, SIGTRAN, IAX2, Unistim, Jingle, Megaco/H.248, H.323, SCTP.
+
+Протоколы использующиеся в видеонаблюдении: IPv4, IPv6, HTTP, HTTPS, FTP, TCP, UDP, DNS, DHCP, SMTP, RTP, DynDNS, NTP, RTSP, RTCP, IGMP, ICMP, ARP, SOCKS, PPP, PPPoE, Bonjour, UPnP.
+
+Распределение протоколов по уровням модели OSI:
+
+7. Прикладной уровень (HTTP, SMTP, FTP, Telnet, SSH, SCP, SMB, NFS, RTSP, BGP);
+6. Представления уровень (XDR, AFP, TLS,SSL);
+5. Сеансовый уровень (RPC, NetBIOS, PPTP, L2TP,AppleTalk);
+4. Транспортный уровень (TCP, UDP, SCTP, SPX, RTP, ATP, DCCP, GRE);
+3. Сетевой уровень (IP, ICMP, IGMP, CLNP, OSPF, RIP, IPX, DDP);
+2. Канальный уровень (Ethernet, Token ring, HDLC, PPP, X.25, Frame relay, ISDN, ATM, MPLS, ARP, RARP);
+1. Физический уровень (электрические провода, радиосвязь, волоконно-оптические провода, Wi-Fi).
+
+Распределение протоколов по уровням модели TCP/IP:
+
+4. Прикладной уровень (HTTP, RTP, FTP, DNS, BGP);
+3. Транспортный уровень (TCP, UDP, SCTP, DCCP, RIP, протоколы маршрутизации, подобные OSPF);
+2. Сетевой уровень (IP, ICMP, IGMP);
+1. Доступа к среде (Ethernet, IEEE 802.11, Wireless Ethernet, SLIP, Token Ring, ATM, MPLS, ARP, физическая среда и принципы кодирования информации, T1, E1).
+
+Порты TCP и UDP
+
+В данном разделе содержится список номеров портов, используемых протоколами TCP/IP транспортного уровня для установки соединения между двумя хостами.
+
+Конфигурирование оборудования
+
+Чтобы грамотно настроить (сконфигурировать) телекоммуникационное оборудование, необходимо умело оперировать набором специализированных команд. В этом разделе вы найдете краткую информацию по командам отталкиваясь от производителя телекоммуникационного оборудования.
+
+Сетевое оборудование
+
+Для создания и поддержки работоспособности компьютерной сети используют различное сетевое оборудование, которое разделяется на два типа: активное и пассивное. В этом разделе вы найдёте список такого оборудования.
+
+Видеонаблюдение
+
+Раздел "Видеонаблюдение" содержит основную информацию об устройстве видеокамеры, алгоритмах сжатия изображений и типах видеокамер.
+
+========================================================================================================================
+
+Описание для ESP8266
+Easy and quick App to check RealTime Temperatures for your ESP8266 NodeMCU connected to a ThingSpeak account. Alarms and mail alert included.
+
+========================================================================================================================
+https://github.com/PaulStoffregen/AltSoftSerial
+========================================================================================================================
+Модуль может поддерживать сигналы Galileo, Глонасс, Compass, GPS, QZSS, MSAS, EGNOS
+========================================================================================================================
+https://github.com/elechouse/PN532
+https://www.direnc.net/
+http://cubieboard.org/
+https://onpad.ru/catalog/cubie/module_esp/2400.html
+https://developer.lightbend.com/guides/akka-quickstart-java/
+https://www.lightbend.com/
+Niomatic Inc
+Cam Starts LTD
+bluino electronics
+Nextion Enhanced
+https://roboshop.spb.ru/modules/GSM-GPRS-GPS-A7-EX
+https://roboshop.spb.ru/modules/NODE-MCU-ESP8266-OLED-0,96
+Waveshare
+https://www.elechouse.com/elechouse/index.php?main_page=contact_us
+https://roboshop.spb.ru/modules/Raspberry-Pi-ARPI600
+https://roboshop.spb.ru/modules/2262-2272-315MHz
+
+https://github.com/node-red
+========================================================================================================================
+https://en.wikipedia.org/wiki/Category:Internet_of_things
+https://iotivity.org/
+https://mycroft.ai
+https://blynk.io/
+https://openconnectivity.org/developer
+https://oneiota.org/documents?filter%5Bmedia_type%5D=application%2Fswagger%2Bjson
+https://github.com/vshymanskyy/blynk-library-js#implementations-for-other-platforms
+
+https://examples.blynk.cc/?board=ESP8266&shield=ESP8266%20WiFi&example=Widgets%2FTerminal
+========================================================================================================================
+
+Описание для GyverLamp
+Приложение для управления Wi-Fi лампой-будильником GyverLamp на адресных светодиодах. Подробности на странице проекта https://alexgyver.ru/GyverLamp/
+
+========================================================================================================================
+
+Описание для Smart Home control with Arduino ESP - WiFi
+Smart Home is an application that makes it easy to connect WiFi devices (arduino, esp 8266, raspberry, etc) to your phone or tablet so you can control your appliances or sensors anywhere in the world, or only from your local network.
+
+In this way you can control the house lights, temperature and humidity, power consumption, air quality, IR remote controlled devices like HAVC, TV, air conditioners and so on, and set different parameters, for any of them.
+
+The application does not use a web server to connect to, so you do not have to pay a monthly fee, or be addicted to a particular site.
+
+Sensors can also be read from multiple sources, including external sources, for example:
+
+If you do not own a weather station hardware, and you want to display weather condition you can just import sensors readings from web sites in XML, JSON or HTML format.
+
+========================================================================================================================
+
+Описание для Mqtt Dashboard - IoT and Node-RED controller
+Mqtt Dashboard is a simple and beautiful tool to control your MQTT-enabled devices and manage your home automation system. It’s compatible with Node-RED, Tasmota Sonoff, all internet enabled Arduino board and much more…
+If it has MQTT, it works with this app.
+
+Features:
+👉🏼 Create and customize your dashboard with a clean and fresh user interface.
+👉🏼 Receive messages formatted as JSON and extract the payload from the specified path.
+👉🏼 Define different broker connections and switch easily between them (PRO).
+
+Available tile types:
+💬 Button: sends a predefined message; output only.
+💬 Multiselect: offers a selection of pre saved messages you can choose from; output only.
+💬 Toggle: toggle the state of the topic, from on to off and vice versa; input and output.
+💬 Text: send and receives any type of string; input and output.
+💬 Progress: sends numerical value in a fixed range and displays the received one; input and output.
+💬 Date & time: choose and send messages containing date or time, and displays the received one; input and output.
+💬 Color: sends a numerical color value chosen from an RGB selector, and displays the received tint; input and output.
+💬 Line chart: displays a chart from received formatted data; input only.
+
+The app is still under development, and could therefore be subjected to changes, bugs, weird behaviours and all sort of bad stuff; if you encounter a bug, want to share a feedback or help translating, reach me out via email.
+Скрыть 
+========================================================================================================================
+
+Описание для WiFi Automation
+INTRODUCTION:
+-WiFi Automation is used to remotely control devices with any WiFi module using TCP/IP Protocol.
+-To connect with device you have to add IP & PORT of device and select it.
+
+FEATURES:
+- Auto connectivity with last selected device.
+- By, Long pressing of any button You can set Sending Commands and define response Commands to display feedback in App.
+- Switch name can be changeable.
+-Keep Screen on/off option.
+- Remove Ads Option.
+
+
+DEFAULT COMMANDS:
+- Switch1: ON sent 'A' OFF sent 'a'
+- Switch2: ON sent 'B' OFF sent 'b'
+- Switch3: ON sent 'C' OFF sent 'c'
+- Switch4: ON sent 'D' OFF sent 'd'
+- Switch5: ON sent 'E' OFF sent 'e'
+- Switch6: ON sent 'F' OFF sent 'f'
+- Switch7: ON sent 'G' OFF sent 'g'
+- Switch8: ON sent 'H' OFF sent 'h'
+- All Devices: ON sent '@' OFF sent '#'
+
+By Default, If app get same reply as sent over Bluetooth then app will display a feedback.
+
+========================================================================================================================
+www.screenmediagroup.com
+========================================================================================================================
+
+Описание для IoT Learning Short Course : ESP32, Arduino,Project
+IoT(Internet of Things) Short Course App is a easy to understand app which is based on popular and latest ESP32 board . Opensource Arduino platform has been used for coding.
+
+# ESP32 with Arduino
+# Total Class : 8
+# 4 topics in each class
+# Practical IoT Projects with Example
+# Easy to understand with explanation
+# All code in github
+
+Chapters :
+Class 1:
+IoT and Its Use
+ESP32 and Its board description
+ESP32 Features
+ESP32 Modules
+
+Class 2:
+IDE & Programming Language
+ESP32 with Arduino
+VS Code with Platform IO
+Test with LED Blinking
+
+Class 3:
+Basic Programming Options
+GPIO input & Output
+Toggle LED
+Serial Communication
+
+Class 4:
+LED Output & Button Input with Serial
+Button Debounce
+Control LED with Serial
+ESP32 built in touch Sensor
+
+Class 5:
+WiFi Scan
+WiFi Connect
+WiFi AP
+Webserver to Control LED
+
+Class 6:
+WiFi Station
+WiFi Webserver
+Captive Portal
+WiFi Manager & Smart Config
+
+Class 7:
+Analog to Digital Converter
+ADC Read
+Voltage Read
+Reading Weather Info from API
+
+Class 8:
+MQTT
+Project: IoT Switch
+ESP32 Bluetooth
+Project: Bluetooth Serial LED Control
+
+
+Note: This app contains advertisement which is necessary for developer support. Please buy our pro version which contains no ad .
+
+If you find any issues please contact with us before giving low ratings which is not good for developer.
+
+Regards
+CRUX App Division
+www.cruxbd.com
+
+========================================================================================================================
+
+Описание для openHAB Beta
+openHAB - "empowering the smart home" - vendor and technology agnostic open source home automation
+
+Try out new features and give early feedback! You can install the beta version alongside the stable version.
+
+Important note
+
+You need an openHAB server for this app
+
+openHAB is a Java-based open-source home automation platform that integrates and combines a vast range of different smart home systems and technologies into one single solution.
+On top of the unified abstraction layer all connected devices are available for the overarching automation rule engines and different user interfaces.
+
+Supported Products
+
+Over 200 specific add-ons provide support for brands, devices, technologies and communication protocols. Examples are Z-Wave, Philips Hue, Amazon Echo, Chromecast and Sonos. Discover all available add-ons and supported devices and/or functions at: https://www.openhab.org/addons/
+
+• Home Automation Solutions: Z-Wave, EnOcean, Netatmo, Homematic, Insteon, ...
+• Lighting: Philips Hue, Ikea Trådfri, LIFX, Lutron, Milight, ...
+• Heating: Max!, Nest, Vitotronic, Heatmiser, ...
+• Home Entertainment: Samsung TV, LG TV, Sonos, Pioneer AVR, Squeezebox, Kodi, Plex, ...
+• Security: ZoneMinder, DSC, ...
+• Open Protocols: HTTP, TCP/UDP, MQTT, Serial, ...
+• Special UseCases: Minecraft, Tesla Car, Weather Services, ...
+• ...
+
+Open Source Community
+
+The openHAB open source initiative strongly supports its vibrant community. The forum with over 13,000 registered users is a place to find guidance, help and inspiration. Join the openHAB community forum over at https://community.openhab.org
+When you find an issue please report it in the forum or at https://github.com/openhab/openhab-android/issues
+If you want to translate the app into your language join us at https://crowdin.com/project/openhab-android
+
+openHAB Foundation
+
+The openHAB Foundation e.V. is a nonprofit organization with the mission to educate the public about the possibilities and benefits of free and open smart home solutions. Learn about the mission and the services of the foundation under https://www.openhabfoundation.org
+
+
+Privacy policy: https://www.openhabfoundation.org/privacy
+
+========================================================================================================================
+
+Описание для GATTBrowser
+GATTBrowserは周辺のBluetooth low energyデバイスを発見し、それらデバイスと通信するために最良な汎用アプリケーションです。また、Renesas Bluetooth low energyマイコンとの通信に特化した機能も提供します。
+
+[特徴]
+
+- 周辺でAdvertisingしているBluetooth low energyデバイスのスキャン
+- Advertisingデータの表示
+- 受信強度（RSSI）の表示
+- Renesas BLE マイコンRL78/G1D、その他BLE デバイスとの接続
+- 接続先BLEデバイスのBD アドレスの表示
+- 接続先BLEデバイスが公開するServiceとCharacteristicの表示
+- 接続先BLEデバイスのCharacteristic値の操作と、取得データの表示
+- RL78/G1Dサンプルアプリケーションで使用するカスタムService/Characteristic情報の表示・操作
+
+[補足]
+
+以下の端末で動作を確認しています。
+- LG Nexus 5X (Android 7.1.1)
+- MOTOROLA Nexus6 (Android 6.0.1)
+- ASUS MeMO Pad7 (Android 5.0.1)
+
+Renesas Bluetooth low energyマイコンについては下記をご参照ください。
+https://www.renesas.com/solutions/proposal/bluetooth-low-energy.html
+
+========================================================================================================================
+
+Описание для DIY Projects Smart Home IoT Arduino ESP8266 ESP32
+diyprojects.io is a blog that deals with home automation and connected objects to do it yourself. The application allows you to find all the content of the blog on your smartphone and tablet. You can bookmark and easily share your favorite items.
+With the mobile application, you will have everything at hand to realize your connected objects projects. Articles, tests, projects, tutorials and direct access to the forum of mutual aid.
+More than 60 categories of articles are available to easily search for a tutorial, a test or a project. News of mini PCs (Raspberry Pi, Orange Pi), micro-controllers and development boards based on ATmega (Arduino), ESP32, ESP8266, framework for the development of DIY connected objects (Blynk, Cayenne, MySensors, ESP Easy , Johnny-five), Arduino / ESP32 and ESP8266 microcontrollers programming (client / server programming, NTP time server, SPIFFS memory, HTML / CSS Web interfaces with Bootstrap ...), home automation equipment (Xiaomi Aqara and Mijia, Sonoff), installation and configuration of a DIY home automation box (Node-RED, Domotic, Jeedom, Home Assistant, Homebridge ...), dashboard and data storage (influxDB, MongoDB), home automation protocols (MQTT, HTTP, Websocket ...), development environment for IOT projects (NodeJS, MicroPython Arduino IDE, PlatformIO), retro gaming, linux and Raspbian tutorials
+
+========================================================================================================================
+ZFlasher AVR - программа для прошивки микроконтроллеров AVR. Приложение основано на avrdude - одном из лучших приложений в своем классе.
+
+Ваше устройство должно поддерживать USB Host (OTG), иначе программа не будет работать.
+
+Работа программы проверена с программаторами:
+* USBasp
+* AVRISP mkII
+* USBtiny
+* STK500v2
+* AVR109
+* Arduino bootloader
+
+!! На некоторых устройствах могут быть проблемы с USB, если устройство было включено с подключенным в USB Host (OTG) устройством (программатором). Вытащите OTG адаптер из устройства перед его включением!
+
+Буду рад замечаниям и предложениям. Спасибо за внимание! Удачи!
+Скрыть 
+========================================================================================================================
+
+Описание для ESP Alexa
+The ESP-Voice-Assistant SDK provides an implementation of Amazon's Alexa Voice Service, Google Voice Assistant and Google's conversational interface (aka Dialogflow) for ESP32 microcontroller.
+
+This facilitates the developers to evaluate ESP32 based voice assistant/s integrated devices like speakers and IoT devices.
+
+https://github.com/espressif/esp-va-sdk
+
+========================================================================================================================
+
+Описание для ESP32 WiFi setup over BLE or Bluetooth Serial
+This application is only useful for users of the Espressif ESP32 WiFi module.
+
+This application is only useful if your phone/tablet supports Bluetooth Low Energy (BLE) or at least Bluetooth.
+
+This application allows you to setup the WiFi credentials of an ESP32 over a BLE connection or Bluetooth Serial connection.
+
+To use this application your ESP32 must have included
+either the BLE code as described in
+https://desire.giesecke.tk/index.php/2018/04/06/esp32-wifi-setup-over-ble/
+or the Bluetooth Serial code as described in
+https://desire.giesecke.tk/index.php/2018/04/10/esp32-wifi-setup-over-bluetooth-serial/
+This application and the ESP32 counterpart is open source
+Source code for ESP32 (BLE):
+https://bitbucket.org/beegee1962/esp32_wifi_ble_esp32
+Source code for ESP32 (Bluetooth Serial):
+https://bitbucket.org/beegee1962/esp32_wifi_bts_esp32
+Source code for Android:
+https://bitbucket.org/beegee1962/esp32_wifi_ble_android
+
+Why is this application requiring location permission?
+Since Android version 5.1 the use of Bluetooth is requiring the user to ask for permission of location. Don't ask me why, I never understood the link between using Bluetooth and using the GPS.
+
+========================================================================================================================
+
+Описание для ESP8266 WiFi Configurator (EWC)
+Configure your ESP8266 WiFi module with your Android device USB port. (USB OTG supported Android device, OTG cable and USB-RS232 converter required)
+
+Features:
+* Baudrate setting
+* Send AT command (AT)
+* Checks Version Information (AT+GMR)
+* Lists Available APs (AT+CWLAP)
+* Sets the IP Address of the ESP8266 Station (AT+CIPSTA)
+* Obtain the IP address of the ESP8266 Station (AT+CIPSTA?)
+* Connects to an AP (AT+CWJAP)
+* WiFi commands: CWMODE?, CWMODE=, CIPMODE?, CIPMODE=, CIPMUX?, CIPMUX=
+* Show USB log for send/receive data
+
+Hardware requirements:
+* OTG cable (To convert Micro USB to USB)
+* USB-RS232 converter
+
+Devices Supported
+Supports USB-RS232 converters with the following chips
+
+* CP210X
+* CDC
+* FTDI
+* PL2303
+* CH34x
+
+========================================================================================================================
+
+Описание для EspBlufi
+ESP32 bluetooth test application.
+MIT licensed.
+source: https://github.com/EspressifApp/EspBlufi
+
+This listing is just a way to share the open-source software builds. I have not developed any of the software myself.
+
+========================================================================================================================
+
+Описание для nRF Mesh
+Seamlessly provision and configure your Bluetooth Mesh compatible fleet of nodes using nRF Mesh.
+
+nRF Mesh allows you to easily deploy nodes to any Bluetooth Mesh compatible Nodes, giving you flexibility to deploy many different Mesh network Setups.
+
+Features:
+• Node Control: nRF Mesh supports controlling GenericOnOff Server models
+• Provisioning: Deployment of a new Node is as simple as a press of a button, this version supports Numeric OOB authentication and static authentication (With no user input on the latter). nRF Mesh will automatically handle the Unicast addressing for you, It's also possible override that by simply entering the desired addresses.
+• Configuration: Setup your Application keys or use the randomly generated ones, add group addresses and configure your nodes into groups by simply setting their Subscription addresses.
+
+Additionally, you may also run the following configuration commands on your network:
+
+• Add the publication address of a model
+• Add/Remove one of more subscription address on a model
+• Bind an Application Key to a specific model for full granular control of your networks' security.
+• Explore the nodes' capabilities by tapping the information button to view all elements, models, provisioning time and date, Manufacturer and all available vendor data.
+• Set the Default TTL on a per-node basis
+
+Hardware support:
+- This version of the app is capable of communicating with any BLE devices that speak Bluetooth Mesh.
+
+This app is supported on Android 4.3 and onward
+
+========================================================================================================================
+
+Описание для IoT MQTT Panel
+This application allow you to mange and visualize IoT project, based on MQTT protocol.
+
+With this app you can make DIY Smart Home project in a minute. The configurations are very simple. Well documented FAQ and User Guide are available at application info page.
+
+
+Features:
+
+1. Supports both MQTT (TCP) and Websocket (useful specially firewall restricted networks) protocol.
+2. SSL for secure communication.
+3. JSON Support for both subscribe and publish message.
+4. Panels subscribe and / or publish the topic automatically, hence get updated in real time.
+5. Designed to work with public broker efficiently (using device prefix).
+6. Sent and Received timestamp from broker.
+7. Material design.
+8. Flexible panel width, merge any panels
+9. More than 250 icons to customize specific panels.
+10. Dark theme for comfortable use in low light.
+11. Clone connection, device or panel for effortless configuration
+12. Import/Export application configuration for easy share with multiple devices.
+13. Runs in background and re-connects automatically.
+14. Notification on receiving message. (Available on pro version only)
+
+Available panels:
+-Button
+-Slider
+-Switch
+-LED Indicator
+-Combo Box
+-Radio Buttons
+-Multi-State Indicator
+-Linear Progress
+-Circular Progress
+-Vertical Meter
+-Gauge
+-Color Picker
+-Time Picker
+-Text Input
+-Text Log
+-Line graph
+-Bar graph
+-Chart
+-URI Launcher
+This list will grow upon feedback from users.
+
+Note: This app is still in beta version and it will mature based on your constructive feedback.
+
+Background running and auto re-connect features are experimental. If you find any issue please feel free to leave a comment in my blog with steps to reproduce.
+
+http://www.snrelectronicsblog.com/iot/iot-mqtt-panel-user-guide/
+
+Please purchase the add free pro version to show appreciation.
+Скрыть 
+========================================================================================================================
+
+Описание для ESP Controller
+Control your Arduino WiFi & ESP server device with this simple app. The app provide simple browser interface to connect to your device. The app connect to the IP address 192.168.4.1 (default IP address of ESP).
+
+========================================================================================================================
+
+Описание для ReadyCLOUD
+ReadyCLOUD allows you easy access to your files and media stored on your NETGEAR ReadyNAS.  This App makes it simple to stream or download content onto to your phone or tablet from your network or over the Internet. ReadyCLOUD can automatically upload your camera roll from your phone/tablet to your ReadyNAS, allowing for effortless backup of your precious photos. 
+
+For any feature requests or detailed feedback, please email readycloud@netgear.com 
+ 
+Detailed features: 
+* Access your entire ReadyNAS (videos, music, photos, and other files) 
+* Download videos, photos, and music for offline viewing 
+* Automatically backup your Camera Roll photos to your ReadyNAS 
+* Stream music from your ReadyCLOUD directly to your mobile device (DLNA must be enabled on the folder) 
+* Preview thumbnails of photos (DLNA must be enabled on the folder) 
+* Camera Roll backup can be configured to use Cellular Data + Wifi or Wifi only connectivity 
+* Access documents (pdf, word, excel) 
+* Access to the full capacity of your ReadyNAS (Terabytes) 
+* No monthly subscriptions or costs 
+* Recently viewed content is available in local cache, reducing the time and data cost to view files that have been accessed 
+* Safe data transfer, everything is encrypted
+ 
+Use ReadyCLOUD to access your centrally stored media and content from your mobile device.  Play videos and music, view photos and documents, and backup your mobile camera roll photos all from the ReadyCLOUD app. 
+
+Supported Devices:
+* ReadyNAS Desktop 102, 104, 202, 204, 212, 214, 312, 314, 316, 516, 716
+* ReadyNAS Rackmount 2120, 3220, 3130, 3138, 4220
+ 
+Please share your experience by rating this application and writing a review. 
+For feature requests and enhancements, please feel free to post at https://community.netgear.com/t5/ReadyNAS-Network-Storage/ct-p/readynas or the AllABoutReadyNAS Facebook page. 
+For more information on ReadyNAS go to www.netgear.com/readynas
+
+========================================================================================================================
+
+Описание для DedoFi
+Control Nodemcu(ESP8266) , Arduino with ESP8266 and any other device which can connect to the WIFI network. (you must can program it)
+
+There is a very beautiful interface with easy and simple control. You can add Living Rooms , Dining Rooms, Bed Rooms ,Wash Room etc. After you can open id and add the electric component you want to control.
+
+This application is used TCP/Socket to communicate. Your electric component and your smart phone must connect to the same wifi network. Using IP address and relevant socket number you can send command.
+
+========================================================================================================================
+Описание для Arduin Remote Bluetooth-WiFi
+The App has the following features.
+
+- Ability to change the switch Name.
+- Connect using Bluetooth or WiFi.
+- Ability to control up to 9 WiFi & Bluetooth switches.
+
+Switch codes:
+Switch 1 > on "A" off "a"
+Switch 2 > on "B" off "b"
+Switch 3 > on "C" off "c"
+Switch 4 > on "D" off "d"
+Switch 5 > on "E" off "e"
+Switch 6 > on "F" off "f"
+Switch 7 > on "G" off "g"
+Switch 8 > on "H" off "h"
+Switch 9 > on "I" off "i"
+
+If you have any suggestion send it and we will try to make it possible.
+========================================================================================================================
+ 
+Вот у меня и у тебя такие валяются - а это типа прошивка кастомные для этих вот этих
+ 
+https://sourceforge.net/projects/espeasy/
+ 
+https://www.letscontrolit.com/wiki/index.php?title=ESPEasy32
+ 
+ 
+прошивка позволяет поддерживать следующие протоколы и девайсы - ведь у каждого свои протоколи и платформы и девайсы и прочее...
+ 
+Supports the following Home Automation platform protocols:
+
+* Domoticz HTTP
+* Domoticz MQTT
+* OpenHAB MQTT
+* PiDome MQTT
+* Nodo Telnet
+* ThingSpeak webservice
+* EmonCMS
+* FHEM HTTP
+* Generic HTTP using templates
+
+Supported devices:
+* DS18B20
+* DHT11
+* DHT22
+* BH1750
+* BMP085
+* Wiegand RFID
+* PN532
+* SI7021
+* TSL2516
+* HCSR04
+* TSOP4838 IR
+* MCP23017
+* PCF8591
+* PCA9685
+* LCD and OLED displays
+* BME280
+* INA219
+* MLX90614
+* ADS1115
+* MSP5611
+* BMP280
+* SHT1x
+ 
+ 
+Но в основе всего конечно он единственные - Линь во множестве вариаций - но а там можно запустить любой код на любом языке - поэтому андройд - в печь...
+ 
+Их сайт
+ 
+https://www.letscontrolit.com/
+ 
+Средненей паршивости, честно говоря...
+ 
+Бэкэнд - пожалуйста
+ 
+https://github.com/letscontrolit/ESPEasy
+ 
+UI - пожалуйста
+ 
+https://github.com/letscontrolit/espeasy_ui
+ 
+Вот я смотрю на вещи со своей стороны - сделать сервер - для поддержки клиентов - самых разных - но пока только можно сделать на небольших примерах - типа что ты говорил про свои мысли...
+ 
+ 
+Почему мы не могем сделать подобное - то тока лучше ....
+ 
+Хочешь в облаке - вот тебе такой вариант...
+ 
+Хочешь у себя в сети - вот такой вариант...
+ 
+Но это пока домыслы...
+
+========================================================================================================================
+Конечно нужно то что сейчас - а не потом... взять и смотреть как работает - пусть чужое - пусть через жопу - своя так быстро и просто не сделаешь....
+ 
+https://github.com/X13home
+========================================================================================================================
+flespi.io
+
+clickteam.com
+
+http://mqtt.org.
+https://github.com/hollie/misterhouse
+========================================================================================================================
+https://sourceforge.net/p/mqtt-server/code/ci/master/tree/
+https://github.com/Talend
+https://sourceforge.net/p/indigoscada/code/HEAD/tree/trunk/src/
+https://osdn.net/projects/bytom/releases/
+
+https://osdn.net/projects/pepolinux/
+
+https://github.com/alekras/erl.mqtt.server.git erl.mqtt.server
+
+    [https://mosquitto.org/] - Mosquitto MQTT server.
+    [https://www.rabbitmq.com/] - RabbitMQ server with MQTT plugin.
+    [https://sourceforge.net/projects/mqtt-client/] - Erlang MQTT client.
+    [http://www.hivemq.com/demos/websocket-client/] - MQTT websocket client.
+    [http://www.mqttfx.org/] - MQTT client.
+========================================================================================================================
+github.com/jcustenborder/kafka-connect-mqtt
+https://github.com/owntracks/android
+http://ha-client.homemade.systems
+
+
+
+Описание для Traccar Client
+Traccar Client is an app that allows you to use your mobile device as a GPS tracker. It reports location to your own or hosted server with selected time intervals.
+
+By default application is configured to use free Traccar service (address - demo.traccar.org, port - 5055). To see your device on map register on http://demo.traccar.org/ and add your device with identifier.
+
+Traccar (Server) is a free open source server that supports more than 100 different protocols and GPS tracking devices. You can use this application with your own hosted instance of Traccar. For more information visit https://www.traccar.org/.
+
+
+
+
+
+Описание для GPS Logger
+BasicAirData GPS Logger is a simple App to record your position and your path.
+It's a basic and lightweight GPS tracker focused on accuracy, with an eye to power saving.
+This app is very accurate in determining your altitude: enable EGM96 automatic altitude correction on settings!
+You can record all your trips, view them with any installed viewer, directly from the in-app tracklist, and share them in KML, GPX, and TXT format in many ways.
+
+The app is 100% Free and Open Source.
+
+
+IT FEATURES:
+- A modern UI, with a low consumption dark theme and a tabbed interface
+- Foreground & Background Recording (On Android 6+ please turn off all battery monitoring and optimizations for this app!!)
+- Placemarks creation also meanwhile recording
+- Visualization of GPS information
+- Manual Altitude Correction (adding an overall offset)
+- Automatic Altitude Correction, based on NGA EGM96 Earth Geoid Model (Enable it on Settings!!!). On Android 4.x this feature can be enabled by following this simple tutorial: https://www.basicairdata.eu/projects/android/android-gps-logger/application-note-gpslogger/manual-setup-of-the-egm-altitude-correction-for-basic-air-data-gps-logger/
+- Real time track statistics
+- In-app tracklist showing the list of recorded tracks
+- Visualization of your tracks using any installed KML/GPX viewer, directly from the Tracklist
+- Track exportation, in the /GPSLogger folder of your device, in KML, GPX, and TXT
+- Track sharing, in KML, GPX, and TXT format, via E-mail, Dropbox, Google Drive, FTP, ...
+- Uses Metric, Imperial, or Nautical units
+
+
+USE IT TO:
+☆ Keep track of your trips
+☆ Make accurate static and dynamic measurements
+☆ Add your placemarks, to remember the best places you've seen
+☆ GeoTag your photos
+☆ Share your tracks with your friends
+☆ Collaborate to OpenStreetMap map editing
+☆ ...
+
+
+LANGUAGES:
+The translation of this app is based on users contribution. Everyone can freely help in translations using Crowdin (https://crowdin.com/project/gpslogger).
+
+
+F.A.Q:
+Problems with this app? Read the most frequently asked question! (https://github.com/BasicAirData/GPSLogger/blob/master/readme.md#frequently-asked-questions).
+
+
+ADDITIONAL INFORMATION:
+- Copyright (C) 2016 BasicAirData - http://www.basicairdata.eu
+- For additional information please see http://www.basicairdata.eu/projects/android/android-gps-logger/
+- This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. See the GNU General Public License for more details: http://www.gnu.org/licenses.
+- You can view and download the source code of this app on GitHub: https://github.com/BasicAirData/GPSLogger
+- When The EGM96 Automatic Correction is enabled for the first time into the Setting Screen, the geoid Height file is downloaded from the NGA/NASA website. (File size: 2 MB).
+========================================================================================================================
+losant.com/blog/how-to-install-nodejs-on-raspberry-pi
+github.com/JoeKarlsson/Iot-Morse-Code-Demo
+github.com/taijihagino
+
+https://developer.ibm.com/jp/technologies/artificial-intelligence/
+https://developer.ibm.com/jp/technologies/java/
+
+https://github.com/Nefry-Community
+
+github.com/androidthings/sample-tensorflow-imageclassifier
+github.com/pokiiio
+github.com/mehmandaronv/microprofile-iot
+========================================================================================================================
+https://www.securitylab.ru/analytics/500361.php
+
+soracom.io
+flashair-developers.com
+
+gpiozero
+piwheels.com
+helium
+enebular
+pubnub
+ayla networks
+treeline
+
+https://docs.enebular.com/en/
+funky-simplehttp
+github.com/techno/line-things-snippets
+
+https://github.com/palladionIT/warpy
+github.com/maxbbraun/mirror
+
+brillo & weave
+github.com/awslabs/aws-sdk-android-samples
+github.com/ibm-watson-iot/iot-starter-for-android
+postscapes.com/internet-of-things-examples
+github.com/aselims
+
+nodered.jp
+github.com/taijihagino
+========================================================================================================================
+github.com/21dotco/two1-python
+github.com/mitchoneill/micropayment-storage
+github.com/iproduct/course-social-robotics
+github.com/iproduct/jprime-demo
+http://iproduct.org/
+noid
+cubicon
+milkcocoa
+oisix
+nnmer.github.io/azure-services-map/dist
+noserengineering
+flogo.io
+github.com/tibcosoftware/flogo
+
+https://sourceforge.net/projects/mrirules/files/
+https://sourceforge.net/p/mqttrepeater/code/ci/master/tree/
+https://sourceforge.net/p/mqttpic32wiz810mj/code-0/HEAD/tree/
+
+какой-то симулятор - при универе сделан
+ 
+ 
+https://www.nsnam.org/
+ 
+http://www.eg.bucknell.edu/~perrone/research/
+ 
+ 
+https://gitlab.com/nsnam/ns-3-dev
+ 
+ 
+Еще одна открытая бесплатная платформа....
+ 
+ 
+https://sourceforge.net/p/zibawa/code-zibawa/ci/master/tree/
+ 
+ 
+Я предлагаю - всех их посмотреть в действии по максимуму - и сделать свою...
+ 
+а так что просто тыкать провода
+ 
+https://github.com/net-commander/windows-dist
+https://sourceforge.net/p/home-controller/code/ci/master/tree/
+https://sourceforge.net/projects/cooling-automation/
+
+https://www.connectedthingslab.com/
+ 
+https://sourceforge.net/p/velisphereclientsdk/code/ci/master/tree/
+
+Смотри как классно сделано - и всего лишь метеостанция...
+ 
+ 
+http://weewx.com
+http://weewx.com/stations.html
+ 
+Здесь страница каждой херовины, к примеру:
+ 
+https://weather.boulvez.org/
+ 
+ 
+Исходники:
+ 
+ 
+https://github.com/weewx/weewx
+
+https://sourceforge.net/p/mqtt-client/git/ci/master/tree/
+
+ 
+
+https://sourceforge.net/p/mqtt-server/code/ci/master/tree/
+
+ 
+
+https://github.com/weewx/weewx
+https://sourceforge.net/p/rsnap/code/ci/master/tree/
+========================================================================================================================http://www.14core.com/wiring-the-mcp2515-controller-area-network-can-bus-diagnostics/
+
+ihackiot.com
+flash-air.com
+github.com/FlashAirDevelopers/FlashAirFileManager
+github.com/v33ru/iotsecurity101
+ifttt.com
+particle.io
+matrix app market
+ubilabs
+
+postscapes/internet-of-things-examples
+github.com/awslabs/aws-sdr-android-samples
+github.com/ibm-watson-iot/iot-starter-for-android
+github.com/aselims
+screenly
+empowerment lab
+========================================================================================================================
+
+The description of IoT MQTT Panel
+This application allow you to mange and visualize IoT project, based on MQTT protocol.
+
+With this app you can make DIY Smart Home project in a minute. The configurations are very simple. Well documented FAQ and User Guide are available at application info page.
+
+
+Features:
+
+1. Supports both MQTT (TCP) and Websocket (useful specially firewall restricted networks) protocol.
+2. SSL for secure communication.
+3. JSON Support for both subscribe and publish message.
+4. Panels subscribe and / or publish the topic automatically, hence get updated in real time.
+5. Designed to work with public broker efficiently (using device prefix).
+6. Sent and Received timestamp from broker.
+7. Material design.
+8. Flexible panel width, merge any panels
+9. More than 250 icons to customize specific panels.
+10. Dark theme for comfortable use in low light.
+11. Clone connection, device or panel for effortless configuration
+12. Import/Export application configuration for easy share with multiple devices.
+13. Runs in background and re-connects automatically.
+14. Notification on receiving message. (Available on pro version only)
+
+Available panels:
+-Button
+-Slider
+-Switch
+-LED Indicator
+-Combo Box
+-Radio Buttons
+-Multi-State Indicator
+-Linear Progress
+-Circular Progress
+-Vertical Meter
+-Gauge
+-Color Picker
+-Time Picker
+-Text Input
+-Text Log
+-Line graph
+-Bar graph
+-Chart
+-URI Launcher
+This list will grow upon feedback from users.
+
+Note: This app is still in beta version and it will mature based on your constructive feedback.
+
+Background running and auto re-connect features are experimental. If you find any issue please feel free to leave a comment in my blog with steps to reproduce.
+
+http://www.snrelectronicsblog.com/iot/iot-mqtt-panel-user-guide/
+
+Please purchase the add free pro version to show appreciation.
+
+
+========================================================================================================================
+
+The description of Kaspersky Smart Home & IoT Scanner
+The internet of things is transforming every corner of our lives these days: at home, in the office, in the street, in cars and beyond. Almost everything connects to Wi-Fi. All connected (IoT) devices and products promise a lot – convenience, resources and money savings, control over your life environment, and peace of mind. You have an array of Wi-Fi enabled smart devices giving you greater control over door locks, lights and home appliances. From smart TVs to routers, devices connect you to the people and businesses that shape your daily life.
+
+However, without proper security, it’s a Pandora’s box, so you need to make sure you guard your privacy and confidential data – so your private life stays private and nobody can access your connected world with you being unaware.
+
+Kaspersky IoT Scanner helps keep your smart home safe. It informs you if new devices connect to your home network, and detects open ports, weak settings and passwords to help eliminate potential threats. Kaspersky IoT Scanner gives advice on how to improve protection and remove vulnerabilities inside your smart-home network.
+The Kaspersky IoT Scanner app is in Beta at the moment, so we’d like to receive your feedback and ideas on how to develop it further considering your thoughts. Please leave a review or drop an email here iotscanner@kaspersky.com.
+
+It helps protect your connected world from security breaches:
+• Checks Wi-Fi router security level
+• Searches for open ports on devices that could be hacked or infected
+It defends your personal data and keeps you in control of suspicious activities:
+• Informs you when new devices connect to your smart-home network
+• Detects weak/default logins or passwords on devices
+• Advises on how to improve protection of your connected devices and smart home
+
+Currently supported devices:
+• W-Fi router
+• IP camera
+• Smart TV
+• Wi-Fi printer
+• Mobile
+• Workstation
+• NAS (network attached storage)
+• Media server
+• Game console
+
+More to come soon…
+
+========================================================================================================================
+
+The description of YI IoT
+****Attention!!! This app only supports International Version YI IoT Camera. For people who use China Version YUNYI Smart Camera, please download the suitable app in Mi Store. ****
+
+-YI IoT Camera connects you with your family through real-time video and audio anytime and anywhere just a fingertip away
+-Equipped with a 111° wide-angle lens, you can extend the area of coverage to enable a clear view of specific areas and objects. Simply double click to activate 4x digital zoom to focus on details
+-With a simple tap on your mobile phone, you can initiate a 2-way conversation with your family remotely. Its specially designed microphone and speaker ensures loud and clean voice quality
+-By simply panning your mobile phone left and right, a complete panoramic view will be displayed to provide a better viewing experience. The gyroscope support, integrated in the Yi Smart App, is able to follow the mobile phone orientation, making it easier to see every corner being monitored
+
+
+Functions：
+-The YI IoT camera uses all glass lenses with f/2.0 aperture to produce bright and crystal images. With HD resolution (1280x720), it still delivers excellent image quality even if your enlarged to view small details
+-YI IoT camera always keeps an eye on things that is important to you.With built-in high accuracy motion detection technology, the camera sends notification to your mobile phone detailing when, where, and what movement was detected so you always stay on top of things that you care about, instantly!
+-Support up to 32GB SD card, it stores video and audio of special moments, fully indexed, for you to cherish at the touch of your fingertip. Best yet, a built-in mode triggers store action only when image change is detected to achieve best storage capacity optimization
+-Our adaptive streaming technology automatically adjust to the optimal viewing quality based on your network conditions
+
+========================================================================================================================
+
+The description of Blynk
+Control Arduino, ESP8266, ESP32, NodeMCU, Particle Photon, Raspberry Pi and other microcomputers with the smartphone over the Internet. Bluetooth and BLE supported too.
+
+Create beautiful interfaces with widgets like buttons, knobs, graphs, displays and many more!
+
+Start in 5 minutes:
+https://www.blynk.cc/getting-started
+
+If you have any questions, ask on our forum:
+https://community.blynk.cc
+
+You can even share your project with friends and other makers by simply sending them the link.
+
+Use our Blynk Cloud or deploy your own Blynk Server in a minute and have full privacy and control in your hands.
+
+Supported boards and shields:
+• ESP8266
+• ESP32
+• NodeMCU
+• Arduino Uno
+• Arduino Mega
+• Arduino Nano
+• Arduino Mini
+• Arduino YÚN (Bridge)
+• Arduino Due
+• Arduino 101
+• Raspberry Pi
+• Particle Core (ex Spark Core)
+• Particle Photon
+• SparkFun Blynk Board
+• TinyDuino (CC3000)
+• Wicked WildFire (CC3000)
+
+Shields and connections:
+• USB, connected to your laptop or desktop computer (no shield required!)
+• Ethernet shield (W5100)
+• Adafruit CC3000 WiFi
+• Official Arduino WiFi shield
+• ENC28J60
+• HC-05, HC-06, HC-08, HM-10, etc.
+
+And much much more...
+
+========================================================================================================================
+
+The description of AWS IoT Button Dev
+The AWS IoT Button is an easy way to get started with the Internet of Things. Based on the Amazon Dash button hardware, the AWS IoT Button is a developer kit that can be programmed to control Internet-connected devices and services. This programmable Wi-Fi button is designed to help developers get started with AWS IoT, AWS Lambda and other Amazon Web Services.
+
+Fast provisioning and set-up
+
+This app walks you through a few easy steps to get your AWS IoT Button up and running: (1) Register - create the resources required for your Button to send messages to AWS IoT, (2) Configure - upload security credentials to your Button and connect it to your Wi-Fi network, and (3) Set Button action - use Lambda functions to trigger events in the Cloud.
+
+Easy to use
+- Manage multiple Buttons
+- Quickly reconfigure the Button to connect to locally available Wi-Fi
+- Create a new AWS Lambda function from a blueprint or use one you developed on the AWS Console
+- Scan the Button's barcode so you don't need to type the Device Serial Number out by hand
+- Name your Buttons
+
+Visit us at https://aws.amazon.com/iotbutton
+
+Twitter: #awsiotbutton
+
+========================================================================================================================
+
+The description of AWS IoT 1-Click
+With AWS IoT 1-Click, it is easy to trigger a Lambda function from one of our supported ready-to-use IoT devices. This app allows you to claim devices you purchased into your account and configure them.
+
+Learn more at https://aws.amazon.com/iot-1-click/.
+
+
+IBM Watson, InitialState, IoTool Cloud, Samsung IoT, using different protocols: proprietary, MQTT,..
+========================================================================================================================
+
+The description of IoT ThingSpeak Monitor Widget
+Be always up to date with a state of your IoT devices connected to Thingspeak!
+You don't need to start an app every time you want to know your senros' actual readings,
+cause they will be always on your Home screen in sight!
+
+* If you don't know how to create a widget on your Home screen,
+please read a tiny manual below, it is really simple.
+** If you can't find widget in your device (sometimes it happens in Android 5.1),
+please find solution below.
+
+The widget features:
+Create widgets to monitor actual Fields’ values in your Channel – one or two in every widget.
+Monitor many Fields from different Channels creating several widgets in one screen.
+Monitor Private Channels using Read API Keys.
+Set higher and lower alert thresholds to recieve alerts if monitored field's value exceeds these thresholds.
+View and customize charts, set up period or results count, average, sum or median the values there.
+Set up the URL of your own Thingspeak server instance to monitor data from it.
+
+Tap on a chart icon in a widget to view charts for every monitored field for various periods.
+Tap on a Field value in a widget to refresh manually.
+Tap on a menu icon in a widget to configure and customize it.
+Configure needed refresh time for every widget.
+Customize widget UI, value rounding and font size, background color and background transparency.
+
+It is really flexible, simple and nice!
+
+* How to create a widget in Home screen.
+To enjoy IoT Thingspeak Monitor you should create at least one instance of it on your home screen.
+To create new instance you should perform the following steps:
+1. Long press on any open spot on one of your Home screen pages.You' will see a list of options.
+2. Touch the option Widgets from the list of choices
+3. Scroll the list and find IoT Thinspeak Monitor
+4. Drag&Drop it to any place of your home screen
+5. After a config screan will appear
+6. Configure your widget and enjoy!
+You can create one, two and more widgets with different options of your channels.
+Also you can change size of widget (make it bigger). To do that just long press on certain widget on your home screen and release the finger. Widget bounds will appear. You should move bound points to change the widget size.
+
+** Widget is not appeared in a widgets page or something like that.
+This is known bug of Android 5.0 and 5.1.
+1. Please reboot your device and check again.
+2. Check the URL: http://www.technipages.com/fix-android-app-widgets-not-appearing to find a couple of another solutions.
+It should help you to fix the issue!
+
+Usage examples:
+As an example of IoT ThingSpeak Monitor Widget usage is monitoring of your own weather station.
+Actually it is so easy and cheap to create it with Arduino or ESP8266.
+There are lots of blogs where you can find related step-by-step manuals.
+Here are some of them:
+1. Low cost WIFI temperature (DS18B20) data logger based on ESP8266 with connectivity to thingspeak.com (http://www.instructables.com/id/Low-cost-WIFI-temperature-data-logger-based-on-ESP/)
+2. Send sensor data (DHT11 & BMP180) to ThingSpeak with an Arduino, using cable or WiFi (ESP8266) (http://www.instructables.com/id/Send-sensor-data-DHT11-BMP180-to-ThingSpeak-with-a/)
+3. ESP8266 Weather Station with Arduino
+#1 Hardware (http://www.instructables.com/id/ESP8266-Weather-Station-with-Arduino-1-Hardware/)
+#2 Software (http://www.instructables.com/id/ESP8266-Weather-Station-with-Arduino-2-Software/)
+
+ThingSpeak is an open source “Internet of Things” application and API to store and retrieve data from things using HTTP over the Internet or via a Local Area Network.
+With ThingSpeak you can create sensor logging applications, location tracking applications and a social network of things with status updates.
+For more information please visit https://thingspeak.com.
+
+Do you have any questions?
+Please send me e-mail!
+
+========================================================================================================================
+
+The description of IoT Toolbox
+IoT Toolbox allows the end-user to improve their Out of the Box Experience, providing a user-friendly way to test the Bluetooth® LE zigbee and Thread demo applications developed for NXP Conectivity chipsets.
+
+IoT Toolbox is an all-in-one application capable of demonstrating NXP’s Bluetooth® LE zigbee and Thread capabilities through the implementation of Bluetooth® LE and custom proprietary profiles, allowing the interaction with different smartphones.
+
+The application interacts with the following Bluetooth® LE profiles:
+-Blood Pressure
+-Cycling Speed and Cadence
+-Glucose
+-Health Thermometer
+-Heart Rate
+-Proximity
+-Running Speed and Cadence
+
+The custom proprietary profiles included are:
+-NXP Beacon
+-Over the Air Programming (OTAP)
+-Thread Shell
+-Wireless Console/UART
+
+Future development will add more exciting capabilities.
+
+========================================================================================================================
+The description of IoT OnOff®
+Monitor and control your Internet Of Things (IoT) projects with this app.
+
+Everything can be configured inside the app.
+The app is preconfigured with a demo configuration so that you experience the simplicity directly after the install. (Tip: use two devices to see and feel the speed of the app.)
+Optionally, JSON formatted MQTT messages can be handled.
+
+We designed smart interactive widgets (controls) so your IoT data will be presented nice and smooth.
+
+Under the settings menu we have foreseen a list with public available MQTT brokers. We are not responsible for the availability of these brokers. If the default broker is not active, please select another one of the list or configure your own under broker settings.
+
+Features:
+* Nice set of widgets
+* In-app configuration
+* Theme support
+* Customizable themes, locally and remote
+* Auto reconnect to MQTT broker
+* Client support for topic filters with wildcards
+* Grid layout with rearrange support
+* Multiple dashboards
+* High performance
+* JSON parser (optionally)
+* Backup / restore (optionally)
+* Export / import (optionally)
+* E-mail support
+* GDPR compliant
+
+This app requires MQTT brokers that support WebSockets.
+
+No advertising in the app.
+========================================================================================================================
+The description of Controllium - ESP8266 IOT
+Controllium is an app that enables you to control you ESP8266 projects using your Android device.
+You can send data from the ESP to the app and vice-versa using wifi.
+You can control as many ESPs as you want with this app.
+
+Save and manage controllers configuration.
+
+The library to be used on the Arduino IDE (C++) can be downloaded here: https://github.com/artur31415/Synapse/tree/master/Controllium
+
+
+Any ideas or criticism, comment down bellow.
+========================================================================================================================
+App periodically collects data from cars (speed/temperature/etc..), using bluetooth-obd2 adapters like ELM327. These data are published on MQTT, following Home Assistant's convention. MQTT broker can be private or pubblic, like http://cloudmqtt.com.
+
+Actually this app is only a beta version, so please don't kill it with bad reviews
+========================================================================================================================
+
+The description of S-IoT
+S-IoT uses a smart phone as a live monitoring camera and an impact sensor.This App and S-IoT will work together as a portable monitoring device. Users can place a smart phone (with the S-Iot App installed) in a car, and then view the live video or start camera recording remotely. Users can also use the phone as an impact sensor, to monitor against theft.
+
+========================================================================================================================
+\The description of MQTT Buddy [iot, smart client]
+MQTT Buddy is a new MQTT app available in English, Russian and Chinese languages.
+
+With our MQTT client home automation becomes easier. By controlling your MQTT enabled Internet of Things devices and monitoring sensors, you enhance the quality of your life.
+
+Best features of our automation solution:
+
+- Flexible subscription to different topics.
+- No Ads in our home automation app
+- Onboard FREE MQTT Broker
+- Unique feature: automated scenarios. Just set up the right time and MQTT Buddy will do the rest: turn on/off light, open doors, etc.
+
+MQTT Buddy is designed with a user in mind. We created a clear user interface which will navigate you easily through the IoT app.
+
+We developed a comprehensive free version of MQTT client with all necessary features to manage you smart things.
+
+Besides, by updating the app, you will get more advantageous Internet of Things client with many useful features such as auto connect, greater number of available buttons and scenarios, extended set of icons, camera slider, etc.
+
+Specially for our MQTT client we have created a show room based on esp8266. In the show room you can try out smart home solution in real time.
+
+If you have any question, do not hesitate to contact us smart@ximxim.com .
+
+We would love to hear your feedback! 
+========================================================================================================================
+
+The description of IoT Tutorial
+This tutorial aims to provide you with a thorough introduction to IoT. It introduces the key concepts of IoT, necessary in using and deploying IoT systems.
+Features:
+Overview
+Hardware
+Software
+IoT - Technology & Protocols
+Internet of Things - Common Uses
+Media, Marketing, & Advertising
+IoT - Environmental Monitoring
+IoT - Manufacturing Applications
+IoT - Energy Applications
+IoT - Healthcare Applications
+IoT - Building/Housing Applications
+IoT - Transportation Applications
+IoT - Education Applications
+IoT - Government Applications
+IoT - Law Enforcement Applications
+IoT - Consumer Applications
+IoT - Thingworx
+IoT - CISCO Virtualized Packet Zone
+IoT - Salesforce
+IoT - GE Predix
+IoT - Eclipse
+IoT - Contiki
+IoT - Security
+IoT - Identity Protection
+IoT - Liability
+Includes 25 lesson and more video tutorials
+Ability to learn on your own time from anywhere when you can’t access the internet.
+Optimized for most Android supported devices with enhanced graphics and design
+
+========================================================================================================================
+
+The description of WEG IoT
+Welcome to the future!
+
+The WEG IoT application is the new way for manage WEG products on your mobile device. Have complete control over your WEG installations and devices in real time.
+It is light, fast, easy use and totally free.
+
+Whether your plant is online the WEG IoT application you can check all the information sent. In a few taps, you can access event logs, alarms, create graphs, check generation rates and saves.
+
+Some features:
+
+• Track your solar plant from anywhere, check its status and know about weather on the location;
+• Check rates of photovoltaic generation (PV) and graph analysis;
+• Track environmental savings, avoiding CO2 emissions and saving knocked down trees;
+• Register new plants, devices (such as a Solar String Inverter SIW600), photovoltaic panels, etc;
+• Check your history of information in the form of charts in columns, lines or area;
+• Manage users per plant, avoiding undesired data visualization;
+• Configure pre-defined rules, such as hourly alarms and disconnected plant warning, or create your own;
+
+A little about the company
+
+On September 16th 1961, in the city of Jaraguá do Sul (State of Santa Catarina), an electrician, an administrator and a mechanic combined their knowledge and skills and founded Eletromotores Jaraguá. From the courage of these visionary entrepreneurs the company grew and after some time, the company name changed to WEG, in reference to the initials of the founders. A name that is recognized today as one of the largest manufacturers of electric equipment in the world.
+
+See more at http://www.weg.net/institutional
+
+========================================================================================================================
+
+The description of Dialog IoT Sensors
+The SmartBond™ IoT Sensors app from Dialog Semiconductor is a mobile application that works with the IoT Sensor Development Kits based on Dialog’s DA14585, DA14583 and DA14681 Bluetooth® Low Energy SoCs.
+
+With the app you can visualize the raw data coming from the development kit sensors, including accelerometer, gyroscope, magnetometer, temperature, pressure and humidity.
+
+The application also has the capability to show a fused version of this data as a moving 3D model.
+
+With the DA14585 IoT Multi Sensor Development Kit you can experience the cloud connectivity, with sensor reading, cloud based rules (alerts, actuation) and historical data visualization for the various supported sensors. As part of the cloud connectivity, Amazon Alexa support is integrated into the app, allowing for voice commands to control the Development Kit.
+
+This app is intended for developers of IoT sensor based applications.
+
+========================================================================================================================
+The description of IoT Factory
+Protect what matters most and get peace of mind knowing your business assets are checked around the clock. Use the app to keep tabs on refrigeration and ambient temperature, water leak detection, motion, door activity, and more!
+
+• Install the sensors and gateway purchased from iotfactory.sprint.com in minutes!
+• Alerts are automatically setup – immediately get alerted via text and email to avoid costly damage when something goes wrong with your refrigeration units or if there’s a water leak
+• Instantly document corrective actions taken to resolve alerts
+• Integrations - Send data to 3rd party apps and services.
+• Receive daily, weekly, monthly and custom date range reports via email. Summary, regulatory and corrective action reports included.
+• Map view of all locations to easily visualize all monitored locations and quickly
+identify issues
+• Use it for one or hundreds of locations – easily purchase more hardware to expand your solution
+• Manage access to all your locations
+
+
+
+
+
+Solutions available on iotfactory.sprint.com:
+
+• Restaurants and Food Services
+• Convenience and Grocery Stores
+• Pharmacy / Labs
+• Facilities and Properties
+• Server Rooms
+========================================================================================================================
+
+The description of IoT RTU
+A Remote Monitoring & Control solution for Industrial M2M, IoT, RTU over GSM GPRS 3G 4G NB-IoT cellular network.
+
+========================================================================================================================
+
+The description of bluSensor® IoT - Remote Monitoring
+Our bluSensor® IoT app is a next generation IoT gateway to easily monitor your bluSensor’s measurements.
+
+The gateway is setup in 1-Minute and ready to go!
+
+The gateway supports many different cloud providers including our easy-to-use bluSensor® IoT cloud.
+
+bluSensor® IoT cloud features:
+
+Sensor Data
++ remote monitoring of your sensors
++ humidity, temperature, dew-point, CO2, TVOC
++ air pressure, ambient light sensor
++ powerloss detection
+
+Sensor Statistics
++ historic sensor data and statistics
++ csv/excel export of sensor data
++ print report
+
+Alarms
++ sensor alarms with remote configuration
++ power loss alarm
+
+Notifications
++ alarm notifications via e-mail
++ alarm notifications via SMS
++ alarm notifications via phone call (our system calls you)
+
+
+Other supported cloud providers:
++ IBM Watson IoT
++ MQTT (connects to any cloud available)
++ Microsoft Azure (on request)
++ Amazon AWS IoT (on request)
++ Your custom IoT cloud (on request)
+
+========================================================================================================================
+
+The description of IOT (Wifi Remote Control Kit)
+Download this App for configuring the WiFi and 2.4G wireless of home devices, then to remotely control the home appliances and monitor housing situation from smartphone at any place and any time.
+
+Home devices connect to this App including:
+- Control Center: an essential item for connecting App before adding 2.4G device under remotely controlling.
+- Camera: record and take picture when someone passby
+- Air Control: remote control for air-conditioner
+-Door: Door/window sensor
+-Infrared: IR motor sensor
+-CO: CO detector
+-GAS: combustible gas detector
+-Smoke: multi-functional detector
+-Water-soak: water leakage alarm
+-Curtain: smart curtain motor controller
+-Metering socket: for switching and time setting
+-Lighting switch control box (2.4G device only)
+-LP: LED Lamp (2.4G device only)
+-PM2.5 AQI detector (2.4G device only)
+
+========================================================================================================================
+
+The description of TwinCAT IoT
+The TC3 IoT Communicator ("TF6730") makes it possible to easily transmit process data to multiple end devices, monitor status changes, and send information back to the machine.
+
+The TC3 IoT Communicator connects the TwinCAT controller to a messaging service, making it easy to set it up within the TwinCAT engineering environment to send and receive push messages between the PLC and mobile operating systems. Since TwinCAT registers each end device with a unique ID, messages can be transmitted to specific people and/or controllers.
+
+Since the TC3 IoT Communicator is based on the publish-subscribe pattern, it does not require any special firewall settings but can be easily integrated into an existing IT network.
+
+More information:
+http://www.beckhoff.com/TF6730
+http://www.beckhoff.com/TF6735
+
+========================================================================================================================
+The description of ThingSpeak
+For high speed, free and unlimited IoT implementation visit iGadget application:
+https://play.google.com/store/apps/details?id=aarsoftronix.com.igadget
+
+*** To monitor water (Fluid) level and control pump via internet (ThingSpeak), visit iFluid application from link given below:
+https://play.google.com/store/apps/details?id=aarsoftronix.com.ifluidthingspeak
+
+We are back again with a sweet, lightweight and easy to use app for the users those are fascinated by Internet of Things. So, are you ready to talk to appliances at home over the internet using most popular server ThingSpeak?
+
+If so, then you are at right place and watching at what you were looking for! This is an app by which you can talk to your ThingSpeak channel without any restriction. This app is gonna give you everything you want.
+
+Excited to know how it works? Here we go!
+
+1. Install and open app.
+2. Type your READ API KEY, WRITE API KEY, CHANNEL ID, and FIELD.
+3. Tap CONNECT TO THINGSPEAK button in order to connect app with ThingSpeak server.
+4. If you want to disconnect app from server then tap DISCONNECT FROM THINGSPEAK button.
+5. If field of your channel already contains data then after connecting app to server it will show you last data with date and time.
+6. If you want to read previous or next feeds of your channel then tap rev. FEEDS or fwd. FEEDS button.
+7. ***Note that after tapping either of FEEDS button, auto sync of data will be OFF, in order to turn auto sync ON to make app always fetch recently updated data (last feed), tap REFRESH button from menu bar at top.
+8. In order to delete your channel details at one go, tap DELETE button from menu bar.
+========================================================================================================================
+========================================================================================================================
+========================================================================================================================
+========================================================================================================================
+========================================================================================================================
+========================================================================================================================
+========================================================================================================================
+========================================================================================================================
+========================================================================================================================
+========================================================================================================================
+========================================================================================================================
+========================================================================================================================
+========================================================================================================================
+========================================================================================================================
+========================================================================================================================
+========================================================================================================================
+========================================================================================================================
+========================================================================================================================
+========================================================================================================================
+========================================================================================================================
+========================================================================================================================
+========================================================================================================================
+========================================================================================================================
+========================================================================================================================
+========================================================================================================================
+========================================================================================================================
+========================================================================================================================
+========================================================================================================================
