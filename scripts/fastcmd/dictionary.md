@@ -19156,6 +19156,184 @@ goto :eof
 -------------------------------------------------------------------------------------------------------
 objdump -D -M intel file.bin | grep main.: -A20
 -------------------------------------------------------------------------------------------------------
+package com.paragon.microservices.links.model.domain;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.AccessType;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.TypeAlias;
+import org.springframework.data.mapping.PersistentProperty;
+import org.springframework.data.mapping.PersistentPropertyAccessor;
+import org.springframework.validation.annotation.Validated;
+
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
+import java.io.Serializable;
+import java.util.Map;
+
+@Data
+@Builder
+@Validated
+@AllArgsConstructor
+@NoArgsConstructor
+@TypeAlias("Ticket")
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class Ticket implements PersistentPropertyAccessor<Ticket>, Serializable {
+    /**
+     * Serializable version identifier.
+     */
+    private static final long serialVersionUID = 6679898674452318620L;
+
+    @Id
+    @AccessType(AccessType.Type.PROPERTY)
+    @JsonProperty(value = "id", required = true)
+    //@JsonDeserialize(using = CustomDateSerializer.class)
+    //@JsonSerialize(using = CustomDateSerializer2.class)
+    @NotNull(message = "{domain.ticket.id.notNull}")
+    private String id;
+
+    @JsonProperty(value = "callBackTopicName", required = true)
+    @NotBlank(message = "{domain.ticket.topic-name.notBlank}")
+    private String topicName;
+
+    @JsonProperty(value = "callBackMessageType", required = true)
+    @NotBlank(message = "{domain.ticket.message-type.notBlank}")
+    private String messageType;
+
+    @JsonProperty(value = "details", required = true)
+    @NotEmpty(message = "{domain.ticket.details.notEmpty}")
+    private Map<String, Object> details;
+
+    @Override
+    public void setProperty(PersistentProperty<?> property, Object value) {
+        final String str = null;
+    }
+
+    @Override
+    public Object getProperty(PersistentProperty<?> property) {
+        return null;
+    }
+
+    @Override
+    public Ticket getBean() {
+        return null;
+    }
+}
+
+package com.paragon.microservices.links.system;
+
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+import java.util.UUID;
+
+@Component
+public class CustomDateSerializer extends StdDeserializer<UUID> {
+    private final ObjectMapper objectMapper;
+
+    @Autowired
+    public CustomDateSerializer(final ObjectMapper objectMapper) {
+        super(UUID.class);
+        this.objectMapper = objectMapper;
+    }
+
+    @Override
+    public UUID deserialize(final JsonParser jsonparser, final DeserializationContext ctxt) throws IOException {
+        final String source = jsonparser.getText();
+        return (StringUtils.isNotBlank(source) ? UUID.fromString(source.trim()) : null);
+    }
+}
+
+package com.paragon.microservices.links.system;
+
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+import java.util.UUID;
+
+@Component
+public class CustomDateSerializer2 extends StdSerializer<UUID> {
+    private final ObjectMapper objectMapper;
+
+    @Autowired
+    public CustomDateSerializer2(final ObjectMapper objectMapper) {
+        super(UUID.class);
+        this.objectMapper = objectMapper;
+    }
+
+    @Override
+    public void serialize(final UUID value, JsonGenerator gen, SerializerProvider arg2) throws IOException {
+        gen.writeRaw(this.objectMapper.writeValueAsString(value));
+    }
+
+//    @Override
+//    public Ticket deserialize(final byte[] bytes) throws SerializationException {
+//        if (bytes == null) {
+//            return null;
+//        }
+//        try {
+//            return om.readValue(bytes, Ticket.class);
+//        } catch (Exception e) {
+//            throw new SerializationException(e.getMessage(), e);
+//        }
+//    }
+}
+
+
+package com.paragon.microservices.links.converter;
+
+import org.apache.commons.lang3.StringUtils;
+
+import java.beans.PropertyEditorSupport;
+import java.util.UUID;
+
+import static org.apache.commons.lang3.StringUtils.EMPTY;
+
+public class TicketTypeEditor extends PropertyEditorSupport {
+
+    @Override
+    public void setAsText(final String text) {
+        final UUID value = (StringUtils.isNotBlank(text) ? UUID.fromString(text.trim()) : null);
+        this.setValue(value);
+    }
+
+    @Override
+    public String getAsText() {
+        Object value = this.getValue();
+        return (value != null ? value.toString() : EMPTY);
+    }
+}
+
+    @Bean
+    public CustomEditorConfigurer customEditorConfigurer() {
+        final CustomEditorConfigurer configurer = new CustomEditorConfigurer();
+//        configurer.setPropertyEditorRegistrars(new PropertyEditorRegistrar[]{new CustomPropertyEditorRegistrar()});
+        final Map<Class<?>, Class<? extends PropertyEditor>> customEditors = new HashMap<>();
+//        customEditors.put(String.class, ExoticTypeEditor.class);
+        customEditors.put(Ticket.class, TicketTypeEditor.class);
+        configurer.setCustomEditors(customEditors);
+        return configurer;
+    }
+-------------------------------------------------------------------------------------------------------
 npm install -g firebase-bolt
 npm install -g firebase-tools
 firebase deploy
