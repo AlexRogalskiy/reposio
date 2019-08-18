@@ -19336,6 +19336,40 @@ public class TicketTypeEditor extends PropertyEditorSupport {
 -------------------------------------------------------------------------------------------------------
 getClass().getName() + '@' + Integer.toHexString(hashCode())
 -------------------------------------------------------------------------------------------------------
+git config --global help.autocorrect 1
+Add this to your .bash_profile: source ~/.git-completion.bash
+
+git log -S[search term]
+git log -Saws_secret_key # did this repo ever have an aws_secret_key?
+
+git log -Saws_secret_key -p
+
+.gitattributes
+
+* filter=trimWhitespace
+*.rb filter=trimWhitespace
+git config filter.trimWhitespace.clean trim_whitespace
+
+sudo nano trim_whitespace
+#!/usr/bin/env ruby
+lines = STDIN.readlines
+lines.each do |line|
+  puts line.rstrip
+end
+
+git branch lost_data [SHA1]
+git merge lost_data
+git fsck --full
+
+
+-------------------------------------------------------------------------------------------------------
+apt-get install node-js
+apt-get install build-essentials
+apt-get install mermaid
+apt-get install mermaid-cli
+-------------------------------------------------------------------------------------------------------
+qmapshack
+-------------------------------------------------------------------------------------------------------
 
 	public int simulate(int[] X, int A) {
         int current = A;
@@ -19581,9 +19615,230 @@ ReactDOM.render(
   document.getElementById('root')
 );
 -------------------------------------------------------------------------------------------------------
+var map = new Map()
+map.set('我是key','hello')
+map.set('我是key2','world')
+for(let [key,value] of map){
+}
+-------------------------------------------------------------------------------------------------------
+let koa = require('koa');
+let static = require('koa-static');
+let router = require('koa-router');
+let body = require('koa-body');
+let path = require('path');
+let fs = require('fs');
+let os = require('os');
+
+const Koa = require('koa');
+const app = new Koa();
+const fs = require('fs');
+const router = require('koa-router'); //路由
+const static = require('koa-static');
+const path = require('path');
+
+let handler = ctx=>{
+   try{
+    // ctx.request.accepts('html')   [browser要接收什么 mime类型的数据]
+    //ctx.response.type ='xml' mime 类型 [xml,html,text,json,....]
+    //ctx.response.body = "hello";  
+    //ctx.response.body = fs.createReadStream('./hello.html'); //读取模板数据
+    
+    
+    //ctx.request.path!=='/'    手动路由，高级的可以使用 koa-router
+    
+   
+    //ctx.response.redirect('/'); //手动重定向方法
+    
+    //ctx.throw(500);  错误处理
+    
+    //ctx.response.status=404;
+    //ctx.response.body = 'page not found';
+       
+   }catch(err){
+       console.log(err);
+       //error 发射事件
+       
+       ctx.app.emit('error',err,ctx);
+   }
+}
+
+
+
+
+ /*
+     app.use(router.get("/",home));
+     app.use(router.get("/handler",handler'))
+     app.use(router.get('/about',about));
+     
+     //路由方式 重定向
+	  app.use(router.get("/admin",redirect));
+    */
+
+// console.log(path.join(__dirname)) //输出当前目录的绝对地址
+//app.use(static(path.join(__dirname))).listen(3000);  //静态服务器
+
+
+
+//error监听器
+
+const main = ctx=>{
+    ctx.throw(500);
+}
+
+app.on('error',(err,ctx)=>{
+    console.error('server error',err);
+})
+
+
+
+
+//cookie 
+const login = function(ctx){
+    const n = Number(ctx.cookies.get('view')||0)+1;
+   	ctx.cookie.set('view',n);
+    ctx.response.body = n+'views';
+}
+
+//表单数据
+const koaBody = require('koa-body');
+const reg = ctx=>{
+    const body = ctx.request.body;
+    if(!body.name)ctx.throw(400,'.name required');
+    ctx.body = {name:body.name};
+    /*
+    	curl 测试
+       curl -X POST --data 'name=hello' 127.0.0.1:3000
+       curl -X POST --data 'name' 127.0.0.1:3000  //name required
+    */
+}
+app.use(koaBody());
+
+
+
+//文件上传
+const os = require ('os');
+const path = require('path');
+const koaBody = require('koa-body');
+
+const main =async (ctx)=>{
+    const tmpdir = os.tmpdir();
+    const filePaths = [];
+    const files = ctx.request.body.files||{};
+    for(let key in files){
+        const file = files[key];
+        const filePath = path.join(tmpdir,file.name);
+        const reader = fs.createReadStream(file.path);
+        const writer = fs.createWriteStream(filePath);
+        reader.pipe(writer);
+        filePaths.push(filePath);
+    }
+    ctx.body=filePaths;
+}
+app.use(koaBody({multipart:true}));
+
+//curl 模拟提交
+curl --form upload=@/path/to/file.jpg http://127.0.0.1:3000
+
+
+app.listen(3000);
+-------------------------------------------------------------------------------------------------------
+InsTream.rangeClosed(2, Integer.MAX_VALUE)
+.filter()
+.map(x -> x * x)
+.limit(20)
+.collect(LinkedList::new,
+LinkedList::push,
+LinkedList::addAll)
+.forEach(System.out::println);
+-------------------------------------------------------------------------------------------------------
+ul {--accent-color: purple;}
+ol {--accent-color: green;}
+li{background: var(--accent-color);}
+-------------------------------------------------------------------------------------------------------
+/*
+<figure>
+	<img />
+	<figurecaption></figurecaption>
+</figure>
+*/
+-------------------------------------------------------------------------------------------------------
+windows : set NODE_ENV=prod&&node index.js
+
+Linux : export NODE_ENV=prod&&node index.js
+
+
+console.log(process.env.NODE_ENV) //prod
+-------------------------------------------------------------------------------------------------------
+npm config set registry https://registry.npmjs.org/
+-------------------------------------------------------------------------------------------------------
+npm install -g create-react-app
+yarn add webpack webpack-dev-server path
+-------------------------------------------------------------------------------------------------------
+sudo npm install -g angular-cli
+
+ng new PROJECT_NAME
+cd PROJECT_NAME
+ng serve
+
+# 这是生产构建
+ng build --target=production --environment=prod
+ng build --prod --env=prod
+ng build --prod
+
+# 这是开发构建
+ng build --target=development --environment=dev
+ng build --dev --e=dev
+ng build --dev
+ng build
+-------------------------------------------------------------------------------------------------------
+process.on('unhandleRejection,(reason,p)=>{
+    console.log('未处理的 rejection:',p,'原因：',reason);
+})
+process.on('waring',(warning)=>{
+    console.warn(warning.message);
+    console.warn(warning.name);
+    console.warn(warning.stack);
+})
+-------------------------------------------------------------------------------------------------------
+let http = require('http');
+let server = http.createServer();
+server.on('request',function(req,res){
+    res.writeHead(200,{'Content-type':'text/plain'});
+    res.end('hello world');
+}).listen(3000);
+-------------------------------------------------------------------------------------------------------
+const formidable = require('formidable');
+let form = new formidable.IncomingForm();
+
+form.encoding = 'utf-8';
+form.uploadDir = "/uploadFile";
+form.keepExtensions = true;
+
+
+form.maxFieldsSize = 2*1024*1024; //2MB
+form.maxFields = 1000;  //分段 0 = unlimited(无限)
+
+form.hash=false; //上传文件的校验码 sha1 or md5
+form.multiples=false; //是否支持多文件上传
+
+
+// read
+
+form.bytesReceived; //接收字节数
+form.type;  //文件类型 mime
+form.bytesExpected; //返回将要接收的表单数据大小
+
+//form.parse(request,(err,fields,files)=>{ 
+    console.log(JSON.stringify({fields:fields,fiels}))
+})// parse upload file info
+
+
+form.on('field')
+-------------------------------------------------------------------------------------------------------
 	/**
 	 * Unique file identifier.
 	 */
+	 @url
 	@JsonProperty("file_id")
 	private String fileId;
 	
