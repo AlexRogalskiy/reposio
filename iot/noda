@@ -2908,13 +2908,299 @@ If you are unsure with your device inclusiveness, then try to read the manual or
 
 https://github.com/eniot/mobile_mqtt_dash
 ========================================================================================================================
+\
+Описание для iTag Alarm
+iTags Вы можете приобрести в Интернете по очень низким ценам.
+
+Официальное приложение iTracing позволяет использовать iTags, как "подключение через iBeacons".
+
+iTag Alarm позволяет использовать Ваш iTag в качестве "волшебной кнопки", чтобы отправлять тревожные, короткие сообщения и местонахождение любого из Ваших контактов.
+
+iTag Alarm полностью интегрирован с «If This Then That» (Если это, значит то). Через Вашу "волшебную кнопку" и "Maker Channel" вы может инициировать любой "Action Channel".
+
+iTag Alarm полностью интегрирован с «Automate for Android». Через Вашу "волшебную кнопку" запускает любую блок-схему.
+
+Используйте несколько iTags везде, без ограничений, каждый из которых может инициировать собственные тревожные сигналы!
+
+iTag это Bluetooth-устройство с низким потреблением энергии. При использовании iTags Alarm потребляется мало энергии, до тех пор, пока не будет активирована тревожная сигнализация. Таким образом, батарея будет долго сохранять свой заряд...
+
+Версия Pro этого приложения будет работать полностью в фоновом режиме очень экономно расходуя драгоценный заряд батареи. В этой версии не содержится реклама.
+
+Попробуйте это приложение бесплатно и оно поможет Вам защищать свою семью:
+- дайте iTag пожилым людям, чтобы дать им возможность вызвать Вас в чрезвычайных ситуациях;
+- дайте iTag своим детям, который поможет одним кликом отправить сигнал об их расположении;
+- поместите iTag в столовую и нажмите его, когда обед будет готов;
+- используйте iTag, чтобы отправить "Привет" Вашим друзьям;
+- отправьте свое расположение друзьям во время Вашего проезда мимо или перед встречей;
+- с IFTTT автоматизируется Ваш дом и используются кнопки, чтобы сделать действия, такие как:
+- если iTag On тогда запускается музыка;
+- если iTag On тогда открываются googleMap и ведет домой (или по другому адресу)
+- если iTag On тогда отправляются почту с выбранным содержанием;
+- если iTag On тогда включаются вентилятор, лампа освещения;
+- если iTag On тогда открывается дверь гаража;
+- с Automate используются кнопки, чтобы создать Ваши автоматические действия через блок-схемы:
+- если iTag On тогда запускаются музыку;
+- если iTag On тогда открываются googleMap и идут домой (или другой адрес)
+- если iTag On тогда отправляют почту с выбранным содержанием
+- если iTag On тогда включаются вентилятор, лампа освещения;
+- если iTag On тогда открывается дверь гаража
+- и еще много, что Вы сможете придумать...
+
+Пожалуйста: Мне сообщили, что очень немногие номера iTags не работают с моим Приложением (на сегодня 0,1%). Прежде, чем оставить отрицательный комментарий, попробуйте сначала свой iTag с приложением "iTracing". Если это работает тогда, это должно работать также с моим Приложением. Если нет, то не будет работать ни один...
+И пожалуйста, оставьте оценку в 5 звездочек. Спасибо.
+
+https://apkpure.com/ru/jg-itag-alarm/fr.free.julienGley.iTagAlarm
 ========================================================================================================================
+
+Описание для iTagOne - антипотеряйка для ключей и мелких вещей
+Bluetooth брелки iTag помогают не терять ключи, кошельки и другие мелкие предметы. iTag One - это приложение, которое устанавливается на смартфон и уменьшает вашу тревогу потерять вещи.
+
+Брелки iTag продаются на множестве интернет-магазинов по небольшой цене от 100 до 300 рублей.
+
+Пользоваться приложением iTag One так просто, как нажать одну кнопку поиска брелков и запомнить найденные. После этого в обычной ситуации приложение не будет вас больше беспокоить.
+
+Если брелок окажется на расстоянии более 15 метров от телефона, то они начнут издавать звук, а на телефоне появится уведомление. Громкий звук отключается мгновенно нажатием на уведомление, на изображение брелка или на кнопку на самим брелке. Возможно отключить звуковое уведомление на телефоне если нужно намеренно оставить брелок в другом месте.
+
+Не меньше пользы, чем предупреждение потери брелка приносит функция поиска. Возможно искать брелок если нажать его изображение на телефона и наоборот найти телефон дважды нажав кнопку на брелке. Звук при поиске отключается мгновенно одним нажатием без раздражения окружающих. Двойное нажатие кнопки брелка делает случайное срабатывание невозможным.
+
+ВОЗМОЖНОСТИ:
+
+* Сигнал при утере брелке
+* Поиск брелка с телефона
+* Поиск телефона с брелка
+* Память на 4 брелка
+* Анимация изображения активного брелка
+* Принудительное отключение/подключение брелка жестом слева на право
+* RSSI индикатор показывающий силу сигнала позволяет оценить расстояние до брелка
+* Отображение на карте положения где была утеряна связь с брелком
+
+ЦЕНА:
+
+Приложение бесплатное и не содержит рекламы. Поставьте нам оценку если видите приложение полезным.
+
+Приложение имеет открытый код доступный на github.
+
+ПРИВАТНОСТЬ:
+
+Эта версия приложения собирает информацию о неисправностях, неожиданных завершения и неправильном поведении, чтобы передать ее для анализа на сервисы Google. Передача содержит технические данные телефона и не имеет никакой личной информации.
+
+
+https://apkpure.com/ru/itag-one-bluetooth-key-finder-anti-lost-alarm/s4y.itag
+
+
+Описание для iTracing
+iTag is a kind of Bluetooth Low-energy product which based on the newest Bluetooth 4.0 version. It can chain user’s easy-lost & valuable belongings (such as keys, handbags etc.), kids or pets together with smart phones through specified App software within a setting Bluetooth connection distance. In the effective distance it can realize the functions of anti-lost, looking for smart phones, self-portrait and voice recording.
+
+The effective distance of iTag is 75 Feet in open range without barrier. With this device, your belongings, kids and pets won’t leave your attentions any more.
+
+iTag use CR2032 Lithium Coin Battery which is easy to get from markets, and it works for almost half a year.
+
+
+https://apkpure.com/ru/itracing/com.fb.antiloss
+
+
+Описание для Bluetooth itag
+Thanks for using Bluetooth anti-lost
+The anti-lost device uses the newest Bluetooth 4.0 low energy technology. Through APP in Phone, the belongings (such as key, handbag), tags with the device to find out easily; the device even can be used with baby to keep baby in your eyes. Also the device can be used to pet to be anti –lost.
+
+
+https://apkpure.com/ru/bluetooth-itag/com.lenzetech.itag
+
+
+
+Описание для iTrack
+iTrack (www.itrack.top), the world's most popular and stable GPS vehicle monitoring and management platform, the launch of the Android client software, convenient for the user at any time to master the condition of vehicle. Main functions are: to view the list of vehicles, bicycle track in real time, multi vehicle monitoring, back to the historical trajectory, reverse address inquiries, through different icon display different road condition.
+You can experience the functions of the APP through demo account.
+account:Demo
+password:123456
+
+
+https://apkpure.com/ru/itrack-gps-tracking-system/com.swd.tracker
+
+
+Описание для i Anti-lost
+This anti-lost alarm APP is designed for mobile use (based on Bluetooth 4.0 low-power technique). Connect your easily lost belongings with anti-lost alarm by Bluetooth, to help preventing from losses and findings.
+
+
+https://apkpure.com/ru/i-anti-lost/com.xpadsp.iantilost
+========================================================================================================================\
+
+Описание для Tractive GPS
+Где моя собака? Где моя кошка?
+Если Вы когда либо задавали себе этот вопрос, тогда Tractive GPS Pet Finder то, что Вам нужно.
+
+Приложение Tractive GPS Pet Finder работет с отслеживающими продуктами Tractive GPS.
+
+Tractive позволяет:
+* Отслеживать Вашу собаку кошку или другое животное в режиме реального времени
+* Идти по следу Вашего питомца
+* Видеть историю передвижений Вашего питомца
+* Установить виртуальную зону безопасности получать уведомления, как только Ваша собака или кошка покинут эту зону
+*Быть спокойным, зная где Ваш четвероногий друг находится в любой момент времени
+
+Используя приложение Tractive, Вы можете видеть точную GPS Вашего питомца в любой момент времени. Устройство Tractive GPS работает в более, чем 80 странах по всему миру н доступно в ближайшем магазине электроники, зоомагазинах или на www.tractive.com/shop.
+
+
+*** Интерактивная карта ***
+Полностью интерактивная карта покасывает всех питомцев, у которых есть устройство Tractive GPS. Вы можете добавлять неограниченное количество питомцев с GPS трекерами в приложение Tractive. Нажатием двумя пальцами превратите карту в 3D! Вы всегда можете переключаться между обычным, гибридным или спутниковым видом карты.
+
+
+*** Отслеживание в режиме реального времени ***
+Если Вы ищите своего питомца, Вам не поможет обновление его позиции каждые несколько минут. Поэтому Tractive обновляет посицию питомца каждые несколько секунд.
+
+*** История***
+Просматривайте путь, по которому прошел Ваш питомец! Просто нажав на кнопку, Вы можете видеть путь Вашего питомца и места, где он был!
+
+*** Уведомления***
+Получайте уведомления, как только один из Ваших питомцев покинет установленную зону - напринмер, двор, парк или кемпинговую площадку. Уведомления могут приходить прямо на Ваш смартфон и/или на Вашу электронную почту.
+
+
+*** Виртуальное ограждение***
+Опция виртуального ограждения позволяет Вам установить так называемую Зону Безопасности, в пределах которой Вашей кошке или собаке разрешено свободно передвигаться. Как только животное покидает ее, Вы получаете уведомление или электронное пиьсмо, так что Вы сможете вернуть вашего питомца, пока он не убежал цлишком далеко. Вы легко можете передвигать виртуальное ограждение в любую точку мира и изменять его границы по своему усмотрению.
+
+
+https://apkpure.com/ru/tractive-gps-dog-and-cat-finder/com.tractive.android.gps
 ========================================================================================================================
+
+Описание для GPS Trace Tag
+GPS Trace Tag — новая многофункциональная программа, которая позволяет отследить, где находится Ваш телефон, планшет или другое мобильное устройство на базе платформы Android, т.е. использовать его в качестве GPS-трекера. Установите GPS Trace Tag — и пользуйтесь системой GPS мониторинга и навигации бесплатно!
+★ Будьте в курсе, где находится Ваш ребенок, родственник или близкий человек.
+★ Знайте, что происходит с важными для Вас людьми или объектами.
+★ Наблюдайте за движением своего автомобиля или яхты.
+★ Делитесь маршрутом своих путешествий с друзьями.
+Для корректной работы приложению необходимо наличие встроенного GPS-приемника и подключение к сети Интернет.
+Особенности GPS Trace Tag:
+✔ Корректно работает с любой версией операционной системы Android.
+✔ Имеет удобный, интуитивно понятный интерфейс.
+✔ Легко подключается к серверу: достаточно ввести IMEI устройства и пароль.
+✔ Полностью справляется с основной функцией обычного трекера — отправкой в систему мониторинга позиционных данных: координат устройства, скорости движения, маршрута и т.п.
+✔ Для определения местоположения использует навигационную систему GPS, Wi-Fi и сети сотовых операторов.
+✔ Может использоваться для отправки в систему мониторинга текстовых сообщений и изображений.
+✔ Два режима работы: постоянный (непрерывная передача координат) и с тайм-аутом (передает координаты лишь один раз в заданный период, снижая расход заряда устройства).
+✔ Работает с любой SIM-картой — даже в роуминге, если это необходимо владельцу.
+Программа GPS Trace Tag совместима с бесплатным сервисом GPS и ГЛОНАСС мониторинга GPS-Trace (http://www.gpstrace.ru/).
+
+
+https://apkpure.com/ru/gps-trace-tag/wialon.GPS_Tag_Orange
+
+https://gurtam.com/ru
 ========================================================================================================================
+
+Описание для Lapa
+Order your Lapas at https://findlapa.com/buy
+
+The App communicates with Lapa: a tiny and beautiful Bluetooth Tracker that finds the things you always lose. You can stick or hang Lapas to your Keys, Backpacks, Wallets, Pets or even Kids.
+
+Protect your things by using any of the following features:
+
+* Ring Phone Button:
+Press the button on your Lapa to make you phone ring.
+
+* Scan & Beep:
+Check the radar and follow the beep to find your things.
+
+* Safety Mode:
+Your smartphone and Lapa will alert you if you leave your belongings behind.
+
+* Silent Spots
+Mute Safety Mode notifications inside your trusted Wifi Spots.
+
+* Last Seen Location:
+Check your things’ last seen location and remember where you left them.
+
+* Community Track:
+Even from far away your Lapa's location is instantly updated when another Lapa user passes by it, automatically and without accessing its data.
+
+* Share with Friends:
+Share access to your Lapas with your friends and family.
+
+* Report as Lost
+Report your Lapa as lost and receive a Push Notification every time your Lapa's location is updated by another user that passes by it.
+
+
+https://apkpure.com/ru/lapa-bluetooth-tracker/lapastudio.lapaapp
 ========================================================================================================================
+
+Описание для SeTracker
+1 intercom: APP record and send to device,device record and send to app.
+2 map: APP can search the last position and show in the map,and get the realtime position.
+3 health: APP can search the movement of the device.
+4 footprint: APP can searth the historical route and show ine the map.
+5 geofence:APP can set geofence,APP can get the message when device stride the geofence.
+6 message : APP can get the lowbat message,sos message and so on.
+7 alarm: APP can set the alarm of the device.
+8 find watch: APP send the command,the device will ring.
+9 rewards: APP can send rewards to the device,like redheart.
+10 settings: APP can set the sos number,work mode,shutdown command and so on.
+
+
+https://apkpure.com/ru/setracker/org.zywx.wbpalmstar.widgetone.uexaaagg10003
 ========================================================================================================================
+
+Описание для Mobile Tracker
+Mobile tracker makes your life easy in location tracking world by making it easy to get connected with your friends and family and share location with this mobile app.
+
+Mobile tracker makes your cell phone safe from getting lost and make easy for you to reach at your phone location.
+
+Main features of this Location Tracker:
+
+• View your current location with GPS Tracker
+• Track your own lost phone
+• Share “real time location” with your family and friends
+• You can change map to satellite view
+• You can also see street view with this mobile app
+• Mobile tracker also provide notification sending feature, you can send message anytime free of cost to your family or friend with just internet connection with this phone locator.
+
+Mobile App provides “user friendly” interface and location tracking with map, also optimized for battery usage. Your privacy will be protected with your password in this Location tracker.
+
+Privacy Policy:
+Your privacy is our top concern, the app requires too little permission to protect your privacy. The only needed permissions are to perform the main app function about location tracking and contacts permission for account sign up.
+
+
+https://apkpure.com/ru/mobile-tracker/com.mobiletracker.mobileapp
 ========================================================================================================================
-========================================================================================================================
+
+Описание для Отслеживание по номеру телефона
+Отслеживание по номеру телефона является отличным инструментом для отслеживания легко найти свой телефона GPS местонахождение по номеру телефона. Вы можете поиск GPS местонахождение телефона и ваши дети, быстро и точно.
+
+Отслеживание телефона по номерy за использует самой последней технологии быстро и точно найти людей, которых вы заботитесь о, обеспечивая информацию о местонахождении в режиме реального времени. Приложение имеет карту с иконами семьей и телефона на их строго определенных местах. Родители любят Приложение , так как это обеспечить до самой последней информации об их ребенком местонахождение. Помимо того, что искатель великие люди, Приложение отслеживает смартфоны, и андроидов.
+
+особенности:
+
+✓ Абсолютно бесплатно для бесконечного числа пользователей. Все функции бесплатны.
+
+✓ Найти ваш потерянный или украденный телефон легко.
+
+✓ Вы можете увидеть полную историю местоположения бесплатно.
+
+✓ Работает со всеми операторами мобильной сети.
+
+✓ Вы получите мгновенное уведомление, когда ваши дети переезжают из одного места в другое. Нет необходимости обновлять местоположения, чтобы получать последние обновления местоположений.
+
+✓ Он точно определяет точное местоположение вашего ребенка и предоставляет навигационную помощь на карте, чтобы вы могли проложить маршрут до их местоположения.
+
+✓ Просмотр уровня заряда аккумулятора для ваших телефонов и телефонов, подключенных к вашим детям
+
+✓ Увидеть всех своих детей в виде значка на карте, которая показывает точный адрес с уровнем заряда батареи для каждого из них.
+
+✓ Следите за текущим местоположением вашего мобильного телефона. Отслеживайте и регистрируйте все посещенные места с момента установки приложения.
+
+✓ Вы можете просмотреть всю историю местоположений ваших детей на карте в любое время.
+
+Защита конфиденциальности: Ваша конфиденциальность - наша главная задача. Для защиты вашей конфиденциальности приложению требуется слишком мало разрешений. Единственные необходимые разрешения - выполнять основную функцию приложения по отслеживанию местоположения, чтобы не нужно было получать доступ к вашим фотографиям и учетным записям.
+
+Как использовать его, чтобы найти телефон ребенка
+1. Установите приложение и зарегистрируйтесь, используя свой номер телефона
+2. В приложении нажмите кнопку «Отправить приглашение» и выберите любое количество детей.
+
+Это оно! Как только ваш ребенок перейдет по ссылке приглашения и примет приглашение, вы оба будете подключены друг к другу в частной сети, чтобы вы могли найти их в любом месте.
+
+Это приложение не является шпионским или секретным решением для наблюдения, и приложение не может быть установлено удаленно или тайно. Чтобы присоединиться к этому сервису, пользователь должен сам установить приложение и принять запрос на совместное использование местоположения.
+
+Нам нравится слышать от клиентов. Если у вас есть какие-либо вопросы или предложения, пожалуйста, свяжитесь с нами: https://onelocator.com
+
+
+https://apkpure.com/ru/phone-tracker-by-number/mg.locations.track5
 ========================================================================================================================
 ========================================================================================================================
 ========================================================================================================================

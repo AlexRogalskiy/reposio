@@ -19334,6 +19334,19 @@ public class TicketTypeEditor extends PropertyEditorSupport {
         return configurer;
     }
 -------------------------------------------------------------------------------------------------------
+getClass().getName() + '@' + Integer.toHexString(hashCode())
+-------------------------------------------------------------------------------------------------------
+
+	public int simulate(int[] X, int A) {
+        int current = A;
+        for (int i = 0; i < X.length; i++) {
+            if (X[i] == current) {
+                current += X[i];
+            }
+        }
+        return current;
+	}
+-------------------------------------------------------------------------------------------------------
 npm install -g firebase-bolt
 npm install -g firebase-tools
 firebase deploy
