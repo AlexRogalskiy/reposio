@@ -4346,7 +4346,43 @@ Tracking history is available. You can export the history to a CSV file.
 
 
 
+Описание для Beacon Scanner
+This app will scan for beacons near you! ✌️
+
+For all Beacons:
+* The type of beacon (iBeacon, AltBeacon, Eddystone or RuuviTag)
+* The approximation of the distance with the beacon (this is based on the RSSI value received and is NOT accurate)
+* The beacon address and manufacturer code
+* The RSSI and TX values
+* The last time the beacon has been seen
+
+For iBeacons and AltBeacons:
+* UUID
+* Major
+* Minor
+
+For Eddystone-UID beacons:
+* NamespaceID
+* InstanceID
+* TLM data sent if any
+
+For Eddystone-URL and RuuviTag
+* Clickable URL
+* TLM data sent if any
+
+For RuuviTag:
+* Air Pressure
+* Temperature
+* Humidity
+
+It can display several frames emitted by a single beacon, allowing you to see if a beacon emits multiple frames types (for example radius network beacons can emit iBeacon and AltBeacon at the same time)!
+
+* You can also log the scans of the beacons to an endpoint via a HTTP POST request.
+
+The code is open source and available here 🤓
+https://github.com/Bridouille/android-beacon-scanner
 ========================================================================================================================
+airspayce.com/mikem/arduino/VirtualWire
 ========================================================================================================================
 ========================================================================================================================
 ========================================================================================================================
