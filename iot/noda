@@ -3267,6 +3267,8 @@ github.com/arun-gupta/javaee7-samples
 github.com/igorsimdyanov/
 effectivedevops.net
 webiopi.com
+http://nauchebe.net/inyavr1
+revich.lib.ru/AVR/AzbukaEl.zip
 yozio.com
 https://www.microsoftpressstore.com/store/programming-windows-9780735671768
 http://arduino.esp8266.com/stable/package_esp8266com_index.json
@@ -3516,6 +3518,835 @@ wiley.com/go/datasmart
 
 https://www.wiley.com/en-ru/Data+Smart%3A+Using+Data+Science+to+Transform+Information+into+Insight-p-9781118661468
 
+========================================================================================================================
+
+Описание для Bluetooth Scanner
+**************************************
+The codec info (aptX, SBC others) is only available from Android 8.0 (Oreo) and only for connected devices!!!
+If your device runs Android 6 or 7, this info won't be displayed.
+**************************************
+
+Are you ready to discover any bluetooth devices around you?
+Would you like to know everything about the connected bt devices?
+
+Highlighted features:
+* Find all bluetooth devices, including connected, paired and unknown devices.
+* bluetooth 4.0 scanner
+* ble scanner, ble rssi, bluetooth signal strength
+* bluetooth address
+* Find Low energy and classic devices, including smart watch or band, TV, computer and others.
+* Pair/Unpair devices
+* Show battery level of connected devices
+* Show signal strength, codec information (aptX, LDAC, SBC and others)
+* Replay any scan in history, see any bt devices in the past
+* Customize device (rename, change device type)
+* Useful filters based on device type, device name, time
+* Order by RSSI, address, name, vendor and others
+* Highlight new devices around you
+* Generate charts from data (device group distribution and others)
+* Export database for further processing
+Скрыть 
+
+
+
+Описание для Bluetooth 4.0 Scanner
+Bluetooth 4.0 (Low Energy and Classic Mode) Scanner. BlueScan scans for Bluetooth devices, looks up the vendor and allows you to email the results.The information is recorded includes: device name, location, RSSI signal strength, MAC address, MAC address vendor lookup.
+
+This supports the earthping.com project - crowdsourced Bluetooth database. Users are also reporting usage to find their lost Bluetooth devices.
+
+Scan data can be downloaded via email in JSON and CSV format. Also, this version uploads the found devices to a web database, which can be turned off in menu --> settings. Bluetooth 4.0 devices will be able to scan in Classic or Low Energy mode. Devices without Bluetooth 4.0 can scan in Classic mode only.
+
+This is part of a research project into the extent that Bluetooth devices are used in the buildout of the Internet-of-things. Currently this supports Bluetooth Classic and 4.0 (Bluetooth Low Energy - BLE).
+
+This app is oriented toward those curious about the extent of the Bluetooth devices in and around their neighborhood - drive through your neighborhood while scanning for Bluetooth devices and you'll see sensors, firetucks, freeway monitors, car brands, laptops, phones, TV set-top boxes, etc.
+
+Any feedback would be greatly appreciated. That includes bugs, feature requests, sending of some scan data sets would be appreciated (j2abro@gmail.com) and/or any comments about interesting Bluetooth devices you are seeing.
+
+Many Thanks, John
+j2abro@gmail.com
+
+
+
+
+Описание для Bluetooth Pair
+Before you download:- This app is targeted to the app developers, requires GPS and Bluetooth is handset dependent.
+
+Functionality and UI of this app are limited to scan/pair/unpair/view UUIDs GATT service & characteristics read/set a device discoverable/Bluetooth Signal Strength. Now you can read Heart Rate using LE scan.
+
+Now find a Bluetooth device functionality help to locate any Bluetooth device. Locate device. Bluetooth device finder. Find Bluetooth device, Bluetooth device locator, Bluetooth detector, Bluetooth device manager. With a range of Bluetooth devices at your disposal such as audio speakers, headsets, car speakers and more, it can be troublesome to have to connect to a specific device. With this app you can locate and find your bluetooth devices using the received signal strength indication (rssi), the closer you get, the stronger the signal will be.
+
+NOTE: The app's scanner can track other Bluetooth 4.0 devices such as hearing aids that are powered on and actively advertising.
+
+Bluetooth device finder help to find Wireless headphones, 'earbuds', 'speakers', bluetooth wearable, bluetooth phone – track down any kind of device. You can freely toss your headphones anywhere you like because the bluetooth headset locator will make sure you find them the next time you need them. This bluetooth device finder app works with headphones from brands like Beats, Bose, Jabra, Jaybird, JBL, and many others
+Tags:
+This app can be used as Bluetooth app, Bluetooth scanner, Bluetooth test app, Bluetooth best app, Bluetooth app for android, free Bluetooth app, Bluetooth profile search, Bluetooth service search, Bluetooth Explorer, Bluetooth le energy app, Bluetooth LE scan, Bluetooth signal strength, Bluetooth signal. Bluetooth Pair, Bluetooth pair. Bluetooth pairing device, BLE pair, find my headphones & earbuds, Bluetooth tracker, Bluetooth notifier, device discovery, Bluetooth locator, Bluetooth connection, BLE finder, Bluetooth scanner, Bluetooth, Pair, Bluetooth device finder, biuetooth, bltouth, Bluetooth device finder, Bluetooth finder app, xtrememac, bbluetooth, the Bluetooth finder, bluetooth locator, Fitbit finder, locate device, périphériques, mac finder, ipad finder, iphone find, iphone locate, track device, Bluetooth device Manager, Bluetooth device locator, Bluetooth Auto connect, Bluetooth device finder, Bluetooth mac address finder, Bluetooth manager, Find My Device, Finder For Lost Bluetooth Devices, Find My Bluetooth Device, Bluetooth Mac Address Finder, Bluetooth Scanner, Bluetooth finder, Find Bluetooth Devices, Bluetooth Connect, Device Lost Location Finder, Where is my bluetooth, Keep track of your devices.
+
+
+
+Описание для BLE Scanner
+No.1 Scanner Utility for Bluetooth Low Energy, iBeacon and Eddystone devices.
+========================================
+
+Over 650,000+ downloads
+==================
+
+Helping Bluetooth community, developers and users.
+======================================
+
+BLE Scanner was developed with a vision to help Bluetooth community, developers who wants to build BLE products & applications.
+
+BLE Scanner is used by not only developers but also users are using it to find their lost Fitness Trackers and other Bluetooth Smart Devices.
+
+Main Features Bluetooth Scanner
+=====================
+# Scan near by Bluetooth Low Energy, iBeacon and Eddystone devices.
+# Added Peripheral (Advertising) Mode.
+# Create your custom peripheral, Add custom services & characteristics.
+# Advertise your phone as Eddystone UID, URI and TLM.
+# Customize Eddystone configuration for UID, URI and TLM.
+# Find your BLE device in proximity using Radar view & unique device colors.
+# Filter devices by Name, Mac Address and RSSI.
+# History of all devices discovered. Find out which device was discovered when with discovery Time.
+# Delete History options in history tab.
+# Export History data into sdcard.
+# RSSI Pool helps to find out how far your devices are. Lower the number the closer you are to the source i.e. -25 very near and -80 is far from your BLE devices.
+# Favorites your devices.
+# Explore Services & Characteristics of connected device.
+# Perform Read, Write, Notify & Indicate.
+# Check device compatibility for BLE.
+# Export history data as CSV format.
+# Write more than 20 Byte data.
+# Add logical name of your device.
+# Copy to clipboard of MAC Address.
+# Find your lost bluetooth or BLE device.
+# New Peripheral Profile Integrated i.e. Heart rate, Blood pressure
+# QR Code scanner integrated.
+
+Known issue:-
+
+- Some times when Android phone advertise as peripheral then it is unable to connect in iOS devices. But it is connect easily in another android devices.
+
+
+Follow us on:
+
+Facebook: https://www.facebook.com/blescanner
+
+Twitter: https://twitter.com/blescanner
+
+Comments, questions or suggestions? Mail us: blescanner@bluepixeltech.com or Visit us: www.bluepixeltech.com
+
+
+Описание для Bluetooth LE Scanner
+This is a demo application to show the use of the Bluetooth LE library.
+
+I allows you to scan and obtain information about Low Energy Bluetooth Devices in your vicinity.
+
+The library allows for easy access to a Bluetooth LE device's Advertisement Records.
+It also offers:
+
+* A simple running average RSSI reading keeping.
+* For iBeacons: Manufacturer data record parser.
+* For iBeacons: Distance indicators (Near, Far, Immediate, Unknown).
+* For iBeacons: A decently inaccurate (due to real world issues) distance approximation.
+* All the new object types are Parcelable.
+
+This will only work on Android 4.3 (API Level 18).
+
+Github Link: https://github.com/alt236/Bluetooth-LE-Library---Android
+
+
+
+
+========================================================================================================================
+
+Описание для Облачный Терминал Сбора Данных и Сканер Штрих-кода
+Это профессиональное приложение для малого и среднего бизнеса заменяет аппаратный 1D/2D сканер штрих-кодов и терминал сбора данных. Не требует установки дополнительного программного обеспечения на ПК или POS, работает по стандартному RFCOMM каналу, так же как это делают специализированные беспроводные сканеры с интерфейсом Bluetooth с любыми системами, поддерживающими подключение таких сканеров.
+Для более тесной интеграции с товароучетными системами имеется открытый REST API интерфейс. Для типовых конфигураций 1С есть готовые обработки.
+
+При подключении ПК или POS сразу передает сканированные значения штрих-кода в RFCOMM. Если подключения нет, приложение автоматически переключается в режим терминала сбора данных и запоминает все значения в базе данных для последующей передачи через Bluetooth или веб-сервис. Начиная с версии 1.3.0 в режиме терминала сбора данных поддерживаются серийные номера.
+
+Работает как на обычных смартфонах и планшетах, сканируя штрих-коды фотокамерой, так и на профессиональных гибридных устройствах со встроенными сканерами штрих-кода.
+
+Сканер на камере распознает все популярные стандарты: UPC-A, UPC-E, EAN-8, EAN-13, Code 39, Code 93, Code 128, ITF, Codabar, RSS-14, RSS Expanded, QR Code, Data Matrix, MaxiCode, PDF417 (в статусе бета).
+
+Так же подключается любой аппаратный сканер штрих-кода, поддерживающий интеграцию через HID или Broadcast Intent.
+
+Последовательность действий:
+1. Выполните Bluetooth сопряжение смартфона и ПК (POS, смарт-терминала).
+2. Запустите приложение.
+3. На Windows ПК откройте Панель управления - Устройства и принтеры - Изменение параметров Bluetooth, перейдите на закладку COM-порты и добавьте исходящий порт для вашего смартфона. В настройках сканера ШК в товароучетной или POS системе укажите этот порт.
+
+Что бы загрузить в приложение базу наименований сканируйте QR код web-ссылки на JSON массив такого формата:
+[
+{
+"barcode": "Значение штрих-кода",
+"name": "Наименование",
+"advanced_name": "Не обязательный. Дополнительное наименование, например, размер",
+"unit": "Не обязательный. Единица, например, шт.",
+"serial": true // если нужен сбор серийных номеров, false или пропуск если не нужен
+},
+{
+"barcode": "253408567004",
+"name": "Юбка",
+"advanced_name": "36, Вишневый"
+},
+{
+"barcode": "4960371004716",
+"name": "Объектив SP AF17-50mm F/2.8 XR",
+"advanced_name": "Модель камеры",
+"unit": "шт.",
+"serial": true
+}
+]
+Ссылка должна заканчиваться на "json".
+
+Выгрузка собранных данных возможна как по каналу Bluetooth, что не требует какого-либо дополнительного программного обеспечения на ПК, так и через веб-сервис.
+Для активации выгрузки через веб-сервис сканируйте QR-код, содержащий URL, заканчивающийся на "upload". Собранные данные будут упакованы в JSON массив такого формата:
+[
+{
+"barcode": "Значение штрих-кода",
+"quantity": 1,
+"serial" : [ //Только для позиций с серийными номерами
+{"serial":"Серийный номер",
+"quantity":1
+}
+]
+},
+{
+"barcode": "253408567004",
+"quantity": 15
+},
+{
+"barcode": "4960371004716",
+"quantity": 2,
+"serial": [
+{"serial": "034319",
+"quantity": 1},
+{"serial": "034320",
+"quantity": 1}
+]
+}
+]
+и отправлены запросом POST по указанному URL.
+
+Подробности смотри в разделе "Интеграция" настроек приложения.
+
+
+https://apkpure.com/ru/wireless-bluetooth-barode-scanner-data-collector/ru.lineris.barcodescanner
+
+
+
+
+
+Описание для Bluetooth Сканер - Group Scan
+Group Scan это программа сканирования использующая Bluetooth и позволяющая не только обнаруживать новые Bluetooth устройства, а также хранить и отслеживать ранее обнаруженные устройства сгруппированные по группам (например Начальник, Друзья, Семья, Самоделки и т.д.). Пользователь может активизировать уведомления об обнаружении новых устройств для выбранной группы или настроить фильтр устройства по классу устройства (телефон, компьютер...). Программа не содержит рекламы. Чтобы устройство было обнаружено во время сканирования, оно должен находиться в Bluetooth discoverable режиме.
+
+В случае обнаружения ошибок в программе или с предложениями об усовершенствовании пожалуйста напишите об этом разработчику по электронной почте.
+
+Вопросы и Ответы:
+- С чего начать использование программы?
+- Откройте программу. Добавьте несколько новых групп. Запустите Bluetooth сканирование. Откройте группу Unknown и нажмите длинным нажатием на обнаруженное устройство для того чтоб переместить в нужную группу. Когда вы освоились с навигацией по программе, зайдите в Настройки (Settings) для установки фильтра и уведомлений. Чтобы активизировать уведомления, сделайте длинное нажатие на выбранной группе и выберите соответствующий пункт всплывающего меню.
+
+- Происходит ли сканирование постоянно?
+- Да, с учетом затрат времени на каждый цикл сканирования. Длительность цикла можно увидеть в статусной строке.
+
+- Потребляет ли прогамма много ресурсов батареи во время сканирования?
+- Да. Сканирование Bluetooth является энергоемкой операцией.
+
+- Есть ли в программе назойливая реклама?
+- Нет. Рекламы совсем нет.
+
+
+
+
+Описание для iBeacon & Bluetooth LE Scanner
+Easily find nearby iBeacons and Bluetooth Low-Energy devices, track the signal strength and other attributes of each device.
+iBeacon distance is estimated based on signal strength as published by the iBeacon.
+
+
+
+Описание для BLE Scanner - ibeacon Bluetooth auto connect
+BLE Scanner is used to help developers to develop and test their BT applications. Also, users can use it to find their lost Fitness Trackers and other Bluetooth Smart Devices. Support connecting multiple devices in parallel. You can view the signal strength (RSSI) in real time to get an idea of how close you are to the BLE device.
+BLE scanner Utility app for Bluetooth Low Energy, iBeacon and Eddystone devices. BLE Scanner is used by not only developers but also users are using it to find their lost Fitness Trackers and other Bluetooth Smart Devices. It allows you to scan and obtain information like BLE device's Advertisement Records in your vicinity. It's a powerful BLE Scanner tool and supports connecting multiple devices in parallel. Bluetooth Pair, bluetooth pair. Bluetooth pairing device, Bluetooth utility, BLE utility, ble checker
+
+Features Bluetooth Scanner
+
+Pair Bluetooth
+Unpair Bluetooth
+BLE Scan
+RSSI Info
+TX Info
+Copy text data
+Share data
+Service UUIDs
+
+Bluetooth embedded device
+
+Known issue:-
+
+- Sometimes when Android phone advertises as peripheral then it is unable to connect in iOS devices. But it connects easily in other Android devices.
+This app can be used as Bluetooth app, Bluetooth scanner, Bluetooth test app, Bluetooth best app, Bluetooth app for android, free Bluetooth app, Bluetooth profile search, Bluetooth service search, Bluetooth Explorer, Bluetooth le energy app, Bluetooth LE scan, Bluetooth signal strength, Bluetooth signal. Bluetooth Pair, Bluetooth pair. Bluetooth pairing device, BLE pair, find my headphones & earbuds, Bluetooth tracker, Bluetooth notifier, device discovery, Bluetooth locator, Bluetooth connection. Bluetooth LE finder - ble sniffer
+
+
+
+Описание для OBD2 scanner bluetooth Elm327
+With obd2 diagnostic interface app you can Use your phone/tablet to connect to your car's on-board diagnostics system via any ELM327 bluetooth adapter (obd diag and scan with obd2 programmer and obd2 abs scanner).
+so you can Resolve obd2 trouble codes with bluthoot obd2 sensor
+Exemple : obd2 odometer correction
+
+OBD2 scanner « ELM327 bluetooth » is an application for vehicle diagnostics to OBD-2/EOBD standards. It "transforms" your Android smartphone or tablet together with an ELM327 diagnostic interface to a vehicle diagnostic device. Many important OBD-2 functions are despite "Lite" available without restriction. Only the number of parameters and error codes are limited compared to the Pro version. The paid Pro version with even more features will follow soon.
+Features:
+- real-time engine and vehicle OBD2 parameters: speed, rotation, temperature, pressure, lambda and multiple other sensors data supported by your car
+- chart drawing for real-time data
+- check engine light control: read and clear stored error codes and related freeze frame data
+- Fuel Economy parameters (for diesel need to set proper flag in Configuration)
+- store and share DTC (Diagnostic Trouble Codes) data and General info
+- auto-start of last used command screen (use "Auto start of the last command" option in Configuration alone or in combination with "Connect BT at start")
+- console for advanced users experiments with OBD-II and adapter commands (use "Test"-"Console" option in Configuration to allow console screen)
+- read more details at product site http://www.incardoc.com
+- read GPS data: speed, altitude
+- support of graphical gauges 
+- logbook: fueling, service records
+
+Additional features
+Read fault codes
+Clear fault codes
+Read/record live data
+Read freeze frame data
+Read vehicle info data
+Save recorded data
+Load recorded data (for analysis)
+CSV export
+data charts
+dashboard
+head up display
+
+
+
+
+
+Описание для Scan-To-Connect (STC) Utility
+The Scan-To-Connect (STC) Utility enables a Zebra Bluetooth scanner to pair to a phone or tablet in one simple step, without having to modify your app.
+
+Unlike standard HID keyboard, the STC Utility supports enhanced HID keyboard, which assures your data is received by your phone or tablet. If corrupted, it will be retransmitted. If lost, you get an error beep to rescan item.
+
+The STC Utility also has a virtual keyboard to manually enter data for items that are not bar coded, or if the bar code is unreadable (ie. Damaged).
+
+Additional functionality includes:
+1. View the host’s Bluetooth MAC address
+2. Print a pairing barcode
+3. Launch an application after completing the pairing process
+4. Hide “Settings” button when deploying to production environments
+
+For more information go to www.Zebra.com/scantoconnect
+
+For Windows, Android and iOS app developers, the source code for the pairing functionality of Scan-To-Connect is available for integration into your application at www.Zebra.com/scannersdk.
+
+
+https://apkpure.com/ru/scan-to-connect-stc-utility/com.zebra.scantoconnect
+
+
+
+Описание для inCarDoc | ELM327 OBD2
+Ваш подключенный автомобиль Сканирование, диагностика, мониторинг и журнал: чтение динамических и сохраненных параметров из ЭБУ автомобилей поддерживающих стандарт OBD-II.
+
+Внимание!!! Для работы программы требуется ELM 327 или совместимый Bluetooth OBD-II адаптер. Поддерживаются: OBD-II (Bluetooth, WiFi, Kiwi 3 (BLE), iCar 3 (BLE), Vinli); GPS и Демо режим. Подробнее на сайте site http://incardoc.com Работа без адаптера возможна только в GPS режиме: скорость и высота над уровне моря.
+
+Диагностика Работает как сканер ошибок: читает состояние Check Engine (MIL), расшифровку ошибок, соответствующие стоп-кадры, позволяет находить описание и выполнять очистку сохраненных диагностических кодов ошибок (DTC). Позволяет сохранять и пересылать диагностические данные для поиска профессиональных советов и рекомендаций по устранению неисправностей. Обратите пожалуйста внимание, что поддерживаются только параметры описываемые стандартом OBD-II - двигатель и выхлоп.
+
+Параметры реального времени Читает OBD2 параметры работы двигателя и автомобиля: скорость, обороты, температура, давление, лямбда и множество других поддерживаемых в вашем авто параметров. Возможно отображение как в виде графиков так и в виде стрелочных/цифровых шкал. Обратите внимание, что конкретный список доступных параметров зависит от марки/модели/года вашего авто.
+
+Экономайзер Специальный режим для контроля и предоставления данных о расходе горючего. Позволяет отображать как параметры реального времени (мгновенный и средний расход) так и суммарные данные за поездку, за день и другую статистику. Обратите внимание, что режим доступен если в авто поддерживаются необходимые для расчета параметры (MAF или MAP+IAT+RPM). В некоторых случаях для правильного расчета необходимо указать Объем двигателя (в куб.см.) и Объемный КПД (в %, по умолчанию 80).
+
+Другие возможности: • журнал: заправки, сервис, покупки, диагностика
+• GPS: скорость, высота
+• регистрация и выгрузка записей в сеть
+• консольный режим: для продвинутых пользователей, прямая отправка OBD2 и ELM327 команд
+• пользовательские настройки для работы с нестандартными параметрами и протоколами
+
+🌐 сайт http://incardoc.com
+
+★ ★ ★ Больше возможностей ★ ★ ★
+с Pro версией inCarDoc Pro https://goo.gl/8qqNZd
+
+Внимание!!! Избегайте одновременного запуска нескольких программ чтения OBD, убедитесь что другие приложения не держат в активном состоянии подключение к OBD.
+
+Разрешения:
+• Устройство & история приложений
+Используется для корректной работы модулей приложения в фоновом режиме
+• Местоположение
+GPS параметры: скорость, высота, позиция для поиска заправок и СТО
+• Фото/Медиа/Файлы
+Хранение записей Журнала и отладочных файлов
+• Другое
+Bluetooth – связь и управление адаптером
+Internet – публикация записей в сети по указанию пользователя
+
+Предупреждение!!! Обратите внимание на возможные проблемы с подключением дешевых клонов ELM 327 (часто с маркировкой прошивки v2.1)! Если у вас возникли сбои при подключении пожалуйста свяжитесь с нами по почте и укажите название адаптера, МАК адрес, версию прошивки ELM327 это позволит расширить список потенциально опасных адаптеров и предупредить других пользователей.
+Вы можете помочь улучшить программу переслав OBD2 параметры вашей машины. Пожалуйста заполните информацию о вашей машине на странице настройки и нажмите кнопку отправки в разделе "Общая информация".
+
+Вопросы и пожелания присылайте на почту, в комментариях отвечать затруднительно!
+
+Всегда рады вашему посещению @
+
+🌐 сайте http://incardoc.com
+
+
+
+Описание для Bluetooth Low Energy Scanner
+Bluetooth Low Energy Scanner help you to discover the services and characteristics in the remote BLE devices around. It could be used as a reference for Bluetooth Low Energy Central Apps as well as useful tool to test the Bluetooth communication.
+
+And Bluetooth Low Energy App can find any nearby beacon with real-time distance estimates.
+
+===Features===
+
+* Discovert Bluttooth Low Energy device nearby.
+
+* Getting Bluetoth Low Energy device information.
+
+* Getting live RSSI.
+
+* Explore Bluetooth Low Energy device Servces and Characteristics.
+
+* Read Characteristics.
+
+* See any beacon, even if you don't konw it's identifiers.
+
+
+
+
+
+Описание для Bluetooth LE Scanner
+The app will scan and give you detailed info about Bluetooth Low Energy devices!
+Main features of the app:
+
+• Scan for nearby Bluetooth Beacons like Eddystone, iBeacon, iTag and other Bluetooth Low Energy devices
+• Provide detailed info on found devices
+• Brief tutorial which you may always activate again
+• Sort found devices according to your needs
+• Simple user interface
+
+The app works only on Android 5.0+ (API 21 and higher) devices.
+
+App limitations:
+• Some smartphones may not be capable of broadcasting Bluetooth Low Energy devices at all
+• Bluetooth low energy scan from API 21+ works only with location permission and GPS on
+• Advertiser data is limited to 31 bytes
+
+If you’d like to help translating the app, please contact me :)
+I'm opened for any suggestion. I will try my best to make this app a perfect Bluetooth Low Energy Scanner.
+
+
+
+
+
+Описание для Bluetooth Barcode Scanner
+This application supports many different types of barcode, including those used to identify products in commerce. Originally barcodes systematically represented data by varying the widths and spacings of parallel lines, and may be referred to as linear or one-dimensional (1D). The Information encoded often includes web addresses, geographical coordinates, and small pieces of text, in addition to commercial product codes. The Android-based system is given similar functionality to a hardware barcode reader.
+
+
+
+https://apkpure.com/ru/bluetooth-barcode-scanner/com.harish.wayinfotech.honbarcodeprinter
+
+
+
+BLE Scanner & Terminal
+
+
+Que 1. what are the application feature?
+This application is used for scanning nearby BLE device and also use for serial communication.
+
+1. you can set scan frequency and Transmit/Receive format in setting (two format is available right now Character/ Hexadecimal).
+2. you can select Read/Write/Notify Characteristic on chat screen.
+3. Change Read/Write/Notify anytime by long pressing buttons.
+4. Chat with only connectable BLE devices.
+
+
+Que 2. what is Bluetooth low energy?
+
+Bluetooth low energy (Bluetooth LE, BLE, marketed as Bluetooth Smart) is a wireless personal area network technology designed and marketed by the Bluetooth Special Interest Group aimed at novel applications in the healthcare, fitness, beacons,security, and home entertainment industries.Compared to Classic Bluetooth, Bluetooth Smart is intended to provide considerably reduced power consumption and cost while maintaining a similar communication range.
+
+Que 3. what are Software terminology in BLE?
+
+All Bluetooth Smart devices use the Generic Attribute Profile (GATT). GATT has the following terminology:
+
+Client
+A device that initiates GATT commands and requests, and accepts responses,for example, a computer or smartphone.
+
+Server
+A device that receives GATT commands and requests, and returns responses,for example, a temperature sensor.
+
+Characteristic
+A data value transferred between client and server, for example,the current battery voltage.
+
+Service
+A collection of related characteristics, which operate together to perform a particular function. For instance, the Health Thermometer service includes characteristics for a temperature measurement value, and a time interval
+between measurements.
+
+Descriptor
+A descriptor provides additional information about a characteristic. For instance, a temperature value characteristic may have an indication of its units (e.g. Celsius), and the maximum and minimum values which the sensor can measure. Descriptors are optional - each characteristic can have any number of descriptors.
+Some service and characteristic values are used for administrative purposes - for instance, the model name and serial number can be read as standard characteristics within the Generic Access service. Services may also include other services as sub-functions; the main functions of the device are so-called primary services, and the auxiliary functions they refer to are secondary services.
+
+Identifiers
+
+Services, characteristics, and descriptors are collectively referred to as attributes, and identified by UUIDs. Any implementer may pick a random or pseudo random UUID for proprietary uses, but the Bluetooth SIG have reserved a range of UUIDs (of the form xxxxxxxx-0000-1000-8000-00805F9B34FB ) for standard attributes. For efficiency, these identifiers are represented as 16-bit or 32-bit values in the protocol, rather than the 128 bits required for a full UUID. For example, the Device Information service has the short code 0x180A, rather than 0000180A-1000-... . The full list is kept in the Bluetooth Assigned Numbers document online.
+Скрыть
+BleTerm 1.8 Обновить
+2018-10-24
+# Bug fixed for file sharing
+# New UI
+# This App is now open source.
+# get it from https://github.com/manishtaraiya/BleTerm
+
+
+
+
+
+Описание для Scanner Control
+The Scanner Control App enables Zebra cordless scanners to be connected and controlled by a tablet / smart phone.
+
+This app supports Scan-To-Connect technology for 1-step Bluetooth pairing.
+
+It allows you to control your scanner:
+• Program beeper and LEDs
+• Enable / disable symbologies
+• Remotely trigger a scan
+
+It displays scanned bar code data.
+
+It can query scanner asset information & battery health statistics.
+
+The source code for this app is available within Zebra’s Scanner SDK for Android at
+https://www.zebra.com/us/en/support-downloads.html
+
+For access to more Zebra’s scanner software tools, go to www.zebra.com/scannersoftware.
+
+
+
+
+Описание для Bluetooth Scanner
+OpenBlueToohMap est tout d'abord un Scanner Bluetooth, mais aussi un moyen de construire une carte mondiale des objets Bluetooth.
+
+Le scanner vous donne toutes les infos sur les objets bluetooth aux alentours, mais envoi ces info au serveur d'OpenBlueTooth qui vous informe en retour si ces objets sont déja trouvé ou pas
+
+De manière ludique, OpenBluetooth vous permet de gagner des point a chaque decouverte de nouvel objet...Devenez le leader de votre catégorie!
+
+
+
+
+
+Описание для GetBlue Bluetooth Reader, Demo
+GetBlue дополняет телефоны и планшеты возможностями автоматического и ручного сбора данных и соединения с Bluetooth SPP устройствами, TCP/IP, HTTP и сканерами штрихкодов.
+
+ОБЗОР: GetBlue автоматически в фоновом режиме собирает данные с Bluetooth SPP устройств, TCP/IP, HTTP и камер-сканеров.
+Собранные данные перенаправляются в другие устройства (возможность настройки), сохраняются в файлы, онлайн документы и могут быть вставлены в третьи приложения.
+Поддерживается двунаправленное соединение с устройствами. Также доступна функция ручного соединения для чтения и записи данных.
+
+ДЕТАЛИ: Приложение для сбора данных GetBlue может работать как универсальный переключатель: оно собирает данные с настраиваемых источников информации и перенаправляет их в любые поддерживаемые объекты. На данный момент поддерживаются следующие устройства и протоколы:
+• Bluetooth SPP и Bluetooth RFCOMM
+Могут быть использованы все Bluetooth устройства, поддерживающие профиль серийного порта (например, SPP и RFCOMM сканеры штрихкодов). GetBlue поддерживает режимы Bluetooth-клиент и Bluetooth-сервер. Таким образом, возможны соединения с устройствами и ПК.
+• TCP/IP
+Любое устройство предоставляющее исходный TCP/IP сокет.
+• HTTP
+Запросы HTTP GET и HTTP POST с настраиваемыми параметрами.
+• Камеры-сканеры
+Могут быть использованы любые сторонние приложения для сканирования, использующие встроенную в устройство камеру.
+• Ручной ввод данных
+Команды устройствам могут быть введены вручную.
+
+Собранные данные могут быть переданы через Bluetooth, TCP/IP и HTTP на любое устройство. Также собранные данные могут быть
+• отображены (HEX или ASCII)
+• локально сохранены в файле (включая отметки времени)
+• загружены в Google Документы
+• или вставлены в любые приложения на смартфоне через программную клавиатуру GetBlue (операция разрыва клавиатуры).
+
+ПРИМЕРЫ ИСПОЛЬЗОВАНИЯ: GetBlue может быть использован в качестве разрыва клавиатуры (сканирование штрихкодов при помощи Bluetooth сканеров и вставка данных штрихкодов в необходимые приложения), автоматического регистратора данных (например, загрузка собранных данных в Google Документы или сохранение их в локальном файле), для управления Bluetooth устройствами, в качестве недорогого сканера штрихкодов, подключённого к ПК, и т.д.
+
+БЕСПЛАТНАЯ ПОДДЕРЖКА: Если у Вас возникли проблемы, вопросы или у Вас есть пожелания, пожалуйста, свяжитесь с support@tec-it.com (E-Mail/MSN).
+
+ИЗВЕСТНЫЕ ПРОБЛЕМЫ: Некоторые Android телефоны используют Bluetooth прошивку содержащую ошибки. Из-за этого SPP соединения могут быть ненадёжными (Вы можете обнаружить SPP ошибки). Следующие действия могут помочь решить проблему:
+- Выключите Bluetooth и завершите работу всех приложений, работающих с Bluetooth.
+- Перезагрузите Ваш телефон
+- Включите Bluetooth
+- Создайте соединение с Вашим устройством
+- Начните пользоваться GetBlue
+
+Мы благодарим Вас за Ваши комментарии и оценки!
+
+ПОЛНАЯ ВЕРСИЯ: В Android Market доступна полная платная версия программы без каких-либо ограничений. Все свойства идентичны. Просто найдите приложения компании TEC-IT.
+
+
+
+
+Описание для Bluetooth LE Tool
+The app will scan, broadcast and locate your Bluetooth Low Energy devices!
+
+Main features of the app:
+
+• Scan for nearby Bluetooth Beacons like Eddystone, iBeacon, iTag and other Bluetooth Low Energy devices
+• Provide detailed info on found devices
+• Broadcast multiple Bluetooth Low Energy devices simultaneously
+• Check last location of your saved devices
+• Map with last known locations of your devices pinned
+• Possibility to add a notification to saved beacon, it will pop when found again
+• Change your smartphone’s visible Bluetooth name
+• Check how many devices your smartphone may broadcast
+• Background scan service to update location of your saved devices
+• Brief tutorial which you may always activate again
+• Sort found devices according to your needs
+• Simple user interface
+
+The app works only on Android 5.0+ (API 21 and higher) devices.
+
+App limitations:
+• Android changes MAC address of broadcasted device every time you turn it on, you can’t also choose it
+• Some smartphones may not be capable of broadcasting Bluetooth Low Energy devices at all
+• Advertiser data is limited to 31 bytes
+
+If you’d like to help translating the app, please contact me!
+
+Future features:
+• Broadcasting BLE devices from templates like AltBeacon or Eddystone and other kind of Bluetooth Low Energy devices
+• Connecting to BLE devices
+• Simulate different types of Bluetooth devices like blood pressure monitor, thermometer and others
+• Simulate devices found through scanning.
+
+I'm opened for any suggestion. I will try my best to make this app a perfect Bluetooth Low Energy Tool.
+
+
+
+
+Описание для Beacon Scanner
+Beacon Scanner is the fastest app to locate all lost Beacon devices. This app allows you to scan, connect and find services and characteristics.
+
+The app is used for debugging and discovering Bluetooth devices near by you by the people and professionals who are just curious. It scans for all Bluetooth smart devices nearby.
+
+Features:-
+• Scan near by Beacon devices
+• Discovered the history of all devices.
+• Filter devices by MAC Address, Name and RSSI
+• Using RSSI Pool you can discover how far your devices are.
+• Discover characteristics and services of connected devices.
+
+Note:-
+This app only works with smart phone with Bluetooth 4.0 or greater .
+
+For any query or suggestions mail us at android@teksun.us
+
+
+
+
+Описание для Torque Lite (OBD2 & Car)
+See what your car is doing in realtime, get fault codes, sensor data and more!
+
+An OBD II engine ECU diagnostics tool that uses a cheap bluetooth ELM / OBD adapter to connect to your car OBD2 engine management system
+
+Some features include:
+
+* Shows and Resets engine fault codes / DTC trouble codes stored in your car
+
+* Can export map/track log files to Google Earth KML / CSV
+
+* Engine performance data(0 to 60, 0-100, quarter mile, etc) (full version)
+
+* Head up Display / GPS HUD mode perfect for checking your speed at night
+
+* Data Logging functions including web upload and file logging, you can even upload data to your own web server from sensors you choose
+
+* Customisable dashboard with theme support - setup the dashboard with the gauges and dials that you want
+
+* Can help you fix your car and helps keep car repair costs down!
+
+* Turbo Boost gauge support for VW vehicles (in Pro version only)
+
+* MPG for Petrol/Gasoline vehicles. (Pro version has diesel support)
+
+This is the free/basic version - it lets you get a feel for the application and lets you find out if it works with your vehicle / obd2 adapter combination; but may contain some small bugs including not working on some nissan/chrysler/subaru ECUs. The paid version has support for more vehicles and ECU types, looks a lot nicer, and works with more cars / trucks
+
+The paid version has more features (HorsePower,Torque, 0-60 , quarter mile tests, graph data, map / track views) + no adverts and exra dial/display types! and better ABS / Knock sensor support, Transmission temperature support for some makes of car / trucks (GM / Ford, etc), and Turbo Boost on many more vehicles (including VW)
+
+Works on vehicles made by Ford, GM/Vauxhall/Opel, Chrysler, Mercedes, Volkswagen, Audi, Jaguar, Citroen, Peugoet, Skoda, Kia, Mazda, Lexus, Daewoo, Renault, Mitsubishi, Nissan, Honda, Hyundai, BMW, Toyota, Seat, Dodge, Jeep, Pontiac, Subaru and many more vehicle makes, European, US, Far East, etc. Some vehicle ECUs may support more/less features than others.
+
+**PLEASE NOTE!** Any reports of hanging or freezing after quitting the app is due to a bug in the HTC Evo 4G and Galaxy Tab, this can be triggered by using the Pandora/Vlingo/Aldiko bluetooth enabled apps. Disabling Pandoras new bluetooth settings fixes the problem, but HTC/Samsung need to release a fix. Please contact their support and encourage them to fix, Thanks!
+
+The pro version supports USB ELM adapters which are use 'Prolific' or 'FTDI' chips
+
+* Update: A freeze/hang workaround has been found after a great amount of effort and is available in the full version in the General Preferences settings!
+
+
+
+
+Описание для Bluetooth Pair
+WHAT IS BLUETOOTH PAIR
+Bluetooth Pair is an app that can automate your Bluetooth pairing/connection process!
+
+With a range of Bluetooth devices at your disposal such as audio speakers, headsets, car speakers and more, it can be troublesome to have to connect to a specific device.
+
+FLEXIBLE
+Bluetooth Pair allows you to automatically pair with a device of your choosing. For instance, if you often connect your phone to your car's Bluetooth, you can choose to automatically make this connection when you turn on your phone's Bluetooth.
+
+TROUBLESHOOTING
+Here are some tips to combat some common problems. (However, with so many different devices, there isn't an easily accessible solution to every problem)
+❖ Make sure the Bluetooth device is in range
+❖ Disable Airplane mode if it is on
+❖ Pull down in the main page to refresh the view and search for devices
+❖ Try turning on/off Bluetooth again (both the Bluetooth device and the Android device)
+❖ Contact us for help!
+
+FEATURES
+★ Support for Android 6.0+
+★ Automatically connect to any Bluetooth enabled device
+★ Set the device to connect to your most recently connect device or your most frequently connected device
+★ Material theme design
+★ Five different theme colors ~ if you're into different colors ;)
+★ Simple and intuitive interface
+
+FAQ
+✤ Why is Bluetooth Pair asking for location permission?!?
+✦ Location Permission is required on Android 6.0+ for Bluetooth device scanning. This is due to the fact that nowadays, Bluetooth Beacons can technically be used to identify a device's whereabouts.
+✤ Bluetooth isn't connecting, what should I do?
+✦ Try one of the various solutions suggested in the troubleshooting section. If all else fails, search for an answer online or contact us!
+✤ This app isn't working, should I leave a bad review?
+✦ Stay calm! This app is in continuous development. A negative review doesn't attract attention nor incentivize us to quickly fix the problem. Send us the error report and/or reach out to us through email. Thanks for understanding!
+✤ I love this app! How can I support it?
+✦ A positive review would mean the world to us! Spread your love for this app through kind words and multiple stars ;) Also share with your friends! Finally, check out some of the other apps made by us! Thanks!
+
+PRO FEATURES
+No Ads! Tired of a little rectangular box with colorful images taking up ten percent of your screen? Get the pro version of Bluetooth Pair and help support our development!
+
+TRANSLATIONS
+♬ German ~ Jimmy Smith
+♬ Spanish ~ Eduardo Granados
+♬ Traditional Mandarin Chinese - Waylon Huang
+♬ Help us translate Bluetooth Pair! Send us an email!
+
+HELP US IMPROVE
+Help us improve by giving us ratings and reviews! If you would like to help translate Bluetooth Pair, email us and we will message you with information!
+For questions and comments, send us an email at wwaylonhuang@gmail.com!
+Thank you!
+
+
+
+
+
+Описание для nRF Connect
+nRF Connect for Mobile is a powerful generic tool that allows you to scan, advertise and explore your Bluetooth low energy (BLE) devices and communicate with them. nRF Connect supports number of Bluetooth SIG adopted profiles together with Device Firmware Update profile (DFU) from Nordic Semiconductors and Mcu Manager on Zephyr and Mynewt.
+
+Features:
+- Scans for Bluetooth low energy (BLE) devices
+- Parses advertisement data
+- Shows RSSI graph, allows export to CSV and Excel formats
+- Connects to a connectible the Bluetooth LE device
+- Discoveries and parses services and characteristics
+- Allows to read and write characteristics
+- Allows to enable and disable notifications and indications
+- Supports Reliable Write
+- Parses number of characteristics adopted by Bluetooth SIG
+- BTLE advertising (Android 5+ required)
+- Read and update PHY (Android 8+ required)
+- GATT Server configuration
+- Supports Device Firmware Update profile which let the user to upload a new application, SoftDevice or a bootloader over-the-air (OTA) from a HEX file
+- Supports the Nordic UART Service
+- Allow to record and replay common operations using Macros
+- Allows to perform automated tests defined in XML file on Bluetooth Smart devices.
+Visit the GitHub page: https://github.com/NordicSemiconductor/Android-nRF-Connect for more information about automated tests and creating init packets for the DFU.
+
+Note:
+- Supported on Android version 4.3 or later.
+- nRF51 or nRF52 Development kits can be ordered from http://www.nordicsemi.com/eng/Buy-Online .
+- The nRF51 and nRF52 SDKs and SoftDevices are available on-line at http://developer.nordicsemi.com
+
+Works well with nRF Logger application, that will store your logs in case something bad happens with nRF Connect.
+Download nRF Logger from: https://play.google.com/store/apps/details?id=no.nordicsemi.android.log
+
+
+
+
+
+Описание для iBeacon & Eddystone Scanner
+iBeacon, Eddystone and AltBeacon scanner with beautiful material design.
+Scans and shows details about every iBeacon, Eddystone (UID, URL, TLM frames) and AltBeacon in your vicinity.
+
+Displays important beacon information like
+* UUID, Minor and Major values for iBeacons/Altbeacons.
+* URL, UID and TLM frames for Eddystone.
+* Proximity value (immediate, near, far)
+* Distance to beacon
+* TX and RSSI values
+* A graph showing the last RSSI values
+* Bluetooth information like MAC address and more
+* Dump beacon data to local CSV file
+* Send beacon data to a web API via POST requests
+* Copy and paste single beacon data snippets
+
+This app requires Bluetooth Low Energy (aka Bluetooth 4.0) integrated into your device and at least Android 4.3.
+
+A big thanks goes to Radius Networks for providing great libraries, informations and tools!
+
+iBeacon is a trademark of Apple Inc., registered in the U.S. and other countries.
+
+
+
+
+Описание для LightBlue® — Bluetooth Low Energy
+LightBlue® can connect you to all of your devices that use Bluetooth Low Energy (also known as Bluetooth Smart, or Bluetooth Light). With LightBlue®, you can scan, connect to and browse any nearby BLE device.
+
+Full support of read, write, and notify is included. You can view the signal strength (RSSI) in real time to get an idea of how close you are to the BLE device.
+
+The log feature allows you to keep track of all significant BLE events that occur while using the app (e.g., device discovery, connection, reading, writing).
+
+Use LightBlue® to test your new BLE Heart Rate Monitor, temperature sensor, TI CC2540 Keyfob, Nordic uBlue, Panasonic PAN1720, etc. LightBlue® is also ideal for developers wanting to test the firmware of their own BLE peripherals.
+
+Key Features:
+- Scan for any BLE peripherals
+- See basic device info (UUID, RSSI) at a glance
+- Browse characteristics and services
+- Register for notifications
+- Read characteristics
+- Write to characteristics in hex
+- Thoroughly log BLE events and share them in plain text format
+Скрыть
+LightBlue® — Bluetooth Low Energy 1.2 Обновить
+2018-11-28
+We heard you and are releasing some widely requested features in this update!
+* Filter scan results by searching device names.
+* Connect to your bonded devices and see them in the list of scan results.
+* The log is now accessible from each device's detail screen in the overflow menu.
+
+
+
+
+Описание для B and L Bluetooth LE Scanner
+This application allows your phone or tablet to scan for Bluetooth low-energy (BLE) devices in your area. You can detect Bluetooth beacons, phones acting as beacons, Bluetooth key-chain trackers and pulse-rate monitors, Bluetooth keyboards and mouses, etc.
+
+The detected Bluetooth LE devices are continuously-updated, in a list, with a real-time signal-strength meter for each device. This allows you to estimate the relative distance, and signal quality, for each device (Note: signal strengths may vary for each manufacturer's Bluetooth LE product).
+
+Settings are provided, to allow the app to ignore Bluetooth LE devices with low signal strengths, and to limit the total devices detected with each scan.
+
+An "audio tracking mode" allows the app to continuously measure the signal strength for a single Bluetooth low energy device, using a variable audio pitch to indicate the device's signal strength.
+
+
+
+
+
+Описание для IndoorTrack
+This app is a Bluetooth item tracking app that supports real time networked result sharing. You can use it to track your pets, children, students, equipment, or anything that has a detectable Bluetooth signal when you are away, and receive alerts when they appear, disappear, connect or disconnect. No additional equipment or setup required. All you need is this app.
+
+Multiple users can join a network account to share the tracking results. By deploying the app in multiple locations, you can identify presence or absence of Bluetooth items in different areas, such as knowing which student is currently in which classroom.
+
+When used with a motion sensor BLE tag, you can set up an alarm to report on your items being moved unexpectedly.
+
+This app uses your device to scan nearby Bluetooth signals. It has a BLE scan mode and a Classic scan mode. The two modes can be both turned on. You can create a network account for real time sharing of the tracking results. You can add any Bluetooth item to your account to track. Other users can join your network account with a PIN. Two modes of PIN are available. Level 1 PIN has all privileges to add/modify/delete items. Level 2 PIN can only share tracking results.
+
+In the item list tracking view, you will see when the item was last seen, where the item was last seen, who last reported seeing it and how far the item is from the reported user. Alarms can be setup for items disappeared, or appeared, or connected, or disconnected. You can filter your tracking screen by using item names, or by the user names. By user filtering allows you to view all items that were last seen by the user. A user monitoring function is available to detect if any user is offline.
+
+You can sort your viewing list by name, time detected or reversely sort based on the time detected. You can add tracking items through the interface, or through importing a CSV file.
+
+Tracking history is available. You can export the history to a CSV file.
+
+
+
+
+========================================================================================================================
 ========================================================================================================================
 ========================================================================================================================
 ========================================================================================================================
