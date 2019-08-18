@@ -19742,6 +19742,38 @@ curl --form upload=@/path/to/file.jpg http://127.0.0.1:3000
 
 app.listen(3000);
 -------------------------------------------------------------------------------------------------------
+class FileLines implements Iterable<String> {
+	private final File file;
+	public Iterator<String> iterator() {
+		return Arrays.asList(FileUtils.readLines(this.file)).iterator();
+	}
+}
+class Between implements Number {
+	private final Number number;
+	Between(Number left, Number right, Number value) {
+		this.number = new Min(new Max(left, x), right);
+	}
+	
+	@Override
+	public int intValue() {
+		return this.num.intValue();
+	}
+}
+class CachedNumber implements Number {
+	private Number origin;
+	private Collection<Integer> cache = new ArrayList<>(1);
+	
+	public CachedNumbee(final Number num) {
+		this.origin = num;
+	}
+	public int intValue() {
+		if(this.cached.isEmpty()) {
+			this.cached.add(this.origin.intValue());
+		}
+		return this.cached.get(0);
+	}
+}
+-------------------------------------------------------------------------------------------------------
 InsTream.rangeClosed(2, Integer.MAX_VALUE)
 .filter()
 .map(x -> x * x)
