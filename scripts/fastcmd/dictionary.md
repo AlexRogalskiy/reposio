@@ -19794,6 +19794,23 @@ li{background: var(--accent-color);}
 </figure>
 */
 -------------------------------------------------------------------------------------------------------
+https://kodnito.com/posts/documenting-rest-api-using-microprofile-openapi-swagger-ui-payara-micro/
+https://microprofile.io/2019/07/11/validate-your-microservices-with-microprofile-and-bean-validation/
+-------------------------------------------------------------------------------------------------------
+
+openapi: 3.0.0
+info:
+  title: This is my TODO application API Title
+  description: This is my TODO application description
+  license:
+    name: Eclipse Public License - v 1.0
+    url: https://www.eclipse.org/legal/epl-v10.html
+  version: 1.0.0
+servers:
+- url: http://localhost:8080
+-------------------------------------------------------------------------------------------------------
+mvn archetype:generate -DarchetypeGroupId=fish.payara.maven.archetypes -DarchetypeArtifactId=payara-micro-maven-archetype -DarchetypeVersion=1.0.1 -DgroupId=fish.payara.micro -DartifactId=mp-openapi-example -Dversion=1.0-SNAPSHOT -Dpackage=com.kodnito.openapi.rest -Darchetype.interactive=false
+-------------------------------------------------------------------------------------------------------
 windows : set NODE_ENV=prod&&node index.js
 
 Linux : export NODE_ENV=prod&&node index.js
