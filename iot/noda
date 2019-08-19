@@ -3248,6 +3248,32 @@ ftp.bhv.ru/9785977533348.zip
 ftp.bhv.ru/9785977539517.zip
 ftp.bhv.ru/9785977540025.zip
 ftp.bhv.ru/9785977540308.zip
+ftp.bhv.ru/9785977535502.zip
+ftp.bhv.ru/9785977539432.zip
+ftp.bhv.ru/9785977539531.zip
+ftp.bhv.ru/9785977539760.zip
+ftp.bhv.ru/9785977539869.zip
+
+osborne.com
+parity.io
+https://github.com/paritytech/
+missingmanuals.com
+github.com/nathanmarz/storm
+https://github.com/apache/storm
+williamstanek.com/windows
+https://bitinfocharts.com/
+github.com/mrightman/css_4e
+csszengarden.com
+cssline.com
+github.com/ethereum/go-ethereum/
+cssdesignawards.com
+awwwards.com
+pearsonhighered.com/cs-resources
+https://www.microsoftpressstore.com/store/software-requirements-9780735679665#downloads
+http://www.tmplbook.com/
+http://www.earthping.com/
+https://github.com/NordicSemiconductor
+https://github.com/MoonHighway/learning-graphql
 VBAMicrosoft Excel2016
 https://www.naverlabs.com/
 northerntool.com
@@ -3266,7 +3292,9 @@ tapstream.com
 github.com/arun-gupta/javaee7-samples
 github.com/igorsimdyanov/
 effectivedevops.net
+https://www.mhprofessional.com/9781259589331-usa-java-the-complete-reference-tenth-edition
 webiopi.com
+https://github.com/mkleehammer/pyodbc/wiki
 http://nauchebe.net/inyavr1
 revich.lib.ru/AVR/AzbukaEl.zip
 yozio.com
@@ -3425,9 +3453,12 @@ https://github.com/ReactiveDesignPatterns/Chapter-2
 
 http://www.librepilot.org/site/index.html
 
-https://bitbucket.org/librepilot/
 
+https://bitbucket.org/librepilot/
+aka.ms/WSR2PC2/errata
+gridbyexample.com/examples
 http://trapkit.de/books/index.html
+github.com/vuejs/awesome-vue
 https://github.com/apsaltis/StreamingData-Book-Examples
 github.com/books/kotlin-in-action
 https://simpleprogrammer.com/
@@ -3489,6 +3520,16 @@ http://www.cs.uu.nl/geobook/
 www.cs.uu.nl/geobook
 github.com/PacktPublishing/
 effectivepython.com
+highperfmysql.com
+github.com/francescoc/
+https://github.com/francescoc/scalabilitywitherlangotp
+12factor.net
+promethemus.io
+grapfana.com
+jwt.io
+swagger.io
+microprofile.io
+gatling.io
 dkhramov.dp.ua/Comp.DataGathering
 programming-challenges.com
 pythonscraping.com/code
@@ -4382,8 +4423,328 @@ It can display several frames emitted by a single beacon, allowing you to see if
 The code is open source and available here 🤓
 https://github.com/Bridouille/android-beacon-scanner
 ========================================================================================================================
-airspayce.com/mikem/arduino/VirtualWire
+http://www.airspayce.com/airspayce/products/other-software/
 ========================================================================================================================
+2.1+ version of "Network Info"
+Donate version available, buy me a coffee :)
+
+Shows info about the phone and the current network, Bluetooth, IPv6 and Cell connection.
+
+It also shows your public/external IP & hostname.
+
+Only goes on-line to get and resolve the public IP via my own server http://aschillings.co.uk/myscripts/getip.php and to remotely resolve it (see notes below). Initially the application was also using whatismyip.org but, as the server seems to be constantly down it was removed.
+
+No ads.
+
+>> Information shown <<
+•Device IP and hostname, both private and public.
+
+•Current mobile Cell and any neighbours, along with their signal strength, location info and type.
+
+•IMSI/ IMEI.
+
+•Information about the current mobile provider (MCC+MNC, current connection, etc.)
+
+•The Android device unique ID.
+
+•Full information regarding the WiFi connection (MAC, current SSID and BSSID, link speed, IP/Netmask, Gateway, DNS and DHCP servers, etc.)
+
+•Your current location according to Android based on your network neighbours. No GPS is needed or used.
+
+•Information regarding Bluetooth status, the current Bluetooth connection(s) and info about past pairings.
+
+•IPv6 device and router IP addresses for all device interfaces (see notes, this should now work for everyone).
+
+>> Notes <<
+•This is an expansion of the 'Network Info' application, to support more phones based on the 2.1 Android API.
+
+•I only have a GSM/UMTS phone. If anything funny happens on any other phone type, email me and I will try to fix it.
+
+•This application will connect to the network only to fetch your external IP/Hostname (using http://aschillings.co.uk/myscripts/getip.php and http://aschillings.co.uk/myscripts/gethostname.php). No other information is sent (my policy is located below).
+
+•Please email me about any bugs or features you want. I cannot see all market comments and I am not notified when someone does comment.
+
+•The IPv6 part should now work for everyone. If that is not the case for you, please email me (aschillings.dev@gmail.com) so I can try to fix it. If possible, download 'Under the hood' from the market and send me the results via export.
+
+•If you want to show the Vendor which owns a MAC address, download 'MAC (OUI) Database' from the market (it is one of my applications) and use it to download a copy of the OUI database.
+
+•In version v0.5.2 I added remote hostname resolution which is your public hostname as is resolved by my server. It should be the same as your external hostname, unless there is a record propagation delay or your DNS server is lying (like some home routers which resolve their external address as a local hostname). My server is hosted by 1and1 so this will be unreliable if you use the same DNS servers.
+
+•'Ext. Hostname (L)' is the hostname your device resolves your external IP (local resolve).\n
+
+•'Ext. Hostname (R)' is the hostname my server resolves your external IP (remote resolve).
+
+•'Field Test' is a hidden application which comes installed in HTC phones. The menu item will only appear if the 'Field Test' is installed in your phone.
+
+>> Known Issues <<
+Samsung devices do not display Neighbouring Cells. This is a problem in Samsung's Android implementation and there is nothing I can do.
+
+>> Privacy Statement <<
+I do not collect any information which can directly and uniquely identify and/or bind a user to a device or any other personal information. When you retrieve your external IP address, my server will log a standard website “hit” which is the same as if you browsed a page on my server using a browser. No other information is logged or kept.
+
+***
+Please email me with any bugs/problems/feature requests. I cannot reply to market comments which can make debugging difficult. 
+
+
+Mobile Network and Wi-Fi Network Information.
+
+Mobile Network information
+- Operator Name
+- IMEI
+- IMSI
+- Sim Serial Number
+- Nework Country
+- Sim Country
+- Network Type
+- LAC
+- MCC
+- MNC
+- CID
+- Signal Strength
+- and many more
+
+Wi-Fi Network information
+- MAC Address,
+- SSID,
+- BSSID
+- Channel
+- RSSI
+- link speed
+- IP
+- Netmask
+- Gateway
+- DNS
+- DHCP server
+- Private DNS
+- and many more
+
+
+
+Privacy Statement
+
+We don't collect any information from the user or from the device. No other information is logged or kept.
+
+
+
+Описание для Network Cell Info Lite
+Network Cell Info показывает местонахождение сот на карте и измеряет силу сигнала обслуживающей соты и соседних сот. Оно поддерживает все стандарты сотовых сетей, включая LTE, HSPA+, HSPA, WCDMA, EDGE, GSM, CDMA, EVDO.
+
+Особенности:
+------------
+* Местоположение сот в сетях стандартов LTE, UMTS и GSM взято из Mozilla Location Service (MLS), наряду с точностью расчёта локаций http://location.services.mozilla.com
+* 2 датчиков измерения уровня сигнала для обслуживающей (зарегистрированной) соты и соседних сот
+* Отображение 2 показателей мощностей сигнала (дБм) с временным графиком для обслуживающей и соседних сот
+* Сохранение полученных измерений о соте в отдельный файл (во вкладке Карта)
+* Настройка расстояний (0м, 5м, 10м, ...) между последовательными измерениями во вкладке КАРТА (если сеть остаётся постоянной)
+* Установка ограничений на точность местоположения для проведения измерений
+* Датчик движения с выбором вариантов чувствительности (применительно к измерениям)
+* Данные измерений в удобном формате для экспорта: MLS Geosubmit v.2, CLF v.3, OpenCellID csv, (и наш собственный) CMWF
+* Тест-драйв сети: цветовая окраска маршрута (во вкладке карты) в зависимости от силы сигнала и расстановка маркеров с местоположением сигнала и информацией о нём
+* Статистика подключений: % (столбчатая диаграмма) 2G/3G/4G с сотовыми данными Вкл / Выкл
+* Уведомления о доступе к типам сетей 2G/2.5G/3G/3.5G/4G в зоне уведомлений
+* Одновременный просмотр карты и данных об уровне сигнала
+* Варианты отображения карты: Нормальный, Спутник, Местность, Гибрид
+* Просмотр подробных необработанных данных о сигнале сети и самой сети, включая мощность сигнала, информацию об обслуживающей соте и ВСЕХ соседних сотах
+* Сотовые данные вкл/выкл и показатели Роуминга вкл/выкл
+* Информация о SIM-карте и устройстве
+* Возможность отключать Датчики выборочно, чтобы освободить CPU устройства от лишней нагрузки
+* Для пользователей Android M запросы на разрешение определения местоположение
+* [BETA] Ограниченная поддержка устройств с двумя SIM-картами
+
+
+* Мануал:
+
+Пожалуйста, ознакомьтесь с ним здесь: http://goo.gl/hhUFGp
+
+
+* Проблемы с телефоном:
+
+Пожалуйста, посмотрите материалы: http://goo.gl/Hy0dx5
+
+
+* Вопросы по работе с двумя SIM-картами:
+
+[BETA] Убедитесь, что эта опция включена в настройках приложения.
+Информацию по возникающим вопросам можно найти здесь: http://goo.gl/o0SC6j
+
+* GPS:
+
+Рекомендуем выбрать режим "высокой точности" для работы GPS-модуля в настройках вашего устройства.
+
+* КАРТА местоположения вышек сотовой связи:
+
+У нас нет собственной базы данных о местоположении сот. В настоящее время мы используем данные MLS (смотрите ниже), где возвращаются не точные координаты размещения сотовых вышек, но примерное указание на их местоположение.
+
+* MLS:
+
+Данные о местоположении сот сетей LTE, UMTS и GSM мы получаем от сервиса Mozilla Location Service (MLS) - http://location.services.mozilla.com - и показываем на карте в виде антенн. Это не настоящее физическое положение сотовых вышек, но указание на их примерное размещение (если на карте не указано ни одной соты, это значит, что в MLS нет данных для вашего региона).
+
+** MLS больше не поддерживает сети CDMA
+** Если приложение не показывает местоположения сот или если вы хотите внести свой вклад / обновить информацию об этом, вы можете воспользоваться приложением Mozilla Stumbler ( https://goo.gl/sysSNQ ) для восполнения пробелов в данных MLS.
+
+* Данные измерений:
+
+Измерения, которые вы проводите во вкладке КАРТА, могут быть локально сохранены на вашем устройстве (смотрите раздел ЧаВо внутри приложения)
+
+
+Благодарим за обратную связь!
+
+** Network Cell Info доступно только в Google Play Store **
+Скрыть
+Network Cell Info Lite 4.19.5 Обновить
+2019-07-11
+Release 4.19.5
+
+* Android libraries updated
+* App optimization
+
+
+* New Manual v3 (for paid/pro): http://goo.gl/hhUFGp
+* Features comparison: http://goo.gl/8A7PSX
+* FAQ: https://goo.gl/EhDDVx
+* BETA app testing: https://goo.gl/5XTzON
+* Have a look in our Ad-Free Network Cell Info: https://goo.gl/ju6is0
+* The app is distributed exclusively only in the Google Play Store.
+
+
+
+Описание для Информация сигнала сети
+Network Signal Info даёт подробную информацию об используемой в настоящий момент сети, будь то беспроводная сеть или мобильное соединение.
+
+Виджеты в трёх размерах и разных стилях: 1x1, 2x1 и 2x2.
+(Если вы не можете найти виджеты, скопируйте приложение обратно в память телефона)
+
+Большое внимание при разработке приложения я уделил визуализации мощности сетевого сигнала. Обычно уровень сигнала обозначается как слабый, хороший или отличный. Графически такое деление представлено рядом из 3-5 «палочек» в случае с мобильным подключением и 3 «волнами» в случае с подключением по WiFi.
+
+Моё приложение делит уровень сигнала в общей сложности на 14 полос. Таким образом, вы быстро получаете подробное представление о силе сигнала в графическом виде.
+
+Помимо красивого графического представления уровня сигнала, вам будет доступно много другой интересной информации.
+
+Более того, приложение поддерживает запись данных об уровне сигналов доступных мобильных и WiFi сетей в формате CVS (например, для импорта в Excel).
+
+Для сигнала в мобильной сети:
+Мобильный оператор, оператор, у которого приобретена SIM-карта, тип телефона, тип сети, уровень сигнала в dbm и ASU, состояние данных и активность передачи данных, код страны в номере мобильного телефона, идентификационный номер аппарата, IP-адрес (внутренний и внешний), а также статус роуминга.
+
+Для сигнала в WLAN-сети:
+Название WLAN (SSID), BSSID, MAC-адрес, максимальная скорость WLAN-сети, IP-адрес, внешний IP-адрес, пропускная способность сети, задействованный канал сети, маска подсети, IP-адрес шлюза, адрес DHCP-сервера, адреса DNS1 и DNS2.
+
+Если вам нравится это приложение, пожалуйста, оцените его положительно в маркете.
+
+В отличие от бесплатной версии, в версии Pro отсутствует реклама, зато в ней есть: НОВАЯ база вышек сотовой связи с перечнем из 22 миллионов сотовых ячеек, который всё время пополняется, НОВАЯ мощная «система отслеживания сигнала мобильной сети», сохраняющая историю отслеживания в формате kml для использования в Google Earth, ещё больше виджетов, «сервис оповещения о потере сигнала мобильной сети» и фоновый сервис записи истории.
+
+
+
+Описание для Network Analyzer
+Network Analyzer can help you diagnose various problems in your wifi network setup, Internet connectivity, and also detect various issues on remote servers thanks to the wide range of tools it provides.
+
+It is equipped with a high-performance wifi device discovery tool, including all the LAN device's addresses, manufacturers and names. Further, Network Analyzer contains standard net diagnostic tools such as ping, traceroute, port scanner, DNS lookup, and whois. Finally, it shows all neighbouring wi-fi networks together with additional details such as signal strength, encryption and router manufacturer to help discovering the best channel for a wireless router. Everything works with both IPv4 and IPv6.
+
+
+Wifi signal meter:
+- Both graphical and textual representation showing network channels and signal strengths
+- Wifi network type (WEP, WPA, WPA2)
+- Wifi encryption (AES, TKIP)
+- BSSID (router MAC address), manufacturer, WPS support
+- Bandwidth (Android 6 and newer only)
+
+LAN scanner:
+- Fast and reliable detection of all network devices
+- Vendor name, IP, and MAC addresses of all discovered devices
+- NetBIOS, mDNS (bonjour), LLMNR, and DNS name where available
+- Pingability test of discovered devices
+- Detection of IPv6 availability
+
+Ping & traceroute:
+- Round trip delay including IP address and hostname for every network node
+- Support of both for IPv4 and IPv6 (selectable)
+
+Port scanner:
+- Fast, adaptive algorithm for scanning the most common ports or user specified port ranges
+- Detection of closed, firewalled, and open ports
+- Description of the known open port services
+
+Whois:
+- Whois of domains, IP addresses and AS numbers
+- Support of both for IPv4 and IPv6 (selectable)
+
+DNS lookup:
+- Functionality similar to nslookup or dig
+- Support for A, AAAA, SOA, PTR, MX, CNAME, NS, TXT, SPF, SRV records
+- Support of both for IPv4 and IPv6 (selectable)
+
+Network information:
+- Default gateway, external IP (v4 and v6), DNS server
+- Wifi network information such as SSID, BSSID, IP address, HTTP proxy, subnet mask , signal strength, etc.
+- Cell (3G, LTE) network information such as IP address, signal strength, network provider, MCC, MNC, etc.
+
+More
+- Full support of IPv6
+- Detailed help
+- Regular updates, support page
+
+
+Описание для Under the Hood
+This app will run shell commands to get info from the device
+
+It's a personal debug tool, but it might be of use to someone else
+
+Root not needed, but rooted devices should give more info
+
+Not all commands work on all ROMs
+
+No ads
+
+Export to SD/app share
+
+>> Commands <<
+$cat /proc/devices
+$cat /proc/meminfo
+$cat /proc/mounts
+$cat /proc/net/arp
+$cat /proc/net/if_inet6
+$cat /proc/net/ipv6_route
+$cat /proc/net/route
+$cat /proc/net/wireless
+$cat /proc/version
+$df -ah
+$getprop dalvik.vm.execution-mode
+$getprop dalvik.vm.heapsize
+$getprop gsm.version.baseband
+$getprop ro.build.fingerprint
+$getprop ro.product.version
+$getprop ro.sf.lcd_density
+$ifconfig -a
+$ip -f inet6 addr
+$ip -f inet6 route show
+$ip addr
+$ip route show
+$lsmod
+$netcfg
+$netstat -apnW
+$netstat -rpnW
+$ps
+$route -A inet6 -n
+$route -n
+$uname -a
+
+Github: https://github.com/alt236/Under-the-Hood---Android
+
+***
+Please email me with any bugs/problems/feature requests. I cannot reply to market comments which can make debugging difficult.
+
+http://aschillings.co.uk/html/mac__oui__database.html
+https://github.com/alt236/USB-Device-Info---Android
+introcs.cs.princeton.edu/java
+informit.com
+nostarch.com
+https://www.netresec.com/?page=Products
+https://www.netresec.com/?page=NetworkMinerSourceCode
+yadi.sk/d/G4Lvf4Yh3RYeQL
+airmagnet, inc.
+bit.ly/decentralized-applications
+goabra.com
+http://www.linux-usb.org/usb.ids
+http://www.clker.com/inc/svgedit/svg-editor.html?url=%2Finc%2Fclean.html%3Fid%3D
 ========================================================================================================================
 ========================================================================================================================
 ========================================================================================================================
