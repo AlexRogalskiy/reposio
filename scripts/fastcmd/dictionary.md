@@ -24040,6 +24040,87 @@ secondArray = Arrays.stream(array)
 --------------------------------------------------------------------------------------------------------
 /set options +HISTORY_DISCLOSED
 --------------------------------------------------------------------------------------------------------
+class Dictionary {
+	private List<String> words = new CopyOnWriteArrayList<>();
+
+	public MyComponent(MeterRegistry registry) {
+		registry.gaugeCollectionSize("dictionary.size", Tags.empty(), words);
+	}
+
+	...
+}
+--------------------------------------------------------------------------------------------------------
+docker run -d --rm --name jmx -p 5000:5000 sysdiglabs/jmx-metrics:0.1
+--------------------------------------------------------------------------------------------------------
+package com.paragon.mailingcontour.commons.actuator.metrics;
+
+import com.paragon.mailingcontour.commons.utils.MessageBuffer;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.binder.MeterBinder;
+import io.micrometer.core.lang.NonNullApi;
+import io.micrometer.core.lang.NonNullFields;
+
+import java.util.Collections;
+import java.util.Optional;
+
+@NonNullApi
+@NonNullFields
+public class ErrorsMetrics implements MeterBinder, AutoCloseable {
+    /**
+     * Errors metrics counter name
+     */
+    public static final String ERRORS_METRICS_COUNTER = "errors.counter.total";
+    /**
+     * Errors metrics gauge name
+     */
+    public static final String ERRORS_METRICS_GAUGE = "errors.buffer";
+
+    private final MessageBuffer messageBuffer;
+    private final Iterable<Tag> tags;
+
+    public ErrorsMetrics(final MessageBuffer messageBuffer) {
+        this(messageBuffer, null);
+    }
+
+    public ErrorsMetrics(final MessageBuffer<Object> messageBuffer, final Iterable<Tag> tags) {
+        this.messageBuffer = messageBuffer;
+        this.tags = Optional.ofNullable(tags).orElseGet(Collections::emptyList);
+    }
+
+    @Override
+    public void bindTo(final MeterRegistry registry) {
+        Counter.builder(ERRORS_METRICS_COUNTER)
+                .description("Total number of registered error events")
+                .tags(this.tags)
+                .tags("counter", "error")
+                .baseUnit("errors")
+                .register(registry);
+
+        Gauge.builder(ERRORS_METRICS_GAUGE, this.messageBuffer, MessageBuffer::size)
+                .description("Registered errors stored in a buffer")
+                .tags(this.tags)
+                .tags("buffer", "error")
+                .baseUnit("errors")
+                .register(registry);
+    }
+
+    @Override
+    public void close() {
+        this.messageBuffer.clear();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+String rawJson = Resources.asString("json-test/nested.json");
+JsonNode node = Json.serializer()
+                    .nodeFromJson(rawJson)
+                    .path("nested1")
+                    .path("nested2")
+                    .path("nested3");
+Message message = Json.serializer().fromNode(node, new TypeReference<Message>() {});
+--------------------------------------------------------------------------------------------------------
 @Component
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class MyBean {
@@ -32519,7 +32600,6 @@ public class AddressFieldsTest {
 
     @Autowired
     AddressFieldsConfig addressFieldsConfig;
-    ...........
 
     @Before
     public void setUp() throws Exception{
@@ -32544,6 +32624,35 @@ public class AddressFieldsConfig {
         classes = Application.class,
 )
 public class MyIntTest {
+
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
+
+import de.scrum_master.app.Authenticated;
+
+@Aspect
+public class VehicleActionInterceptor {
+  @Before("execution(* de.scrum_master.app.IVehicle+.*(..)) && @annotation(authenticated)")
+  public void beforeAction(JoinPoint thisJoinPoint, Authenticated authenticated) {
+    System.out.println(thisJoinPoint + " -> " + authenticated);
+  }
+}
+--------------------------------------------------------------------------------------------------------
+@Pointcut("call(@Authenticated * IVehicle+.*(..)) && within(RacingApp)")
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
+
+@Aspect
+public class VehicleActionInterceptor {
+  @Before("execution(@de.scrum_master.app.Authenticated * de.scrum_master.app.IVehicle+.*(..))")
+  public void beforeAction(JoinPoint thisJoinPoint) {
+    System.out.println(thisJoinPoint);
+  }
+}
+
+
 --------------------------------------------------------------------------------------------------------
 final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 final Set<ConstraintViolation<Object>> violations = validator
@@ -32615,6 +32724,204 @@ public class TestExy {
         };
 
     }
+--------------------------------------------------------------------------------------------------------
+@After("execution(* org.springsource.service.OrderServiceImpl.findOrder(..))") 
+
+
+DefaultHandlerExceptionResolver
+SimpleMappingExceptionResolver
+ExceptionHandlerExceptionResolver
+AbstractHandlerMethodExceptionResolver
+ResponseStatusExceptionResolver
+
+AbstractHandlerMethodExceptionResolver
+--------------------------------------------------------------------------------------------------------
+@Pointcut("execution(* io.mc.springaspects.DummyComponent.doThrow())")
+protected void doThrow() { }
+
+@AfterThrowing(pointcut="doThrow()", throwing="ex")
+public void doThrowThrows(TestException ex) {
+   consoleLogger.log("doThrow() THROWS EXCEPTION: %s",
+        ex.getClass().getSimpleName());
+}
+--------------------------------------------------------------------------------------------------------
+package com.paragon.microservices.links.aspect;
+
+import lombok.extern.slf4j.Slf4j;
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
+import org.aspectj.lang.annotation.Pointcut;
+import org.springframework.stereotype.Component;
+
+import java.util.Arrays;
+
+@Slf4j
+@Aspect
+@Component
+public class MyAspect {
+
+//    //    @Pointcut("@target(org.springframework.web.bind.annotation.RestControllerAdvice)")
+////    @Pointcut("@target(org.springframework.stereotype.Repository)")
+////    @Pointcut("@target(com.paragon.microservices.links.aspect.ExceptionLogHandler)")
+//    @Pointcut("within(@org.springframework.web.bind.annotation.RestControllerAdvice *)")
+//    public void repositoryClassMethods() {
+//    }
+
+    @Pointcut("@annotation(org.springframework.web.bind.annotation.RestControllerAdvice)")
+    public void restControllerAdviceAnnotation() {
+    }
+
+    @Pointcut("@annotation(com.paragon.microservices.links.aspect.ExceptionLogHandler)")
+    public void exceptionLogHandlerAnnotation() {
+    }
+
+    @Pointcut("@annotation(org.springframework.web.bind.annotation.ExceptionHandler)")
+    public void exceptionHandlerAnnotation() {
+    }
+
+//    @Pointcut("execution(@com.paragon.microservices.links.aspect.ExceptionLogHandler * *.*(..))")
+//    protected void useAdviceOnThisMethodAnnotation() {
+//    }
+
+    @Pointcut("execution(* org.springframework.web.servlet.handler.AbstractHandlerMethodExceptionResolver.*(..))")
+    protected void abstractHandlerMethodExceptionResolver() {
+    }
+
+    @Pointcut("execution(* org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler.*(..))")
+    protected void responseEntityExceptionHandler() {
+    }
+
+    @Pointcut("exceptionHandlerAnnotation() && @annotation(exceptionLogHandler)")
+    protected void before333(final ExceptionLogHandler exceptionLogHandler) {
+    }
+
+//    @Before("before3()")
+//    public void before(final JoinPoint joinPoint) {
+//        log.info(" Check for user access ");
+//        log.info(" Allowed execution for {}", joinPoint);
+//    }
+
+//    @Around("repositoryClassMethods()")
+//    public Object measureMethodExecutionTime(ProceedingJoinPoint pjp) throws Throwable {
+//        long start = System.nanoTime();
+//        Object retval = pjp.proceed();
+//        long end = System.nanoTime();
+//        String methodName = pjp.getSignature().getName();
+//        return retval;
+//    }
+
+//    @Before("useAdviceOnThisMethodAnnotation()")
+//    public void useAdviceBefore(final JoinPoint joinPoint) {
+//        log.info("[ASPECT] SOURCE LOCATION: %s", joinPoint.getSourceLocation());
+//    }
+
+//    @Before("useAdviceOnThisMethodAnnotation() && @annotation(useAdvice)")
+//    public void useAdviceBefore2(final JoinPoint joinPoint, final ExceptionLogHandler useAdvice) {
+//        log.info("VALUE: %s", useAdvice);
+//    }
+
+//    @Before("callAtMyServicePublic3()")
+//    public void beforeCallAtMethod3(final JoinPoint jp) {
+//        final String args = Arrays.stream(jp.getArgs())
+//                .map(a -> a.toString())
+//                .collect(Collectors.joining(","));
+//        log.info("before " + jp.toString() + ", args=[" + args + "]");
+//    }
+//
+//    @Before("callAtMyServicePublic5()")
+//    public void beforeCallAtMethod5(final JoinPoint jp) {
+//        final String args = Arrays.stream(jp.getArgs())
+//                .map(a -> a.toString())
+//                .collect(Collectors.joining(","));
+//        log.info("before " + jp.toString() + ", args=[" + args + "]");
+//    }
+
+    @Around("restControllerAdviceAnnotation()")
+    public Object aroundCall3(final ProceedingJoinPoint joinPoint) throws Throwable {
+        log.debug("logAround() is running!");
+        log.debug("method name: " + joinPoint.getSignature().getName());
+        log.debug("method arguments: " + Arrays.toString(joinPoint.getArgs()));
+        log.debug("logAround before is running!");
+        final Object result = joinPoint.proceed();
+        log.debug("logAround after is running!");
+        return result;
+    }
+
+    @Around("exceptionLogHandlerAnnotation() || exceptionHandlerAnnotation() || responseEntityExceptionHandler()")
+    public Object aroundCall(final ProceedingJoinPoint joinPoint) throws Throwable {
+        log.debug("logAround() is running!");
+        log.debug("method name: " + joinPoint.getSignature().getName());
+        log.debug("method arguments: " + Arrays.toString(joinPoint.getArgs()));
+        log.debug("logAround before is running!");
+        final Object result = joinPoint.proceed();
+        log.debug("logAround after is running!");
+        return result;
+    }
+
+    @Around("before333(exceptionLogHandler)")
+    public Object ar(final ProceedingJoinPoint joinPoint, final ExceptionLogHandler exceptionLogHandler) throws Throwable {
+        final String value = exceptionLogHandler.value();
+        final Object result = joinPoint.proceed();
+        log.debug("logAround after is running!");
+        return result;
+    }
+
+//    @Around("callAtMyServicePublic5()")
+//    public Object aroundCall2(final ProceedingJoinPoint joinPoint) throws Throwable {
+//        log.debug("logAround() is running!");
+//        log.debug("method name: " + joinPoint.getSignature().getName());
+//        log.debug("method arguments: " + Arrays.toString(joinPoint.getArgs()));
+//        log.debug("logAround before is running!");
+//        final Object result = joinPoint.proceed();
+//        log.debug("logAround after is running!");
+//        return result;
+//    }
+}
+--------------------------------------------------------------------------------------------------------
+{
+"timestamp": "2019-08-20T14:28:03.406+0000",
+"status": 405,
+"error": "Method Not Allowed",
+"message": "Request method 'GET' not supported",
+"path": "/api/v0/links/execute/23233"
+}
+--------------------------------------------------------------------------------------------------------
+@Before("doStuff()")
+public void beforeDoStuff(JoinPoint joinPoint) {
+     consoleLogger.log("BEFORE CALL TO doStuff()");
+     
+     consoleLogger.log("ARGUMENTS:");
+     Arrays.stream(joinPoint.getArgs())
+         .map(Object::toString)
+         .forEach(arg -> consoleLogger.log("\t%s", arg));
+     
+     consoleLogger.log("");
+}
+
+@Pointcut("execution(@io.mc.springaspects.UseAdviceOnThisMethod * *.*(..))")
+protected void useAdviceOnThisMethodAnnotation() { }    
+
+@Before("useAdviceOnThisMethodAnnotation()")
+public void useAdviceBefore(JoinPoint joinPoint) {
+  consoleLogger.log("[ASPECT] SOURCE LOCATION: %s",
+      joinPoint.getSourceLocation());
+}
+@UseAdviceOnThisMethod
+public void someMethod() {
+   consoleLogger.log("Hello, world!");
+}
+
+@Pointcut("execution(@io.mc.springaspects.UseAdviceOnThisMethod * *.*(..))")
+protected void useAdviceOnThisMethodAnnotation() { }    
+
+@Before("useAdviceOnThisMethodAnnotation() && @annotation(useAdvice)")
+public void useAdviceBefore(JoinPoint joinPoint, 
+                            UseAdviceOnThisMethod useAdvice) {
+  consoleLogger.log("VALUE: %s", useAdvice.value());
+}
 --------------------------------------------------------------------------------------------------------
 package com.spring.mvc.demo.exception.advice;
  
