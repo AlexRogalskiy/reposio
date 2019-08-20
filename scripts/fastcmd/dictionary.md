@@ -19809,6 +19809,269 @@ class CachedNumber implements Number {
 	}
 }
 -------------------------------------------------------------------------------------------------------
+//package com.paragon.microservices.links.aspect;
+//
+//import lombok.extern.slf4j.Slf4j;
+//import org.aspectj.lang.annotation.Aspect;
+//import org.springframework.aop.AfterReturningAdvice;
+//import org.springframework.aop.MethodBeforeAdvice;
+//import org.springframework.aop.ThrowsAdvice;
+//import org.springframework.stereotype.Component;
+//
+//import java.lang.reflect.Method;
+//
+//@Slf4j
+//@Aspect
+//@Component
+//public class ExceptionHandler implements AfterReturningAdvice, MethodBeforeAdvice, ThrowsAdvice {
+//
+//    @Override
+//    public void afterReturning(final Object o, final Method method, final Object[] os, final Object o1) {
+//        log.debug("afterReturning: ", method.getName());
+//    }
+//
+//    @Override
+//    public void before(final Method method, final Object[] os, final Object o) {
+//        log.debug("before: ", method.getName());
+//    }
+//
+//    public void afterThrowing(final IllegalArgumentException ex) {
+//        log.debug("afterThrowing: ", ex.getMessage());
+//    }
+//}
+
+
+package com.paragon.microservices.links.aspect;
+
+import lombok.extern.slf4j.Slf4j;
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.*;
+import org.springframework.stereotype.Component;
+
+import java.util.Arrays;
+
+/**
+ * Base controllers logging REST Application handlers
+ *
+ * @author Alex
+ * @version 1.0.0
+ * @since 2017-08-08
+ */
+@Slf4j
+@Aspect
+@Component
+public class ExceptionResolver {
+
+    @Before("@annotation(org.springframework.web.bind.annotation.RestControllerAdvice)")
+    public void logBeforeController(final JoinPoint joinPoint) {
+        log.debug("logBeforeController() is running!");
+        log.debug("method name: " + joinPoint.getSignature().getName());
+        log.debug("Class Name :  " + joinPoint.getSignature().getDeclaringTypeName());
+        log.debug("Arguments :  " + Arrays.toString(joinPoint.getArgs()));
+        log.debug("Target class : " + joinPoint.getTarget().getClass().getName());
+    }
+
+    //    @After("restcontroller() && allMethod()")
+//    public void logAfterController(final JoinPoint joinPoint) {
+//        log.debug("logAfterController() is running!");
+//        log.debug("method name: " + joinPoint.getSignature().getName());
+//        log.debug("Class Name :  " + joinPoint.getSignature().getDeclaringTypeName());
+//        log.debug("Arguments :  " + Arrays.toString(joinPoint.getArgs()));
+//        log.debug("Target class : " + joinPoint.getTarget().getClass().getName());
+//    }
+//
+//    @AfterReturning(pointcut = "restcontroller() && allMethod()", returning = "resultSet")
+//    public void logAfterControllerReturning(final JoinPoint joinPoint, final Object resultSet) {
+//        log.debug("logAfterReturningController() is running!");
+//        log.debug("method name: " + joinPoint.getSignature().getName());
+//        log.debug("returned value: " + resultSet);
+//    }
+//
+//    @AfterThrowing(pointcut = "restcontroller() && allMethod()", throwing = "error")
+//    public void logAfterControllerThrowing(final JoinPoint joinPoint, final Throwable error) {
+//        log.debug("logAfterControllerThrowing() is running!");
+//        log.debug("method name: " + joinPoint.getSignature().getName());
+//        log.debug("exceptions: " + error);
+//    }
+
+    @AfterThrowing(pointcut = "execution(* com.paragon.microservices.links.controller.TicketController.*(..))", throwing = "error")
+    public void logBeforeProxyController(final JoinPoint joinPoint, final Throwable error) {
+        log.debug("logBefore() is running!");
+        log.debug("method name: " + joinPoint.getSignature().getName());
+    }
+
+//    @Around("@annotation(test) && allMethod()")
+//    public Object logAroundController(final ProceedingJoinPoint joinPoint) throws Throwable {
+//        log.debug("logControllerAround() is running!");
+//        log.debug("method name: " + joinPoint.getSignature().getName());
+//        log.debug("method arguments: " + Arrays.toString(joinPoint.getArgs()));
+//        log.debug("logControllerAround before is running!");
+//        final Object result = joinPoint.proceed();
+//        log.debug("logControllerAround after is running!");
+//        return result;
+//    }
+
+    @Pointcut("within(com.paragon.microservices.links.controller.TicketController)")
+    public void stringProcessingMethods() {
+    }
+
+    @After("stringProcessingMethods()")
+    public void logMethodCall(final JoinPoint jp) {
+        final String methodName = jp.getSignature().getName();
+        log.info("testing");
+    }
+
+    @AfterReturning(value = "execution(* com.paragon.microservices.links.controller.TicketController.*(..))", returning = "result")
+    public void logBeforeProxyController(final JoinPoint joinPoint, final Object result) {
+        log.debug("logBefore() is running!");
+        log.debug("method name: " + joinPoint.getSignature().getName());
+    }
+
+    //
+//    @After("execution(* com.paragon.microservices.links.controller.*(..))")
+//    public void logAfterProxyController(final JoinPoint joinPoint) {
+//        log.debug("logAfter() is running!");
+//        log.debug("method name: " + joinPoint.getSignature().getName());
+//
+//    }
+//
+//    @AfterReturning(pointcut = "execution(* com.paragon.microservices.links.controller.*(..))", returning = "resultSet")
+//    public void logAfterProxyControllerReturning(final JoinPoint joinPoint, final Object resultSet) {
+//        log.debug("logAfterReturning() is running!");
+//        log.debug("method name: " + joinPoint.getSignature().getName());
+//        log.debug("returned value: " + resultSet);
+//    }
+//
+    @Around("@annotation(com.paragon.microservices.links.aspect.LogExecutionError)")
+    public Object logExecutionTime(final ProceedingJoinPoint joinPoint) throws Throwable {
+        final long start = System.currentTimeMillis();
+        Object proceed = joinPoint.proceed();
+        final long executionTime = System.currentTimeMillis() - start;
+        System.out.println(joinPoint.getSignature() + " executed in " + executionTime + "ms");
+        log.info("test");
+        return proceed;
+    }
+
+    @AfterThrowing(pointcut = "execution(* com.paragon.microservices.links.controller.TicketController.*(..))", throwing = "error")
+    public void logAfterProxyControllerThrowing(final JoinPoint joinPoint, final Throwable error) {
+        log.debug("logAfterThrowing() is running!");
+        log.debug("method name: " + joinPoint.getSignature().getName());
+        log.debug("exceptions: " + error);
+    }
+
+    @Around("execution(* com.paragon.microservices.links.controller.TicketController.*(..))")
+    public Object logrAroundProxyController(final ProceedingJoinPoint joinPoint) throws Throwable {
+        log.debug("logAround() is running!");
+        log.debug("method name: " + joinPoint.getSignature().getName());
+        log.debug("method arguments: " + Arrays.toString(joinPoint.getArgs()));
+        log.debug("logAround before is running!");
+        final Object result = joinPoint.proceed();
+        log.debug("logAround after is running!");
+        return result;
+    }
+}
+
+
+package com.paragon.microservices.links.aspect;
+
+import lombok.extern.slf4j.Slf4j;
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.annotation.After;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
+import org.aspectj.lang.annotation.Pointcut;
+import org.springframework.stereotype.Component;
+
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
+@Slf4j
+@Aspect
+@Component
+public class MyAspect {
+
+    @Pointcut("execution(protected * com.paragon.microservices.links.system.configuration.DefaultExceptionHandler.*(..))")
+    public void callAtMyServicePublic() {
+    }
+
+    @Before("callAtMyServicePublic()")
+    public void beforeCallAtMethod1(final JoinPoint jp) {
+        final String args = Arrays.stream(jp.getArgs())
+                .map(a -> a.toString())
+                .collect(Collectors.joining(","));
+        log.info("before " + jp.toString() + ", args=[" + args + "]");
+    }
+
+    @After("callAtMyServicePublic()")
+    public void afterCallAt(JoinPoint jp) {
+        log.info("after " + jp.toString());
+    }
+}
+
+
+package com.paragon.microservices.links.aspect;
+
+import lombok.extern.slf4j.Slf4j;
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
+import org.springframework.context.annotation.Configuration;
+
+@Slf4j
+@Aspect
+@Configuration
+public class UserAccessAspect {
+
+    @Before("execution(* com.paragon.microservices.links.controller.*.*(..))")
+    public void before(JoinPoint joinPoint) {
+        log.info(" Check for user access ");
+        log.info(" Allowed execution for {}", joinPoint);
+    }
+}
+
+
+@Pointcut("execution(* com.example.demoAspects.MyService.method1(..)) && args(list,..))")
+public void callAtMyServiceMethod1(List<String> list) { }
+
+   @Pointcut("execution(* com.example.demoAspects.MyService.check())")
+    public void callAtMyServiceAfterReturning() { }
+	
+-------------------------------------------------------------------------------------------------------
+    @Aspect
+    @Component
+    public class DeviceLogger {
+
+    private static Logger logger = Logger.getLogger("Device");
+
+
+        @Around("execution(* com.devicemachine.StateHandler.*(..))")
+        public void log() {
+            logger.info( "Logger" );
+        }
+}
+-------------------------------------------------------------------------------------------------------
+@SpringBootApplication
+public class LoggerApplication {
+
+    private static Logger logger = Logger.getLogger("Device");
+
+
+    public static void main(String[] args) {
+
+        SpringApplication.run(LoggerApplication.class, args);
+
+    }
+
+    @PostConstruct
+    public void log(){
+        DeviceState s = DeviceState.BLOCKED;
+        StateHandler<DeviceEvent> sh = new StateHandler<DeviceEvent>( s,
+                                            Event.block(DeviceEvent.BLOCKED, "AuditMessage") );
+        sh.handle(Event.block(DeviceEvent.UNBLOCKED, "AuditMessage"));
+    }
+}
+-------------------------------------------------------------------------------------------------------
 InsTream.rangeClosed(2, Integer.MAX_VALUE)
 .filter()
 .map(x -> x * x)
@@ -21189,6 +21452,215 @@ before_script:
 
 script:
    - ./gradlew connectedAndroidTest coveralls
+--------------------------------------------------------------------------------------------------------
+for i in $(adb shell pm list packages | awk -F':' '{print $2}'); do adb pull "$(adb shell pm path $i | awk -F':' '{print $2}')"; mv base.apk $i.apk 2&> /dev/null ;done
+adb shell pm uninstall --user 0 com.android.cellbroadcastreceiver   <--- kills presidential alert app!
+adb shell pm list users
+adb shell pm path com.example.someapp
+adb pull /data/app/com.example.someapp-2.apk path/to/desired/destination
+adb shell pm list packages -f -3
+
+adb pull /sdcard/Android/data/com.bluemotionlabs.bluescan/files/scans/classic_scan_20190819_141752.json
+adb pull /sdcard/Android/data/com.bluemotionlabs.bluescan/files/scans/classic_scan_20190819_141752.csv
+
+adb pull "/sdcard/Nordic Semiconductor/" D:/adb/test
+
+adb pull /sdcard/Android/data/com.bluemotionlabs.bluescan/files/scans/ D:/adb/test
+adb backup -apk apk
+
+adb shell 'cat `pm path com.example.name | cut -d':' -f2`' > app.apk
+
+function android_pull_apk() {
+    if [ -z "$1" ]; then
+        echo "You must pass a package to this function!"
+        echo "Ex.: android_pull_apk \"com.android.contacts\""
+        return 1
+    fi
+
+    if [ -z "$(adb shell pm list packages | grep $1)" ]; then
+        echo "You are typed a invalid package!"
+        return 1
+    fi
+
+    apk_path="`adb shell pm path $1 | sed -e 's/package://g' | tr '\n' ' ' | tr -d '[:space:]'`"
+    apk_name="`adb shell basename ${apk_path} | tr '\n' ' ' | tr -d '[:space:]'`"
+
+    destination="$HOME/Documents/Android/APKs"
+    mkdir -p "$destination"
+
+    adb pull ${apk_path} ${destination}
+    echo -e "\nAPK saved in \"$destination/$apk_name\""
+}
+
+
+
+for package in $(adb shell pm list packages -3 | tr -d '\r' | sed 's/package://g'); do apk=$(adb shell pm path $package | tr -d '\r' | sed 's/package://g'); echo "Pulling $apk"; adb pull -p $apk "$package".apk; done
+
+adb pull /system/app/CertInstaller/CertInstaller.apk /Users/$(whoami)/Documents/APK/download_apk/
+
+ls -la /Users/$(whoami)/Documents/
+
+
+adb shell dumpsys activity activities | grep mFocusedActivity
+adb shell pm path <packagename.apk>
+adb shell cp /data/app/<packagename.apk> /sdcard
+adb pull /sdcard/base.apk
+--------------------------------------------------------------------------------------------------------
+  @Retention(RUNTIME)
+  @Target(METHOD)
+   public @interface SecurityAnnotation {
+   }
+   //
+   @Aspect
+   @Component
+   public class MyAspect {
+    
+    @Pointcut("@annotation(SecurityAnnotation) && args(user,..)")
+    public void callAtMyServiceSecurityAnnotation(User user) { }
+
+    @Around("callAtMyServiceSecurityAnnotation(user)")
+    public Object aroundCallAt(ProceedingJoinPoint pjp, User user) {
+        Object retVal = null;
+        if (securityService.checkRight(user)) {
+         retVal = pjp.proceed();
+         }
+        return retVal;
+    }
+--------------------------------------------------------------------------------------------------------
+@Aspect
+@Component
+public class MyAspect {
+
+    @Pointcut("execution(public * com.example.demoAspects.MyService.*(..))")
+    public void callAtMyServicePublic() {
+    }
+
+    @Around("callAtMyServicePublic()")
+    public Object aroundCallAt(ProceedingJoinPoint call) throws Throwable {
+        StopWatch clock = new StopWatch(call.toString());
+        try {
+            clock.start(call.toShortString());
+            return call.proceed();
+        } finally {
+            clock.stop();
+            System.out.println(clock.prettyPrint());
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@Configuration
+public class RequestCountMonitoringConfiguration extends WebMvcConfigurerAdapter {
+
+  private Meter requestMeter;
+
+  @Autowired
+  public RequestCountMonitoringConfiguration(MetricRegistry metricRegistry) {
+    this.requestMeter = metricRegistry.meter("http.requests");
+  }
+
+  @Override
+  public void addInterceptors(InterceptorRegistry registry) {
+    registry.addInterceptor(new HandlerInterceptorAdapter() {
+      @Override
+      public void afterCompletion(HttpServletRequest request,
+          HttpServletResponse response, Object handler, Exception ex)
+          throws Exception {
+        requestMeter.mark();
+      }
+    });
+  }
+}
+
+@ControllerAdvice
+public class ControllerExceptionHandler {
+
+  private MetricRegistry metricRegistry;
+
+  @Autowired
+  public ControllerExceptionHandler(MetricRegistry metricRegistry){
+    this.metricRegistry = metricRegistry;
+  }
+  
+  @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
+  @ExceptionHandler(Exception.class)
+  @ResponseBody
+  public String handleInternalError(Exception e) {
+    countHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+    logger.error("Returned HTTP Status 500 due to the following exception:", e);
+    return "Internal Server Error";
+  }
+  
+  private void countHttpStatus(HttpStatus status){
+    Meter meter = metricRegistry.meter(String.format("http.status.%d", status.value()));
+    meter.mark();
+  }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.stereotype.Component;
+
+import java.util.Random;
+
+@Component
+public class CustomHealth implements HealthIndicator {
+
+    @Override
+    public Health health() {
+
+        int systemStatusCode = generateSystemStatusCode();
+
+        if (systemStatusCode == 1) {
+            return Health.up().build();
+        }
+
+        if (systemStatusCode == 2) {
+            return Health.outOfService().build();
+        }
+
+        return Health.down().withDetail("Error : ", systemStatusCode).build();
+    }
+
+    /**
+     * Implement logic to checking your system health
+     * @return int
+     */
+    private int generateSystemStatusCode() {
+        Random rand = new Random();
+        return rand.nextInt(3) + 1;
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+    @AfterReturning(pointcut = "execution(public String ru.sysout.aspectsdemo.service.FullNameComposer.*(..))", returning = "result")
+    public void logAfterReturning(JoinPoint joinPoint, Object result) {
+        logger.log(Level.INFO, "возвращенное значение: " + result.toString());
+    }
+--------------------------------------------------------------------------------------------------------
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.annotation.After;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
+import org.springframework.stereotype.Component;
+
+@Aspect
+@Component
+public class EmployeeServiceAspect {
+
+	@Before(value = "execution(* com.javainuse.service.EmployeeService.*(..)) and args(name,empId)")
+	public void beforeAdvice(JoinPoint joinPoint, String name, String empId) {
+		System.out.println("Before method:" + joinPoint.getSignature());
+
+		System.out.println("Creating Employee with name - " + name + " and id - " + empId);
+	}
+
+	@After(value = "execution(* com.javainuse.service.EmployeeService.*(..)) and args(name,empId)")
+	public void afterAdvice(JoinPoint joinPoint, String name, String empId) {
+		System.out.println("After method:" + joinPoint.getSignature());
+
+		System.out.println("Successfully created Employee with name - " + name + " and id - " + empId);
+	}
+}
 --------------------------------------------------------------------------------------------------------
 import java.math.BigDecimal
 
