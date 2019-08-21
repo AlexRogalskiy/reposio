@@ -24097,6 +24097,10 @@ public class SSLSocketFactoryUtil {
 	}
 }
 --------------------------------------------------------------------------------------------------------
+MetricsAutoConfiguration
+philandro software
+
+--------------------------------------------------------------------------------------------------------
 package org.afc.petstore;
 
 import org.afc.env.Environment;
@@ -24110,6 +24114,19 @@ public class PetstoreLocal {
 		Petstore.main(new String[] {"--spring.profiles.active=local,default,vi,vi1"});
 	}
 }
+--------------------------------------------------------------------------------------------------------
+@Configuration
+@ConditionalOnClass(Flyway.class)
+@ConditionalOnBean(DataSource.class)
+@ConditionalOnExpression("${flyway.enabled:true}")
+@AutoConfigureAfter(DataSourceAutoConfiguration.class)
+public class FlywayAutoConfiguration {
+
+    @Configuration
+    @ConditionalOnMissingBean(Flyway.class)
+    @EnableConfigurationProperties(FlywayProperties.class)
+    @Import(FlywayJpaDependencyConfiguration.class)
+    public static class FlywayConfiguration {
 --------------------------------------------------------------------------------------------------------
 import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
