@@ -21596,6 +21596,313 @@ public class ControllerExceptionHandler {
   }
 }
 --------------------------------------------------------------------------------------------------------
+apt-get update
+apt-get insatll ssh
+systemctl enable ssh
+service ssh start
+nano /etc/ssh/sshd_config
+
+PermitRootLogin yes
+
+service ssh restart
+
+https://codeby.net/threads/vkljuchenie-ssh-na-kali-linux.67703/
+
+Как можно получить список всех доступных пакетов?
+
+Чтобы увидеть все доступные пакеты, выполните следующую команду:
+1
+	
+apt-cache pkgnames
+
+Как можно найти имя пакета и его описание.
+
+Чтобы найти название пакета и его описание перед установкой, используйте флаг «search». Использование “search” c apt-cache отобразит список подходящих пакетов с кратким описанием. Например, вы хотите найти описание пакета vsftpd: чтобы сделать это, команда должна быть вот такой:
+1
+	
+apt-cache search vsftpd
+
+Чтобы найти и перечислить все пакеты, имя которых начинается с vsftpd, вы можете использовать следующую команду:
+1
+	
+apt-cache pkgnames vsftpd
+
+Как я могу просмотреть информацию о пакете?
+
+Например, если вы хотите ознакомиться с информацией о пакете, с его кратким описанием, отображающим номер версии, контрольные суммы, размер, размер после установки, категории и так далее, вы можете использовать подкоманду «show», как показано ниже:
+1
+	
+apt-cache show netcat
+
+Как можно проверить зависимости какого-либо пакета?
+
+Чтобы проверить зависимости конкретного пакета, вы можете использовать подкоманду showpkg, чтобы узнать, установлены эти зависимости или нет. Например, используйте команду showpkg вместе с названием пакета.
+1
+	
+apt-cache showpkg vsftpd
+
+Как можно просмотреть статистику кэша?
+
+Подкоманда stats отобразит полную статистику о кеше, например, полное число пакетов, найденное в кеше. Используйте такую команду:
+1
+	
+apt-cache stats
+
+Как обновить список пакетов в системе?
+
+Команда update используется для синхронизации и обновления индексных файлов пакетов. Синхронизация происходит с источниками, указанными в файле /etc/apt/sources.list. Эту команду можно использовать, например, чтобы не упускать важные обновления пакетов.
+1
+	
+sudo apt-get update
+
+Как обновить пакеты в системе?
+
+Команда upgrade используется для обновления всего установленного на данный момент софта в вашйе системе. Иногда может получиться так, что обновление установить нельзя из-за какого-либо другого пакета, который требует старую версию.
+1
+	
+sudo apt-get upgrade
+
+Но если вы хотите обновиться вне зависимости от требований пакетов, используйте подкоманду dist-upgrade:
+1
+	
+sudo apt-get dist-upgrade
+
+Как я могу установить или обновить какой-либо конкретный пакет?
+
+Подкоманда install используется для установки или обновления какого-либо пакета.
+1
+	
+sudo apt-get install netcat
+
+Как я могу установить несколько пакетов сразу?
+
+Вы можете ввести названия нескольих пакетов, чтобы установить их одновременно. Например, чтобы установить пакеты nethogs и goaccess, вы можете выполнить следующую команду:
+1
+	
+sudo apt-get install nethogs goaccess
+
+Как установить несколько пакетов по «маске» названия
+
+С помощью регулярных вырежний вы можете добавлять несколько пакетов с помощью специальных символов. Например, можно использовать звездочку, чтобы установить все пакеты, которые содержат строку «name» в названии:
+1
+	
+sudo apt-get install *name*
+
+Как установить пакеты без обновления.
+
+Использование флага –no-upgrade предотвратит обновление уже установленных пакетов.
+1
+	
+sudo apt-get install packageName --no-upgrade
+
+Как только обновить определенные пакеты?
+
+Флаг –only-upgrade не установит новые пакеты, а только обновит существующие.
+1
+	
+sudo apt-get install имя_пакета --only-upgrade
+
+Как я могу установить определенную версию пакета?
+
+Представим, что вам необходимо установить специфичную версию пакета, просто используйте знак равно вместе с именем пакета и припишите желаемую версию.
+1
+	
+sudo apt-get install vsftpd=2.3.5-3ubuntu1
+
+Как удалить пакеты без удаления настроек?
+
+Чтобы удалить программные пакеты без удаления их конфигурационных файлов (для дальнейшего их использования), используйте команду remove как показано.
+1
+	
+sudo apt-get remove vsftpd
+
+Как полностью удалить пакеты?
+
+Чтобы удалить пакет вместе с его файлами настроек, используете подкоманду purge, как показано ниже.
+1
+	
+sudo apt-get purge vsftpd
+
+Или вы можете объединить обе команды, вот так:
+1
+	
+sudo apt-get remove --purge vsftpd
+
+Как можно очистить место на диске?
+
+Команда clean используется для освобождения дискового пространствва за счет удаления полученных .deb-файлов пакетов в вашем локальном репозитории.
+1
+	
+sudo apt-get clean
+
+Как только загрузить исходный код пакета?
+
+Чтобы только загрузить исходный код пакета, вы можете использовать опцию –download-only source с именем пакета, например:
+1
+	
+sudo apt-get --download-only source vsftpd
+
+Как можно загрузить и распаковать пакет?
+
+Чтобы загрузить и распаковать исходный код пакета в специальную директорию, выполните следующую команду:
+1
+	
+sudo apt-get source vsftpd
+
+Как можно загрузить, распаковать и скомпилировать исходный код пакета?
+
+Вы также можете загрузить, распаковать и скомпилировать исходный код пакета, используя опцию ‘–compile‘, как показано ниже:
+1
+	
+sudo apt-get --compile source goaccess
+
+Как загрузить пакет без установки
+
+Используя опцию «download», вы можете загрузить любой пакет, не устанавливая его. Например, следующая команда только загрузит пакет nethogs в текущую рабочую директорию.
+1
+	
+sudo apt-get download nethogs
+
+Как можно просмотреть лог изменений (changelog) пакета?
+
+Флаг changelog загружает лог изменений пакета и отображает версию пакета, если он установлен.
+1
+	
+sudo apt-get changelog vsftpd
+
+Как можно исправить сломанные зависимости?
+
+Команда «check» — инструмент для диагностики, он используется для обновления кеша пакетов и проверки на сломанные зависимости.
+1
+	
+sudo apt-get check
+
+Как можно найти и собрать зависимости?
+
+Команда build-dep ищет и устанавливает собранные зависимости нужного пакета. Если пакет отсутствует в локальном репозитории, вы получите ошибку.
+1
+	
+sudo apt-get build-dep netcat
+
+Как можно автоматически очистить кеш Apt-Get?
+
+Команда autoclean удаляет все .deb-файлы из /var/cache/apt/archives для освобождения свободного места на жестком диске.
+1
+	
+sudo apt-get autoclean
+
+Как можно автоматически удалить ненужные пакеты?
+
+Подкоманда autoremove используется для автоматического удаления пакетов, которые были установлены как зависимости других, но сейчас они больше не нужны. Например, следующая команда удалит установленный пакет вместе с его зависимостями.
+1
+	
+sudo apt-get autoremove vsftpd
+--------------------------------------------------------------------------------------------------------
+#!/bin/bash
+
+#
+# Ubertooth install script for Kali Linux 2.0.0
+#
+# by Raul Siles
+# Copyright (c) 2015 DinoSec SL (www.dinosec.com)
+#
+# Version: 2017-03-R2
+# Date: 2015-10-31
+#
+# Ubertooth and libbtbb versions: 2017-03-R2
+# Kali Linux version: 2.0.0
+# Wireshark version: 1.12.6
+# FING version: 2013-03-R1b
+#
+
+# Versions
+FING_VERSION=2016-07-R1
+AIRCRACK_VERSION=1.2
+HORST_VERSION=5.1
+
+AIRCRACK_URL=https://download.aircrack-ng.org/aircrack-ng-1.2.tar.gz
+AIRCRACK_FILENAME=aircrack-ng-$AIRCRACK_VERSION.tar.gz
+AIRCRACK_DIR=aircrack-ng-$AIRCRACK_VERSION
+LIBBTBB_BACK=../..
+
+HORST_URL=https://github.com/br101/horst/archive/v$HORST_VERSION.tar.gz
+HORST_FILENAME=$HORST_VERSION.tar.gz
+HORST_DIR=horst
+HORST_BACK=..
+
+FING_URL=https://39qiv73eht2y1az3q51pykkf-wpengine.netdna-ssl.com/wp-content/uploads/2018/02/FingKit_CLI_Linux_Debian.zip
+FING_FILENAME=FingKit_CLI_Linux_Debian.zip
+FING_DIR=Linux_Debian
+FING_PACKAGE=fing-5.1.0-armhf.deb
+FING_CONF_FILE=/etc/fing.conf
+FING_BACK=..
+
+BLUEHYDRA_URL=https://github.com/pwnieexpress/blue_hydra.git
+BLUEHYDRA_DIR=blue_hydra
+#BLUEHYDRA_CONF_FILE=/etc/BLUEHYDRA.conf
+BLUEHYDRA_BACK=..
+
+echo
+echo "   Tools Versions:"
+echo "   - Aircrack: $AIRCRACK_VERSION"
+echo "   - Fing: $AIRCRACK_VERSION"
+echo "   - Horst: $FING_VERSION"
+echo "   - Blue HydRA: $FING_VERSION"
+echo
+
+echo "  Press any key to continue (or Ctrl+C):"
+read key
+
+
+echo "Fixing ssh keys"
+#dpkg-reocnfigure -i openssh-server
+
+echo "[*] Installing basic packages..."
+echo
+sudo apt-get install -y nano fish vim tshark tree sqlite3 tcpdump libtool screen tmux rfkill ethtool automake libssl-dev libnl-3-dev libnl-genl-3-dev pkg-config build-essential libpcre3-dev ruby-dev bluez bluez-test-scripts python-bluez python-dbus libsqlite3-dev bundler 
+
+echo
+echo "[*] Building aircrack ..."
+wget $AIRCRACK_URL
+L -O $AIRCRACK_FILENAME
+tar xf $AIRCRACK_FILENAME
+cd $AIRCRACK_DIR
+autoreconf -i
+./configure --with-experimental --with-ext-scripts
+make
+sudo make install
+cd $LIBBTBB_BACK
+
+echo "[*] Installing  Blue Hydra ..."
+git clone  $BLUEHYDRA_URL 
+cd $BLUEHYDRA_DIR
+bundle install
+cd $BLUEHYDRA_BACK
+
+
+echo
+echo "[*] Installing Horst.."
+echo
+wget $HORST_URL -O $HORST_FILENAME
+tar xf $HORST_FILENAME
+cd $HORST_DIR
+make
+sudo make install
+cd $HORST_BACK
+
+echo
+echo "[*] Installing FING.."
+echo
+wget $FING_URL
+unzip $FING_FILENAME
+cd $FING_DIR
+sudo dpkg -i $FING_PACKAGE
+cd $FING_BACK
+
+echo
+echo "[*] End of the Pi tools install script. Congratulations!"
+echo
+--------------------------------------------------------------------------------------------------------
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.stereotype.Component;
