@@ -24099,6 +24099,14 @@ public class Sea {
     @Singular("oneFish") private final List<String> fish;
 }
 --------------------------------------------------------------------------------------------------------
+@OverridesAttribute(constraint = Size.class, name = "min")
+@OverridesAttribute(constraint = Size.class, name = "max")
+int size() default 5;
+@OverridesAttribute(constraint = Size.class, name = "message")
+String sizeMessage() default "A french zip code has a length of 5";
+@OverridesAttribute(constraint = Pattern.class, name = "regexp", constraintIndex = 1)
+String regex() default "\\d*";
+--------------------------------------------------------------------------------------------------------
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Singular;
@@ -24121,6 +24129,54 @@ public class Person {
     @Singular private final List<String> interests;
     @Singular private final Set<String> skills;
     @Singular private final Map<String, LocalDate> awards;
+}
+--------------------------------------------------------------------------------------------------------
+/**
+ * @author Guillaume Smet
+ */
+public class FrenchAddressListContainer extends Address {
+
+  @Override
+  @FrenchZipcodeListContainer
+  public String getZipCode() {
+    return super.getZipCode();
+  }
+
+  @NotEmpty
+  @Size
+  // first pattern just duplicates the length of 5 characters, the second pattern is just to prove that parameters can be overridden.
+  @Pattern.List({ @Pattern(regexp = "....."), @Pattern(regexp = "bar") })
+  @Constraint(validatedBy = FrenchZipcodeListContainerConstraintValidator.class)
+  @Documented
+  @Target({ METHOD, FIELD, TYPE })
+  @Retention(RUNTIME)
+  public @interface FrenchZipcodeListContainer {
+    String message() default "Wrong zipcode";
+
+    Class<?>[] groups() default { };
+
+    Class<? extends Payload>[] payload() default {};
+
+    @OverridesAttribute(constraint = Size.class, name = "min")
+    @OverridesAttribute(constraint = Size.class, name = "max")
+    int size() default 5;
+
+    @OverridesAttribute(constraint = Size.class, name = "message")
+    String sizeMessage() default "A french zip code has a length of 5";
+
+    @OverridesAttribute(constraint = Pattern.class, name = "regexp", constraintIndex = 1)
+    String regex() default "\\d*";
+  }
+}
+--------------------------------------------------------------------------------------------------------
+public final class WeightBean {
+    @NotNull
+    private Double txtWeight;  //Getter and setter.
+
+    @AssertTrue
+    public boolean getTxtWeightCheck() {
+        return txtWeight > 0.1 && txtWeight < 0.9;
+    }
 }
 --------------------------------------------------------------------------------------------------------
         this.objectMapper.registerModule(
