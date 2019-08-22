@@ -21903,6 +21903,224 @@ echo
 echo "[*] End of the Pi tools install script. Congratulations!"
 echo
 --------------------------------------------------------------------------------------------------------
+general:
+    artifacts:
+        - "build/reports/jacoco"        
+machine:
+    java:
+        version: oraclejdk8
+    environment:
+        ANDROID_HOME: /usr/local/android-sdk-linux
+        GRADLE_OPTS: '-Dorg.gradle.jvmargs="-Xmx2048m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"'
+dependencies:
+    pre:
+        - echo y | android update sdk --no-ui --all --filter tools
+        - echo y | android update sdk --no-ui --all --filter platform-tools
+        - echo y | android update sdk --no-ui --all --filter build-tools-25.0.3
+        - echo y | android update sdk --no-ui --all --filter android-25
+        - echo y | android update sdk --no-ui --all --filter extra-google-m2repository
+        - echo y | android update sdk --no-ui --all --filter extra-android-m2repository
+        - chmod +x gradlew
+        - ANDROID_HOME=/usr/local/android-sdk-linux ./gradlew dependencies
+    cache_directories:
+        - /usr/local/android-sdk-linux/tools
+        - /usr/local/android-sdk-linux/build-tools/23.0.3
+test:
+    override:
+        - ./gradlew lint
+        - ./gradlew testDebugUnitTest
+        - ./gradlew jacocoTestDebugUnitTestReport
+    post:
+        - bash <(curl -s https://codecov.io/bash)
+
+--------------------------------------------------------------------------------------------------------
+import android.util.Log;
+
+class LogEngine {
+    private final String tag;
+
+    public LogEngine(final String tag) {
+        this.tag = tag;
+    }
+
+    public void log(final String message) {
+        Log.i(tag, message);
+    }
+
+    public void logError(final String message) {
+        Log.e(tag, message);
+    }
+
+    public void logSecurity(final String message) {
+        Log.w(tag, message);
+    }
+
+    public void logKeyEvent(final String message) {
+        Log.e(tag, message);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import android.bluetooth.BluetoothClass;
+
+public class BluetoothClassResolver {
+
+    public static String resolveDeviceClass(final int btClass) {
+        switch (btClass) {
+            case BluetoothClass.Device.AUDIO_VIDEO_CAMCORDER:
+                return "A/V, Camcorder";
+            case BluetoothClass.Device.AUDIO_VIDEO_CAR_AUDIO:
+                return "A/V, Car Audio";
+            case BluetoothClass.Device.AUDIO_VIDEO_HANDSFREE:
+                return "A/V, Handsfree";
+            case BluetoothClass.Device.AUDIO_VIDEO_HEADPHONES:
+                return "A/V, Headphones";
+            case BluetoothClass.Device.AUDIO_VIDEO_HIFI_AUDIO:
+                return "A/V, HiFi Audio";
+            case BluetoothClass.Device.AUDIO_VIDEO_LOUDSPEAKER:
+                return "A/V, Loudspeaker";
+            case BluetoothClass.Device.AUDIO_VIDEO_MICROPHONE:
+                return "A/V, Microphone";
+            case BluetoothClass.Device.AUDIO_VIDEO_PORTABLE_AUDIO:
+                return "A/V, Portable Audio";
+            case BluetoothClass.Device.AUDIO_VIDEO_SET_TOP_BOX:
+                return "A/V, Set Top Box";
+            case BluetoothClass.Device.AUDIO_VIDEO_UNCATEGORIZED:
+                return "A/V, Uncategorized";
+            case BluetoothClass.Device.AUDIO_VIDEO_VCR:
+                return "A/V, VCR";
+            case BluetoothClass.Device.AUDIO_VIDEO_VIDEO_CAMERA:
+                return "A/V, Video Camera";
+            case BluetoothClass.Device.AUDIO_VIDEO_VIDEO_CONFERENCING:
+                return "A/V, Video Conferencing";
+            case BluetoothClass.Device.AUDIO_VIDEO_VIDEO_DISPLAY_AND_LOUDSPEAKER:
+                return "A/V, Video Display and Loudspeaker";
+            case BluetoothClass.Device.AUDIO_VIDEO_VIDEO_GAMING_TOY:
+                return "A/V, Video Gaming Toy";
+            case BluetoothClass.Device.AUDIO_VIDEO_VIDEO_MONITOR:
+                return "A/V, Video Monitor";
+            case BluetoothClass.Device.AUDIO_VIDEO_WEARABLE_HEADSET:
+                return "A/V, Video Wearable Headset";
+            case BluetoothClass.Device.COMPUTER_DESKTOP:
+                return "Computer, Desktop";
+            case BluetoothClass.Device.COMPUTER_HANDHELD_PC_PDA:
+                return "Computer, Handheld PC/PDA";
+            case BluetoothClass.Device.COMPUTER_LAPTOP:
+                return "Computer, Laptop";
+            case BluetoothClass.Device.COMPUTER_PALM_SIZE_PC_PDA:
+                return "Computer, Palm Size PC/PDA";
+            case BluetoothClass.Device.COMPUTER_SERVER:
+                return "Computer, Server";
+            case BluetoothClass.Device.COMPUTER_UNCATEGORIZED:
+                return "Computer, Uncategorized";
+            case BluetoothClass.Device.COMPUTER_WEARABLE:
+                return "Computer, Wearable";
+            case BluetoothClass.Device.HEALTH_BLOOD_PRESSURE:
+                return "Health, Blood Pressure";
+            case BluetoothClass.Device.HEALTH_DATA_DISPLAY:
+                return "Health, Data Display";
+            case BluetoothClass.Device.HEALTH_GLUCOSE:
+                return "Health, Glucose";
+            case BluetoothClass.Device.HEALTH_PULSE_OXIMETER:
+                return "Health, Pulse Oximeter";
+            case BluetoothClass.Device.HEALTH_PULSE_RATE:
+                return "Health, Pulse Rate";
+            case BluetoothClass.Device.HEALTH_THERMOMETER:
+                return "Health, Thermometer";
+            case BluetoothClass.Device.HEALTH_UNCATEGORIZED:
+                return "Health, Uncategorized";
+            case BluetoothClass.Device.HEALTH_WEIGHING:
+                return "Health, Weighting";
+            case BluetoothClass.Device.PHONE_CELLULAR:
+                return "Phone, Cellular";
+            case BluetoothClass.Device.PHONE_CORDLESS:
+                return "Phone, Cordless";
+            case BluetoothClass.Device.PHONE_ISDN:
+                return "Phone, ISDN";
+            case BluetoothClass.Device.PHONE_MODEM_OR_GATEWAY:
+                return "Phone, Modem or Gateway";
+            case BluetoothClass.Device.PHONE_SMART:
+                return "Phone, Smart";
+            case BluetoothClass.Device.PHONE_UNCATEGORIZED:
+                return "Phone, Uncategorized";
+            case BluetoothClass.Device.TOY_CONTROLLER:
+                return "Toy, Controller";
+            case BluetoothClass.Device.TOY_DOLL_ACTION_FIGURE:
+                return "Toy, Doll/Action Figure";
+            case BluetoothClass.Device.TOY_GAME:
+                return "Toy, Game";
+            case BluetoothClass.Device.TOY_ROBOT:
+                return "Toy, Robot";
+            case BluetoothClass.Device.TOY_UNCATEGORIZED:
+                return "Toy, Uncategorized";
+            case BluetoothClass.Device.TOY_VEHICLE:
+                return "Toy, Vehicle";
+            case BluetoothClass.Device.WEARABLE_GLASSES:
+                return "Wearable, Glasses";
+            case BluetoothClass.Device.WEARABLE_HELMET:
+                return "Wearable, Helmet";
+            case BluetoothClass.Device.WEARABLE_JACKET:
+                return "Wearable, Jacket";
+            case BluetoothClass.Device.WEARABLE_PAGER:
+                return "Wearable, Pager";
+            case BluetoothClass.Device.WEARABLE_UNCATEGORIZED:
+                return "Wearable, Uncategorized";
+            case BluetoothClass.Device.WEARABLE_WRIST_WATCH:
+                return "Wearable, Wrist Watch";
+            default:
+                return "Unknown, Unknown (class=" + btClass + ")";
+        }
+    }
+
+    public static String resolveMajorDeviceClass(final int majorBtClass) {
+        switch (majorBtClass) {
+            case BluetoothClass.Device.Major.AUDIO_VIDEO:
+                return "Audio/ Video";
+            case BluetoothClass.Device.Major.COMPUTER:
+                return "Computer";
+            case BluetoothClass.Device.Major.HEALTH:
+                return "Health";
+            case BluetoothClass.Device.Major.IMAGING:
+                return "Imaging";
+            case BluetoothClass.Device.Major.MISC:
+                return "Misc";
+            case BluetoothClass.Device.Major.NETWORKING:
+                return "Networking";
+            case BluetoothClass.Device.Major.PERIPHERAL:
+                return "Peripheral";
+            case BluetoothClass.Device.Major.PHONE:
+                return "Phone";
+            case BluetoothClass.Device.Major.TOY:
+                return "Toy";
+            case BluetoothClass.Device.Major.UNCATEGORIZED:
+                return "Uncategorized";
+            case BluetoothClass.Device.Major.WEARABLE:
+                return "Wearable";
+            default:
+                return "Unknown (" +majorBtClass+ ")";
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.google.gson.annotations.SerializedName;
+
+import java.util.List;
+
+public class Settings {
+
+    @SerializedName("globalSettings")
+    private GlobalSettings globalSettings;
+    @SerializedName("commands")
+    private List<Command> commands;
+
+    public GlobalSettings getGlobalSettings() {
+        return globalSettings;
+    }
+
+    public List<Command> getCommands() {
+        return commands;
+    }
+}
+--------------------------------------------------------------------------------------------------------
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.stereotype.Component;
