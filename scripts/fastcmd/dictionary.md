@@ -24131,6 +24131,94 @@ public class Person {
     @Singular private final Map<String, LocalDate> awards;
 }
 --------------------------------------------------------------------------------------------------------
+@Configuration
+class ConnectionFactoryConfiguration {
+
+	@Bean
+	DatabaseClient databaseClient() {
+		return DatabaseClient.create(connectionFactory());
+	}
+
+	@Bean
+	public ConnectionFactory connectionFactory() {
+		MssqlConnectionConfiguration config = MssqlConnectionConfiguration.builder() //
+			.host("localhost")
+			.port(1434)
+			.database("pizza")
+			.username("test")
+			.password("test")
+			.build();
+		return new MssqlConnectionFactory(config);
+	}
+}
+--------------------------------------------------------------------------------------------------------
+@Repository
+public class ManualPizzaRepository {
+
+    private final ConnectionFactory connectionFactory;
+
+    public ManualPizzaRepository(ConnectionFactory connectionFactory) {
+        this.connectionFactory = connectionFactory;
+    }
+
+    Mono<Void> deleteById(Integer id) {
+        return this.connection()
+            .flatMapMany(c -> c.createStatement("delete from pizza where id = $1")
+                .bind("$1", id)
+                .execute())
+            .then();
+    }
+
+    Flux<Pizza> findAll() {
+        return this.connection()
+            .flatMapMany(connection ->
+                Flux.from(connection.createStatement("select * from pizza").execute())
+                    .flatMap(r ->
+                        r.map((row, rowMetadata) ->
+                            new Pizza(row.get("id", Integer.class), row.get("flavor", String.class)))));
+    }
+
+    Flux<Pizza> save(Pizza pizza) {
+        Flux<? extends Result> flux = this.connection().flatMapMany(conn -> conn.createStatement("insert into pizza (flavor) values ($1)")
+            .bind("$1", pizza.getFlavor())
+            .add()
+            .execute());
+
+        return flux.switchMap(x -> Flux.just(new Pizza(pizza.getId(), pizza.getFlavor())));
+    }
+
+    private Mono<Connection> connection() {
+        return Mono.from(this.connectionFactory.create());
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = {ConnectionFactoryConfiguration.class, ManualPizzaRepository.class})
+public class ReactiveSqlSqlserverApplicationTests {
+
+	@Autowired
+	ManualPizzaRepository pizzas;
+
+	@Autowired
+	DatabaseClient databaseClient;
+
+	@Test
+	public void testAllManual() {
+		Flux<Void> deleteAll = this.pizzas.findAll().flatMap(pizza -> this.pizzas.deleteById(pizza.getId()));
+		StepVerifier.create(deleteAll).expectNextCount(0).verifyComplete();
+
+		Flux<Pizza> savePizzas = Flux.just("Mozzarella", "Pepperoni", "Margherita")
+			.map(flavor -> new Pizza(null, flavor))
+			.flatMap(pizza -> this.pizzas.save(pizza));
+		StepVerifier.create(savePizzas).expectNextCount(3).verifyComplete();
+
+		Flux<Pizza> findAll = this.pizzas.findAll();
+		StepVerifier.create(findAll).expectNextCount(3).verifyComplete();
+
+	}
+}
+--------------------------------------------------------------------------------------------------------
 /**
  * @author Guillaume Smet
  */
