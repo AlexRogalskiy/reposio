@@ -22101,6 +22101,181 @@ public class BluetoothClassResolver {
     }
 }
 --------------------------------------------------------------------------------------------------------
+cat /etc/httpd/conf/httpd.conf | grep shirts | grep -v "#"
+--------------------------------------------------------------------------------------------------------
+
+    @ExceptionHandler({AccessDeniedException.class})
+    @ResponseBody
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    protected ResponseEntity<?> handle(final HttpServletRequest req, final AccessDeniedException ex) {
+        LOGGER.error(ex.getMessage());
+        String url = req.getRequestURI().substring(req.getContextPath().length());
+        return new ResponseEntity<>(new ExceptionEntity(url, ResponseStatusCode.FORBIDDEN, ex.getMessage()), HttpStatus.FORBIDDEN);
+    }
+--------------------------------------------------------------------------------------------------------
+https://habr.com/ru/post/438808/
+https://github.com/promoscow/modelmapper-demo
+
+   @PostConstruct
+    public void setupMapper() {
+        mapper.createTypeMap(Droid.class, DroidDto.class)
+                .addMappings(m -> m.skip(DroidDto::setUnicornId)).setPostConverter(toDtoConverter());
+        mapper.createTypeMap(DroidDto.class, Droid.class)
+                .addMappings(m -> m.skip(Droid::setUnicorn)).setPostConverter(toEntityConverter());
+    }
+--------------------------------------------------------------------------------------------------------
+String json = "{ \"color\" : \"Black\", \"type\" : \"BMW\" }";
+Map<String, Object> map 
+  = objectMapper.readValue(json, new TypeReference<Map<String,Object>>(){});
+  
+https://javainterviewpoint.com/jackson-json-example-objectmapper/
+--------------------------------------------------------------------------------------------------------
+    Converter<DogData, DogInfo> myConverter = new Converter<DogData, DogInfo>()
+    {
+        public DogInfo convert(MappingContext<DogData, DogInfo> context)
+        {
+            DogData s = context.getSource();
+            DogInfo d = context.getDestination();
+            d.setName(s.getName());
+            d.setLarge(s.getMass() > 25);
+            return d;
+        }
+    };
+
+    mm.addConverter(myConverter);
+	
+	   Converter<Integer, Boolean> convertMassToLarge = new Converter<Integer, Boolean>()
+    {
+        public Boolean convert(MappingContext<Integer, Boolean> context)
+        {
+            // If the dog weighs more than 25, then it must be large
+            return context.getSource() > 25;
+        }
+    };
+
+    PropertyMap<DogData, DogInfo> mymap = new PropertyMap<DogData, DogInfo>()
+    {
+        protected void configure()
+        {
+            // Note: this is not normal code. It is "EDSL" so don't get confused
+            map(source.getName()).setName(null);
+            using(convertMassToLarge).map(source.getMass()).setLarge(false);
+        }
+    };
+
+    mm.addMappings(mymap);
+--------------------------------------------------------------------------------------------------------
+@ApiImplicitParams({
+    @ApiImplicitParam(
+        name = "kambiTransaction",
+        value = "A JSON value representing a transaction. An example of the expected schema can be found down here. The fields marked with * means that they are required. See the schema of KambiTransaction for more information.",
+        required = true,
+        dataType = "String",
+        paramType = "body",
+        examples = @Example(value = {@ExampleProperty(mediaType = "application/json", value = "{foo: whatever, bar: whatever2}")}))})
+--------------------------------------------------------------------------------------------------------
+  /**
+   * This example demonstrates how ModelMapper automatically maps properties from Order to OrderDTO.
+   */
+  static void mapAutomatically() {
+    Order order = createOrder();
+    ModelMapper modelMapper = new ModelMapper();
+    OrderDTO orderDTO = modelMapper.map(order, OrderDTO.class);
+    assertOrdersEqual(order, orderDTO);
+  }
+
+  /**
+   * This example demonstrates how ModelMapper can be used to explicitly map properties from an
+   * Order to OrderDTO.
+   */
+  static void mapExplicitly() {
+    Order order = createOrder();
+    ModelMapper modelMapper = new ModelMapper();
+    modelMapper.addMappings(new PropertyMap<Order, OrderDTO>() {
+      @Override
+      protected void configure() {
+        map().setBillingStreet(source.getBillingAddress().getStreet());
+        map(source.billingAddress.getCity(), destination.billingCity);
+      }
+    });
+
+    OrderDTO orderDTO = modelMapper.map(order, OrderDTO.class);
+    assertOrdersEqual(order, orderDTO);
+  }
+--------------------------------------------------------------------------------------------------------
+@ApiModel(subTypes = {BalanceUpdate.class, UserMessage.class})
+class PushRequest {
+    @ApiModelProperty(value = "status", example = "push")
+    private final String status;;
+}
+@ApiParam(
+  value = "A JSON value representing a transaction. An example of the expected schema can be found down here. The fields marked with an * means that they are required.",
+  examples = @Example(value = 
+    @ExampleProperty(
+      mediaType = MediaType.APPLICATION_JSON,
+      value = "{foo: whatever, bar: whatever2}"
+    )
+  )
+)
+
+<dependency>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-swagger2</artifactId>
+            <version>3.0.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-swagger-ui</artifactId>
+            <version>3.0.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-spring-webmvc</artifactId>
+            <version>3.0.0-SNAPSHOT</version>
+        </dependency>
+--------------------------------------------------------------------------------------------------------
+server:
+  port: 5555
+  servlet:
+      context-path: /xxxx
+  tomcat:
+      remote-ip-header: x-forward-for
+      uri-encoding: UTF-8
+      max-threads: 1000
+      max-http-header-size: 8096
+ ———————————————— 
+版权声明：本文为CSDN博主「Moshow郑锴」的原创文章，遵循CC 4.0 by-sa版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/moshowgame/article/details/82597326
+--------------------------------------------------------------------------------------------------------
+PRAGMA foreign_keys = "1";
+SELECT type,name,sql,tbl_name,'0' AS temp FROM sqlite_master UNION SELECT type,name,sql,tbl_name,'1' AS temp FROM sqlite_temp_master;
+PRAGMA encoding
+SELECT COUNT(*) FROM (SELECT `_rowid_`,* FROM `android_metadata` ORDER BY `_rowid_` ASC);
+SELECT `_rowid_`,* FROM `android_metadata` ORDER BY `_rowid_` ASC LIMIT 0, 50000;
+SELECT COUNT(*) FROM (SELECT `_rowid_`,* FROM `android_metadata` ORDER BY `_rowid_` ASC);
+SELECT `_rowid_`,* FROM `android_metadata` ORDER BY `_rowid_` ASC LIMIT 0, 50000;
+SELECT COUNT(*) FROM (SELECT `_rowid_`,* FROM `android_metadata` ORDER BY `_rowid_` ASC);
+SELECT `_rowid_`,* FROM `android_metadata` ORDER BY `_rowid_` ASC LIMIT 0, 50000;
+SELECT COUNT(*) FROM (SELECT `_rowid_`,* FROM `android_metadata` ORDER BY `_rowid_` ASC);
+SELECT `_rowid_`,* FROM `android_metadata` ORDER BY `_rowid_` ASC LIMIT 0, 50000;
+SELECT COUNT(*) FROM (SELECT `_rowid_`,* FROM `android_metadata` ORDER BY `_rowid_` ASC);
+SELECT `_rowid_`,* FROM `android_metadata` ORDER BY `_rowid_` ASC LIMIT 0, 50000;
+SELECT COUNT(*) FROM (SELECT `_rowid_`,* FROM `android_metadata` ORDER BY `_rowid_` ASC);
+SELECT `_rowid_`,* FROM `android_metadata` ORDER BY `_rowid_` ASC LIMIT 0, 50000;
+SELECT COUNT(*) FROM (SELECT `_rowid_`,* FROM `elements` ORDER BY `_rowid_` ASC);
+SELECT `_rowid_`,* FROM `elements` ORDER BY `_rowid_` ASC LIMIT 0, 50000;
+SELECT COUNT(*) FROM (SELECT `_rowid_`,* FROM `elements` ORDER BY `_rowid_` ASC);
+SELECT `_rowid_`,* FROM `elements` ORDER BY `_rowid_` ASC LIMIT 0, 50000;
+SELECT COUNT(*) FROM (SELECT `_rowid_`,* FROM `sqlite_sequence` ORDER BY `_rowid_` ASC);
+SELECT `_rowid_`,* FROM `sqlite_sequence` ORDER BY `_rowid_` ASC LIMIT 0, 50000;
+SELECT COUNT(*) FROM (SELECT `_rowid_`,* FROM `sqlite_sequence` ORDER BY `_rowid_` ASC);
+SELECT `_rowid_`,* FROM `sqlite_sequence` ORDER BY `_rowid_` ASC LIMIT 0, 50000;
+SELECT COUNT(*) FROM (SELECT `_rowid_`,* FROM `android_metadata` ORDER BY `_rowid_` ASC);
+SELECT `_rowid_`,* FROM `android_metadata` ORDER BY `_rowid_` ASC LIMIT 0, 50000;
+SELECT COUNT(*) FROM (SELECT `_rowid_`,* FROM `android_metadata` ORDER BY `_rowid_` ASC);
+SELECT `_rowid_`,* FROM `android_metadata` ORDER BY `_rowid_` ASC LIMIT 0, 50000;
+
+--------------------------------------------------------------------------------------------------------
 import java.io.File;
 
 public class JarDetails {
