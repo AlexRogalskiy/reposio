@@ -22113,6 +22113,598 @@ cat /etc/httpd/conf/httpd.conf | grep shirts | grep -v "#"
         return new ResponseEntity<>(new ExceptionEntity(url, ResponseStatusCode.FORBIDDEN, ex.getMessage()), HttpStatus.FORBIDDEN);
     }
 --------------------------------------------------------------------------------------------------------
+@GET
+@Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON, MediaType.APPLICATION_FORM_URLENCODED })
+@Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON, MediaType.APPLICATION_FORM_URLENCODED })
+@ApiOperation(value = "Get all ServiceConfigs", response = ServiceConfigResultsModel.class)
+@ApiResponses(value = {
+		@ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Returns a list of ServiceConfig", response = ServiceConfigResultsModel.class),
+		@ApiResponse(code = HttpURLConnection.HTTP_UNAUTHORIZED, message = "Unauthorized", response = ExceptionModel.class),
+		@ApiResponse(code = HttpURLConnection.HTTP_NOT_FOUND, message = "Not found", response = ExceptionModel.class),
+		@ApiResponse(code = HttpURLConnection.HTTP_FORBIDDEN, message = "Access denied", response = ExceptionModel.class) })
+public Response getServiceConfigs(@Context HttpServletRequest request, @Context HttpHeaders header,
+		@Context Company company, @Context Locale locale, @Context User user,
+		@Context ServiceContext serviceContext,
+		@ApiParam(value = "query params for search") @BeanParam ServiceConfigSearchModel search);
+--------------------------------------------------------------------------------------------------------
+
+import com.springio.store.domain.User;
+import com.springio.store.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * Authenticate a user from the database.
+ */
+@Component("userDetailsService")
+public class DomainUserDetailsService implements UserDetailsService {
+
+    private final Logger log = LoggerFactory.getLogger(DomainUserDetailsService.class);
+
+    private final UserRepository userRepository;
+
+    public DomainUserDetailsService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    @Override
+    @Transactional
+    public UserDetails loadUserByUsername(final String login) {
+        log.debug("Authenticating {}", login);
+        String lowercaseLogin = login.toLowerCase(Locale.ENGLISH);
+        Optional<User> userFromDatabase = userRepository.findOneWithAuthoritiesByLogin(lowercaseLogin);
+        return userFromDatabase.map(user -> {
+            if (!user.getActivated()) {
+                throw new UserNotActivatedException("User " + lowercaseLogin + " was not activated");
+            }
+            List<GrantedAuthority> grantedAuthorities = user.getAuthorities().stream()
+                    .map(authority -> new SimpleGrantedAuthority(authority.getName()))
+                .collect(Collectors.toList());
+            return new org.springframework.security.core.userdetails.User(lowercaseLogin,
+                user.getPassword(),
+                grantedAuthorities);
+        }).orElseThrow(() -> new UsernameNotFoundException("User " + lowercaseLogin + " was not found in the " +
+        "database"));
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.security.config.annotation.SecurityConfigurerAdapter;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.DefaultSecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+public class JWTConfigurer extends SecurityConfigurerAdapter<DefaultSecurityFilterChain, HttpSecurity> {
+
+    public static final String AUTHORIZATION_HEADER = "Authorization";
+
+    public static final String AUTHORIZATION_TOKEN = "access_token";
+
+    private TokenProvider tokenProvider;
+
+    public JWTConfigurer(TokenProvider tokenProvider) {
+        this.tokenProvider = tokenProvider;
+    }
+
+    @Override
+    public void configure(HttpSecurity http) throws Exception {
+        JWTFilter customFilter = new JWTFilter(tokenProvider);
+        http.addFilterBefore(customFilter, UsernamePasswordAuthenticationFilter.class);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.util.StringUtils;
+import org.springframework.web.filter.GenericFilterBean;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+
+/**
+ * Filters incoming requests and installs a Spring Security principal if a header corresponding to a valid user is
+ * found.
+ */
+public class JWTFilter extends GenericFilterBean {
+
+    private TokenProvider tokenProvider;
+
+    public JWTFilter(TokenProvider tokenProvider) {
+        this.tokenProvider = tokenProvider;
+    }
+
+    @Override
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
+        throws IOException, ServletException {
+        HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
+        String jwt = resolveToken(httpServletRequest);
+        if (StringUtils.hasText(jwt) && this.tokenProvider.validateToken(jwt)) {
+            Authentication authentication = this.tokenProvider.getAuthentication(jwt);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+        }
+        filterChain.doFilter(servletRequest, servletResponse);
+    }
+
+    private String resolveToken(HttpServletRequest request){
+        String bearerToken = request.getHeader(JWTConfigurer.AUTHORIZATION_HEADER);
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7, bearerToken.length());
+        }
+        String jwt = request.getParameter(JWTConfigurer.AUTHORIZATION_TOKEN);
+        if (StringUtils.hasText(jwt)) {
+            return jwt;
+        }
+        return null;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+package com.springio.store.config.audit;
+
+import com.springio.store.domain.PersistentAuditEvent;
+
+import org.springframework.boot.actuate.audit.AuditEvent;
+import org.springframework.security.web.authentication.WebAuthenticationDetails;
+import org.springframework.stereotype.Component;
+
+import java.util.*;
+
+@Component
+public class AuditEventConverter {
+
+    /**
+     * Convert a list of PersistentAuditEvent to a list of AuditEvent
+     *
+     * @param persistentAuditEvents the list to convert
+     * @return the converted list.
+     */
+    public List<AuditEvent> convertToAuditEvent(Iterable<PersistentAuditEvent> persistentAuditEvents) {
+        if (persistentAuditEvents == null) {
+            return Collections.emptyList();
+        }
+        List<AuditEvent> auditEvents = new ArrayList<>();
+        for (PersistentAuditEvent persistentAuditEvent : persistentAuditEvents) {
+            auditEvents.add(convertToAuditEvent(persistentAuditEvent));
+        }
+        return auditEvents;
+    }
+
+    /**
+     * Convert a PersistentAuditEvent to an AuditEvent
+     *
+     * @param persistentAuditEvent the event to convert
+     * @return the converted list.
+     */
+    public AuditEvent convertToAuditEvent(PersistentAuditEvent persistentAuditEvent) {
+        return new AuditEvent(Date.from(persistentAuditEvent.getAuditEventDate()), persistentAuditEvent.getPrincipal(),
+            persistentAuditEvent.getAuditEventType(), convertDataToObjects(persistentAuditEvent.getData()));
+    }
+
+    /**
+     * Internal conversion. This is needed to support the current SpringBoot actuator AuditEventRepository interface
+     *
+     * @param data the data to convert
+     * @return a map of String, Object
+     */
+    public Map<String, Object> convertDataToObjects(Map<String, String> data) {
+        Map<String, Object> results = new HashMap<>();
+
+        if (data != null) {
+            for (Map.Entry<String, String> entry : data.entrySet()) {
+                results.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return results;
+    }
+
+    /**
+     * Internal conversion. This method will allow to save additional data.
+     * By default, it will save the object as string
+     *
+     * @param data the data to convert
+     * @return a map of String, String
+     */
+    public Map<String, String> convertDataToStrings(Map<String, Object> data) {
+        Map<String, String> results = new HashMap<>();
+
+        if (data != null) {
+            for (Map.Entry<String, Object> entry : data.entrySet()) {
+                Object object = entry.getValue();
+
+                // Extract the data that will be saved.
+                if (object instanceof WebAuthenticationDetails) {
+                    WebAuthenticationDetails authenticationDetails = (WebAuthenticationDetails) object;
+                    results.put("remoteAddress", authenticationDetails.getRemoteAddress());
+                    results.put("sessionId", authenticationDetails.getSessionId());
+                } else if (object != null) {
+                    results.put(entry.getKey(), object.toString());
+                } else {
+                    results.put(entry.getKey(), "null");
+                }
+            }
+        }
+
+        return results;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+<bean id="sessionFactory" class="org.springframework.orm.hibernate4.LocalSessionFactoryBean" destroy-method="destroy">
+    <property name="dataSource" ref="dataSource"/>
+    <property name="configLocation" value="classpath:hibernate.cfg.xml"/>
+    <property name="hibernateProperties">
+        <props>
+            <prop key="hibernate.dialect">${hibernate.dialect}</prop>
+            <prop key="hibernate.query.substitutions">true 'Y', false 'N'</prop>
+            <prop key="hibernate.cache.use_second_level_cache">true</prop>
+            <prop key="hibernate.cache.provider_class">org.hibernate.cache.EhCacheProvider</prop>
+            <!-- Hibernate Search index directory -->
+            <prop key="hibernate.search.default.indexBase">${app.search.index.basedir}</prop>
+        </props>
+        <!-- Turn batching off for better error messages under PostgreSQL -->
+        <!-- hibernate.jdbc.batch_size=0 -->
+    </property>
+</bean>
+--------------------------------------------------------------------------------------------------------
+# ===================================================================
+# Spring Boot configuration for the "dev" profile.
+#
+# This configuration overrides the application.yml file.
+#
+# More information on profiles: https://www.jhipster.tech/profiles/
+# More information on configuration properties: https://www.jhipster.tech/common-application-properties/
+# ===================================================================
+
+# ===================================================================
+# Standard Spring Boot properties.
+# Full reference is available at:
+# http://docs.spring.io/spring-boot/docs/current/reference/html/common-application-properties.html
+# ===================================================================
+
+logging:
+  level:
+    ROOT: DEBUG
+    io.github.jhipster: DEBUG
+    com.kekse.mystaff: DEBUG
+
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    service-url:
+      defaultZone: http://admin:${jhipster.registry.password}@${DEV_REGISTRY_ADDRESS}:${DEV_REGISTRY_PORT}/eureka/
+
+spring:
+  elasticsearch:
+    rest:
+      uris: http://localhost:9200
+  profiles:
+    active: dev
+    include:
+      - swagger
+      # Uncomment to activate TLS for the dev profile
+      #- tls
+  devtools:
+    restart:
+      enabled: true
+    livereload:
+      enabled: false # we use Webpack dev server + BrowserSync for livereload
+  jackson:
+    serialization:
+      indent-output: true
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    url: jdbc:mysql://${DEV_DB_ADDRESS}:${DEV_DB_PORT}/UserAuthorityAgent600?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&useLegacyDatetimeCode=false&serverTimezone=UTC
+    username: ${DEV_DB_USERNAME}
+    password: ${DEV_DB_PASSWORD}
+    hikari:
+      poolName: Hikari
+      auto-commit: false
+      data-source-properties:
+        cachePrepStmts: true
+        prepStmtCacheSize: 250
+        prepStmtCacheSqlLimit: 2048
+        useServerPrepStmts: true
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
+    database: MYSQL
+    show-sql: true
+    properties:
+      hibernate.id.new_generator_mappings: true
+      hibernate.connection.provider_disables_autocommit: true
+      hibernate.cache.use_second_level_cache: true
+      hibernate.cache.use_query_cache: false
+      hibernate.generate_statistics: false
+      hibernate.cache.region.factory_class: com.hazelcast.hibernate.HazelcastCacheRegionFactory
+      hibernate.cache.hazelcast.instance_name: UserAuthorityAgent
+      hibernate.cache.use_minimal_puts: true
+      hibernate.cache.hazelcast.use_lite_member: true
+  data:
+    elasticsearch:
+      properties:
+        path:
+          home: target/elasticsearch
+  liquibase:
+    # Remove 'faker' if you do not want the sample data to be loaded automatically
+    contexts: dev, faker
+  mail:
+    host: ${DEV_MAIL_HOST}
+    port: ${DEV_MAIL_PORT}
+    username: ${DEV_MAIL_USERNAME}
+    password: ${DEV_MAIL_PASSWORD}
+    protocol: ${DEV_MAIL_PROTOCOL}
+    tls: true
+    properties.mail.smtp:
+      auth: true
+      starttls.enable: true
+      ssl.trust: ${DEV_MAIL_SSL_TRUST}
+  messages:
+    cache-duration: PT1S # 1 second, see the ISO 8601 standard
+  thymeleaf:
+    cache: false
+  sleuth:
+    sampler:
+      probability: 1 # report 100% of traces
+  zipkin: # Use the "zipkin" Maven profile to have the Spring Cloud Zipkin dependencies
+    base-url: http://localhost:9411
+    enabled: false
+    locator:
+      discovery:
+        enabled: true
+
+server:
+  port: 9999
+
+# ===================================================================
+# JHipster specific properties
+#
+# Full reference is available at: https://www.jhipster.tech/common-application-properties/
+# ===================================================================
+
+jhipster:
+  cache: # Cache configuration
+    hazelcast: # Hazelcast distributed cache
+      time-to-live-seconds: 3600
+      backup-count: 1
+      management-center: # Full reference is available at: http://docs.hazelcast.org/docs/management-center/3.9/manual/html/Deploying_and_Starting.html
+        enabled: false
+        update-interval: 3
+        url: http://localhost:8180/mancenter
+  # CORS is only enabled by default with the "dev" profile, so BrowserSync can access the API
+  cors:
+    allowed-origins: '*'
+    allowed-methods: '*'
+    allowed-headers: '*'
+    exposed-headers: 'Authorization,Link,X-Total-Count'
+    allow-credentials: true
+    max-age: 1800
+  security:
+    client-authorization:
+      client-id: internal
+      client-secret: internal
+  mail: # specific JHipster mail property, for standard properties see MailProperties
+    from: UserAuthorityAgent@localhost
+    base-url: http://127.0.0.1:8080
+  metrics:
+    logs: # Reports metrics in the logs
+      enabled: false
+      report-frequency: 60 # in seconds
+  logging:
+    use-json-format: false # By default, logs are not in Json format
+    logstash: # Forward logs to logstash over a socket, used by LoggingConfiguration
+      enabled: false
+      host: localhost
+      port: 5000
+      queue-size: 512
+uaa:
+  key-store:
+    name: config/tls/keystore.p12
+    password: password
+    alias: selfsigned
+  web-client-configuration:
+    # Access Token is valid for 5 mins
+    access-token-validity-in-seconds: 300
+    # Refresh Token is valid for 7 days
+    refresh-token-validity-in-seconds-for-remember-me: 604800
+    client-id: web_app
+    secret: changeit
+# ===================================================================
+# Application specific properties
+# Add your own application properties here, see the ApplicationProperties class
+# to have type-safe configuration, like in the JHipsterProperties above
+#
+# More documentation is available at:
+# https://www.jhipster.tech/common-application-properties/
+# ===================================================================
+
+# application:
+
+--------------------------------------------------------------------------------------------------------
+@SpringBootApplication(exclude = {        
+    ElasticSearchRestHealthIndicatorAutoConfiguration.class
+})
+public class YourApplication
+
+management.health.elasticsearch.enabled: false
+--------------------------------------------------------------------------------------------------------
+spring.elasticsearch.jest.uris=http://search.example.com:9200
+spring.elasticsearch.jest.read-timeout=10000
+spring.elasticsearch.jest.username=user
+spring.elasticsearch.jest.password=secret
+--------------------------------------------------------------------------------------------------------
+import io.github.jhipster.config.JHipsterConstants;
+import io.github.jhipster.config.liquibase.AsyncSpringLiquibase;
+
+import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
+import liquibase.integration.spring.SpringLiquibase;
+import org.h2.tools.Server;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.liquibase.LiquibaseProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.core.env.Environment;
+import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
+import org.springframework.core.task.TaskExecutor;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+
+import javax.sql.DataSource;
+import java.sql.SQLException;
+
+@Configuration
+@EnableJpaRepositories("com.springio.store.repository")
+@EnableJpaAuditing(auditorAwareRef = "springSecurityAuditorAware")
+@EnableTransactionManagement
+@EnableElasticsearchRepositories("com.springio.store.repository.search")
+public class DatabaseConfiguration {
+
+    private final Logger log = LoggerFactory.getLogger(DatabaseConfiguration.class);
+
+    private final Environment env;
+
+    public DatabaseConfiguration(Environment env) {
+        this.env = env;
+    }
+
+    /**
+     * Open the TCP port for the H2 database, so it is available remotely.
+     *
+     * @return the H2 database TCP server
+     * @throws SQLException if the server failed to start
+     */
+    @Bean(initMethod = "start", destroyMethod = "stop")
+    @Profile(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT)
+    public Server h2TCPServer() throws SQLException {
+        return Server.createTcpServer("-tcp","-tcpAllowOthers");
+    }
+
+    @Bean
+    public SpringLiquibase liquibase(@Qualifier("taskExecutor") TaskExecutor taskExecutor,
+            DataSource dataSource, LiquibaseProperties liquibaseProperties) {
+
+        // Use liquibase.integration.spring.SpringLiquibase if you don't want Liquibase to start asynchronously
+        SpringLiquibase liquibase = new AsyncSpringLiquibase(taskExecutor, env);
+        liquibase.setDataSource(dataSource);
+        liquibase.setChangeLog("classpath:config/liquibase/master.xml");
+        liquibase.setContexts(liquibaseProperties.getContexts());
+        liquibase.setDefaultSchema(liquibaseProperties.getDefaultSchema());
+        liquibase.setDropFirst(liquibaseProperties.isDropFirst());
+        if (env.acceptsProfiles(JHipsterConstants.SPRING_PROFILE_NO_LIQUIBASE)) {
+            liquibase.setShouldRun(false);
+        } else {
+            liquibase.setShouldRun(liquibaseProperties.isEnabled());
+            log.debug("Configuring Liquibase");
+        }
+        return liquibase;
+    }
+
+    @Bean
+    public Hibernate5Module hibernate5Module() {
+        return new Hibernate5Module();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@ConfigurationProperties(prefix = "jhipster", ignoreUnknownFields = false)
+@PropertySources({
+    @PropertySource(value = "classpath:git.properties", ignoreResourceNotFound = true),
+    @PropertySource(value = "classpath:META-INF/build-info.properties", ignoreResourceNotFound = true)
+})
+--------------------------------------------------------------------------------------------------------
+    /**
+     * POST  /products : Create a new product.
+     *
+     * @param product the product to create
+     * @return the ResponseEntity with status 201 (Created) and with body the new product, or with status 400 (Bad Request) if the product has already an ID
+     * @throws URISyntaxException if the Location URI syntax is incorrect
+     */
+    @PostMapping("/products")
+    @Timed
+    public ResponseEntity<Product> createProduct(@RequestBody Product product) throws URISyntaxException {
+        log.debug("REST request to save Product : {}", product);
+        if (product.getId() != null) {
+            return ResponseEntity.badRequest().headers(HeaderUtil.createFailureAlert(ENTITY_NAME, "idexists", "A new product cannot already have an ID")).body(null);
+        }
+        Product result = productService.save(product);
+        return ResponseEntity.created(new URI("/api/products/" + result.getId()))
+            .headers(HeaderUtil.createEntityCreationAlert(ENTITY_NAME, result.getId().toString()))
+            .body(result);
+    }
+--------------------------------------------------------------------------------------------------------
+import com.springio.store.service.SocialService;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.springframework.social.connect.Connection;
+import org.springframework.social.connect.web.ProviderSignInUtils;
+import org.springframework.social.support.URIBuilder;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.view.RedirectView;
+
+@RestController
+@RequestMapping("/social")
+public class SocialController {
+
+    private final Logger log = LoggerFactory.getLogger(SocialController.class);
+
+    private final SocialService socialService;
+
+    private final ProviderSignInUtils providerSignInUtils;
+
+    public SocialController(SocialService socialService, ProviderSignInUtils providerSignInUtils) {
+        this.socialService = socialService;
+        this.providerSignInUtils = providerSignInUtils;
+    }
+
+    @GetMapping("/signup")
+    public RedirectView signUp(WebRequest webRequest, @CookieValue(name = "NG_TRANSLATE_LANG_KEY", required = false, defaultValue = "\"en\"") String langKey) {
+        try {
+            Connection<?> connection = providerSignInUtils.getConnectionFromSession(webRequest);
+            socialService.createSocialUser(connection, langKey.replace("\"", ""));
+            return new RedirectView(URIBuilder.fromUri("/#/social-register/" + connection.getKey().getProviderId())
+                .queryParam("success", "true")
+                .build().toString(), true);
+        } catch (Exception e) {
+            log.error("Exception creating social user: ", e);
+            return new RedirectView(URIBuilder.fromUri("/#/social-register/no-provider")
+                .queryParam("success", "false")
+                .build().toString(), true);
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@GET
+
+@Consumes({ "application/json" })
+@Produces({ "application/json" })
+@ApiOperation(value = "", notes = "Retrieves Multi-Target Application operations ", response = Operation.class, responseContainer = "List", authorizations = {
+    @Authorization(value = "oauth2", scopes = {
+        
+    })
+}, tags={  })
+@ApiResponses(value = { 
+    @ApiResponse(code = 200, message = "OK", response = Operation.class, responseContainer = "List") })
+public Response getMtaOperations( @ApiParam(value = "")  @QueryParam("last") Integer last,  @ApiParam(value = "")  @QueryParam("state") List<String> state) {
+    return delegate.getMtaOperations(last, state, securityContext, spaceGuid);
+}
+--------------------------------------------------------------------------------------------------------
 https://habr.com/ru/post/438808/
 https://github.com/promoscow/modelmapper-demo
 
