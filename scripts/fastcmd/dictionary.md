@@ -25265,6 +25265,16 @@ public class PetstoreLocal {
 	}
 }
 --------------------------------------------------------------------------------------------------------
+git branch -D PBA-4653
+https://global-hotspot.ru/wi-fi-targeting-reklamy/
+https://target.my.com/
+--------------------------------------------------------------------------------------------------------
+@RunWith(SpringJUnit4ClassRunner.class) 
+@ContextConfiguration(classes = AppConfig.class)
+@WebAppConfiguration
+public class SpringTest {
+}
+--------------------------------------------------------------------------------------------------------
 @Configuration
 @ConditionalOnClass(Flyway.class)
 @ConditionalOnBean(DataSource.class)
@@ -25277,6 +25287,502 @@ public class FlywayAutoConfiguration {
     @EnableConfigurationProperties(FlywayProperties.class)
     @Import(FlywayJpaDependencyConfiguration.class)
     public static class FlywayConfiguration {
+--------------------------------------------------------------------------------------------------------
+
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+package com.spring.configuration;
+ 
+import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.*;
+import org.springframework.core.env.Environment;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.orm.hibernate5.HibernateTransactionManager;
+import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+import org.springframework.web.servlet.view.InternalResourceViewResolver;
+import org.springframework.web.servlet.view.JstlView;
+ 
+import javax.sql.DataSource;
+import java.util.Properties;
+ 
+@Configuration
+@EnableWebMvc  //здесь
+@EnableTransactionManagement
+@ComponentScan(
+        basePackages = { "com.spring" },
+        excludeFilters = { @ComponentScan.Filter(
+                type = FilterType.ANNOTATION,
+                value = Configuration.class)}
+)
+@PropertySource(value = {"classpath:application.properties"})
+public class WebConfiguration extends WebMvcConfigurerAdapter {
+    @Autowired
+    private Environment environment;
+ 
+    @Override  //ну или здесь
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/resources/**").addResourceLocations("/resources/");
+    }
+ 
+    @Bean
+    public InternalResourceViewResolver setupViewResolver() {
+        InternalResourceViewResolver resolver = new InternalResourceViewResolver();
+        resolver.setPrefix("/WEB-INF/views/");
+        resolver.setSuffix(".jsp");
+        resolver.setViewClass(JstlView.class);
+ 
+        return resolver;
+    }
+ 
+    @Bean
+    public LocalSessionFactoryBean sessionFactory() {
+        LocalSessionFactoryBean sessionFactory = new LocalSessionFactoryBean();
+        sessionFactory.setDataSource(dataSource());
+        sessionFactory.setPackagesToScan("com.spring.model");  //new String[] { "com.spring.model" }
+        sessionFactory.setHibernateProperties(hibernateProperties());
+        return sessionFactory;
+    }
+ 
+    @Bean
+    public DataSource dataSource() {
+        DriverManagerDataSource dataSource = new DriverManagerDataSource();
+        dataSource.setDriverClassName(environment.getRequiredProperty("jdbc.driverClassName"));
+        dataSource.setUrl(environment.getRequiredProperty("jdbc.url"));
+        dataSource.setUsername(environment.getRequiredProperty("jdbc.username"));
+        dataSource.setPassword(environment.getRequiredProperty("jdbc.password"));
+        return dataSource;
+    }
+ 
+    private Properties hibernateProperties() {
+        Properties properties = new Properties();
+        properties.put("hibernate.dialect", environment.getRequiredProperty("hibernate.dialect"));
+        properties.put("hibernate.show_sql", environment.getRequiredProperty("hibernate.show_sql"));
+        properties.put("hibernate.format_sql", environment.getRequiredProperty("hibernate.format_sql"));
+        properties.put("hibernate.hbm2ddl.auto", "update");
+        properties.put(
+                "log4j.logger.org.hibernate.SQL",
+                environment.getRequiredProperty("log4j.logger.org.hibernate.SQL")
+        );
+        properties.put(
+                "log4j.logger.org.hibernate.type",
+                environment.getRequiredProperty("log4j.logger.org.hibernate.type")
+        );
+        return properties;
+    }
+ 
+    @Bean
+    @Autowired
+    public HibernateTransactionManager transactionManager(SessionFactory s) {
+        HibernateTransactionManager txManager = new HibernateTransactionManager();
+        txManager.setSessionFactory(s);
+        return txManager;
+    }
+}
+pom.xml
+XML
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <packaging>war</packaging>
+ 
+    <groupId>com</groupId>
+    <artifactId>Traveler</artifactId>
+    <version>1.0</version>
+ 
+    <name>Traveler</name>
+ 
+    <properties>
+        <springframework.version>4.3.8.RELEASE</springframework.version>
+        <hibernate.version>5.2.9.Final</hibernate.version>
+    </properties>
+ 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <configuration>
+                    <failOnMissingWebXml>false</failOnMissingWebXml>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+ 
+    <dependencies>
+        <!-- Servlet -->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>4.0.0-b05</version>
+        </dependency>
+ 
+        <!-- JSTL -->
+        <dependency>
+            <groupId>jstl</groupId>
+            <artifactId>jstl</artifactId>
+            <version>1.2</version>
+        </dependency>
+ 
+        <!-- Spring -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
+            <version>${springframework.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-orm</artifactId>
+            <version>${springframework.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+            <version>${springframework.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+            <version>${springframework.version}</version>
+        </dependency>
+ 
+        <!-- Hibernate -->
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-core</artifactId>
+            <version>${hibernate.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-entitymanager</artifactId>
+            <version>${hibernate.version}</version>
+        </dependency>
+ 
+        <!-- MySQL -->
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>5.1.40</version>
+        </dependency>
+    </dependencies>
+ 
+ 
+ 
+</project>
+
+package com.spring.controller;
+ 
+import com.spring.configuration.WebConfiguration;
+import com.spring.model.Place;
+import com.spring.model.User;
+import com.spring.service.PlaceService;
+import com.spring.service.UserService;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.ModelAndView;
+ 
+import java.util.ArrayList;
+ 
+@Controller
+public class HomeController {
+    @RequestMapping(value = "/", method = RequestMethod.GET)
+    public ModelAndView home() {
+        ModelAndView modelAndView = new ModelAndView();
+        modelAndView.addObject("user", new User());
+        modelAndView.setViewName("index");
+ 
+        return modelAndView;
+    }
+ 
+    @RequestMapping(value = "/reg", method = RequestMethod.POST)
+    public ModelAndView reg(@ModelAttribute("user") User user) {
+        AbstractApplicationContext context = new AnnotationConfigApplicationContext(WebConfiguration.class);
+        ModelAndView modelAndView = new ModelAndView();
+        UserService service = (UserService) context.getBean("userService");
+ 
+        modelAndView.setViewName("registration");
+        modelAndView.addObject("user", user);
+        service.saveUser(user);
+ 
+        context.close();
+        return modelAndView;
+    }
+ 
+    @RequestMapping(value = "/reg", method = RequestMethod.GET)
+    public ModelAndView authorization(@ModelAttribute("user") User user) {
+        AbstractApplicationContext context = new AnnotationConfigApplicationContext(WebConfiguration.class);
+        ModelAndView modelAndView = new ModelAndView();
+        UserService service = (UserService) context.getBean("userService");
+ 
+        modelAndView.addObject("user", user);
+ 
+        if (service.findByLogin(user.getLogin()) != null)
+        {
+            if (service.findByLogin(user.getLogin()).getPassword().equals(user.getPassword()))
+                modelAndView.setViewName("authorization");
+            else
+                modelAndView.setViewName("authorizeFail");
+        }
+        else
+        modelAndView.setViewName("authorizeFail");
+ 
+        context.close();
+        return modelAndView;
+    }
+ 
+    @RequestMapping(value = "/list", method = RequestMethod.GET)
+    public ModelAndView list(@ModelAttribute("user") User user, @ModelAttribute("list") ArrayList<Place> list) {
+        AbstractApplicationContext context = new AnnotationConfigApplicationContext(WebConfiguration.class);
+        PlaceService service = (PlaceService) context.getBean("placeService");
+ 
+        ModelAndView modelAndView = new ModelAndView();
+        modelAndView.addObject("user", user);
+        list = (ArrayList<Place>) service.findAllPlaces();
+        modelAndView.addObject("list", list);
+        modelAndView.setViewName("list");
+ 
+        context.close();
+        return modelAndView;
+    }
+}
+Проект на Git
+
+
+Помогите пожалуйста, сильно не критикуйте, мой первый web проект и я много чего не знаю(
+Ответ: Это мой первый пр
+--------------------------------------------------------------------------------------------------------
+Example 24. Example performance option configuration
+hibernate.search.Animals.2.indexwriter.max_merge_docs = 10
+hibernate.search.Animals.2.indexwriter.merge_factor = 20
+hibernate.search.Animals.2.indexwriter.max_buffered_docs = default
+hibernate.search.default.indexwriter.max_merge_docs = 100
+hibernate.search.default.indexwriter.ram_buffer_size = 64
+The configuration in Example performance option configuration will result in these settings applied on the second shard of the Animal index:
+
+max_merge_docs = 10
+
+merge_factor = 20
+
+ram_buffer_size = 64MB
+
+max_buffered_docs = Lucene default
+--------------------------------------------------------------------------------------------------------
+public class BigDecimalNumericFieldBridge implements TwoWayFieldBridge {
+
+    private static final BigDecimal storeFactor = BigDecimal.valueOf( 100 );
+
+    @Override
+    public void set(String name, Object value, Document document, LuceneOptions luceneOptions) {
+        if ( value != null ) {
+            BigDecimal decimalValue = (BigDecimal) value;
+            Long indexedValue = decimalValue.multiply( storeFactor ).longValue();
+            luceneOptions.addNumericFieldToDocument( name, indexedValue, document );
+        }
+    }
+
+    @Override
+    public Object get(String name, Document document) {
+        String fromLucene = document.get( name );
+        BigDecimal storedBigDecimal = new BigDecimal( fromLucene );
+        return storedBigDecimal.divide( storeFactor );
+    }
+
+    @Override
+    public String objectToString(Object object) {
+        return object.toString();
+    }
+}
+
+https://docs.jboss.org/hibernate/stable/search/reference/en-US/html_single/#_configuration
 --------------------------------------------------------------------------------------------------------
 import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
@@ -32667,6 +33173,175 @@ public class HelloWorld {
    }
 }
 --------------------------------------------------------------------------------------------------------
+@Component
+@Configuration
+public class DataSources {
+    @Bean
+    @Primary
+    @ConfigurationProperties(prefix="first.datasource")
+    public DataSource getPrimaryDataSource() {
+        return DataSourceBuilder.create().build();
+    }
+
+    @Bean
+    @ConfigurationProperties(prefix="second.datasource")
+    public DataSource getSecondDataSource() {
+        return DataSourceBuilder.create().build();
+    }
+
+    @Bean
+    @ConfigurationProperties(prefix="third.final.datasource")
+    public DataSource getThirdFinalDataSource() {
+        return DataSourceBuilder.create().build();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+package com.paragon.microservices.distributor.configuration;
+
+import com.paragon.microservices.distributor.model.domain.AuthenticatedUser;
+import com.paragon.microservices.distributor.property.RoleProperty;
+import com.paragon.microservices.distributor.system.filter.JwtAuthenticationFilter;
+import com.paragon.microservices.distributor.system.handler.SecurityAuditorAwareHandler;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Description;
+import org.springframework.data.domain.AuditorAware;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+//import com.paragon.microservices.distributor.property.CorsProperty;
+
+@EnableWebSecurity
+@EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true)
+@RequiredArgsConstructor
+@Description("Paragon MicroServices Distributor security configuration")
+public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
+    private final JwtAuthenticationFilter authenticationFilter;
+    private final RoleProperty roleProperty;
+//    private final CorsProperty corsProperty;
+
+    @Override
+    protected void configure(final HttpSecurity http) throws Exception {
+        http
+                .cors()
+                .and().csrf().disable()
+                .exceptionHandling()
+                .accessDeniedHandler(this.accessDeniedHandler())
+                .and().authorizeRequests()
+                .antMatchers(this.roleProperty.getAdmin().getPaths().toArray(new String[0])).hasAuthority(this.roleProperty.getAdmin().getCode())
+                .antMatchers("/swagger**").permitAll()
+                .anyRequest().authenticated()
+                .and().addFilterBefore(this.authenticationFilter, BasicAuthenticationFilter.class)
+//                .addFilterBefore(this.corsFilter(), BasicAuthenticationFilter.class)
+                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and().headers().frameOptions().disable().cacheControl().disable();
+    }
+
+//    @Bean
+//    public CorsFilter corsFilter() {
+//        final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+//        final CorsConfiguration config = new CorsConfiguration();
+//        config.setAllowedMethods(this.corsProperty.getAllowedMethods());
+//        config.setAllowedOrigins(this.corsProperty.getAllowedOrigins());
+//        config.setAllowedHeaders(this.corsProperty.getAllowedHeaders());
+//        config.setExposedHeaders(this.corsProperty.getExposedHeaders());
+//        if (!CollectionUtils.isEmpty(config.getAllowedOrigins())) {
+//            source.registerCorsConfiguration("/api/**", config);
+//            source.registerCorsConfiguration("/v2/api-docs", config);
+//        }
+//        return new CorsFilter(source);
+//    }
+
+    @Bean
+    public AuditorAware<AuthenticatedUser> auditorAware() {
+        return new SecurityAuditorAwareHandler();
+    }
+
+    @Bean
+    public AccessDeniedHandler accessDeniedHandler() {
+        return new CustomAccessDeniedHandler();
+    }
+
+    @Override
+    public void configure(final WebSecurity web) {
+        web.ignoring().antMatchers("/resources/**");
+    }
+
+    private static class CustomAccessDeniedHandler implements AccessDeniedHandler {
+
+        @Override
+        public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException ex) throws IOException {
+            response.sendError(HttpStatus.FORBIDDEN.value(), "Access denied");
+        }
+    }
+//    @Override
+//    protected MethodSecurityExpressionHandler createExpressionHandler() {
+//        return this.defaultMethodSecurityExpressionHandler();
+//    }
+//
+//    @Bean(name = "defaultMethodSecurityExpressionHandler")
+//    public MethodSecurityExpressionHandler defaultMethodSecurityExpressionHandler() {
+//        return new DefaultMethodSecurityExpressionHandler();
+//    }
+}
+
+--------------------------------------------------------------------------------------------------------
+ * <pre class="code">
+ * &#064;Configuration
+ * &#064;ComponentScan(basePackageClasses = { MyConfiguration.class })
+ * public class MyConfiguration extends WebMvcConfigurationSupport {
+ *
+ * 	   &#064;Override
+ *	   public void addFormatters(FormatterRegistry formatterRegistry) {
+ *         formatterRegistry.addConverter(new MyConverter());
+ *	   }
+ *
+ *	   &#064;Bean
+ *	   public RequestMappingHandlerAdapter requestMappingHandlerAdapter() {
+ *         // Create or delegate to "super" to create and
+ *         // customize properties of RequestMappingHandlerAdapter
+ *	   }
+ * }
+ * </pre>
+--------------------------------------------------------------------------------------------------------
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <version>3.7.0</version>
+    <configuration>
+        <compilerArgs>
+            <arg>-Xlint:-path</arg>
+        </compilerArgs>
+    </configuration>
+</plugin>
+--------------------------------------------------------------------------------------------------------
+mvn  clean install tomcat7:run-war
+--------------------------------------------------------------------------------------------------------
+@Controller
+@RequestMapping("/customers")
+public class CustomerController {
+    @Autowired
+    private CustomerDataService customerDataService;
+
+    @RequestMapping(method = RequestMethod.GET)
+    private String handleRequest (Model model) {
+        model.addAttribute("customerList", customerDataService.getAllUsers());
+        return "customers";
+    }
+}
+--------------------------------------------------------------------------------------------------------
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Application.class, webEnvironment = WebEnvironment.DEFINED_PORT)
 @TestPropertySource(properties = 
@@ -32717,6 +33392,99 @@ public class ExcludeAutoConfigIntegrationTest {
 spring:
   profiles: test
   autoconfigure.exclude: org.springframework.boot.autoconfigure.session.SessionAutoConfiguration
+--------------------------------------------------------------------------------------------------------
+https://howtodoinjava.com/hibernate/hibernate-ehcache-configuration-tutorial/
+https://www.ehcache.org/documentation/2.8/integrations/hibernate.html
+https://vladmihalcea.com/how-does-hibernate-collection-cache-work/
+https://planet.jboss.org/post/collection_caching_in_the_hibernate_second_level_cache
+
+         /**
+* Returns the advanced search facilities that should appear for this country.
+* @hibernate.set cascade="all" inverse="true"
+* @hibernate.collection-key column="COUNTRY_ID"
+* @hibernate.collection-one-to-many class="com.wotif.jaguar.domain.AdvancedSearchFacility"
+* @hibernate.cache usage="read-write"
+*/
+public Set getAdvancedSearchFacilities() {
+return advancedSearchFacilities;
+"/>
+
+
+             <?xml version="1.0" encoding="UTF-8"?>
+<ehcache>
+ <cache name="com.somecompany.someproject.domain.Country"
+	maxEntriesLocalHeap="50"
+	eternal="false"
+	timeToLiveSeconds="600"
+    <persistence strategy="localTempSwap"/>
+/>
+ <cache
+name="com.somecompany.someproject.domain.Country.advancedSearchFacilities"
+	maxEntriesLocalHeap="450"
+	eternal="false"
+	timeToLiveSeconds="600"
+    <persistence strategy="localTempSwap"/>
+/>
+</ehcache>
+--------------------------------------------------------------------------------------------------------
+URI uri = UriComponentsBuilder
+        .fromUriString("https://example.com/hotels/{hotel}")
+        .queryParam("q", "{q}")
+        .encode()
+        .buildAndExpand("Westin", "123")
+        .toUri();
+--------------------------------------------------------------------------------------------------------
+@GetMapping("/download")
+public StreamingResponseBody handle() {
+    return new StreamingResponseBody() {
+        @Override
+        public void writeTo(OutputStream outputStream) throws IOException {
+            // write...
+        }
+    };
+}
+--------------------------------------------------------------------------------------------------------
+// Target all Controllers annotated with @RestController
+@ControllerAdvice(annotations = RestController.class)
+public class ExampleAdvice1 {}
+
+// Target all Controllers within specific packages
+@ControllerAdvice("org.example.controllers")
+public class ExampleAdvice2 {}
+
+// Target all Controllers assignable to specific classes
+@ControllerAdvice(assignableTypes = {ControllerInterface.class, AbstractController.class})
+public class ExampleAdvice3 {}
+--------------------------------------------------------------------------------------------------------
+@RestController
+public class ErrorController {
+
+    @RequestMapping(path = "/error")
+    public Map<String, Object> handle(HttpServletRequest request) {
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put("status", request.getAttribute("javax.servlet.error.status_code"));
+        map.put("reason", request.getAttribute("javax.servlet.error.message"));
+        return map;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+  <repositories>
+        <repository>
+            <id>Nexus</id>
+            <name>Maven Central</name>
+            <url>HTTPS: https://repo1.maven.org/maven2</url>
+        </repository>
+        <repository>
+            <id>egit</id>
+            <name>Eclipse egit</name>
+            <url>https://repo.eclipse.org/content/repositories/egit-releases/</url>
+        </repository>
+    </repositories>
+--------------------------------------------------------------------------------------------------------
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration
 --------------------------------------------------------------------------------------------------------
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties="spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.mongo.embedded.EmbeddedMongoAutoConfiguration")
 --------------------------------------------------------------------------------------------------------
