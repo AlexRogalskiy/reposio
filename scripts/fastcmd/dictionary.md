@@ -22531,6 +22531,39 @@ uaa:
 
 # application:
 
+-------------------------------------------------------------------------------------------------------
+At Intertech we do a lot of sharing of expertise. Whether it’s someone on our team at that moment or a colleague working on another project, we make it a point to collaboratively share information to move all projects and clients forward. We also hope to share these quick tips with you in hopes it will help you someday in your work. Here is a quick tip I recently shared with my team that I thought you might find useful.
+
+When a production code field should not have a setter method, typically in an immutable domain model, we need to use a different approach in tests for giving that field a value in an existing instance. This approach usually involves using Java’s reflection.
+
+While directly using reflection for this is not difficult, it has some extra steps and checked exceptions to handle. The Spring ReflectionUtils class makes this a little easier. The following steps show how to use it.
+
+1. Identify the object to set the value on (the one without the setter) and the value to set. In this example, “object” needs the “value” (no reflection in use in this step!).
+MyEntity object = new MyEntity();
+LocalDateTime value = LocalDateTime.now();
+1
+2
+	
+MyEntity object = new MyEntity();
+LocalDateTime value = LocalDateTime.now();
+
+2. Using reflection, obtain the Field reference from the class with the field to set. This step uses the Spring ReflectionUtils.findField method. This method takes two arguments, the Class having the field and the name of the field.
+Field field = ReflectionUtils.findField(MyEntity.class, "createDate");
+1
+	
+Field field = ReflectionUtils.findField(MyEntity.class, "createDate");
+
+3. Using reflection, set the field’s accessible flag to true so we can then set the field’s value. The accessible flag toggles reflection access to Java internals, such as fields. This step uses the Spring ReflectionUtils.makeAccessible method. This method takes one argument, the Field reference.
+ReflectionUtils.makeAccessible(field);
+1
+	
+ReflectionUtils.makeAccessible(field);
+
+4. Using reflection, set the value on the object. This step uses the Spring ReflectionUtils.setField method to set the value on the object. This method takes three arguments, the Field reference, the object to set the value on, and the value to set.
+ReflectionUtils.setField(field, object, value);
+1
+	
+ReflectionUtils.setField(field, object, value);-
 --------------------------------------------------------------------------------------------------------
 @SpringBootApplication(exclude = {        
     ElasticSearchRestHealthIndicatorAutoConfiguration.class
