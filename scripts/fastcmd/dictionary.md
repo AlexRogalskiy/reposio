@@ -33375,6 +33375,309 @@ public class CustomerController {
     }
 }
 --------------------------------------------------------------------------------------------------------
+ConditionalOnProperty(
+  name = "usemysql", 
+  havingValue = "local")
+@ConditionalOnMissingBean
+public DataSource dataSource() {
+    DriverManagerDataSource dataSource = new DriverManagerDataSource();
+  
+    dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
+    dataSource.setUrl("jdbc:mysql://localhost:3306/myDb?createDatabaseIfNotExist=true");
+    dataSource.setUsername("mysqluser");
+    dataSource.setPassword("mysqlpass");
+ 
+    return dataSource;
+}
+
+
+@Bean(name = "dataSource")
+@ConditionalOnProperty(
+  name = "usemysql", 
+  havingValue = "custom")
+@ConditionalOnMissingBean
+public DataSource dataSource2() {
+    DriverManagerDataSource dataSource = new DriverManagerDataSource();
+         
+    dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
+    dataSource.setUrl(env.getProperty("mysql.url"));
+    dataSource.setUsername(env.getProperty("mysql.user") != null
+      ? env.getProperty("mysql.user") : "");
+    dataSource.setPassword(env.getProperty("mysql.pass") != null
+      ? env.getProperty("mysql.pass") : "");
+         
+    return dataSource;
+}
+@ConditionalOnResource(
+  resources = "classpath:mysql.properties")
+@Conditional(HibernateCondition.class)
+Properties additionalProperties() {
+    Properties hibernateProperties = new Properties();
+ 
+    hibernateProperties.setProperty("hibernate.hbm2ddl.auto", 
+      env.getProperty("mysql-hibernate.hbm2ddl.auto"));
+    hibernateProperties.setProperty("hibernate.dialect", 
+      env.getProperty("mysql-hibernate.dialect"));
+    hibernateProperties.setProperty("hibernate.show_sql", 
+      env.getProperty("mysql-hibernate.show_sql") != null
+      ? env.getProperty("mysql-hibernate.show_sql") : "false");
+    return hibernateProperties;
+}
+
+static class HibernateCondition extends SpringBootCondition {
+ 
+    private static String[] CLASS_NAMES
+      = { "org.hibernate.ejb.HibernateEntityManager", 
+          "org.hibernate.jpa.HibernateEntityManager" };
+ 
+    @Override
+    public ConditionOutcome getMatchOutcome(ConditionContext context, 
+      AnnotatedTypeMetadata metadata) {
+  
+        ConditionMessage.Builder message
+          = ConditionMessage.forCondition("Hibernate");
+        return Arrays.stream(CLASS_NAMES)
+          .filter(className -> ClassUtils.isPresent(className, context.getClassLoader()))
+          .map(className -> ConditionOutcome
+            .match(message.found("class")
+            .items(Style.NORMAL, className)))
+          .findAny()
+          .orElseGet(() -> ConditionOutcome
+            .noMatch(message.didNotFind("class", "classes")
+            .items(Style.NORMAL, Arrays.asList(CLASS_NAMES))));
+    }
+}
+
+@RunWith(SpringJUnit4ClassRunner.class)
+@SpringBootTest(
+  classes = AutoconfigurationApplication.class)
+@EnableJpaRepositories(
+  basePackages = { "com.baeldung.autoconfiguration.example" })
+public class AutoconfigurationTest {
+ 
+    @Autowired
+    private MyUserRepository userRepository;
+ 
+    @Test
+    public void whenSaveUser_thenOk() {
+        MyUser user = new MyUser("user@email.com");
+        userRepository.save(user);
+    }
+}
+
+@Configuration
+@EnableAutoConfiguration(
+  exclude={MySQLAutoconfiguration.class})
+public class AutoconfigurationApplication {
+    //...
+}
+
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.baeldung.autoconfiguration.MySQLAutoconfiguration
+--------------------------------------------------------------------------------------------------------
+MessageSourceAutoConfiguration 
+--------------------------------------------------------------------------------------------------------
+spring init -d=web,actuator -n=actuator-demo actuator-demo
+--------------------------------------------------------------------------------------------------------
+# INFO ENDPOINT CONFIGURATION
+info.app.name=@project.name@
+info.app.description=@project.description@
+info.app.version=@project.version@
+info.app.encoding=@project.build.sourceEncoding@
+info.app.java.version=@java.version@
+--------------------------------------------------------------------------------------------------------
+import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
+import org.springframework.boot.actuate.context.ShutdownEndpoint;
+import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+
+@Configuration
+public class ActuatorSecurityConfig extends WebSecurityConfigurerAdapter {
+
+    /*
+        This spring security configuration does the following
+
+        1. Restrict access to the Shutdown endpoint to the ACTUATOR_ADMIN role.
+        2. Allow access to all other actuator endpoints.
+        3. Allow access to static resources.
+        4. Allow access to the home page (/).
+        5. All other requests need to be authenticated.
+        5. Enable http basic authentication to make the configuration complete.
+           You are free to use any other form of authentication.
+     */
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http
+                .authorizeRequests()
+                    .requestMatchers(EndpointRequest.to(ShutdownEndpoint.class))
+                        .hasRole("ACTUATOR_ADMIN")
+                    .requestMatchers(EndpointRequest.toAnyEndpoint())
+                        .permitAll()
+                    .requestMatchers(PathRequest.toStaticResources().atCommonLocations())
+                        .permitAll()
+                    .antMatchers("/")
+                        .permitAll()
+                    .antMatchers("/**")
+                        .authenticated()
+                .and()
+                .httpBasic();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+Type listType = new TypeToken<List<String>>() {}.getType();
+List<String> characters = modelMapper.map(numbers, listType);
+--------------------------------------------------------------------------------------------------------
+To run the utility, go to the directory where the Lucene library files are located and run the following command: 
+java -ea:org.apache.lucene... org.apache.lucene.index.CheckIndex INDEX_PATH -fix
+--------------------------------------------------------------------------------------------------------
+    BigInteger modulus = new BigInteger(Base64.getDecoder().decode(publicKeyString));
+    BigInteger exponent = new BigInteger(Base64.getDecoder().decode("AQAB"));
+
+    RSAPublicKeySpec keySpec = new RSAPublicKeySpec(modulus, exponent);
+    KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+    PublicKey pubKey = keyFactory.generatePublic(keySpec);
+
+    byte[] sigToVerify = Base64.getDecoder().decode(signatureString);
+    Signature sig = Signature.getInstance("MD5WithRSA");
+    sig.initVerify(pubKey);
+    boolean verifies = sig.verify(sigToVerify);
+--------------------------------------------------------------------------------------------------------
+eyJhbGciOiJodHRwOi8vd3d3LnczLm9yZy8yMDAxLzA0L3htbGRzaWctbW9yZSNyc2Etc2hhMjU2IiwidHlwIjoiSldUIn0.eyJqdGkiOiI4ZjZmNWZkOC00NzhmLTQ0Y2MtYTZmZS0zMzQzNmM2ZTBkZWMiLCJ1c2VyaWQiOiI1N2Q0ZTFkOC00NWQ4LTQ2NjItNTIzYi0wOGQ3MjYxNmU4MmQiLCJvd25lcmlkIjoiODc2ZWFmNDQtNzUyMy00YjEzLThhMmEtNzBlYWVkNDU4OTAyIiwiZXhwIjoxNTY2NDY0ODEzLCJpc3MiOiJSZWdpc3RyeSIsImF1ZCI6IlJlZ2lzdHJ5In0.p4gbYXYBRuTPMNS81UrPvx06BFh8d3p_oRI0KVVRtCUiaUd6sAkWequyVJZEdmiYGvcqb6OHj1BAiXnAR1Cibg6FlKeVS31SyJqHkZWlaDDR1LDmu4SJPZ8cixYeAWBMXE_10EbjLxFY3nBOEg1vtUM3WNTws2pfoAFA8oqb9uqjeI_33_9fW206hLngb98ICr8WWJFcfRTsAHc0pc-XRQCkZH8LKpL-QpT6HqPxzP_sStxPHvhYZRcHFXxVwrcAEOtthfgFReAx0XwVEJXYsiRrTKApLyYvVIL7GvbJ6dyinWOKNCU861bsdsGiQmK7-HdQwAya4nUl_IEGQlnYzw
+--------------------------------------------------------------------------------------------------------
+@SpringBootApplication 
+@EnableOAuth2Client
+@EnableAuthorizationServer
+@Order(SecurityProperties.ACCESS_OVERRIDE_ORDER)
+public class MsAuthorizationGmailApplication extends WebSecurityConfigurerAdapter {
+
+    @Autowired
+    OAuth2ClientContext oauth2ClientContext;
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.antMatcher("/**").authorizeRequests().antMatchers("/", "/login**", "/webjars/**").permitAll().anyRequest()
+            .authenticated().and().exceptionHandling()
+            .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login/gmail")).and().logout()
+            .logoutSuccessUrl("/").permitAll().and().csrf()
+            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and()
+            .addFilterBefore(ssoFilter(), BasicAuthenticationFilter.class);
+    }
+
+    @Bean
+    @ConfigurationProperties("gmail")
+    public ClientResources gmail() {
+        return new ClientResources();
+    }
+
+    private Filter ssoFilter() {
+        CompositeFilter filter = new CompositeFilter();
+        List<Filter> filters = new ArrayList<>();
+        filters.add(ssoFilter(gmail(), "/login/gmail"));
+        filter.setFilters(filters);
+        return filter;
+    }
+
+    private Filter ssoFilter(ClientResources client, String path) {
+        OAuth2ClientAuthenticationProcessingFilter filter = new     OAuth2ClientAuthenticationProcessingFilter(
+            path);
+        OAuth2RestTemplate template = new OAuth2RestTemplate(client.getClient(), oauth2ClientContext);
+        filter.setRestTemplate(template);
+        filter.setTokenServices(JwtConfig.tokenServices());
+        return filter;
+    }
+
+    public static void main(String[] args) {
+        SpringApplication.run(MsAuthorizationGmailApplication.class, args);
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+import org.hibernate.search.jpa.FullTextEntityManager;
+import org.hibernate.search.jpa.Search;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
+import org.springframework.context.annotation.Description;
+
+import javax.persistence.EntityManagerFactory;
+
+@Configuration
+@Description("Paragon MicroServices Distributor index search configuration")
+public class IndexSearchConfiguration {
+
+    @Bean
+    @DependsOn({"entityManagerFactory"})
+    public LuceneIndexServiceBean luceneIndexServiceBean(final EntityManagerFactory entityManagerFactory) {
+        final LuceneIndexServiceBean luceneIndexServiceBean = new LuceneIndexServiceBean(entityManagerFactory);
+        luceneIndexServiceBean.triggerIndexing();
+        return luceneIndexServiceBean;
+    }
+
+    public static class LuceneIndexServiceBean {
+        private FullTextEntityManager fullTextEntityManager;
+
+        public LuceneIndexServiceBean(final EntityManagerFactory entityManagerFactory) {
+            this.fullTextEntityManager = Search.getFullTextEntityManager(entityManagerFactory.createEntityManager());
+        }
+
+        public void triggerIndexing() {
+            try {
+                this.fullTextEntityManager.createIndexer().startAndWait();
+            } catch (Exception e) {
+            }
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+public class TypeUtils {
+  public static <T> TypeToken<List<T>> listType() {
+    return new TypeToken<List<T>>() {};
+  }
+  
+  public abstract class TypeHandler<T> {
+    final TypeToken<T> type = new TypeToken<T>(getClass()) {};
+  }
+}
+
+TypeToken<List<String>> stringListType = Util.<String>listType();
+
+Authorization
+
+Bearer 
+--------------------------------------------------------------------------------------------------------
+@Bean
+public SecurityWebFilterChain securityWebFilterChain(
+  ServerHttpSecurity http) {
+    return http.authorizeExchange()
+      .pathMatchers("/actuator/**").permitAll()
+      .anyExchange().authenticated()
+      .and().build();
+}
+--------------------------------------------------------------------------------------------------------
+@RestController
+public class Internationalization {
+
+    @Autowired
+    @Qualifier("messageResourceSB")
+    MessageSource messageSource;
+
+    @GetMapping(path = "/sayHelloIntern")
+    public String sayHello(@RequestHeader(name="Accept-Language",required = false) Locale locale) {
+        return messageSource.getMessage("message.greeting", null, locale);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+@ConditionalOnBean(value=MyBean.class, name="NameOfMyBean")
+@Controller
+public class MyController{
+
+  ...
+}
+
+--------------------------------------------------------------------------------------------------------
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Application.class, webEnvironment = WebEnvironment.DEFINED_PORT)
 @TestPropertySource(properties = 
