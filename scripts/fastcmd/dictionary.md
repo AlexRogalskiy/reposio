@@ -33548,6 +33548,50 @@ AbstractCommand <|-- ConcreteCommand2
 
 @enduml
 --------------------------------------------------------------------------------------------------------
+class A {}
+class B extends A {}
+
+public class Benchmark {
+
+    public static final Object a = new A();
+    public static final Object b = new B();
+
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    public boolean testInstanceOf()
+    {
+        return b instanceof A;
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    public boolean testIsInstance()
+    {
+        return A.class.isInstance(b);
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    public boolean testIsAssignableFrom()
+    {
+        return A.class.isAssignableFrom(b.getClass());
+    }
+
+    public static void main(String[] args) throws RunnerException {
+        Options opt = new OptionsBuilder()
+                .include(TestPerf2.class.getSimpleName())
+                .warmupIterations(20)
+                .measurementIterations(2000)
+                .forks(1)
+                .build();
+
+        new Runner(opt).run();
+    }
+}
+--------------------------------------------------------------------------------------------------------
 	headers.add(new InternetHeader("Return-Path", null));
 	headers.add(new InternetHeader("Received", null));
 	headers.add(new InternetHeader("Resent-Date", null));
