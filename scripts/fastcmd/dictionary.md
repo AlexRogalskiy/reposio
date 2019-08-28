@@ -22532,6 +22532,580 @@ uaa:
 # application:
 
 -------------------------------------------------------------------------------------------------------
+static Consumer<Integer> lambdaWrapper(Consumer<Integer> consumer) {
+    return i -> {
+        try {
+            consumer.accept(i);
+        } catch (ArithmeticException e) {
+            System.err.println(
+              "Arithmetic Exception occured : " + e.getMessage());
+        }
+    };
+}
+
+List<Integer> integers = Arrays.asList(3, 9, 7, 0, 10, 20);
+integers.forEach(lambdaWrapper(i -> System.out.println(50 / i)));
+
+static <T, E extends Exception> Consumer<T>
+  consumerWrapper(Consumer<T> consumer, Class<E> clazz) {
+  
+    return i -> {
+        try {
+            consumer.accept(i);
+        } catch (Exception ex) {
+            try {
+                E exCast = clazz.cast(ex);
+                System.err.println(
+                  "Exception occured : " + exCast.getMessage());
+            } catch (ClassCastException ccEx) {
+                throw ex;
+            }
+        }
+    };
+}
+
+List<Integer> integers = Arrays.asList(3, 9, 7, 0, 10, 20);
+integers.forEach(
+  consumerWrapper(
+    i -> System.out.println(50 / i), 
+    ArithmeticException.class));
+	
+	
+List<Integer> integers = Arrays.asList(3, 9, 7, 0, 10, 20);
+integers.forEach(i -> {
+    try {
+        writeToFile(i);
+    } catch (IOException e) {
+        throw new RuntimeException(e);
+    }
+});
+
+
+@FunctionalInterface
+public interface ThrowingConsumer<T, E extends Exception> {
+    void accept(T t) throws E;
+}
+
+static <T> Consumer<T> throwingConsumerWrapper(
+  ThrowingConsumer<T, Exception> throwingConsumer) {
+  
+    return i -> {
+        try {
+            throwingConsumer.accept(i);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    };
+}
+
+List<Integer> integers = Arrays.asList(3, 9, 7, 0, 10, 20);
+integers.forEach(throwingConsumerWrapper(i -> writeToFile(i)));
+-------------------------------------------------------------------------------------------------------
+import java.util.concurrent.Callable;
+
+import static org.assertj.core.error.ShouldBeInstance.shouldBeInstance;
+
+/**
+ * Assertion methods for {@link Throwable}s.
+ * <p>
+ * To create a new instance of this class, invoke <code>{@link Assertions#assertThat(Throwable)}</code>.
+ * </p>
+ *
+ * @author David DIDIER
+ * @author Alex Ruiz
+ * @author Joel Costigliola
+ * @author Mikhail Mazursky
+ */
+public class ThrowableAssert extends AbstractThrowableAssert<ThrowableAssert, Throwable> {
+
+  public interface ThrowingCallable {
+    void call() throws Throwable;
+  }
+
+  public ThrowableAssert(Throwable actual) {
+    super(actual, ThrowableAssert.class);
+  }
+
+  public <V> ThrowableAssert(Callable<V> runnable) {
+    super(buildThrowableAssertFromCallable(runnable), ThrowableAssert.class);
+  }
+
+  private static <V> Throwable buildThrowableAssertFromCallable(Callable<V> callable) throws AssertionError {
+    try {
+      callable.call();
+      // fail if the expected exception was *not* thrown
+      Fail.fail("Expecting code to throw an exception.");
+      // this will *never* happen...
+      return null;
+    } catch (AssertionError e) {
+      // do not handle AssertionErrors in the next catch block!
+      throw e;
+    } catch (Throwable throwable) {
+      // the throwable we will check
+      return throwable;
+    }
+  }
+
+  public static Throwable catchThrowable(ThrowingCallable shouldRaiseThrowable) {
+    try {
+      shouldRaiseThrowable.call();
+    } catch (Throwable throwable) {
+      return throwable;
+    }
+    return null;
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <THROWABLE extends Throwable> THROWABLE catchThrowableOfType(ThrowingCallable shouldRaiseThrowable,
+                                                                             Class<THROWABLE> type) {
+    Throwable throwable = catchThrowable(shouldRaiseThrowable);
+    if (throwable == null) return null;
+    // check exception type
+    new ThrowableAssert(throwable).overridingErrorMessage(shouldBeInstance(throwable, type).create())
+                                  .isInstanceOf(type);
+    return (THROWABLE) throwable;
+  }
+}
+-------------------------------------------------------------------------------------------------------
+    AsyncContext asyncContext = request.startAsync();
+    asyncContext.setTimeout(30000);
+    asyncContext.start(myRunnableClass);
+-------------------------------------------------------------------------------------------------------
+# Paragon MicroServices Distributor configuration
+---
+server:
+  port: 8089
+  tomcat:
+    remote-ip-header: x-forward-for
+
+redis:
+  user:
+    field-key: data
+    key-space: user
+    time-to-live: 300
+
+spring:
+  redis:
+    host: localhost
+    port: 6379
+  mvc:
+    throw-exception-if-no-handler-found: true
+    log-resolved-exception: true
+  devtools:
+    add-properties: false
+  aop:
+    proxy-target-class: true
+  datasource:
+    url: jdbc:postgresql://localhost:5432/distributor
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+    sql-script-encoding: utf-8
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 25
+      idle-timeout: 30000
+      isolate-internal-queries: true
+      connection-test-query: SELECT current_timestamp
+  jpa:
+    show-sql: true
+    open-in-view: false
+    generate-ddl: false
+    database: postgresql
+    hibernate:
+      ddl-auto: none
+      properties:
+        hibernate:
+          dialect: org.hibernate.dialect.PostgreSQL9Dialect
+          ddl-auto: none
+          cache:
+            use_query_cache: false
+            use_second_level_cache: false
+          jdbc.lob.non_contextual_creation: true
+          temp.use_jdbc_metadata_defaults: false
+          current_session_context_class: org.hibernate.context.internal.ThreadLocalSessionContext
+  liquibase:
+    change-log: classpath:/db/db.changelog-master.xml
+    enabled: false
+
+springfox:
+  documentation:
+    swagger:
+      v2:
+        path: /swagger-api
+
+security:
+  role:
+    admin:
+      code: 1
+      paths: /api/admin/**
+  rsa:
+    modulus: y3YZPtr7MB94Tnwj9Je9fdnjwhenVEj5GdZEVcauTZtSSglkryujtRkNdhEiF7gjyJAMycg2AobYE33xiKsZvUdiKMKvvSNVjoG4M3KXBOkJTfKS6LefMCk/B0AqVBAzdrWBrpO3xvnuVLoAqCpUF4MWyqGwJO4sKWuRqSNX+fRtsXTSBQ4X7gbrvGyS7zRRsHAg1S7D9o6Sl8o7sFNNxSr82W2YD1MlWM1/3+v+uvGuEbWIxzb0nWtThV5j8gib0gknl/Mb78uor/jMi46IeBSPftQYtzwjZHe5T+V8BscwpGli2Y+XWFGJNoSa6DwxZxGSNB7DI6j+Ev46B+IC5Q==
+    exponent: AQAB
+  jwt:
+    claim-names:
+      user-id: userid
+      owner-id: ownerid
+      user-role: userrole
+      expiration: exp
+
+management:
+  info:
+    build:
+      enabled: false
+  endpoint:
+    shutdown:
+      enabled: true
+    health:
+      show-details: ALWAYS
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+      base-path: /api
+      path-mapping:
+        info: status
+
+api-status:
+  node:
+    name: ${java.rmi.server.hostname:localhost}
+  # build properties from maven
+  build:
+    groupId: '@project.groupId@'
+    artifactId: '@project.artifactId@'
+    version: '@project.version@'
+    name: '@project.name@'
+    timestamp: '@maven.build.timestamp@'
+
+logging:
+  config:
+
+info:
+  # application info
+  app:
+    name: '@project.name@'
+    description: '@project.description@'
+  # environment variables
+  env:
+    java:
+      vendor: ${java.specification.vendor}
+      vm-name: ${java.vm.name}
+      runtime-version: ${java.runtime.version}
+-------------------------------------------------------------------------------------------------------
+public static Map<Object, Object> convertToMap(final String filePath) {
+
+	// creating the properties object
+	Properties properties = new Properties();
+
+	// declaring the map object
+	Map<Object, Object> propertyMap  = null;
+	
+	// creating file object
+	File file = new File(filePath);
+
+	FileReader fr = null;
+	
+	try {
+		
+		fr = new FileReader(file);
+
+		properties.load(fr);
+		
+		propertyMap = new HashMap<Object, Object>(properties);
+
+	} catch (FileNotFoundException e) {
+		
+		System.out.println(e.getMessage());
+		e.printStackTrace();
+		
+	} catch (IOException e) {
+
+		System.out.println(e.getMessage());
+		e.printStackTrace();
+	}
+	
+	return propertyMap;
+}
+-------------------------------------------------------------------------------------------------------
+@Controller
+public class LibraryController {
+	
+	public static final int USERS_PER_PAGE = 20;
+	
+	@Autowired
+	LibraryUserDetailService userService;
+  
+  	@GetMapping("/admin-panel")
+	public String showAdminPanel(	@RequestParam(value="search", required=false) String searchText,
+					@RequestParam(value="pageNo", required=false) Integer pageNo,
+					ModelMap model){
+		
+			if (searchText == null && pageNo == null) {
+				return "admin-panel";
+			}
+			
+			if (searchText != null && pageNo == null){
+				pageNo = 1;
+				model.put("pageNo", 1);
+			}
+			
+			model.addAttribute("resultsCount", userService.searchUsersResultsCount(searchText));
+			
+			model.addAttribute("pageCount", userService.searchUserPagesCount(searchText, USERS_PER_PAGE));
+			
+			model.addAttribute("userList", userService.searchUsers(searchText, pageNo, USERS_PER_PAGE));
+			return "admin-panel";
+	}
+https://habr.com/ru/company/rostelecom/blog/428578/
+https://medium.com/@wkrzywiec/full-text-search-with-hibernate-search-lucene-part-1-e245b889aa8e
+
+<!-- Configuration of Hibernate Session -->
+   <bean id="sessionFactory"
+      class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
+
+      <property name="dataSource" ref="dataSource" />
+      <property name="packagesToScan" value="de.user.server.model" />
+      <property name="hibernateProperties">
+         <props>
+            <prop key="hibernate.hbm2ddl.auto">update</prop>
+            <prop key="hibernate.show_sql">${jdbc.debug}</prop>
+            <prop key="hibernate.format_sql">true</prop>
+            <prop key="hibernate.id.new_generator_mappings">true</prop>
+            <prop key="hibernate.dialect">${jdbc.dialect}</prop>
+            <prop key="hibernate.jdbc.batch_size">0</prop>
+            <prop key="hibernate.hbm2ddl.import_files">import.sql</prop>
+            <prop key="hibernate.c3p0.idle_test_period">28680</prop>
+            <prop key="hibernate.search.default.directory_provider">filesystem</prop>
+            <prop key="hibernate.search.default.indexBase">H:/indexes</prop>
+
+         </props>
+      </property>
+
+<!-- hibernate-envers for versioning of entities -->
+      <property name="eventListeners">
+         <map>
+            <entry key="post-insert" value-ref="envers" />
+            <entry key="post-update" value-ref="envers" />
+            <entry key="post-delete" value-ref="envers" />
+            <entry key="pre-collection-update" value-ref="envers" />
+            <entry key="pre-collection-remove" value-ref="envers" />
+            <entry key="post-collection-recreate" value-ref="envers" />
+         </map>
+      </property>
+   </bean>
+   
+   
+@Entity
+@Indexed
+@Connectable(modelClass = ModelClassEnum.TEXT)
+public class Text extends AbstractDataObject {
+
+    /**
+     * Value generated automatically by eclipse.
+     */
+    private static final long serialVersionUID = 8096234710520978913L;
+
+    private String text;
+
+    public Text() {
+
+    }    
+
+    @Lob
+    @Field (name="text",index=Index.YES, analyze=Analyze.YES,store=Store.YES)
+    public String getText() {
+        return this.text;
+    }
+
+public void setText(String text) {
+        this.text = text;       
+    }
+}
+
+
+import com.mkyong.model.BaseballCard;
+import org.apache.lucene.search.Query;
+import org.hibernate.search.jpa.FullTextEntityManager;
+import org.hibernate.search.jpa.Search;
+import org.hibernate.search.query.dsl.QueryBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import java.util.List;
+
+@Service
+public class HibernateSearchService {
+
+
+    @Autowired
+    private final EntityManager centityManager;
+
+
+    @Autowired
+    public HibernateSearchService(EntityManager entityManager) {
+        super();
+        this.centityManager = entityManager;
+    }
+
+
+    public void initializeHibernateSearch() {
+
+        try {
+            FullTextEntityManager fullTextEntityManager = Search.getFullTextEntityManager(centityManager);
+            fullTextEntityManager.createIndexer().startAndWait();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Transactional
+    public List<BaseballCard> fuzzySearch(String searchTerm) {
+
+        FullTextEntityManager fullTextEntityManager = Search.getFullTextEntityManager(centityManager);
+        QueryBuilder qb = fullTextEntityManager.getSearchFactory().buildQueryBuilder().forEntity(BaseballCard.class).get();
+        Query luceneQuery = qb.keyword().fuzzy().withEditDistanceUpTo(1).withPrefixLength(1).onFields("name")
+                .matching(searchTerm).createQuery();
+
+        javax.persistence.Query jpaQuery = fullTextEntityManager.createFullTextQuery(luceneQuery, BaseballCard.class);
+
+        // execute search
+
+        List<BaseballCard> BaseballCardList = null;
+        try {
+            BaseballCardList = jpaQuery.getResultList();
+        } catch (NoResultException nre) {
+            ;// do nothing
+
+        }
+
+        return BaseballCardList;
+
+
+    }
+}
+
+
+import javax.persistence.EntityManager;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import com.mkyong.service.HibernateSearchService;
+@EnableAutoConfiguration 
+@Configuration
+public class HibernateSearchConfiguration {
+
+	@Autowired
+	private EntityManager bentityManager;
+
+	@Bean
+	HibernateSearchService hibernateSearchService() {
+		HibernateSearchService hibernateSearchService = new HibernateSearchService(bentityManager);
+		hibernateSearchService.initializeHibernateSearch();
+		return hibernateSearchService;
+	}
+}
+
+
+    @Autowired
+    private HibernateSearchService searchservice;
+	
+	
+	import com.mkyong.model.BaseballCard;
+import com.mkyong.service.CardService;
+import com.mkyong.service.HibernateSearchService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import java.util.List;
+
+@Controller
+public class CardController {
+
+    @Autowired
+    private HibernateSearchService searchservice;
+
+    @Autowired
+    private CardService cardservice;
+
+    @RequestMapping(value = "/", method = RequestMethod.GET)
+    public String search(@RequestParam(value = "search", required = false) String q, Model model) {
+        List<BaseballCard> searchResults = null;
+        try {
+            cardservice.addCards();
+            searchResults = searchservice.fuzzySearch(q);
+
+        } catch (Exception ex) {
+            // here you should handle unexpected errors
+            // ...
+            // throw ex;
+        }
+        model.addAttribute("search", searchResults);
+        return "index";
+
+    }
+
+}
+-------------------------------------------------------------------------------------------------------
+    @Override
+        public void run() {
+            doProcess();
+        }
+     
+        private void doProcess() {
+            ...
+     
+            try {
+                sendResponse(asyncContext.getResponse().getWriter(), jsnResult);    
+            } catch (IOException ex) {
+                Logger.getLogger(AsyncRequestProcessor.class.getName()).log(Level.SEVERE, null, ex);
+            }
+     
+            asyncContext.complete();
+        }
+     
+        public void sendResponse(PrintWriter out, JSONObject jsnResp) {
+            Logger.getLogger(AsyncRequestProcessor.class.getName()).info("AsyncRequestProcessor: sending response: " + jsnResp.toString());
+            
+            asyncContext.getResponse().setContentType("application/json");
+            
+            out.print(jsnResp.toString());
+        }
+-------------------------------------------------------------------------------------------------------
+    @Lob
+    @Field (name="text",index=Index.YES, analyze=Analyze.YES,store=Store.YES)
+    public String getText() {
+        return this.text;
+    }
+	
+	@Entity
+@Audited
+@Inheritance(strategy = InheritanceType.JOINED)
+public class AbstractDataObject extends BaseDomainModel {
+    private Long objectId;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @DocumentId
+    public Long getObjectId() {
+     return objectId;
+    }
+}
+-------------------------------------------------------------------------------------------------------
+    @FunctionalInterface
+    public interface ExceptionResolver<T, E extends Throwable> {
+
+        ResponseEntity<T> handle(final HttpServletRequest req, final E ex, final HttpStatus status);
+    }
+-------------------------------------------------------------------------------------------------------
 At Intertech we do a lot of sharing of expertise. Whether it’s someone on our team at that moment or a colleague working on another project, we make it a point to collaboratively share information to move all projects and clients forward. We also hope to share these quick tips with you in hopes it will help you someday in your work. Here is a quick tip I recently shared with my team that I thought you might find useful.
 
 When a production code field should not have a setter method, typically in an immutable domain model, we need to use a different approach in tests for giving that field a value in an existing instance. This approach usually involves using Java’s reflection.
