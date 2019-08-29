@@ -4709,6 +4709,518 @@ public class Account {
 
 }
 --------------------------------------------------------------------------------------------------------
+LocalDate date = LocalDate.of(2015, 8, 11);
+TypedQuery query = this.em.createQuery("SELECT e FROM MyEntity e WHERE date BETWEEN :start AND :end", MyEntity.class);
+query.setParameter("start", date.minusDays(2));
+query.setParameter("end", date.plusDays(7));
+MyEntity e = query.getSingleResult();
+
+https://thoughts-on-java.org/persist-localdate-localdatetime-jpa/
+--------------------------------------------------------------------------------------------------------
+https://github.com/spring-projects/spring-data-examples/tree/master/jpa/example/src/main/java/example/springdata/jpa/auditing
+--------------------------------------------------------------------------------------------------------
+import org.hibernate.annotations.Type;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+ 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EntityListeners;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import javax.persistence.Version;
+import java.time.ZonedDateTime;
+ 
+@Entity
+@EntityListeners(AuditingEntityListener.class)
+@Table(name = "todos")
+final class Todo {
+ 
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long id;
+ 
+    @Column(name = "created_by_user", nullable = false)
+    @CreatedBy
+    private String createdByUser;
+ 
+    @Column(name = "creation_time", nullable = false)
+    @Type(type = "org.jadira.usertype.dateandtime.threeten.PersistentZonedDateTime")
+    @CreatedDate
+    private ZonedDateTime creationTime;
+ 
+    @Column(name = "description", length = 500)
+    private String description;
+ 
+    @Column(name = "modified_by_user", nullable = false)
+    @LastModifiedBy
+    private String modifiedByUser;
+ 
+    @Column(name = "modification_time")
+    @Type(type = "org.jadira.usertype.dateandtime.threeten.PersistentZonedDateTime")
+    @LastModifiedDate
+    private ZonedDateTime modificationTime;
+ 
+    @Column(name = "title", nullable = false, length = 100)
+    private String title;
+ 
+    @Version
+    private long version;
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.auditing.DateTimeProvider;
+import org.springframework.data.domain.AuditorAware;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+  
+  
+@Configuration
+@EnableJpaAuditing(dateTimeProviderRef = "dateTimeProvider")
+@EnableJpaRepositories(basePackages = {
+        "net.petrikainulainen.springdata.jpa.todo"
+})
+@EnableTransactionManagement
+class PersistenceContext {
+ 
+    @Bean
+    AuditorAware<String> auditorProvider() {
+        return new UsernameAuditorAware();
+    }
+  
+    @Bean
+    DateTimeProvider dateTimeProvider(DateTimeService dateTimeService) {
+        return new AuditingDateTimeProvider(dateTimeService);
+    
+--------------------------------------------------------------------------------------------------------
+import org.hibernate.annotations.Type;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+ 
+import javax.persistence.Column;
+import javax.persistence.MappedSuperClass
+ 
+@EntityListeners(AuditingEntityListener.class)
+@MappedSuperClass
+public abstract class BaseEntity {
+  
+    @Column(name = "created_by_user", nullable = false)
+    @CreatedBy
+    private String createdByUser;
+     
+    @Column(name = "creation_time", nullable = false)
+    @Type(type = "org.jadira.usertype.dateandtime.threeten.PersistentZonedDateTime")
+    @CreatedDate
+    private ZonedDateTime creationTime; 
+  
+    @Column(name = "modified_by_user", nullable = false)
+    @LastModifiedBy
+    private String modifiedByUser;
+     
+    @Column(name = "modification_time")
+    @Type(type = "org.jadira.usertype.dateandtime.threeten.PersistentZonedDateTime")
+    @LastModifiedDate
+    private ZonedDateTime modificationTime;
+}
+--------------------------------------------------------------------------------------------------------
+    <!--  entity manager -->
+    <bean id="entityManagerFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="jpaVendorAdapter" ref="hibernateJpaVendorAdapter"/>
+        <property name="packagesToScan" value="com.ia.domain"/>
+        <property name="jpaProperties">
+            <props>
+                <prop key="hibernate.dialect">org.hibernate.dialect.MySQL5InnoDBDialect</prop>
+                <prop key="hibernate.query.substitutions">true '1', false '0'</prop>
+                <prop key="hibernate.generate_statistics">true</prop>
+                <prop key="hibernate.show_sql">false</prop>
+                <prop key="hibernate.format_sql">true</prop>
+                <prop key="hibernate.hbm2ddl.auto">update</prop>
+                <prop key="hibernate.ejb.naming_strategy">org.hibernate.cfg.ImprovedNamingStrategy</prop>
+                <prop key="hibernate.connection.charSet">UTF-8</prop>
+            </props>
+        </property>
+    </bean>
+--------------------------------------------------------------------------------------------------------
+@EntityListeners({AuditingEntityListener.class})
+@Entity
+public class User
+{
+
+  @TableGenerator(name="UUIDGenerator", pkColumnValue="user_id", table="uuid_generator", allocationSize=1)
+  @Id
+  @GeneratedValue(strategy=GenerationType.TABLE, generator="UUIDGenerator")
+  @Column(name="id")
+  private Long id;
+
+  @NotNull
+  private String username;
+
+  @CreatedDate
+  @NotNull
+  @Temporal(TemporalType.TIMESTAMP)
+  @Column(name="created_date", nullable=false)
+  private Date createdDate;
+
+  @LastModifiedDate
+  @NotNull
+  @Temporal(TemporalType.TIMESTAMP)
+  @Column(name="last_modified_date", nullable=false)
+  private Date lastModifiedDate;
+
+  @CreatedBy
+  @ManyToOne(fetch=FetchType.LAZY)
+  @JoinColumn(name="created_by")
+  private User createdBy;
+
+  @LastModifiedBy
+  @ManyToOne(fetch=FetchType.LAZY)
+  @JoinColumn(name="last_modified_by")
+  private User lastModifiedBy;
+  private String password;
+  private Boolean enabled;
+
+
+...
+}
+--------------------------------------------------------------------------------------------------------
+@Configurable
+public class TimestampedEntityAuditListener {
+
+    @PrePersist
+    public void touchForCreate(AbstractTimestampedEntity target) {
+        Date now = new Date();
+        target.setCreated(now);
+        target.setUpdated(now);
+    }
+
+    @PreUpdate
+    public void touchForUpdate(AbstractTimestampedEntity target) {
+        target.setUpdated(new Date());
+    }
+}
+
+@MappedSuperclass
+@EntityListeners({TimestampedEntityAuditListener.class})
+public abstract class AbstractTimestampedEntity implements Serializable {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.TABLE)
+    private Long id;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date created;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date updated;
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
+    }
+
+    public Date getUpdated() {
+        return updated;
+    }
+
+    public void setUpdated(Date updated) {
+        this.updated = updated;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+}
+
+@ManyToOne ( fetch=FetchType.LAZY )
+
+                
+@MappedSuperclass
+@SuppressWarnings("serial")
+public class AbstractAuditableEntity extends AbstractPersistable<Integer> implements Auditable<String, Integer> {
+
+    private DateTime lastUpdated;
+    private String lastUpdateUser;
+    private DateTime created;
+    private String createUser;
+    
+    /**
+     * Gets created by audit user.
+     */
+    @Override
+    public String getCreatedBy() {
+        return createUser;
+    }
+
+    /**
+     * Sets created by audit user.
+     */
+    @Override
+    public void setCreatedBy(String createdBy) {
+        this.createUser = createdBy;
+    }
+    
+    /**
+     * Gets create audit date.
+     */    
+    @Override
+    public DateTime getCreatedDate() {
+        return created;
+    }
+
+    /**
+     * Sets create audit date.
+     */    
+    @Override
+    public void setCreatedDate(DateTime creationDate) {
+        this.created = creationDate;
+    }
+
+    /**
+     * Gets last modified by audit user.
+     */
+    @Override
+    public String getLastModifiedBy() {
+        return lastUpdateUser;
+    }
+    
+    /**
+     * Sets last modified by audit user.
+     */
+    @Override
+    public void setLastModifiedBy(String lastModifiedBy) {
+        this.lastUpdateUser = lastModifiedBy;
+    }
+
+    /**
+     * Gets last modified audit date.
+     */    
+    @Override
+    public DateTime getLastModifiedDate() {
+        return lastUpdated;
+    }
+
+    /**
+     * Sets last modified audit date.
+     */    
+    @Override
+    public void setLastModifiedDate(DateTime lastModifiedDate) {
+        this.lastUpdated = lastModifiedDate;
+    }
+
+}
+     
+--------------------------------------------------------------------------------------------------------
+@Entity
+public class User {
+    @Id
+    Long id;
+ 
+    @Column(columnDefinition = "varchar(255) default 'John Snow'")
+    private String name;
+ 
+    @Column(columnDefinition = "integer default 25")
+    private Integer age;
+ 
+    @Column(columnDefinition = "boolean default false")
+    private Boolean locked;
+}
+--------------------------------------------------------------------------------------------------------
+import java.io.File;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.hibernate.cfg.Configuration;
+import org.hibernate.tool.hbm2ddl.SchemaExport;
+
+public class SchemaGenerator {
+
+    private Configuration cfg;
+
+    public static void main(String[] args) throws Exception {
+
+        File f = new File(".");
+        String directory = f.getAbsoluteFile() + "/src/main/resources/ddl/generated/";
+
+        String packageName[] = { "com.mypackage.jpa", "com.mypackage.jpa.legacy", "com.mypackage.jpa.local",
+                "com.mypackage.jpa.local.impl" };
+
+        SchemaGenerator gen = new SchemaGenerator(packageName);
+        gen.generate(Dialect.MYSQL, directory);
+
+    }
+
+    @SuppressWarnings("rawtypes")
+    public SchemaGenerator(String[] packagesName) throws Exception {
+        cfg = new Configuration();
+        cfg.setProperty("hibernate.hbm2ddl.auto", "create");
+
+        for (String packageName : packagesName) {
+            for (Class clazz : getClasses(packageName)) {
+                cfg.addAnnotatedClass(clazz);
+            }
+        }
+    }
+
+    @SuppressWarnings("rawtypes")
+    private List<Class> getClasses(String packageName) throws Exception {
+        File directory = null;
+        try {
+            ClassLoader cld = getClassLoader();
+            URL resource = getResource(packageName, cld);
+            directory = new File(resource.getFile());
+        } catch (NullPointerException ex) {
+            throw new ClassNotFoundException(packageName + " (" + directory + ") does not appear to be a valid package");
+        }
+        return collectClasses(packageName, directory);
+    }
+
+    private ClassLoader getClassLoader() throws ClassNotFoundException {
+        ClassLoader cld = Thread.currentThread().getContextClassLoader();
+        if (cld == null) {
+            throw new ClassNotFoundException("Can't get class loader.");
+        }
+        return cld;
+    }
+
+    private URL getResource(String packageName, ClassLoader cld) throws ClassNotFoundException {
+        String path = packageName.replace('.', '/');
+        URL resource = cld.getResource(path);
+        if (resource == null) {
+            throw new ClassNotFoundException("No resource for " + path);
+        }
+        return resource;
+    }
+
+    @SuppressWarnings("rawtypes")
+    private List<Class> collectClasses(String packageName, File directory) throws ClassNotFoundException {
+        List<Class> classes = new ArrayList<>();
+        if (directory.exists()) {
+            String[] files = directory.list();
+            for (String file : files) {
+                if (file.endsWith(".class")) {
+                    // removes the .class extension
+                    classes.add(Class.forName(packageName + '.' + file.substring(0, file.length() - 6)));
+                }
+            }
+        } else {
+            throw new ClassNotFoundException(packageName + " is not a valid package");
+        }
+        return classes;
+    }
+
+    private void generate(Dialect dialect, String directory) {
+        cfg.setProperty("hibernate.dialect", dialect.getDialectClass());
+        SchemaExport export = new SchemaExport(cfg);
+        export.setDelimiter(";");
+        export.setOutputFile(directory + "ddl_" + dialect.name().toLowerCase() + ".sql");
+        export.setFormat(true);
+        export.execute(true, false, false, false);
+    }
+
+    private static enum Dialect {
+        ORACLE("org.hibernate.dialect.Oracle10gDialect"), MYSQL("org.hibernate.dialect.MySQLDialect"), HSQL(
+                "org.hibernate.dialect.HSQLDialect"), H2("org.hibernate.dialect.H2Dialect");
+
+        private String dialectClass;
+
+        private Dialect(String dialectClass) {
+            this.dialectClass = dialectClass;
+        }
+
+        public String getDialectClass() {
+            return dialectClass;
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+java -Duser.timezone=UTC ...
+--------------------------------------------------------------------------------------------------------
+public static class CurrentUser {
+
+	public static final CurrentUser INSTANCE = new CurrentUser();
+
+	private static final ThreadLocal<String> storage = new ThreadLocal<>();
+
+	public void logIn(String user) {
+		storage.set( user );
+	}
+
+	public void logOut() {
+		storage.remove();
+	}
+
+	public String get() {
+		return storage.get();
+	}
+}
+
+public static class LoggedUserGenerator implements ValueGenerator<String> {
+
+	@Override
+	public String generateValue(
+			Session session, Object owner) {
+		return CurrentUser.INSTANCE.get();
+	}
+}
+--------------------------------------------------------------------------------------------------------
+spring:
+  jpa:
+    properties:
+      javax:
+        persistence:
+          schema-generation:
+            create-source: metadata
+            scripts:
+              action: create
+              create-target: create.sql
+--------------------------------------------------------------------------------------------------------
+@Embeddable
+public class AccountBalance {
+    private Calendar date;
+
+    @Type(type = Amount.TYPE_DEF)
+    @Columns(columns = {
+        @Column(name = "amount"),
+        @Column(name = "currencyCode")})
+    private Amount amount;
+}
+
+public class AccountStatement
+    @AttributeOverrides(value = {
+        @AttributeOverride(name = "date", column = @Column(name = "openingBalanceDate") ),
+        @AttributeOverride(name = "amount.amount", column = @Column(name = "openingBalanceAmount") ),
+        @AttributeOverride(name = "amount.currencyCode", column = @Column(name = "openingBalanceCurrency") )})
+    @Embedded
+    @Basic(optional = true)
+    private AccountBalance openingBalance;
+
+    @AttributeOverrides(value = {
+        @AttributeOverride(name = "date", column = @Column(name = "closingBalanceDate") ),
+        @AttributeOverride(name = "amount.amount", column = @Column(name = "closingBalanceAmount") ),
+        @AttributeOverride(name = "amount.currencyCode", column = @Column(name = "closingBalanceCurrency") )})
+    @Embedded
+    @Basic(optional = true)
+    private AccountBalance closingBalance;
+--------------------------------------------------------------------------------------------------------
 mkdir /var/www/testsite.com
 echo "Hello World" > /var/www/testsite.com/index.php
 chmod -R 755 /var/www/testsite.com
@@ -11703,6 +12215,342 @@ public class PersonNameConverter implements AttributeConverter<PersonName, Strin
         return personName;
     }
 }
+--------------------------------------------------------------------------------------------------------
+//package com.paragon.microservices.distributor.configuration;
+//
+//import lombok.RequiredArgsConstructor;
+//import org.springframework.beans.factory.config.BeanPostProcessor;
+//import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+//import org.springframework.boot.autoconfigure.condition.SearchStrategy;
+//import org.springframework.boot.autoconfigure.jmx.ParentAwareNamingStrategy;
+//import org.springframework.boot.autoconfigure.orm.jpa.JpaProperties;
+//import org.springframework.context.annotation.Bean;
+//import org.springframework.context.annotation.Configuration;
+//import org.springframework.context.annotation.Description;
+//import org.springframework.context.annotation.Primary;
+//import org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor;
+//import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+//import org.springframework.jmx.export.annotation.AnnotationJmxAttributeSource;
+//import org.springframework.jmx.export.naming.ObjectNamingStrategy;
+//import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
+//import org.springframework.orm.jpa.JpaDialect;
+//import org.springframework.orm.jpa.JpaTransactionManager;
+//import org.springframework.orm.jpa.JpaVendorAdapter;
+//import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+//import org.springframework.orm.jpa.persistenceunit.DefaultPersistenceUnitManager;
+//import org.springframework.orm.jpa.persistenceunit.PersistenceUnitManager;
+//import org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor;
+//import org.springframework.orm.jpa.vendor.HibernateJpaDialect;
+//import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+//import org.springframework.transaction.PlatformTransactionManager;
+//import org.springframework.transaction.annotation.EnableTransactionManagement;
+//import org.springframework.transaction.support.TransactionTemplate;
+//
+//import javax.sql.DataSource;
+//import java.io.IOException;
+//import java.util.Properties;
+//import java.util.UUID;
+//
+//import static org.apache.commons.lang3.StringUtils.join;
+//
+//@Configuration
+//@RequiredArgsConstructor
+//@EnableTransactionManagement
+//@EnableJpaRepositories
+////        (
+////        basePackages = {
+////                "com.paragon.microservices.distributor.model",
+////                "com.paragon.microservices.distributor.repository"
+////        }
+////)
+//@Description("Paragon MicroServices Distributor datasource configuration")
+//public class DataSourceConfiguration {
+//
+//    /**
+//     * Default persistence unit name
+//     */
+//    public static final String DEFAULT_PERSISTENCE_UNIT_NAME = "local";
+//    /**
+//     * Default domain name prefix
+//     */
+//    public static final String DEFAULT_DOMAIN_NAME_PREFIX = "domain-";
+//
+//    @Bean
+//    @Primary
+//    @ConditionalOnMissingBean(name = {"entityManagerFactory"})
+//    @Description("Local container entity manager factory bean")
+//    public LocalContainerEntityManagerFactoryBean entityManagerFactory(final DataSource dataSource, final JpaProperties jpaProperties) {
+//        final LocalContainerEntityManagerFactoryBean factoryBean = new LocalContainerEntityManagerFactoryBean();
+//        factoryBean.setDataSource(dataSource);
+//        factoryBean.setJpaVendorAdapter(this.jpaVendorAdapter());
+//        factoryBean.setJpaPropertyMap(jpaProperties.getProperties());
+//        factoryBean.setJpaDialect(this.jpaDialect());
+//        factoryBean.setPackagesToScan(this.getPackagesToScan());
+//        factoryBean.setPersistenceUnitName(DEFAULT_PERSISTENCE_UNIT_NAME);
+//        return factoryBean;
+//    }
+//
+//    /**
+//     * Returns {@link JpaVendorAdapter} configuration
+//     *
+//     * @return {@link JpaVendorAdapter} configuration
+//     */
+//    @Bean
+//    @ConditionalOnMissingBean
+//    public JpaVendorAdapter jpaVendorAdapter() {
+//        return new HibernateJpaVendorAdapter();
+//    }
+//
+//    @Bean
+//    @ConditionalOnMissingBean(type = "JpaTransactionManager")
+//    @Description("JPA transaction manager bean")
+//    public JpaTransactionManager transactionManager(final LocalContainerEntityManagerFactoryBean entityManagerFactory) {
+//        final JpaTransactionManager transactionManager = new JpaTransactionManager();
+//        transactionManager.setEntityManagerFactory(entityManagerFactory.getObject());
+//        return transactionManager;
+//    }
+//
+////    @Bean(name = "transactionManager")
+////    public HibernateTransactionManager transactionManager(final DataSource dataSource) {
+////        final HibernateTransactionManager txManager = new HibernateTransactionManager();
+////        txManager.setSessionFactory(this.sessionFactory(dataSource).getObject());
+////        return txManager;
+////    }
+//
+//    @Bean
+//    @Primary
+//    @Description("Transaction template bean")
+//    public TransactionTemplate transactionTemplate(final PlatformTransactionManager transactionManager) {
+//        return new TransactionTemplate(transactionManager);
+//    }
+//
+//    /**
+//     * Returns {@link ParentAwareNamingStrategy} configuration
+//     *
+//     * @return {@link ParentAwareNamingStrategy} configuration
+//     */
+//    @Bean
+//    @ConditionalOnMissingBean(value = ObjectNamingStrategy.class, search = SearchStrategy.CURRENT)
+//    @Description("Parent aware object naming strategy bean")
+//    public ParentAwareNamingStrategy objectNamingStrategy() {
+//        final ParentAwareNamingStrategy namingStrategy = new ParentAwareNamingStrategy(new AnnotationJmxAttributeSource());
+//        namingStrategy.setDefaultDomain(join(DEFAULT_DOMAIN_NAME_PREFIX, UUID.randomUUID().toString()));
+//        return namingStrategy;
+//    }
+//
+//    /**
+//     * Returns {@link JpaDialect} configuration
+//     *
+//     * @return {@link JpaDialect} configuration
+//     */
+//    @Bean
+//    @Description("JPA dialect bean")
+//    public JpaDialect jpaDialect() {
+//        return new HibernateJpaDialect();
+//    }
+//
+//    /**
+//     * Returns {@link PersistenceExceptionTranslationPostProcessor} configuration
+//     *
+//     * @return {@link PersistenceExceptionTranslationPostProcessor} configuration
+//     */
+//    @Bean
+//    @Description("Persistence exception translation post processor bean")
+//    public PersistenceExceptionTranslationPostProcessor exceptionTranslation() {
+//        return new PersistenceExceptionTranslationPostProcessor();
+//    }
+//
+//    /**
+//     * Returns {@link PersistenceUnitManager} configuration
+//     *
+//     * @return {@link PersistenceUnitManager} configuration
+//     */
+//    @Bean
+//    @Description("Persistence unit manager bean")
+//    public PersistenceUnitManager persistenceUnitManager(final DataSource dataSource) {
+//        final DefaultPersistenceUnitManager manager = new DefaultPersistenceUnitManager();
+//        manager.setDefaultDataSource(dataSource);
+//        manager.setDefaultPersistenceUnitName(DEFAULT_PERSISTENCE_UNIT_NAME);
+//        return manager;
+//    }
+//
+//    /**
+//     * Returns {@link BeanPostProcessor} configuration
+//     *
+//     * @return {@link BeanPostProcessor} configuration
+//     */
+//    @Bean
+//    @Description("Post processor bean")
+//    public BeanPostProcessor postProcessor() {
+//        final PersistenceAnnotationBeanPostProcessor postProcessor = new PersistenceAnnotationBeanPostProcessor();
+//        postProcessor.setDefaultPersistenceUnitName(DEFAULT_PERSISTENCE_UNIT_NAME);
+//        return postProcessor;
+//    }
+//
+//    /**
+//     * Returns {@link LocalSessionFactoryBean} configuration
+//     *
+//     * @return {@link LocalSessionFactoryBean} configuration
+//     */
+//    @Bean
+//    @Description("Local session factory bean")
+//    public LocalSessionFactoryBean sessionFactory(final DataSource dataSource, final JpaProperties jpaProperties) throws IOException {
+//        final LocalSessionFactoryBean sessionFactory = new LocalSessionFactoryBean();
+//        sessionFactory.setDataSource(dataSource);
+//        //sessionFactory.setPackagesToScan(this.getPackagesToScan());
+//
+//        final Properties properties = new Properties();
+//        properties.putAll(jpaProperties.getProperties());
+//        sessionFactory.setHibernateProperties(properties);
+//        sessionFactory.afterPropertiesSet();
+//        return sessionFactory;
+//    }
+//
+//    protected String[] getPackagesToScan() {
+//        return new String[]{"com.paragon.microservices.distributor.model", "com.paragon.microservices.distributor.model"};
+//    }
+//}
+{"userId":"ee9cb324-1781-4bb6-6131-08d727c2cbb2","ownerId":"b3a341c7-43d0-41b9-af35-cb4cf3b13476"}
+{"userId": "ee9cb324-1781-4bb6-6131-08d727c2cbb2","ownerId": "b3a341c7-43d0-41b9-af35-cb4cf3b13476"}
+--------------------------------------------------------------------------------------------------------
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.paragon.microservices.distributor.model.constraint.ChronologicalDates;
+import com.paragon.microservices.distributor.model.converter.AuthenticatedUserConverter;
+import com.paragon.microservices.distributor.model.domain.AuthenticatedUser;
+import com.paragon.microservices.distributor.system.utils.AuthenticationUtils;
+import io.swagger.annotations.ApiModelProperty;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.UtilityClass;
+import org.hibernate.Session;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.DynamicInsert;
+import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.tuple.ValueGenerator;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.domain.Auditable;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.springframework.format.annotation.DateTimeFormat;
+
+import javax.persistence.*;
+import javax.validation.constraints.NotNull;
+import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.util.Objects;
+import java.util.Optional;
+
+import static com.paragon.microservices.distributor.model.entity.AuditModelEntity.AuditModelPersistable.*;
+import static com.paragon.microservices.distributor.system.utils.DateUtils.DEFAULT_DATE_FORMAT_PATTERN_EXT;
+
+/**
+ * {@link AuditModelPersistable} entity
+ *
+ * @param <ID> type of model identifier {@link Serializable}
+ */
+@AllArgsConstructor
+@NoArgsConstructor
+@DynamicInsert
+@DynamicUpdate
+@MappedSuperclass
+@ChronologicalDates
+@EntityListeners(AuditingEntityListener.class)
+@Converts({
+        @Convert(attributeName = "createdBy", converter = AuthenticatedUserConverter.class),
+        @Convert(attributeName = "lastModifiedBy", converter = AuthenticatedUserConverter.class)
+})
+public abstract class AuditModelEntity<ID extends Serializable> implements Auditable<AuthenticatedUser, ID, LocalDateTime>, Serializable {
+    /**
+     * Default explicit serialVersionUID for interoperability
+     */
+    private static final long serialVersionUID = 431774856692738135L;
+
+    @Setter
+    @CreationTimestamp
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME, pattern = DEFAULT_DATE_FORMAT_PATTERN_EXT)
+    @NotNull(message = "{model.entity.audit.created-date.notNull}")
+    @Column(name = CREATED_FIELD_NAME, nullable = false, updatable = false)
+    private LocalDateTime createdDate;
+
+    @Setter
+    @CreatedBy
+    @Basic(fetch = FetchType.LAZY)
+    @NotNull(message = "{model.entity.audit.created-by.notNull}")
+    @Column(name = CREATED_BY_FIELD_NAME, nullable = false, updatable = false, length = 512)
+    //@GeneratorType( type = AuthenticationUserGenerator.class, when = GenerationTime.INSERT)
+    private AuthenticatedUser createdBy;
+
+    @Setter
+    @UpdateTimestamp
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME, pattern = DEFAULT_DATE_FORMAT_PATTERN_EXT)
+    @Column(name = MODIFIED_FIELD_NAME, insertable = false)
+    //@GeneratorType( type = AuthenticationUserGenerator.class, when = GenerationTime.ALWAYS)
+    private LocalDateTime lastModifiedDate;
+
+    @Setter
+    @LastModifiedBy
+    @Basic(fetch = FetchType.LAZY)
+    @Column(name = MODIFIED_BY_FIELD_NAME, insertable = false, length = 512)
+    private AuthenticatedUser lastModifiedBy;
+
+    @Override
+    public Optional<LocalDateTime> getCreatedDate() {
+        return Optional.ofNullable(this.createdDate);
+    }
+
+    @Override
+    public Optional<AuthenticatedUser> getCreatedBy() {
+        return Optional.ofNullable(this.createdBy);
+    }
+
+    @Override
+    public Optional<LocalDateTime> getLastModifiedDate() {
+        return Optional.ofNullable(this.lastModifiedDate);
+    }
+
+    @Override
+    public Optional<AuthenticatedUser> getLastModifiedBy() {
+        return Optional.ofNullable(this.lastModifiedBy);
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        AuthenticationUtils.getAuthenticatedUser().ifPresent(this::setCreatedBy);
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        AuthenticationUtils.getAuthenticatedUser().ifPresent(this::setLastModifiedBy);
+    }
+
+    @ApiModelProperty(hidden = true)
+    @JsonIgnore
+    @Override
+    public boolean isNew() {
+        return Objects.isNull(this.getId());
+    }
+
+    @UtilityClass
+    public static final class AuditModelPersistable {
+        public static final String CREATED_FIELD_NAME = "created";
+        public static final String MODIFIED_FIELD_NAME = "modified";
+        public static final String CREATED_BY_FIELD_NAME = "created_by";
+        public static final String MODIFIED_BY_FIELD_NAME = "modified_by";
+    }
+
+
+    public static class AuthenticationUserGenerator implements ValueGenerator<AuthenticatedUser> {
+        @Override
+        public AuthenticatedUser generateValue(final Session session, final Object owner) {
+            return AuthenticationUtils.getAuthenticatedUser().orElse(null);
+        }
+    }
+}
+
+
+java.util.concurrent.CompletionException: org.springframework.dao.DataIntegrityViolationException: could not initialize a collection batch:
 --------------------------------------------------------------------------------------------------------
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -33629,6 +34477,56 @@ public interface UserService {
     @WebMethod
     public Users getUsers();
 }
+--------------------------------------------------------------------------------------------------------
+https://www.baeldung.com/hibernate-custom-types
+https://github.com/eugenp/tutorials/tree/master/persistence-modules/hibernate5/src/main/java/com/baeldung/hibernate
+--------------------------------------------------------------------------------------------------------
+import org.hibernate.boot.model.naming.Identifier;
+import org.hibernate.boot.model.naming.PhysicalNamingStrategy;
+import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment;
+
+public class CustomPhysicalNamingStrategy implements PhysicalNamingStrategy {
+
+    @Override
+    public Identifier toPhysicalCatalogName(final Identifier identifier, final JdbcEnvironment jdbcEnv) {
+        return convertToSnakeCase(identifier);
+    }
+
+    @Override
+    public Identifier toPhysicalColumnName(final Identifier identifier, final JdbcEnvironment jdbcEnv) {
+        return convertToSnakeCase(identifier);
+    }
+
+    @Override
+    public Identifier toPhysicalSchemaName(final Identifier identifier, final JdbcEnvironment jdbcEnv) {
+        return convertToSnakeCase(identifier);
+    }
+
+    @Override
+    public Identifier toPhysicalSequenceName(final Identifier identifier, final JdbcEnvironment jdbcEnv) {
+        return convertToSnakeCase(identifier);
+    }
+
+    @Override
+    public Identifier toPhysicalTableName(final Identifier identifier, final JdbcEnvironment jdbcEnv) {
+        return convertToSnakeCase(identifier);
+    }
+
+    private Identifier convertToSnakeCase(final Identifier identifier) {
+        if (identifier == null) {
+            return identifier;
+        }
+
+        final String regex = "([a-z])([A-Z])";
+        final String replacement = "$1_$2";
+        final String newName = identifier.getText()
+            .replaceAll(regex, replacement)
+            .toLowerCase();
+        return Identifier.toIdentifier(newName);
+    }
+
+}
+© 2019 GitHub
 --------------------------------------------------------------------------------------------------------
 #!/bin/sh
 
