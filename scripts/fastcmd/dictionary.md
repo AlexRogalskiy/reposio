@@ -22831,6 +22831,900 @@ info:
     }
 
 -------------------------------------------------------------------------------------------------------
+package org.jboss.tutorial.callback.bean;
+
+import javax.persistence.PreRemove;
+import javax.persistence.PostRemove;
+import javax.persistence.PreUpdate;
+import javax.persistence.PostUpdate;
+import javax.persistence.PostLoad;
+import javax.persistence.PrePersist;
+import javax.persistence.PostPersist;
+
+/**
+ * @author <a href="mailto:kabir.khan@jboss.org">Kabir Khan</a>
+ * @version $Revision: 57207 $
+ */
+public class CustomerCallbackListener
+{
+   @PrePersist
+   public void doPrePersist(Customer customer)
+   {
+      System.out.println("doPrePersist: About to create Customer: " + customer.getFirst() + " " + customer.getLast());
+   }
+
+   @PostPersist
+   public void doPostPersist(Object customer)
+   {
+      System.out.println("doPostPersist: Created Customer: " + ((Customer)customer).getFirst() + " " + ((Customer)customer).getLast());
+   }
+
+   @PreRemove
+   public void doPreRemove(Customer customer)
+   {
+      System.out.println("doPreRemove: About to delete Customer: " + customer.getFirst() + " " + customer.getLast());
+   }
+
+   @PostRemove
+   public void doPostRemove(Customer customer)
+   {
+      System.out.println("doPostRemove: Deleted Customer: " + customer.getFirst() + " " + customer.getLast());
+   }
+
+   @PreUpdate
+   public void doPreUpdate(Customer customer)
+   {
+      System.out.println("doPreUpdate: About to update Customer: " + customer.getFirst() + " " + customer.getLast());
+   }
+
+   @PostUpdate
+   public void doPostUpdate(Customer customer)
+   {
+      System.out.println("doPostUpdate: Updated Customer: " + customer.getFirst() + " " + customer.getLast());
+   }
+
+   @PostLoad
+   public void doPostLoad(Customer customer)
+   {
+      System.out.println("doPostLoad: Loaded Customer: " + customer.getFirst() + " " + customer.getLast());
+   }
+
+
+}
+
+-------------------------------------------------------------------------------------------------------
+import javax.persistence.DiscriminatorColumn;
+import javax.persistence.DiscriminatorType;
+import javax.persistence.DiscriminatorValue;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
+import javax.persistence.Table;
+
+
+@Entity
+public class Employee extends Customer {
+   private int employeeId;
+
+   public int getEmployeeId() { return employeeId; }
+   public void setEmployeeId(int id) { employeeId = id; }
+}
+
+
+@Entity
+@DiscriminatorValue("CUST")
+class Customer extends Person {
+   private String street;
+   private String city;
+   private String state;
+   private String zip;
+   
+   public String getStreet() { return street; }
+   public void setStreet(String street) { this.street = street; }
+
+   public String getCity() { return city; }
+   public void setCity(String city) { this.city = city; }
+
+   public String getState() { return state; }
+   public void setState(String state) { this.state = state; }
+
+   public String getZip() { return zip; }
+   public void setZip(String zip) { this.zip = zip; }
+}
+
+
+@Entity
+@Table(name="PERSON_HIERARCHY")
+@Inheritance(strategy=InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name="DISCRIMINATOR",
+                     discriminatorType=DiscriminatorType.STRING)
+@DiscriminatorValue("PERSON")
+class Person implements java.io.Serializable
+{
+   private int id;
+   private String firstName;
+   private String lastName;
+
+   @Id @GeneratedValue
+   public int getId() { return id; }
+   public void setId(int id) { this.id = id; }
+
+   public String getFirstName() { return firstName; }
+   public void setFirstName(String first) { this.firstName = first; }
+
+   public String getLastName() { return lastName; }
+   public void setLastName(String last) { this.lastName = last; }
+}
+    
+-------------------------------------------------------------------------------------------------------
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.http.MediaType;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.mock.http.MockHttpOutputMessage;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup;
+
+/**
+ * @author Josh Long
+ */
+@RunWith(SpringJUnit4ClassRunner.class)
+@SpringApplicationConfiguration(classes = Application.class)
+@WebAppConfiguration
+public class BookmarkRestControllerTest {
+
+
+    private MediaType contentType = new MediaType(MediaType.APPLICATION_JSON.getType(),
+            MediaType.APPLICATION_JSON.getSubtype(),
+            Charset.forName("utf8"));
+
+    private MockMvc mockMvc;
+
+    private String userName = "bdussault";
+
+    private HttpMessageConverter mappingJackson2HttpMessageConverter;
+
+    private Account account;
+
+    private List<Bookmark> bookmarkList = new ArrayList<>();
+
+    @Autowired
+    private BookmarkRepository bookmarkRepository;
+
+    @Autowired
+    private WebApplicationContext webApplicationContext;
+
+    @Autowired
+    private AccountRepository accountRepository;
+
+    @Autowired
+    void setConverters(HttpMessageConverter<?>[] converters) {
+
+        this.mappingJackson2HttpMessageConverter = Arrays.asList(converters).stream().filter(
+                hmc -> hmc instanceof MappingJackson2HttpMessageConverter).findAny().get();
+
+        Assert.assertNotNull("the JSON message converter must not be null",
+                this.mappingJackson2HttpMessageConverter);
+    }
+
+    @Before
+    public void setup() throws Exception {
+        this.mockMvc = webAppContextSetup(webApplicationContext).build();
+
+        this.bookmarkRepository.deleteAllInBatch();
+        this.accountRepository.deleteAllInBatch();
+
+        this.account = accountRepository.save(new Account(userName, "password"));
+        this.bookmarkList.add(bookmarkRepository.save(new Bookmark(account, "http://bookmark.com/1/" + userName, "A description")));
+        this.bookmarkList.add(bookmarkRepository.save(new Bookmark(account, "http://bookmark.com/2/" + userName, "A description")));
+    }
+
+    @Test
+    public void userNotFound() throws Exception {
+        mockMvc.perform(post("/george/bookmarks/")
+                .content(this.json(new Bookmark()))
+                .contentType(contentType))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void readSingleBookmark() throws Exception {
+        mockMvc.perform(get("/" + userName + "/bookmarks/"
+                + this.bookmarkList.get(0).getId()))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(contentType))
+                .andExpect(jsonPath("$.id", is(this.bookmarkList.get(0).getId().intValue())))
+                .andExpect(jsonPath("$.uri", is("http://bookmark.com/1/" + userName)))
+                .andExpect(jsonPath("$.description", is("A description")));
+    }
+
+    @Test
+    public void readBookmarks() throws Exception {
+        mockMvc.perform(get("/" + userName + "/bookmarks"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(contentType))
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].id", is(this.bookmarkList.get(0).getId().intValue())))
+                .andExpect(jsonPath("$[0].uri", is("http://bookmark.com/1/" + userName)))
+                .andExpect(jsonPath("$[0].description", is("A description")))
+                .andExpect(jsonPath("$[1].id", is(this.bookmarkList.get(1).getId().intValue())))
+                .andExpect(jsonPath("$[1].uri", is("http://bookmark.com/2/" + userName)))
+                .andExpect(jsonPath("$[1].description", is("A description")));
+    }
+
+    @Test
+    public void createBookmark() throws Exception {
+        String bookmarkJson = json(new Bookmark(
+                this.account, "http://spring.io", "a bookmark to the best resource for Spring news and information"));
+        this.mockMvc.perform(post("/" + userName + "/bookmarks")
+                .contentType(contentType)
+                .content(bookmarkJson))
+                .andExpect(status().isCreated());
+    }
+
+    protected String json(Object o) throws IOException {
+        MockHttpOutputMessage mockHttpOutputMessage = new MockHttpOutputMessage();
+        this.mappingJackson2HttpMessageConverter.write(
+                o, MediaType.APPLICATION_JSON, mockHttpOutputMessage);
+        return mockHttpOutputMessage.getBodyAsString();
+    }
+}
+-------------------------------------------------------------------------------------------------------
+keytool -genkey -alias bookmarks -keyalg RSA -keystore src/main/resources/tomcat.keystore
+-------------------------------------------------------------------------------------------------------
+@Configuration
+class WebSecurityConfiguration extends GlobalAuthenticationConfigurerAdapter {
+
+	@Autowired
+	AccountRepository accountRepository;
+
+	@Override
+	public void init(AuthenticationManagerBuilder auth) throws Exception {
+		auth.userDetailsService(userDetailsService());
+	}
+
+	@Bean
+	UserDetailsService userDetailsService() {
+		return (username) -> accountRepository
+				.findByUsername(username)
+				.map(a -> new User(a.username, a.password, true, true, true, true,
+						AuthorityUtils.createAuthorityList("USER", "write")))
+				.orElseThrow(
+						() -> new UsernameNotFoundException("could not find the user '"
+								+ username + "'"));
+	}
+}
+-------------------------------------------------------------------------------------------------------
+
+@Configuration
+@EnableResourceServer
+@EnableAuthorizationServer
+class OAuth2Configuration extends AuthorizationServerConfigurerAdapter {
+
+	String applicationName = "bookmarks";
+
+	// This is required for password grants, which we specify below as one of the
+	// {@literal authorizedGrantTypes()}.
+	@Autowired
+	AuthenticationManagerBuilder authenticationManager;
+
+	@Override
+	public void configure(AuthorizationServerEndpointsConfigurer endpoints)
+			throws Exception {
+		// Workaround for https://github.com/spring-projects/spring-boot/issues/1801
+		endpoints.authenticationManager(new AuthenticationManager() {
+			@Override
+			public Authentication authenticate(Authentication authentication)
+					throws AuthenticationException {
+				return authenticationManager.getOrBuild().authenticate(authentication);
+			}
+		});
+	}
+
+	@Override
+	public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
+
+		clients.inMemory().withClient("android-" + applicationName)
+				.authorizedGrantTypes("password", "authorization_code", "refresh_token")
+				.authorities("ROLE_USER").scopes("write").resourceIds(applicationName)
+				.secret("123456");
+	}
+}
+
+class BookmarkResource extends ResourceSupport {
+
+	private final Bookmark bookmark;
+
+	public BookmarkResource(Bookmark bookmark) {
+		String username = bookmark.getAccount().getUsername();
+		this.bookmark = bookmark;
+		this.add(new Link(bookmark.uri, "bookmark-uri"));
+		this.add(linkTo(BookmarkRestController.class, username).withRel("bookmarks"));
+		this.add(linkTo(
+				methodOn(BookmarkRestController.class, username).readBookmark(null,
+						bookmark.getId())).withSelfRel());
+	}
+
+	public Bookmark getBookmark() {
+		return bookmark;
+	}
+}
+-------------------------------------------------------------------------------------------------------
+  /** POST /newss -> Create a new news. */
+  @RequestMapping(
+      value = "/newss",
+      method = RequestMethod.POST,
+      produces = MediaType.APPLICATION_JSON_VALUE)
+  @Timed
+  public ResponseEntity<News> createNews(@Valid @RequestBody News news) throws URISyntaxException {
+    log.debug("REST request to save News : {}", news);
+    if (news.getId() != null) {
+      return ResponseEntity.badRequest()
+          .headers(
+              HeaderUtil.createFailureAlert(
+                  "news", "idexists", "A new news cannot already have an ID"))
+          .body(null);
+    }
+    News result = newsRepository.save(news);
+    List<Subscription> subscriptions =
+        subscriptionRepository
+            .findAll()
+            .stream()
+            .filter(item -> (item.getIdMarketPlace().equals(result.getMarketPlace().getId())))
+            .collect(Collectors.toList());
+    String title = result.getMarketPlace().getName() + " vous a envoyé une News !";
+    String content = result.getTitle() + "\n\n\n" + result.getContent();
+
+    for (Subscription subscription : subscriptions) {
+      mailService.sendEmail(subscription.getUser().getEmail(), title, content, false, false);
+    }
+    return ResponseEntity.created(new URI("/api/newss/" + result.getId()))
+        .headers(HeaderUtil.createEntityCreationAlert("news", result.getId().toString()))
+        .body(result);
+  }
+-------------------------------------------------------------------------------------------------------
+ /**
+   * POST /users : Creates a new user.
+   *
+   * <p>Creates a new user if the login and email are not already used, and sends an mail with an
+   * activation link. The user needs to be activated on creation.
+   *
+   * @param managedUserVM the user to create
+   * @return the ResponseEntity with status 201 (Created) and with body the new user, or with status
+   *     400 (Bad Request) if the login or email is already in use
+   * @throws URISyntaxException if the Location URI syntax is incorrect
+   */
+  @PostMapping("/users")
+  @Timed
+  @Secured(AuthoritiesConstants.ADMIN)
+  public ResponseEntity<?> createUser(@RequestBody ManagedUserVM managedUserVM)
+      throws URISyntaxException {
+    log.debug("REST request to save User : {}", managedUserVM);
+
+    // Lowercase the user login before comparing with database
+    if (userRepository.findOneByLogin(managedUserVM.getLogin().toLowerCase()).isPresent()) {
+      return ResponseEntity.badRequest()
+          .headers(
+              HeaderUtil.createFailureAlert("userManagement", "userexists", "Login already in use"))
+          .body(null);
+    } else if (userRepository.findOneByEmail(managedUserVM.getEmail()).isPresent()) {
+      return ResponseEntity.badRequest()
+          .headers(
+              HeaderUtil.createFailureAlert(
+                  "userManagement", "emailexists", "Email already in use"))
+          .body(null);
+    } else {
+      User newUser = userService.createUser(managedUserVM);
+      mailService.sendCreationEmail(newUser);
+      return ResponseEntity.created(new URI("/api/users/" + newUser.getLogin()))
+          .headers(HeaderUtil.createAlert("userManagement.created", newUser.getLogin()))
+          .body(newUser);
+    }
+  }
+-------------------------------------------------------------------------------------------------------
+@RunWith(SpringJUnit4ClassRunner.class)
+@WebAppConfiguration
+@ContextConfiguration(classes = MyWebConfig.class)
+public class ControllerTest {
+
+    @Autowired
+    private WebApplicationContext wac;
+    private MockMvc mockMvc;
+
+    @Before
+    public void setup () {
+        DefaultMockMvcBuilder builder = MockMvcBuilders.webAppContextSetup(this.wac);
+        this.mockMvc = builder.build();
+    }
+
+    @Test
+    public void testUserController () throws Exception {
+        MockHttpServletRequestBuilder builder =
+                                      MockMvcRequestBuilders.post("/test")
+                                        .header("testHeader",
+                                                "headerValue")
+                                        .content("test body");
+        this.mockMvc.perform(builder)
+                    .andExpect(MockMvcResultMatchers.status()
+                                                    .isOk())
+                    .andDo(MockMvcResultHandlers.print());
+					
+@Controller
+@RequestMapping
+public class MyController {
+
+   @RequestMapping("/user")
+    public ResponseEntity<String> handleUserRequest (RequestEntity<User> requestEntity) {
+        User user = requestEntity.getBody();
+        System.out.println("request body: " + user);
+        System.out.println("request headers " + requestEntity.getHeaders());
+        System.out.println("request method : " + requestEntity.getMethod());
+
+        MultiValueMap<String, String> headers = new HttpHeaders();
+        headers.put("Cache-Control", Arrays.asList("max-age=3600"));
+
+        ResponseEntity<String> responseEntity = new ResponseEntity<>("my response body",
+                                                                     headers,
+                                                                     HttpStatus.OK);
+        return responseEntity;
+    }
+}
+
+@RunWith(SpringJUnit4ClassRunner.class)
+@WebAppConfiguration
+@ContextConfiguration(classes = MyWebConfig.class)
+public class ControllerTest {
+
+    @Autowired
+    private WebApplicationContext wac;
+    private MockMvc mockMvc;
+
+    @Before
+    public void setup () {
+        DefaultMockMvcBuilder builder = MockMvcBuilders.webAppContextSetup(this.wac);
+        this.mockMvc = builder.build();
+    }
+
+    @Test
+    public void testUserController () throws Exception {
+
+        MockHttpServletRequestBuilder builder =
+                                   MockMvcRequestBuilders.post("/user")
+                                        .header("testHeader",
+                                                "headerValue")
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(createUserInJson("joe",
+                                                            "joe@example.com"));
+        this.mockMvc.perform(builder)
+                    .andExpect(MockMvcResultMatchers.status()
+                                                    .isOk())
+                    .andDo(MockMvcResultHandlers.print());
+    }
+
+    private static String createUserInJson (String name, String email) {
+        return "{ \"name\": \"" + name + "\", " +
+                            "\"emailAddress\":\"" + email + "\"}";
+    }
+}
+-------------------------------------------------------------------------------------------------------
+  public class User {
+    @NotNull(groups = GroupUserName.class)
+    String firstName;
+    @NotNull(groups = GroupUserName.class)
+    String lastName;
+
+    @NotNull(groups = GroupAddress.class)
+    String streetAddress;
+    @NotNull(groups = GroupAddress.class)
+    String country;
+    @NotNull(groups = GroupAddress.class)
+    @Size(min = 5, groups = GroupAddress.class)
+    String zipCode;
+
+    @NotNull
+    String userId;
+
+    //getters and setters
+  }
+  
+     validator.validate(user, GroupUserName.class,
+                      GroupAddress.class, Default.class);
+					  
+import javax.validation.GroupSequence;
+import javax.validation.groups.Default;
+
+@GroupSequence({Default.class, GroupUserName.class, GroupAddress.class})
+public interface GroupSequenceForUser {
+}
+
+ @GroupSequence({User2.class, GroupUserName.class, GroupAddress.class})
+ public class User2 {
+    @NotNull(groups = GroupUserName.class)
+    String firstName;
+    @NotNull(groups = GroupUserName.class)
+    String lastName;
+
+    @NotNull(groups = GroupAddress.class)
+    String streetAddress;
+    @NotNull(groups = GroupAddress.class)
+    String country;
+    @NotNull(groups = GroupAddress.class)
+    @Size(min = 5, groups = GroupAddress.class)
+    String zipCode;
+
+    @NotNull
+    String userId;
+
+   // getters and setters
+}
+-------------------------------------------------------------------------------------------------------
+    TestBean test = new TestBean();
+    int[] testNumbers = test.findNumbers();
+
+    Method method = TestBean.class.getDeclaredMethod("findNumbers");
+
+    ExecutableValidator executableValidator = validator.forExecutables();
+    Set<ConstraintViolation<TestBean>> violations =
+                            executableValidator.validateReturnValue(test,
+                                                method, testNumbers);
+
+    if (violations.size() > 0) {
+        violations.stream().forEach(MethodReturnValidationExample::printError);
+    } else {
+        //proceed using TestBean object
+    }
+-------------------------------------------------------------------------------------------------------
+    public class User {
+        private final String name;
+        private final String phone;
+
+        public User (@NotNull String name,
+                     @NotNull
+                     @Pattern(regexp = "(\\d){3,3}-\\d{3,3}-\\d{4,4}",
+                     message = "must match 111-111-1111 format")
+                     String phone) {
+            this.name = name;
+            this.phone = phone;
+        }
+      ....
+    }
+	
+	public class Test{
+    public static void main (String[] args) throws NoSuchMethodException {
+
+        javax.validation.Validator validator =  ....
+
+        String userName = null;
+        String userPhone = "223-223-222";
+
+        ExecutableValidator executableValidator = validator.forExecutables();
+
+        Set<ConstraintViolation<User>> constraintViolations =
+                            executableValidator.validateConstructorParameters(
+                              User.class.getConstructor(String.class, String.class),
+                                                 new  Object[]{userName, userPhone});
+
+        if (constraintViolations.size() > 0) {
+            constraintViolations.stream().forEach(Test::printError);
+        } else {
+            User user = new User(userName, userPhone);
+            System.out.println(user);
+        }
+    }
+
+    private static void printError (
+                        ConstraintViolation<User> violation) {
+        System.out.println(violation.getPropertyPath() + " " + violation.getMessage());
+    }
+-------------------------------------------------------------------------------------------------------
+https://www.logicbig.com/tutorials/java-ee-tutorial/bean-validation/predefined_constraints.html
+-------------------------------------------------------------------------------------------------------
+javax.validation.constraints.DecimalMax.message  = must be less than ${inclusive == true ? 'or equal to ' : ''}{value}
+javax.validation.constraints.DecimalMin.message  = must be greater than ${inclusive == true ? 'or equal to ' : ''}{value}
+javax.validation.constraints.Digits.message      = numeric value out of bounds (<{integer} digits>.<{fraction} digits> expected)
+javax.validation.constraints.Max.message         = must be less than or equal to {value}
+javax.validation.constraints.Min.message         = must be greater than or equal to {value}
+javax.validation.constraints.Pattern.message     = must match "{regexp}"
+javax.validation.constraints.Size.message        = size must be between {min} and {max}
+-------------------------------------------------------------------------------------------------------
+     public class Task {
+        public void run (@Size(min = 3, max = 20) String name,
+                         @NotNull Runnable runnable) {
+            System.out.println("starting task synchronously: " + name);
+            runnable.run();
+        }
+    }
+	
+    Task task = new Task();
+    String taskName = "a"; //"myTask"
+    Runnable runnable = null; // ()-> System.out.println("task running");
+
+    ExecutableValidator executableValidator = validator.forExecutables();
+    Set<ConstraintViolation<Task>> violations =
+                      executableValidator.validateParameters(task,
+                           Task.class.getDeclaredMethod("run",
+                           new Class[]{String.class, Runnable.class}),
+                           new Object[]{taskName, runnable});
+
+    if (violations.size() > 0) {
+          violations.stream().forEach(MethodParamValidationExample::printError);
+    } else {
+           task.run(taskName, runnable);
+    }
+-------------------------------------------------------------------------------------------------------
+ LocalDate startDate = LocalDate.now();
+  LocalDate endDate = LocalDate.now().minusDays(5);
+
+  TradeHistory tradeHistory = new TradeHistory(startDate, endDate);
+
+  Constructor<TradeHistory> constructor = TradeHistory.class.getConstructor(LocalDate
+                            .class, LocalDate.class);
+
+  ExecutableValidator executableValidator = validator.forExecutables();
+  Set<ConstraintViolation<TradeHistory>> constraintViolations =
+                     executableValidator.validateConstructorParameters(constructor,
+                                                   new Object[]{startDate, endDate});
+
+  if (constraintViolations.size() > 0) {
+         constraintViolations.stream().forEach(
+                               CrossParameterConstructorExample::printError);
+  } else {
+            //proceed using order
+            System.out.println(tradeHistory);
+  }   
+-------------------------------------------------------------------------------------------------------
+   public interface AppErrorHandler<T> extends Payload {
+        void onError (ConstraintViolation<T> violation);
+    }
+-------------------------------------------------------------------------------------------------------
+  public  class TestBean {
+     @NotNull(payload = {ErrorEmailSender.class})
+     private String str;
+
+     //getters and setters
+
+    }
+	
+	
+  TestBean bean = new TestBean();
+  Set<ConstraintViolation<TestBean>> constraintViolations =
+                                                validator.validate(bean);
+
+  if (constraintViolations.size() > 0) {
+          constraintViolations.stream().forEach(
+                                ConstraintPayloadExample2::processError);
+  } else {
+          //proceed using user object
+            System.out.println(bean);
+        }
+  }
+
+
+  private static void processError (ConstraintViolation<TestBean> violation) {
+        Set<Class<? extends Payload>> payload =
+                                   violation.getConstraintDescriptor().getPayload();
+
+        payload.forEach(p -> {
+            if (AppErrorHandler.class.isAssignableFrom(p)) {
+                try {
+                    AppErrorHandler errorHandler = (AppErrorHandler) p.newInstance();
+                    errorHandler.onError(violation);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+  }
+-------------------------------------------------------------------------------------------------------
+  public class Severity {
+        public static class Info implements Payload {}
+
+        public static class Error implements Payload {}
+    }
+	
+    public class TestBean {
+      @NotNull(payload = {Severity.Error.class})
+      @Size(min = 1, payload = {Severity.Info.class})
+      private String str;
+
+       public String getStr () {
+            return str;
+       }
+
+       public void setStr (String str) {
+            this.str = str;
+       }
+    }
+	
+        TestBean bean = new TestBean();
+        //uncommenting next line will give us info severity
+        // or setting a non-empty string won't give any validation error
+        //bean.setStr("");
+
+        Set<ConstraintViolation<TestBean>> constraintViolations =
+                            validator.validate(bean);
+
+        boolean severeError = false;
+
+        if (constraintViolations.size() > 0) {
+            for (ConstraintViolation<TestBean> violation : constraintViolations) {
+                Set<Class<? extends Payload>> payloads =
+                                    violation.getConstraintDescriptor().getPayload();
+                for (Class<? extends Payload> payload : payloads) {
+                    if (payload == Severity.Error.class) {
+                        severeError = true;
+                        System.out.println("Error: " + violation.getPropertyPath() + " " +
+                                            violation.getMessage());
+                    } else if (payload == Severity.Info.class) {
+                        System.out.println("Info: " + violation.getPropertyPath() + " " +
+                                            violation.getMessage());
+                    }
+                }
+            }
+        }
+
+        if (!severeError) {
+            //continue working with bean
+            System.out.println("working with : " + bean);
+        }
+    }
+-------------------------------------------------------------------------------------------------------
+@Pattern(regexp = "\\d{3}-\\d{3}-\\d{4}")
+
+  public static void main(String[] args) throws ParseException {
+      Driver driver = new Driver(null, 60,
+              new Date(System.currentTimeMillis() + 100000));
+      DriverLicense dl = new DriverLicense(driver, 3454343);
+
+      Validator validator = createValidator();
+      Set<ConstraintViolation<DriverLicense>> violations =
+              validator.validate(dl, LicenceNumberCheck.class, Default.class);
+      if (violations.size() == 0) {
+          System.out.println("No violations.");
+      } else {
+          System.out.printf("%s violations:%n", violations.size());
+          violations.stream()
+                    .forEach(ConvertGroupExample::printError);
+      }
+  }
+  
+  public static Validator createValidator() {
+      Configuration<?> config = Validation.byDefaultProvider().configure();
+      ValidatorFactory factory = config.buildValidatorFactory();
+      Validator validator = factory.getValidator();
+      factory.close();
+      return validator;
+  }
+  
+public class DriverLicense {
+  @NotNull
+  @Valid
+  @ConvertGroup(from = LicenceNumberCheck.class,
+          to = DriverPhysicalRequirement.class)
+  private Driver driver;
+  @Digits(integer = 7, fraction = 0, groups = LicenceNumberCheck.class)
+  private int number;
+
+  public DriverLicense(Driver driver, int number) {
+      this.driver = driver;
+      this.number = number;
+  }
+}
+
+public class Driver {
+  @NotNull
+  private String fullName;
+  @Min(value = 100, groups = DriverPhysicalRequirement.class)
+  private int height;
+  @Past(groups = DriverPhysicalRequirement.class)
+  @NotNull
+  private Date dateOfBirth;
+
+  public Driver(String fullName, int height, Date dateOfBirth) {
+      this.dateOfBirth = dateOfBirth;
+      this.fullName = fullName;
+      this.height = height;
+  }
+}
+-------------------------------------------------------------------------------------------------------
+# Настройка сервера на запуск с SSL/TLS и использования HTTPS
+server.port = 8443
+server.ssl.key-store = classpath:tomcat.keystore
+server.ssl.key-store-password = password
+server.ssl.key-password = password
+-------------------------------------------------------------------------------------------------------
+import javax.annotation.security.RolesAllowed;
+import javax.ejb.Stateless;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
+import javax.annotation.security.PermitAll;
+import javax.annotation.security.RolesAllowed;
+import javax.ejb.Remote;
+import org.jboss.annotation.security.SecurityDomain;
+import org.jboss.annotation.security.SecurityDomain;
+
+@Stateless
+@SecurityDomain("other")
+@Remote(Calculator.class)
+public class CalculatorBean implements Calculator
+{
+   @PermitAll
+   @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
+   public int add(int x, int y)
+   {
+      return x + y;
+   }
+
+   @RolesAllowed({"student"})
+   public int subtract(int x, int y)
+   {
+      return x - y;
+   }
+
+   @RolesAllowed({"teacher"})
+   public int divide(int x, int y)
+   {
+      return x / y;
+   }
+}
+-------------------------------------------------------------------------------------------------------
+    <properties>
+      <property name="hibernate.dialect" value="org.hibernate.dialect.HSQLDialect"/>
+      <property name="hibernate.hbm2ddl.auto" value="update"/>
+      <property name="hibernate.connection.driver_class" value="org.hsqldb.jdbcDriver"/>
+      <property name="hibernate.connection.username" value="sa"/>
+      <property name="hibernate.connection.password" value=""/>
+      <property name="hibernate.connection.url" value="jdbc:hsqldb:data/tutorial"/>
+    </properties>
+-------------------------------------------------------------------------------------------------------
+@Entity
+@Table(name="PERSON_HIERARCHY")
+@Inheritance(strategy=InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name="DISCRIMINATOR",
+                     discriminatorType=DiscriminatorType.STRING)
+@DiscriminatorValue("PERSON")
+class Person implements java.io.Serializable
+{
+   private int id;
+   private String firstName;
+   private String lastName;
+
+   @Id @GeneratedValue
+   public int getId() { return id; }
+   public void setId(int id) { this.id = id; }
+
+   public String getFirstName() { return firstName; }
+   public void setFirstName(String first) { this.firstName = first; }
+
+   public String getLastName() { return lastName; }
+   public void setLastName(String last) { this.lastName = last; }
+}
+-------------------------------------------------------------------------------------------------------
 public static Map<Object, Object> convertToMap(final String filePath) {
 
 	// creating the properties object
