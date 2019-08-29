@@ -8036,8 +8036,155 @@ Google+: https://plus.google.com/110576186886576714610/about
 
 
 https://github.com/0x90/bluetooth-arsenal
+
+https://www.acrylicwifi.com/ru/
+https://wi-fi-pirate.ru/skachat-programmu-vzloma-wi-fi-wi-fi-pirate-4
+https://www.securitylab.ru/software/1426/
+https://www.comss.ru/page.php?id=1822
+
+waze.com
+easygps.com
+https://github.com/paritytech/
+https://github.com/mikesiko/PracticalMalwareAnalysis-Labs
+https://github.com/blockchain-IoT/Motoro
+https://github.com/PacktPublishing/Hands-On-Internet-of-Things-with-Blynk
+https://www.corben.io/projects/
+
+
+
+A descrição de Ready for Sky
+Turn on your kettle, cook dinner or turn the air on in your room with one click! Thanks to the Ready for Sky app you can do it all in one touch of your smartphone!
+
+Install the Ready for Sky app on your smartphone to control all REDMOND smart appliances based on the R4S technology from anywhere across the world*. Just download the application once to remotely send commands to all REDMOND smart devices via the common app interface.
+
+Start cooking the dish from the cookbook list in the app, set the kettle's schedule to boil water, warm up your apartment on a cold day or turn off the lights in the hallway from any distance. With the help of the Ready for Sky app it’s also easy to monitor your physical condition. The app saves parameters of all your weightings on the smart floor scale on your smartphone so that you can monitor your weight changes.
+
+The Ready for Sky app consumes minimum energy and doesn’t affect the battery life. Smart appliances are upgraded due to the regular app update which ensures that your devices won't become outdated or remain below modern trends in the course of time.
+
+Ready for Sky – affordable innovations and convenient system of controlling smart appliances in every household.
+
+*With the free R4S Gateway mobile app installed on an "at-home" Android smartphone/tablet.
+
+Devices already integrated into app:
+
+Multicooker RMC-M800S
+Multicooker RMC-M92S
+Multicooker RMC-M92S-А
+Multicooker RMC-M40S
+Multicooker RMC-M42S
+Multicooker RMC-CBF390S
+Multicooker RMC-CBD100S
+Multicooker RMC-M222S
+Multicooker RMC-M222S-А
+Multicooker RMC-M223S
+Multicooker RMC-M224S
+Multicooker RMC-M225S
+Multicooker RMC-M226
+Multicooker RMC-M227
+Multicooker RMC-M903S
+Multikitchen RMK-M41S
+Multikitchen RMK-CB390S
+Multikitchen RMK-CB391S
+Kettle RK-M170S
+Kettle RK-M171S
+Kettle RK-M173S
+Kettle RK-G200S
+Kettle RK-G200S-E
+Kettle RK-G200S-А
+Kettle RK-G201S
+Kettle RK-G202S
+Kettle RK-G203S
+Kettle RK-G210S
+Kettle RK-G211S
+Kettle RK-G212S
+Kettle RK-G213S
+Kettle RK-G214S
+Kettle RK-G216S
+Kettle RK-G240S
+Lifesense RSS-741S
+Lifesense RSB-740
+CoffeeMaker RCM-M1505S
+CoffeeMaker RCM-M1508S
+CoffeeMaker RCM-M1509S
+CoffeeMaker RCM-M1519S
+Heater RFH-C4519S
+Heater RFH-C4522S
+Heater RCH-7001S
+Heater Glassar-04\06\08
+Humidifier RHF-3310S
+Iron RI-C250S
+Iron RI-C253S
+Iron RI-C254S
+Iron RI-C255S
+Iron RI-C265S
+Iron RI-C273S
+Fan RAF-5005S
+Socket RSP-100S
+Socket RSP-103S
+Air cleaner RAC-3706S
+Cap RSP-S202S
+Socket RSP-300S
+Socket RSP-303S
+Socket RSP-BA300S/1/1
+Tracker RFT-S08
+Thermopot RTP-M810S
+Smart warm floor controller SkyFloor RSF-171S
+Heater RFH-4550S
+Heater RCH-4525/6/7/8S
+Heater RCH-4529/30S
+Water heater RSW-302S/502S/802S/1002S
+Grill RGM-M810S
+Baker RMB-M657/1S
+Baker RMB-M658/3S
+Baker RMB-M659/3S
+CleanRobot RVRW001S
+
+
+https://github.com/godda/AIS_NB-IoT_MagellanLib
+
+https://brannon.online/project/wifi-data-safari
+ 
+https://github.com/brangerbriz/wifi-data-safari
+ 
+Не только трекать активных агентов сети, составлять их профиля - но и вести их по локациям...
 ========================================================================================================================
+
+Придумать систему и ее разработать по аккумуляции данных от их последующей обработки - ведь в данных сила и - можно построить разные стат. модели, данные для экспертных система, для рекламных платформ и прочего... пока еще нет четкого описания...
+ 
+ 
+Хотелось бы придумать методы сбора данных - их последующей обработки - и выдаче какой-то конкретной обогащенной информации - нужно придумать некий портал - для пользователй - для рекламщиков для всех заинтересованных - будут данные - можно уже придумать их использование - конкретные модели - в начале нужно их уметь собирать - отбирать и агрегировать - по районам - по возрастным и прочик признакам
+ 
+Вот здесь как раз идет их обработка - тема моя - статистика - но нужно с точки зрения технологий подойти - для разработки схема поступления данных от различных устройств... которые в онлайн режиме отдают данные на серверы где уже в отложенном варианте их будет мониторить по различным срезам и прочему...
+ 
+Вот как построен Яндекс.Директ - ведь это не единственная платформа - но это уже следующий этап - интерграции в эти платформы....
+ 
+НУЖЕН ETL-процесс - экстракт-трансформ-лоад - хотелось бы чтобы это было облачное решение....
+ 
+также нужны устройства - с которых эти данные будут поступать в сервис...
+ 
+вот с этого нужно начать - потом уже смотреть как их можно обработать ....
+ 
+хотелось бы чтобы пользователи тоже могли этим управлять....
+ 
+Вот например - я сегодня ночью прошел по домам - собрал данные - в параллели - а дома их загрузил и обработал... ведь так и я могу по макам и данным пользователям - слать свою рекламу - хоть через соцсети - хоть через Яндекс директ  - как угодно - при этом могу сам рекламировать свой портал - где эти данные можно использовать для покупок, регистраций - мониторинга за всем - в том числе сотрудниками - детьми...
+ 
+пользователи сами буду получать оттуда инфу....
 ========================================================================================================================
+ 
+До хуя устройств сегодня  мне сново насыпалось - чем больше людей - тем больше устройств...
+Моя задача - помоги вот в этом - лучше узнавать инфу об устройства, лучше знать пользователей этих устройв - их привычки, предпочтения и все что можно...
+ 
+Так жалко вот идешь и ни хуя не  можешь - ни предложить - ни сделать - вот это меня захватывает - и нравится...
+ 
+Нужно разработать свою систему и прочее - инфу можно черпать откуда угодно - все равно нужно своя логика - свой интервейс - все свое....
+ 
+Прямо вот смотрю на это как на упущенную выгоду или недоприбыль - а мне она нужна - я смотрю на пользователей - как на деньги - на потенциальные деньги - и уже это все изменяет...
+ 
+Плохо - что мы ни пользуемся этой информацией, ничего не делаем - ни платные - ни бесплатные проекты - ну абсолютно ничего - вот этом меня прямо-таки расстраивает - я уже каждый день этим измеряю...
+ 
+еще пройдет чуть-чуть времени - и кто-то появиться на рынке - будут свои решения - но плохо что мы все упускаем - я так больше жить не могу - вот блять запилю свой проект и все - хоть тресни....
+ 
+Поможешь мне в этом??
 ========================================================================================================================
 ========================================================================================================================
 ========================================================================================================================

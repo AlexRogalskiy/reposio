@@ -22792,6 +22792,45 @@ info:
       vm-name: ${java.vm.name}
       runtime-version: ${java.runtime.version}
 -------------------------------------------------------------------------------------------------------
+    /**
+     * Returns {@code T} mapped item by input {@link Object} source and {@link ModelMapperType}
+     *
+     * @param source - initial input input {@link Object} source
+     * @param type   - initial input {@link ModelMapperType}
+     * @param <T>    type of mapped item
+     * @return {@code T} mapped item
+     */
+    protected <T> T map(final Object source, final TypeToken<T> type) {
+        return this.getModelMapper().map(source, type.getType());
+//        return safeCast(this.getModelMapper().map(source, type.getType()), type.getRawType());
+    }
+-------------------------------------------------------------------------------------------------------
+    public static final <T> TypeToken<T> getTypeToken() {
+        return new TypeToken<T>() {
+        };
+    }
+
+    public interface MetaDataKey<T> extends Serializable {
+        TypeToken<T> getTypeToken();
+
+        String getName();
+    }
+
+    public enum StringKeys implements MetaDataKey<Iterable<ProductModelResponse>> {
+        A1;
+
+        @Override
+        public TypeToken<Iterable<ProductModelResponse>> getTypeToken() {
+            return Iterable.class;
+        }
+
+        @Override
+        public String getName() {
+            return getDeclaringClass().getName() + "." + name();
+        }
+    }
+
+-------------------------------------------------------------------------------------------------------
 public static Map<Object, Object> convertToMap(final String filePath) {
 
 	// creating the properties object
