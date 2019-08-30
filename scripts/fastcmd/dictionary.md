@@ -12552,6 +12552,35 @@ public abstract class AuditModelEntity<ID extends Serializable> implements Audit
 
 java.util.concurrent.CompletionException: org.springframework.dao.DataIntegrityViolationException: could not initialize a collection batch:
 --------------------------------------------------------------------------------------------------------
+import com.paragon.microservices.distributor.model.entity.BaseAuditableEntity;
+import org.springframework.data.repository.NoRepositoryBean;
+
+import java.io.Serializable;
+
+/**
+ * {@link BaseAuditableEntity} repository declaration
+ *
+ * @param <E>  type of persistable {@link BaseAuditableEntity}
+ * @param <ID> type of persistable {@link BaseAuditableEntity} identifier {@link Serializable}
+ */
+@NoRepositoryBean
+public interface BaseRepository<E extends BaseAuditableEntity<ID>, ID extends Serializable> extends BaseJpaRepository<E, ID> {
+}
+
+--------------------------------------------------------------------------------------------------------
+    @Override
+    public <E extends Persistable<ID>> void saveOrUpdate(final E target, final Class<? extends E> entityClass) {
+        log.info("Saving or updating target entity: {}, class: {}", target, entityClass);
+        if (target.isNew()) {
+            this.getEntityManager().persist(target);
+        } else {
+            final E targetEntity = this.getEntityManager().find(entityClass, target.getId());
+            OptionalConsumer.of(targetEntity)
+                    .ifPresent(e -> this.getEntityManager().merge(e))
+                    .ifNotPresent(() -> this.getEntityManager().persist(target));
+        }
+    }
+--------------------------------------------------------------------------------------------------------
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.stream.Collectors;
@@ -12630,6 +12659,39 @@ public class MyPairDeserializer extends KeyDeserializer {
     public MyPair deserializeKey(String key, DeserializationContext ctxt) throws IOException, JsonProcessingException {
 
         return new MyPair(key);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+public CompletableFuture<Person> get(String id) {
+    // When creating future manually, it's important to include try/catch blocks.
+    // This is because when an exception is thrown, we want to wrap it in a failed future.
+    try {
+        // cache is a simple Map<String, Person>.
+        Person cached = cache.get(id);
+        // If we have the object cached, simply wrap and return it.
+        if (cached != null) {
+            return CompletableFuture.completedFuture(cached);
+        }
+        // Object was not cached, create CompletableFuture to represent its future availability.
+        CompletableFuture<Person> future = new CompletableFuture<>();
+        // Code to fetch the Person here.
+        // This example uses a legacy callback class as an example, but it could be any type of asynchronous code.
+        databaseFetch(id, person -> {
+            // Cache the person. (this step is specific to this example, included for completeness)
+            cache.put(id, person);
+            // Send the result to the future.
+            future.complete(person);
+        });
+        // Return the future.
+        return future;
+    }
+    // Wrap all errors in a failed future.
+    catch (Throwable e) {
+        // If errors happen, we use completeExceptionally() to report them.
+        // The get() method itself should not throw any exceptions.
+        CompletableFuture<Person> future = new CompletableFuture<>();
+        future.completeExceptionally(e);
+        return future;
     }
 }
 --------------------------------------------------------------------------------------------------------
