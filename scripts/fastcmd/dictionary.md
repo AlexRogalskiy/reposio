@@ -24290,7 +24290,445 @@ public interface GroupSequenceForUser {
         System.out.println(violation.getPropertyPath() + " " + violation.getMessage());
     }
 -------------------------------------------------------------------------------------------------------
+    .................. 
+    CriteriaUpdate<Employee> criteriaUpdate = criteriaBuilder.createCriteriaUpdate(Employee.class);
+    Root<Employee> employeeRoot = criteriaUpdate.from(Employee.class);
+    criteriaUpdate.set(employeeRoot.get(Employee_.salary),
+            criteriaBuilder.sum(employeeRoot.get(Employee_.salary), 500d))
+                  .where(criteriaBuilder.equal(employeeRoot.get(Employee_.DEPT), "IT"));
+    //the equivalent JPQL
+    //UPDATE Employee e SET e.salary = e.salary + 500 WHERE e.dept = 'IT'
+    entityManager.getTransaction().begin();
+    int i = entityManager.createQuery(criteriaUpdate).executeUpdate();
+    System.out.println("Entities updated: " + i);
+    entityManager.getTransaction().commit();
+    ..................
+-------------------------------------------------------------------------------------------------------
+SHOW COLUMNS from person
+-------------------------------------------------------------------------------------------------------
 https://www.logicbig.com/tutorials/java-ee-tutorial/bean-validation/predefined_constraints.html
+
+  private static EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("example-unit");
+  
+  private static void findEmployees() {
+      EntityManager entityManager = entityManagerFactory.createEntityManager();
+      CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+      CriteriaQuery<Employee> criteriaQuery = criteriaBuilder.createQuery(Employee.class);
+      Root<Employee> root = criteriaQuery.from(Employee.class);
+      criteriaQuery.select(root);
+
+      System.out.println("-- All employees --");
+      List<Employee> resultList = entityManager.createQuery(criteriaQuery).getResultList();
+      resultList.forEach(System.out::println);
+
+
+      System.out.println("-- All employees from IT dept --");
+      criteriaQuery.where(criteriaBuilder.equal(root.get(Employee_.DEPT), "IT"));
+      List<Employee> resultList2 = entityManager.createQuery(criteriaQuery).getResultList();
+      resultList2.forEach(System.out::println);
+
+      entityManager.close();
+  }
+
+  private static void findEmployees2() {
+      EntityManager entityManager = entityManagerFactory.createEntityManager();
+      CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+      CriteriaQuery<Object[]> criteriaQuery = criteriaBuilder.createQuery(Object[].class);
+      Root<Employee> root = criteriaQuery.from(Employee.class);
+
+      System.out.println("-- Employees name and salary --");
+      criteriaQuery.multiselect(root.get(Employee_.NAME), root.get(Employee_.SALARY));
+      List<Object[]> resultList = entityManager.createQuery(criteriaQuery).getResultList();
+      resultList.forEach(arr -> System.out.println(Arrays.toString(arr)));
+
+      System.out.println("-- Employees name and dept --");
+      criteriaQuery.multiselect(root.get(Employee_.NAME), root.get(Employee_.DEPT));
+      List<Object[]> resultList2 = entityManager.createQuery(criteriaQuery).getResultList();
+      resultList2.forEach(arr -> System.out.println(Arrays.toString(arr)));
+
+      entityManager.close();
+  }
+  
+  CriteriaQuery<Item> query = criteriaBuilder.createQuery(Item.class);
+  Root<Customer> customer = query.from(Customer.class);
+  ListJoin<Order, Item> items = customer.join(Customer_.orders)
+                                        .join(Order_.items);
+  query.select(items)
+       .where(criteriaBuilder.equal(customer.get(Customer_.shipmentInfo)
+                                    .get(ShipmentInfo_.address)
+                                    .get(Address_.state), "NJ"));
+									
+  CriteriaQuery<Employee> criteriaQuery = criteriaBuilder.createQuery(Employee.class);
+   Root<Employee> employee = criteriaQuery.from(Employee.class);
+   criteriaQuery.select(employee)
+                .where(criteriaBuilder.isMember(criteriaBuilder.literal("222-222-222"),
+                                                    employee.get(Employee_.phoneNumbers)));
+  TypedQuery<Employee> typedQuery = entityManager.createQuery(criteriaQuery);
+  List<Employee> list = typedQuery.getResultList();
+  
+  
+ CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+  CriteriaQuery<Employee> query = criteriaBuilder.createQuery(Employee.class);
+  Root<Employee> employee = query.from(Employee.class);
+  employee.fetch(Employee_.tasks, JoinType.INNER);
+  query.select(employee)
+       .distinct(true);
+  TypedQuery<Employee> typedQuery = entityManager.createQuery(query);
+  List<Employee> resultList = typedQuery.getResultList();
+  
+  
+  private static void findEmployeesWithTasks() {
+      System.out.println("-- find employees with tasks --");
+      EntityManager em = entityManagerFactory.createEntityManager();
+      CriteriaBuilder cb = em.getCriteriaBuilder();
+      CriteriaQuery<Employee> query = cb.createQuery(Employee.class);
+      Root<Employee> employee = query.from(Employee.class);
+      employee.fetch(Employee_.tasks, JoinType.LEFT);
+      query.select(employee)
+           .distinct(true);
+      TypedQuery<Employee> typedQuery = em.createQuery(query);
+      List<Employee> resultList = typedQuery.getResultList();
+      for (Employee e : resultList) {
+          System.out.println(e.getName() + " - " + e.getTasks());
+      }
+  }
+  
+  CriteriaBuilder cb = em.getCriteriaBuilder(); 
+  CriteriaQuery<Employee> query = cb.createQuery(Employee.class);//create query object
+  Root<Employee> employee = query.from(Employee.class);//create object representing 'from' part
+  query.select(employee);//create 'select from' part
+  query.orderBy(
+        cb.asc(employee.get(Employee_.dept)),
+        cb.desc(employee.get(Employee_.salary))
+   );
+   
+@Entity
+@NamedQuery(name = Employee.SALARY_RANGE_QUERY,
+      query = "SELECT e FROM Employee e WHERE e.salary BETWEEN :min AND :max order by e.salary")
+@NamedQuery(name = Employee.SALARY_LESS_THAN_AVERAGE_QUERY,
+      query = "SELECT e FROM Employee e where  e.salary < (SELECT AVG(e2.salary) FROM Employee e2)")
+public class Employee {
+  public static final String SALARY_RANGE_QUERY = "salaryRangeQuery";
+  public static final String SALARY_LESS_THAN_AVERAGE_QUERY = "salaryLessThanAverageQuery";
+  @Id
+  @GeneratedValue
+  private long id;
+  private String name;
+  private Timestamp joinDate;
+  private long salary;
+    .............
+}
+
+  private static void findEmployeeBySalaryRange() {
+      System.out.println("-- Employee by salary range --");
+      EntityManager em = entityManagerFactory.createEntityManager();
+      Query query = em.createNamedQuery(Employee.SALARY_RANGE_QUERY);
+      query.setParameter("min", 2000L);
+      query.setParameter("max", 4000L);
+      List<Employee> resultList = query.getResultList();
+      resultList.forEach(System.out::println);
+      em.close();
+  }
+
+  private static void findEmployeeWithLessThanAverageSalary() {
+      System.out.println("-- Employee with salary less than average --");
+      EntityManager em = entityManagerFactory.createEntityManager();
+      Query query = em.createNamedQuery(Employee.SALARY_LESS_THAN_AVERAGE_QUERY);
+      List<Employee> resultList = query.getResultList();
+      resultList.forEach(System.out::println);
+      em.close();
+  }
+
+  public static void persistEmployees() {
+      Employee employee1 = Employee.create("Diana", 3000, LocalDate.of(1999, 11, 15));
+      Employee employee2 = Employee.create("Rose", 4000, LocalDate.of(2011, 5, 1));
+      Employee employee3 = Employee.create("Denise", 1500, LocalDate.of(2006, 1, 10));
+      Employee employee4 = Employee.create("Mike", 2000, LocalDate.of(2015, 8, 20));
+      EntityManager em = entityManagerFactory.createEntityManager();
+      em.getTransaction().begin();
+      em.persist(employee1);
+      em.persist(employee2);
+      em.persist(employee3);
+      em.persist(employee4);
+      em.getTransaction().commit();
+      em.close();
+  }
+
+  private static Timestamp localToTimeStamp(LocalDate date) {
+      return Timestamp.from(date.atStartOfDay().toInstant(ZoneOffset.UTC));
+  }
+-------------------------------------------------------------------------------------------------------
+  public static void main(String[] args) throws Exception {
+      EntityManagerFactory emf =
+              Persistence.createEntityManagerFactory("example-unit");
+      try {
+          persistEntities(emf);
+          runTypeEqualsQuery(emf);
+          runTypeInQuery(emf);
+          runTypeNotInQuery(emf);
+      } finally {
+          emf.close();
+      }
+  }
+
+  private static void persistEntities(EntityManagerFactory emf) throws Exception {
+      System.out.println("-- Persisting entities --");
+      EntityManager em = emf.createEntityManager();
+      em.getTransaction().begin();
+      for (Employee employee : createEmployees()) {
+          em.persist(employee);
+      }
+      em.getTransaction().commit();
+  }
+
+  private static void runTypeEqualsQuery(EntityManagerFactory emf) {
+      System.out.println("-- running TYPE with '=' query --");
+      EntityManager em = emf.createEntityManager();
+      List<Employee> entityAList = em.createQuery("SELECT t FROM Employee t WHERE TYPE(t) = FullTimeEmployee")
+                                     .getResultList();
+      entityAList.forEach(System.out::println);
+      em.close();
+  }
+
+  private static void runTypeInQuery(EntityManagerFactory emf) {
+      System.out.println("-- running TYPE with 'IN' query --");
+      EntityManager em = emf.createEntityManager();
+      List<Employee> entityAList =
+              em.createQuery("SELECT t FROM Employee t WHERE TYPE(t) IN (ContractEmployee, PartTimeEmployee)")
+                .getResultList();
+      entityAList.forEach(System.out::println);
+      em.close();
+  }
+
+  private static void runTypeNotInQuery(EntityManagerFactory emf) {
+      System.out.println("-- running TYPE NOT 'IN' query --");
+      EntityManager em = emf.createEntityManager();
+      List<Employee> entityAList =
+              em.createQuery("SELECT t FROM Employee t WHERE TYPE(t) NOT IN (ContractEmployee, PartTimeEmployee)")
+                .getResultList();
+      entityAList.forEach(System.out::println);
+      em.close();
+  }
+-------------------------------------------------------------------------------------------------------
+@Converter
+public class FileConverter implements AttributeConverter<File, String> {
+
+  @Override
+  public String convertToDatabaseColumn(File attribute) {
+      return attribute.getAbsolutePath();
+  }
+
+  @Override
+  public File convertToEntityAttribute(String dbData) {
+      return new File(dbData);
+  }
+}
+-------------------------------------------------------------------------------------------------------
+<properties>
+  <property name="javax.persistence.lock.timeout" value="600000"/>
+  <property name="javax.persistence.schema-generation.database.action" value="create"/>
+  <property name="javax.persistence.jdbc.url" value="jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;LOCK_TIMEOUT=600000"/>
+</properties>
+-------------------------------------------------------------------------------------------------------
+INSERT INTO tablename (fieldname1, fieldname2, fieldname3)
+SELECT * FROM (
+    SELECT UNNEST(ARRAY[1, 2, 3]), 
+           UNNEST(ARRAY[100, 200, 300]), 
+           UNNEST(ARRAY['a', 'b', 'c'])
+) AS temptable
+WHERE NOT EXISTS (
+    SELECT 1 FROM tablename tt
+    WHERE tt.fieldname1=temptable.fieldname1
+);
+-------------------------------------------------------------------------------------------------------
+public interface UserRepository extends MongoRepository<User, String> {
+ 
+    @Async(AsyncConfiguration.TASK_EXECUTOR_REPOSITORY)
+    CompletableFuture<Page<User>> findAllBy(final Pageable pageable);
+ 
+    @Async(AsyncConfiguration.TASK_EXECUTOR_REPOSITORY)
+    CompletableFuture<User> findOneById(final String id);
+}
+-------------------------------------------------------------------------------------------------------
+https://www.humansreadcode.com/spring-boot-completablefuture/
+https://www.nurkiewicz.com/2013/05/java-8-definitive-guide-to.html
+https://github.com/spring-projects/spring-data-examples/tree/master/jpa/java8/src/main/java/example/springdata/jpa/java8
+
+interface CustomerRepository extends Repository<Customer, Long> {
+
+  @Query("select c from Customer c")
+  Stream<Customer> streamAllCustomers();
+}
+
+try (Stream<Customer> customers = repository.streamAllCustomers()) {
+  // use the stream here
+}
+-------------------------------------------------------------------------------------------------------
+    List<String> webPageLinks = Arrays.asList(...)	// A list of 100 web page links
+    // Download contents of all the web pages asynchronously
+    List<CompletableFuture<String>> pageContentFutures = webPageLinks.stream()
+            .map(webPageLink -> downloadWebPage(webPageLink))
+            .collect(Collectors.toList());
+    // Create a combined Future using allOf()
+    CompletableFuture<Void> allFutures = CompletableFuture.allOf(
+            pageContentFutures.toArray(new CompletableFuture[pageContentFutures.size()])
+    );
+
+    CompletableFuture<String> future1 = CompletableFuture.supplyAsync(() -> {
+        try {
+            TimeUnit.SECONDS.sleep(2);
+        } catch (InterruptedException e) {
+           throw new IllegalStateException(e);
+        }
+        return "Result of Future 1";
+    });
+    CompletableFuture<String> future2 = CompletableFuture.supplyAsync(() -> {
+        try {
+            TimeUnit.SECONDS.sleep(1);
+        } catch (InterruptedException e) {
+           throw new IllegalStateException(e);
+        }
+        return "Result of Future 2";
+    });
+    CompletableFuture<String> future3 = CompletableFuture.supplyAsync(() -> {
+        try {
+            TimeUnit.SECONDS.sleep(3);
+        } catch (InterruptedException e) {
+           throw new IllegalStateException(e);
+        }
+        return "Result of Future 3";
+    });
+    CompletableFuture<Object> anyOfFuture = CompletableFuture.anyOf(future1, future2, future3);
+    System.out.println(anyOfFuture.get()); // Result of Future 2
+
+    // When all the Futures are completed, call `future.join()` to get their results and collect the results in a list -
+    CompletableFuture<List<String>> allPageContentsFuture = allFutures.thenApply(v -> {
+       return pageContentFutures.stream()
+               .map(pageContentFuture -> pageContentFuture.join())
+               .collect(Collectors.toList());
+    });
+-------------------------------------------------------------------------------------------------------
+// Run a task specified by a Runnable Object asynchronously.
+CompletableFuture<Void> future = CompletableFuture.runAsync(new Runnable() {
+    @Override
+    public void run() {
+        // Simulate a long-running Job
+        try {
+            TimeUnit.SECONDS.sleep(1);
+        } catch (InterruptedException e) {
+            throw new IllegalStateException(e);
+        }
+        System.out.println("I'll run in a separate thread than the main thread.");
+    }
+});
+// Block and wait for the future to complete
+future.get(
+-------------------------------------------------------------------------------------------------------
+    CompletableFuture<String> welcomeText  = CompletableFuture.supplyAsync(() -> {
+    	try {
+    		TimeUnit.SECONDS.sleep(1);
+    	} catch (InterruptedException e) {
+    		throw new IllegalStateException(e);
+    	}
+    	System.out.println(Thread.currentThread().getName());
+    	return "Rajeev";
+    }).thenApply(name -> {
+    	System.out.println(Thread.currentThread().getName());
+    	return "Hello " + name;
+    		
+    }).thenApply(greeting -> {
+    	System.out.println(Thread.currentThread().getName());
+    	return greeting + ", Welcome to the CalliCoder Blog";
+    });
+    System.out.println(Thread.currentThread().getName()+" go further");
+    		
+    // Block and wait for the future to complete
+    System.out.println(Thread.currentThread().getName()+" "+welcomeText .get());
+-------------------------------------------------------------------------------------------------------
+SELECT * FROM INFORMATION_SCHEMA.CONSTRAINTS WHERE TABLE_NAME='EMPLOYEE'
+SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='CONSTRAINTS'
+
+  public static void main(String[] args) {
+      EntityManagerFactory emf = Persistence.createEntityManagerFactory("example-unit");
+      try {
+          EntityManager em = emf.createEntityManager();
+          nativeQuery(em, "SHOW TABLES");
+          nativeQuery(em, "SHOW COLUMNS from Customer");
+          nativeQuery(em, "SHOW COLUMNS from ITEM_QTY");
+
+          emf.close();
+      } finally {
+          emf.close();
+      }
+  }
+  
+Entity
+public class EntityA {
+  @Id
+  @GeneratedValue
+  private int id;
+
+  @Embedded
+  @AttributeOverrides({
+          @AttributeOverride(name = "myStr", column = @Column(name = "MY_STR_COL1"))
+  })
+  @AssociationOverrides({
+          @AssociationOverride(
+                  name = "entityBRef", joinColumns = @JoinColumn(name = "EntityAB_JOIN1"))
+  })
+  private ClassA classARef;
+
+  @Embedded
+  @AttributeOverrides({
+          @AttributeOverride(name = "myStr", column = @Column(name = "MY_STR_COL2"))
+  })
+  @AssociationOverrides({
+          @AssociationOverride(
+                  name = "entityBRef", joinColumns = @JoinColumn(name = "EntityAB_JOIN2"))
+  })
+  private ClassA classARef2;
+    .............
+}
+
+
+SELECT * FROM INFORMATION_SCHEMA.SEQUENCES
+-------------------------------------------------------------------------------------------------------
+@Embeddable
+public class Report {
+  private String description;
+  //@Convert(converter = FileConverter.class)
+  private File file;
+    .............
+}
+
+@Entity
+public class Journal {
+  @Id
+  @GeneratedValue
+  private long id;
+  @ElementCollection
+  @Convert(converter = FileConverter.class, attributeName = "file")
+  private List<Report> reports;
+    .............
+}
+-------------------------------------------------------------------------------------------------------
+DROP TABLE PERSON;
+DROP SEQUENCE SQ_PERSON;
+CREATE TABLE PERSON(
+ ID NUMBER(19),
+ FIRST_NAME VARCHAR(255),
+ LAST_NAME VARCHAR(255),
+ ADDRESS VARCHAR(255),
+ PRIMARY KEY (ID)
+);
+
+CREATE SEQUENCE SQ_PERSON MINVALUE 1 START WITH 1 INCREMENT BY 1 CACHE 10;
+
+INSERT INTO PERSON VALUES (SQ_PERSON.nextval,'Rose','Kantata', '2736 Kooter Lane');
+INSERT INTO PERSON VALUES (SQ_PERSON.nextval,'Mike','Togglie', '111 Cool Dr');
+INSERT INTO PERSON VALUES (SQ_PERSON.nextval,'Dana', 'Whitley', '464 Gorsuch Drive');
+INSERT INTO PERSON VALUES (SQ_PERSON.nextval,'Robin', 'Cash', '64 Zella Park');
+INSERT INTO PERSON VALUES (SQ_PERSON.nextval,'Chary', 'Mess', '112 Yellow Hill');
 -------------------------------------------------------------------------------------------------------
 javax.validation.constraints.DecimalMax.message  = must be less than ${inclusive == true ? 'or equal to ' : ''}{value}
 javax.validation.constraints.DecimalMin.message  = must be greater than ${inclusive == true ? 'or equal to ' : ''}{value}
