@@ -5181,6 +5181,156 @@ public static class LoggedUserGenerator implements ValueGenerator<String> {
 		return CurrentUser.INSTANCE.get();
 	}
 }
+--------------------------------------------------------------------------------------------------------\
+<dependencies>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-data-mongodb</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-data-mongodb-reactive</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-jdbc</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-mail</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-thymeleaf</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <dependency>
+        <groupId>mysql</groupId>
+        <artifactId>mysql-connector-java</artifactId>
+        <scope>runtime</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>de.flapdoodle.embed</groupId>
+        <artifactId>de.flapdoodle.embed.mongo</artifactId>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.hibernate</groupId>
+        <artifactId>hibernate-entitymanager</artifactId>
+        <version>5.2.16.Final</version>
+    </dependency>
+    <dependency>
+        <groupId>org.hibernate</groupId>
+        <artifactId>hibernate-search-orm</artifactId>
+        <version>4.5.1.Final</version>
+    </dependency>
+    <dependency>
+        <groupId>org.hibernate</groupId>
+        <artifactId>hibernate-core</artifactId>
+        <version>4.1.4.Final</version>
+    </dependency>
+    <dependency>
+        <groupId>org.hibernate</groupId>
+        <artifactId>hibernate-entitymanager</artifactId>
+        <version>5.2.3.Final</version>
+    </dependency>
+</dependencies>
+--------------------------------------------------------------------------------------------------------
+https://j2html.com/
+
+C:\Program Files (x86)\EMS\SQL Manager Lite for PostgreSQL\Dump\pg_dump96.exe -h localhost -p 5432 -U distributor -F p -E UTF8 -C --inserts --column-inserts -v -f "C:\Users\Alex\Documents\test2.sql" distributor_db
+
+--
+-- TOC entry 2170 (class 1262 OID 73728)
+-- Name: distributor_db; Type: DATABASE; Schema: -; Owner: postgres
+--
+
+CREATE DATABASE distributor_db WITH TEMPLATE = template0 ENCODING = 'UTF8' LC_COLLATE = 'English_United States.1252' LC_CTYPE = 'English_United States.1252';
+
+
+ALTER DATABASE distributor_db OWNER TO postgres;
+--------------------------------------------------------------------------------------------------------
+private static String PROP_DB_DRIVER_CLASS = "spring.db.driver";
+private static String PROP_DB_URL = "spring.datasource.url";
+private static String PROP_DB_USER = "spring.datasource.username";
+private static String PROP_DB_PASS = "spring.datasource.password";
+
+@Autowired
+private Environment env;
+
+@Bean
+public DataSource dataSource(){
+      DriverManagerDataSource dataSource = new DriverManagerDataSource();
+      dataSource.setDriverClassName(env.getProperty(PROP_DB_DRIVER_CLASS));
+      dataSource.setUrl(env.getProperty(PROP_DB_URL));
+      dataSource.setUsername(env.getProperty(PROP_DB_USER));
+      dataSource.setPassword(env.getProperty(PROP_DB_PASS));
+      return dataSource;
+}
+
+@Bean
+public LocalContainerEntityManagerFactoryBean entityManagerFactory() {
+      LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
+      em.setDataSource(dataSource());
+      em.setPackagesToScan("com.sweng.giflib.model");
+
+      JpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
+      em.setJpaVendorAdapter(vendorAdapter);
+      em.setJpaProperties(additionalProperties());
+
+      return em;
+}
+--------------------------------------------------------------------------------------------------------
+git pull
+mvn -B -Djava.net.id=drulli -Dusername=drulli release:prepare release:perform -Dlocale=de
+
+mvn deploy:deploy-file -Durl=http://maven.jenkins-ci.org:8081/content/repositories/releases/ -DrepositoryId=java.net-m2-repository -Dfile=findbugs-full-2.0.0-dev-20101217.jar -DpomFile=upload-pom.xml
+
+
+rm -rf $JENKINS_HOME/plugins/findbugs*
+
+mvn install || { echo "Build failed"; exit 1; }
+
+cp -f target/*.hpi $JENKINS_HOME/plugins/
+cd $JENKINS_HOME
+./go.sh
+
+
+export MAVEN_OPTS="-Xmx1024m -Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=8000,suspend=n"
+rm -rf $JENKINS_HOME/plugins/findbugs*
+mvn clean hpi:run
+--------------------------------------------------------------------------------------------------------
+  private static final String PROPERTIES_RESOURCE =
+      "/META-INF/maven/com.google.errorprone/error_prone_core/pom.properties";
+  public static Optional<String> loadVersionFromPom() {
+    try (InputStream stream = ErrorProneVersion.class.getResourceAsStream(PROPERTIES_RESOURCE)) {
+      if (stream == null) {
+        return Optional.absent();
+      }
+      Properties mavenProperties = new Properties();
+      mavenProperties.load(stream);
+      return Optional.of(mavenProperties.getProperty("version"));
+    } catch (IOException expected) {
+      return Optional.absent();
+    }
+  }
 --------------------------------------------------------------------------------------------------------
 spring:
   jpa:
@@ -24571,6 +24721,174 @@ public class Employee {
       entityAList.forEach(System.out::println);
       em.close();
   }
+-------------------------------------------------------------------------------------------------------
+public final class HibernateExporter {
+
+    private static final Logger LOG = LoggerFactory.getLogger(HibernateExporter.class);
+    private static final String OUTPUT_FILE = "schema.sql";
+    private static final String DIALECT = "org.hibernate.dialect.H2Dialect";
+
+    private List<String> entityPackages;
+
+    private HibernateExporter(List<String> entityPackages) {
+        this.entityPackages = entityPackages;
+    }
+
+    public static void main(String[] args) {
+        final List<String> entityPackages = Collections.singletonList("pakage.with.entites");
+
+        HibernateExporter exporter = new HibernateExporter(entityPackages);
+        exporter.export();
+    }
+
+    private void export() {
+        SchemaExport export = new SchemaExport();
+        export.setOutputFile(OUTPUT_FILE);
+        export.setFormat(true);
+        export.setDelimiter(";");
+        EnumSet<TargetType> types = EnumSet.of(TargetType.SCRIPT);
+        Metadata metadata = createMetadataSources().buildMetadata();
+        export.execute(types, Action.CREATE, metadata);
+    }
+
+    private MetadataSources createMetadataSources() {
+        MetadataSources metadata = new MetadataSources(
+                new StandardServiceRegistryBuilder()
+                        .applySetting("hibernate.dialect", DIALECT)
+                        .build());
+
+        for (String entityPackage : entityPackages) {
+            final Reflections reflections = new Reflections(entityPackage);
+            for (Class<?> cl : reflections.getTypesAnnotatedWith(MappedSuperclass.class)) {
+                metadata.addAnnotatedClass(cl);
+                LOG.info(String.format("Mapped = %s", cl.getName()));
+            }
+            for (Class<?> cl : reflections.getTypesAnnotatedWith(Entity.class)) {
+                metadata.addAnnotatedClass(cl);
+                LOG.info(String.format("Mapped = %s", cl.getName()));
+            }
+        }
+        return metadata;
+    }
+}
+-------------------------------------------------------------------------------------------------------
+os: Visual Studio 2015
+
+install:
+  - ps: |
+      Add-Type -AssemblyName System.IO.Compression.FileSystem
+      if (!(Test-Path -Path "C:\maven" )) {
+        (new-object System.Net.WebClient).DownloadFile(
+          'http://www.us.apache.org/dist/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.zip',
+          'C:\maven-bin.zip'
+        )
+        [System.IO.Compression.ZipFile]::ExtractToDirectory("C:\maven-bin.zip", "C:\maven")
+      }
+  - cmd: SET PATH=C:\maven\apache-maven-3.3.9\bin;%JAVA_HOME%\bin;%PATH%
+  - cmd: SET MAVEN_OPTS=-XX:MaxPermSize=2g -Xmx4g
+  - cmd: SET JAVA_OPTS=-XX:MaxPermSize=2g -Xmx4g
+
+build_script:
+  - mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+
+test_script:
+  - mvn test -B
+
+cache:
+  - C:\maven\
+  - C:\Users\appveyor\.m2
+
+notifications:
+  - provider: Email
+    to:
+      - error-prone-team+ci@google.com
+    on_build_success: false
+    on_build_failure: true
+    on_build_status_changed: true
+-------------------------------------------------------------------------------------------------------
+language: java
+
+
+matrix:
+  allow_failures:
+    - jdk: oraclejdk9
+  include:
+# JDK 8
+    - jdk: oraclejdk8
+      env: JDK_RELEASE='8'
+# JDK 9
+    - jdk: oraclejdk9
+      env: JDK_RELEASE='9'
+
+# use travis-ci docker based infrastructure
+sudo: false
+
+cache:
+  directories:
+    - $HOME/.m2
+
+notifications:
+  #email: error-prone-team@google.com
+  webhooks:
+    urls:
+      - https://webhooks.gitter.im/e/74d33a22fbfb1942920e
+    on_success: change  # options: [always|never|change] default: always
+    on_failure: always  # options: [always|never|change] default: always
+
+# Store encrypted credentials for gh-pages and sonatype:
+# travis encrypt -r google/error-prone GH_TOKEN=<github access token>
+# travis encrypt -r google/error-prone CI_DEPLOY_USERNAME=<sonatype username>
+# travis encrypt -r google/error-prone CI_DEPLOY_PASSWORD=<sonatype password>
+
+env:
+  global:
+    - secure: "kM6uLpPkYz/i5FTMAh0yUyhLrmJFDr643u49i9FHreg+L5n+DYUilbRPOfHhN802Wd9Pb1yGkFxbumuzo+ZjTjHmyjH5w5hsRvRrPVX3FRnMN5SMCnE95nBZJOyMrYHYnko+IXsENqqfPjTe5d/fUsMcwYcIPuqssaO+lvTv0Yw="
+    - secure: "VTl3ljwGf0KPbX5wW1+MgQuLwpfSppph/STiyUOQkISO5jDwBAfnvcBymn/oLESwQeLZ/D+GZtL/sooG2Kf6v8Fdn6Q6VhwfSxgLDJUME+A4rOBBnDExhpUz+OT0XugWHfQ/sYRaDRk1/c1axt3XB/cxlzPNIJKlzDoPZpfDyGM="
+    - secure: "FHXaeHYXmdGNYZLuSbAE7c5xmIhUT8/VzpnlkVmDgCPXgOGY7RzCpF4MVPIDm7f63bx/qZSu+d008gFHTI98UQLHMACjD1wuahk+0vqXVG1W3WwruqilTriYjW1gUkwa5zv5AaApq0dd5CO7li1DpNPgqOrU50ddJlb0BZ6wv1Q="
+
+after_success:
+  - util/publish-snapshot-on-commit.sh
+  - util/generate-latest-docs.sh
+-------------------------------------------------------------------------------------------------------
+#! /bin/sh
+PREFIX="taskset -c 0 java -XX:+UnlockDiagnosticVMOptions -XX:-TieredCompilation -XX:+PrintCompilation -jar out/nearly-optimal-mergesort.jar "
+SEED=248442268
+
+echo Running study 1 - Random Permutations
+$PREFIX 1001 10_000,100_000,1_000_000 $SEED rp        times-rp-small       > times-rp-small.out
+$PREFIX 9001          10_000          $SEED rp        times-rp-10k         > times-rp-10k.out
+$PREFIX  201      10_000_000          $SEED rp        times-rp-10m         > times-rp-10m.out
+$PREFIX   21     100_000_000          $SEED rp        times-rp-100m        > times-rp-100m.out
+
+echo Running study 2 - sqrt-n runs
+$PREFIX  201      10_000_000          $SEED runs3000    times-runs3k-10m   > times-runs3k-10m.out
+
+echo Running study 3 - timdrag input
+$PREFIX  201      16_777_216          $SEED timdrag32   times-timdrag32-16m > times-timdrag32-16m.out
+
+#! /bin/sh
+# -XX:+UnlockDiagnosticVMOptions -XX:+PrintCompilation
+# -XX:-TieredCompilation
+# -verbose:gc
+PREFIX="taskset -c 2 java -Xms1g -Xmx1g -jar out/nearly-optimal-mergesort.jar "
+SEED=248442268
+
+echo Running study 1 - Random Permutations
+$PREFIX 200          1000,5000,10_000,50_000,100_000   $SEED rp        times-rp             > times-rp.out
+#$PREFIX  201      10_000_000          $SEED rp        times-rp-10m         > times-rp-10m.out
+#$PREFIX   21     100_000_000          $SEED rp        times-rp-100m        > times-rp-100m.out
+
+#echo Running study 2 - iid runs
+#$PREFIX  200     1000,5000,10_000,50_000,100_000          $SEED iid500    times-iid500      > times-iid500.out
+
+echo Running study 3 - sqrt-n runs
+$PREFIX  200     1000,5000,10_000,50_000,100_000          $SEED runs30    times-runs30         > times-runs30.out
+#$PREFIX  201      10_000_000          $SEED runs3000    times-runs3k-10m   > times-runs3k-10m.out
+
+echo Running study 4 - timdrag input
+$PREFIX  200      1000,5000,10_000,50_000,100_000          $SEED timdrag32   times-timdrag32 > times-timdrag32.out
+
+
 -------------------------------------------------------------------------------------------------------
 @Converter
 public class FileConverter implements AttributeConverter<File, String> {
