@@ -6016,6 +6016,11 @@ public enum Action {
 	}
 }
 --------------------------------------------------------------------------------------------------------
+hekate.name=Hekate
+hekate.version=${project.version}
+hekate.build.date=${build.date}
+hekate.git.revision=${git.commit.id}
+--------------------------------------------------------------------------------------------------------
 import com.google.errorprone.BugPattern;
 import com.google.errorprone.BugPattern.ProvidesFix;
 import com.google.errorprone.VisitorState;
