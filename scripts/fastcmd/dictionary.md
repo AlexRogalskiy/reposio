@@ -5253,6 +5253,336 @@ public static class LoggedUserGenerator implements ValueGenerator<String> {
     </dependency>
 </dependencies>
 --------------------------------------------------------------------------------------------------------
+/* $Revision:  $ */
+/* $Date:  $ */
+
+CREATE TABLE jiveSASLAuthorized (
+  username            NVARCHAR(64)   NOT NULL,
+  principal           NVARCHAR(4000) NOT NULL,
+  CONSTRAINT jiveSASLAuthoirzed_pk PRIMARY KEY (username, principal)
+);
+
+UPDATE jiveVersion set version=10 where name = 'openfire';
+
+
+/* $Revision:  $  */
+/* $Date:  $      */
+
+CREATE TABLE jiveSASLAuthorized (
+  username        NVARCHAR(64)     NOT NULL,
+  principal       NVARCHAR(2000)   NOT NULL,
+  CONSTRAINT jiveSASLAuthoirzed_pk PRIMARY KEY (username, principal)
+);
+
+UPDATE jiveVersion set version=10 where name = 'openfire';
+
+-- $Revision:  $
+-- $Date:  $
+
+CREATE TABLE jiveSASLAuthorized (
+  username            VARCHAR(64)   NOT NULL,
+  principal           VARCHAR(4000) NOT NULL,
+  CONSTRAINT jiveSASLAuthoirzed_pk PRIMARY KEY (username, principal)
+);
+
+UPDATE jiveVersion set version=10 where name = 'openfire';
+
+# $Revision:  $
+# $Date:  $
+
+CREATE TABLE jiveSASLAuthorized (
+  username            VARCHAR(64)   NOT NULL,
+  principal           TEXT          NOT NULL,
+  PRIMARY KEY (username, principal(200))
+);
+
+UPDATE jiveVersion set version=10 where name = 'openfire';
+
+// $Revision:  $
+// $Date:  $
+
+CREATE TABLE jiveSASLAuthorized (
+  username        VARCHAR(64)      NOT NULL,
+  principal       VARCHAR(4000)    NOT NULL,
+  CONSTRAINT jiveSASLAuthorized_pk PRIMARY KEY (username, principal)
+);
+
+UPDATE jiveVersion set version=10 where name = 'openfire';
+
+-- $Revision:  $
+-- $Date:  $
+
+CREATE TABLE jiveSASLAuthorized (
+  username            VARCHAR(64)   NOT NULL,
+  principal           VARCHAR(4000) NOT NULL,
+  CONSTRAINT jiveSASLAuthorized_pk PRIMARY KEY (username, principal)
+);
+
+UPDATE jiveVersion set version=10 where name = 'openfire';
+
+/sbin/chkconfig --add openfired
+/sbin/chkconfig openfired on
+--------------------------------------------------------------------------------------------------------
+@echo off
+
+REM #
+REM # $RCSfile$
+REM # $Revision: 1102 $
+REM # $Date: 2005-03-07 22:36:48 -0300 (Mon, 07 Mar 2005) $
+REM #
+
+REM # Starts Openfire in development mode, which means that JSP pages in the admin console will
+REM # be compiled dynamically out of the web src directory. This makes it much easier to admin
+REM # console development.
+
+REM # Development mode also works for plugins so that plugin JSP pages are compiled dynamically.
+REM # Hot swapping of class files is optionally supported. The two params to control these features
+REM # are [pluginName].webRoot and [pluginName].classes. See the plugin developer guide for
+REM # additional information.
+
+REM  SET PLUGIN_WEBROOT=foo.webRoot=c:\plugins\foo\src\web
+REM  SET PLUGIN_CLASSES=foo.classes=c:\plugins\foo\target\classes
+
+
+
+if "%JAVA_HOME%" == "" goto javaerror
+if not exist "%JAVA_HOME%\bin\java.exe" goto javaerror
+set OPENFIRE_HOME=%CD%\..
+goto run
+
+:javaerror
+echo.
+echo Error: JAVA_HOME environment variable not set, Openfire not started.
+echo.
+goto end
+
+:run
+if "%1" == "-debug" goto debug
+start "Openfire" "%JAVA_HOME%\bin\java" -DopenfireHome="%OPENFIRE_HOME%" -DdevelopmentMode="true" -server -cp "%JAVA_HOME%\lib\tools.jar;..\..\..\build\lib\ant.jar;..\..\..\build\lib\ant-contrib.jar;..\lib\slf4j-log4j12.jar;..\lib\bouncycastle.jar;..\lib\commons-el.jar;..\lib\hsqldb.jar;..\lib\jasper-compiler.jar;..\lib\jasper-runtime.jar;..\lib\jtds.jar;..\lib\mail.jar;..\lib\mysql.jar;..\lib\postgres.jar;..\lib\servlet.jar;..\lib\startup.jar;..\lib\openfire.jar" org.jivesoftware.openfire.starter.ServerStarter
+goto end
+
+:debug
+start "Openfire" "%JAVA_HOME%\bin\java" -DopenfireHome="%OPENFIRE_HOME%" -Xdebug -Xint -Xnoagent -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8000 -DdevelopmentMode="true" -D%PLUGIN_WEBROOT% -D%PLUGIN_CLASSES% -server -cp "%JAVA_HOME%\lib\tools.jar;..\..\..\build\lib\ant.jar;..\..\..\build\lib\ant-contrib.jar;..\lib\bouncycastle.jar;..\lib\commons-el.jar;..\lib\hsqldb.jar;..\lib\jasper-compiler.jar;..\lib\jasper-runtime.jar;..\lib\jtds.jar;..\lib\mail.jar;..\lib\mysql.jar;..\lib\postgres.jar;..\lib\servlet-api.jar;..\lib\startup.jar;..\lib\openfire.jar" org.jivesoftware.openfire.starter.ServerStarter
+goto end
+:end
+--------------------------------------------------------------------------------------------------------
+#!/bin/sh
+
+#
+# $RCSfile$
+# $Revision: 1194 $
+# $Date: 2005-03-30 13:39:54 -0300 (Wed, 30 Mar 2005) $
+#
+
+# tries to determine arguments to launch openfire
+
+# OS specific support.  $var _must_ be set to either true or false.
+cygwin=false;
+darwin=false;
+linux=false;
+case "`uname`" in
+  CYGWIN*) cygwin=true ;;
+  Darwin*) darwin=true
+           if [ -z "$JAVA_HOME" ] ; then
+             JAVA_HOME=/System/Library/Frameworks/JavaVM.framework/Home
+           fi
+           ;;
+  Linux*) linux=true
+          if [ -z "$JAVA_HOME" ]; then
+              shopt -s nullglob
+              jdks=`ls -r1d /usr/java/j* /usr/lib/jvm/* 2>/dev/null`
+              for jdk in $jdks; do
+                if [ -f "$jdk/bin/java" ]; then
+                  JAVA_HOME="$jdk"
+                  break
+                fi
+              done
+          fi
+          ;;
+esac
+
+#if openfire home is not set or is not a directory
+if [ -z "$OPENFIRE_HOME" -o ! -d "$OPENFIRE_HOME" ]; then
+
+	if [ -d /opt/openfire ] ; then
+		OPENFIRE_HOME="/opt/openfire"
+	fi
+
+	if [ -d /usr/local/openfire ] ; then
+		OPENFIRE_HOME="/usr/local/openfire"
+	fi
+
+	if [ -d ${HOME}/opt/openfire ] ; then
+		OPENFIRE_HOME="${HOME}/opt/openfire"
+	fi
+
+	#resolve links - $0 may be a link in openfire's home
+	PRG="$0"
+	progname=`basename "$0$"`
+
+	# need this for relative symlinks
+
+	# need this for relative symlinks
+  	while [ -h "$PRG" ] ; do
+    		ls=`ls -ld "$PRG"`
+    		link=`expr "$ls" : '.*-> \(.*\)$'`
+    		if expr "$link" : '/.*' > /dev/null; then
+    			PRG="$link"
+    		else
+    			PRG=`dirname "$PRG"`"/$link"
+    		fi
+  	done
+
+	#assumes we are in the bin directory
+	OPENFIRE_HOME=`dirname "$PRG"`/..
+
+	#make it fully qualified
+	OPENFIRE_HOME=`cd "$OPENFIRE_HOME" && pwd`
+fi
+OPENFIRE_OPTS="${OPENFIRE_OPTS} -DopenfireHome=\"${OPENFIRE_HOME}\""
+
+
+# For Cygwin, ensure paths are in UNIX format before anything is touched
+if $cygwin ; then
+	[ -n "$OPENFIRE_HOME" ] &&
+    		OPENFIRE_HOME=`cygpath --unix "$OPENFIRE_HOME"`
+  	[ -n "$JAVA_HOME" ] &&
+    		JAVA_HOME=`cygpath --unix "$JAVA_HOME"`
+fi
+
+#set the OPENFIRE_LIB location
+OPENFIRE_LIB="${OPENFIRE_HOME}/lib"
+OPENFIRE_OPTS="${OPENFIRE_OPTS} -Dopenfire.lib.dir=\"${OPENFIRE_LIB}\""
+
+# Override with bundled jre if it exists.
+if [ -f "$OPENFIRE_HOME/jre/bin/java" ]; then
+	JAVA_HOME="$OPENFIRE_HOME/jre"
+	JAVACMD="$OPENFIRE_HOME/jre/bin/java"
+fi
+
+if [ -z "$JAVACMD" ] ; then
+  	if [ -n "$JAVA_HOME"  ] ; then
+    		if [ -x "$JAVA_HOME/jre/sh/java" ] ; then
+      			# IBM's JDK on AIX uses strange locations for the executables
+      			JAVACMD="$JAVA_HOME/jre/sh/java"
+    		else
+      			JAVACMD="$JAVA_HOME/bin/java"
+    		fi
+  	else
+    		JAVACMD=`which java 2> /dev/null `
+    		if [ -z "$JAVACMD" ] ; then
+        		JAVACMD=java
+    		fi
+  	fi
+fi
+
+if [ ! -x "$JAVACMD" ] ; then
+  	echo "Error: JAVA_HOME is not defined correctly."
+  	echo "  We cannot execute $JAVACMD"
+  	exit 1
+fi
+
+for arguments in "$@"
+do
+case $arguments in
+    -debug)
+    JAVACMD="$JAVACMD -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
+    ;;
+    *)
+	# unknown option
+    ;;
+esac
+done
+
+
+if [ -z "$LOCALCLASSPATH" ] ; then
+	LOCALCLASSPATH=$OPENFIRE_LIB/startup.jar
+else
+      	LOCALCLASSPATH=$OPENFIRE_LIB/startup.jar:$LOCALCLASSPATH
+fi
+
+# For Cygwin, switch paths to appropriate format before running java
+if $cygwin; then
+  	if [ "$OS" = "Windows_NT" ] && cygpath -m .>/dev/null 2>/dev/null ; then
+    		format=mixed
+  	else
+    		format=windows
+  	fi
+  	OPENFIRE_HOME=`cygpath --$format "$OPENFIRE_HOME"`
+  	OPENFIRE_LIB=`cygpath --$format "$OPENFIRE_LIB"`
+  	JAVA_HOME=`cygpath --$format "$JAVA_HOME"`
+  	LOCALCLASSPATH=`cygpath --path --$format "$LOCALCLASSPATH"`
+  	if [ -n "$CLASSPATH" ] ; then
+    		CLASSPATH=`cygpath --path --$format "$CLASSPATH"`
+  	fi
+  	CYGHOME=`cygpath --$format "$HOME"`
+fi
+
+# add a second backslash to variables terminated by a backslash under cygwin
+if $cygwin; then
+  case "$OPENFIRE_HOME" in
+    *\\ )
+    OPENFIRE_HOME="$OPENFIRE_HOME\\"
+    ;;
+  esac
+  case "$CYGHOME" in
+    *\\ )
+    CYGHOME="$CYGHOME\\"
+    ;;
+  esac
+  case "$LOCALCLASSPATH" in
+    *\\ )
+    LOCALCLASSPATH="$LOCALCLASSPATH\\"
+    ;;
+  esac
+  case "$CLASSPATH" in
+    *\\ )
+    CLASSPATH="$CLASSPATH\\"
+    ;;
+  esac
+fi
+
+openfire_exec_command="exec $JAVACMD -server $OPENFIRE_OPTS -classpath \"$LOCALCLASSPATH\" -jar \"$OPENFIRE_LIB/startup.jar\""
+eval $openfire_exec_command
+--------------------------------------------------------------------------------------------------------
+/**
+ * The Class UserEntity.
+ */
+@XmlRootElement(name = "user")
+@XmlType(propOrder = { "username", "name", "email", "password", "properties" })
+public class UserEntity {
+
+}
+--------------------------------------------------------------------------------------------------------
+import javax.xml.bind.DatatypeConverter;
+
+public class BasicAuth {
+	/**
+	 * Decode the basic auth and convert it to array login/password
+	 * 
+	 * @param auth
+	 *            The string encoded authentification
+	 * @return The login (case 0), the password (case 1)
+	 */
+	public static String[] decode(String auth) {
+		// Replacing "Basic THE_BASE_64" to "THE_BASE_64" directly
+		auth = auth.replaceFirst("[B|b]asic ", "");
+
+		// Decode the Base64 into byte[]
+		byte[] decodedBytes = DatatypeConverter.parseBase64Binary(auth);
+
+		// If the decode fails in any case
+		if (decodedBytes == null || decodedBytes.length == 0) {
+			return null;
+		}
+
+		// Now we can convert the byte[] into a splitted array :
+		// - the first one is login,
+		// - the second one password
+		return new String(decodedBytes).split(":", 2);
+	}
+}
+--------------------------------------------------------------------------------------------------------
 https://j2html.com/
 
 C:\Program Files (x86)\EMS\SQL Manager Lite for PostgreSQL\Dump\pg_dump96.exe -h localhost -p 5432 -U distributor -F p -E UTF8 -C --inserts --column-inserts -v -f "C:\Users\Alex\Documents\test2.sql" distributor_db
@@ -5332,6 +5662,295 @@ mvn clean hpi:run
     }
   }
 --------------------------------------------------------------------------------------------------------
+
+import com.strobel.assembler.metadata.ClasspathTypeLoader;
+import com.strobel.assembler.metadata.CompositeTypeLoader;
+import com.strobel.assembler.metadata.ITypeLoader;
+import com.strobel.assembler.metadata.JarTypeLoader;
+import one.util.huntbugs.analysis.AnalysisOptions;
+import one.util.huntbugs.analysis.Context;
+import one.util.huntbugs.analysis.HuntBugsResult;
+import one.util.huntbugs.input.XmlReportReader;
+import one.util.huntbugs.output.Reports;
+import one.util.huntbugs.repo.AuxRepository;
+import one.util.huntbugs.repo.CompositeRepository;
+import one.util.huntbugs.repo.DirRepository;
+import one.util.huntbugs.repo.Repository;
+import one.util.huntbugs.warning.Warning;
+import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.repository.ArtifactRepository;
+import org.apache.maven.artifact.resolver.filter.ArtifactFilter;
+import org.apache.maven.artifact.resolver.filter.ScopeArtifactFilter;
+import org.apache.maven.execution.MavenSession;
+import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProject;
+import org.apache.maven.shared.dependency.tree.DependencyNode;
+import org.apache.maven.shared.dependency.tree.DependencyTreeBuilder;
+import org.apache.maven.shared.dependency.tree.DependencyTreeBuilderException;
+import org.apache.maven.shared.dependency.tree.traversal.CollectingDependencyNodeVisitor;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.jar.JarFile;
+
+/**
+ * Goal which launches the HuntBugs static analyzer tool.
+ */
+@Mojo(name = "huntbugs", defaultPhase = LifecyclePhase.PREPARE_PACKAGE, requiresProject = true, threadSafe = true)
+public class HuntBugsMojo extends AbstractMojo {
+    /**
+     * Location of the file.
+     */
+    @Parameter(defaultValue = "${project.build.directory}/huntbugs", property = "outputDir", required = true)
+    private File outputDirectory;
+
+    /**
+     * Location of classes to analyze
+     */
+    @Parameter(defaultValue = "${project.build.outputDirectory}", property = "classesDir", required = true)
+    private File classesDirectory;
+
+    /**
+     * Minimal warning score to report
+     */
+    @Parameter(defaultValue = "30", property = "minScore", required = true)
+    private int minScore;
+    
+    /**
+     * Score to fail build
+     */
+    @Parameter(defaultValue = "0", property = "failScore", required = false)
+    private int failScore;
+    
+    /**
+     * Do not print progress messages
+     */
+    @Parameter(defaultValue = "false", property = "quiet", required = true)
+    private boolean quiet;
+    
+    /**
+     * If true and report already exists, generate diff report with previous version
+     */
+    @Parameter(defaultValue = "true", property = "diff", required = true)
+    private boolean diff;
+    
+    @Parameter( defaultValue = "${project.compileClasspathElements}", readonly = true, required = true )
+    private List<String> classpathElements;
+    
+    @Parameter( defaultValue = "${project}", readonly = true, required = true )
+    private MavenProject project;
+
+    @Parameter( defaultValue = "${session}", readonly = true, required = true )
+    private MavenSession session;
+
+    @Parameter(property = "skip", defaultValue = "false")
+    private boolean skip;
+    
+    @Component
+    private DependencyTreeBuilder treeBuilder;
+
+    @Override
+    public void execute() throws MojoExecutionException {
+        if (!skip) {
+            try {
+                Context ctx = new Context(constructRepository(), constructOptions());
+
+                if (!quiet) {
+                    addAnalysisProgressListener(ctx);
+                }
+
+                ctx.analyzePackage("");
+                writeReports(ctx);
+            } catch (Exception e) {
+                throw new MojoExecutionException("Failed to run HuntBugs", e);
+            }
+        }
+    }
+    
+    private Repository constructRepository() throws IOException {
+        Repository repo = new DirRepository(classesDirectory.toPath());
+        
+        if (!quiet) {
+            getLog().info("HuntBugs: +dir " + classesDirectory);
+        }
+
+        // collecting project dependencies including pom and transitive dependencies
+        ArtifactFilter artifactFilter = new ScopeArtifactFilter("compile");
+        DependencyNode rootNode;
+        try {
+            rootNode = treeBuilder.buildDependencyTree(project, session.getLocalRepository(), artifactFilter);
+        } catch (DependencyTreeBuilderException e) {
+            throw new RuntimeException(e);
+        }
+        CollectingDependencyNodeVisitor visitor = new CollectingDependencyNodeVisitor();
+        rootNode.accept(visitor);
+
+        // converting dependencies to type loaders
+        List<DependencyNode> nodes = visitor.getNodes();
+        List<ITypeLoader> deps = new ArrayList<>();
+        for (DependencyNode dependencyNode : nodes) {
+            int state = dependencyNode.getState();
+
+            // checking that transitive dependency is NOT excluded
+            if (state == DependencyNode.INCLUDED) {
+                Artifact artifact = dependencyNode.getArtifact();
+                addDependency(artifact, deps);
+            }
+        }
+        
+        if (deps.isEmpty()) {
+            return repo;
+        }
+        
+        return new CompositeRepository(
+            Arrays.asList(repo, new AuxRepository(new CompositeTypeLoader(deps.toArray(new ITypeLoader[0])))));
+    }
+
+    private void addDependency(Artifact art, List<ITypeLoader> deps) throws IOException {
+        if ("compile".equals(art.getScope())) {
+            ArtifactRepository localRepository = session.getLocalRepository();
+            File f = localRepository.find(art).getFile();
+            if (f != null) {
+                Path path = f.toPath();
+                if (!quiet) {
+                    getLog().info("HuntBugs: +dep " + path);
+                }
+                if (Files.isRegularFile(path) && art.getType().equals("jar")) {
+                    deps.add(new JarTypeLoader(new JarFile(path.toFile())));
+                } else if (Files.isDirectory(path)) {
+                    deps.add(new ClasspathTypeLoader(path.toString()));
+                }
+            }
+        }
+    }
+
+    private AnalysisOptions constructOptions() {
+        AnalysisOptions options = new AnalysisOptions();
+        options.minScore = minScore;
+        
+        return options;
+    }
+    
+    private void addAnalysisProgressListener(Context ctx) {
+        long[] lastPrint = {0};
+        ctx.addListener((stepName, className, count, total) -> {
+            if (count == total || System.currentTimeMillis() - lastPrint[0] > 2000) {
+                getLog().info("HuntBugs: " + stepName + " [" + count + "/" + total + "]");
+                lastPrint[0] = System.currentTimeMillis();
+            }
+            return true;
+        });
+    }
+    
+    private void writeReports(Context ctx) throws Exception {
+        getLog().info("HuntBugs: Writing report (" + ctx.getStat("Warnings") + " warnings)");
+        Path path = outputDirectory.toPath();
+        Files.createDirectories(path);
+        Path xmlFile = path.resolve("report.xml");
+        Path htmlFile = path.resolve("report.html");
+        HuntBugsResult res = ctx;
+        if(diff && Files.isRegularFile(xmlFile)) {
+            res = Reports.diff(XmlReportReader.read(ctx, xmlFile), ctx);
+        }
+        Reports.write(xmlFile, htmlFile, res);
+        if (failScore > 0 && res.warnings().mapToInt(Warning::getScore).anyMatch(score -> score >= failScore)) {
+            throw new MojoFailureException("There are warnings with score higher than " + failScore);
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@WarningDefinition(category = "Performance", name = "WrongMapIteratorValues", maxScore = 55)
+--------------------------------------------------------------------------------------------------------
+language: java
+python:
+  - "2.7"
+addons:
+  apt:
+    packages:
+      - python-pip
+      - python-virtualenv
+      - wget
+      - mercurial
+
+# Use Trusty to get enough RAM
+sudo: required
+dist: trusty
+
+env:
+  global:
+    - JVMCI_VERSION="jvmci-0.36"
+    - JVMCI_BASE_JDK8="openjdk1.8.0_141"
+    - JDK9_BUILD="181"
+  matrix:
+    - JDK="jdk8" GATE="style,fullbuild"
+    - JDK="jdk8" GATE="build,test"
+    - JDK="jdk8" GATE="build,bootstraplite"
+    - JDK="jdk9" GATE="style,fullbuild"
+    - JDK="jdk9" GATE="build,test"
+    - JDK="jdk9" GATE="build,bootstraplite"
+install:
+  - |
+      export MX_PATH=${TRAVIS_BUILD_DIR}/../mx
+      git clone https://github.com/graalvm/mx.git ${MX_PATH}
+      export PATH=${PATH}:${MX_PATH}
+  - |
+      if [[ ${GATE} == *style* ]]
+      then
+        virtualenv venv
+        source venv/bin/activate
+        pip install astroid==1.1.0
+        pip install pylint==1.1.0
+        export ECLIPSE_TAR=${TRAVIS_BUILD_DIR}/../eclipse.tar.gz
+        wget http://archive.eclipse.org/eclipse/downloads/drops4/R-4.5.2-201602121500/eclipse-SDK-4.5.2-linux-gtk-x86_64.tar.gz -O ${ECLIPSE_TAR}
+        tar -C ${TRAVIS_BUILD_DIR}/.. -xzf ${ECLIPSE_TAR}
+        export ECLIPSE_EXE=${TRAVIS_BUILD_DIR}/../eclipse/eclipse
+      fi
+  - |
+      if [[ ${GATE} == *fullbuild* ]]
+      then
+        # JDT is not supported on JDK9
+        if [ "${JDK}" != "jdk9" ]
+        then
+          export JDT=${MX_PATH}/ecj.jar
+          wget http://archive.eclipse.org/eclipse/downloads/drops4/R-4.5.2-201602121500/ecj-4.5.2.jar -O ${JDT}
+        fi
+      fi
+  - |
+      if [ "${JDK}" == "jdk8" ]
+      then
+        JDK_TAR=${TRAVIS_BUILD_DIR}/../jdk.tar.gz
+        wget https://github.com/dougxc/openjdk8-jvmci-builder/releases/download/${JVMCI_VERSION}/${JVMCI_BASE_JDK8}-${JVMCI_VERSION}-linux-amd64.tar.gz -O ${JDK_TAR}
+        tar -C ${TRAVIS_BUILD_DIR}/.. -xzf ${JDK_TAR}
+        export JAVA_HOME=${TRAVIS_BUILD_DIR}/../${JVMCI_BASE_JDK8}-${JVMCI_VERSION}
+      fi
+  - |
+      if [ "${JDK}" == "jdk9" ]
+      then
+        JDK_TAR=${TRAVIS_BUILD_DIR}/../jdk.tar.gz
+        wget http://download.java.net/java/jdk9/archive/${JDK9_BUILD}/binaries/jdk-9+${JDK9_BUILD}_linux-x64_bin.tar.gz -O ${JDK_TAR}
+        tar -C ${TRAVIS_BUILD_DIR}/.. -xzf ${JDK_TAR}
+        export JAVA_HOME=${TRAVIS_BUILD_DIR}/../jdk-9
+      fi
+script:
+  - echo ${JAVA_HOME}
+  - ${JAVA_HOME}/bin/java -version
+  - mx -v --primary-suite-path ${TRAVIS_BUILD_DIR}/compiler --java-home=${JAVA_HOME} gate --strict-mode --tags ${GATE}
+after_failure:
+  - cat hs_err*
+--------------------------------------------------------------------------------------------------------
+@FieldBridge(impl = ScanResultBridge.class)
+
 spring:
   jpa:
     properties:
@@ -5342,6 +5961,93 @@ spring:
             scripts:
               action: create
               create-target: create.sql
+--------------------------------------------------------------------------------------------------------
+			settings.getJpaProperties().setProperty("hibernate.connection.url", dbUrl);
+			settings.getJpaProperties().setProperty("hibernate.connection.username", "sa");
+			settings.getJpaProperties().setProperty("hibernate.connection.password", "");
+			settings.getJpaProperties().setProperty("javax.persistence.schema-generation.scripts.action", settings.getAction().toSchemaGenerationAction());
+
+			settings.getJpaProperties().setProperty("javax.persistence.schema-generation.scripts.create-target", outputFile.getAbsolutePath());
+			settings.getJpaProperties().setProperty("javax.persistence.schema-generation.scripts.drop-target", outputFile.getAbsolutePath());
+
+			settings.getJpaProperties().setProperty("hibernate.hbm2ddl.delimiter", settings.getDelimiter());
+			settings.getJpaProperties().setProperty("hibernate.format_sql", String.valueOf(settings.isFormatOutput()));
+--------------------------------------------------------------------------------------------------------
+private static final String SEQUENCES_VIEW = "CREATE VIEW ALL_SEQUENCES(SEQUENCE_NAME, SEQUENCE_OWNER) AS SELECT SEQUENCE_NAME, '' FROM INFORMATION_SCHEMA.SEQUENCES;";
+	private static final String EMPTY_SYNONYMS = "CREATE TABLE ALL_SYNONYMS (SYNONYM_NAME VARCHAR2(30), TABLE_OWNER VARCHAR2(30), TABLE_NAME VARCHAR2(30));";
+
+--------------------------------------------------------------------------------------------------------
+    @Parameter(
+      names = "-explanations",
+      description = "Path to side-car explanations",
+      required = true
+    )
+--------------------------------------------------------------------------------------------------------
+    private static BiConsumer<String, String> curry(final BiConsumer<String, String> consumer) {
+        return (key, value) -> consumer.accept(key, value);
+    }
+
+    public static <X, Y, Z> Function<X, Function<Y, Z>> curry(final BiFunction<X, Y, Z> function) {
+        return x -> y -> function.apply(x, y);
+    }
+--------------------------------------------------------------------------------------------------------
+import org.hibernate.tool.hbm2ddl.SchemaExport;
+
+public enum Action {
+	CREATE(SchemaExport.Action.CREATE, "create"),
+	DROP(SchemaExport.Action.DROP, "drop"),
+	DROP_AND_CREATE(SchemaExport.Action.BOTH, "drop-and-create"),
+	UPDATE(SchemaExport.Action.NONE, "update");
+
+	private final SchemaExport.Action schemaExportAction;
+	private final String schemaGenerationAction;
+
+	Action(SchemaExport.Action schemaExportAction, String schemaGenerationAction) {
+		this.schemaExportAction = schemaExportAction;
+		this.schemaGenerationAction = schemaGenerationAction;
+	}
+
+	public SchemaExport.Action toSchemaExportAction() {
+		return schemaExportAction;
+	}
+
+	public String toSchemaGenerationAction() {
+		return schemaGenerationAction;
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import com.google.errorprone.BugPattern;
+import com.google.errorprone.BugPattern.ProvidesFix;
+import com.google.errorprone.VisitorState;
+import com.google.errorprone.bugpatterns.BugChecker.AssertTreeMatcher;
+import com.google.errorprone.fixes.SuggestedFix;
+import com.google.errorprone.matchers.Description;
+import com.google.errorprone.matchers.Matcher;
+import com.sun.source.tree.AssertTree;
+
+/** @author sebastian.h.monte@gmail.com (Sebastian Monte) */
+@BugPattern(
+    name = "AssertFalse",
+    summary =
+        "Assertions may be disabled at runtime and do not guarantee that execution will "
+            + "halt here; consider throwing an exception instead",
+    category = JDK,
+    severity = WARNING,
+    providesFix = ProvidesFix.REQUIRES_HUMAN_ATTENTION)
+public class AssertFalse extends BugChecker implements AssertTreeMatcher {
+
+  private static final Matcher<AssertTree> ASSERT_FALSE_MATCHER =
+      assertionWithCondition(booleanLiteral(false));
+
+  @Override
+  public Description matchAssert(AssertTree tree, VisitorState state) {
+    if (!ASSERT_FALSE_MATCHER.matches(tree, state)) {
+      return Description.NO_MATCH;
+    }
+
+    return describeMatch(tree, SuggestedFix.replace(tree, "throw new AssertionError()"));
+  }
+}
 --------------------------------------------------------------------------------------------------------
 @Embeddable
 public class AccountBalance {
