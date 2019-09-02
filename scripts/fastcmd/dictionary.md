@@ -6016,6 +6016,821 @@ public enum Action {
 	}
 }
 --------------------------------------------------------------------------------------------------------
+import static org.testng.Assert.assertEquals;
+import static org.modelmapper.config.Configuration.AccessLevel;
+
+import java.util.Arrays;
+import java.util.List;
+
+import org.modelmapper.AbstractTest;
+import org.testng.annotations.Test;
+
+@Test
+public class DeepListTest extends AbstractTest {
+  private int seq = 0;
+
+  static class SrcObj {
+    private List<SrcGroup> groups;
+
+    public List<SrcGroup> getGroups() {
+      return groups;
+    }
+  }
+
+  static class SrcGroup {
+    private List<SrcItem> items;
+
+    public List<SrcItem> getItems() {
+      return items;
+    }
+  }
+
+  static class SrcItem {
+    private String value;
+
+    public String getValue() {
+      return value;
+    }
+  }
+
+  static class DestObj {
+    protected List<DestGroup> groups;
+
+    public List<DestGroup> getGroups() {
+      return groups;
+    }
+  }
+
+  static class DestGroup {
+    protected List<DestItem> items;
+
+    public List<DestItem> getItems() {
+      return items;
+    }
+  }
+
+  static class DestItem {
+    protected String value;
+
+    public String getValue() {
+      return value;
+    }
+  }
+
+  public void shouldMap() {
+    modelMapper.getConfiguration().setMethodAccessLevel(AccessLevel.PUBLIC);
+    modelMapper.getConfiguration().setFieldAccessLevel(AccessLevel.PROTECTED);
+
+    SrcObj srcObj = new SrcObj();
+    srcObj.groups = Arrays.asList(srcGroup(), srcGroup());
+
+    DestObj destObj = modelMapper.map(srcObj, DestObj.class);
+
+    assertEquals(destObj.groups.get(0).items.get(0).value, "foo1");
+    assertEquals(destObj.groups.get(0).items.get(1).value, "foo2");
+    assertEquals(destObj.groups.get(1).items.get(0).value, "foo3");
+    assertEquals(destObj.groups.get(1).items.get(1).value, "foo4");
+  }
+
+  private SrcGroup srcGroup() {
+    SrcGroup group = new SrcGroup();
+    group.items = Arrays.asList(srcItem(), srcItem());
+    return group;
+  }
+
+  private SrcItem srcItem() {
+    SrcItem item = new SrcItem();
+    item.value = "foo" + String.valueOf(++seq);
+    return item;
+  }
+}
+--------------------------------------------------------------------------------------------------------
+//package com.paragon.microservices.distributor.system.converter;
+//
+//import com.paragon.microservices.distributor.model.dto.response.VersionResponse;
+//import com.paragon.microservices.distributor.model.entity.VersionEntity;
+//import com.paragon.microservices.distributor.model.entity.VersionInfoEntity;
+//import com.paragon.microservices.distributor.model.formatter.VersionInfoFormatter;
+//import org.modelmapper.Converter;
+//import org.modelmapper.spi.MappingContext;
+//import org.springframework.beans.factory.annotation.Autowired;
+//import org.springframework.stereotype.Component;
+//
+//import java.util.Locale;
+//
+//@Component
+//public class VersionEntityToVersionResponseConverter implements Converter<VersionEntity, VersionResponse> {
+//
+//    @Autowired
+//    private VersionInfoFormatter formatter;
+//
+//    @Override
+//    public VersionResponse convert(final MappingContext<VersionEntity, VersionResponse> context) {
+//        final VersionEntity source = context.getSource();
+//        final VersionResponse dest = new VersionResponse();
+//        dest.setVersionInfo(this.getVersionInfo(source.getVersionInfo()));
+//        dest.setChangeLog(source.getChangeLog());
+//        dest.setLocale(source.getLocale());
+//        dest.setId(source.getId());
+//        return dest;
+//    }
+//
+//    private String getVersionInfo(final VersionInfoEntity versionInfo) {
+//        return this.formatter.print(versionInfo, Locale.getDefault());
+//    }
+//}
+
+//package com.paragon.microservices.distributor.system.converter;
+//
+//import com.paragon.microservices.distributor.model.dto.response.VersionResponse;
+//import com.paragon.microservices.distributor.model.entity.VersionEntity;
+//import com.paragon.microservices.distributor.model.entity.VersionInfoEntity;
+//import com.paragon.microservices.distributor.model.formatter.VersionInfoFormatter;
+//import org.modelmapper.PropertyMap;
+//import org.springframework.beans.factory.annotation.Autowired;
+//import org.springframework.stereotype.Component;
+//
+//import java.util.Locale;
+//
+//@Component
+//public class VersionEntityToVersionResponsePropertyMap extends PropertyMap<VersionEntity, VersionResponse> {
+//
+//    @Autowired
+//    private VersionInfoFormatter formatter;
+//
+//    @Override
+//    protected void configure() {
+//        map(this.source.getVersionInfo()).setVersionInfo("test");
+//    }
+//
+//    private String getVersionInfo(final VersionInfoEntity versionInfo) {
+//        return this.formatter.print(versionInfo, Locale.getDefault());
+//    }
+//}
+--------------------------------------------------------------------------------------------------------
+public String create(@RequestBody JSONObject requestParams) {
+      String name=requestParams.getString("name");
+      List<Planet> planetArtifacts=requestParams.getJSONArray("artifacts").toJavaList(Planet.Class);
+...
+--------------------------------------------------------------------------------------------------------
+@Component @Order(Ordered.HIGHEST_PRECEDENCE)
+public class MultiTenancyFilter implements Filter {
+    private final static Pattern pattern = Pattern.compile("^/(?<contextpath>[^/]+).*$");
+
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+        final HttpServletRequest req = (HttpServletRequest) request;
+        final String requestURI = req.getRequestURI();
+
+        Matcher matcher = pattern.matcher(requestURI);
+        if(matcher.matches()) {
+            chain.doFilter(new HttpServletRequestWrapper(req) {
+                @Override
+                public String getContextPath() {
+                    return "/"+matcher.group("contextpath");
+                }
+            }, response);
+        }
+    }
+
+    @Override public void init(FilterConfig filterConfig) throws ServletException {}
+    @Override public void destroy() {}
+}
+
+@Component @Order(Ordered.HIGHEST_PRECEDENCE)
+public class MultiTenancyFilter extends OncePerRequestFilter {
+    private final static Pattern pattern = Pattern.compile("^(?<contextPath>/[^/]+)(?<servletPath>.*)$");
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        Matcher matcher = pattern.matcher(request.getServletPath());
+        if(matcher.matches()) {
+            final String contextPath = matcher.group("contextPath");
+            final String servletPath = matcher.group("servletPath");
+
+            if(servletPath.trim().isEmpty()) {
+                response.sendRedirect(contextPath+"/");
+                return;
+            }
+
+            filterChain.doFilter(new HttpServletRequestWrapper(request) {
+                @Override
+                public String getContextPath() {
+                    return contextPath;
+                }
+                @Override
+                public String getServletPath() {
+                    return servletPath;
+                }
+            }, response);
+        } else {
+            filterChain.doFilter(request, response);
+        }
+    }
+
+    @Override
+    protected String getAlreadyFilteredAttributeName() {
+        return "multiTenancyFilter" + OncePerRequestFilter.ALREADY_FILTERED_SUFFIX;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+# Number of ms to wait before throwing an exception if no connection is available.
+spring.datasource.tomcat.max-wait=10000
+
+# Maximum number of active connections that can be allocated from this pool at the same time.
+spring.datasource.tomcat.max-active=50
+
+# Validate the connection before borrowing it from the pool.
+spring.datasource.tomcat.test-on-borrow=true
+--------------------------------------------------------------------------------------------------------
+# ===============================
+# = H2 data source
+# ===============================
+spring:
+  datasource:
+    url: jdbc:h2:mem:spring-security-hibernate-test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    platform: h2
+    username: sa
+    password:
+
+# ===============================
+# = JPA configurations
+# ===============================
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: create-drop
+      naming-strategy: org.hibernate.cfg.ImprovedNamingStrategy
+    database-platform: H2
+--------------------------------------------------------------------------------------------------------
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@SpringBootTest
+@ActiveProfiles("it")
+@AutoConfigureMockMvc
+@RunWith(SpringJUnit4ClassRunner.class)
+public class BasicAuthenticationIntegrationTests {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    public void accessWithValidCredentials() throws Exception {
+        this.mockMvc
+                .perform(get("/users").with(httpBasic("info@memorynotfound.com", "password")))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    public void accessWithInValidCredentials() throws Exception {
+        this.mockMvc
+                .perform(get("/users").with(httpBasic("info@memorynotfound.com", "invalidPassword")))
+                .andExpect(status().is4xxClientError());
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+@Bean
+public WebMvcConfigurer corsConfigurer() {
+	return new WebMvcConfigurerAdapter() {
+		@Override
+		public void addCorsMappings(CorsRegistry registry) {
+			registry.addMapping("/**").allowedMethods("GET", "POST", "PUT", "DELETE").allowedOrigins("*")
+				.allowedHeaders("*");
+		}
+	};
+}
+--------------------------------------------------------------------------------------------------------
+import com.auth0.samples.authapi.user.ApplicationUser;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.jsonwebtoken.Jwts;
+
+import io.jsonwebtoken.SignatureAlgorithm;
+
+import org.springframework.security.authentication.AuthenticationManager;
+
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+
+import org.springframework.security.core.Authentication;
+
+import org.springframework.security.core.AuthenticationException;
+
+import org.springframework.security.core.userdetails.User;
+
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import javax.servlet.FilterChain;
+
+import javax.servlet.ServletException;
+
+import javax.servlet.http.HttpServletRequest;
+
+import javax.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
+
+import java.util.ArrayList;
+
+import java.util.Date;
+
+import static com.auth0.samples.authapi.security.SecurityConstants.EXPIRATION_TIME;
+
+import static com.auth0.samples.authapi.security.SecurityConstants.HEADER_STRING;
+
+import static com.auth0.samples.authapi.security.SecurityConstants.SECRET;
+
+import static com.auth0.samples.authapi.security.SecurityConstants.TOKEN_PREFIX;
+
+public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
+
+    private AuthenticationManager authenticationManager;
+
+    public JWTAuthenticationFilter(AuthenticationManager authenticationManager) {
+
+        this.authenticationManager = authenticationManager;
+
+    }
+
+    @Override
+
+    public Authentication attemptAuthentication(HttpServletRequest req,
+
+                                                HttpServletResponse res) throws AuthenticationException {
+
+        try {
+
+            ApplicationUser creds = new ObjectMapper()
+
+                    .readValue(req.getInputStream(), ApplicationUser.class);
+
+            return authenticationManager.authenticate(
+
+                    new UsernamePasswordAuthenticationToken(
+
+                            creds.getUsername(),
+
+                            creds.getPassword(),
+
+                            new ArrayList<>())
+
+            );
+
+        } catch (IOException e) {
+
+            throw new RuntimeException(e);
+
+        }
+
+    }
+
+    @Override
+
+    protected void successfulAuthentication(HttpServletRequest req,
+
+                                            HttpServletResponse res,
+
+                                            FilterChain chain,
+
+                                            Authentication auth) throws IOException, ServletException {
+
+        String token = Jwts.builder()
+
+                .setSubject(((User) auth.getPrincipal()).getUsername())
+
+                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+
+                .signWith(SignatureAlgorithm.HS512, SECRET)
+
+                .compact();
+
+        res.addHeader(HEADER_STRING, TOKEN_PREFIX + token);
+
+    }
+
+}
+
+import io.jsonwebtoken.Jwts;
+
+import org.springframework.security.authentication.AuthenticationManager;
+
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+
+import org.springframework.security.core.context.SecurityContextHolder;
+
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+
+import javax.servlet.FilterChain;
+
+import javax.servlet.ServletException;
+
+import javax.servlet.http.HttpServletRequest;
+
+import javax.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
+
+import java.util.ArrayList;
+
+import static com.auth0.samples.authapi.security.SecurityConstants.HEADER_STRING;
+
+import static com.auth0.samples.authapi.security.SecurityConstants.SECRET;
+
+import static com.auth0.samples.authapi.security.SecurityConstants.TOKEN_PREFIX;
+
+public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
+
+    public JWTAuthorizationFilter(AuthenticationManager authManager) {
+
+        super(authManager);
+
+    }
+
+    @Override
+
+    protected void doFilterInternal(HttpServletRequest req,
+
+                                    HttpServletResponse res,
+
+                                    FilterChain chain) throws IOException, ServletException {
+
+        String header = req.getHeader(HEADER_STRING);
+
+        if (header == null || !header.startsWith(TOKEN_PREFIX)) {
+
+            chain.doFilter(req, res);
+
+            return;
+
+        }
+
+        UsernamePasswordAuthenticationToken authentication = getAuthentication(req);
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        chain.doFilter(req, res);
+
+    }
+
+    private UsernamePasswordAuthenticationToken getAuthentication(HttpServletRequest request) {
+
+        String token = request.getHeader(HEADER_STRING);
+
+        if (token != null) {
+
+            // parse the token.
+
+            String user = Jwts.parser()
+
+                    .setSigningKey(SECRET)
+
+                    .parseClaimsJws(token.replace(TOKEN_PREFIX, ""))
+
+                    .getBody()
+
+                    .getSubject();
+
+            if (user != null) {
+
+                return new UsernamePasswordAuthenticationToken(user, null, new ArrayList<>());
+
+            }
+
+            return null;
+
+        }
+
+        return null;
+
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+import javax.sql.DataSource;
+ 
+import org.o7planning.sbsecurity.service.UserDetailsServiceImpl;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
+import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
+ 
+@Configuration
+@EnableWebSecurity
+public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+ 
+    @Autowired
+    private UserDetailsServiceImpl userDetailsService;
+ 
+    @Autowired
+    private DataSource dataSource;
+ 
+    @Bean
+    public BCryptPasswordEncoder passwordEncoder() {
+        BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
+        return bCryptPasswordEncoder;
+    }
+ 
+    @Autowired
+    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
+ 
+        // Setting Service to find User in the database.
+        // And Setting PassswordEncoder
+        auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
+ 
+    }
+ 
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+ 
+        http.csrf().disable();
+ 
+        // The pages does not require login
+        http.authorizeRequests().antMatchers("/", "/login", "/logout").permitAll();
+ 
+        // /userInfo page requires login as ROLE_USER or ROLE_ADMIN.
+        // If no login, it will redirect to /login page.
+        http.authorizeRequests().antMatchers("/userInfo").access("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')");
+ 
+        // For ADMIN only.
+        http.authorizeRequests().antMatchers("/admin").access("hasRole('ROLE_ADMIN')");
+ 
+        // When the user has logged in as XX.
+        // But access a page that requires role YY,
+        // AccessDeniedException will be thrown.
+        http.authorizeRequests().and().exceptionHandling().accessDeniedPage("/403");
+ 
+        // Config for Login Form
+        http.authorizeRequests().and().formLogin()//
+                // Submit URL of login page.
+                .loginProcessingUrl("/j_spring_security_check") // Submit URL
+                .loginPage("/login")//
+                .defaultSuccessUrl("/userAccountInfo")//
+                .failureUrl("/login?error=true")//
+                .usernameParameter("username")//
+                .passwordParameter("password")
+                // Config for Logout Page
+                .and().logout().logoutUrl("/logout").logoutSuccessUrl("/logoutSuccessful");
+ 
+        // Config Remember Me.
+        http.authorizeRequests().and() //
+                .rememberMe().tokenRepository(this.persistentTokenRepository()) //
+                .tokenValiditySeconds(1 * 24 * 60 * 60); // 24h
+ 
+    }
+ 
+    @Bean
+    public PersistentTokenRepository persistentTokenRepository() {
+        JdbcTokenRepositoryImpl db = new JdbcTokenRepositoryImpl();
+        db.setDataSource(dataSource);
+        return db;
+    }
+ 
+}
+--------------------------------------------------------------------------------------------------------
+// Token stored in Table (Persistent_Logins)
+@Bean
+public PersistentTokenRepository persistentTokenRepository() {
+    JdbcTokenRepositoryImpl db = new JdbcTokenRepositoryImpl();
+    db.setDataSource(this.dataSource);
+    return db;
+}
+ 
+// Token stored in Memory (Of Web Server).
+@Bean
+public PersistentTokenRepository persistentTokenRepository() {
+    InMemoryTokenRepositoryImpl memory = new InMemoryTokenRepositoryImpl();
+    return memory;
+}
+--------------------------------------------------------------------------------------------------------
+    @Autowired
+    private AuthenticationManager authenticationManager;
+--------------------------------------------------------------------------------------------------------
+public class CollectionsBean {
+ 
+    @Value("${names.list:}#{T(java.util.Collections).emptyList()}")
+    private List<String> nameListWithDefaultValue;
+     
+    public void printNameListWithDefaults() {
+        System.out.println(nameListWithDefaultValue);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.persistence.Query;
+ 
+import org.o7planning.sbsecurity.entity.AppUser;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+ 
+@Repository
+@Transactional
+public class AppUserDAO {
+ 
+    @Autowired
+    private EntityManager entityManager;
+ 
+    public AppUser findUserAccount(String userName) {
+        try {
+            String sql = "Select e from " + AppUser.class.getName() + " e " //
+                    + " Where e.userName = :userName ";
+ 
+            Query query = entityManager.createQuery(sql, AppUser.class);
+            query.setParameter("userName", userName);
+ 
+            return (AppUser) query.getSingleResult();
+        } catch (NoResultException e) {
+            return null;
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@Component
+public class AuditApplicationEventListener {
+ 
+    private static final Logger LOG = LoggerFactory.getLogger(AuditApplicationEventListener.class);
+ 
+    @Autowired
+    private ApplicationEventPublisher applicationEventPublisher;
+ 
+    @EventListener(condition = "#event.auditEvent.type != 'CUSTOM_AUDIT_EVENT'")
+    @Async
+    public void onAuditEvent(AuditApplicationEvent event) {
+        AuditEvent actualAuditEvent = event.getAuditEvent();
+ 
+        LOG.info("On audit application event: timestamp: {}, principal: {}, type: {}, data: {}",
+            actualAuditEvent.getTimestamp(),
+            actualAuditEvent.getPrincipal(),
+            actualAuditEvent.getType(),
+            actualAuditEvent.getData()
+        );
+        applicationEventPublisher.publishEvent(
+            new AuditApplicationEvent(
+                new AuditEvent(actualAuditEvent.getPrincipal(), "CUSTOM_AUDIT_EVENT")
+            )
+        );
+    }
+ 
+    @EventListener(condition = "#event.auditEvent.type == 'CUSTOM_AUDIT_EVENT'")
+    public void onCustomAuditEvent(AuditApplicationEvent event) {
+        LOG.info("Handling custom audit event ...");
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@RestController
+@RequestMapping("/token")
+public class AuthenticationController {
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private JwtTokenUtil jwtTokenUtil;
+
+    @Autowired
+    private UserService userService;
+
+    @RequestMapping(value = "/generate-token", method = RequestMethod.POST)
+    public ResponseEntity register(@RequestBody LoginUser loginUser) throws AuthenticationException {
+
+        final Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        loginUser.getUsername(),
+                        loginUser.getPassword()
+                )
+        );
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        final User user = userService.findOne(loginUser.getUsername());
+        final String token = jwtTokenUtil.generateToken(user);
+        return ResponseEntity.ok(new AuthToken(token));
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@Bean
+public FlywayMigrationStrategy repairStrategy() {
+    return flyway -> {
+        flyway.repair();
+        flyway.migrate();
+    };
+}
+--------------------------------------------------------------------------------------------------------
+spring.main.web-application-type=none
+--------------------------------------------------------------------------------------------------------
+private static <S, D> TypeMap<S, D> createTypeMap(
+  ModelMapper mapper, Class<S> sourceType, Class<D> destinationType, Configuration config) {
+ return mapper
+   .createTypeMap(sourceType, destinationType, config)
+   // We setPropertyCondition because ModelMapper seems to ignore this in
+   // the config
+   .setPropertyCondition(config.getPropertyCondition());
+}
+--------------------------------------------------------------------------------------------------------
+300: jar:file:///C:/Users/Alex/AppData/Roaming/Mozilla/Firefox/Profiles/gungst61.default-1499496685605/extensions/%7Bad0d925d-88f8-47f1-85ea-8463569e756e%7D.xpi!/
+200: filename content-length last-modified file-type
+201: META-INF/ 0 Mon,%2031%20Dec%201979%2021:00:00%20GMT DIRECTORY
+201: _locales/ 0 Fri,%2023%20Feb%202018%2011:29:30%20GMT DIRECTORY
+201: blank.html 381 Fri,%2023%20Feb%202018%2011:29:28%20GMT FILE
+201: icons/ 0 Fri,%2023%20Feb%202018%2011:29:30%20GMT DIRECTORY
+201: images/ 0 Fri,%2023%20Feb%202018%2011:29:30%20GMT DIRECTORY
+201: index.html 75555 Fri,%2023%20Feb%202018%2011:29:28%20GMT FILE
+201: manifest.json 853 Fri,%2023%20Feb%202018%2011:29:28%20GMT FILE
+201: scripts/ 0 Fri,%2023%20Feb%202018%2011:29:30%20GMT DIRECTORY
+201: styles/ 0 Fri,%2023%20Feb%202018%2011:29:30%20GMT DIRECTORY
+--------------------------------------------------------------------------------------------------------
+String entityPackage = JpaMarkerModel.class.getPackage().getName();
+ 
+import java.awt.Color;
+import javax.persistence.AttributeConverter;
+import javax.persistence.Converter;
+ 
+@Converter
+public class ColorConverter implements AttributeConverter&amp;amp;lt;Color, String&amp;amp;gt; {
+ 
+ private static final String SEPARATOR = "|";
+ 
+ /**
+ * Convert Color object to a String
+ * with format red|green|blue|alpha
+ */
+ @Override
+ public String convertToDatabaseColumn(Color color) {
+     StringBuilder sb = new StringBuilder();
+     sb.append(color.getRed()).append(SEPARATOR)
+       .append(color.getGreen())
+       .append(SEPARATOR)
+       .append(color.getBlue())
+       .append(SEPARATOR)
+       .append(color.getAlpha());
+    return sb.toString();
+ }
+ 
+ /**
+ * Convert a String with format red|green|blue|alpha
+ * to a Color object
+ */
+ @Override
+ public Color convertToEntityAttribute(String colorString) {
+     String[] rgb = colorString.split(SEPARATOR);
+     return new Color(Integer.parseInt(rgb[0]),
+                      Integer.parseInt(rgb[1]),
+                      Integer.parseInt(rgb[2]),
+                      Integer.parseInt(rgb[3]));
+ }
+} 
+--------------------------------------------------------------------------------------------------------
+@Converter(autoApply = true)
+public class VehicleConverter implements AttributeConverter<Vehicle, String> {
+ 
+    @Override
+    public String convertToDatabaseColumn(Vehicle vehicle) {
+        return vehicle.getShortName();
+    }
+ 
+    @Override
+    public Vehicle convertToEntityAttribute(String dbData) {
+        return Vehicle.fromShortName(dbData);
+    }
+ 
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.core.annotation.AliasFor;
+import org.springframework.stereotype.Component;
+
+import javax.persistence.Converter;
+import java.lang.annotation.*;
+
+@Documented
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Component
+@Converter
+public @interface ConverterComponent {
+
+    @AliasFor(annotation = Component.class, attribute = "value") String value() default "";
+
+    @AliasFor(annotation = Converter.class, attribute = "autoApply") boolean autoApply() default true;
+}
+--------------------------------------------------------------------------------------------------------
 hekate.name=Hekate
 hekate.version=${project.version}
 hekate.build.date=${build.date}
