@@ -4046,6 +4046,81 @@ spring:
       - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
       - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
 --------------------------------------------------------------------------------------------------------
+    @Bean
+    Map<String, ?> hibernateProperties ()
+    {
+        Map<String, Object> m = new HashMap<> ();
+        m.put ("hibernate.dialect", MySQL5Dialect.class);
+        m.put ("hibernate.dialect.storage_engine", "innodb");
+        boolean devSystem = isDevSystem ();
+        m.put ("hibernate.hbm2ddl.auto", devSystem ? "update" : "create-only");  // will need to handle updates by hand on live system, but creation is OK.
+        m.put ("hibernate.show_sql", "" + devSystem);
+        m.put ("hibernate.cache.use_second_level_cache", "" + !devSystem);
+        return m;
+    }
+--------------------------------------------------------------------------------------------------------
+@RequestMapping("/pod/{id}")
+@Transactional(readOnly = true)
+public Stream<RSSPodcastItem> podItems (@PathVariable("id") UUID id) {
+    try (Stream<RSSPodcastItem> items = repository.findByPodcast(...)) {
+        return items...;
+    }
+}
+
+@RestController
+public class XService {
+
+    class XDto{
+        final int x;
+        public XDto(int x) {this.x = x;}
+    }
+
+    Stream<XDto> produceX(){
+        return IntStream.range(1,10).mapToObj(i -> {
+            System.out.println("produce "+i);
+            try {Thread.sleep(1000);} catch (InterruptedException e) {e.printStackTrace();}
+            return new XDto(i);
+        });
+    }
+
+    // stream of Server-Sent Events (SSE)
+    @GetMapping(value = "/api/x/sse", 
+    produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<XDto> getXSse() {
+        return Flux.fromStream(produceX());
+    }
+
+    // stream of JSON lines
+    @GetMapping(value = "/api/x/json-stream", 
+    produces = MediaType.APPLICATION_STREAM_JSON_VALUE)
+    public Flux<XDto> getAllJsonStream() {
+        return Flux.fromStream(produceX());
+    }
+
+    // same as List<XDto> - blocking JSON list
+    @GetMapping(value = "/api/x/json-list", 
+    produces = MediaType.APPLICATION_JSON_VALUE)
+    public Flux<XDto> getAll() {
+        return Flux.fromStream(produceX());
+    }
+}
+
+try (Stream<User> foundUsersStream 
+  = userRepository.findAllByName(USER_NAME_ADAM)) {
+  
+assertThat(foundUsersStream.count(), equalTo(3l));
+
+    @Autowired
+    private FileRepository fileRepository;
+
+    @GetMapping("/test4")
+    @Transactional
+    public Stream<FileEntity> get4() {
+        try (final Stream<FileEntity> items = this.fileRepository.streamAll()) {
+            return items;
+        }
+    }
+--------------------------------------------------------------------------------------------------------
  this.mockMvc.perform(get("/test"))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
                 .andExpect(status().isOk())
@@ -5961,6 +6036,439 @@ spring:
             scripts:
               action: create
               create-target: create.sql
+--------------------------------------------------------------------------------------------------------
+$ ./gradlew clean build && java -jar build/libs/gs-actuator-service-0.1.0.jar
+
+--------------------------------------------------------------------------------------------------------
+import java.util.Map;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.junit4.SpringRunner;
+
+import static org.assertj.core.api.BDDAssertions.then;
+
+/**
+ * Basic integration tests for service demo application.
+ *
+ * @author Dave Syer
+ */
+@RunWith(SpringRunner.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@TestPropertySource(properties = {"management.port=0"})
+public class HelloWorldApplicationTests {
+
+	@LocalServerPort
+	private int port;
+
+	@Value("${local.management.port}")
+	private int mgt;
+
+	@Autowired
+	private TestRestTemplate testRestTemplate;
+
+	@Test
+	public void shouldReturn200WhenSendingRequestToController() throws Exception {
+		@SuppressWarnings("rawtypes")
+		ResponseEntity<Map> entity = this.testRestTemplate.getForEntity(
+				"http://localhost:" + this.port + "/hello-world", Map.class);
+
+		then(entity.getStatusCode()).isEqualTo(HttpStatus.OK);
+	}
+
+	@Test
+	public void shouldReturn200WhenSendingRequestToManagementEndpoint() throws Exception {
+		@SuppressWarnings("rawtypes")
+		ResponseEntity<Map> entity = this.testRestTemplate.getForEntity(
+				"http://localhost:" + this.mgt + "/actuator/info", Map.class);
+
+		then(entity.getStatusCode()).isEqualTo(HttpStatus.OK);
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+ 
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.authorizeRequests()
+          .antMatchers("/login").permitAll()
+          .antMatchers("/foos/**").hasIpAddress("11.11.11.11")
+          .anyRequest().authenticated()
+          .and()
+          .formLogin().permitAll()
+          .and()
+          .csrf().disable();
+    }
+ 
+    // ...
+ 
+}
+
+//...
+.antMatchers("/foos/**")
+.access("isAuthenticated() and hasIpAddress('11.11.11.11')")
+//...
+
+@Test
+public void givenUser_whenGetHomePage_thenOK() {
+    Response response = RestAssured.given().auth().form("john", "123")
+      .get("http://localhost:8082/");
+ 
+    assertEquals(200, response.getStatusCode());
+    assertTrue(response.asString().contains("Welcome"));
+}
+
+@Test
+public void givenUserWithWrongIP_whenGetFooById_thenForbidden() {
+    Response response = RestAssured.given().auth().form("john", "123")
+      .get("http://localhost:8082/foos/1");
+ 
+    assertEquals(403, response.getStatusCode());
+    assertTrue(response.asString().contains("Forbidden"));
+}
+
+@Component
+public class CustomIpAuthenticationProvider implements AuthenticationProvider {
+     
+   Set<String> whitelist = new HashSet<String>();
+ 
+    public CustomIpAuthenticationProvider() {
+        whitelist.add("11.11.11.11");
+        whitelist.add("12.12.12.12");
+    }
+ 
+    @Override
+    public Authentication authenticate(Authentication auth) throws AuthenticationException {
+        WebAuthenticationDetails details = (WebAuthenticationDetails) auth.getDetails();
+        String userIp = details.getRemoteAddress();
+        if(! whitelist.contains(userIp)){
+            throw new BadCredentialsException("Invalid IP Address");
+        }
+        //...
+}
+--------------------------------------------------------------------------------------------------------
+@Column(name="Price", columnDefinition="Decimal(10,2) default '100.00'")
+--------------------------------------------------------------------------------------------------------
+@Entity(name = "Event")
+public static class Event {
+
+	@Id
+	@GeneratedValue
+	private Long id;
+
+	@Column(name = "`timestamp`")
+	@FunctionCreationTimestamp
+	private Date timestamp;
+
+	//Constructors, getters, and setters are omitted for brevity
+}
+
+@ValueGenerationType(generatedBy = FunctionCreationValueGeneration.class)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface FunctionCreationTimestamp {}
+
+public static class FunctionCreationValueGeneration
+		implements AnnotationValueGeneration<FunctionCreationTimestamp> {
+
+	@Override
+	public void initialize(FunctionCreationTimestamp annotation, Class<?> propertyType) {
+	}
+
+	/**
+	 * Generate value on INSERT
+	 * @return when to generate the value
+	 */
+	public GenerationTiming getGenerationTiming() {
+		return GenerationTiming.INSERT;
+	}
+
+	/**
+	 * Returns null because the value is generated by the database.
+	 * @return null
+	 */
+	public ValueGenerator<?> getValueGenerator() {
+		return null;
+	}
+
+	/**
+	 * Returns true because the value is generated by the database.
+	 * @return true
+	 */
+	public boolean referenceColumnInSql() {
+		return true;
+	}
+
+	/**
+	 * Returns the database-generated value
+	 * @return database-generated value
+	 */
+	public String getDatabaseGeneratedReferencedColumnValue() {
+		return "current_timestamp";
+	}
+}
+
+@Entity(name = "Event")
+public static class Event {
+
+	@Id
+	@GeneratedValue
+	private Long id;
+
+	@Column(name = "`timestamp`")
+	@FunctionCreationTimestamp
+	private Date timestamp;
+
+	//Constructors, getters, and setters are omitted for brevity
+}
+
+@ValueGenerationType(generatedBy = FunctionCreationValueGeneration.class)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface FunctionCreationTimestamp {}
+
+public static class FunctionCreationValueGeneration
+		implements AnnotationValueGeneration<FunctionCreationTimestamp> {
+
+	@Override
+	public void initialize(FunctionCreationTimestamp annotation, Class<?> propertyType) {
+	}
+
+	/**
+	 * Generate value on INSERT
+	 * @return when to generate the value
+	 */
+	public GenerationTiming getGenerationTiming() {
+		return GenerationTiming.INSERT;
+	}
+
+	/**
+	 * Returns the in-memory generated value
+	 * @return {@code true}
+	 */
+	public ValueGenerator<?> getValueGenerator() {
+		return (session, owner) -> new Date( );
+	}
+
+	/**
+	 * Returns false because the value is generated by the database.
+	 * @return false
+	 */
+	public boolean referenceColumnInSql() {
+		return false;
+	}
+
+	/**
+	 * Returns null because the value is generated in-memory.
+	 * @return null
+	 */
+	public String getDatabaseGeneratedReferencedColumnValue() {
+		return null;
+	}
+}
+
+@Entity(name = "Employee")
+public static class Employee {
+
+	@Id
+	private Long id;
+
+	@NaturalId
+	private String username;
+
+	@Column(name = "pswd")
+	@ColumnTransformer(
+		read = "decrypt( 'AES', '00', pswd  )",
+		write = "encrypt('AES', '00', ?)"
+	)
+	private String password;
+
+	private int accessLevel;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	private Department department;
+
+	@ManyToMany(mappedBy = "employees")
+	private List<Project> projects = new ArrayList<>();
+
+	//Getters and setters omitted for brevity
+}
+
+@Entity(name = "Savings")
+public static class Savings {
+
+	@Id
+	private Long id;
+
+	@Type(type = "org.hibernate.userguide.mapping.basic.MonetaryAmountUserType")
+	@Columns(columns = {
+		@Column(name = "money"),
+		@Column(name = "currency")
+	})
+	@ColumnTransformer(
+		forColumn = "money",
+		read = "money / 100",
+		write = "? * 100"
+	)
+	private MonetaryAmount wallet;
+
+	//Getters and setters omitted for brevity
+
+}
+
+@Entity(name = "Account")
+public static class Account {
+
+	@Id
+	private Long id;
+
+	private Double credit;
+
+	private Double rate;
+
+	@Formula(value = "credit * rate")
+	private Double interest;
+
+	//Getters and setters omitted for brevity
+
+}
+
+public enum AccountType {
+	DEBIT,
+	CREDIT
+}
+
+@Entity(name = "Client")
+public static class Client {
+
+	@Id
+	private Long id;
+
+	private String name;
+
+	@Where( clause = "account_type = 'DEBIT'")
+	@OneToMany(mappedBy = "client")
+	private List<Account> debitAccounts = new ArrayList<>( );
+
+	@Where( clause = "account_type = 'CREDIT'")
+	@OneToMany(mappedBy = "client")
+	private List<Account> creditAccounts = new ArrayList<>( );
+
+	//Getters and setters omitted for brevity
+
+}
+
+@Entity(name = "Account")
+@Where( clause = "active = true" )
+public static class Account {
+
+	@Id
+	private Long id;
+
+	@ManyToOne
+	private Client client;
+
+	@Column(name = "account_type")
+	@Enumerated(EnumType.STRING)
+	private AccountType type;
+
+	private Double amount;
+
+	private Double rate;
+
+	private boolean active;
+
+	//Getters and setters omitted for brevity
+
+}
+
+@Entity(name = "Book")
+public static class Book {
+
+	@Id
+	private Long id;
+
+	private String title;
+
+	private String author;
+
+	@ManyToMany
+	@JoinTable(
+		name = "Book_Reader",
+		joinColumns = @JoinColumn(name = "book_id"),
+		inverseJoinColumns = @JoinColumn(name = "reader_id")
+	)
+	@WhereJoinTable( clause = "created_on > DATEADD( 'DAY', -7, CURRENT_TIMESTAMP() )")
+	private List<Reader> currentWeekReaders = new ArrayList<>( );
+
+	//Getters and setters omitted for brevity
+
+}
+
+@Entity(name = "Reader")
+public static class Reader {
+
+	@Id
+	private Long id;
+
+	private String name;
+
+	//Getters and setters omitted for brevity
+
+}
+
+@Entity(name = "Account")
+@Table(name = "account")
+@SecondaryTable(
+	name = "account_details"
+)
+@SQLDelete(
+	sql = "UPDATE account_details SET deleted = true WHERE id = ? "
+)
+@FilterDef(
+	name="activeAccount",
+	parameters = @ParamDef(
+		name="active",
+		type="boolean"
+	)
+)
+@Filter(
+	name="activeAccount",
+	condition="{a}.active = :active and {ad}.deleted = false",
+	aliases = {
+		@SqlFragmentAlias( alias = "a", table= "account"),
+		@SqlFragmentAlias( alias = "ad", table= "account_details"),
+	}
+)
+public static class Account {
+
+	@Id
+	private Long id;
+
+	private Double amount;
+
+	private Double rate;
+
+	private boolean active;
+
+	@Column(table = "account_details")
+	private boolean deleted;
+
+	//Getters and setters omitted for brevity
+
+}
+
+
+https://docs.jboss.org/hibernate/orm/5.3/userguide/html_single/Hibernate_User_Guide.html#annotations-hibernate-subselect
 --------------------------------------------------------------------------------------------------------
 			settings.getJpaProperties().setProperty("hibernate.connection.url", dbUrl);
 			settings.getJpaProperties().setProperty("hibernate.connection.username", "sa");
@@ -27228,7 +27736,7 @@ public class AbstractDataObject extends BaseDomainModel {
     @FunctionalInterface
     public interface ExceptionResolver<T, E extends Throwable> {
 
-        ResponseEntity<T> handle(final HttpServletRequest req, final E ex, final HttpStatus status);
+        ResponseEntity<T> handle(final HttpServletRequest req, final E throwable, final HttpStatus status);
     }
 -------------------------------------------------------------------------------------------------------
 At Intertech we do a lot of sharing of expertise. Whether it’s someone on our team at that moment or a colleague working on another project, we make it a point to collaboratively share information to move all projects and clients forward. We also hope to share these quick tips with you in hopes it will help you someday in your work. Here is a quick tip I recently shared with my team that I thought you might find useful.
@@ -27423,7 +27931,6 @@ public class SocialController {
 }
 --------------------------------------------------------------------------------------------------------
 @GET
-
 @Consumes({ "application/json" })
 @Produces({ "application/json" })
 @ApiOperation(value = "", notes = "Retrieves Multi-Target Application operations ", response = Operation.class, responseContainer = "List", authorizations = {
@@ -27437,16 +27944,277 @@ public Response getMtaOperations( @ApiParam(value = "")  @QueryParam("last") Int
     return delegate.getMtaOperations(last, state, securityContext, spaceGuid);
 }
 --------------------------------------------------------------------------------------------------------
-https://habr.com/ru/post/438808/
-https://github.com/promoscow/modelmapper-demo
+     public Converter<UnicornDto, Unicorn> toEntityConverter() {
+        return context -> {
+            UnicornDto source = context.getSource();
+            Unicorn destination = context.getDestination();
+            mapSpecificFields(source, destination);
+            return context.getDestination();
+        };
+    }
+	
+	public Converter<Unicorn, UnicornDto> toDtoConverter() {
+        return context -> {
+            Unicorn source = context.getSource();
+            UnicornDto destination = context.getDestination();
+            mapSpecificFields(source, destination);
+            return context.getDestination();
+        };
+    }
+--------------------------------------------------------------------------------------------------------
+public abstract class AbstractMapper<E extends AbstractEntity, D extends AbstractDto> implements Mapper<E, D> {
 
-   @PostConstruct
+    @Autowired
+    ModelMapper mapper;
+
+    private Class<E> entityClass;
+    private Class<D> dtoClass;
+
+    AbstractMapper(Class<E> entityClass, Class<D> dtoClass) {
+        this.entityClass = entityClass;
+        this.dtoClass = dtoClass;
+    }
+
+    @Override
+    public E toEntity(D dto) {
+        return Objects.isNull(dto)
+                ? null
+                : mapper.map(dto, entityClass);
+    }
+
+    @Override
+    public D toDto(E entity) {
+        return Objects.isNull(entity)
+                ? null
+                : mapper.map(entity, dtoClass);
+    }
+
+    Converter<E, D> toDtoConverter() {
+        return context -> {
+            E source = context.getSource();
+            D destination = context.getDestination();
+            mapSpecificFields(source, destination);
+            return context.getDestination();
+        };
+    }
+
+    Converter<D, E> toEntityConverter() {
+        return context -> {
+            D source = context.getSource();
+            E destination = context.getDestination();
+            mapSpecificFields(source, destination);
+            return context.getDestination();
+        };
+    }
+
+    void mapSpecificFields(E source, D destination) {
+    }
+
+    void mapSpecificFields(D source, E destination) {
+    }
+}
+
+@Component
+public class DroidMapper extends AbstractMapper<Droid, DroidDto> {
+
+    private final ModelMapper mapper;
+    private final UnicornRepository unicornRepository;
+
+    @Autowired
+    public DroidMapper(ModelMapper mapper, UnicornRepository unicornRepository) {
+        super(Droid.class, DroidDto.class);
+        this.mapper = mapper;
+        this.unicornRepository = unicornRepository;
+    }
+
+    @PostConstruct
     public void setupMapper() {
         mapper.createTypeMap(Droid.class, DroidDto.class)
                 .addMappings(m -> m.skip(DroidDto::setUnicornId)).setPostConverter(toDtoConverter());
         mapper.createTypeMap(DroidDto.class, Droid.class)
                 .addMappings(m -> m.skip(Droid::setUnicorn)).setPostConverter(toEntityConverter());
     }
+
+    @Override
+    public void mapSpecificFields(Droid source, DroidDto destination) {
+        destination.setUnicornId(getId(source));
+    }
+
+    private Long getId(Droid source) {
+        return Objects.isNull(source) || Objects.isNull(source.getId()) ? null : source.getUnicorn().getId();
+    }
+
+    @Override
+    void mapSpecificFields(DroidDto source, Droid destination) {
+        destination.setUnicorn(unicornRepository.findById(source.getUnicornId()).orElse(null));
+    }
+}
+
+@Component
+public class UnicornMapper extends AbstractMapper<Unicorn, UnicornDto> {
+
+    @Autowired
+    public UnicornMapper() {
+        super(Unicorn.class, UnicornDto.class);
+    }
+}
+
+    @PostConstruct
+    public void setupMapper() {
+        mapper.createTypeMap(Droid.class, DroidDto.class)
+                .addMappings(m -> m.skip(DroidDto::setUnicornId)).setPostConverter(toDtoConverter());
+        mapper.createTypeMap(DroidDto.class, Droid.class)
+                .addMappings(m -> m.skip(Droid::setUnicorn)).setPostConverter(toEntityConverter());
+    }
+--------------------------------------------------------------------------------------------------------
+"findByNameContaining" : {
+  "href" : "http://localhost:8080/subjects/search/nameContains{?name,page,size,sort}",
+  "templated" : true
+}
+
+@GetMapping(params = { "page", "size" })
+
+@GetMapping(params = { "page", "size" })
+public List<Foo> findPaginated(@RequestParam("page") int page, 
+  @RequestParam("size") int size, UriComponentsBuilder uriBuilder,
+  HttpServletResponse response) {
+    Page<Foo> resultPage = service.findPaginated(page, size);
+    if (page > resultPage.getTotalPages()) {
+        throw new MyResourceNotFoundException();
+    }
+    eventPublisher.publishEvent(new PaginatedResultsRetrievedEvent<Foo>(
+      Foo.class, uriBuilder, response, page, resultPage.getTotalPages(), size));
+ 
+    return resultPage.getContent();
+}
+
+
+    @GetMapping("/test")
+    public ResponseEntity<Iterable<FileResponse>> get() {
+        final DateTimePeriod dataTimePeriod = new DateTimePeriod(
+                DateUtils.asDate(LocalDateTime.now().minus(50, ChronoUnit.DAYS)),
+                DateUtils.asDate(LocalDateTime.now().plus(50, ChronoUnit.DAYS)));
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(this.getModelMapper().mapAll(this.getFileService().findRecordsCreatedByPeriod(dataTimePeriod), FileResponse.class));
+    }
+
+    @GetMapping("/test1")
+    public ResponseEntity<Iterable<FileResponse>> get1() {
+        final DateTimePeriod dataTimePeriod = new DateTimePeriod(
+                DateUtils.asDate(LocalDateTime.now().minus(50, ChronoUnit.DAYS)),
+                DateUtils.asDate(LocalDateTime.now().plus(50, ChronoUnit.DAYS)));
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(this.getModelMapper().mapAll(this.getFileService().findRecordsModifiedByPeriod(dataTimePeriod), FileResponse.class));
+    }
+
+    @GetMapping("/test2")
+    public ResponseEntity<Iterable<FileResponse>> get2() {
+        final AuthenticatedUser user = AuthenticatedUser.builder().userId("ee9cb324-1781-4bb6-6131-08d727c2cbb2").ownerId("b3a341c7-43d0-41b9-af35-cb4cf3b13476").build();
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(this.getModelMapper().mapAll(this.getFileService().findRecordsCreatedByUser(user), FileResponse.class));
+    }
+
+    @GetMapping("/test3")
+    public Iterable<FileEntity> get3() {
+        final AuthenticatedUser user = AuthenticatedUser.builder().userId("ee9cb324-1781-4bb6-6131-08d727c2cbb2").ownerId("b3a341c7-43d0-41b9-af35-cb4cf3b13476").build();
+        return this.getFileService().findRecordsModifiedByUser(user);
+    }
+
+    @Autowired
+    private FileRepository fileRepository;
+
+    @GetMapping("/test4")
+    public ResponseEntity<Stream<FileEntity>> get4() {
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(this.fileRepository.streamAll());
+    }
+	
+https://www.baeldung.com/rest-api-pagination-in-spring
+https://www.baeldung.com/spring-data-jpa-pagination-sorting
+--------------------------------------------------------------------------------------------------------
+@WebMvcTest(controllers = PagedController.class)
+class PagedControllerTest {
+
+  @MockBean
+  private MovieCharacterRepository characterRepository;
+
+  @Autowired
+  private MockMvc mockMvc;
+
+  @Test
+  void evaluatesSortParameter() throws Exception {
+
+    mockMvc.perform(get("/characters/sorted")
+        .param("sort", "id,desc")   // <-- no space after comma!!!
+        .param("sort", "name,asc")) // <-- no space after comma!!!
+        .andExpect(status().isOk());
+
+    ArgumentCaptor<Sort> sortCaptor = ArgumentCaptor.forClass(Sort.class);
+    verify(characterRepository).findAllSorted(sortCaptor.capture());
+    Sort sort = sortCaptor.getValue();
+
+    assertThat(sort).hasSort("name", Sort.Direction.ASC);
+    assertThat(sort).hasSort("id", Sort.Direction.DESC);
+  }
+}
+--------------------------------------------------------------------------------------------------------
+spring.data.web.pageable.size-parameter=size
+spring.data.web.pageable.page-parameter=page
+spring.data.web.pageable.default-page-size=20
+spring.data.web.pageable.one-indexed-parameters=false
+spring.data.web.pageable.max-page-size=2000
+spring.data.web.pageable.prefix=
+spring.data.web.pageable.qualifier-delimiter=_
+
+@RestController
+class PagedController {
+
+  @GetMapping(path = "/characters/qualifier")
+  Page<MovieCharacter> loadCharactersPageWithQualifier(
+      @Qualifier("my") Pageable pageable) {
+    ...
+  }
+
+}
+
+@RestController
+class PagedController {
+
+  @GetMapping(path = "/characters/page")
+  Page<MovieCharacter> loadCharactersPage(
+      @PageableDefault(page = 0, size = 20)
+      @SortDefault.SortDefaults({
+          @SortDefault(sort = "name", direction = Sort.Direction.DESC),
+          @SortDefault(sort = "id", direction = Sort.Direction.ASC)
+      }) Pageable pageable) {
+    ...
+  }
+  
+}
+--------------------------------------------------------------------------------------------------------
+{"userId":"ee9cb324-1781-4bb6-6131-08d727c2cbb2","ownerId":"b3a341c7-43d0-41b9-af35-cb4cf3b13476"}
+{"userId": "ee9cb324-1781-4bb6-6131-08d727c2cbb2","ownerId": "b3a341c7-43d0-41b9-af35-cb4cf3b13476"}
+{"userId":"ee9cb324-1781-4bb6-6131-08d727c2cbb2","ownerId":"b3a341c7-43d0-41b9-af35-cb4cf3b13476"}
+
+https://habr.com/ru/post/438808/
+https://github.com/promoscow/modelmapper-demo
+{"userId": "ee9cb324-1781-4bb6-6131-08d727c2cbb2","ownerId": "b3a341c7-43d0-41b9-af35-cb4cf3b13476"}
+@PostConstruct
+public void setupMapper() {
+    mapper.createTypeMap(Droid.class, DroidDto.class)
+            .addMappings(m -> m.skip(DroidDto::setUnicornId)).setPostConverter(toDtoConverter());
+    mapper.createTypeMap(DroidDto.class, Droid.class)
+            .addMappings(m -> m.skip(Droid::setUnicorn)).setPostConverter(toEntityConverter());
+}
+
+{
+	"name": "name-test",
+	"sku": "sku-test"
+}
 --------------------------------------------------------------------------------------------------------
 String json = "{ \"color\" : \"Black\", \"type\" : \"BMW\" }";
 Map<String, Object> map 
