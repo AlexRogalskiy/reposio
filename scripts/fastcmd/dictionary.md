@@ -6632,6 +6632,183 @@ public class CollectionsBean {
         System.out.println(nameListWithDefaultValue);
     }
 }
+
+https://github.com/modelmapper/modelmapper/issues/217
+--------------------------------------------------------------------------------------------------------
+//package com.paragon.microservices.distributor.system.converter;
+//
+//import com.paragon.microservices.distributor.model.dto.response.FileResponse;
+//import com.paragon.microservices.distributor.model.entity.FileEntity;
+//import org.modelmapper.Converter;
+//import org.modelmapper.spi.MappingContext;
+//import org.springframework.stereotype.Component;
+//
+//import java.util.Optional;
+//
+//@Component
+//public class FileEntityToFileResponseConverter implements Converter<FileEntity, FileResponse> {
+//
+//    @Override
+//    public FileResponse convert(final MappingContext<FileEntity, FileResponse> context) {
+//        final FileEntity source = context.getSource();
+//        final FileResponse dest = Optional.ofNullable(context.getDestination()).orElseGet(FileResponse::new);
+//        dest.setId(source.getId());
+//        dest.setVersionId(source.getVersion().getId().toString());
+//        dest.setCreatedDate(source.getCreatedDate());
+//        dest.setLastModifiedDate(source.getLastModifiedDate());
+//        dest.setVersionId(source.getVersion().getId().toString());
+//        dest.setFileName(source.getFileInfo().getFileName());
+//        dest.setFilePath(source.getFileInfo().getFilePath());
+//        dest.setFilePlatform(source.getFileInfo().getFilePlatform());
+//        return dest;
+//    }
+//}
+
+//package com.paragon.microservices.distributor.system.converter;
+//
+//import com.paragon.microservices.distributor.model.dto.response.FileResponse;
+//import com.paragon.microservices.distributor.model.entity.FileEntity;
+//import com.paragon.microservices.distributor.model.entity.FileInfoEntity;
+//import org.modelmapper.Converter;
+//import org.modelmapper.spi.MappingContext;
+//import org.springframework.stereotype.Component;
+//
+//import java.util.Optional;
+//
+//@Component
+//public class FileResponseToFileEntityConverter implements Converter<FileResponse, FileEntity> {
+//
+//    @Override
+//    public FileEntity convert(final MappingContext<FileResponse, FileEntity> context) {
+//        final FileResponse source = context.getSource();
+//        final FileEntity dest = Optional.ofNullable(context.getDestination()).orElseGet(FileEntity::new);
+//        dest.setId(source.getId());
+//        dest.setFileInfo(this.getFileInfoEntity(source));
+//        return dest;
+//    }
+//
+//    private FileInfoEntity getFileInfoEntity(final FileResponse source) {
+//        return FileInfoEntity
+//                .builder()
+//                .fileName(source.getFileName())
+//                .filePath(source.getFilePath())
+//                .filePlatform(source.getFilePlatform())
+//                .build();
+//    }
+//}
+//package com.paragon.microservices.distributor.system.converter;
+//
+//import com.paragon.microservices.distributor.model.dto.request.FileCreateRequest;
+//import com.paragon.microservices.distributor.model.dto.request.ProductCreateRequest;
+//import com.paragon.microservices.distributor.model.dto.response.FileResponse;
+//import com.paragon.microservices.distributor.model.entity.FileEntity;
+//import com.paragon.microservices.distributor.model.entity.ProductEntity;
+//import org.modelmapper.Converter;
+//import org.modelmapper.spi.MappingContext;
+//
+//import java.util.Optional;
+//
+//public class ProductCreateRequestToProductEntityConverter implements Converter<ProductCreateRequest, ProductEntity> {
+//
+//    @Override
+//    public ProductEntity convert(final MappingContext<ProductCreateRequest, ProductEntity> context) {
+//        final ProductCreateRequest source = context.getSource();
+//        final ProductEntity dest = Optional.ofNullable(context.getDestination()).orElseGet(ProductEntity::new);
+//        dest.setName(source.getName());
+//        dest.setSku(source.getSku());
+//    }
+//}
+//package com.paragon.microservices.distributor.system.converter;
+//
+//import com.paragon.microservices.distributor.model.dto.response.VersionResponse;
+//import com.paragon.microservices.distributor.model.entity.VersionEntity;
+//import com.paragon.microservices.distributor.model.entity.VersionInfoEntity;
+//import com.paragon.microservices.distributor.model.formatter.VersionInfoFormatter;
+//import org.modelmapper.Converter;
+//import org.modelmapper.spi.MappingContext;
+//import org.springframework.beans.factory.annotation.Autowired;
+//import org.springframework.stereotype.Component;
+//
+//import java.text.ParseException;
+//import java.util.Locale;
+//import java.util.Optional;
+//
+//@Component
+//public class VersionResponseToVersionEntityConverter implements Converter<VersionResponse, VersionEntity> {
+//
+//    @Autowired
+//    private VersionInfoFormatter formatter;
+//
+//    @Override
+//    public VersionEntity convert(final MappingContext<VersionResponse, VersionEntity> context) {
+//        final VersionResponse source = context.getSource();
+//        final VersionEntity dest = Optional.ofNullable(context.getDestination()).orElseGet(VersionEntity::new);
+//        dest.setVersionInfo(this.getVersionInfo(source.getVersionInfo()));
+//        dest.setChangeLog(source.getChangeLog());
+//        dest.setLocale(source.getLocale());
+//        dest.setId(source.getId());
+//        return dest;
+//    }
+//
+//    private VersionInfoEntity getVersionInfo(final String version) {
+//        try {
+//            return this.formatter.parse(version, Locale.getDefault());
+//        } catch (ParseException e) {
+//            return null;
+//        }
+//    }
+//}
+//package com.paragon.microservices.distributor.system.mapper;
+//
+//import com.paragon.microservices.distributor.model.dto.request.ProductCreateRequest;
+//import com.paragon.microservices.distributor.model.entity.ProductEntity;
+//import org.modelmapper.PropertyMap;
+//import org.springframework.stereotype.Component;
+//
+//@Component
+//public class ProductCreateRequestToProductEntityPropertyMap extends PropertyMap<ProductCreateRequest, ProductEntity> {
+//
+//    @Override
+//    protected void configure() {
+////        skip(this.destination.getId());
+////        skip(this.destination.getCreatedBy());
+////        skip(this.destination.getCreatedDate());
+////        skip(this.destination.getLastModifiedBy());
+////        skip(this.destination.getLastModifiedDate());
+////        skip(this.destination.getRowVersion());
+//
+//        skip().setId(null);
+//        skip().setRowVersion(null);
+//        skip().setCreatedBy(null);
+//        skip().setCreatedDate(null);
+//        skip().setLastModifiedBy(null);
+//        skip().setLastModifiedDate(null);
+//    }
+//}
+
+//package com.paragon.microservices.distributor.system.mapper;
+//
+//import com.paragon.microservices.distributor.model.dto.response.ProductResponse;
+//import com.paragon.microservices.distributor.model.entity.ProductEntity;
+//import org.modelmapper.PropertyMap;
+//import org.springframework.stereotype.Component;
+//
+//@Component
+//public class ProductEntityToProductResponsePropertyMap extends PropertyMap<ProductEntity, ProductResponse> {
+//
+//    @Override
+//    protected void configure() {
+////        map(this.source.getCreatedBy().get()).setCreatedBy(null);
+////        map(this.source.getCreatedDate().get()).setCreatedDate(null);
+////        map(this.source.getLastModifiedBy().get()).setLastModifiedBy(null);
+////        map(this.source.getLastModifiedDate().get()).setLastModifiedDate(null);
+//        skip(this.destination.getCreatedBy());
+//        skip(this.destination.getCreatedDate());
+//        skip(this.destination.getLastModifiedBy());
+//        skip(this.destination.getLastModifiedDate());
+//    }
+//}
+
 --------------------------------------------------------------------------------------------------------
 
 import javax.persistence.EntityManager;
