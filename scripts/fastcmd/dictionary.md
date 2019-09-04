@@ -4121,6 +4121,509 @@ assertThat(foundUsersStream.count(), equalTo(3l));
         }
     }
 --------------------------------------------------------------------------------------------------------
+package example.springdata.jpa.java8;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
+
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.Repository;
+import org.springframework.scheduling.annotation.Async;
+
+/**
+ * Repository to manage {@link Customer} instances.
+ *
+ * @author Oliver Gierke
+ * @author Thomas Darimont
+ */
+public interface CustomerRepository extends Repository<Customer, Long> {
+
+	/**
+	 * Special customization of {@link CrudRepository#findOne(java.io.Serializable)} to return a JDK 8 {@link Optional}.
+	 *
+	 * @param id
+	 * @return
+	 */
+	Optional<Customer> findById(Long id);
+
+	/**
+	 * Saves the given {@link Customer}.
+	 *
+	 * @param customer
+	 * @return
+	 */
+	<S extends Customer> S save(S customer);
+
+	/**
+	 * Sample method to derive a query from using JDK 8's {@link Optional} as return type.
+	 *
+	 * @param lastname
+	 * @return
+	 */
+	Optional<Customer> findByLastname(String lastname);
+
+	/**
+	 * Sample default method to show JDK 8 feature support.
+	 *
+	 * @param customer
+	 * @return
+	 */
+	default Optional<Customer> findByLastname(Customer customer) {
+		return findByLastname(customer == null ? null : customer.lastname);
+	}
+
+	/**
+	 * Sample method to demonstrate support for {@link Stream} as a return type with a custom query. The query is executed
+	 * in a streaming fashion which means that the method returns as soon as the first results are ready.
+	 *
+	 * @return
+	 */
+	@Query("select c from Customer c")
+	Stream<Customer> streamAllCustomers();
+
+	/**
+	 * Sample method to demonstrate support for {@link Stream} as a return type with a derived query. The query is
+	 * executed in a streaming fashion which means that the method returns as soon as the first results are ready.
+	 *
+	 * @return
+	 */
+	Stream<Customer> findAllByLastnameIsNotNull();
+
+	@Async
+	CompletableFuture<List<Customer>> readAllBy();
+}
+--------------------------------------------------------------------------------------------------------
+@Controller
+public class CustomErrorController implements ErrorController {
+
+  @RequestMapping("/error")
+  @ResponseBody
+  public String handleError(HttpServletRequest request) {
+      Integer statusCode = (Integer) request.getAttribute("javax.servlet.error.status_code");
+      Exception exception = (Exception) request.getAttribute("javax.servlet.error.exception");
+      return String.format("<html><body><h2>Sample Error Page</h2><div>Status code: <b>%s</b></div>"
+                      + "<div>Exception Message: <b>%s</b></div><body></html>",
+              statusCode, exception==null? "N/A": exception.getMessage());
+  }
+
+  @Override
+  public String getErrorPath() {
+      return "/error";
+  }
+}
+--------------------------------------------------------------------------------------------------------
+#function to zip text + encrypt, 2 params (text to encrypt, filename w/o extension) 
+function zipe() {
+    echo "$1" > $2.txt && zip -e $2.zip $2.txt && rm $2.txt
+}
+--------------------------------------------------------------------------------------------------------
+-Dcom.sun.management.jmxremote
+-Dcom.sun.management.jmxremote.port=1234
+-Dcom.sun.management.jmxremote.authenticate=false
+-Dcom.sun.management.jmxremote.ssl=false
+-Djava.rmi.server.hostname=127.0.0.1
+--------------------------------------------------------------------------------------------------------
+import javax.sql.DataSource;
+
+import org.apache.commons.lang.Validate;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+/**
+ * @author bchild
+ *
+ */
+public abstract class AbstractBatchCustomRepositoryImpl {
+	
+	private JdbcTemplate jdbcTemplate = null;
+
+	protected int executeBatch(String sql, BatchPreparedStatementSetter batchPreparedStatementSetter) {
+		Validate.notNull(jdbcTemplate, "Datasource not set for batch statement.");
+		int[] rows = jdbcTemplate.batchUpdate(sql, batchPreparedStatementSetter);
+		return sumRows(rows);
+	}
+	
+	private int sumRows(int[] rows) {
+		int rowCount = 0;
+		for(int row : rows) {
+			rowCount += row;
+		}
+		return rowCount;
+	}
+
+	public void setDataSource(DataSource dataSource) {
+		this.jdbcTemplate = new JdbcTemplate(dataSource);
+	}
+
+}
+
+
+import java.util.Collection;
+
+/**
+ * 
+ * @author brettchild
+ *
+ * @param <T>
+ */
+public interface BatchSaveCustomRepository<T> {
+	
+	/**
+	 * @param records
+	 * @return number of records saved
+	 */
+	int batchSave(Collection<T> records);
+}
+
+import java.util.Date;
+import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.query.Param;
+
+import com.bmchild.data.shared.batch.BatchSaveCustomRepository;
+
+/*
+* Our Repository get the default functionality of the JPARepository plus we all also add our batchSave.
+* If we wanted to also add a batch update we could make a batch update interface and implement that in our concrete impl class
+*/
+public interface MyEntityRepository extends JpaRepository<MyEntity, Long>, BatchSaveCustomRepository<MyEntity> {
+	
+}
+
+
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.Collection;
+import java.util.List;
+
+import javax.annotation.PostConstruct;
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+
+import com.bmchild.data.shared.batch.AbstractBatchCustomRepositoryImpl;
+import com.bmchild.data.shared.batch.BatchSaveCustomRepository;
+import com.bmchild.data.shared.common.util.CollectionUtil;
+
+/*
+* Impl of our repo so we can add our batch save functionality
+*/
+public class MyEntityRepositoryImpl extends AbstractBatchCustomRepositoryImpl implements BatchSaveCustomRepository<MyEntity> {
+
+	private static final String BATCH_INSERT_SQL = "insert into myentity (field1, field2) "
+			+ " VALUES (?, ?)";
+
+	/* We limit the number of records we process at a time to avoid too many parameters per query */		
+	private static final Integer BATCH_SIZE = 500; 
+
+	@Autowired
+	@Qualifier("dataSource")
+	private DataSource dataSource;
+
+	@PostConstruct
+	public void postConstruct() {
+		setDataSource(dataSource);
+	}
+	
+	@Override
+	public int batchSave(Collection<MyEntity> records) {
+		int count = 0;
+		for(final List<MyEntity> batch : CollectionUtil.split(records, BATCH_SIZE)) {
+			count += executeBatch(BATCH_INSERT_SQL, new BatchPreparedStatementSetter() {
+			
+				@Override
+				public void setValues(PreparedStatement ps, int i) throws SQLException {
+					MyEntity l = batch.get(i);
+					ps.setString(1, l.getField1());
+					ps.setString(2, l.getField2());
+				}
+				
+				@Override
+				public int getBatchSize() {
+					return batch.size();
+				}
+			});
+		}
+		return count;
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+/*
+* Matches either on userId or lastName + last4 digits of SSN
+*/
+public List<User> findAllByUserIdOrLastNameLastFourSSN( List<UserParameter> parameters ) {
+	  
+	// setup the criteria API to query User
+	CriteriaBuilder cBuilder = getEntityManager().getCriteriaBuilder();
+	CriteriaQuery<User> criteriaQuery = cBuilder.createQuery(User.class);
+	Root<User> root = criteriaQuery.from(User.class);
+	criteriaQuery.select(root);
+
+	// set up lists to store the userId or predicates to match lastName AND last 4 of ssn
+	List<String> userIds = ArrayList<>();
+	List<Predicate> nameAndSSNPredicates = new ArrayList<>();
+
+	// Loop over parameters, adding predicates and parameters as needed
+	int i = 0;
+	for(UserParameter param : parameters) {
+	  
+	  if(null == param.getUserId) {
+	    // match lastname + ssn with unique parameters
+	    Predicate predicate = cBuilder.and(
+	      ParameterExpression<String> lastNameParam = cBuilder.parameter(String.class, "lastName" + i);
+				ParameterExpression<String> ssnParam = cBuilder.parameter(String.class, "ssn" + i);
+				cBuilder.equal(root.get("lastName"), lastNameParam),
+				cBuilder.equal( cBuilder.substring(root.get("ssn"), cBuilder.diff( cBuilder.length( root.get("ssn") ), 3), cBuilder.literal(4) ), ssnParam)
+			);
+			nameAndSSNPredicates.add(predicate);
+	  } else {
+	    // match to userId
+	    userIds.add(param.getUserId);
+	  }
+	  
+	}
+
+	// Add userIds to list of predicates
+	if(!userIds.isEmpty()) {
+	  nameAndSSNPredicates.add(root.get("userId").in(userIds));
+	}
+
+	// seperate all generated predicates with an OR
+	Predicate combinedPredicate = cBuilder.or(nameAndSSNPredicates.toArray(new Predicate[nameAndSSNPredicates.size()]));
+
+	// Create Query and add parameters
+	criteriaQuery.where(combinedPredicate);
+	Query query = getEntityManager().createQuery(criteriaQuery);
+
+	int x = 0;
+	for(UserParameter param : parameters) {
+	  if(null == param.getUserId) {
+	  // only set parameters for lastname and ssn matches
+	      query.setParameter("lastname" + x, param.getLastName());
+	      
+		  .setParameter("ssn" + x, param.getSsn());
+	  } 
+	  x++;
+	}
+
+	// run the query
+	return query.getResultList();
+		
+}
+
+select *
+from User 
+where
+userId in (:userIds)
+-- Then we need an OR clause for each match we want
+OR ( lastName = :lastName1 AND SUBSTRING(ssn, LEN(ssn)-3, 4) = :lastFourSsn1)
+OR ( lastName = :lastName2 AND SUBSTRING(ssn, LEN(ssn)-3, 4) = :lastFourSsn2)
+-- ... 
+--------------------------------------------------------------------------------------------------------
+@GetMapping(value = "/image", produces = "image/png")
+public ResponseEntity<StreamingResponseBody> image() {
+    BufferedImage canvas = service.createImage();
+
+    StreamingResponseBody stream = outputStream ->
+            ImageIO.write(canvas, "png", outputStream);
+
+    return ResponseEntity.ok()
+        .contentType(MediaType.IMAGE_PNG)
+        .body(stream);
+}
+--------------------------------------------------------------------------------------------------------
+spring.jpa.properties.javax.persistence.schema-generation.create-source=metadata
+spring.jpa.properties.javax.persistence.schema-generation.scripts.action=create
+spring.jpa.properties.javax.persistence.schema-generation.scripts.create-target=create.sql
+--------------------------------------------------------------------------------------------------------
+        try (ObjectOutputStream oos = new ObjectOutputStream(new GZIPOutputStream(outputStream))) {
+            oos.writeObject(result);
+        }
+--------------------------------------------------------------------------------------------------------
+uuidgen | grep -E "[A-F0-9]{8}-[A-F0-9]{4}-4[A-F0-9]{3}-[89AB][A-F0-9]{3}-[A-F0-9]{12}"
+/[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}/
+
+@GetMapping("/file/{id:[a-f0-9]{64}}/{key:[a-f0-9]{64}}")
+
+UUID v1 :
+
+/^[0-9A-F]{8}-[0-9A-F]{4}-[1][0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i
+UUID v2 :
+
+/^[0-9A-F]{8}-[0-9A-F]{4}-[2][0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i
+UUID v3 :
+
+/^[0-9A-F]{8}-[0-9A-F]{4}-[3][0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i
+UUID v4 :
+
+/^[0-9A-F]{8}-[0-9A-F]{4}-[4][0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i
+UUID v5 :
+
+/^[0-9A-F]{8}-[0-9A-F]{4}-[5][0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i
+--------------------------------------------------------------------------------------------------------
+@RequestMapping(path = "config", method = RequestMethod.GET)
+public ResponseEntity<StreamingResponseBody> getConfig() {
+    HttpHeaders headers = new HttpHeaders();
+    // 'produces' in annotation does not work with stream
+    headers.setContentType(MediaType.APPLICATION_JSON);
+    headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"cluman_config.json\"");
+    return new ResponseEntity<>((os) -> {
+        appConfigService.write(MimeTypeUtils.APPLICATION_JSON_VALUE, os);
+    }, headers, HttpStatus.OK);
+}
+--------------------------------------------------------------------------------------------------------
+@PostMapping("/")
+@ResponseBody
+ResponseEntity<StreamingResponseBody> post(@RequestPart final MultipartFile file)
+        throws Exception {
+
+    if (file.isEmpty()) {
+        throw new ValidationException("file was empty");
+    }
+
+    final HttpHeaders headers = new HttpHeaders();
+    headers.setContentDispositionFormData("filename", "sample.txt");
+
+    final StreamingResponseBody body = out -> out.write(file.getBytes());
+
+    return ResponseEntity.ok()
+            .headers(headers)
+            .contentType(MediaType.valueOf("application/force-download"))
+            .body(body);
+}
+--------------------------------------------------------------------------------------------------------
+package com.paragon.microservices.distributor.controller.impl;
+
+import com.paragon.mailingcontour.commons.configuration.BaseExceptionHandler;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.servlet.error.ErrorAttributes;
+import org.springframework.boot.web.servlet.error.ErrorController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.context.request.WebRequest;
+
+import javax.servlet.http.HttpServletResponse;
+import java.util.HashMap;
+import java.util.Map;
+
+@Controller
+@RequiredArgsConstructor
+public class BaseErrorController implements ErrorController {
+    private final ErrorAttributes errorAttributes;
+
+    @Value("${server.error.path:${error.path:/error}}")
+    private String path;
+
+    @RequestMapping("${server.error.path:${error.path:/error}}")
+    @ResponseBody
+    public ResponseEntity<BaseExceptionHandler.ExceptionResponse> handleError(final WebRequest request, final HttpServletResponse response) {
+        final Map<String, Object> errorAttributes = this.getErrorAttributes(request);
+        return BaseExceptionHandler.buildResponse(String.valueOf(errorAttributes.get("path")), String.valueOf(errorAttributes.get("message")), HttpStatus.valueOf(response.getStatus()));
+    }
+
+    @Override
+    public String getErrorPath() {
+        return this.path;
+    }
+
+    private Map<String, Object> getErrorAttributes(final WebRequest request) {
+        final Map<String, Object> errorMap = new HashMap<>();
+        errorMap.putAll(this.errorAttributes.getErrorAttributes(request, false));
+        return errorMap;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+public class ExceptionResponse {
+
+  private Integer status;
+  private String path;
+  private String errorMessage;
+  private String timeStamp;
+  private String trace;
+
+  public ExceptionResponse(int status, Map<String, Object> errorAttributes) {
+    this.setStatus(status);
+    this.setPath((String) errorAttributes.get("path"));
+    this.setErrorMessage((String) errorAttributes.get("message"));
+    this.setTimeStamp(errorAttributes.get("timestamp").toString());
+    this.setTrace((String) errorAttributes.get("trace"));
+  }
+
+  public Integer getStatus() {
+    return status;
+  }
+
+  private void setStatus(Integer status) {
+    this.status = status;
+  }
+
+  public String getErrorMessage() {
+    return errorMessage;
+  }
+
+  private void setErrorMessage(String errorMessage) {
+    this.errorMessage = errorMessage;
+  }
+
+  public String getTimeStamp() {
+    return timeStamp;
+  }
+
+  private void setTimeStamp(String timeStamp) {
+    this.timeStamp = timeStamp;
+  }
+
+  public String getTrace() {
+    return trace;
+  }
+
+  private void setTrace(String trace) {
+    this.trace = trace;
+  }
+
+  public String getPath() {
+    return path;
+  }
+
+  private void setPath(String path) {
+    this.path = path;
+  }
+}
+--------------------------------------------------------------------------------------------------------
+@FeignClient(name = "currency-exchange")
+@RibbonClient(name = "currency-exchange")
+public interface CurrencyExchangeProxy {
+
+    @GetMapping("/exchange/{from}/to/{to}")
+    PairRateDto callForExchangeValue(@PathVariable("from") String fromValue, @PathVariable("to") String toValue);
+
+}
+
+@RestController
+public class WebController {
+private static final String template = "Hello, %s!";
+    private final AtomicLong counter = new AtomicLong();
+
+    @RequestMapping(value= "/hi", method = RequestMethod.GET)
+    public @ResponseBody Greeting sayHello(
+            @RequestParam(value = "name", required = false, defaultValue = "Stranger") String name) {
+        System.out.println("Inside sayHello() of WebController.java");
+        return new Greeting(counter.incrementAndGet(), String.format(template, name));
+    }
+}
+--------------------------------------------------------------------------------------------------------
  this.mockMvc.perform(get("/test"))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
                 .andExpect(status().isOk())
