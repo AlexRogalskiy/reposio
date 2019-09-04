@@ -6809,6 +6809,77 @@ public class BasicAuthenticationIntegrationTests {
 
 }
 --------------------------------------------------------------------------------------------------------
+If there are problems in this service, check the SQL Server Agent jobs. You can look up the regis
+-
+try for the “ErrorLogFile” key under HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft 
+SQL Server\MSSQL12.SQL2014\SQLServerAge
+--------------------------------------------------------------------------------------------------------
+@Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "CUST_SEQ")
+    @SequenceGenerator(sequenceName = "customer_seq", allocationSize = 1, name = "CUST_SEQ")
+    Long id;
+--------------------------------------------------------------------------------------------------------
+        <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-launcher</artifactId>
+                <scope>test</scope>
+                <version>${junit-platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-engine</artifactId>
+                <scope>test</scope>
+                <version>${junit-platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-api</artifactId>
+                <scope>test</scope>
+                <version>${junit-jupiter.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <scope>test</scope>
+                <version>${junit-jupiter.version}</version>
+            </dependency>
+--------------------------------------------------------------------------------------------------------
+@SpringJUnitConfig
+$ hostnamectl --static set-hostname dallas
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationListener;
+import org.springframework.core.env.Environment;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
+@SuppressWarnings("SpringJavaAutowiredFieldsWarningInspection")
+@SpringBootApplication
+class App implements ApplicationListener<ApplicationReadyEvent> {
+
+    @Autowired
+    private ApplicationContext applicationContext;
+
+    public static void main(String[] args) {
+        SpringApplication.run(App.class, args);
+    }
+
+    @Override
+    public void onApplicationEvent(ApplicationReadyEvent event) {
+        try {
+            String ip = InetAddress.getLocalHost().getHostAddress();
+            int port = applicationContext.getBean(Environment.class).getProperty("server.port", Integer.class, 8080);
+            System.out.printf("%s:%d", ip, port);
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+    }
+--------------------------------------------------------------------------------------------------------
 @Bean
 public WebMvcConfigurer corsConfigurer() {
 	return new WebMvcConfigurerAdapter() {
@@ -14773,6 +14844,411 @@ public class PersonNameConverter implements AttributeConverter<PersonName, Strin
 //}
 {"userId":"ee9cb324-1781-4bb6-6131-08d727c2cbb2","ownerId":"b3a341c7-43d0-41b9-af35-cb4cf3b13476"}
 {"userId": "ee9cb324-1781-4bb6-6131-08d727c2cbb2","ownerId": "b3a341c7-43d0-41b9-af35-cb4cf3b13476"}
+--------------------------------------------------------------------------------------------------------
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.MappedSuperclass;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import lombok.Getter;
+import lombok.Setter;
+
+@MappedSuperclass
+@Getter @Setter
+public class BaseEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    protected Integer id;
+
+    @CreationTimestamp
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    protected Date createdAt;
+
+    @UpdateTimestamp
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    protected Date updatedAt;
+}
+
+CREATE TABLE my_table (
+        ...
+      updated_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    );
+--------------------------------------------------------------------------------------------------------
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+ 
+public class MyLocalHostName {
+    public static void main(String a[]){
+        try {
+            InetAddress myHost = InetAddress.getLocalHost();
+            System.out.println(myHost.getHostName());
+        } catch (UnknownHostException ex) {
+            ex.printStackTrace();
+        }
+    }
+}
+
+https://knative.dev/v0.4-docs/serving/samples/hello-world/helloworld-java/
+https://www.springboottutorial.com/spring-boot-with-embedded-servers-tomcat-jetty
+https://o7planning.org/ru/11669/spring-boot
+https://www.javatpoint.com/spring-boot-properties
+https://o7planning.org/ru/11665/spring-boot-hibernate-and-spring-transaction-tutorial
+--------------------------------------------------------------------------------------------------------
+import org.apache.commons.validator.routines.EmailValidator;
+import org.o7planning.sbshoppingcart.form.CustomerForm;
+import org.springframework.stereotype.Component;
+import org.springframework.validation.Errors;
+import org.springframework.validation.ValidationUtils;
+import org.springframework.validation.Validator;
+ 
+@Component
+public class CustomerFormValidator implements Validator {
+ 
+   private EmailValidator emailValidator = EmailValidator.getInstance();
+ 
+   // This validator only checks for the CustomerForm.
+   @Override
+   public boolean supports(Class<?> clazz) {
+      return clazz == CustomerForm.class;
+   }
+ 
+   @Override
+   public void validate(Object target, Errors errors) {
+      CustomerForm custInfo = (CustomerForm) target;
+ 
+      // Check the fields of CustomerForm.
+      ValidationUtils.rejectIfEmptyOrWhitespace(errors, "name", "NotEmpty.customerForm.name");
+      ValidationUtils.rejectIfEmptyOrWhitespace(errors, "email", "NotEmpty.customerForm.email");
+      ValidationUtils.rejectIfEmptyOrWhitespace(errors, "address", "NotEmpty.customerForm.address");
+      ValidationUtils.rejectIfEmptyOrWhitespace(errors, "phone", "NotEmpty.customerForm.phone");
+ 
+      if (!emailValidator.isValid(custInfo.getEmail())) {
+         errors.rejectValue("email", "Pattern.customerForm.email");
+      }
+   }
+}
+
+import org.o7planning.sbshoppingcart.dao.ProductDAO;
+import org.o7planning.sbshoppingcart.entity.Product;
+import org.o7planning.sbshoppingcart.form.ProductForm;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.validation.Errors;
+import org.springframework.validation.ValidationUtils;
+import org.springframework.validation.Validator;
+ 
+@Component
+public class ProductFormValidator implements Validator {
+ 
+   @Autowired
+   private ProductDAO productDAO;
+ 
+   // This validator only checks for the ProductForm.
+   @Override
+   public boolean supports(Class<?> clazz) {
+      return clazz == ProductForm.class;
+   }
+ 
+   @Override
+   public void validate(Object target, Errors errors) {
+      ProductForm productForm = (ProductForm) target;
+ 
+      // Check the fields of ProductForm.
+      ValidationUtils.rejectIfEmptyOrWhitespace(errors, "code", "NotEmpty.productForm.code");
+      ValidationUtils.rejectIfEmptyOrWhitespace(errors, "name", "NotEmpty.productForm.name");
+      ValidationUtils.rejectIfEmptyOrWhitespace(errors, "price", "NotEmpty.productForm.price");
+ 
+      String code = productForm.getCode();
+      if (code != null && code.length() > 0) {
+         if (code.matches("\\s+")) {
+            errors.rejectValue("code", "Pattern.productForm.code");
+         } else if (productForm.isNewProduct()) {
+            Product product = productDAO.findProduct(code);
+            if (product != null) {
+               errors.rejectValue("code", "Duplicate.productForm.code");
+            }
+         }
+      }
+   }
+}
+
+   @Autowired
+   private ProductFormValidator productFormValidator;
+ 
+   @InitBinder
+   public void myInitBinder(WebDataBinder dataBinder) {
+      Object target = dataBinder.getTarget();
+      if (target == null) {
+         return;
+      }
+      System.out.println("Target=" + target);
+ 
+      if (target.getClass() == ProductForm.class) {
+         dataBinder.setValidator(productFormValidator);
+      }
+   }
+   
+ 
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
+ 
+public class ServletInitializer extends SpringBootServletInitializer {
+ 
+    @Override
+    protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+        return application.sources(SpringBootTomcatApplication.class);
+    }
+ 
+}
+--------------------------------------------------------------------------------------------------------
+logging.config
+logging.exception-conversion-word
+logging.file
+logging.level.*
+logging.path
+logging.pattern.console
+logging.pattern.file
+logging.pattern.level
+logging.register-shutdown-hook
+
+yyyy-MM-dd'T'HH:mm:ss.SSSZ
+--------------------------------------------------------------------------------------------------------
+curl -i -H "key1:val1" -H "key2:val2" http://localhost:8080/spring-rest/ex/foos
+@RequestMapping(value = "/ex/bars/{numericId:[\\d]+}", method = GET)
+curl -i -d id=100 http://localhost:8080/spring-rest/ex/bars
+
+--------------------------------------------------------------------------------------------------------
+@RequestParam Map<String, String> params
+   /*
+    * Binding date and time URL template variable to LocalDate and LocalTime
+    */
+   @GetMapping("/request5/{date}/{time}")
+   @ResponseBody
+   public String handler(
+         @DateTimeFormat(pattern = "yyyy-MM-dd") @PathVariable("date") LocalDate date,
+         @DateTimeFormat(pattern = "HH:mm:ss") @PathVariable("time") LocalTime time) {
+
+      return "URL parameters - <br>" 
+            + " date = " + date + " <br>" 
+            + " time = " + time;
+   }
+--------------------------------------------------------------------------------------------------------
+@Controller
+@RequestMapping("/dept")
+public class DeptController {
+
+    @RequestMapping("{id:[0-9]+}")
+    public String handleRequest(@PathVariable("id") String userId, Model model){
+        model.addAttribute("msg", "profile id: "+userId);
+        return "my-page";
+
+    }
+
+    @RequestMapping("{name:[a-zA-Z]+}")
+    public String handleRequest2 (@PathVariable("name") String deptName, Model model) {
+        model.addAttribute("msg", "dept name : " + deptName);
+        return "my-page";
+    }
+}
+
+mvn  clean install tomcat7:run-war
+--------------------------------------------------------------------------------------------------------
+# ===============================
+# JPA / HIBERNATE
+# ===============================
+ 
+spring.jpa.show-sql=true
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.SQLServer2012Dialect
+--------------------------------------------------------------------------------------------------------
+import java.util.HashMap;
+import java.util.Map;
+ 
+import org.springframework.boot.actuate.info.Info;
+import org.springframework.boot.actuate.info.InfoContributor;
+import org.springframework.stereotype.Component;
+ 
+  
+ 
+@Component
+public class BuildInfoContributor implements InfoContributor {
+     
+    @Override
+    public void contribute(Info.Builder builder) {
+        Map<String,String> data= new HashMap<String,String>();
+        data.put("build.version", "2.0.0.M7");
+        builder.withDetail("buildInfo", data);
+    }
+     
+}
+--------------------------------------------------------------------------------------------------------
+import com.gpch.login.model.User;
+import com.gpch.login.repository.RoleRepository;
+import com.gpch.login.repository.UserRepository;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.MockitoAnnotations.initMocks;
+
+public class UserServiceTest {
+
+    @Mock
+    private UserRepository mockUserRepository;
+    @Mock
+    private RoleRepository mockRoleRepository;
+    @Mock
+    private BCryptPasswordEncoder mockBCryptPasswordEncoder;
+
+    private UserService userServiceUnderTest;
+    private User user;
+
+    @Before
+    public void setUp() {
+        initMocks(this);
+        userServiceUnderTest = new UserService(mockUserRepository,
+                                               mockRoleRepository,
+                                               mockBCryptPasswordEncoder);
+        user = User.builder()
+                .id(1)
+                .name("Gustavo")
+                .lastName("Ponce")
+                .email("test@test.com")
+                .build();
+
+        Mockito.when(mockUserRepository.save(any()))
+                .thenReturn(user);
+        Mockito.when(mockUserRepository.findByEmail(anyString()))
+                .thenReturn(user);
+    }
+
+    @Test
+    public void testFindUserByEmail() {
+        // Setup
+        final String email = "test@test.com";
+
+        // Run the test
+        final User result = userServiceUnderTest.findUserByEmail(email);
+
+        // Verify the results
+        assertEquals(email, result.getEmail());
+    }
+
+    @Test
+    public void testSaveUser() {
+        // Setup
+        final String email = "test@test.com";
+
+        // Run the test
+        User result = userServiceUnderTest.saveUser(User.builder().build());
+
+        // Verify the results
+        assertEquals(email, result.getEmail());
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+
+@Converter
+public class PeriodStringConverter
+        implements AttributeConverter<Period, String> {
+
+    @Override
+    public String convertToDatabaseColumn(Period attribute) {
+        return attribute.toString();
+    }
+
+    @Override
+    public Period convertToEntityAttribute(String dbData) {
+        return Period.parse( dbData );
+    }
+}
+
+
+
+
+
+@Entity(name = "Event")
+public static class Event {
+
+    @Id
+    @GeneratedValue
+    private Long id;
+
+    @Convert(converter = PeriodStringConverter.class)
+    @Column(columnDefinition = "")
+    private Period span;
+
+    //Getters and setters are omitted for brevity
+
+}
+
+
+--------------------------------------------------------------------------------------------------------
+@Service
+public class StudentCustomRepositoryServiceImpl implements StudentCustomRepository {
+
+     @PersistenceContext
+     private EntityManager em;
+
+     @Override
+     public void anyCustomMethod(){
+         //here use the entityManager
+     }
+
+     @Override
+     StudentEntity getStudentByName(String name){
+         Criteria crit = em.unwrap(Session.class).createCriteria(StudentEntity.class);
+         crit.add(Restrictions.eq("name", name));
+         List<StudentEntity> students = crit.list();
+         return students.get(0);
+     }
+ }
+--------------------------------------------------------------------------------------------------------
+ 
+import java.util.List;
+ 
+import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+ 
+import com.howtodoinjava.entity.EmployeeEntity;
+ 
+@Repository
+public class EmployeeDaoImpl implements EmployeeDAO
+{
+    @Autowired
+    private SessionFactory sessionFactory;
+    @Override
+    public void addEmployee(EmployeeEntity employee) {
+        this.sessionFactory.getCurrentSession().save(employee);
+    }
+    @SuppressWarnings("unchecked")
+    @Override
+    public List<EmployeeEntity> getAllEmployees() {
+        return this.sessionFactory.getCurrentSession().createQuery("from EmployeeEntity").list();
+    }
+    @Override
+    public void deleteEmployee(Integer employeeId) {
+        EmployeeEntity employee = (EmployeeEntity) sessionFactory.getCurrentSession().load(
+                EmployeeEntity.class, employeeId);
+        if (null != employee) {
+            this.sessionFactory.getCurrentSession().delete(employee);
+        }
+    }
+}
 --------------------------------------------------------------------------------------------------------
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.paragon.microservices.distributor.model.constraint.ChronologicalDates;
