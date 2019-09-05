@@ -4356,6 +4356,37 @@ public class MyEntityRepositoryImpl extends AbstractBatchCustomRepositoryImpl im
 
 }
 --------------------------------------------------------------------------------------------------------
+  HttpHeaders headers = new HttpHeaders();
+  headers.setContentType(MediaType.parseMediaType(mediaType));
+  headers.setContentDispositionFormData("attachment", fileName);
+  return new ResponseEntity<>(fileContent, headers, HttpStatus.OK);
+--------------------------------------------------------------------------------------------------------
+@RequestMapping(value = "/createReport", method = RequestMethod.POST,produces="application/pdf")
+ @ResponseStatus(value = HttpStatus.OK)
+ public ResponseEntity<byte[]> createReport(@RequestBody ReporteDTO reporteDTO) {
+   byte[] outputReport = null;
+   HttpHeaders headers = new HttpHeaders();
+   headers.setContentType(MediaType.parseMediaType("application/pdf"));
+   headers.setContentDispositionFormData("inline", "archivo.pdf");
+   headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+      outputReport = getFilePdf();
+   ResponseEntity<byte[]> response = new ResponseEntity<byte[]>(outputReport, headers, HttpStatus.OK);
+   return response;
+ }
+ 
+ @RequestMapping(value = "/{id}/download", method = RequestMethod.GET)
+public ResponseEntity<byte[]> download(@PathVariable String id) throws Exception {
+  DocumentId documentId = new DocumentId(id);
+  byte[] bytes = documentPdfService.generatePdf(documentId);
+  HttpHeaders headers = new HttpHeaders();
+  headers.setContentType(MediaType.parseMediaType("application/pdf"));
+  String filename = documentPdfService.getFileName(documentId);
+  headers.setContentDispositionFormData(filename, filename);
+  headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+  return new ResponseEntity<>(bytes, headers, HttpStatus.OK);
+}
+
+--------------------------------------------------------------------------------------------------------
 /*
 * Matches either on userId or lastName + last4 digits of SSN
 */
@@ -4428,6 +4459,227 @@ OR ( lastName = :lastName1 AND SUBSTRING(ssn, LEN(ssn)-3, 4) = :lastFourSsn1)
 OR ( lastName = :lastName2 AND SUBSTRING(ssn, LEN(ssn)-3, 4) = :lastFourSsn2)
 -- ... 
 --------------------------------------------------------------------------------------------------------
+	/**
+	 * 下载
+	 * @param file 文件
+	 * @param fileName 生成的文件名
+	 * @return {ResponseEntity}
+	 */
+	protected ResponseEntity<Resource> download(File file, String fileName) {
+		Resource resource = new FileSystemResource(file);
+		
+		HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder
+				.getRequestAttributes()).getRequest();
+		String header = request.getHeader("User-Agent");
+		// 避免空指针
+		header = header == null ? "" : header.toUpperCase();
+		HttpStatus status;
+		if (header.contains("MSIE") || header.contains("TRIDENT") || header.contains("EDGE")) {
+			fileName = URLUtils.encodeURL(fileName, Charsets.UTF_8);
+			status = HttpStatus.OK;
+		} else {
+			fileName = new String(fileName.getBytes(Charsets.UTF_8), Charsets.ISO_8859_1);
+			status = HttpStatus.CREATED;
+		}
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+		headers.setContentDispositionFormData("attachment", fileName);
+		return new ResponseEntity<Resource>(resource, headers, status);
+	}
+--------------------------------------------------------------------------------------------------------
+    @PostMapping("/login")
+    @CsrfToken(remove = true)
+    @ResponseBody
+--------------------------------------------------------------------------------------------------------
+import com.baomidou.mybatisplus.mapper.BaseMapper;
+import com.ikm.xmanager.cms.model.RoleResource;
+import org.apache.ibatis.annotations.Delete;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+
+import java.io.Serializable;
+
+/**
+ *
+ * RoleResource 表数据库控制层接口
+ *
+ */
+public interface RoleResourceMapper extends BaseMapper<RoleResource> {
+
+    @Select("SELECT e.id AS id FROM role r LEFT JOIN role_resource e ON r.id = e.role_id WHERE r.id = #{id}")
+    Long selectIdListByRoleId(@Param("id") Long id);
+
+    @Delete("DELETE FROM role_resource WHERE resource_id = #{resourceId}")
+    int deleteByResourceId(@Param("resourceId") Serializable resourceId);
+
+}
+
+import com.baomidou.mybatisplus.mapper.BaseMapper;
+import com.ikm.xmanager.cms.model.UserRole;
+import org.apache.ibatis.annotations.Delete;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.ResultType;
+import org.apache.ibatis.annotations.Select;
+
+import java.util.List;
+
+/**
+ *
+ * UserRole 表数据库控制层接口
+ *
+ */
+public interface UserRoleMapper extends BaseMapper<UserRole> {
+
+    List<UserRole> selectByUserId(@Param("userId") Long userId);
+
+    @Select("select role_id AS roleId from user_role where user_id = #{userId}")
+    @ResultType(Long.class)
+    List<Long> selectRoleIdListByUserId(@Param("userId") Long userId);
+
+    @Delete("DELETE FROM user_role WHERE user_id = #{userId}")
+    int deleteByUserId(@Param("userId") Long userId);
+
+}
+--------------------------------------------------------------------------------------------------------
+    /**
+     * 未授权
+     * @return {String}
+     */
+    @GetMapping("/unauth")
+    public String unauth() {
+        if (SecurityUtils.getSubject().isAuthenticated() == false) {
+            return "redirect:/login";
+        }
+        return "unauth";
+    }
+--------------------------------------------------------------------------------------------------------
+import com.ikm.xmanager.cms.service.ISysLogService;
+import com.ikm.xmanager.commons.result.PageInfo;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+
+/**
+ * @description：日志管理
+ * @author：zhixuan.wang
+ * @date：2015/10/30 18:06
+ */
+@Controller
+@RequestMapping("/sysLog")
+public class SysLogController {
+    @Autowired
+    private ISysLogService sysLogService;
+
+    @GetMapping("/manager")
+    public String manager() {
+        return "admin/syslog";
+    }
+
+    @PostMapping("/dataGrid")
+    @ResponseBody
+    public PageInfo dataGrid(Integer page, Integer rows, 
+            @RequestParam(value = "sort", defaultValue = "create_time") String sort, 
+            @RequestParam(value = "order", defaultValue = "DESC") String order) {
+        PageInfo pageInfo = new PageInfo(page, rows, sort, order);
+        sysLogService.selectDataGrid(pageInfo);
+        return pageInfo;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+Map<String, Object> hookMap = JsonUtils.parse(hook, Map.class);
+
+public <T> Page<T> getPage(int current, int size, String sort, String order){
+    Page<T> page = new Page<T>(current, size, sort);
+    if ("desc".equals(order)) {
+        page.setAsc(false);
+    } else {
+        page.setAsc(true);
+    }
+    return page;
+}
+--------------------------------------------------------------------------------------------------------
+public class FileSizeExample 
+{
+    public static void main(String[] args)
+    {	
+		File file =new File("c:\\java_xml_logo.jpg");
+		
+		if(file.exists()){
+			
+			double bytes = file.length();
+			double kilobytes = (bytes / 1024);
+			double megabytes = (kilobytes / 1024);
+			double gigabytes = (megabytes / 1024);
+			double terabytes = (gigabytes / 1024);
+			double petabytes = (terabytes / 1024);
+			double exabytes = (petabytes / 1024);
+			double zettabytes = (exabytes / 1024);
+			double yottabytes = (zettabytes / 1024);
+			
+			System.out.println("bytes : " + bytes);
+			System.out.println("kilobytes : " + kilobytes);
+			System.out.println("megabytes : " + megabytes);
+			System.out.println("gigabytes : " + gigabytes);
+			System.out.println("terabytes : " + terabytes);
+			System.out.println("petabytes : " + petabytes);
+			System.out.println("exabytes : " + exabytes);
+			System.out.println("zettabytes : " + zettabytes);
+			System.out.println("yottabytes : " + yottabytes);
+		}else{
+			 System.out.println("File does not exists!");
+		}
+    		
+    }
+}
+--------------------------------------------------------------------------------------------------------
+//    private StreamingResponseBody toStreaming(final InputStream command) {
+//        return outputStream -> {
+//            final Observable<InputStream> stream = command.toObservable();
+//            stream.toBlocking().subscribe(inputStream -> {
+//                try {
+//                    IOUtils.copyLarge(inputStream, outputStream);
+//                    outputStream.flush();
+//                } catch (IOException e) {
+//                    try {
+//                        inputStream.close();
+//                    } catch (IOException closingException) {
+//                        log.warn("could not close command result, a http connection may be leaked !", closingException);
+//                    }
+//                    log.error("Unable to fully copy command result '{}'.", command.getClass(), e);
+//                }
+//            }, TDPException::rethrowOrWrap);
+//        };
+//    }
+--------------------------------------------------------------------------------------------------------
+public class ClassValidationMvcTest {
+  private MockMvc mockMvc;
+     
+    @Before
+    public void setup(){
+        this.mockMvc = MockMvcBuilders
+          .standaloneSetup(new NewUserController()).build();
+    }
+     
+    @Test
+    public void givenMatchingEmailPassword_whenPostNewUserForm_thenOk() 
+      throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders
+          .post("/user")
+          .accept(MediaType.TEXT_HTML).
+          .param("email", "john@yahoo.com")
+          .param("verifyEmail", "john@yahoo.com")
+          .param("password", "pass")
+          .param("verifyPassword", "pass"))
+          .andExpect(model().errorCount(0))
+          .andExpect(status().isOk());
+    }
+}
+--------------------------------------------------------------------------------------------------------
 @GetMapping(value = "/image", produces = "image/png")
 public ResponseEntity<StreamingResponseBody> image() {
     BufferedImage canvas = service.createImage();
@@ -4438,6 +4690,35 @@ public ResponseEntity<StreamingResponseBody> image() {
     return ResponseEntity.ok()
         .contentType(MediaType.IMAGE_PNG)
         .body(stream);
+}
+
+
+https://auth0.com/blog/automatically-mapping-dto-to-entity-on-spring-boot-apis/
+
+@DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+@JsonFormat(pattern = "MM/dd/yyyy")
+private LocalDate startDate;
+
+@JsonDeserialize(using = DateDeSerializer .class)
+ private Date startDate;
+ 
+ public class DateDeSerializer extends StdDeserializer<Date> {
+
+    public DateDeSerializer() {
+        super(Date.class);
+    }
+
+    @Override
+    public Date deserialize(JsonParser p, DeserializationContext ctxt)
+        throws IOException, JsonProcessingException {
+        String value = p.readValueAs(String.class);
+        try {
+            return new SimpleDateFormat("MM/dd/yyyy").parse(value);
+        } catch (DateTimeParseException e) {
+            //throw an error
+        }
+    }
+
 }
 --------------------------------------------------------------------------------------------------------
 spring.jpa.properties.javax.persistence.schema-generation.create-source=metadata
