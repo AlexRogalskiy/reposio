@@ -4385,7 +4385,6 @@ public ResponseEntity<byte[]> download(@PathVariable String id) throws Exception
   headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
   return new ResponseEntity<>(bytes, headers, HttpStatus.OK);
 }
-
 --------------------------------------------------------------------------------------------------------
 /*
 * Matches either on userId or lastName + last4 digits of SSN
@@ -4458,6 +4457,296 @@ userId in (:userIds)
 OR ( lastName = :lastName1 AND SUBSTRING(ssn, LEN(ssn)-3, 4) = :lastFourSsn1)
 OR ( lastName = :lastName2 AND SUBSTRING(ssn, LEN(ssn)-3, 4) = :lastFourSsn2)
 -- ... 
+--------------------------------------------------------------------------------------------------------\
+Foo foo = new Foo();
+fooService.create(foo);
+fooService.findOne(foo.getId());
+int size = CacheManager.ALL_CACHE_MANAGERS.get(0)
+  .getCache("com.baeldung.hibernate.cache.model.Foo").getSize();
+assertThat(size, greaterThan(0));
+--------------------------------------------------------------------------------------------------------
+  @Bean
+    public Validator validator() {
+
+        return new org.springframework.validation.beanvalidation.LocalValidatorFactoryBean();
+    }
+	
+	@Bean
+public javax.validation.Validator localValidatorFactoryBean() {
+   return new LocalValidatorFactoryBean();
+}
+--------------------------------------------------------------------------------------------------------
+<?xml version="1.0" encoding="UTF-8"?>
+<ehcache name="in-memory" xmlns="http://ehcache.org/ehcache.xsd">
+    <!--<diskStore path="java.io.tmpdir"/>-->
+
+    <!--
+        30d = 3600×24×30 = 2592000
+    -->
+
+    <cache name="org.hibernate.cache.internal.StandardQueryCache"
+           maxElementsInMemory="9999" eternal="false"
+           timeToIdleSeconds="2592000" timeToLiveSeconds="2592000"
+           overflowToDisk="false" overflowToOffHeap="false"/>
+
+    <cache name="org.hibernate.cache.spi.UpdateTimestampsCache"
+           maxElementsInMemory="9999" eternal="true"
+           overflowToDisk="false" overflowToOffHeap="false"/>
+
+    <defaultCache maxElementsInMemory="9999" eternal="false"
+                  timeToIdleSeconds="2592000" timeToLiveSeconds="2592000"
+                  overflowToDisk="false" overflowToOffHeap="false"/>
+</ehcache>
+and hibernate.properties:
+
+hibernate.jdbc.batch_size=20
+hibernate.show_sql=true
+hibernate.format_sql=true
+hibernate.validator.autoregister_listeners=false
+hibernate.cache.use_second_level_cache=true
+hibernate.cache.use_query_cache=true
+hibernate.cache.region.factory_class=org.hibernate.cache.ehcache.EhCacheRegionFactory
+hibernate.hbm2ddl.auto=update
+net.sf.ehcache.configurationResourceName=ehcache/ehcache-in-memory.xml
+hibernate.dialect=org.hibernate.dialect.H2Dialect
+and some versions from pom.xml for which my explanation applies:
+
+<springframework.version>5.0.6.RELEASE</springframework.version>
+<spring-security.version>5.0.5.RELEASE</spring-security.version>
+<spring-data-jpa.version>2.1.0.RELEASE</spring-data-jpa.version>
+<hibernate.version>5.2.13.Final</hibernate.version>
+<jackson-datatype-hibernate5.version>2.9.4</jackson-datatype-hibernate5.version>
+--------------------------------------------------------------------------------------------------------
+@CacheEvict//(value = "servicesByCustomerId", key = "#p0.customer.id")
+--------------------------------------------------------------------------------------------------------
+ @Configuration
+ @EnableCaching
+ class CachingConfig {
+
+   @Bean
+   CacheManager cacheManager() {
+
+     SimpleCacheManager cacheManager = new SimpleCacheManager();
+     cacheManager.addCaches(Arrays.asList(new ConcurrentMapCache("servicesByCustomerId)));
+
+     return cacheManager;
+   }
+ }
+--------------------------------------------------------------------------------------------------------
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.cache.CacheManager;
+import javax.cache.Caching;
+
+import org.ehcache.config.CacheConfiguration;
+import org.ehcache.config.ResourcePools;
+import org.ehcache.config.builders.CacheConfigurationBuilder;
+import org.ehcache.config.builders.ResourcePoolsBuilder;
+import org.ehcache.config.units.EntryUnit;
+import org.ehcache.config.units.MemoryUnit;
+import org.ehcache.core.config.DefaultConfiguration;
+import org.ehcache.jsr107.EhcacheCachingProvider;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.jcache.JCacheCacheManager;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+@EnableCaching
+public class CacheConfig {
+
+
+    @Bean
+    public JCacheCacheManager jCacheCacheManager() {
+        JCacheCacheManager jCacheManager = new JCacheCacheManager(cacheManager());
+        return jCacheManager;
+    }
+
+    @Bean(destroyMethod = "close")
+    public CacheManager cacheManager() {
+
+        ResourcePools resourcePools = ResourcePoolsBuilder.newResourcePoolsBuilder()
+                .heap(2000, EntryUnit.ENTRIES)
+                .offheap(100, MemoryUnit.MB)
+                .build();
+
+
+        CacheConfiguration<Object,Object> cacheConfiguration = CacheConfigurationBuilder.newCacheConfigurationBuilder(
+                Object.class,
+                Object.class,
+                resourcePools).
+                build();
+
+        Map<String, CacheConfiguration<?, ?>> caches = new HashMap<>();
+        caches.put("myCache", cacheConfiguration);
+
+        EhcacheCachingProvider provider = (EhcacheCachingProvider) Caching.getCachingProvider("org.ehcache.jsr107.EhcacheCachingProvider");
+        org.ehcache.config.Configuration configuration = new DefaultConfiguration(caches, provider.getDefaultClassLoader());
+
+        return  provider.getCacheManager(provider.getDefaultURI(), (org.ehcache.config.Configuration) configuration);
+    }
+
+}
+
+spring.cache.cache-names=cache1,cache2
+spring.cache.redis.time-to-live=600000
+
+https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-caching.html
+--------------------------------------------------------------------------------------------------------
+//package com.paragon.microservices.distributor.system.configuration;
+//
+//import org.springframework.cache.annotation.EnableCaching;
+//import org.springframework.cache.jcache.JCacheCacheManager;
+//import org.springframework.context.annotation.AdviceMode;
+//import org.springframework.context.annotation.Bean;
+//import org.springframework.context.annotation.Configuration;
+//
+//@Configuration
+//@EnableCaching(mode = AdviceMode.ASPECTJ)
+//public class CacheConfiguration {
+//
+//    @Bean
+//    public JCacheCacheManager jCacheCacheManager() {
+//        final JCacheCacheManager jCacheCacheManager = new JCacheCacheManager();
+//        jCacheCacheManager.setTransactionAware(true);
+//        jCacheCacheManager.afterPropertiesSet();
+//        return jCacheCacheManager;
+//    }
+//
+////    @Bean(destroyMethod = "close")
+////    public CacheManager cacheManager() {
+////        final org.ehcache.config.CacheConfiguration cacheConfiguration = CacheConfigurationBuilder
+////                .newCacheConfigurationBuilder(Object.class, Object.class, ResourcePoolsBuilder.heap(5))
+////                .build();
+////
+////        //final Map<String, org.ehcache.config.CacheConfiguration> caches = Collections.singletonMap("person", cacheConfiguration);
+////        final EhcacheCachingProvider provider = (EhcacheCachingProvider) Caching.getCachingProvider();
+////        final DefaultConfiguration configuration = new DefaultConfiguration(cacheConfiguration);
+////        return provider.getCacheManager(provider.getDefaultURI(), configuration);
+////    }
+//
+////    @Bean
+////    @ConditionalOnMissingBean
+////    public CacheManager jCacheCacheManager() throws IOException {
+////        CacheManager jCacheCacheManager = createCacheManager();
+////        List<String> cacheNames = this.cacheProperties.getCacheNames();
+////        if (!CollectionUtils.isEmpty(cacheNames)) {
+////            for (String cacheName : cacheNames) {
+////                jCacheCacheManager.createCache(cacheName, getDefaultCacheConfiguration());
+////            }
+////        }
+////        customize(jCacheCacheManager);
+////        return jCacheCacheManager;
+////    }
+////    @Bean(destroyMethod = "close")
+////    public CacheManager cacheManager() {
+////
+////        ResourcePools resourcePools = ResourcePoolsBuilder.newResourcePoolsBuilder()
+////                .heap(2000, EntryUnit.ENTRIES)
+////                .offheap(100, MemoryUnit.MB)
+////                .build();
+////
+////
+////        CacheConfiguration<Object,Object> cacheConfiguration = CacheConfigurationBuilder.newCacheConfigurationBuilder(
+////                Object.class,
+////                Object.class,
+////                resourcePools).
+////                build();
+////
+////        Map<String, CacheConfiguration<?, ?>> caches = new HashMap<>();
+////        caches.put("myCache", cacheConfiguration);
+////
+////        EhcacheCachingProvider provider = (EhcacheCachingProvider) Caching.getCachingProvider("org.ehcache.jsr107.EhcacheCachingProvider");
+////        org.ehcache.config.Configuration configuration = new DefaultConfiguration(caches, provider.getDefaultClassLoader());
+////
+////        return  provider.getCacheManager(provider.getDefaultURI(), (org.ehcache.config.Configuration) configuration);
+////    }
+//
+////    @Bean(destroyMethod = "close")
+////    public CacheManager cacheManager(final org.springframework.cache.ehcache.EhCacheCacheManager ehCacheCacheManager) {
+////        final EhCacheCacheManager cacheManager = new EhCacheCacheManager();
+////        cacheManager.setCacheManager(ehCacheCacheManager);
+////        cacheManager.setTransactionAware(true);
+////        return cacheManager;
+////    }
+//
+////    @Bean
+////    public CacheManager cacheManager() {
+////        return new EhCacheCacheManager(ehCacheCacheManager().getObject());
+////    }
+////
+////    @Bean
+////    public EhCacheManagerFactoryBean ehCacheCacheManager() {
+////        final EhCacheManagerFactoryBean cmfb = new EhCacheManagerFactoryBean();
+////        cmfb.setConfigLocation(new ClassPathResource("ehcache.xml"));
+////        cmfb.setShared(true);
+////        return cmfb;
+////    }
+//
+////    @Bean
+////    public org.springframework.cache.CacheManager cacheManager(final org.ehcache.CacheManager cacheManager) {
+////        final JCacheCacheManager jCacheCacheManager = new JCacheCacheManager();
+////        jCacheCacheManager.setCacheManager(cacheManager);
+////        jCacheCacheManager.setTransactionAware(true);
+////        jCacheCacheManager.afterPropertiesSet();
+////        return jCacheCacheManager;
+////    }
+//
+////    @Bean
+////    public org.springframework.cache.CacheManager cacheManager(final EhCacheManagerFactoryBean cacheManagerFactory) {
+////        final JCacheCacheManager jCacheCacheManager = new JCacheCacheManager(cacheManagerFactory.getObject());
+////        jCacheCacheManager.setTransactionAware(true);
+////        jCacheCacheManager.afterPropertiesSet();
+////        return jCacheCacheManager;
+////    }
+////
+////    @Bean(destroyMethod = "destroy")
+////    public EhCacheManagerFactoryBean cacheManagerFactory() {
+////        final EhCacheManagerFactoryBean bean = new EhCacheManagerFactoryBean();
+////        //bean.setConfigLocation(new ClassPathResource(env.getProperty("triggers.datasource.config.hibernate.cache.configurationResourceName")));
+////        bean.setShared(true);
+////        bean.afterPropertiesSet();
+////        return bean;
+////    }
+//}
+--------------------------------------------------------------------------------------------------------
+@SuppressWarnings("checkstyle:classdataabstractioncoupling")
+--------------------------------------------------------------------------------------------------------
+public class CacheHelper {
+ 
+    private CacheManager cacheManager;
+    private Cache<Integer, Integer> squareNumberCache;
+ 
+    public CacheHelper() {
+        cacheManager = CacheManagerBuilder
+          .newCacheManagerBuilder().build();
+        cacheManager.init();
+ 
+        squareNumberCache = cacheManager
+          .createCache("squaredNumber", CacheConfigurationBuilder
+            .newCacheConfigurationBuilder(
+              Integer.class, Integer.class,
+              ResourcePoolsBuilder.heap(10)));
+    }
+ 
+    public Cache<Integer, Integer> getSquareNumberCacheFromCacheManager() {
+        return cacheManager.getCache("squaredNumber", Integer.class, Integer.class);
+    }
+     
+    // standard getters and setters
+}
+--------------------------------------------------------------------------------------------------------
+interface PromotionServiceXrefRepository extends PagingAndSortingRepository<PromotionServiceXref, Integer> {
+
+  @Query("…")
+  @Cacheable("servicesByCustomerId")
+  Set<PromotionServiceXref> findByCustomerId(int customerId);
+
+  @Override
+  @CacheEvict(value = "servicesByCustomerId", key = "#p0.customer.id")
+  <S extends PromotionServiceXref> S save(S service);
+}
 --------------------------------------------------------------------------------------------------------
 	/**
 	 * 下载
