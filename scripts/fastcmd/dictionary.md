@@ -15065,6 +15065,536 @@ public class Employee implements Serializable {
     }
 }
 --------------------------------------------------------------------------------------------------------
+import static org.hamcrest.Matchers.equalTo;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest
+@AutoConfigureMockMvc
+public class HelloControllerTest {
+
+    @Autowired
+    private MockMvc mvc;
+
+    @Test
+    public void getHello() throws Exception {
+        mvc.perform(MockMvcRequestBuilders.get("/").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().string(equalTo("Greetings from Spring Boot!")));
+    }
+}
+
+public Address validateAddress(AddressDTO addressDTO) {
+
+        Address addressToSearch = new Address(addressDTO.getCountry(), addressDTO.getCity(), addressDTO.getPostcode(),
+            addressDTO.getStreet(), addressDTO.getStreetNumber());
+
+        //@formatter:off
+        ExampleMatcher matcher =
+            ExampleMatcher.matching()
+                    .withMatcher("country", startsWith().ignoreCase())
+                    .withMatcher("postcode", startsWith().ignoreCase())
+                    .withMatcher("street", contains().ignoreCase())
+                    .withMatcher("streetNumber", contains().ignoreCase())
+                    .withMatcher("city", contains().ignoreCase());
+
+        //@formatter:on
+        Example<Address> searchExample = Example.of(addressToSearch, matcher);
+
+        return addressRepository.findOne(searchExample);
+
+    }
+	
+	@Test
+public void testSingle() {
+	// tag::example-mono[]
+	Employee e = new Employee();
+	e.setFirstName("Bilbo");
+	Example<Employee> example = Example.of(e);
+	// end::example-mono[]
+
+	// tag::query-mono[]
+	Mono<Employee> singleEmployee = repository.findOne(example);
+	// end::query-mono[]
+
+	StepVerifier.create(singleEmployee)
+		.expectNextMatches(employee -> {
+			assertThat(employee).hasNoNullFieldsOrProperties();
+			assertThat(employee.getFirstName()).isEqualTo("Bilbo");
+			assertThat(employee.getLastName()).isEqualTo("Baggins");
+			assertThat(employee.getRole()).isEqualTo("burglar");
+			return true;
+		})
+		.expectComplete()
+		.verify();
+}
+--------------------------------------------------------------------------------------------------------
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+	
+/**
+ * Schema selecting multitenant provider.
+ *
+ * Works with PgSQL database and HikariCP pool.
+ */
+public class MultitenantSchemaProvider implements MultiTenantConnectionProvider {
+  /**
+   * Connection pool.
+   */
+  private HikariDataSource connectionProvider;
+ 
+  /**
+   * Switches search path on specified connection.
+   * @param c connection to operate on
+   * @param schema tenant id
+   * @throws SQLException is thrown when not able
+   * to return connection to the pool.
+   */
+  private void setSchemaTo(Connection c, String schema) throws SQLException {
+    try {
+      c.createStatement().execute("SET SCHEMA '" + schema.toLowerCase() + "'");
+    } catch (SQLException e) {
+      connectionProvider.evictConnection(c);
+      throw new HibernateException("Error while switching schema", e);
+    }
+  }
+ 
+  /**
+   * Here we instantiate database connection pool.
+   */
+  public MultitenantSchemaProvider() {
+    HikariConfig parameters = new HikariConfig();
+ 
+    parameters.setDataSourceClassName("org.postgresql.ds.PGSimpleDataSource");
+    parameters.setUsername("test");
+    parameters.setPassword("test");
+    parameters.setMaximumPoolSize(2);
+    parameters.addDataSourceProperty("databaseName", "test");
+    parameters.addDataSourceProperty("serverName", "192.168.75.5");
+ 
+    connectionProvider = new HikariDataSource(parameters);
+  }
+ 
+  @Override
+  public Connection getAnyConnection() throws SQLException {
+    return connectionProvider.getConnection();
+  }
+ 
+  @Override
+  public void releaseAnyConnection(Connection connection) throws SQLException {
+    connectionProvider.evictConnection(connection);
+  }
+ 
+  @Override
+  public Connection getConnection(String s) throws SQLException {
+    Connection c = getAnyConnection();
+    setSchemaTo(c, s);
+    return c;
+  }
+ 
+  @Override
+  public void releaseConnection(String s, Connection connection) throws SQLException {
+    setSchemaTo(connection, "public");
+    releaseAnyConnection(connection);
+  }
+ 
+  @Override
+  public boolean supportsAggressiveRelease() {
+    return false;
+  }
+ 
+  /* Spi related mandatory methods */
+  @Override
+  public boolean isUnwrappableAs(Class aClass) {
+    return false;
+  }
+ 
+  @Override
+  public <T> T unwrap(Class<T> aClass) {
+    return null;
+  }
+}
+
+https://easyjava.ru/data/hibernate/hibernate-schema-multitenancy/
+https://habr.com/ru/post/252353/
+
+<hibernate-configuration>
+  <session-factory>
+    <property name="hibernate.multiTenancy">SCHEMA</property>
+    <property name="hibernate.multi_tenant_connection_provider">ru.easyjava.data.hibernate.multitenancy.MultitenantSchemaProvider</property>
+ 
+    <property name="hibernate.hbm2ddl.auto">update</property>
+    <property name="hibernate.dialect">org.hibernate.dialect.PostgreSQL94Dialect</property>
+ 
+    <!-- mappings skipped -->
+  </session-factory>
+ 
+</hibernate-configuration>
+--------------------------------------------------------------------------------------------------------
+@Scope(proxyMode = ScopedProxyMode.INTERFACES)
+--------------------------------------------------------------------------------------------------------
+import com.questionmarks.model.dto.ExamCreationDTO;
+import com.questionmarks.model.dto.ExamUpdateDTO;
+import org.junit.Test;
+import org.modelmapper.ModelMapper;
+
+import static org.junit.Assert.assertEquals;
+
+public class ExamUT {
+    private static final ModelMapper modelMapper = new ModelMapper();
+
+    @Test
+    public void checkExamMapping() {
+        ExamCreationDTO creation = new ExamCreationDTO();
+        creation.setTitle("Testing title");
+        creation.setDescription("Testing description");
+
+        Exam exam = modelMapper.map(creation, Exam.class);
+        assertEquals(creation.getTitle(), exam.getTitle());
+        assertEquals(creation.getDescription(), exam.getDescription());
+        assertEquals(creation.getCreatedAt(), exam.getCreatedAt());
+        assertEquals(creation.getEditedAt(), exam.getEditedAt());
+
+        ExamUpdateDTO update = new ExamUpdateDTO();
+        update.setTitle("New title");
+        update.setDescription("New description");
+
+        modelMapper.map(update, exam);
+        assertEquals(update.getTitle(), exam.getTitle());
+        assertEquals(update.getDescription(), exam.getDescription());
+        assertEquals(creation.getCreatedAt(), exam.getCreatedAt());
+        assertEquals(update.getEditedAt(), exam.getEditedAt());
+    }
+}
+--------------------------------------------------------------------------------------------------------
+List<Author> authors = em.createQuery("SELECT a FROM Author a ORDER BY a.id ASC", Author.class)
+                                    .setMaxResults(5)
+                                    .setFirstResult(0)
+                                    .getResultList();
+									
+TypedQuery<Author> q = em.createQuery(
+                "SELECT a FROM Author a WHERE a.id = :id", Author.class);
+q.setParameter("id", 1L);
+Author a = q.getSingleResult();
+
+TypedQuery<Book> q = em.createQuery(
+             "SELECT b FROM Book b WHERE b.id = function('calculate', 1, 2)",
+             Book.class);
+Book b = q.getSingleResult();
+
+EntityGraph graph = em.getEntityGraph("graph.Order.items");
+ 
+Order newOrder = em.find(Order.class, 1L, Collections.singletonMap("javax.persistence.fetchgraph", graph));
+RootGraph graph = GraphParser.parse(Order.class, "items", em);
+ 
+Order newOrder = em.find(Order.class, 1L, Collections.singletonMap("javax.persistence.fetchgraph", graph));
+RootGraph graph = GraphParser.parse(Order.class, "items(product(supplier))", em);
+ 
+Order newOrder = em.find(Order.class, 1L, Collections.singletonMap("javax.persistence.fetchgraph", graph));
+
+RootGraph graph1 = GraphParser.parse(Order.class, "items(product(supplier))", em);
+RootGraph graph2 = GraphParser.parse(Order.class, "customer", em);
+EntityGraph graph = EntityGraphs.merge(em, Order.class, graph1, graph2);
+ 
+Order newOrder = em.find(Order.class, 1L, Collections.singletonMap("javax.persistence.fetchgraph", graph));
+
+--------------------------------------------------------------------------------------------------------
+ExampleMatcher ignoringExampleMatcher = ExampleMatcher.matchingAny().withIgnorePaths("createdDate", "lastModifiedDate", "createdBy", "lastModifiedBy");
+
+final ExampleMatcher caseInsensitiveExampleMatcher = ExampleMatcher.matchingAll().withIgnoreCase();
+		
+caseInsensitiveExampleMatcher
+--------------------------------------------------------------------------------------------------------
+@Query("select case when count(c)> 0 then true else false end from Car c where lower(c.model) like lower(:model)")
+boolean existsCarLikeCustomQuery(@Param("model") String model);
+--------------------------------------------------------------------------------------------------------
+mvn archetype:generate 
+    -DgroupId=ru.carousel
+    -DartifactId=carousel 
+    -Dversion=1.0-SNAPSHOT 
+    -DarchetypeArtifactId=maven-archetype-quickstart
+	
+mvn install:install-file 
+    -Dfile=org.eclipse.swt.win32.win32.x86_3.7.1.v3738a.jar
+    -DgroupId=org.eclipse.swt.win32.win32.x86 
+    -DartifactId=org.eclipse.swt.win32.win32.x86 
+    -Dversion=3.7.1.v3738 
+    -Dpackaging=jar
+
+mvn install:install-file
+    -Dfile=org.eclipse.core.runtime_3.7.0.v20110110.jar
+    -DgroupId=org.eclipse.core.runtime
+    -DartifactId=org.eclipse.core.runtime
+    -Dversion=3.7.0.v20110110
+    -Dpackaging=jar
+
+mvn install:install-file
+    -Dfile=org.eclipse.core.commands_3.6.0.I20110111-0800.jar
+    -DgroupId=org.eclipse.core.commands
+    -DartifactId=org.eclipse.core.commands
+    -Dversion=3.6.0.I20110111-0800
+    -Dpackaging=jar
+
+mvn install:install-file
+    -Dfile=org.eclipse.equinox.common_3.6.0.v20110523.jar
+    -DgroupId=org.eclipse.equinox.common
+    -DartifactId=org.eclipse.equinox.common
+    -Dversion=3.6.0.v20110523
+    -Dpackaging=jar
+
+mvn install:install-file
+    -Dfile=org.eclipse.jface_3.5.2.M20100120-0800.jar
+    -DgroupId=org.eclipse.jface
+    -DartifactId=org.eclipse.jface
+    -Dversion=3.5.2.M20100120-0800
+    -Dpackaging=jar
+--------------------------------------------------------------------------------------------------------
+
+    mvn compile - компиляция проекта;
+    mvn test - выполнение теста;
+    mvn exec:java -Dexec.mainClass=ru.carousel.App - выполнение программы;
+    mvn jar:jar - сборка проекта;
+    mvn package - компиляция + тестирование + сборка;
+    mvn install –Dmaven.test.skip=true - компиляция + сборка;
+
+--------------------------------------------------------------------------------------------------------
+    <plugin>
+        <groupId>
+            com.akathist.maven.plugins.launch4j
+        </groupId>
+        <artifactId>launch4j-maven-plugin</artifactId>
+        <executions>
+            <execution>
+                <id>plugin-loader</id>
+                <phase>package</phase>
+                <goals>
+                    <goal>launch4j</goal>
+                </goals>
+                <configuration>
+                    <headerType>gui</headerType>
+                    <outfile>${exeFileName}.exe</outfile>
+                    <jar>${project.artifactId}.jar</jar>
+                    <errTitle>${product.title}</errTitle>
+                    <icon>favicon.ico</icon>
+                    <classPath>
+                        <mainClass>Boostrap</mainClass>
+                        <addDependencies>
+                            true
+                        </addDependencies>
+                        <preCp>anything</preCp>
+                    </classPath>
+                    <jre>
+                        <minVersion>
+                           ${jdkVersion}
+                        </minVersion>
+                    </jre>
+                    <versionInfo>
+                        <fileVersion>
+                            ${project.version}
+                        </fileVersion>
+                        <txtFileVersion>
+                            ${project.version}
+                        </txtFileVersion>
+                        <fileDescription>
+                            Swing application
+                        </fileDescription>
+                        <copyright>
+                          Copyright © 2011 ${product.company}
+                        </copyright>
+                        <productVersion>
+                            ${project.version}
+                        </productVersion>
+                        <txtProductVersion>
+                            ${project.version}
+                        </txtProductVersion>
+                        <companyName>
+                            ${product.company}
+                        </companyName>
+                        <productName>
+                            ${product.title}
+                        </productName>
+                        <internalName>
+                            ${exeFileName}
+                        </internalName>
+                        <originalFilename>
+                            ${exeFileName}.exe
+                        </originalFilename>
+                    </versionInfo>
+                </configuration>
+            </execution>
+        </executions>
+    </plugin>
+--------------------------------------------------------------------------------------------------------
+create sequence SEQ_USER
+minvalue 1
+start with 10
+increment by 1
+cache 5;
+
+  @Id
+    @GeneratedValue(strategy=GenerationType.SEQUENCE,
+                    generator="users_seq")
+    @SequenceGenerator(name="users_seq",
+                       sequenceName="SEQ_USER",
+                       allocationSize=5)
+    @Column(name="id", updatable=false, nullable=false)
+    private Integer  id;
+--------------------------------------------------------------------------------------------------------
+import javax.persistence.Query;
+import javax.persistence.EntityManager;
+
+import org.apache.commons.lang.StringUtils;
+
+...
+
+@SuppressWarnings("unchecked")
+public List<Author< getAuthorsByLastName(String lastName)
+{
+    String queryString = "SELECT a FROM Author a " +
+                         "WHERE LOWER(a.lastName) = :lastName";
+    Query query = getEntityManager().createQuery(queryString);
+    
+    query.setParameter("lastName", StringUtils.lowerCase(lastName));
+    return query.getResultList();
+}
+
+http://java-online.ru/hibernate-faq.xhtml
+
+List<User> users
+users = session.createCriteria(User.class)
+               .setFirstResult(2)
+               .setMaxResults(15).list();
+--------------------------------------------------------------------------------------------------------
+docker run --name questionmarks-psql \
+    -p 5432:5432 \
+    -e POSTGRES_DB=questionmarks \
+    -e POSTGRES_PASSWORD=mysecretpassword \
+    -d postgres
+spring.datasource.url=jdbc:postgresql://localhost/questionmarks
+spring.datasource.username=postgres
+spring.datasource.password=mysecretpassword
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+alter table exam
+  add column created_at timestamp without time zone not null default now(),
+  add column edited_at timestamp without time zone not null default now(),
+  add column published boolean not null default false;
+--------------------------------------------------------------------------------------------------------
+ExampleMatcher matcher = ExampleMatcher.matching()
+		.withIgnoreCase()
+		.withMatcher("lastName", startsWith())
+		.withIncludeNullValues();
+--------------------------------------------------------------------------------------------------------
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    String user="springstudent";
+    String pass="springstudent";
+    String jdbcUrl = "jdbc:mysql://localhost:3306/web_customer_tracker&allowPublicKeyRetrieval=false&useSSL=false&serverTimeZone=UTC";
+    String driver="com.mysql.cj.jdbc.Driver";
+
+    try {
+        PrintWriter out = response.getWriter();
+        out.println("Connecting to database "+jdbcUrl);
+
+        Class.forName(driver);
+        Connection myConn = DriverManager.getConnection(jdbcUrl,user,pass);
+
+        out.println("Success!");
+        myConn.close();
+    }catch(Exception e) {
+        e.printStackTrace();
+    }
+}
+
+ com.mysql.cj.jdbc.Driver
+--------------------------------------------------------------------------------------------------------
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.DiscriminatorType;
 import javax.persistence.Entity;
