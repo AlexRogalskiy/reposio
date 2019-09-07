@@ -15355,6 +15355,675 @@ public class ExamUT {
     }
 }
 --------------------------------------------------------------------------------------------------------
+<Connector connectionTimeout="20000" asyncTimeout="30000" maxThreads="1000"
+    port="8080" protocol="org.apache.coyote.http11.Http11NioProtocol"
+    redirectPort="8443" />
+--------------------------------------------------------------------------------------------------------
+uname 	Displays  Linux system information
+uname -r 	Displays  kernel release information
+uptime 	Displays how long the system has been running including load average
+hostname 	Shows the system hostname
+hostname -i 	Displays the IP address of the system
+last reboot 	Shows system reboot history
+date 	Displays current system date and time
+timedatectl 	Query and change the System clock
+cal 	Displays the current calendar month and day
+w 	Displays currently  logged in users in the system
+whoami 	Displays who you are logged in as
+finger username 	Displays information about the user
+General
+su 	Switches user.
+	
+- <user> 	Switches to user.
+- 	Switches to root.
+	
+man 	Help on commands.
+	
+<section> 	Section numbers: 1. Programs, 2. System calls, 3. Library calls, 4. Special files, 5. File formats, 7. Miscellaneous, 8. System administration commands
+	
+echo 	Prints passed text.
+	
+-n 	Does not add newline at the end.
+-e 	Enables interpretation of backslashed letters.
+	
+xargs <cmd> 	Passes output from one command to arguments of another:
+'echo -a | xargs ls'
+	
+-t 	Echoes the command before executing it.
+-p 	Echoes command and asks for confirmation before execution.
+-0 	Input items are separated by null character instead of space.
+	
+tee <file> 	Sends output of a program to specified file and to standard output:
+'<cmd_1> | tee out_1.txt | <cmd_2>'
+	
+/dev/tty 	Sends output to terminal and to standard output
+	
+expr 	Evaluates passed expression.
+	
+1 + 1 	Prints '2'.
+	
+bc 	Evaluates input. It's basically a calculator, but also provides some control commands.
+	
+echo 1 + 1 | bc 	Prints '2'.
+echo "scale=5;3/4" | bc 	Prints '.75000'.
+	
+sh 	Runs command interpreter (shell). Can run a script even if not executable.
+	
+-c '<commands>' 	Starts new non-interactive shell and reads commands from arguments instead of 'stdin'.
+To append lines to system configuration file run:
+'sudo sh -c 'echo "<text>" >> <file>''
+	
+bash 	Runs bash command interpreter (shell).
+	
+-c 	Reads commands from arguments instead of 'stdin'.
+-n <script> 	Checks script for errors.
+-x 	Prints commands before execution. Useful for debugging.
+	
+gcc 	Gnu C compiler. Run 'g++' for C++ code.
+	
+-w 	Supresses warnings (Only prints errors).
+-Wall 	All warnings.
+-g 	Compile for debugging.
+-std=<std> 	Sets the standard. Suported standards for C are:
+'c90', 'gnu90', 'c99', 'gnu99', 'c11' and 'gnu11'.
+Suported standarts for C++ are:
+'c++98', 'gnu++98', 'c++11' and 'gnu++11'.
+'gnu90' and 'gnu++98' are the default options.
+-O<level> 	Optimization level. '0': Reduce compilation time (default), '1-3': - Level of optimization, 's' - Optimize for size, 'g' - Optimize debugging experience.
+	
+run-parts <dir> 	Runs all scripts or programs in a directory.
+	
+date 	Tells and sets date and time.
+	
+-s <string> 	Sets date.
++%T -s "10:13:13" 	Sets time.
+	
+timedatectl 	Controls the system time and date.
+	
+set-timezone CET 	Sets timezone.
+	
+cal 	Calendar
+	
+xclip 	Copies to clipboard.
+	
+mkfifo <pipe> 	Creates named pipe during that shell session.
+	
+mkisofs 	Creates a DVD/CD image.
+	
+genisoimage 	Creates a DVD/CD image (Debian).
+	
+cdrecord 	Writes to a CD/DVD.
+	
+acpi 	Checks battery.
+	
+fdisk -l (sudo) 	Shows partitions.
+	
+shutdown 	Closes down the system at a given time.
+	
+now 	Takes you to the single user mode.
+-h now 	Begins the shutdown procedure, same as 'halt' and 'poweroff'.
+-h 11:50 	At 11:50.
+-r now 	Same as 'reboot'.
+	
+make 	Utility that maintains groups of programs.
+	
+-q 	Doesn't run any commands, just returns '0' exit code if everything is up to date or non-zero otherwise.
+-B 	Unconditionally makes all targets.
+Files
+ls 	
+-d 	List directory names instead of contents
+-S 	Sort by size
+-t 	Sort by time
+-1 	One file per line
+./* 	Ls one level deep
+-i 	Get inode number of file (file id). Use 'sudo find / -inum <number>' to find all links that point to same file.
+	
+cp 	
+-i 	Interactive (Prompts before overwrite)
+-v 	Verbose (Explains what is being done)
+-R 	Copy directories recursively
+-p 	Preserve mode, ownership and timestamps
+--preserve=all 	Also preserves context, links and xattr
+	
+rm 	
+-i 	Interactive (Prompts before every removal)
+-v 	Verbose (Explains what is being done)
+-f 	Force remove (Does not prompt, useful if 'rm' is aliased with '-i')
+-R 	Removes directories and their content recursively
+	
+mkdir 	
+-p 	Make parents if needed
+	
+ln 	Makes links to the files
+	
+-s <file> <link> 	Makes symbolic link. If you want to use relative paths you must be in links directory !!!!!!!!!!!!!!!!!!!!!!
+	
+df 	
+-h 	Displays humanly readable free disk space
+	
+du 	
+-s <dir> 	Directory size
+	
+mc 	Midnight commander
+	
+Alt o 	Open parent dir in another panel
+Ctrl o 	Switch to bash
+	
+find <dir> 	
+-name <file> 	Search by name
+-regex <regex> 	Use regex for name search
+-not 	Insert before other options to negate
+-maxdepth <levels> 	Descend only to levels deep
+-samefile <file> 	Find all hard links of a file
+-xdev 	Don't descend directories on other filesystems
+-inum <inum> 	Find files with the inode number
+-type <f|d|b|...> 	Find files of type
+-delete 	Delete found files
+-exec <cmd> {} \; 	Find files and execute command for every found file. '{}' is replaced with filename
+-exec <cmd> {} + 	Find files and execute command with all filenames in place of '{}'
+-atime +/-n 	Find files that were last accessed less or more than n days.
+-print0 | xargs -0 <cmd> 	Sends found files to a command as parameters. Uses 'NUL' character as separator, necessary for filenames with spaces
+	
+locate <regex> 	Similar as 'find' but using index
+	
+-i 	Ignore case
+--regex 	Interprets all patterns as extended regex
+-0 | xargs -0 <cmd> 	Sends found files to a command as parameters.
+	
+updatedb (sudo) 	Update locate index
+	
+md5sum 	Prints md5 sum hash of a file
+	
+read 	Read single line from standard input
+	
+-n 1 	Print after reading one character
+-s 	Do not echo input coming from terminal
+	
+shred 	Securely remove files
+	
+file 	Determine file's type
+	
+tree 	Ls in a tree-like (hierarchical) format
+	
+install 	Copy files and set attributes
+	
+gpg 	Decrypt file with password
+	
+-c 	Encrypt
+	
+mktemp 	Create a temporary file or directory in '/tmp' and returns it's name.
+	
+rename 	
+s/<from>/<to> <files> 	Renames multiple files using 'sed' syntax
+	
+rsync 	A fast, versatile, remote (and local) file-copying tool
+	
+-Hbaz -e ssh 	'<src_dir> <user>@<host>:<dest_dir>' - Backs up the 'src-dir': '-H' preserves hard links, '-b' renames preexisting destination files (back up), '-a' preserve everything except hard links and '-z' compresses.
+cmp 	Compares two files, similar to diff but also for binaries
+	
+stat 	Displays files status
+	
+-c%X 	Time of last modification of the file
+	
+readlink 	
+-f 	Follow link recursively and print files path
+	
+xdg-open 	Open file with default application for the file type
+	
+dialog 	Display dialog box from shell script
+	
+watch 	Execute command periodically
+Archives
+dtrx 	
+<archive> 	Universal archive extractor
+	
+tar 	
+xvzf <file>.tar.gz (.tgz) 	Decompress and detar
+xvjf <file>.tar.bz2 	Decompress and detar
+-cf <archive>.tar <files> 	Compress
+	
+unzip 	
+\*.zip 	Backslash is necessary so that bash doesn't expand the '*'
+-d <dir> 	Extract into directory (create if doesn't exist)
+	
+zip 	
+-r <archive> <dir> 	Compress whole directory recursively.
+-g <archive> <files> 	Add files to existing archive (grow).
+	
+unrar 	
+e 	Extract files from rar archive
+	
+zcat 	Cats gziped file
+Packages
+dpkg 	Low level package manager for Debian.
+	
+-l 	Lists installed packages.
+-i <package> (sudo) 	Installs package from a package file.
+	
+apt-get 	Advanced Package Tool built on top of 'dpkg'. New command called simply 'apt' is also available. It merges the functionalities of 'apt-get' and 'apt-cache'.
+	
+update 	Updates local list of existing packages.
+-u dist-upgrade 	Upgrades by intelligently handling changing dependencies with new versions of packages. To regularly update put this line in 'crontab':
+'apt-get update && apt-get -u dist-upgrade'.
+upgrade 	Same as dist-upgrade, but will not remove installed packages or install new ones.
+install <package> 	Also updates single package.
+remove <package> 	Removes package but leaves its configurations.
+remove apt-listchanges 	Useful when Debian can't find a package.
+purge <package> 	Removes package and its configurations. Run 'apt-get autoremove' after to remove all dependencies that are not needed anymore.
+autoremove 	Removes unneeded packages.
+source <package> 	Downloads code.
+build-dep <package> 	Installs the build dependencies.
+--yes 	Answers with 'yes' to most questions (Except the ones that can have potentially harmful consequences).
+--force-yes 	Answers 'yes' to all questions (Not recommended).
+	
+apt-cache 	Queries the APT's internal database.
+	
+search <keyword> 	Searches packages like 'apropos', but globally.
+show <package> 	Shows package info like version, dependencies, etc.
+showpkg <package> 	Similar, but also shows the packages that depend on the searched package (reverse dependencies).
+policy <package> 	Shows installed and remote version.
+	
+apt-file 	APT package searching utility.
+	
+search <file> 	Search in which package a file is included.
+update 	Updates local list of package contents.
+	
+aptitude 	Enables package browsing (skin for apt-get).
+	
+search '~i!~M' 	Lists installed packages that were not installed as a dependency, with short description of each.
+search <package> 	Package search.
+winetricks 	Installs wine applications.
+	
+update-alternatives 	Maintains symbolic links determining default commands.
+	
+unattended-upgrade 	Automatic installation of security upgrades.
+Hardware
+dmesg 	Displays bootup messages
+cat /proc/cpuinfo 	Displays more information about CPU e.g model, model name, cores, vendor id
+cat /proc/meminfo 	Displays more information about hardware memory e.g. Total and Free memory
+lshw 	Displays information about system's hardware configuration
+lsblk 	Displays block devices related information
+free -m 	Displays free and used memory in the system (-m flag indicates memory in MB)
+lspci -tv 	Displays PCI devices in a tree-like diagram
+lsusb -tv 	Displays USB devices in a tree-like diagram
+dmidecode 	Displays hardware information from the BIOS
+hdparm -i /dev/xda 	Displays information about disk data
+hdparm -tT /dev/xda <:code> 	Conducts a read speed test on device xda
+badblocks -s /dev/xda 	Tests  for unreadable blocks on disk
+Users
+id 	Displays the details of the active user e.g. uid, gid, and groups
+last 	Shows the last logins in the system
+who 	Shows who is logged in to the system
+groupadd "admin" 	Adds the group 'admin'
+adduser "Sam" 	Adds user Sam
+userdel "Sam" 	Deletes user Sam
+usermod 	Used for changing / modifying user information
+File Commands
+ls -al 	Lists files - both regular &  hidden files and their permissions as well.
+pwd 	Displays the current directory file path
+mkdir 'directory_name' 	Creates a new directory
+rm file_name 	Removes a file
+rm -f filename 	Forcefully removes a file
+rm -r directory_name 	Removes a directory recursively
+rm -rf directory_name 	Removes a directory forcefully and recursively
+cp file1 file2 	Copies the contents of file1 to file2
+cp -r dir1 dir2 	Recursively Copies dir1 to dir2. dir2 is created if it does not exist
+mv file1 file2 	Renames file1 to file2
+ln -s /path/to/file_name   link_name 	Creates a symbolic link to file_name
+touch file_name 	Creates a new file
+cat > file_name 	Places standard input into a file
+more file_name 	Outputs the contents of a file
+head file_name 	Displays the first 10 lines of a file
+tail file_name 	Displays the last 10 lines of a file
+gpg -c file_name 	Encrypts a file
+gpg file_name.gpg 	Decrypts a file
+wc 	Prints the number of bytes, words and lines in a file
+xargs 	Executes commands from standard input
+Process Related
+ps 	Display currently active processes
+ps aux | grep 'telnet' 	Searches for the id of the process 'telnet'
+pmap 	Displays memory map of processes
+top 	 Displays all running processes
+kill pid 	Terminates process with a given pid
+killall proc 	Kills / Terminates all processes named proc
+pkill process-name 	Sends a signal to a process with its name
+bg 	Resumes suspended jobs in the background
+fg 	Brings suspended jobs to the foreground
+fg n 	job n to the foreground
+lsof 	Lists files that are open by processes
+renice 19 PID 	makes a process run with very low priority
+pgrep firefox 	find Firefox process ID
+pstree 	visualizing processes in tree model
+File Permission
+chmod octal filename 	Change file permissions of the file to octal
+	
+Example 	
+chmod 777 /data/test.c 	Set rwx permissions to owner, group and everyone (everyone else who has access to the server)
+chmod 755 /data/test.c 	Set rwx to the owner and r_x to group and everyone
+chmod 766 /data/test.c 	Sets rwx for owner, rw for group and everyone
+chown owner user-file 	Change ownership of the file
+chown owner-user:owner-group file_name 	Change owner and group owner of the file
+chown owner-user:owner-group directory 	Change owner and group owner of the directory
+Network
+ip addr show 	Displays IP addresses and all the network interfaces
+ip address add 192.168.0.1/24 dev eth0 	Assigns IP address 192.168.0.1 to interface eth0
+ifconfig  	Displays IP addresses of all network interfaces
+ping  host 	ping command sends an ICMP echo request to establish a connection to server / PC
+whois domain 	Retrieves more information about a domain name
+dig domain 	Retrieves DNS information about the domain
+dig -x host  	Performs reverse lookup on a domain
+host google.com  	Performs an IP lookup for the domain name
+hostname -i 	Displays local IP address
+wget file_name 	Downloads a file from an online source
+netstat -pnltu 	Displays all active listening ports
+Compression/Archives
+tar -cf home.tar home<:code> 	Creates archive file called 'home.tar' from file 'home'
+tar -xf files.tar 	Extract archive file 'files.tar'
+tar -zcvf home.tar.gz source-folder 	Creates gzipped tar archive file from the source folder
+gzip file 	Compression a file with .gz extension
+Install Packages
+rpm -i pkg_name.rpm 	Install an rpm package
+rpm -e pkg_name 	Removes an rpm package
+dnf install pkg_name 	Install package using dnf utility
+Install Source (Compilation)
+./configure 	Checks your system for the required software needed to build the program. It will build the Makefile containing the instructions required to effectively build the project
+make 	It reads the Makefile to compile the program with the required operations. The process may take some time, depending on your system and the size of the program
+make install 	The command installs the binaries in the default/modified paths after the compilation
+Search
+grep 'pattern' files 	Search for a given pattern in files
+grep -r pattern dir 	Search recursively for a pattern in a given directory
+locate file 	Find all instances of the file
+find /home/ -name "index"  	Find file names that begin with 'index' in /home folder
+find /home -size +10000k 	Find files greater than 10000k in the home folder
+Login
+ssh user@host 	Securely connect to host as user
+ssh -p port_number user@host  	Securely connect to host using a specified port
+ssh host 	Securely connect to the system via SSH default port 22
+telnet host 	Connect to host via telnet default port 23
+File Transfer
+scp file1.txt server2/tmp 	Securely copy file1.txt to server2 in /tmp directory
+rsync -a /home/apps  /backup/ 	Synchronize contents in /home/apps directory with /backup  directory
+Disk Usage
+df  -h 	Displays free space on mounted systems
+df  -i  	Displays free inodes on filesystems
+fdisk  -l 	Shows disk partitions, sizes, and types
+du  -sh 	Displays disk usage in the current directory in a human-readable format
+findmnt 	Displays target mount point for all filesystems
+mount device-path mount-point 	Mount a device
+Directory Traverse
+cd .. 	Move up one level in the directory tree structure
+cd 	Change directory to $HOME directory
+cd /test 	Change directory to /test directory
+--------------------------------------------------------------------------------------------------------
+    <resources>
+        <resource>
+            <directory>${project.basedir}/src/main/resources</directory>
+            <targetPath>${project.build.outputDirectory}/META-INF/resources/webjars</targetPath>
+        </resource>
+    </resources>
+--------------------------------------------------------------------------------------------------------
+	@Bean
+	public WebMvcConfigurer corsConfigurer() {
+		return new WebMvcConfigurerAdapter() {
+			@Override
+			public void addCorsMappings(CorsRegistry registry) {
+				registry.addMapping("/api/**").allowedOrigins("https://blog.lqdev.cn");
+			}
+		};
+	}
+--------------------------------------------------------------------------------------------------------
+@Accessors(chain = true)
+--------------------------------------------------------------------------------------------------------
+import java.io.Serializable;
+import java.util.Date;
+
+import com.baomidou.mybatisplus.activerecord.Model;
+import com.baomidou.mybatisplus.annotations.TableId;
+
+import lombok.Data;
+import lombok.experimental.Accessors;
+
+/**
+ * <p>
+ * 
+ * </p>
+ *
+ * @author oKong
+ * @since 2018-07-20
+ */
+@Data
+@Accessors(chain = true)
+public class User extends Model<User> {
+
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * 唯一标示
+     */
+    @TableId
+    private Long id;
+    /**
+     * 编码
+     */
+    private String code;
+    /**
+     * 名称
+     */
+    private String name;
+    
+    /**
+     * 状态1 启用 0 停用
+     */
+    private StatusEnum status;
+    /**
+     * 创建时间
+     */
+    private Date gmtCreate;
+    /**
+     * 修改时间
+     */
+    private Date gmtModified;
+
+
+    public static final String ID = "id";
+
+    public static final String CODE = "code";
+
+    public static final String NAME = "name";
+
+    public static final String GMT_CREATE = "gmt_create";
+
+    public static final String GMT_MODIFIED = "gmt_modified";
+
+    @Override
+    protected Serializable pkVal() {
+        return this.id;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@RequestMapping(path="/downloadFile",method=RequestMethod.GET)
+    @Consumes(MediaType.APPLICATION_JSON_VALUE)
+    public  ResponseEntity<InputStreamReader> downloadDocument(
+                String acquistionId,
+                String fileType,
+                Integer expressVfId) throws IOException {
+        File file2Upload = new File("C:\\Users\\admin\\Desktop\\bkp\\1.rtf");
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Cache-Control", "no-cache, no-store, must-revalidate");
+        headers.add("Pragma", "no-cache");
+        headers.add("Expires", "0");
+        InputStreamReader i = new InputStreamReader(new FileInputStream(file2Upload));
+        System.out.println("The length of the file is : "+file2Upload.length());
+
+        return ResponseEntity.ok().headers(headers).contentLength(file2Upload.length())
+                .contentType(MediaType.parseMediaType("application/octet-stream"))
+                .body(i);
+        }
+--------------------------------------------------------------------------------------------------------
+buildscript {
+    repositories {
+        maven { url "http://repo.spring.io/libs-release" }
+        mavenLocal()
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.1.6.RELEASE")
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'spring-boot'
+
+apply plugin: 'application'
+run {
+    args 'sample.txt'
+}
+
+jar {
+    baseName = 'gs-uploading-files'
+    version =  '0.1.0'
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven { url "http://repo.spring.io/libs-release" }
+}
+
+dependencies {
+    compile("org.springframework.boot:spring-boot-starter-web")
+    testCompile("junit:junit")
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '1.11'
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.logging.LoggingSystem;
+import org.springframework.boot.web.support.SpringBootServletInitializer;
+
+import lombok.extern.slf4j.Slf4j;
+
+@SpringBootApplication
+@Slf4j
+public class ChapterApplication extends SpringBootServletInitializer implements CommandLineRunner{
+
+	public static void main(String[] args) {
+		log.info("jar,chapter开始启动!");
+		SpringApplication.run(ChapterApplication.class, args);
+	//	new SpringApplicationBuilder().sources(ChapterApplication.class).web(false).run(args);
+    //之后这里设置业务逻辑 比如挂起一个线程 或者设置一个定时任务。保证不退出
+		//不然它就是一个启动类，启动后就停止了。
+		log.info("jar,chapter启动完成!");
+	} 
+	 
+	@Override
+	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+		log.info("外部tomcat,chapter启动!");
+		return application.sources(ChapterApplication.class);
+	}
+
+	@Override
+	public void run(String... args) throws Exception {
+		log.info("CommandLineRunner运行,info输出");
+//		loggingSystem.setLogLevel(null, LogLevel.DEBUG);
+		log.debug("CommandLineRunner运行:debug输出");
+	}
+	
+	@Autowired
+	LoggingSystem loggingSystem;
+}
+--------------------------------------------------------------------------------------------------------
+      @GetMapping(value = "/testCallable")
+      public Callable<String> echoHelloWorld()
+      {
+            return () ->
+            {
+                  Thread.sleep(ThreadLocalRandom.current().nextInt(5000));
+                   
+                  return "Hello World !!";
+            };
+      }
+	  
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+ 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
+ 
+import com.howtodoinjava.springasyncexample.web.controller.HelloWorldCallableController;
+ 
+@RunWith(SpringRunner.class)
+@WebMvcTest(HelloWorldCallableController.class)
+public class HelloWorldCallableControllerTest {
+ 
+      @Autowired
+      private MockMvc mockMvc;
+ 
+      @Test
+      public void testHelloWorldController() throws Exception
+      {
+            MvcResult mvcResult = mockMvc.perform(get("/testCallable"))
+                                                .andExpect(request().asyncStarted())
+                                                .andDo(MockMvcResultHandlers.log())
+                                                .andReturn();
+             
+            mockMvc.perform(asyncDispatch(mvcResult)).andExpect(status().isOk())
+                              .andExpect(content().contentTypeCompatibleWith("text/plain"))
+                              .andExpect(content().string("Hello World !!"));
+      }
+}
+--------------------------------------------------------------------------------------------------------
+    @RequestMapping("/test3")
+    public
+    @ResponseBody
+    WebAsyncTask<String> handleRequest (HttpServletRequest r) {
+        System.out.println("asyncSupported: " + r.isAsyncSupported());
+        System.out.println(Thread.currentThread().getName());
+
+        Callable<String> callable = () -> {
+            System.out.println(Thread.currentThread().getName());
+            return "WebAsyncTask test";
+        };
+
+        ConcurrentTaskExecutor t = new ConcurrentTaskExecutor(
+                  Executors.newFixedThreadPool(1));
+        return new WebAsyncTask<>(10000L, t, callable);
+    }
+	
+    @Bean
+    WebMvcConfigurer configurer(){
+        return new WebMvcConfigurerAdapter(){
+            @Override
+            public void configureAsyncSupport (AsyncSupportConfigurer configurer) {
+                ThreadPoolTaskExecutor t = new ThreadPoolTaskExecutor();
+                t.setCorePoolSize(10);
+                t.setMaxPoolSize(100);
+                t.setQueueCapacity(50);
+                t.setAllowCoreThreadTimeOut(true);
+                t.setKeepAliveSeconds(120);
+                t.initialize();
+                configurer.setTaskExecutor(t);
+            }
+        };
+    }
+--------------------------------------------------------------------------------------------------------
 List<Author> authors = em.createQuery("SELECT a FROM Author a ORDER BY a.id ASC", Author.class)
                                     .setMaxResults(5)
                                     .setFirstResult(0)
@@ -16337,7 +17006,6 @@ yyyy-MM-dd'T'HH:mm:ss.SSSZ
 curl -i -H "key1:val1" -H "key2:val2" http://localhost:8080/spring-rest/ex/foos
 @RequestMapping(value = "/ex/bars/{numericId:[\\d]+}", method = GET)
 curl -i -d id=100 http://localhost:8080/spring-rest/ex/bars
-
 --------------------------------------------------------------------------------------------------------
 @RequestParam Map<String, String> params
    /*
@@ -16353,6 +17021,1420 @@ curl -i -d id=100 http://localhost:8080/spring-rest/ex/bars
             + " date = " + date + " <br>" 
             + " time = " + time;
    }
+--------------------------------------------------------------------------------------------------------
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.validation.BindException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ *  统一异常处理类
+ * @author oKong
+ *
+ */
+@ControllerAdvice
+@Slf4j
+public class CommonExceptionHandler {
+
+	/**
+	 * 拦截 CommonException 的异常
+	 * @param ex
+	 * @return
+	 */
+	@ExceptionHandler(CommonException.class)
+	@ResponseBody
+	public Map<String,Object> exceptionHandler(CommonException ex){
+		log.info("CommonException：{}({})",ex.getMsg(), ex.getCode());
+		Map<String,Object> result = new HashMap<String,Object>();
+		result.put("respCode", ex.getCode());
+		result.put("respMsg", ex.getMsg());
+		return result; 
+	}
+	
+	/**
+	 *  拦截Exception类的异常
+	 * @param e
+	 * @return
+	 */
+	@ExceptionHandler(Exception.class)
+	@ResponseBody
+	public Map<String,Object> exceptionHandler(Exception e){
+		log.info("Exception：{}({})",e);
+		Map<String,Object> result = new HashMap<String,Object>();
+		result.put("respCode", "9999");
+		result.put("respMsg", e.getMessage());
+		//正常开发中，可创建一个统一响应实体，如CommonResp
+		return result; 
+	}
+	
+	@ExceptionHandler(MethodArgumentNotValidException.class)
+	@ResponseBody
+	public Map<String,Object> handleBindException(MethodArgumentNotValidException ex) {
+		FieldError fieldError = ex.getBindingResult().getFieldError();
+		log.info("参数校验异常:{}({})", fieldError.getDefaultMessage(),fieldError.getField());
+		Map<String,Object> result = new HashMap<String,Object>();
+		result.put("respCode", "01002");
+		result.put("respMsg", fieldError.getDefaultMessage());
+		return result;
+	}
+
+
+	@ExceptionHandler(BindException.class)
+	@ResponseBody
+	public Map<String,Object> handleBindException(BindException ex) {
+		//校验 除了 requestbody 注解方式的参数校验 对应的 bindingresult 为 BeanPropertyBindingResult
+		FieldError fieldError = ex.getBindingResult().getFieldError();
+		log.info("必填校验异常:{}({})", fieldError.getDefaultMessage(),fieldError.getField());
+		Map<String,Object> result = new HashMap<String,Object>();
+		result.put("respCode", "01002");
+		result.put("respMsg", fieldError.getDefaultMessage());
+		return result;
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import javax.servlet.Filter;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.boot.web.servlet.ServletComponentScan;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+
+import cn.lqdev.learning.chapter7.config.CustomFilter;
+import cn.lqdev.learning.chapter7.config.CustomHandlerInterceptor;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * 
+ *  拦截器、监听器、过滤器的使用
+ *  启动类
+ * @author oKong
+ *
+ */
+@SpringBootApplication
+@ServletComponentScan
+@Slf4j
+public class Chapter7Application {
+	
+	public static void main(String[] args) {
+		SpringApplication.run(Chapter7Application.class, args);
+		log.info("chapter7 服务启动");
+	}
+	
+	@Bean
+	public FilterRegistrationBean  filterRegistrationBean() {
+        FilterRegistrationBean registration = new FilterRegistrationBean();
+        //当过滤器有注入其他bean类时，可直接通过@bean的方式进行实体类过滤器，这样不可自动注入过滤器使用的其他bean类。
+        //当然，若无其他bean需要获取时，可直接new CustomFilter()，也可使用getBean的方式。
+        registration.setFilter(customFilter());
+        //过滤器名称
+        registration.setName("customFilter");
+        //拦截路径
+        registration.addUrlPatterns("/*");
+        //设置顺序
+        registration.setOrder(10);
+		return registration;
+	}
+
+	@Bean
+	public Filter customFilter() {
+		return new CustomFilter();
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+
+/**
+ * 
+ * @author oKong
+ *
+ */
+@Configuration
+public class WebMvcConfigurer extends WebMvcConfigurerAdapter{
+	
+	@Override
+	 public void addInterceptors(InterceptorRegistry registry) {
+		 //注册拦截器 拦截规则
+		//多个拦截器时 以此添加 执行顺序按添加顺序
+		registry.addInterceptor(getHandlerInterceptor()).addPathPatterns("/*");
+	 }
+	
+	@Bean
+	public static HandlerInterceptor getHandlerInterceptor() {
+		return new CustomHandlerInterceptor();
+	}
+}
+
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
+import javax.servlet.annotation.WebListener;
+
+import lombok.extern.slf4j.Slf4j;
+
+
+@WebListener
+@Slf4j
+public class CustomLister implements ServletContextListener{
+	
+	@Override
+	public void contextInitialized(ServletContextEvent sce) {
+		log.info("监听器：初始化");
+	}
+
+	@Override
+	public void contextDestroyed(ServletContextEvent sce) {
+		log.info("监听器：销毁");
+	}
+
+	
+}
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.ModelAndView;
+
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * 
+ * @author oKong
+ *
+ */
+@Slf4j
+public class CustomHandlerInterceptor implements HandlerInterceptor{
+
+	@Override
+	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
+			throws Exception {
+		log.info("preHandle:请求前调用");
+		//返回 false 则请求中断
+		return true;
+	}
+
+	@Override
+	public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
+			ModelAndView modelAndView) throws Exception {
+		log.info("postHandle:请求后调用");
+
+	}
+
+	@Override
+	public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex)
+			throws Exception {
+		log.info("afterCompletion:请求调用完成后回调方法，即在视图渲染完成后回调");
+
+	}
+
+}
+
+import java.io.IOException;
+
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ *  自定义过滤器
+ * 
+ * @author oKong
+ *
+ */
+//注册器名称为customFilter,拦截的url为所有
+//@WebFilter(filterName="customFilter",urlPatterns={"/*"})
+@Slf4j
+public class CustomFilter implements Filter{
+
+	@Override
+	public void init(FilterConfig filterConfig) throws ServletException {
+		log.info("filter 初始化");
+	}
+
+	@Override
+	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+			throws IOException, ServletException {
+		// TODO Auto-generated method stub
+		log.info("doFilter 请求处理");
+		//对request、response进行一些预处理
+		// 比如设置请求编码
+		// request.setCharacterEncoding("UTF-8");
+        // response.setCharacterEncoding("UTF-8");
+		//TODO 进行业务逻辑
+		
+		//链路 直接传给下一个过滤器
+		chain.doFilter(request, response);
+	}
+
+	@Override
+	public void destroy() {
+		log.info("filter 销毁");
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.amqp.core.AmqpTemplate;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
+import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
+import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import cn.lqdev.learning.springboot.chapter38.constant.ApplicationConstant;
+import cn.lqdev.learning.springboot.chapter38.entity.HttpEntity;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import lombok.extern.slf4j.Slf4j;
+
+/** 
+*
+* @ClassName   类名：HttpDemoController 
+* @Description 功能说明：
+* <p>
+* TODO
+*</p>
+************************************************************************
+* @date        创建日期：2019年7月17日
+* @author      创建人：xds
+* @version     版本号：V1.0
+*<p>
+***************************修订记录*************************************
+* 
+*   2019年7月17日   xds   创建该类功能。
+*
+***********************************************************************
+*</p>
+*/
+@Slf4j
+
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import springfox.documentation.builders.ApiInfoBuilder;
+import springfox.documentation.builders.PathSelectors;
+import springfox.documentation.builders.RequestHandlerSelectors;
+import springfox.documentation.service.ApiInfo;
+import springfox.documentation.service.Contact;
+import springfox.documentation.spi.DocumentationType;
+import springfox.documentation.spring.web.plugins.Docket;
+import springfox.documentation.swagger2.annotations.EnableSwagger2;
+
+@EnableSwagger2
+@Configuration
+public class SwaggerConfig {
+
+	//是否开启swagger，正式环境一般是需要关闭的，可根据springboot的多环境配置进行设置
+	@Value(value = "${swagger.enabled}")
+	Boolean swaggerEnabled;
+
+	@Bean
+	public Docket createRestApi() {
+		return new Docket(DocumentationType.SWAGGER_2).apiInfo(apiInfo())
+				// 是否开启
+				.enable(swaggerEnabled).select()
+				// 扫描的路径包
+				.apis(RequestHandlerSelectors.basePackage("cn.lqdev.learning.springboot.chapter38"))
+				// 指定路径处理PathSelectors.any()代表所有的路径
+				.paths(PathSelectors.any()).build().pathMapping("/");
+	}
+
+	//设置api信息
+	private ApiInfo apiInfo() {
+		return new ApiInfoBuilder()
+				.title("SpringBoot-rabbitMQ延迟队列-demo示例")
+				.description("oKong | 趔趄的猿")
+				// 作者信息
+				.contact(new Contact("oKong", "https://blog.lqdev.cn/", "499452441@qq.com"))
+				.version("1.0.0")
+				.build();
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.amqp.core.AcknowledgeMode;
+import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.DirectExchange;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.QueueBuilder;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import cn.lqdev.learning.springboot.chapter38.constant.ApplicationConstant;
+
+/** 
+*
+* @ClassName   类名：RabbitConfig 
+* @Description 功能说明：
+* <p>
+* TODO
+*</p>
+************************************************************************
+* @date        创建日期：2019年7月17日
+* @author      创建人：oKong
+* @version     版本号：V1.0
+*<p>
+***************************修订记录*************************************
+* 
+*   2019年7月17日   oKong   创建该类功能。
+*
+***********************************************************************
+*</p>
+*/
+@Configuration
+public class RabbitConfig {
+	
+	@Autowired
+	ConnectionFactory connectionFactory;
+	
+	/**
+	 * 消费者线程数 设置大点 大概率是能通知到的
+	 */
+	@Value("${http.notify.concurrency:50}")
+	int concurrency;
+	
+	/**
+	 * 延迟队列的消费者线程数 可设置小点
+	 */
+	@Value("${http.notify.delay.concurrency:20}")
+	int delayConcurrency;
+	
+	@Bean
+	public RabbitAdmin rabbitAdmin() {
+		return new RabbitAdmin(connectionFactory);
+	}
+	
+	@Bean
+	public DirectExchange httpMessageNotifyDirectExchange(RabbitAdmin rabbitAdmin) {
+		//durable 是否持久化
+		//autoDelete 是否自动删除，即服务端或者客服端下线后 交换机自动删除
+		DirectExchange directExchange = new DirectExchange(ApplicationConstant.HTTP_MESSAGE_EXCHANGE,true,false);
+		directExchange.setAdminsThatShouldDeclare(rabbitAdmin);
+		return directExchange;
+	}
+	
+	//设置消息队列
+	@Bean
+	public Queue httpMessageStartQueue(RabbitAdmin rabbitAdmin) {
+		 
+       /*
+                       创建接收队列，4个参数
+		 name - 队列名称
+		 durable - false，不进行持有化
+		 exclusive - true，独占性
+		 autoDelete - true，自动删除*/
+		Queue queue = new Queue(ApplicationConstant.HTTP_MESSAGE_START_QUEUE_NAME, true, false, false);
+		queue.setAdminsThatShouldDeclare(rabbitAdmin);
+		return queue;
+	}
+	
+    //队列绑定交换机
+	@Bean
+	public Binding bindingStartQuene(RabbitAdmin rabbitAdmin,DirectExchange httpMessageNotifyDirectExchange, Queue httpMessageStartQueue) {
+		Binding binding = BindingBuilder.bind(httpMessageStartQueue).to(httpMessageNotifyDirectExchange).with(ApplicationConstant.HTTP_MESSAGE_START_RK);
+		binding.setAdminsThatShouldDeclare(rabbitAdmin);
+		return binding;
+	}
+	
+	@Bean
+	public Queue httpMessageOneQueue(RabbitAdmin rabbitAdmin) {
+		Queue queue = new Queue(ApplicationConstant.HTTP_MESSAGE_ONE_QUEUE_NAME, true, false, false);
+		queue.setAdminsThatShouldDeclare(rabbitAdmin);
+		return queue;
+	}
+	
+	@Bean
+	public Binding bindingOneQuene(RabbitAdmin rabbitAdmin,DirectExchange httpMessageNotifyDirectExchange, Queue httpMessageOneQueue) {
+		Binding binding = BindingBuilder.bind(httpMessageOneQueue).to(httpMessageNotifyDirectExchange).with(ApplicationConstant.HTTP_MESSAGE_ONE_RK);
+		binding.setAdminsThatShouldDeclare(rabbitAdmin);
+		return binding;
+	}
+	
+	//-------------设置延迟队列--开始--------------------
+	@Bean
+	public Queue httpDelayOneQueue() {
+		//name - 队列名称
+		//durable - true
+		//exclusive - false
+		//autoDelete - false
+		return QueueBuilder.durable("http.message.dlx.one")
+				//以下是重点：当变成死信队列时，会转发至 路由为x-dead-letter-exchange及x-dead-letter-routing-key的队列中
+				.withArgument("x-dead-letter-exchange", ApplicationConstant.HTTP_MESSAGE_EXCHANGE)
+				.withArgument("x-dead-letter-routing-key", ApplicationConstant.HTTP_MESSAGE_ONE_RK)
+				.withArgument("x-message-ttl", 1*60*1000)//1分钟 过期时间（单位：毫秒），当过期后 会变成死信队列，之后进行转发
+				.build();
+	}
+	//绑定到交换机上
+	@Bean
+	public Binding bindingDelayOneQuene(RabbitAdmin rabbitAdmin, DirectExchange httpMessageNotifyDirectExchange, Queue httpDelayOneQueue) {
+		Binding binding = BindingBuilder.bind(httpDelayOneQueue).to(httpMessageNotifyDirectExchange).with("delay.one");
+		binding.setAdminsThatShouldDeclare(rabbitAdmin);
+		return binding;
+	}
+	//-------------设置延迟队列--结束--------------------
+
+	//建议将正常的队列和延迟处理的队列分开
+	//设置监听容器
+	@Bean("notifyListenerContainer")
+	public SimpleRabbitListenerContainerFactory httpNotifyListenerContainer() {
+		SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+		factory.setAcknowledgeMode(AcknowledgeMode.MANUAL);// 手动ack
+		factory.setConnectionFactory(connectionFactory);
+		factory.setPrefetchCount(1);
+		factory.setConcurrentConsumers(concurrency);
+		return factory;
+	}
+
+	// 设置监听容器
+	@Bean("delayNotifyListenerContainer")
+	public SimpleRabbitListenerContainerFactory httpDelayNotifyListenerContainer() {
+		SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+		factory.setAcknowledgeMode(AcknowledgeMode.MANUAL);// 手动ack
+		factory.setConnectionFactory(connectionFactory);
+		factory.setPrefetchCount(1);
+		factory.setConcurrentConsumers(delayConcurrency);
+		return factory;
+	}
+}
+--------------------------------------------------------------------------------------------------------
+<?xml version="1.0" encoding="UTF-8"?>
+<ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="ehcache.xsd">
+    <!--timeToIdleSeconds 当缓存闲置n秒后销毁 -->
+    <!--timeToLiveSeconds 当缓存存活n秒后销毁 -->
+    <!-- 缓存配置 
+        name:缓存名称。 
+        maxElementsInMemory：缓存最大个数。 
+        eternal:对象是否永久有效，一但设置了，timeout将不起作用。 
+        timeToIdleSeconds：设置对象在失效前的允许闲置时间（单位：秒）。仅当eternal=false对象不是永久有效时使用，可选属性，默认值是0，也就是可闲置时间无穷大。 
+        timeToLiveSeconds：设置对象在失效前允许存活时间（单位：秒）。最大时间介于创建时间和失效时间之间。仅当eternal=false对象不是永久有效时使用，默认是0.，也就是对象存活时间无穷大。 
+        overflowToDisk：当内存中对象数量达到maxElementsInMemory时，Ehcache将会对象写到磁盘中。 diskSpoolBufferSizeMB：这个参数设置DiskStore（磁盘缓存）的缓存区大小。默认是30MB。每个Cache都应该有自己的一个缓冲区。 
+        maxElementsOnDisk：硬盘最大缓存个数。 
+        diskPersistent：是否缓存虚拟机重启期数据 Whether the disk 
+        store persists between restarts of the Virtual Machine. The default value 
+        is false. 
+        diskExpiryThreadIntervalSeconds：磁盘失效线程运行时间间隔，默认是120秒。  memoryStoreEvictionPolicy：当达到maxElementsInMemory限制时，Ehcache将会根据指定的策略去清理内存。默认策略是 
+LRU（最近最少使用）。你可以设置为FIFO（先进先出）或是LFU（较少使用）。 
+        clearOnFlush：内存数量最大时是否清除。 -->
+    <!-- 磁盘缓存位置 -->
+    <diskStore path="java.io.tmpdir" />
+    <!-- 默认缓存 -->
+    <defaultCache 
+        maxElementsInMemory="10000" 
+        eternal="false"
+        timeToIdleSeconds="120" 
+        timeToLiveSeconds="120" 
+        maxElementsOnDisk="10000000"
+        diskExpiryThreadIntervalSeconds="120" 
+        memoryStoreEvictionPolicy="LRU">
+        <persistence strategy="localTempSwap" />
+    </defaultCache>
+
+    <!-- 指定cache，即对应cacheName的值 -->
+    <cache name="oKongCache" 
+        eternal="false" 
+        timeToIdleSeconds="2400"
+        timeToLiveSeconds="2400" 
+        maxEntriesLocalHeap="10000"
+        maxEntriesLocalDisk="10000000" 
+        diskExpiryThreadIntervalSeconds="120"
+        overflowToDisk="false" 
+        memoryStoreEvictionPolicy="LRU">
+    </cache>
+</ehcache>
+--------------------------------------------------------------------------------------------------------
+# REDIS (RedisProperties)
+# Redis数据库索引（默认为0）
+spring.redis.database=0
+# Redis服务器地址
+spring.redis.host=127.0.0.1
+# Redis服务器连接端口
+spring.redis.port=6379
+# Redis服务器连接密码（默认为空）
+spring.redis.password=
+# 连接池最大连接数（使用负值表示没有限制）
+spring.redis.pool.max-active=8
+# 连接池最大阻塞等待时间（使用负值表示没有限制）
+spring.redis.pool.max-wait=-1
+# 连接池中的最大空闲连接
+spring.redis.pool.max-idle=8
+# 连接池中的最小空闲连接
+spring.redis.pool.min-idle=0
+# 连接超时时间（毫秒）
+spring.redis.timeout=0
+
+# ehcache配置地址
+spring.cache.ehcache.config=ehcache.xml
+--------------------------------------------------------------------------------------------------------
+@RestController
+@Slf4j
+public class DemoController {
+	
+	@RequestMapping("/redis/{key}")
+	@Cacheable(value = "redis",key="#key",cacheManager=CacheConfig.CacheManagerName.REDIS_CACHE_MANAGER)
+	public String cacheRedisTest(@PathVariable("key") String key) {
+		log.info("redis,key={}", key);
+		return key;
+	}
+	
+	@RequestMapping("/ehcache/{key}")
+	@Cacheable(value = "oKongCache",key="#key",cacheManager=CacheConfig.CacheManagerName.EHCACHE_CACHE_MAANGER)
+	public String cacheEhcacheTest(@PathVariable("key") String key) {
+		log.info("ehcache,key={}", key);
+		return key;
+	}
+	
+	@RequestMapping("/default/{key}")
+	@Cacheable(value = "default",key="#key")
+	public String cacheDefaultTest(@PathVariable("key") String key) {
+		log.info("default,key={}", key);
+		return key;
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.ehcache.EhCacheCacheManager;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+/** 
+*
+* @ClassName   类名：CacheConfig 
+* @Description 功能说明：缓存配置类
+* <p>
+* TODO
+*</p>
+************************************************************************
+* @date        创建日期：2019年3月7日
+* @author      创建人：oKong
+* @version     版本号：V1.0
+*<p>
+***************************修订记录*************************************
+* 
+*   2019年3月7日   oKong   创建该类功能。
+*
+***********************************************************************
+*</p>
+*/
+@Configuration
+@EnableCaching
+public class CacheConfig {
+	
+	/**
+     * cacheManager名称
+     */
+    public interface CacheManagerName {
+        /**
+         * redis
+         */
+        String REDIS_CACHE_MANAGER = "redisCacheManager";
+
+        /**
+         * ehCache
+         */
+        String EHCACHE_CACHE_MAANGER = "ehCacheCacheManager";
+    }
+	/**
+     *  定义 StringRedisTemplate ，指定序列号和反序列化的处理类
+     * @param factory
+     * @return
+     */
+    @Bean
+    public RedisTemplate<String, String> redisTemplate(RedisConnectionFactory factory) {
+        StringRedisTemplate template = new StringRedisTemplate(factory);
+        Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer<>(
+                Object.class);
+        ObjectMapper om = new ObjectMapper();
+        om.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+        om.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
+        jackson2JsonRedisSerializer.setObjectMapper(om);
+        //序列化 值时使用此序列化方法
+        template.setValueSerializer(jackson2JsonRedisSerializer);
+        template.afterPropertiesSet();
+        return template;
+    }
+    
+    @Bean(CacheConfig.CacheManagerName.REDIS_CACHE_MANAGER)
+    @Primary
+    public RedisCacheManager redisCacheManager(RedisTemplate<String,String> redisTemplate) {
+        RedisCacheManager rcm = new RedisCacheManager(redisTemplate);
+        //使用前缀
+        rcm.setUsePrefix(true);
+        //缓存分割符 默认为 ":"
+//        rcm.setCachePrefix(new DefaultRedisCachePrefix(":"));
+        //设置缓存过期时间
+        //rcm.setDefaultExpiration(60);//秒
+        return rcm;
+    }
+    
+    @Bean(CacheConfig.CacheManagerName.EHCACHE_CACHE_MAANGER) 
+    public EhCacheCacheManager EhcacheManager() {
+    	EhCacheCacheManager ehCacheManager = new EhCacheCacheManager();
+    	return ehCacheManager;
+    }
+    
+//    @Bean(name = "cacheManager")
+//    @Primary
+//    public CompositeCacheManager cacheManager(RedisCacheManager redisCacheManager, EhCacheCacheManager ehCacheCacheManager) {
+//        CompositeCacheManager cacheManager = new CompositeCacheManager(redisCacheManager, ehCacheCacheManager);
+//        return cacheManager;
+//    }
+    
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+
+import javax.jws.WebService;
+
+import cn.lqdev.learning.springboot.cxf.config.WsConst;
+import cn.lqdev.learning.springboot.cxf.entity.AuthorDto;
+import cn.lqdev.learning.springboot.cxf.entity.Sex;
+
+
+@WebService(
+		 targetNamespace = WsConst.NAMESPACE_URI, //wsdl命名空间 
+		 name = "authorPortType",                 //portType名称 客户端生成代码时 为接口名称
+		 serviceName = "authorService",           //服务name名称
+		 portName = "authorPortName",             //port名称
+		 endpointInterface = "cn.lqdev.learning.springboot.cxf.service.AuthorService")//指定发布webservcie的接口类，此类也需要接入@WebService注解
+public class AuthorServiceImpl implements AuthorService{
+
+	@Override
+	public AuthorDto getAuthor(String name) {
+		AuthorDto author = new AuthorDto();
+    	author.setBirthday("1990-01-23");
+    	author.setName("姓名：" + name);
+    	author.setSex(Sex.MALE);
+    	author.setHobby(Arrays.asList("电影","旅游"));
+    	author.setDescription("描述：一枚趔趄的猿。现在时间：" + new Date().getTime());
+    	return author;
+	}
+
+	@Override
+	public List<AuthorDto> getAuthorList() {
+		List<AuthorDto> resultList = new ArrayList<>();
+		AuthorDto author = new AuthorDto();
+    	author.setBirthday("1990-01-23");
+    	author.setName("姓名：oKong");
+    	author.setSex(Sex.MALE);
+    	author.setHobby(Arrays.asList("电影","旅游"));
+    	author.setDescription("描述：一枚趔趄的猿。现在时间：" + new Date().getTime());
+    	resultList.add(author);
+    	resultList.add(author);
+		return resultList;
+	}
+
+	@Override
+	public String getAuthorString(String name) {
+		AuthorDto author = getAuthor(name);
+		return author.toString();
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.List;
+
+import javax.jws.WebMethod;
+import javax.jws.WebParam;
+import javax.jws.WebService;
+
+import cn.lqdev.learning.springboot.cxf.config.WsConst;
+import cn.lqdev.learning.springboot.cxf.entity.AuthorDto;
+
+/**
+ * 创建服务接口
+ * @author oKong
+ *
+ */
+@WebService(targetNamespace = WsConst.NAMESPACE_URI ,name = "authorPortType")
+public interface AuthorService {
+
+	/**
+	 * 根据名称获取作者信息
+	 * @author 作者：oKong
+	 */
+	@WebMethod(operationName="getAuthorByName")
+	AuthorDto getAuthor(@WebParam(name = "authorName") String name);
+
+	/**
+	 * 获取作者列表信息
+	 * @author oKong
+	 */
+	@WebMethod
+	List<AuthorDto> getAuthorList();
+	
+	/**
+	 * 返回字符串测试
+	 * @author oKong
+	 */
+	String getAuthorString(@WebParam(name = "authorName")String name);
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
+
+import cn.lqdev.learning.springboot.chapter32.event.CustomEvent;
+import cn.lqdev.learning.springboot.chapter32.event.MessageEntity;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * 监听配置类
+ * 
+ * @author oKong
+ *
+ */
+@Configuration
+@Slf4j
+public class EventListenerConfig {
+
+	@EventListener
+	public void handleEvent(Object event) {
+		//监听所有事件 可以看看 系统各类时间 发布了哪些事件
+		//可根据 instanceof 监听想要监听的事件
+//		if(event instanceof CustomEvent) {
+//			
+//		}
+		log.info("事件：{}", event);
+	}
+	
+	@EventListener
+	public void handleCustomEvent(CustomEvent customEvent) {
+		//监听 CustomEvent事件
+		log.info("监听到CustomEvent事件，消息为：{}, 发布时间：{}", customEvent.getMessageEntity(), customEvent.getTimestamp());
+	}
+	
+	/**
+	 * 监听 code为oKong的事件
+	 */
+	@Async
+	@EventListener(condition="#customEvent.messageEntity.code == 'oKong'")
+	public void handleCustomEventByCondition(CustomEvent customEvent) {
+		//监听 CustomEvent事件
+		log.info("监听到code为'oKong'的CustomEvent事件，消息为：{}, 发布时间：{}", customEvent.getMessageEntity(), customEvent.getTimestamp());
+	}
+	
+	@EventListener 
+	public void handleObjectEvent(MessageEntity messageEntity) {
+		//这个和eventbus post方法一样了
+		log.info("监听到对象事件，消息为：{}", messageEntity);
+		
+	}
+}
+--------------------------------------------------------------------------------------------------------
+//
+// Source code recreated from a .class file by IntelliJ IDEA
+// (powered by Fernflower decompiler)
+//
+
+package com.sun.applet2.preloader.event;
+
+import com.sun.deploy.trace.Trace;
+import com.sun.deploy.trace.TraceLevel;
+import java.net.URL;
+
+public class DownloadEvent extends PreloaderEvent {
+    public static final int DOWNLOADING = 0;
+    public static final int VERIFYING = 1;
+    public static final int PATCHING = 2;
+    private long completed;
+    private long total;
+    private int percent;
+    private URL url;
+    private String version;
+    private String resourceLabel;
+    private int downloadtype;
+    protected boolean isStart = false;
+    protected boolean isComplete = false;
+    protected boolean isExplicit = false;
+    private final String[] types = new String[]{"load", "verify", "patch"};
+
+    public DownloadEvent(int var1, URL var2, String var3, String var4, long var5, long var7, int var9) {
+        super(3);
+        this.downloadtype = var1;
+        this.url = var2;
+        this.version = var3;
+        this.resourceLabel = var4;
+        this.completed = var5;
+        this.total = var7;
+        this.percent = var9;
+    }
+
+    public void normalize(int var1) {
+        if (var1 < 100 && this.percent < 100) {
+            if (var1 < 0) {
+                Trace.println("warning: progress baseline could not be negative!", TraceLevel.PRELOADER);
+            } else if (this.percent < var1) {
+                Trace.println("warning: progress baseline above the progress value! " + this.percent + " < " + var1, TraceLevel.PRELOADER);
+                this.percent = 0;
+            } else {
+                this.percent = 100 * (this.percent - var1) / (100 - var1);
+                if (this.percent == 0) {
+                    this.percent = 1;
+                }
+
+            }
+        } else {
+            this.percent = 100;
+        }
+    }
+
+    public URL getURL() {
+        return this.url;
+    }
+
+    public String getVersion() {
+        return this.version;
+    }
+
+    public String getResourceLabel() {
+        return this.resourceLabel;
+    }
+
+    public int getDownloadType() {
+        return this.downloadtype;
+    }
+
+    public long getCompletedCount() {
+        return this.completed;
+    }
+
+    public long getTotalCount() {
+        return this.total;
+    }
+
+    public int getOverallPercentage() {
+        return this.percent;
+    }
+
+    public boolean isStart() {
+        return this.isStart;
+    }
+
+    public boolean isComplete() {
+        return this.isComplete;
+    }
+
+    public boolean isExplicit() {
+        return this.isExplicit;
+    }
+
+    public void sendExplicitEvent(boolean var1) {
+        this.isExplicit = var1;
+    }
+
+    public String toString() {
+        return "DownloadEvent[type=" + this.types[this.downloadtype] + ",loaded=" + this.getCompletedCount() + ", total=" + this.getTotalCount() + ", percent=" + this.getOverallPercentage() + "]";
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.Date;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.stereotype.Service;
+
+import cn.lqdev.learning.springboot.chapter31.biz.entity.NotifyMsg;
+import cn.lqdev.learning.springboot.chapter31.biz.service.NotifyMsgService;
+
+/**
+ * MongoTemplate 访问实现
+ * @author oKong
+ *
+ */
+@Service
+public class NotifyMsgServiceImpl implements NotifyMsgService{
+
+	@Autowired
+	MongoTemplate mongoTemplate;
+	
+	@Override
+	public NotifyMsg saveNotifyMsg(NotifyMsg msg) {
+		//使用 save和insert都可以进行插入
+		//区别：当存在"_id"时
+		//insert 插入已经存在的id时 会异常
+		//save 则会进行更新
+		//简单来说 save 就是不存在插入 存在更新
+		mongoTemplate.insert(msg);
+		mongoTemplate.save(msg);
+		
+		return msg;
+	}
+
+	@Override
+	public NotifyMsg findNotifyMsgByNo(String notifyNo) {
+		//根据Criteria 改造查询条件
+		Query query = new Query(Criteria.where("notifyNo").is(notifyNo));
+		return mongoTemplate.findOne(query, NotifyMsg.class);
+	}
+
+	@Override
+	public List<NotifyMsg> findNotifyMsgByDate(String notifyDate) {
+		//查找 notifyDate 根据Criteria 改造查询条件
+		Query query = new Query(Criteria.where("notifyDate").is(notifyDate));		
+		return mongoTemplate.find(query, NotifyMsg.class);
+	}
+
+	@Override
+	public NotifyMsg delNotifyMsgById(String id) {
+		//查找 id 根据Criteria 改造查询条件
+		Query query = new Query(Criteria.where("id").is(id));	
+		return mongoTemplate.findAndRemove(query, NotifyMsg.class);
+	}
+
+}
+
+import java.io.Serializable;
+import java.util.Date;
+
+
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/**
+ * 通知消息对象
+ * @author oKong
+ *
+ */
+@Document(collection="notify_msg")
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class NotifyMsg implements Serializable{
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -8985545025018238754L;
+
+	@Id
+	String id;
+	
+	/**
+	 * 消息类型
+	 */
+	@Indexed
+	String notifyType;
+	
+	/**
+	 * 消息单号
+	 */
+	@Indexed
+	String notifyNo;
+	
+	/**
+	 * 消息通知日期
+	 */
+	String notifyDate;
+	
+	/**
+	 * 消息体
+	 */
+	@Field("notifyMsg")//可指定存储时的字段名
+	String notifyMsg;
+	
+	/**
+	 * 创建时间
+	 */
+	@CreatedDate
+	Date gmtCreate;
+}
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
+
+import cn.lqdev.learning.springboot.chapter31.biz.entity.NotifyMsg;
+
+/**
+ * MongoRepository 示例
+ * @author oKong
+ *
+ */
+public interface NotifyMsgDao extends MongoRepository<NotifyMsg, String>{
+
+	/*
+	 * 根据消息号进行查询
+	 */
+	NotifyMsg findByNotifyNo(String notifyNo);
+	
+	/**
+	 * 根据日期查询 自定义查询
+	 * @author 作者：oKong
+	 */
+	//需要注意 查询的语法结构 ，同时这里和`jpa`不一样的地方是，第一个索引值从0 开始。。
+	@Query("{'notifyDate':?0}")
+	Page<NotifyMsg> queryBySql(String notifyDate,Pageable pageable);
+}
+--------------------------------------------------------------------------------------------------------
+import com.alibaba.dubbo.config.annotation.Service;
+
+import cn.lqdev.learning.springboot.dubbo.api.IHelloService;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * 定义一个服务实现类
+ * @author oKong
+ *
+ */
+// 这里注意 此类@service是dubbo的
+@Service(
+		version = "${demo.service.version}", //版本
+		application = "${dubbo.application.id}", //应用ID
+		protocol = "${dubbo.protocol.id}", //协议id
+		registry = "${dubbo.registry.id}")//注册中心id
+@Slf4j
+public class HelloServiceImpl implements IHelloService {
+	
+	@Override
+	public String hello(String name) {
+		log.info("dubbo提供者，参数name:{}", name);
+		return "hello " + name + ",this is a dubbo provider!";
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+additional-spring-configuration-metadata.json
+
+{
+	"properties": [
+		{
+			"name": "blog.address",
+			"type": "java.lang.String",
+			"description": "博客地址"
+		}
+	]
+}
+
+    @EventListener(condition = "#downloadEvent.messageEntity.code == 'oKong'")
+--------------------------------------------------------------------------------------------------------
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.mongodb.config.EnableMongoAuditing;
+import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
+
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * mongodb 集成示例
+ * @author oKong
+ *
+ */
+@SpringBootApplication
+@EnableMongoAuditing
+//@EnableMongoRepositories(basePackages="cn.lqdev")//当有些dao不在default page下时 可通过此方法进行注册扫描包
+@Slf4j
+public class MongodbApplication {
+
+	public static void main(String[] args) throws Exception {
+		SpringApplication.run(MongodbApplication.class, args);
+		log.info("spring-boot-mongodb-chapter31启动!");
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.context.ApplicationListener;
+import org.springframework.stereotype.Component;
+
+import cn.lqdev.learning.springboot.chapter32.event.CustomEvent;
+import lombok.extern.slf4j.Slf4j;
+
+
+@Component
+@Slf4j
+public class EventListener implements ApplicationListener<CustomEvent>{
+
+	@Override
+	public void onApplicationEvent(CustomEvent event) {
+		//这里也可以监听所有事件 使用  ApplicationEvent 类即可
+		//这里仅仅监听自定义事件 CustomEvent
+		log.info("ApplicationListener方式监听事件：{}", event);
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import javax.jws.WebMethod;
+import javax.jws.WebParam;
+import javax.jws.WebResult;
+import javax.jws.WebService;
+import javax.xml.bind.annotation.XmlSeeAlso;
+import javax.xml.ws.RequestWrapper;
+import javax.xml.ws.ResponseWrapper;
+
+/**
+ * This class was generated by Apache CXF 3.2.5
+ * 2018-11-10T20:20:08.070+08:00
+ * Generated source version: 3.2.5
+ *
+ */
+@WebService(targetNamespace = "http://www.lqdev.cn/webservice", name = "authorPortType")
+@XmlSeeAlso({ObjectFactory.class})
+public interface AuthorPortType {
+
+    @WebMethod
+    @RequestWrapper(localName = "getAuthorByName", targetNamespace = "http://www.lqdev.cn/webservice", className = "cn.lqdev.webservice.GetAuthorByName")
+    @ResponseWrapper(localName = "getAuthorByNameResponse", targetNamespace = "http://www.lqdev.cn/webservice", className = "cn.lqdev.webservice.GetAuthorByNameResponse")
+    @WebResult(name = "return", targetNamespace = "")
+    public cn.lqdev.webservice.AuthorDto getAuthorByName(
+        @WebParam(name = "authorName", targetNamespace = "")
+        java.lang.String authorName
+    );
+
+    @WebMethod
+    @RequestWrapper(localName = "getAuthorList", targetNamespace = "http://www.lqdev.cn/webservice", className = "cn.lqdev.webservice.GetAuthorList")
+    @ResponseWrapper(localName = "getAuthorListResponse", targetNamespace = "http://www.lqdev.cn/webservice", className = "cn.lqdev.webservice.GetAuthorListResponse")
+    @WebResult(name = "return", targetNamespace = "")
+    public java.util.List<cn.lqdev.webservice.AuthorDto> getAuthorList();
+
+    @WebMethod
+    @RequestWrapper(localName = "getAuthorString", targetNamespace = "http://www.lqdev.cn/webservice", className = "cn.lqdev.webservice.GetAuthorString")
+    @ResponseWrapper(localName = "getAuthorStringResponse", targetNamespace = "http://www.lqdev.cn/webservice", className = "cn.lqdev.webservice.GetAuthorStringResponse")
+    @WebResult(name = "return", targetNamespace = "")
+    public java.lang.String getAuthorString(
+        @WebParam(name = "authorName", targetNamespace = "")
+        java.lang.String authorName
+    );
+}
+--------------------------------------------------------------------------------------------------------
+	@Bean
+	public ConfigurationCustomizer configurationCustomizer() {
+		ConfigurationCustomizer config = new ConfigurationCustomizer() {
+			
+			@Override
+			public void customize(org.apache.ibatis.session.Configuration configuration) {
+//				TypeAliasRegistry typeAliasRegistry = configuration.getTypeAliasRegistry();
+				// mapper接口注册器
+//				MapperRegistry mapperRegistry = configuration.getMapperRegistry();
+				// 类型处理器
+				TypeHandlerRegistry typeHandlerRegistry = configuration.getTypeHandlerRegistry();
+				typeHandlerRegistry.register(StatusEnum.class, EnumOrdinalTypeHandler.class);
+			}
+		};
+		
+		return config;
+	}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.context.annotation.Configuration;
+
+import com.ulisesbocchio.jasyptspringboot.annotation.EncryptablePropertySource;
+
+/** 
+*
+* @ClassName   类名：JasyptConfig 
+* @Description 功能说明：自定义配置文件加解密配置
+* <p>
+* TODO
+*</p>
+************************************************************************
+* @date        创建日期：2019年5月8日
+* @author      创建人：oKong
+* @version     版本号：V1.0
+*<p>
+***************************修订记录*************************************
+* 
+*   2019年5月8日   oKong   创建该类功能。
+*
+***********************************************************************
+*</p>
+*/
+@Configuration
+//这里可加载多个 使用{}方式
+@EncryptablePropertySource(name = "encryptedProperties", value = "classpath:encrypted.properties")
+public class JasyptConfig {
+
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.amqp.core.AmqpTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import cn.hutool.http.HttpUtil;
+import cn.lqdev.learning.springboot.chapter38.constant.ApplicationConstant;
+import cn.lqdev.learning.springboot.chapter38.entity.HttpEntity;
+import lombok.extern.slf4j.Slf4j;
+
+/** 
+*
+* @ClassName   类名：HttpMessagerService 
+* @Description 功能说明：
+* <p>
+* TODO
+*</p>
+************************************************************************
+* @date        创建日期：2019年7月17日
+* @author      创建人：oKong
+* @version     版本号：V1.0
+*<p>
+***************************修订记录*************************************
+* 
+*   2019年7月17日   oKong   创建该类功能。
+*
+***********************************************************************
+*</p>
+*/
+@Component
+@Slf4j
+public class HttpMessagerService {
+	
+	@Autowired
+	AmqpTemplate mqTemplate;	
+	
+	public void notify(String queue,HttpEntity httpEntity) {
+		//发起请求
+		log.info("开始发起http请求:{}", httpEntity);
+		try {
+			switch(httpEntity.getMethod().toLowerCase()) {
+			case "POST":
+				  HttpUtil.post(httpEntity.getUrl(), httpEntity.getParams());
+				  break;
+			case "GET":
+			default:
+				HttpUtil.get(httpEntity.getUrl(), httpEntity.getParams());
+			}
+		} catch (Exception e) {
+			//发生异常，放入延迟队列中
+			String nextRk = ApplicationConstant.delayRefMap.get(queue);
+			if(ApplicationConstant.HTTP_MESSAGE_ONE_QUEUE_NAME.equals(queue)) {
+				//若已经是最后一个延迟队列的消息队列了，则后续可直接放入数据库中 待后续定时策略进行再次发送
+				log.warn("http通知已经通知N次失败，进入定时进行发起通知,url={}", httpEntity.getUrl());
+			} else {
+			   log.warn("http重新发送通知：{}, 通知队列rk为：{}, 原队列：{}", httpEntity.getUrl(), nextRk, queue);
+			   mqTemplate.convertAndSend(ApplicationConstant.HTTP_MESSAGE_EXCHANGE, nextRk, cn.hutool.json.JSONUtil.toJsonStr(httpEntity));
+			}
+		}
+	}
+
+}
+
+
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import com.rabbitmq.client.Channel;
+
+import cn.hutool.json.JSONUtil;
+import cn.lqdev.learning.springboot.chapter38.constant.ApplicationConstant;
+import cn.lqdev.learning.springboot.chapter38.entity.HttpEntity;
+import cn.lqdev.learning.springboot.chapter38.service.HttpMessagerService;
+import lombok.extern.slf4j.Slf4j;
+
+/** 
+*
+* @ClassName   类名：HttpMessagerLister 
+* @Description 功能说明：http通知消费监听接口
+* <p>
+* TODO
+*</p>
+************************************************************************
+* @date        创建日期：2019年7月17日
+* @author      创建人：oKong
+* @version     版本号：V1.0
+*<p>
+***************************修订记录*************************************
+* 
+*   2019年7月17日   oKong   创建该类功能。
+*
+***********************************************************************
+*</p>
+*/
+@Component
+@Slf4j
+public class HttpMessagerLister {
+	
+	@Autowired
+	HttpMessagerService messagerService;
+	
+	@RabbitListener(id = "httpMessageNotifyConsumer", queues = {ApplicationConstant.HTTP_MESSAGE_START_QUEUE_NAME}, containerFactory = "notifyListenerContainer")
+	public void httpMessageNotifyConsumer(Message message, Channel channel) throws Exception {
+		doHandler(message, channel);
+	}
+	
+	@RabbitListener(id= "httpDelayMessageNotifyConsumer", queues = {
+			ApplicationConstant.HTTP_MESSAGE_ONE_QUEUE_NAME,}, containerFactory = "delayNotifyListenerContainer")
+	public void httpDelayMessageNotifyConsumer(Message message, Channel channel) throws Exception {
+		doHandler(message, channel);
+	}
+	
+	private void doHandler(Message message, Channel channel) throws Exception {
+		String body = new String(message.getBody(),"utf-8");
+		String queue = message.getMessageProperties().getConsumerQueue();
+		log.info("接收到通知请求：{}，队列名：{}",body, queue);
+		//消息对象转换
+		try {
+			HttpEntity httpNotifyDto = JSONUtil.toBean(body, HttpEntity.class);
+			channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+			//发送通知
+			messagerService.notify(queue, httpNotifyDto);
+		} catch(Exception e) {
+			log.error(e.getMessage());
+			//ack
+			channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+		}
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+@echo off
+set/p input=待加密的明文字符串：
+set/p password=加密密钥(盐值)：
+echo 加密中......
+java -cp jasypt-1.9.2.jar org.jasypt.intf.cli.JasyptPBEStringEncryptionCLI input=%input% password=%password% algorithm=PBEWithMD5AndDES
+pause
+```
 --------------------------------------------------------------------------------------------------------
 @Controller
 @RequestMapping("/dept")
