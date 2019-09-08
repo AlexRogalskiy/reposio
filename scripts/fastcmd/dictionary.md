@@ -18148,6 +18148,2008 @@ public class HelloServiceImpl implements IHelloService {
 
 }
 --------------------------------------------------------------------------------------------------------
+# 邮件相关
+# SMTP服务器地址
+spring.mail.host=smtp.qq.com
+# SMTP服务器端口号 默认-1
+# spring.mail.port=-1
+# 发送方帐号
+spring.mail.username=邮箱
+# 发送方密码（授权码）
+spring.mail.password=邮箱密码
+#javaMailProperties 配置
+# 开启用户身份验证
+spring.mail.properties.mail.smtp.auth=true
+# STARTTLS：一种通信协议，具体可以搜索下
+#spring.mail.properties.mail.smtp.starttls.enable=true
+#spring.mail.properties.mail.smtp.starttls.required=true
+
+# 缓存配置 开发阶段应该配置为false 因为经常会改
+spring.freemarker.cache=false
+# 模版后缀名 默认为ftl
+spring.freemarker.suffix=.ftl
+# 文件编码
+spring.freemarker.charset=UTF-8
+# 模版加载的目录
+spring.freemarker.template-loader-path=classpath:/templates/
+--------------------------------------------------------------------------------------------------------
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.ui.freemarker.FreeMarkerTemplateUtils;
+import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * 发送邮件
+ * @author oKong
+ *
+ */
+@RestController
+public class EmailController {
+	
+	@Autowired
+	private JavaMailSender mailSender;
+	
+	/**
+	 * 纯文本格式
+	 * @return
+	 */
+	@GetMapping("/simple")
+	public String simpleSend() {
+		SimpleMailMessage message = new SimpleMailMessage();
+		message.setFrom("499452441@qq.com");
+		message.setTo("499452441@qq.com");
+		message.setSubject("主题：来自oKong邮件");
+		message.setText("公众号：一枚趔趄的猿(lqdevOps)，作者：oKong");
+		mailSender.send(message);		
+		return "发送成功!";
+	}
+	
+	@GetMapping("/attach")
+	public String attachSend() throws MessagingException {
+		MimeMessage mimeMessage = mailSender.createMimeMessage();
+
+		MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+		helper.setFrom("499452441@qq.com");
+		helper.setTo("499452441@qq.com");	
+		helper.setSubject("主题：来自oKong邮件(带附件)");
+		helper.setText("(含附件)公众号：一枚趔趄的猿(lqdevOps)，作者：oKong");
+		//添加附件
+		File qrCode = new File("wxgzh8cm.jpg");
+		//建议文件带上后缀，可支持在线预览 
+		helper.addAttachment("公众号二维码.jpg", qrCode);
+		mailSender.send(mimeMessage);
+		return "附件邮件发送成功!";
+	}
+	
+	/**
+	 * html格式
+	 * @return
+	 * @throws MessagingException
+	 */
+	@GetMapping("/html")
+	public String htmlSend() throws MessagingException {
+		MimeMessage mimeMessage = mailSender.createMimeMessage();
+
+		MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+		helper.setFrom("499452441@qq.com");
+		helper.setTo("499452441@qq.com");	
+		helper.setSubject("主题：来自oKong邮件(带附件)");
+		helper.setText("<html><body><div>(含附件)公众号：一枚趔趄的猿(lqdevOps)，作者：oKong</div><div><img src='cid:winxin'></div></body></html>",true);
+		
+		//抄送人
+//		helper.setCc("");
+		//密送人
+//		helper.setBcc("");
+		//添加附件
+		File qrCode = new File("wxgzh8cm.jpg");
+		//建议文件带上后缀，可支持在线预览 
+		helper.addAttachment("公众号二维码.jpg", qrCode);
+		helper.addInline("winxin", qrCode);
+
+		mailSender.send(mimeMessage);
+		return "附件邮件发送成功!";
+	}
+	
+	@GetMapping("/template")
+	public String template(String userName) throws Exception {
+		MimeMessage mimeMessage = mailSender.createMimeMessage();
+
+		MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+		helper.setFrom("499452441@qq.com");
+		helper.setTo("499452441@qq.com");	
+		helper.setSubject("主题：" + userName + ",你有一封来自oKong邮件(From模版)");
+		Map<String, Object> model = new HashMap<String, Object>();
+		model.put("userName", StringUtils.isEmpty(userName) ? "oKong" : userName);
+		String templateString = FreeMarkerTemplateUtils.processTemplateIntoString(freemarkerConfig.getTemplate("mail.ftl"), model);
+		helper.setText(templateString,true);
+		//抄送人
+//		helper.setCc("");
+		//密送人
+//		helper.setBcc("");
+		//添加附件
+		File qrCode = new File("wxgzh8cm.jpg");
+		//建议文件带上后缀，可支持在线预览 
+		helper.addAttachment("公众号二维码.jpg", qrCode);
+		helper.addInline("winxin", qrCode);
+		mailSender.send(mimeMessage);
+		
+		return "模版文件发送成功!";
+	}
+	//自动注入
+	@Autowired 
+	freemarker.template.Configuration freemarkerConfig;
+
+}
+--------------------------------------------------------------------------------------------------------
+logging.register-shutdown-hook=true
+
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.Layout;
+import ch.qos.logback.core.UnsynchronizedAppenderBase;
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+public class MyLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEvent>{
+
+    Layout<ILoggingEvent> layout;
+    
+    //自定义配置 
+	String printString;
+
+	
+    
+	@Override
+    public void start(){
+		//这里可以做些初始化判断 比如layout不能为null ,
+		if(layout == null) {
+			addWarn("Layout was not defined");
+		}
+		//或者写入数据库 或者redis时 初始化连接等等
+		 super.start();
+		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				// 执行资源释放操作
+
+			}
+		}));		 
+    }
+	
+
+    @Override
+    public void stop()
+    {
+       //释放相关资源，如数据库连接，redis线程池等等
+    	System.out.println("logback-stop方法被调用");
+    	if(!isStarted()) {
+    		return;
+    	}
+        super.stop();
+    }
+	
+	@Override
+	public void append(ILoggingEvent event) {
+		if (event == null || !isStarted()){
+            return;
+        }
+	         // 此处自定义实现输出			 
+			 // 获取输出值：event.getFormattedMessage()
+			 // System.out.print(event.getFormattedMessage());
+			 // 格式化输出		
+		System.out.print(printString + "：" + layout.doLayout(event));
+	      
+	}
+}
+
+import java.io.Serializable;
+
+import org.apache.logging.log4j.core.Filter;
+import org.apache.logging.log4j.core.Layout;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.plugins.Plugin;
+import org.apache.logging.log4j.core.config.plugins.PluginAttribute;
+import org.apache.logging.log4j.core.config.plugins.PluginElement;
+import org.apache.logging.log4j.core.config.plugins.PluginFactory;
+import org.apache.logging.log4j.core.layout.PatternLayout;
+
+/**
+ * 自定义log4j2输出源，简单的输出到控制台
+ * @author oKong
+ *
+ */
+//这里的 MyLog4j2 对应就是 xml中，
+/**
+ * 
+ *  <appenders>
+ *     <MyLog4j2 name="customAppender" printString="一枚趔趄的猿">
+ *     </MyLog4j2>
+ *  </appenders>
+ *
+ */
+@Plugin(name = "MyLog4j2", category = "Core", elementType = "appender", printObject = true)
+public class MyLog4j2Appender extends AbstractAppender {
+
+	String printString;
+   /**  
+	 *构造函数 可自定义参数 这里直接传入一个常量并输出
+	 * 
+	*/ 
+	protected MyLog4j2Appender(String name, Filter filter, Layout<? extends Serializable> layout,String printString) {
+		super(name, filter, layout);
+		this.printString = printString;
+	}
+
+	@Override
+	public void append(LogEvent event) {
+		 if (event != null && event.getMessage() != null) {
+	         // 此处自定义实现输出			 
+			 // 获取输出值：event.getMessage().toString()
+			 // System.out.print(event.getMessage().toString());
+			 // 格式化输出
+			 System.out.print(printString + "：" + getLayout().toSerializable(event));
+	      }
+		
+	}
+	
+	/**  接收配置文件中的参数 
+	 * 
+	 * @PluginAttribute 字面意思都知道，是xml节点的attribute值，如<oKong name="oKong"></oKong> 这里的name 就是 attribute
+	 * @PluginElement：表示xml子节点的元素，
+	 * 如
+	 *     <oKong name="oKong">
+	 *         <PatternLayout pattern="[%d{HH:mm:ss:SSS}] [%p] - %l - %m%n"/>
+	 *     </oKong>
+	 *   其中，PatternLayout就是 的 Layout，其实就是{@link Layout}的实现类。
+	 */ 
+	@PluginFactory
+	public static MyLog4j2Appender createAppender(
+			@PluginAttribute("name") String name,
+            @PluginElement("Filter") final Filter filter, 
+            @PluginElement("Layout") Layout<? extends Serializable> layout,
+            @PluginAttribute("printString") String printString) {
+		if (name == null) {
+            LOGGER.error("no name defined in conf."); 
+            return null; 
+        } 
+		//默认使用 PatternLayout
+        if (layout == null) { 
+            layout = PatternLayout.createDefaultLayout(); 
+        } 
+        
+        return new MyLog4j2Appender(name, filter, layout, printString);
+	}
+	
+	@Override
+	public void start() {
+		System.out.println("log4j2-start方法被调用");
+		super.start();
+	}
+	
+	@Override
+	public void stop() {
+		System.out.println("log4j2-stop方法被调用");
+		super.stop();
+	}
+}
+--------------------------------------------------------------------------------------------------------
+	@Autowired
+	ScheduledTask task;
+
+	@GetMapping("/timer")
+	public String doTimer() {
+		Timer timer = new Timer();
+		timer.schedule(new TimerTask() {
+			
+			@Override
+			public void run() {
+				log.info("Timer定时任务执行：" + new Date());
+				
+			}
+		}, 1000,1000);//延迟1秒启动，每1秒执行一次
+		log.info("Timer定时任务启动：" + new Date());
+		return "timer";
+	}
+	@GetMapping("/executor")
+	public String ScheduledExecutorService() {
+		//
+		ScheduledExecutorService service = Executors.newScheduledThreadPool(10);
+		service.scheduleAtFixedRate(new Runnable() {
+			
+			@Override
+			public void run() {
+				log.info("ScheduledExecutorService定时任务一执行：" + new Date());				
+			}
+		}, 1, 2, TimeUnit.SECONDS);//首次延迟1秒，之后每1秒执行一次
+		log.info("ScheduledExecutorService定时任务启动：" + new Date());	
+		
+		service.scheduleAtFixedRate(new Runnable() {
+			
+			@Override
+			public void run() {
+				log.info("ScheduledExecutorService定时任务二执行：" + new Date());			
+				
+			}
+		}, 0, 1, TimeUnit.SECONDS);
+		
+		return "ScheduledExecutorService!";		
+	}
+	
+	@Autowired
+	TaskScheduler taskScheduler;
+	
+	@GetMapping("/poolTask")
+	public String threadPoolTaskScheduler() {
+	
+		taskScheduler.schedule(new Runnable() {
+			
+			@Override
+			public void run() {
+				log.info("ThreadPoolTaskScheduler定时任务：" + new Date());
+			}
+		}, new CronTrigger("0/3 * * * * ?"));//每3秒执行一次
+		return "ThreadPoolTaskScheduler!";
+	}
+	
+--------------------------------------------------------------------------------------------------------
+    @RequestMapping(value = "/files/{file_name:.+}", method = RequestMethod.GET)
+    public void getFile(@PathVariable("file_name") String fileName, @RequestHeader String referer, HttpServletResponse response) {
+        if (referer == null || referer.isEmpty())
+            throw new RefererException("Missing header 'referer' when try download file: " + fileName);
+ 
+//...
+    }
+--------------------------------------------------------------------------------------------------------
+spring init --name=file-demo --dependencies=web file-demo
+
+        // Try to determine file's content type
+        String contentType = null;
+        try {
+            contentType = request.getServletContext().getMimeType(resource.getFile().getAbsolutePath());
+        } catch (IOException ex) {
+            logger.info("Could not determine file type.");
+        }
+		
+    @PostMapping("/")
+    public String handleFileUpload(@RequestParam("file") MultipartFile file,
+            RedirectAttributes redirectAttributes) {
+
+        storageService.store(file);
+        redirectAttributes.addFlashAttribute("message",
+                "You successfully uploaded " + file.getOriginalFilename() + "!");
+
+        return "redirect:/";
+    }
+	
+   @Bean
+    CommandLineRunner init(StorageService storageService) {
+        return (args) -> {
+            storageService.deleteAll();
+            storageService.init();
+        };
+    }
+--------------------------------------------------------------------------------------------------------
+import java.nio.file.Paths;
+import java.util.stream.Stream;
+
+import org.hamcrest.Matchers;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.fileUpload;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import hello.storage.StorageFileNotFoundException;
+import hello.storage.StorageService;
+
+@RunWith(SpringRunner.class)
+@AutoConfigureMockMvc
+@SpringBootTest
+public class FileUploadTests {
+
+    @Autowired
+    private MockMvc mvc;
+
+    @MockBean
+    private StorageService storageService;
+
+    @Test
+    public void shouldListAllFiles() throws Exception {
+        given(this.storageService.loadAll())
+                .willReturn(Stream.of(Paths.get("first.txt"), Paths.get("second.txt")));
+
+        this.mvc.perform(get("/")).andExpect(status().isOk())
+                .andExpect(model().attribute("files",
+                        Matchers.contains("http://localhost/files/first.txt",
+                                "http://localhost/files/second.txt")));
+    }
+
+    @Test
+    public void shouldSaveUploadedFile() throws Exception {
+        MockMultipartFile multipartFile = new MockMultipartFile("file", "test.txt",
+                "text/plain", "Spring Framework".getBytes());
+        this.mvc.perform(fileUpload("/").file(multipartFile))
+                .andExpect(status().isFound())
+                .andExpect(header().string("Location", "/"));
+
+        then(this.storageService).should().store(multipartFile);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void should404WhenMissingFile() throws Exception {
+        given(this.storageService.loadAsResource("test.txt"))
+                .willThrow(StorageFileNotFoundException.class);
+
+        this.mvc.perform(get("/files/test.txt")).andExpect(status().isNotFound());
+    }
+
+}
+
+https://www.baeldung.com/spring-file-upload
+--------------------------------------------------------------------------------------------------------
+curl -i \
+-H "Accept: application/json" \
+-H "Content-Type:application/json" \
+-X POST --data 
+  '{"username": "johnny", "password": "password"}' "https://localhost:8080/.../request"
+--------------------------------------------------------------------------------------------------------
+@Configuration
+public class TestBeanPostProcessor implements BeanPostProcessor {
+
+    @Override
+    public Object postProcessBeforeInitialization(Object o, String s) throws BeansException {
+        return o;
+    }
+
+    @Override
+    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+        if (beanName.equalsIgnoreCase("requestMappingHandlerAdapter")) {
+            RequestMappingHandlerAdapter requestMappingHandlerAdapter = (RequestMappingHandlerAdapter) bean;
+            List<HandlerMethodArgumentResolver> argumentResolvers = requestMappingHandlerAdapter.getArgumentResolvers();
+            List<HandlerMethodArgumentResolver> modifiedArgumentResolvers = new ArrayList<>(argumentResolvers.size());                
+            for(int i =1; i< argumentResolvers.size();i++){
+                modifiedArgumentResolvers.add(argumentResolvers.get(i));
+            }
+            modifiedArgumentResolvers.add(new TestRequestBodyMethodProcessor(requestMappingHandlerAdapter.getMessageConverters(), new ArrayList<Object>()));
+            ((RequestMappingHandlerAdapter) bean).setArgumentResolvers(null);
+            ((RequestMappingHandlerAdapter) bean).setArgumentResolvers(modifiedArgumentResolvers);
+        }
+        return bean;
+    }
+}
+
+public class TestRequestBodyMethodProcessor extends AbstractMessageConverterMethodProcessor {
+
+    public TestRequestBodyMethodProcessor(List<HttpMessageConverter<?>> converters) {
+        super(converters);
+    }
+
+    public TestRequestBodyMethodProcessor(List<HttpMessageConverter<?>> converters, ContentNegotiationManager manager) {
+        super(converters, manager);
+    }
+
+    public TestRequestBodyMethodProcessor(List<HttpMessageConverter<?>> converters, List<Object> requestResponseBodyAdvice) {
+        super(converters, null, requestResponseBodyAdvice);
+    }
+
+    public TestRequestBodyMethodProcessor(List<HttpMessageConverter<?>> converters,
+                                          ContentNegotiationManager manager, List<Object> requestResponseBodyAdvice) {
+        super(converters, manager, requestResponseBodyAdvice);
+    }
+
+    @Override
+    public boolean supportsParameter(MethodParameter parameter) {
+        return parameter.hasParameterAnnotation(RequestBody.class);
+    }
+
+    @Override
+    public boolean supportsReturnType(MethodParameter returnType) {
+        return (AnnotatedElementUtils.hasAnnotation(returnType.getContainingClass(), ResponseBody.class) ||
+                returnType.hasMethodAnnotation(ResponseBody.class));
+    }
+
+    @Override
+    public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
+                                  NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
+
+        parameter = parameter.nestedIfOptional();
+        BaseInsert trans_type_code = ;
+        Object arg = readWithMessageConverters(webRequest, parameter,
+                Test.getModelClassObject().getClass());
+        String name = Conventions.getVariableNameForParameter(parameter);
+
+        WebDataBinder binder = binderFactory.createBinder(webRequest, arg, name);
+        if (arg != null) {
+            validateIfApplicable(binder, parameter);
+            if (binder.getBindingResult().hasErrors() && isBindExceptionRequired(binder, parameter)) {
+                throw new MethodArgumentNotValidException(parameter, binder.getBindingResult());
+            }
+        }
+        mavContainer.addAttribute(BindingResult.MODEL_KEY_PREFIX + name, binder.getBindingResult());
+
+        return adaptArgumentIfNecessary(arg, parameter);
+    }
+
+    @Override
+    protected <T> Object readWithMessageConverters(NativeWebRequest webRequest, MethodParameter parameter,
+                                                   Type paramType) throws IOException, HttpMediaTypeNotSupportedException, HttpMessageNotReadableException {
+
+        HttpServletRequest servletRequest = webRequest.getNativeRequest(HttpServletRequest.class);
+        ServletServerHttpRequest inputMessage = new ServletServerHttpRequest(servletRequest);
+        Object arg = readWithMessageConverters(inputMessage, parameter, paramType);
+        if (arg == null) {
+            if (checkRequired(parameter)) {
+                throw new HttpMessageNotReadableException("Required request body is missing: " +
+                        parameter.getMethod().toGenericString());
+            }
+        }
+        return arg;
+    }
+
+    protected boolean checkRequired(MethodParameter parameter) {
+        return (parameter.getParameterAnnotation(RequestBody.class).required() && !parameter.isOptional());
+    }
+
+    @Override
+    public void handleReturnValue(Object returnValue, MethodParameter returnType,
+                                  ModelAndViewContainer mavContainer, NativeWebRequest webRequest)
+            throws IOException, HttpMediaTypeNotAcceptableException, HttpMessageNotWritableException {
+
+        mavContainer.setRequestHandled(true);
+        ServletServerHttpRequest inputMessage = createInputMessage(webRequest);
+        ServletServerHttpResponse outputMessage = createOutputMessage(webRequest);
+        // Try even with null return value. ResponseBodyAdvice could get involved.
+        writeWithMessageConverters(returnValue, returnType, inputMessage, outputMessage);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+ @Test
+  public void resolveArgumentTypeVariableWithNonGenericConverter() throws Exception {
+    Method method = MyParameterizedController.class.getMethod("handleDto", Identifiable.class);
+    HandlerMethod handlerMethod = new HandlerMethod(new MySimpleParameterizedController(), method);
+    MethodParameter methodParam = handlerMethod.getMethodParameters()[0];
+
+    String content = "{\"name\" : \"Jad\"}";
+    this.servletRequest.setContent(content.getBytes("UTF-8"));
+    this.servletRequest.setContentType(MediaType.APPLICATION_JSON_VALUE);
+
+    List<HttpMessageConverter<?>> converters = new ArrayList<HttpMessageConverter<?>>();
+    HttpMessageConverter target = new MappingJackson2HttpMessageConverter();
+    HttpMessageConverter proxy =
+        ProxyFactory.getProxy(HttpMessageConverter.class, new SingletonTargetSource(target));
+    converters.add(proxy);
+    RequestResponseBodyMethodProcessor processor =
+        new RequestResponseBodyMethodProcessor(converters);
+
+    SimpleBean result =
+        (SimpleBean)
+            processor.resolveArgument(methodParam, mavContainer, webRequest, binderFactory);
+
+    assertNotNull(result);
+    assertEquals("Jad", result.getName());
+  }
+--------------------------------------------------------------------------------------------------------
+//get the mimetype
+			String mimeType = URLConnection.guessContentTypeFromName(file.getName());
+			if (mimeType == null) {
+				//unknown mimetype so set the mimetype to application/octet-stream
+				mimeType = "application/octet-stream";
+			}
+--------------------------------------------------------------------------------------------------------
+setCustomArgumentResolvers
+
+RequestMappingHandlerAdapter requestMappingHandlerAdapter
+
+    @PostConstruct
+    public void init() {
+        this.adapter.setCustomArgumentResolvers(Collections.singletonList(new RequestMethodProcessor(this.objectMapper, this.modelMapper, this.validator)));
+        this.adapter.setCustomReturnValueHandlers(Collections.singletonList(new ResponseMethodProcessor(this.objectMapper, this.modelMapper, this.validator)));
+    }
+--------------------------------------------------------------------------------------------------------
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.request.async.DeferredResult;
+import org.springframework.web.context.request.async.WebAsyncTask;
+
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * spring方式实现异步请求
+ * 
+ * @author oKong
+ *
+ */
+@Slf4j
+@RestController
+public class SpringController {
+
+	@RequestMapping("/callable")
+	public Callable<String> callable() {
+		log.info("外部线程：" + Thread.currentThread().getName());
+		return new Callable<String>() {
+
+			@Override
+			public String call() throws Exception {
+				log.info("内部线程：" + Thread.currentThread().getName());
+				return "callable!";
+			}
+		};
+	}
+	
+	@RequestMapping("/deferredresult")
+	public DeferredResult<String> deferredResult(){
+		log.info("外部线程：" + Thread.currentThread().getName());
+		//设置超时时间
+		DeferredResult<String> result = new DeferredResult<String>(60*1000L);
+		//处理超时事件 采用委托机制
+		result.onTimeout(new Runnable() {
+			
+			@Override
+			public void run() {
+				log.error("DeferredResult超时");
+				result.setResult("超时了!");
+			}
+		});
+		result.onCompletion(new Runnable() {
+			
+			@Override
+			public void run() {
+				//完成后
+				log.info("调用完成");
+			}
+		});
+		FIXED_THREAD_POOL.execute(new Runnable() {
+			
+			@Override
+			public void run() {
+				//处理业务逻辑
+				log.info("内部线程：" + Thread.currentThread().getName());
+				//返回结果
+				result.setResult("DeferredResult!!");
+			}
+		});
+		return result;
+	}
+	
+	/**
+	 * 线程池
+	 */
+    public static ExecutorService FIXED_THREAD_POOL = Executors.newFixedThreadPool(30);
+    
+    
+    @RequestMapping("/webAsyncTask")
+    public WebAsyncTask<String> webAsyncTask() {
+    	log.info("外部线程：" + Thread.currentThread().getName());
+    	WebAsyncTask<String> result = new WebAsyncTask<String>(60*1000L, new Callable<String>() {
+
+			@Override
+			public String call() throws Exception {
+				log.info("内部线程：" + Thread.currentThread().getName());
+				return "WebAsyncTask!!!";
+			}
+		});
+    	result.onTimeout(new Callable<String>() {
+			
+			@Override
+			public String call() throws Exception {
+				// TODO Auto-generated method stub
+				return "WebAsyncTask超时!!!";
+			}
+		});
+    	result.onCompletion(new Runnable() {
+			
+			@Override
+			public void run() {
+				//超时后 也会执行此方法
+				log.info("WebAsyncTask执行结束");
+			}
+		});
+    	return result;
+    }
+}
+
+import javax.servlet.AsyncContext;
+import javax.servlet.AsyncEvent;
+import javax.servlet.AsyncListener;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * 使用servlet方式进行异步请求
+ * @author oKong
+ *
+ */
+@Slf4j
+@RestController
+public class ServletController {
+	
+	@RequestMapping("/servlet/orig")
+	public void todo(HttpServletRequest request,
+            HttpServletResponse response) throws Exception {
+		//这里来个休眠
+		Thread.sleep(100);
+		response.getWriter().println("这是【正常】的请求返回");
+	}
+	
+	@RequestMapping("/servlet/async")
+	public void todoAsync(HttpServletRequest request,
+            HttpServletResponse response) {
+		AsyncContext asyncContext = request.startAsync();
+		asyncContext.addListener(new AsyncListener() {
+			
+			@Override
+			public void onTimeout(AsyncEvent event) throws IOException {
+				log.info("超时了：");
+				//做一些超时后的相关操作
+				
+			}
+			
+			@Override
+			public void onStartAsync(AsyncEvent event) throws IOException {
+				// TODO Auto-generated method stub
+				log.info("线程开始");
+			}
+			
+			@Override
+			public void onError(AsyncEvent event) throws IOException {
+				log.info("发生错误：",event.getThrowable());
+				
+			}
+			
+			@Override
+			public void onComplete(AsyncEvent event) throws IOException {
+				log.info("执行完成");
+				//这里可以做一些清理资源的操作
+				
+			}
+		});
+		//设置超时时间
+		asyncContext.setTimeout(200);
+		//也可以不使用start 进行异步调用
+//		new Thread(new Runnable() {
+//			
+//			@Override
+//			public void run() {
+//				编写业务逻辑
+//				
+//			}
+//		}).start();
+		
+		asyncContext.start(new Runnable() {			
+			@Override
+			public void run() {
+				try {
+					Thread.sleep(100);
+					log.info("内部线程：" + Thread.currentThread().getName());
+					asyncContext.getResponse().setCharacterEncoding("utf-8");
+					asyncContext.getResponse().setContentType("text/html;charset=UTF-8");
+					asyncContext.getResponse().getWriter().println("这是【异步】的请求返回");
+				} catch (Exception e) {
+					log.error("异常：",e);
+				}
+				//异步请求完成通知
+				//此时整个请求才完成
+				//其实可以利用此特性 进行多条消息的推送 把连接挂起。。
+				asyncContext.complete();
+			}
+		});
+		//此时之类 request的线程连接已经释放了
+		log.info("线程：" + Thread.currentThread().getName());
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.web.socket.config.annotation.EnableWebSocket;
+import org.springframework.web.socket.server.standard.ServerEndpointExporter;
+
+import lombok.extern.slf4j.Slf4j;
+
+@SpringBootApplication
+@EnableWebSocket
+@Slf4j
+public class Chapter19Application {
+
+	public static void main(String[] args) {
+		SpringApplication.run(Chapter19Application.class, args);
+		log.info("Chapter19启动!");
+	}
+	
+	/**
+	 * 会自动注册使用了@ServerEndpoint注解声明的Websocket endpoint
+	 * 要注意，如果使用独立的servlet容器，
+	 * 而不是直接使用springboot的内置容器，
+	 * 就不要注入ServerEndpointExporter，因为它将由容器自己提供和管理。
+	 */
+	@Bean
+	public ServerEndpointExporter serverEndpointExporter() {
+		return new ServerEndpointExporter();
+	}
+}
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import javax.websocket.RemoteEndpoint.Async;
+import javax.websocket.Session;
+
+public class WebSocketUtil {
+
+	/**
+	 * 简单使用map进行存储在线的session
+	 * 
+	 */
+    private static final Map<String, Session> ONLINE_SESSION = new ConcurrentHashMap<>();
+    
+    public static void addSession(String userNick,Session session) {
+    	//putIfAbsent 添加键—值对的时候，先判断该键值对是否已经存在
+    	//不存在：新增，并返回null
+    	//存在：不覆盖，直接返回已存在的值
+//    	ONLINE_SESSION.putIfAbsent(userNick, session);
+    	//简单示例 不考虑复杂情况。。怎么简单怎么来了。。
+    	ONLINE_SESSION.put(userNick, session);
+    }
+    
+    public static void remoteSession(String userNick) {
+    	ONLINE_SESSION.remove(userNick);
+    }
+    
+    /**
+     * 向某个用户发送消息
+     * @param session 某一用户的session对象
+     * @param message
+     */
+    public static void sendMessage(Session session, String message) {
+    	if(session == null) {
+    		return;
+    	}
+    	// getAsyncRemote()和getBasicRemote()异步与同步
+    	Async async = session.getAsyncRemote();
+    	//发送消息
+    	async.sendText(message);
+    }
+    
+    /**
+     * 向所有在线人发送消息
+     * @param message
+     */
+    public static void sendMessageForAll(String message) {
+    	//jdk8 新方法
+    	ONLINE_SESSION.forEach((sessionId, session) -> sendMessage(session, message));
+    }
+}
+
+import java.io.IOException;
+
+import javax.websocket.OnClose;
+import javax.websocket.OnError;
+import javax.websocket.OnMessage;
+import javax.websocket.OnOpen;
+import javax.websocket.Session;
+import javax.websocket.server.PathParam;
+import javax.websocket.server.ServerEndpoint;
+
+import org.springframework.stereotype.Component;
+
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * websocket 简易聊天
+ * @author oKong
+ *
+ */
+//由于是websocket 所以原本是@RestController的http形式 
+//直接替换成@ServerEndpoint即可，作用是一样的 就是指定一个地址
+//表示定义一个websocket的Server端
+@Component
+@ServerEndpoint(value = "/my-chat/{usernick}")
+@Slf4j
+public class WebSocketController {
+	
+	/**
+	 * 连接事件 加入注解
+	 * @param session
+	 */
+	@OnOpen
+	public void onOpen(@PathParam(value = "usernick") String userNick,Session session) {
+		String message = "有新游客[" + userNick + "]加入聊天室!";
+		log.info(message);
+		WebSocketUtil.addSession(userNick, session);	
+		//此时可向所有的在线通知 某某某登录了聊天室			
+		WebSocketUtil.sendMessageForAll(message);
+	}
+	
+	@OnClose
+	public void onClose(@PathParam(value = "usernick") String userNick,Session session) {
+		String message = "游客[" + userNick + "]退出聊天室!";
+		log.info(message);
+		WebSocketUtil.remoteSession(userNick);	
+		//此时可向所有的在线通知 某某某登录了聊天室			
+		WebSocketUtil.sendMessageForAll(message);
+	}
+	
+	@OnMessage
+	public void OnMessage(@PathParam(value = "usernick") String userNick, String message) {
+		//类似群发
+		String info = "游客[" + userNick + "]：" + message;
+		log.info(info);
+		WebSocketUtil.sendMessageForAll(info);
+	} 
+	
+	@OnError
+	public void onError(Session session, Throwable throwable) {
+		log.error("异常:", throwable);
+		try {
+			session.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		throwable.printStackTrace();
+	}
+}
+
+    @Override
+    public void addArgumentResolvers(List<HandlerMethodArgumentResolver> argumentResolvers) {
+        super.addArgumentResolvers(argumentResolvers);
+        ObjectMapper objectMapper = Jackson2ObjectMapperBuilder.json().applicationContext(this.applicationContext).build();
+        argumentResolvers.add(new DTOModelMapper(objectMapper, entityManager));
+    }
+--------------------------------------------------------------------------------------------------------
+    @Bean
+    public ServletRegistrationBean servletRegistrationBean() {
+        FacesServlet servlet = new FacesServlet();
+        return new ServletRegistrationBean(servlet, "*.jsf");
+    }
+
+    @Bean
+    public FilterRegistrationBean rewriteFilter() {
+        FilterRegistrationBean rwFilter = new FilterRegistrationBean(new RewriteFilter());
+        rwFilter.setDispatcherTypes(EnumSet.of(DispatcherType.FORWARD, DispatcherType.REQUEST,
+                DispatcherType.ASYNC, DispatcherType.ERROR));
+        rwFilter.addUrlPatterns("/*");
+        return rwFilter;
+    }
+--------------------------------------------------------------------------------------------------------
+FROM frolvlad/alpine-oraclejdk8:slim
+VOLUME /tmp
+ADD target/spring-session-0.1-SNAPSHOT.jar /app.jar
+RUN sh -c 'touch /app.jar'
+ENV JAVA_OPTS=""
+ENTRYPOINT [ "sh", "-c", "java $JAVA_OPTS -Djava.security.egd=file:/dev/./urandom -jar /app.jar" ]
+
+FROM redis
+ENV REDIS_PASSWORD secret
+CMD ["sh", "-c", "exec redis-server --requirepass \"$REDIS_PASSWORD\""]
+
+FROM nginx
+RUN rm /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+upstream my-app {
+    server 172.17.0.1:8081 weight=1;
+    server 172.17.0.1:8082 weight=1;
+}
+
+server {
+    location / {
+        proxy_pass http://my-app;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+minicom -D /dev/ttyACM0 #macOS should be /dev/tty.usbserial or similar
+--------------------------------------------------------------------------------------------------------
+import org.apache.catalina.startup.Tomcat;
+
+import java.io.File;
+import java.io.IOException;
+
+public class Main {
+    private static final int PORT = 8080;
+
+    public static void main(String[] args) throws Exception {
+        String appBase = ".";
+        Tomcat tomcat = new Tomcat();
+        tomcat.setBaseDir(createTempDir());
+        tomcat.setPort(PORT);
+        tomcat.getHost().setAppBase(appBase);
+        tomcat.addWebapp("", appBase);
+        tomcat.start();
+        tomcat.getServer().await();
+    }
+
+    // based on AbstractEmbeddedServletContainerFactory
+    private static String createTempDir() {
+        try {
+            File tempDir = File.createTempFile("tomcat.", "." + PORT);
+            tempDir.delete();
+            tempDir.mkdir();
+            tempDir.deleteOnExit();
+            return tempDir.getAbsolutePath();
+        } catch (IOException ex) {
+            throw new RuntimeException(
+                    "Unable to create tempDir. java.io.tmpdir is set to " + System.getProperty("java.io.tmpdir"),
+                    ex
+            );
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.auth0.spring.security.api.JwtWebSecurityConfigurer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
+
+@EnableWebSecurity
+public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+    private static final String TOKEN_AUDIENCE = "spring5";
+    private static final String TOKEN_ISSUER = "https://bkrebs.auth0.com/";
+    private static final String API_ENDPOINT = "/api/**";
+    private static final String PUBLIC_URLS = "/**";
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        JwtWebSecurityConfigurer
+                .forRS256(TOKEN_AUDIENCE, TOKEN_ISSUER)
+                .configure(http)
+                .authorizeRequests()
+                .mvcMatchers(API_ENDPOINT).fullyAuthenticated()
+                .mvcMatchers(PUBLIC_URLS).permitAll()
+                .anyRequest().authenticated().and()
+                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+IntStream.of(1, 2, 3, 5, 6, 7)
+          .filter((var i) -> i % 3 == 0)
+          .forEach(System.out::println);
+--------------------------------------------------------------------------------------------------------
+# rabbitmq相关配置
+spring.rabbitmq.host=127.0.0.1
+spring.rabbitmq.port=5672
+spring.rabbitmq.username=guest
+spring.rabbitmq.password=guest
+--------------------------------------------------------------------------------------------------------
+import org.springframework.amqp.rabbit.annotation.RabbitHandler;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.stereotype.Component;
+
+import lombok.extern.slf4j.Slf4j;
+
+@Component
+//@RabbitListener 监听 okong 队列
+@RabbitListener(queues = "okong")
+@Slf4j
+public class Consumer {
+
+	/**
+	 * @RabbitHandler 指定消息的处理方法
+	 * @param message
+	 */
+	@RabbitHandler
+	public void process(String message) {
+        log.info("接收的消息为: {}", message);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.quartz.DisallowConcurrentExecution;
+import org.quartz.JobDataMap;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import cn.lqdev.java.scheduler.biz.entity.SchedConfig;
+import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Mono;
+
+/** 
+*
+* @ClassName   类名：TaskJob 
+* @Description 功能说明：
+* <p>
+* TODO
+*</p>
+************************************************************************
+* @date        创建日期：2019年3月4日
+* @author      创建人：oKong
+* @version     版本号：V1.0
+*<p>
+***************************修订记录*************************************
+* 
+*   2019年3月4日   oKong   创建该类功能。
+*
+***********************************************************************
+*</p>
+*/
+//@DisallowConcurrentExecution 说明在一个任务执行时，另一个定时点来临时不会执行任务，比如一个定时是间隔3分钟一次，但任务执行了5分钟，此时会等上个任务完成后再执行下一次定时任务
+@DisallowConcurrentExecution
+@Slf4j
+public class TaskJob implements org.quartz.Job{
+	
+	/**
+	 * spring5中 异步restTemplate已被标记位作废了
+	 * 这里尝试使用webClient
+	 */ 
+	@Autowired
+	@Qualifier("balanceWebClient")
+	private WebClient.Builder balanceWebClientBuilder;
+	
+	@Autowired
+	@Qualifier("webClient")
+	private WebClient.Builder webClientBuilder;
+	
+	
+	@Override
+	public void execute(JobExecutionContext context) throws JobExecutionException {
+		//执行方法
+		//获取任务实体对象
+		JobDataMap jobDataMap = context.getJobDetail().getJobDataMap();
+		SchedConfig schedConfig = (SchedConfig) jobDataMap.get("config");
+		log.info("执行定时任务：{}", schedConfig);
+		//根据不同类型进行不同的处理逻辑
+		Mono<String> monoRst = null;
+		switch (schedConfig.getTargetServiceType()) {
+		case "01":
+			//springcloud方式
+			//利用loadBalancerClient 获取实际服务地址
+			monoRst = balanceWebClientBuilder.build().post().uri(schedConfig.getTargerService()).retrieve().bodyToMono(String.class);
+			 break;
+		case "02":
+			//普通http方式
+			monoRst =webClientBuilder.build().post().uri(schedConfig.getTargerService()).retrieve().bodyToMono(String.class);//无参数
+			break;
+		case "03":
+			//dubbo方式
+			//TODO 暂时未实现
+			break;
+		default:
+
+		}
+		if(monoRst != null) {
+		  log.info("调用服务结果为：{}", monoRst.block());
+		}
+	}
+
+}
+
+
+import org.quartz.spi.TriggerFiredBundle;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
+import org.springframework.scheduling.quartz.AdaptableJobFactory;
+
+/**
+ *
+ * @ClassName 类名：QuartzJobFactory
+ * @Description 功能说明：对执行的job字段进行自动注入
+ *              <p>
+ *              TODO
+ *              </p>
+ ************************************************************************
+ * @date 创建日期：2019年3月4日
+ * @author 创建人：oKong
+ * @version 版本号：V1.0
+ *          <p>
+ ***************************          修订记录*************************************
+ * 
+ *          2019年3月4日 oKong 创建该类功能。
+ *
+ ***********************************************************************
+ *          </p>
+ */
+public class QuartzJobFactory extends AdaptableJobFactory {
+	@Autowired
+	private AutowireCapableBeanFactory capableBeanFactory;
+
+	protected Object createJobInstance(TriggerFiredBundle bundle) throws Exception {
+		// 调用父类的方法
+		Object jobInstance = super.createJobInstance(bundle);
+		//主动注入
+		capableBeanFactory.autowireBean(jobInstance);
+		return jobInstance;
+	}
+}
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.quartz.SchedulerFactoryBean;
+
+/** 
+*
+* @ClassName   类名：QuartzConfig 
+* @Description 功能说明：quartz配置，主要设置SchedulerFactoryBean
+* <p>
+* TODO
+*</p>
+************************************************************************
+* @date        创建日期：2019年3月5日
+* @author      创建人：oKong
+* @version     版本号：V1.0
+*<p>
+***************************修订记录*************************************
+* 
+*   2019年3月5日   oKong   创建该类功能。
+*
+***********************************************************************
+*</p>
+*/
+@Configuration
+public class QuartzConfig {
+	
+	@Bean
+    public SchedulerFactoryBean schedulerFactoryBean(){
+        SchedulerFactoryBean factory = new SchedulerFactoryBean();
+        factory.setOverwriteExistingJobs(true);
+        // 延时启动
+        factory.setStartupDelay(20);
+        // 自定义Job Factory，用于Spring注入
+        factory.setJobFactory(quartzJobFactory());
+        return factory;
+    }
+	
+	@Bean
+	public QuartzJobFactory quartzJobFactory() {
+		return new QuartzJobFactory();
+	
+--------------------------------------------------------------------------------------------------------
+spring.application.name=shedlock-demo
+server.port=8001
+
+# REDIS (RedisProperties)
+# Redis数据库索引（默认为0）
+spring.redis.database=0
+# Redis服务器地址
+spring.redis.host=127.0.0.1
+# Redis服务器连接端口
+spring.redis.port=6379  
+# Redis服务器连接密码（默认为空）
+#spring.redis.password=
+# 连接池最大连接数（使用负值表示没有限制）
+spring.redis.lettuce.pool.max-active=8  
+# 连接池最大阻塞等待时间（使用负值表示没有限制）Duration
+spring.redis.lettuce.pool.max-wait=-1ms 
+# 连接池中的最大空闲连接
+spring.redis.lettuce.pool.max-idle=8  
+# 连接池中的最小空闲连接
+spring.redis.lettuce.pool.min-idle=0  
+# 连接超时时间-Duration 不能设置为0 一般上设置个200ms
+spring.redis.timeout=200ms
+
+#spring.profiles.active=dev
+
+#指定注册中心地址
+eureka.client.service-url.defaultZone=http://127.0.0.1:1000/eureka
+# 启用ip配置 这样在注册中心列表中看见的是以ip+端口呈现的
+eureka.instance.prefer-ip-address=true
+# 实例名称  最后呈现地址：ip:2000
+eureka.instance.instance-id=${spring.cloud.client.ip-address}:${server.port}
+--------------------------------------------------------------------------------------------------------
+import java.util.Date;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.core.SchedulerLock;
+
+/** 
+*
+* @ClassName   类名：SimpleTask 
+* @Description 功能说明：
+* <p>
+* TODO
+*</p>
+************************************************************************
+* @date        创建日期：2019年3月3日
+* @author      创建人：oKong
+* @version     版本号：V1.0
+*<p>
+***************************修订记录*************************************
+* 
+*   2019年3月3日   oKong   创建该类功能。
+*
+***********************************************************************
+*</p>
+*/
+//@Component
+@Slf4j
+public class SimpleTask {
+	
+	//区分服务
+	@Value("${server.port}")
+	String port;
+	
+	//为了方便测试 设置cron表达式 
+	@Scheduled(cron = "*/5 * * * * ?")
+	//lockAtLeastFor：保证在设置的期间类不执行多次任务，单位是毫秒，此处可以根据实际任务运行情况进行设置，
+	//简单来说，一个每15分钟执行的任务，若每次任务执行的时间为几分钟，则可以设置lockAtLeastFor大于其最大估计最大执行时间
+	//避免一次任务未执行完，下一个定时任务又启动了。
+	//任务执行完，会自动释放锁。
+	@SchedulerLock(name="simpleTask",lockAtLeastFor = 1*1000)
+	public void getCurrentDate() {
+        log.info("端口({}),Scheduled定时任务执行：{}", port, new Date());
+    }
+}
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+
+import net.javacrumbs.shedlock.core.LockProvider;
+import net.javacrumbs.shedlock.provider.redis.spring.RedisLockProvider;
+import net.javacrumbs.shedlock.spring.annotation.EnableSchedulerLock;
+
+/** 
+*
+* @ClassName   类名：ShedLockRedisConfig 
+* @Description 功能说明：redis配置
+* <p>
+* TODO
+*</p>
+************************************************************************
+* @date        创建日期：2019年3月3日
+* @author      创建人：oKong
+* @version     版本号：V1.0
+*<p>
+***************************修订记录*************************************
+* 
+*   2019年3月3日   oKong   创建该类功能。
+*
+***********************************************************************
+*</p>
+*/
+@Configuration
+//defaultLockAtMostFor 指定在执行节点结束时应保留锁的默认时间使用ISO8601 Duration格式
+//作用就是在被加锁的节点挂了时，无法释放锁，造成其他节点无法进行下一任务
+//这里默认30s
+//关于ISO8601 Duration格式用的不到，具体可上网查询下相关资料，应该就是一套规范，规定一些时间表达方式
+@EnableSchedulerLock(defaultLockAtMostFor = "PT30S")
+public class ShedLockRedisConfig {
+	
+	//正常情况下 应该按实际环境来区分的
+	//这里为了方便 写成test便于是测试
+//	@Value("${spring.profiles.active}")
+	String env = "test";
+	
+	@Bean
+	public LockProvider lockProvider(RedisConnectionFactory connectionFactory) {
+		//环境变量 -需要区分不同环境避免冲突，如dev环境和test环境，两者都部署时，只有一个实例进行，此时会造成相关环境未启动情况
+	    return new RedisLockProvider(connectionFactory, env);
+	}
+}
+--------------------------------------------------------------------------------------------------------
+spring.datasource.url=jdbc:h2:mem:batchdb
+spring.datasource.driverClassName=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=password
+spring.jpa.database-platform=org.hibernate.dialect.H2Dialect
+spring.h2.console.enabled=true
+--------------------------------------------------------------------------------------------------------
+    @GenericGenerator (name="uuid", strategy="org.hibernate.id.UUIDGenerator")
+--------------------------------------------------------------------------------------------------------
+public class ReflectionWithPublicFieldSingleton {
+
+    public static void main(String[] args) {
+
+        Singleton instance1 = Singleton.getInstance();
+
+        Singleton instance2 = null;
+
+        try {
+
+            Field instance = Singleton.class.getDeclaredField("instance");
+            instance.setAccessible(true);
+            instance.set(instance, null);
+
+            Constructor[] cstr = Singleton.class.getDeclaredConstructors();
+
+            for (Constructor constructor: cstr) {
+
+                //Setting constructor accessible
+
+                constructor.setAccessible(true);
+
+                instance2 = (Singleton) constructor.newInstance();
+
+                break;
+
+            }
+
+        } catch (Exception e) {
+
+            System.out.println(e);
+
+        }
+
+        System.out.println(instance1.hashCode());
+
+        System.out.println(instance2.hashCode());
+
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+import com.techshard.batch.dao.entity.Voltage;
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.Step;
+import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
+import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
+import org.springframework.batch.item.database.JdbcBatchItemWriter;
+import org.springframework.batch.item.database.builder.JdbcBatchItemWriterBuilder;
+import org.springframework.batch.item.file.FlatFileItemReader;
+import org.springframework.batch.item.file.LineMapper;
+import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
+import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
+import org.springframework.batch.item.file.mapping.DefaultLineMapper;
+import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
+
+import javax.sql.DataSource;
+
+@Configuration
+@EnableBatchProcessing
+public class BatchConfiguration {
+
+    @Autowired
+    public JobBuilderFactory jobBuilderFactory;
+
+    @Autowired
+    public StepBuilderFactory stepBuilderFactory;
+
+    @Bean
+    public FlatFileItemReader<Voltage> reader() {
+        return new FlatFileItemReaderBuilder<Voltage>()
+                .name("voltItemReader")
+                .resource(new ClassPathResource("Volts.csv"))
+                .delimited()
+                .names(new String[]{"volt", "time"})
+                .lineMapper(lineMapper())
+                .fieldSetMapper(new BeanWrapperFieldSetMapper<Voltage>() {{
+                    setTargetType(Voltage.class);
+                }})
+                .build();
+    }
+
+    @Bean
+    public LineMapper<Voltage> lineMapper() {
+
+        final DefaultLineMapper<Voltage> defaultLineMapper = new DefaultLineMapper<>();
+        final DelimitedLineTokenizer lineTokenizer = new DelimitedLineTokenizer();
+        lineTokenizer.setDelimiter(";");
+        lineTokenizer.setStrict(false);
+        lineTokenizer.setNames(new String[] {"volt","time"});
+
+        final VoltageFieldSetMapper fieldSetMapper = new VoltageFieldSetMapper();
+        defaultLineMapper.setLineTokenizer(lineTokenizer);
+        defaultLineMapper.setFieldSetMapper(fieldSetMapper);
+
+        return defaultLineMapper;
+    }
+
+    @Bean
+    public VoltageProcessor processor() {
+        return new VoltageProcessor();
+    }
+
+    @Bean
+    public JdbcBatchItemWriter<Voltage> writer(final DataSource dataSource) {
+        return new JdbcBatchItemWriterBuilder<Voltage>()
+                .itemSqlParameterSourceProvider(new BeanPropertyItemSqlParameterSourceProvider<>())
+                .sql("INSERT INTO voltage (volt, time) VALUES (:volt, :time)")
+                .dataSource(dataSource)
+                .build();
+    }
+
+    @Bean
+    public Job importVoltageJob(NotificationListener listener, Step step1) {
+        return jobBuilderFactory.get("importVoltageJob")
+                .incrementer(new RunIdIncrementer())
+                .listener(listener)
+                .flow(step1)
+                .end()
+                .build();
+    }
+
+    @Bean
+    public Step step1(JdbcBatchItemWriter<Voltage> writer) {
+        return stepBuilderFactory.get("step1")
+                .<Voltage, Voltage> chunk(10)
+                .reader(reader())
+                .processor(processor())
+                .writer(writer)
+                .build();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.jms.annotation.EnableJms;
+import org.springframework.jms.annotation.JmsListener;
+import org.springframework.stereotype.Component;
+
+@Component
+@EnableJms
+public class MessageConsumer {
+
+    private final Logger logger = LoggerFactory.getLogger(MessageConsumer.class);
+
+    @JmsListener(destination = "test-queue")
+    public void listener(String message){
+        logger.info("Message received {} ", message);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for `sched_config`
+-- ----------------------------
+DROP TABLE IF EXISTS `sched_config`;
+CREATE TABLE `sched_config` (
+  `id` bigint(20) NOT NULL,
+  `code` varchar(50) DEFAULT NULL COMMENT '任务编码',
+  `name` varchar(200) DEFAULT NULL COMMENT '任务名称',
+  `target_service_type` varchar(2) DEFAULT NULL COMMENT '目标任务类型：01 springcloud 02 http 03 dubbo',
+  `targer_service` varchar(50) DEFAULT NULL COMMENT '目标服务：可为服务地址，或者dubbo服务名',
+  `cron_config` varchar(20) DEFAULT NULL COMMENT 'cron表达式',
+  `status` varchar(1) DEFAULT NULL COMMENT '状态：1启用 0 停用',
+  `remark` varchar(200) DEFAULT NULL COMMENT '备注说明',
+  `extra_dubbo_group` varchar(50) DEFAULT NULL COMMENT 'dubbo组名',
+  `extra_dubbo_version` varchar(50) DEFAULT NULL COMMENT 'dubbo服务版本信息',
+  `gmt_create` datetime DEFAULT NULL COMMENT '创建时间',
+  `gmt_modified` datetime DEFAULT NULL COMMENT '修改时间',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+--------------------------------------------------------------------------------------------------------
+	@Bean
+    public CacheManager cacheManager(RedisTemplate<String,String> redisTemplate) {
+        RedisCacheManager rcm = new RedisCacheManager(redisTemplate);
+        //使用前缀
+        rcm.setUsePrefix(true);
+        //缓存分割符 默认为 ":"
+//        rcm.setCachePrefix(new DefaultRedisCachePrefix(":"));
+        //设置缓存过期时间
+        //rcm.setDefaultExpiration(60);//秒
+        return rcm;
+    }
+--------------------------------------------------------------------------------------------------------
+# freemarker配置
+
+spring.freemarker.enabled=false
+
+# 缓存配置 开发阶段应该配置为false 因为经常会改
+spring.freemarker.cache=false
+
+# 模版后缀名 默认为:.ftl
+spring.freemarker.suffix=.html
+
+# 文件编码
+spring.freemarker.charset=UTF-8
+
+# 模版加载的目录
+spring.freemarker.template-loader-path=classpath:/templates/
+
+# 配置
+# locale	该选项指定该模板所用的国家/语言选项
+# number_format	指定格式化输出数字的格式：currency、
+# boolean_format	指定两个布尔值的语法格式,默认值是true,false
+# date_format,time_format,datetime_format	定格式化输出日期的格式
+# time_zone	设置格式化输出日期时所使用的时区
+# 数字 千分位标识
+spring.freemarker.settings.number_format=,##0.00 
+
+# thymeleaf配置 
+# 启用缓存:建议生产开启
+spring.thymeleaf.cache=false
+
+# 建议模版是否存在
+spring.thymeleaf.check-template-location=true
+# Content-Type 值
+spring.thymeleaf.content-type=text/html
+# 是否启用
+spring.thymeleaf.enabled=true
+# 模版编码
+spring.thymeleaf.encoding=UTF-8
+# 应该从解析中排除的视图名称列表（用逗号分隔）
+spring.thymeleaf.excluded-view-names=
+# 模版模式
+spring.thymeleaf.mode=HTML5
+# 模版存放路径
+spring.thymeleaf.prefix=classpath:/templates/
+# 模版后缀
+spring.thymeleaf.suffix=.html
+
+spring.profiles.active=jsp
+
+# 最大支持文件大小 即单个文件大小
+spring.http.multipart.max-file-size=1Mb
+# 最大支持请求大小 即一次性上传的总文件大小
+spring.http.multipart.max-request-size=10Mb
+
+# 使用fileUpload
+spring.http.multipart.enabled=false
+--------------------------------------------------------------------------------------------------------
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+
+@Configuration
+public class WebConfig extends WebMvcConfigurerAdapter{
+
+	@Override
+	public void addResourceHandlers(ResourceHandlerRegistry registry) {
+		//配置映射关系
+		//即：/webjars/** 映射到 classpath:/META-INF/resources/webjars/ 
+		registry.addResourceHandler("/webjars/**")
+		        .addResourceLocations("classpath:/META-INF/resources/webjars/")
+				//新增 resourceChain 配置即开启缓存配置。
+		        //不知道为何不加这个配置 设置了 webjars-locator 未生效。。
+		        .resourceChain(true);//生产时建议开启缓存（只是缓存了资源路径而不是资源内容）,开发是可以设置为false
+	}
+}
+--------------------------------------------------------------------------------------------------------
+# issuing requests to unsecured endpoints
+curl localhost:8080/hello
+
+# issuing requests to secured endpoints
+CLIENT_ID="d85mVhuL6EPYitTES37pA8rbi716IYCA"
+CLIENT_SECRET="AeeFp-g5YGwxFOWwLVMdxialnxOnoyuwGXoE5kPiHs8kGJeC2FJ0BCj6xTLlNKkY"
+
+JWT=$(curl -X POST -H 'content-type: application/json' -d '{
+    "client_id": "'$CLIENT_ID'",
+    "client_secret": "'$CLIENT_SECRET'",
+    "audience":"spring5",
+    "grant_type":"client_credentials"
+}' https://bkrebs.auth0.com/oauth/token | jq .access_token)
+
+curl -H "Authorization: Bearer "$JWT http://localhost:8080/products
+--------------------------------------------------------------------------------------------------------
+# use Maven wrapper
+mvn -N io.takari:maven:wrapper -Dmaven=3.5.4
+
+# use Maven to package the application in a fat JAR file
+./mvnw clean package
+
+# run the fat JAR artifact
+java -jar target/jsf-javaee-microblog-thorntail.jar
+--------------------------------------------------------------------------------------------------------
+group 'com.auth0.samples'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+
+// 1 - apply application and shadow plugins
+apply plugin: 'application'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+mainClassName = 'com.auth0.samples.Main'
+
+// 2 - define the dependency to the shadow plugin
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.1'
+    }
+}
+
+// 3 - merge service descriptors
+shadowJar {
+    mergeServiceFiles()
+}
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    compile group: 'org.apache.tomcat.embed', name: 'tomcat-embed-jasper', version: '8.0.47'
+    compile group: 'org.springframework', name: 'spring-webmvc', version: '5.0.1.RELEASE'
+}
+--------------------------------------------------------------------------------------------------------
+# build the dockerized application image
+docker build -t without-spring-session .
+
+# running instance number one
+docker run -d -p 8081:8080 --name without-spring-session-1 -e "APPLICATION_TITLE=First instance" without-spring-session
+# running instance number two
+docker run -d -p 8082:8080 --name without-spring-session-2 -e "APPLICATION_TITLE=Second instance" without-spring-session
+
+# create redis image
+docker build -t spring-session-redis redis
+
+# run redis
+docker run -p 6379:6379 -d --name spring-session-redis spring-session-redis
+
+# remove previous instances
+docker rm -f without-spring-session-1 without-spring-session-2
+
+# compile and package the application
+mvn clean package
+
+# build the dockerized application image
+docker build -t spring-session .
+
+# running instance number one
+docker run -d -p 8081:8080 --name spring-session-1 -e "APPLICATION_TITLE=First instance" spring-session
+# running instance number two
+docker run -d -p 8082:8080 --name spring-session-2 -e "APPLICATION_TITLE=Second instance" spring-session
+
+# build the dockerized NGINX load balancer
+docker build -t spring-session-nginx nginx
+
+# run load balancer
+docker run -p 8080:80 -d --name spring-session-nginx spring-session-nginx
+--------------------------------------------------------------------------------------------------------
+import org.ocpsoft.rewrite.annotation.Join;
+import org.ocpsoft.rewrite.el.ELBeanName;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
+
+@Scope(value = "session")
+@Component(value = "productController")
+@ELBeanName(value = "productController")
+@Join(path = "/product", to = "/product-form.jsf")
+public class ProductController {
+    @Autowired
+    private ProductRepository productRepository;
+
+    private Product product = new Product();
+
+    public String save() {
+        productRepository.save(product);
+        product = new Product();
+        return "/product-list.xhtml?faces-redirect=true";
+    }
+
+    public Product getProduct() {
+        return product;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+npm install yo generator-jhipster
+
+# In case you picked Maven:
+mvn spring-boot:run
+
+# In case you picked Gradle:
+gradle bootRun
+--------------------------------------------------------------------------------------------------------
+@RunWith(SpringRunner.class)
+@WebMvcTest(controllers = SubscriberApiController.class)
+
+public class ApiControllerTest {
+
+private MockMvc mvc;
+
+@Autowired
+private WebApplicationContext webApplicationContext;
+
+@MockBean
+private ApiService service;
+
+@Before
+public void setUp() {
+//  mvc = MockMvcBuilders.standaloneSetup(new HandlerController()).build();
+    mvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+}
+
+@Test
+public void getIndex() throws Exception {
+    mvc.perform(get("/my-service/api/check?email=someone@someone.com").accept(MediaType.APPLICATION_JSON))
+       .andExpect(status().isOk());
+
+}
+}
+--------------------------------------------------------------------------------------------------------
+# issue a GET request to see the (empty) list of tasks
+curl http://localhost:8080/tasks
+
+# issue a POST request to create a new task
+curl -H "Content-Type: application/json" -X POST -d '{
+    "description": "Buy some milk(shake)"
+}'  http://localhost:8080/tasks
+
+# issue a PUT request to update the recently created task
+curl -H "Content-Type: application/json" -X PUT -d '{
+    "description": "Buy some milk"
+}'  http://localhost:8080/tasks/1
+
+# issue a DELETE request to remove the existing task
+curl -X DELETE http://localhost:8080/tasks/1
+--------------------------------------------------------------------------------------------------------
+databaseChangeLog:
+    - includeAll:
+        path: db/changelog/changes/
+--------------------------------------------------------------------------------------------------------
+  @Bean
+  CorsConfigurationSource corsConfigurationSource() {
+    final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", new CorsConfiguration().applyPermitDefaultValues());
+    return source;
+  }
+--------------------------------------------------------------------------------------------------------
+# create a variable with our token
+ACCESS_TOKEN=<OUR_ACCESS_TOKEN>
+
+# use this variable to fetch contacts
+curl -H 'Authorization: Bearer '$ACCESS_TOKEN http://localhost:8080/contacts/
+--------------------------------------------------------------------------------------------------------
+import java.util.List;
+ 
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+ 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+ 
+@Configuration
+@EnableWebMvc
+@ComponentScan(basePackages = "com.websystique.springmvc")
+public class HelloWorldConfiguration extends WebMvcConfigurerAdapter{
+     
+     
+    @Override
+    public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
+        converters.add(mappingJackson2HttpMessageConverter());
+    }
+     
+    @Bean
+    public MappingJackson2HttpMessageConverter mappingJackson2HttpMessageConverter() {
+        MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
+        converter.setObjectMapper(new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false));
+        return converter;
+    }
+     
+     
+}
+--------------------------------------------------------------------------------------------------------
+executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+
+
+import java.text.ParseException;
+import java.util.Date;
+
+import org.quartz.Trigger;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.quartz.CronTriggerFactoryBean;
+import org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean;
+import org.springframework.scheduling.quartz.SchedulerFactoryBean;
+import org.springframework.stereotype.Component;
+
+import lombok.extern.slf4j.Slf4j;
+
+@Configuration
+@Slf4j
+public class QuartzConfig {
+	
+	/**
+	 * 通过工厂类，创建job实例
+	 * @return
+	 */
+	@Bean
+	public MethodInvokingJobDetailFactoryBean customJobDetailFactoryBean() {
+        
+		MethodInvokingJobDetailFactoryBean jobDetail = new MethodInvokingJobDetailFactoryBean();
+        //设置执行任务的bean
+		jobDetail.setTargetBeanName("quartzTask");
+		//设置具体执行的方法
+        jobDetail.setTargetMethod("quartzTask");
+        //同步执行，上一任务未执行完，下一任务等待
+        //true 任务并发执行
+        //false 下一个任务必须等待上一任务完成
+        jobDetail.setConcurrent(false);
+        return jobDetail; 
+	}
+	
+	/**
+	 * 通过工厂类创建Trigger
+	 * @param jobDetailFactoryBean
+	 * @return
+	 * @throws ParseException 
+	 */
+	@Bean(name = "cronTriggerBean")
+	public Trigger cronTriggerBean(MethodInvokingJobDetailFactoryBean jobDetailFactoryBean) throws ParseException {
+		CronTriggerFactoryBean cronTriggerFactoryBean = new CronTriggerFactoryBean();
+		cronTriggerFactoryBean.setJobDetail(jobDetailFactoryBean.getObject());
+		cronTriggerFactoryBean.setCronExpression("0/3 * * * * ?");//每3秒执行一次
+		cronTriggerFactoryBean.setName("customCronTrigger");
+		cronTriggerFactoryBean.afterPropertiesSet();
+		return cronTriggerFactoryBean.getObject();
+
+	}
+	
+	/**
+	 * 调度工厂类,自动注入Trigger
+	 * @return
+	 */
+	@Bean
+	public SchedulerFactoryBean schedulerFactoryBean(Trigger... triggers) {
+		SchedulerFactoryBean bean = new SchedulerFactoryBean();
+		
+		//也可以直接注入 ApplicationContext,利于 getBeansOfType获取trigger
+//		Map<String,Trigger> triggerMap = appContext.getBeansOfType(Trigger.class);
+//		if(triggerMap != null) {
+//			List<Trigger> triggers = new ArrayList<>(triggerMap.size());
+//			//
+//			triggerMap.forEach((key,trigger)->{
+//				triggers.add(trigger);
+//			});
+//			bean.setTriggers(triggers.toArray(new Trigger[triggers.size()]));
+//		}
+		//这里注意 对应的trigger 不能为null 不然会异常的
+		bean.setTriggers(triggers);
+		return bean;
+	} 
+	
+	@Component("quartzTask")
+	public class QuartzTask {
+	  
+		public void quartzTask() {
+			log.info("Quartz定时任务：" + new Date());
+		}
+	}
+}
+--------------------------------------------------------------------------------------------------------
 additional-spring-configuration-metadata.json
 
 {
@@ -42958,6 +44960,1942 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
  *	   }
  * }
  * </pre>
+--------------------------------------------------------------------------------------------------------
+sh -e /etc/init.d/xvfb start
+--------------------------------------------------------------------------------------------------------
+import java.util.concurrent.*;
+
+public class Application
+{
+    public static void main(String[] args) throws InterruptedException
+    {
+        System.out.println("main thread is started");
+        ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(5);
+
+        scheduledExecutorService.scheduleAtFixedRate(() -> {
+            System.out.println("Thread [" + Thread.currentThread().getName() + "] is executing the task");
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                System.out.println("sleeping thread get interrupted");
+            }
+        }, 5, 2, TimeUnit.SECONDS);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.*;
+
+public class Application {
+
+    public static void main(String[] args) throws InterruptedException {
+        System.out.println("main thread is started");
+
+        ExecutorService executorService = Executors.newCachedThreadPool();
+        CountDownLatch countDownLatch = new CountDownLatch(10);
+
+        List<Callable<String>> allCallableList = new ArrayList<>();
+
+        for (int taskIndex = 0; taskIndex < 10; taskIndex++) {
+            //creating the callable object
+            Callable<String> callable = () -> {
+                System.out.println("Thread [" + Thread.currentThread().getName() + "] is executing the task");
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    System.out.println("sleeping thread get interrupted");
+                }
+                countDownLatch.countDown();
+                return "done";
+            };
+
+            allCallableList.add(callable);
+        }
+
+        //execute all the callables in background threads
+        executorService.invokeAll(allCallableList);
+        countDownLatch.await();
+
+        System.out.println("main thread completed ");
+    }
+}
+--------------------------------------------------------------------------------------------------------
+    @Override
+    public void configureMessageConverters(List<HttpMessageConverter<?>> httpMessageConverters) {
+        httpMessageConverters.add(new BookCaseMessageConverter(new MediaType("text", "csv")));
+    }
+--------------------------------------------------------------------------------------------------------
+vimport au.com.bytecode.opencsv.CSVReader;
+import au.com.bytecode.opencsv.CSVWriter;
+import org.springframework.http.HttpInputMessage;
+import org.springframework.http.HttpOutputMessage;
+import org.springframework.http.MediaType;
+import org.springframework.http.converter.AbstractHttpMessageConverter;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.http.converter.HttpMessageNotWritableException;
+
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.util.List;
+
+public class BookCaseMessageConverter extends AbstractHttpMessageConverter<BookCase> {
+
+    public BookCaseMessageConverter() {
+    }
+
+    public BookCaseMessageConverter(MediaType supportedMediaType) {
+        super(supportedMediaType);
+    }
+
+    public BookCaseMessageConverter(MediaType... supportedMediaTypes) {
+        super(supportedMediaTypes);
+    }
+
+    @Override
+    protected boolean supports(Class<?> clazz) {
+        return BookCase.class.equals(clazz);
+    }
+
+    @Override
+    protected BookCase readInternal(Class<? extends BookCase> clazz, HttpInputMessage httpInputMessage) throws IOException, HttpMessageNotReadableException {
+        CSVReader reader = new CSVReader(new InputStreamReader(httpInputMessage.getBody()));
+        List<String[]> rows = reader.readAll();
+        BookCase bookCase = new BookCase();
+        for (String[] row : rows) {
+            bookCase.add(new Book(row[0], row[1]));
+        }
+        return bookCase;
+    }
+
+    @Override
+    protected void writeInternal(BookCase books, HttpOutputMessage httpOutputMessage) throws IOException, HttpMessageNotWritableException {
+        CSVWriter writer = new CSVWriter(new OutputStreamWriter(httpOutputMessage.getBody()));
+        for (Book book : books) {
+            writer.writeNext(new String[]{book.getIsbn(), book.getTitle()});
+        }
+        writer.close();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@RunWith(SpringJUnit4ClassRunner.class)
+@WebAppConfiguration
+@ContextConfiguration(classes = MyWebConfig.class)
+public class RegistrationControllerTest {
+
+    @Autowired
+    private WebApplicationContext wac;
+
+    private MockMvc mockMvc;
+
+    @Before
+    public void setup () {
+        DefaultMockMvcBuilder builder = MockMvcBuilders.webAppContextSetup(this.wac);
+        this.mockMvc = builder.build();
+    }
+
+    @Test
+    public void testController () throws Exception {
+        ResultMatcher ok = MockMvcResultMatchers.status()
+                                                .isOk();
+
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/message")
+                                                        .contentType(MediaType.TEXT_PLAIN)
+                                                        .content("test message");
+        this.mockMvc.perform(builder)
+                    .andExpect(ok)
+                    .andDo(MockMvcResultHandlers.print());
+
+    }
+}
+
+@RunWith(SpringJUnit4ClassRunner.class)
+@WebAppConfiguration
+@ContextConfiguration(classes = MyWebConfig.class)
+public class RegistrationControllerTest {
+
+    @Autowired
+    private WebApplicationContext wac;
+
+    private MockMvc mockMvc;
+
+    @Before
+    public void setup () {
+        DefaultMockMvcBuilder builder = MockMvcBuilders.webAppContextSetup(this.wac);
+        this.mockMvc = builder.build();
+    }
+
+    @Test
+    public void testFormPostController () throws Exception {
+        ResultMatcher ok = MockMvcResultMatchers.status()
+                                                .isOk();
+
+        MockHttpServletRequestBuilder builder =
+                   MockMvcRequestBuilders.post("/message")
+                                         .contentType("application/x-www-form-urlencoded")
+                                         //use param instead of content
+                                         .param("name", "joe");
+
+        this.mockMvc.perform(builder)
+                    .andExpect(ok);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
+import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
+import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
+import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
+import org.springframework.security.oauth2.provider.token.TokenStore;
+import org.springframework.security.oauth2.provider.token.store.InMemoryTokenStore;
+
+@Configuration
+@EnableAuthorizationServer
+public class AuthorizationServerConfiguration extends AuthorizationServerConfigurerAdapter {
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private TokenStore tokenStore;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+
+    @Override
+    public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
+
+        clients.inMemory()
+                .withClient("client")
+                .authorizedGrantTypes("password", "authorization_code", "refresh_token", "implicit")
+                .scopes("read", "write")
+                .secret(passwordEncoder.encode("password"));
+    }
+
+
+    @Override
+    public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+        endpoints
+                .authenticationManager(authenticationManager)
+                .tokenStore(tokenStore);
+    }
+
+    @Bean
+    public TokenStore tokenStore() {
+        return new InMemoryTokenStore();
+    }
+
+    @Override
+    public void configure(AuthorizationServerSecurityConfigurer oauthServer) throws Exception {
+		oauthServer.checkTokenAccess("isAuthenticated()");
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
+import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
+import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
+import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
+import org.springframework.security.oauth2.provider.token.TokenStore;
+import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
+import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
+
+@Configuration
+@EnableAuthorizationServer
+public class AuthorizationServerConfiguration extends AuthorizationServerConfigurerAdapter {
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private TokenStore tokenStore;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+
+    @Override
+    public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
+
+        clients.inMemory()
+                .withClient("client")
+                .authorizedGrantTypes("password", "authorization_code", "refresh_token", "implicit")
+                .scopes("read", "write")
+                .autoApprove(true)
+                .secret(passwordEncoder.encode("password"));
+    }
+
+
+    @Override
+    public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+        endpoints
+                .authenticationManager(authenticationManager)
+                .accessTokenConverter(accessTokenConverter())
+                .tokenStore(tokenStore);
+    }
+
+
+
+    @Override
+    public void configure(AuthorizationServerSecurityConfigurer oauthServer) throws Exception {
+		oauthServer.checkTokenAccess("isAuthenticated()");
+    }
+
+
+    @Bean
+    public TokenStore tokenStore() {
+        return new JwtTokenStore(accessTokenConverter());
+    }
+
+    @Bean
+    public JwtAccessTokenConverter accessTokenConverter() {
+        JwtAccessTokenConverter converter = new JwtAccessTokenConverter();
+        converter.setSigningKey("123");
+        return converter;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+  @RolesAllowed({"ROLE_USER"})
+  @GetMapping("/user")
+  public String welcomeUser() {
+    return "welcome user";
+  }
+      @Secured("ROLE_USER")
+    @GetMapping(value = "/user/hello")
+    public String welcomeAppUser(@AuthenticationPrincipal User user) {
+        return "Welcome User " + user.getName();
+    }
+    @PreAuthorize("hasRole('USER') OR hasRole('ADMIN')")
+    @GetMapping(value = "/user/hello3")
+    public String welcomeAppUser3(@AuthenticationPrincipal User user) {
+        return "Welcome User " + user.getName();
+    }
+	
+	    /**
+     * <p>
+     * This method can be accessed by any user with ROLE_USER.
+     * But the content will be returned if the user has the ROLE_ADMIN and
+     * authenticated principal name is same as the username of the return object.
+     * </p>
+     *
+     * @param user
+     * @return
+     */
+    @PreAuthorize("hasRole('USER')")
+    @PostAuthorize("(returnObject.username == principal.name) AND hasRole('ADMIN')")
+    @GetMapping(value = "/user/hello5")
+    public UserProfile welcomeAppUser5(@AuthenticationPrincipal User user) {
+        return new UserProfile("chathuranga", "Chathuranga Tennakoon");
+    }
+	
+
+    @Bean
+    public NoOpPasswordEncoder passwordEncoder()
+    {
+        return (NoOpPasswordEncoder) NoOpPasswordEncoder.getInstance();
+    }
+	
+	   @Bean
+    @Profile("prod")
+    public AppConfiguration getProductionConfiguration()
+    {
+        return new AppConfiguration("production_config");
+    }
+--------------------------------------------------------------------------------------------------------
+import com.springbootdev.examples.consumer.model.Car;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.annotation.RabbitHandler;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.stereotype.Component;
+
+@Component
+@RabbitListener(queues = {"all_cars_queue", "nissan_cars_queue"})
+public class ConsumerService
+{
+    private static final Logger logger = LoggerFactory.getLogger(ConsumerService.class);
+
+    @RabbitHandler
+    public void receiveMessage(Car car)
+    {
+        logger.info(" receive message [" + car.toString() + "] ");
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.springbootdev.samples.rabbitmq.consumer.model.Item;
+import com.springbootdev.samples.rabbitmq.consumer.model.Order;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.converter.DefaultClassMapper;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@Configuration
+public class RabbitMqConfig {
+
+    @Bean
+    public MessageConverter messageConverter()
+    {
+        Jackson2JsonMessageConverter jsonMessageConverter = new Jackson2JsonMessageConverter();
+        jsonMessageConverter.setClassMapper(classMapper());
+        return jsonMessageConverter;
+    }
+
+
+    @Bean
+    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory)
+    {
+        RabbitTemplate template = new RabbitTemplate(connectionFactory);
+        template.setMessageConverter(messageConverter());
+        return template;
+    }
+
+    @Bean
+    public DefaultClassMapper classMapper()
+    {
+        DefaultClassMapper classMapper = new DefaultClassMapper();
+        Map<String, Class<?>> idClassMapping = new HashMap<>();
+        idClassMapping.put("com.springbootdev.samples.producer.model.Order", Order.class);
+        classMapper.setIdClassMapping(idClassMapping);
+        return classMapper;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+    public byte[] getKey() throws URISyntaxException, IOException {
+        return Files.readAllBytes(Paths.get(this.getClass().getResource("/sample.key").toURI()));
+    }
+--------------------------------------------------------------------------------------------------------
+import org.springframework.web.client.RestTemplate;
+
+public class RestClient
+{
+    //REST api endpoint
+    private static final String REST_API_ENDPOINT = "https://localhost:8443/logged_info";
+
+
+    static {
+        //for localhost testing only
+        javax.net.ssl.HttpsURLConnection.setDefaultHostnameVerifier(
+                new javax.net.ssl.HostnameVerifier() {
+
+                    public boolean verify(String hostname, javax.net.ssl.SSLSession sslSession) {
+                        return hostname.equals("localhost");
+                    }
+                });
+    }
+
+
+    public static String getRemoteMessage()
+    {
+        //configuring the keyStore and trustStore for the client application
+        System.setProperty("javax.net.ssl.keyStore", "/Users/chathuranga/Projects/spring-boot-ssl-x509/keystores/clientkeystore.p12");
+        System.setProperty("javax.net.ssl.keyStorePassword", "3edc4rfv");
+        System.setProperty("javax.net.ssl.trustStore", "/Users/chathuranga/Projects/spring-boot-ssl-x509/keystores/clienttruststore.p12");
+        System.setProperty("javax.net.ssl.trustStorePassword", "3edc4rfv");
+
+        RestTemplate restTemplate = new RestTemplate();
+        return restTemplate.getForObject(REST_API_ENDPOINT, String.class);
+    }
+}
+
+server.port = 8443
+#keystore details
+server.ssl.key-store=/Users/chathuranga/Projects/spring-boot-ssl-x509/keystores/serverkeystore.p12
+server.ssl.key-store-password=1qaz2wsx
+
+#truststore details
+server.ssl.trust-store=/Users/chathuranga/Projects/spring-boot-ssl-x509/keystores/servertruststore.p12
+server.ssl.trust-store-password=1qaz2wsx
+server.ssl.client-auth=need
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.User;
+
+@EnableWebSecurity
+public class AppSpringSecurityConfig extends WebSecurityConfigurerAdapter {
+
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        super.configure(auth);
+    }
+
+    /**
+     * subjectPrincipalRegex("CN=(.*?)(?:,|$)") :- The regular expression used to extract a username from the client certificate’s subject name.
+     * (CN value of the client certificate)
+     */
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        //Enabling X.509 client authentication is very straightforward. just add x509()
+        http.x509().subjectPrincipalRegex("CN=(.*?)(?:,|$)").
+                and().authorizeRequests().anyRequest().authenticated().
+                and().userDetailsService(userDetailsService());
+    }
+
+
+    @Bean
+    public UserDetailsService userDetailsService() {
+        return new UserDetailsService() {
+            @Override
+            public User loadUserByUsername(String username) {
+                if (username != null) {
+                    return new User(username, "", AuthorityUtils.commaSeparatedStringToAuthorityList("ROLE_USER"));
+                }
+                return null;
+            }
+        };
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import javax.jws.WebMethod;
+import javax.jws.WebParam;
+import javax.jws.WebResult;
+import javax.jws.WebService;
+import javax.xml.bind.annotation.XmlSeeAlso;
+import javax.xml.ws.RequestWrapper;
+import javax.xml.ws.ResponseWrapper;
+import com.chathurangaonline.apache.cxf.jaxws.spring.samples.ObjectFactory;
+
+
+/**
+ * This class was generated by the JAX-WS RI.
+ * JAX-WS RI 2.2.4-b01
+ * Generated source version: 2.2
+ * 
+ */
+@WebService(name = "CalculatorService", targetNamespace = "http://samples.spring.jaxws.cxf.apache.chathurangaonline.com/")
+@XmlSeeAlso({
+    ObjectFactory.class
+})
+public interface CalculatorService {
+
+
+    /**
+     * 
+     * @param arg1
+     * @param arg0
+     * @return
+     *     returns double
+     */
+    @WebMethod
+    @WebResult(targetNamespace = "")
+    @RequestWrapper(localName = "multiply", targetNamespace = "http://samples.spring.jaxws.cxf.apache.chathurangaonline.com/", className = "com.chathurangaonline.apache.cxf.jaxws.spring.samples.Multiply")
+    @ResponseWrapper(localName = "multiplyResponse", targetNamespace = "http://samples.spring.jaxws.cxf.apache.chathurangaonline.com/", className = "com.chathurangaonline.apache.cxf.jaxws.spring.samples.MultiplyResponse")
+    public double multiply(
+        @WebParam(name = "arg0", targetNamespace = "")
+        double arg0,
+        @WebParam(name = "arg1", targetNamespace = "")
+        double arg1);
+
+}
+--------------------------------------------------------------------------------------------------------
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebInitParam;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+/**
+ * <p>
+ *     you can see that we can pass init param for the servlet through the annotations.
+ * </p>
+ */
+@WebServlet(
+        name = "hello",
+        urlPatterns = {"/hello"},
+        initParams = {
+                @WebInitParam(name = "username",value = "chathuranga"),
+                @WebInitParam(name = "email",value = "chathuranga.t@gmail.com")
+        },
+        loadOnStartup = 1
+)
+public class HelloServlet extends HttpServlet{
+
+    private static final Logger logger = LoggerFactory.getLogger(HelloServlet.class);
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        logger.info(" this servlet will be executed after executing the all relevant filters according to their order ");
+        response.setContentType("text/plain");
+        response.getWriter().write(" Welcome to Servlet Annotation with Servlet 3");
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.servlet.*;
+import javax.servlet.annotation.WebFilter;
+import java.io.IOException;
+
+/**
+ * <p>
+ *     filter execution order has been defined in the web.xml file
+ * </p>
+ */
+@WebFilter(
+        filterName = "helloFilterOne",
+        urlPatterns = {"/hello"}
+
+)
+public class FilterOne implements Filter{
+
+    private FilterConfig filterConfig;
+    private static final Logger logger = LoggerFactory.getLogger(FilterOne.class);
+
+    @Override
+    public void init(FilterConfig filterConfig) throws ServletException {
+        this.filterConfig = filterConfig;
+    }
+
+    @Override
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+        logger.info(" inside the filter one ");
+        filterChain.doFilter(servletRequest,servletResponse);
+    }
+
+    @Override
+    public void destroy() {
+       //releasing the resources
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.hsenidmobile.recruitment.model.EmailMessage;
+import org.apache.commons.lang.StringUtils;
+import org.apache.velocity.app.VelocityEngine;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.mail.javamail.MimeMessagePreparator;
+import org.springframework.stereotype.Component;
+import org.springframework.ui.velocity.VelocityEngineUtils;
+
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+import java.io.File;
+
+@Component("emailSender")
+public class EmailSender {
+
+    @Autowired
+    private JavaMailSender mailSender;
+
+    @Autowired
+    private VelocityEngine velocityEngine;
+
+
+    public void sendEmail(final String toEmailAddresses, final String fromEmailAddress,
+                          final String subject) {
+        sendEmail(toEmailAddresses, fromEmailAddress, subject, null, null,null);
+    }
+
+//    public void sendEmailWithAttachment(final String toEmailAddresses, final String fromEmailAddress,
+//                                        final String subject, final String attachmentPath,
+//                                        final String attachmentName) {
+//        sendEmail(toEmailAddresses, fromEmailAddress, subject, attachmentPath, attachmentName);
+//    }
+
+//    private void sendEmail(final String toEmailAddresses, final String fromEmailAddress,
+//                           final String subject, final String attachmentPath,
+//                           final String attachmentName) {
+//        MimeMessagePreparator preparator = new MimeMessagePreparator() {
+//            public void prepare(MimeMessage mimeMessage) throws Exception {
+//                MimeMessageHelper message = new MimeMessageHelper(mimeMessage, true);
+//                message.setTo(toEmailAddresses);
+//                message.setFrom(new InternetAddress(fromEmailAddress));
+//                message.setSubject(subject);
+//                String body = VelocityEngineUtils.mergeTemplateIntoString(
+//                        velocityEngine, "templates/reminder.vm", "UTF-8", null);
+//                message.setText(body, true);
+//                if (!StringUtils.isBlank(attachmentPath)) {
+//                    FileSystemResource file = new FileSystemResource(attachmentPath);
+//                    message.addAttachment(attachmentName, file);
+//                }
+//            }
+//        };
+//        this.mailSender.send(preparator);
+//    }
+
+
+
+    private void sendEmail(final String toEmailAddresses, final String fromEmailAddress,
+                           final String subject, final String attachmentPath,
+                           final String attachmentName,final String image) {
+        MimeMessagePreparator preparator = new MimeMessagePreparator() {
+            public void prepare(MimeMessage mimeMessage) throws Exception {
+                MimeMessageHelper message = new MimeMessageHelper(mimeMessage, true);
+                message.setTo(toEmailAddresses);
+                message.setFrom(new InternetAddress(fromEmailAddress));
+                message.setSubject(subject);
+                String body = VelocityEngineUtils.mergeTemplateIntoString(
+                        velocityEngine, "templates/reminder.vm", "UTF-8", null);
+                message.setText(body, true);
+                //  message.addInline(image, new ClassPathResource("templates/staticmap.png"));
+                message.addInline("image", new ClassPathResource("templates/staticmap.png"));
+                if (!StringUtils.isBlank(attachmentPath)) {
+                    FileSystemResource file = new FileSystemResource(attachmentPath);
+                    message.addAttachment(attachmentName, file);
+                }
+            }
+        };
+        this.mailSender.send(preparator);
+    }
+
+
+
+    public void sendEmail(final EmailMessage emailMessage){
+        MimeMessagePreparator preparator = new MimeMessagePreparator() {
+            public void prepare(MimeMessage mimeMessage) throws Exception {
+                MimeMessageHelper message = new MimeMessageHelper(mimeMessage, true);
+                message.setTo(emailMessage.getToAddress());
+                message.setFrom(new InternetAddress(emailMessage.getFrom()));
+                message.setSubject(emailMessage.getEmailTemplate().getSubject());
+                String body = VelocityEngineUtils.mergeTemplateIntoString(
+                        velocityEngine, "templates/reminder.vm", "UTF-8", null);
+                message.setText(body, true);
+                FileSystemResource img = new FileSystemResource(new File("templates/staticmap.png"));
+                message.addInline("imgId", img);
+//               if (!StringUtils.isBlank(attachmentPath)) {
+//                   FileSystemResource file = new FileSystemResource(attachmentPath);
+//                   message.addAttachment(attachmentName, file);
+//               }
+            }
+        };
+        //sending email as a thread
+        EmailService emailService = new EmailService(preparator,mailSender);
+        emailService.start();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.chathurangaonline.examples.dao.GenericDao;
+import com.chathurangaonline.examples.exception.ApplicationException;
+import org.hibernate.Criteria;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.service.ServiceRegistry;
+import java.io.Serializable;
+import java.util.List;
+
+
+public  class GenericDaoImpl<T,PK extends Serializable>  implements GenericDao<T,PK>{
+
+    private Class<T> entityClass;
+
+    private static SessionFactory sessionFactory;
+
+    public GenericDaoImpl(Class<T> entityClass) {
+        this.entityClass = entityClass;
+    }
+
+    public SessionFactory getSessionFactory(){
+        if(sessionFactory==null){
+            Configuration configuration = new Configuration();
+            configuration.configure();
+            ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder().applySettings(configuration.getProperties()).build();
+            sessionFactory = configuration.buildSessionFactory(serviceRegistry);
+        }
+        return sessionFactory;
+    }
+
+    public   Session getSession(){
+        SessionFactory sessionFactory = this.getSessionFactory();
+        return sessionFactory.openSession();
+    }
+
+    @Override
+    public T findById(Serializable id) {
+        T object = null;
+        if(id!=null){
+            Session session = this.getSession();
+            object =  (T)session.get(entityClass,id);
+            return object;
+        }
+        return object;
+    }
+
+
+    @Override
+    public void save(T object) {
+        Session session = null;
+        try{
+            session = getSession();
+            session.beginTransaction();
+            session.save(object);
+            session.getTransaction().commit();
+        }
+        catch (HibernateException ex){
+            if(session!=null && session.getTransaction()!=null){
+                session.getTransaction().rollback();
+            }
+            throw new ApplicationException("ERROR_SAVE",ex);
+        }
+        finally {
+            if(session!=null){
+                session.close();
+            }
+        }
+    }
+
+
+    @Override
+    public List<T> findAll() {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public Integer countAll() {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void delete(T object) {
+        if(object!=null){
+            Session session = null;
+            try{
+                session = this.getSessionFactory().openSession();
+                session.beginTransaction();
+                session.delete(object);
+                session.getTransaction().commit();
+            }
+            catch (HibernateException ex){
+                if(session!=null && session.getTransaction()!=null){
+                    session.getTransaction().rollback();
+                }
+                throw new ApplicationException("ERROR_DELETE",ex);
+            }
+            finally {
+                if(session!=null){
+                    session.close();
+                }
+            }
+        }
+    }
+
+
+
+    public Class<T> getEntityClass() {
+        return entityClass;
+    }
+
+    public void setEntityClass(Class<T> entityClass) {
+        this.entityClass = entityClass;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+    ByteArrayHttpMessageConverter – converts byte arrays
+    StringHttpMessageConverter – converts Strings
+    ResourceHttpMessageConverter – converts org.springframework.core.io.Resource for any type of octet stream
+    SourceHttpMessageConverter – converts javax.xml.transform.Source
+    FormHttpMessageConverter – converts form data to/from a MultiValueMap<String, String>.
+    Jaxb2RootElementHttpMessageConverter – converts Java objects to/from XML (added only if JAXB2 is present on the classpath)
+    MappingJackson2HttpMessageConverter – converts JSON (added only if Jackson 2 is present on the classpath)
+    MappingJacksonHttpMessageConverter – converts JSON (added only if Jackson is present on the classpath)
+    AtomFeedHttpMessageConverter – converts Atom feeds (added only if Rome is present on the classpath)
+    RssChannelHttpMessageConverter – converts RSS feeds (added only if Rome is present on the classpath)
+--------------------------------------------------------------------------------------------------------
+@Bean
+public HttpMessageConverter<Object> createXmlHttpMessageConverter() {
+    MarshallingHttpMessageConverter xmlConverter = new MarshallingHttpMessageConverter();
+ 
+    // ...
+ 
+    return xmlConverter;
+}
+
+@Test
+public void givenConsumingXml_whenReadingTheFoo_thenCorrect() {
+    String URI = BASE_URI + "foos/{id}";
+    RestTemplate restTemplate = new RestTemplate();
+    restTemplate.setMessageConverters(getMessageConverters());
+ 
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(Arrays.asList(MediaType.APPLICATION_XML));
+    HttpEntity<String> entity = new HttpEntity<String>(headers);
+ 
+    ResponseEntity<Foo> response = 
+      restTemplate.exchange(URI, HttpMethod.GET, entity, Foo.class, "1");
+    Foo resource = response.getBody();
+ 
+    assertThat(resource, notNullValue());
+}
+private List<HttpMessageConverter<?>> getMessageConverters() {
+    XStreamMarshaller marshaller = new XStreamMarshaller();
+    MarshallingHttpMessageConverter marshallingConverter = 
+      new MarshallingHttpMessageConverter(marshaller);
+     
+    List<HttpMessageConverter<?>> converters = 
+      ArrayList<HttpMessageConverter<?>>();
+    converters.add(marshallingConverter);
+    return converters; 
+}
+
+@Test
+public void givenConsumingJson_whenReadingTheFoo_thenCorrect() {
+    String URI = BASE_URI + "foos/{id}";
+ 
+    RestTemplate restTemplate = new RestTemplate();
+    restTemplate.setMessageConverters(getMessageConverters());
+ 
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+    HttpEntity<String> entity = new HttpEntity<String>(headers);
+ 
+    ResponseEntity<Foo> response = 
+      restTemplate.exchange(URI, HttpMethod.GET, entity, Foo.class, "1");
+    Foo resource = response.getBody();
+ 
+    assertThat(resource, notNullValue());
+}
+private List<HttpMessageConverter<?>> getMessageConverters() {
+    List<HttpMessageConverter<?>> converters = 
+      new ArrayList<HttpMessageConverter<?>>();
+    converters.add(new MappingJackson2HttpMessageConverter());
+    return converters;
+}
+
+@Test
+public void givenConsumingXml_whenWritingTheFoo_thenCorrect() {
+    String URI = BASE_URI + "foos/{id}";
+    RestTemplate restTemplate = new RestTemplate();
+    restTemplate.setMessageConverters(getMessageConverters());
+ 
+    Foo resource = new Foo(4, "jason");
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+    headers.setContentType((MediaType.APPLICATION_XML));
+    HttpEntity<Foo> entity = new HttpEntity<Foo>(resource, headers);
+ 
+    ResponseEntity<Foo> response = restTemplate.exchange(
+      URI, HttpMethod.PUT, entity, Foo.class, resource.getId());
+    Foo fooResponse = response.getBody();
+ 
+    Assert.assertEquals(resource.getId(), fooResponse.getId());
+}
+--------------------------------------------------------------------------------------------------------
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        id: http://localhost:8080/api
+        jwk:
+          jwk-set-uri: https://blog-samples.auth0.com/.well-known/jwks.json
+          issuer-uri: https://blog-samples.auth0.com/
+--------------------------------------------------------------------------------------------------------
+
+import com.example.movieapi.model.Movie;
+import com.example.movieapi.model.repository.MovieRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+@RestController
+@RequestMapping("/movies")
+public class MovieController {
+
+    private MovieRepository movieRepository;
+
+    public MovieController(MovieRepository movieRepository){
+        this.movieRepository = movieRepository;
+    }
+
+    @GetMapping
+    public Flux<Movie> getMovies(){
+        return movieRepository.findAll();
+    }
+
+    @GetMapping("{id}")
+    public Mono<ResponseEntity<Movie>> getMovie(@PathVariable String id){
+        return movieRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public Mono<Movie> saveMovie(@RequestBody Movie movie){
+        return movieRepository.save(movie);
+    }
+
+    @PutMapping("{id}")
+    public Mono<ResponseEntity<Movie>> updateMovie(@PathVariable(value = "id") String id, @RequestBody Movie movie){
+        return movieRepository.findById(id)
+                .flatMap(existingMovie -> {
+                    existingMovie.setName(movie.getName());
+                    existingMovie.setGenre(movie.getGenre());
+                    existingMovie.setReleaseDate(movie.getReleaseDate());
+                    return movieRepository.save(existingMovie);
+                })
+                .map(ResponseEntity::ok)
+                .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("{id}")
+    public Mono<ResponseEntity<Void>> deleteMovie(@PathVariable(value = "id") String id){
+        return movieRepository.findById(id)
+                .flatMap(existingMovie ->
+                        movieRepository.delete(existingMovie)
+                                .then(Mono.just(ResponseEntity.ok().<Void>build()))
+                )
+                .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping
+    public Mono<Void> deleteAllMovies(){
+        return movieRepository.deleteAll();
+    }
+}
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
+import org.springframework.security.oauth2.jwt.ReactiveJwtDecoders;
+import org.springframework.security.web.server.SecurityWebFilterChain;
+
+@EnableWebFluxSecurity
+public class SecurityConfig {
+
+    @Value("${spring.security.oauth2.resourceserver.jwk.issuer-uri}")
+    private String issuerUri;
+
+    @Bean
+    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http){
+        http
+                .authorizeExchange()
+                .pathMatchers(HttpMethod.GET,"/movies/**").permitAll()
+                .anyExchange().authenticated()
+                .and()
+                .oauth2ResourceServer()
+                .jwt();
+        return http.build();
+    }
+
+    @Bean
+    public ReactiveJwtDecoder jwtDecoder() {
+        return ReactiveJwtDecoders.fromOidcIssuerLocation(issuerUri);
+    }
+}
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import com.example.movieapi.model.Movie;
+import com.example.movieapi.model.repository.MovieRepository;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.data.mongodb.core.ReactiveMongoOperations;
+import reactor.core.publisher.Flux;
+
+import java.time.LocalDateTime;
+
+@SpringBootApplication
+public class MovieApiApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(MovieApiApplication.class, args);
+	}
+
+	//Keep the rest of the code untouched. Just add the following method
+	@Bean
+	CommandLineRunner init(ReactiveMongoOperations operations, MovieRepository movieRepository) {
+		return args -> {
+			Flux<Movie> productFlux = Flux.just(
+					new Movie(null, "Avenger: Infinity Wars", "Action", LocalDateTime.now()),
+					new Movie(null, "Gladiator", "Drama/Action", LocalDateTime.now()),
+					new Movie(null, "Black Panther", "Action", LocalDateTime.now()))
+					.flatMap(movieRepository::save);
+
+			productFlux
+					.thenMany(movieRepository.findAll())
+					.subscribe(System.out::println);
+		};
+	}
+}
+
+--------------------------------------------------------------------------------------------------------
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.integration.channel.PublishSubscribeChannel;
+import org.springframework.integration.dsl.IntegrationFlow;
+import org.springframework.integration.dsl.IntegrationFlows;
+import org.springframework.integration.file.dsl.FileInboundChannelAdapterSpec;
+import org.springframework.integration.file.dsl.Files;
+import org.springframework.messaging.MessageHandler;
+import org.springframework.web.reactive.HandlerMapping;
+import org.springframework.web.reactive.handler.SimpleUrlHandlerMapping;
+import org.springframework.web.reactive.socket.WebSocketHandler;
+import org.springframework.web.reactive.socket.WebSocketMessage;
+import org.springframework.web.reactive.socket.server.support.WebSocketHandlerAdapter;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
+
+import java.io.File;
+import java.util.Collections;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
+
+
+@Configuration
+public class WebSocketConfiguration {
+    @Bean
+    public IntegrationFlow fileFlow(PublishSubscribeChannel channel, @Value("file://${HOME}/Desktop/in") File file) {
+        FileInboundChannelAdapterSpec in = Files.inboundAdapter(file).autoCreateDirectory(true);
+//        return IntegrationFlows.from(
+//        in,
+//                new Consumer<SourcePollingChannelAdapterSpec>() {
+//                    @Override
+//                    public void accept(SourcePollingChannelAdapterSpec p) {
+//                        p.poller(new Function<PollerFactory, PollerSpec>() {
+//                            @Override
+//                            public PollerSpec apply(PollerFactory pollerFactory) {
+//                                return pollerFactory.fixedRate(1000);
+//                            }
+//                        });
+//                    }
+//                }
+        return IntegrationFlows.from(
+                in,
+                p -> p.poller(pollerFactory -> {
+                    return pollerFactory.fixedRate(1000);
+                })
+        ).channel(channel).get();
+    }
+
+    @Bean
+    @Primary
+    public PublishSubscribeChannel incomingFilesChannel() {
+        return new PublishSubscribeChannel();
+    }
+
+    @Bean
+    public WebSocketHandlerAdapter webSocketHandlerAdapter() {
+        return new WebSocketHandlerAdapter();
+    }
+
+    @Bean
+    public WebSocketHandler webSocketHandler(PublishSubscribeChannel channel) {
+        return session -> {
+            Map<String, MessageHandler> connections = new ConcurrentHashMap<>();
+            Flux<WebSocketMessage> publisher = Flux.create((Consumer<FluxSink<WebSocketMessage>>) fluxSink -> {
+                connections.put(session.getId(), new ForwardingMessageHandler(session, fluxSink));
+                channel.subscribe(connections.get(session.getId()));
+            }).doFinally(signalType -> {
+                channel.unsubscribe(connections.get(session.getId()));
+                connections.remove(session.getId());
+            });
+            return session.send(publisher);
+        };
+    }
+
+    @Bean
+    public HandlerMapping handlerMapping(WebSocketHandler webSocketHandler) {
+        SimpleUrlHandlerMapping handlerMapping = new SimpleUrlHandlerMapping();
+        handlerMapping.setOrder(10);
+        handlerMapping.setUrlMap(Collections.singletonMap("/ws/files", webSocketHandler));
+        return handlerMapping;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+curl http://localhost:8080/exams
+
+curl -X POST -H "Content-Type: application/json" -d '{
+    "title": "First exam"
+}' http://localhost:8080/exams
+
+curl -X POST -H "Content-Type: application/json" -d '{
+    "title": "Another show exam",
+    "description": "Another show exam desc"
+}' http://localhost:8080/exams
+
+curl -X POST -H "Content-Type: application/json" -d '{
+    "title": "First exam",
+    "description": "Just a test",
+    "url": "trying-to-hack",
+    "published": true
+}' http://localhost:8080/exams
+
+curl -X PUT -H "Content-Type: application/json" -d '{
+    "title": "First exam",
+    "description": "Just a test",
+    "url": "trying-to-hack",
+    "published": true
+}' http://localhost:8080/exams
+
+curl -X PUT -H "Content-Type: application/json" -d '{
+    "id": 1,
+    "title": "First exam",
+    "description": "Just a test"
+}' http://localhost:8080/exams
+
+curl -X PUT -H "Content-Type: application/json" -d '{
+    "id": 2,
+    "title": "The third exam is amazing",
+    "description": "Just a test"
+}' http://localhost:8080/exams
+--------------------------------------------------------------------------------------------------------
+alter table exam
+  add column created_at timestamp without time zone not null default now(),
+  add column edited_at timestamp without time zone not null default now(),
+  add column published boolean not null default false;
+--------------------------------------------------------------------------------------------------------
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Collections;
+
+public class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
+
+    public JWTLoginFilter(String url, AuthenticationManager authManager) {
+        super(new AntPathRequestMatcher(url));
+        setAuthenticationManager(authManager);
+    }
+
+    @Override
+    public Authentication attemptAuthentication(
+            HttpServletRequest req, HttpServletResponse res)
+            throws AuthenticationException, IOException, ServletException {
+        AccountCredentials creds = new ObjectMapper()
+                .readValue(req.getInputStream(), AccountCredentials.class);
+        return getAuthenticationManager().authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        creds.getUsername(),
+                        creds.getPassword(),
+                        Collections.emptyList()
+                )
+        );
+    }
+
+    @Override
+    protected void successfulAuthentication(
+            HttpServletRequest req,
+            HttpServletResponse res, FilterChain chain,
+            Authentication auth) throws IOException, ServletException {
+        TokenAuthenticationService
+                .addAuthentication(res, auth.getName());
+    }
+}
+--------------------------------------------------------------------------------------------------------
+mvn spring-boot:run -Drun.arguments="--auth0.secret=YOUR_SECRET_KEY"
+--------------------------------------------------------------------------------------------------------
+import feign.Feign;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.cloud.openfeign.AnnotatedParameterProcessor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.MethodParameter;
+import org.springframework.core.convert.ConversionService;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.method.annotation.RequestHeaderMethodArgumentResolver;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.web.servlet.mvc.method.annotation.PathVariableMethodArgumentResolver;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
+import org.springframework.web.servlet.mvc.method.annotation.RequestResponseBodyMethodProcessor;
+import org.springframework.web.servlet.mvc.method.annotation.ServletCookieValueMethodArgumentResolver;
+
+import javax.annotation.PostConstruct;
+import javax.validation.Valid;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * VenusFeignAutoConfig
+ *
+ * @author Charles He
+ */
+@Configuration
+@ConditionalOnClass(Feign.class)
+public class VenusFeignAutoConfig {
+
+    @Autowired
+    private RequestMappingHandlerAdapter adapter;
+
+    @Autowired
+    private ConfigurableBeanFactory beanFactory;
+
+    @Bean
+    public VenusRequestInterceptor feignRequestInterceptor() {
+        return new VenusRequestInterceptor();
+    }
+
+    @Bean
+    public VenusSpringMvcContract feignSpringMvcContract(@Autowired(required = false) List<AnnotatedParameterProcessor> parameterProcessors,
+                                                         ConversionService conversionService) {
+        if (null == parameterProcessors) {
+            parameterProcessors = new ArrayList<>();
+        }
+        return new VenusSpringMvcContract(parameterProcessors, conversionService);
+    }
+
+    public static MethodParameter interfaceMethodParameter(MethodParameter parameter, Class annotationType) {
+        if (!parameter.hasParameterAnnotation(annotationType)) {
+            for (Class<?> itf : parameter.getDeclaringClass().getInterfaces()) {
+                try {
+                    Method method = itf.getMethod(parameter.getMethod().getName(), parameter.getMethod().getParameterTypes());
+                    MethodParameter itfParameter = new MethodParameter(method, parameter.getParameterIndex());
+                    if (itfParameter.hasParameterAnnotation(annotationType)) {
+                        return itfParameter;
+                    }
+                } catch (NoSuchMethodException e) {
+                    continue;
+                }
+            }
+        }
+        return parameter;
+    }
+
+    @PostConstruct
+    public void modifyArgumentResolvers() {
+        List<HandlerMethodArgumentResolver> list = new ArrayList<>(adapter.getArgumentResolvers());
+
+        // PathVariable 支持接口注解
+        list.add(0, new PathVariableMethodArgumentResolver() {
+            @Override
+            public boolean supportsParameter(MethodParameter parameter) {
+                return super.supportsParameter(interfaceMethodParameter(parameter, PathVariable.class));
+            }
+
+            @Override
+            protected NamedValueInfo createNamedValueInfo(MethodParameter parameter) {
+                return super.createNamedValueInfo(interfaceMethodParameter(parameter, PathVariable.class));
+            }
+        });
+
+        // RequestHeader 支持接口注解
+        list.add(0, new RequestHeaderMethodArgumentResolver(beanFactory) {
+            @Override
+            public boolean supportsParameter(MethodParameter parameter) {
+                return super.supportsParameter(interfaceMethodParameter(parameter, RequestHeader.class));
+            }
+
+            @Override
+            protected NamedValueInfo createNamedValueInfo(MethodParameter parameter) {
+                return super.createNamedValueInfo(interfaceMethodParameter(parameter, RequestHeader.class));
+            }
+        });
+
+        // CookieValue 支持接口注解
+        list.add(0, new ServletCookieValueMethodArgumentResolver(beanFactory) {
+            @Override
+            public boolean supportsParameter(MethodParameter parameter) {
+                return super.supportsParameter(interfaceMethodParameter(parameter, CookieValue.class));
+            }
+
+            @Override
+            protected NamedValueInfo createNamedValueInfo(MethodParameter parameter) {
+                return super.createNamedValueInfo(interfaceMethodParameter(parameter, CookieValue.class));
+            }
+        });
+
+        // RequestBody Valid 支持接口注解
+        list.add(0, new RequestResponseBodyMethodProcessor(adapter.getMessageConverters()) {
+            @Override
+            public boolean supportsParameter(MethodParameter parameter) {
+                return super.supportsParameter(interfaceMethodParameter(parameter, RequestBody.class));
+            }
+
+            @Override
+            protected void validateIfApplicable(WebDataBinder binder, MethodParameter methodParam) {
+                super.validateIfApplicable(binder, interfaceMethodParameter(methodParam, Valid.class));
+            }
+        });
+
+        // 修改ArgumentResolvers, 支持接口注解
+        adapter.setArgumentResolvers(list);
+    }
+}
+
+https://github.com/SpringCloud/venus-cloud-feign/blob/master/venus-cloud-feign-core/src/main/java/cn/springcloud/feign/VenusFeignAutoConfig.java
+--------------------------------------------------------------------------------------------------------
+mvn help:describe -Dcmd= compile
+mvn help:describe -Dplugin=compiler
+mvn help:describe -Dcmd= dependency:get
+mvn dependency:list
+mvn help:effective-pom
+mvn compiler:compile
+
+mvn tomcat7:deploy
+mvn tomcat7:redeploy
+mvn tomcat7:undeploy
+
+mvn install:install-file
+-Dfile="D:\thirdParty\jortho.jar"
+-DgroupId=com.inet.jortho
+-DartifactId=jortho 
+-Dversion=1.0 
+-Dpackaging=jar
+
+mvn    archetype:generate   -DgroupId={ project-group-id}    - DartifactId={ project-name}    - DarchetypeArtifactId= maven-archetype-quickstart   - DinteractiveMode= false 
+
+mvn  exec:java -Dexec.mainClass="com.logicbig.App"
+
+mvn -Dmaven.surefire.debug test
+mvn -Dmaven.surefire.debug="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000 -Xnoagent -Djava.compiler=NONE" test
+
+mvn -q test
+mvn -q test -Dtest=TestClass3
+mvn -q test -Dtest=TestClass3,TestClass1
+mvn -q test -Dtest=T*lass1
+mvn -q test -Dtest=TestClass2#test4
+mvn -q test -Dtest=#test4
+mvn -q  test -Dtest=TestClass3#test5+test7
+mvn -q test "-Dtest=!TestClass1"
+
+                    <compilerArgs>
+                        <arg>-g</arg>
+                        <arg>-Xlint</arg>
+                     </compilerArgs>
+--------------------------------------------------------------------------------------------------------
+let compare = Symbol();
+class Math {
+    constructor() {
+        this.desc = "math utility";
+    }
+    //a method
+    [compare](x, y) {
+        return x === y ? 0 : x < y ? -1 : 1;
+    }
+}
+
+let math = new Math();
+console.log(math);
+let doCompare = math[compare];
+let result = doCompare(7, 5);
+console.log(result);
+--------------------------------------------------------------------------------------------------------
+function shape(inputClass) {
+    return class extends inputClass {
+        draw() {
+            console.log("shape is drawing");
+        }
+    };
+}
+
+function component(inputClass) {
+    return class extends inputClass {
+        display() {
+            console.log("component is displaying");
+        }
+    };
+}
+
+class Rectangle {
+    constructor(w, h) {
+        this.w = w;
+        this.h = h;
+    }
+    area() {
+        return this.w * this.h;
+    }
+}
+
+let SquareBase = shape(component(Rectangle));
+//above is equivalent to: class Shape extends (class Component extends Rectangle{}){}
+
+class Square extends SquareBase {
+    constructor(sideLength) {
+        super(sideLength, sideLength); //calling Rectangle constructor
+    }
+}
+
+let square = new Square(4);
+square.draw();
+square.display();
+let area = square.area();
+console.log(area);
+--------------------------------------------------------------------------------------------------------
+function* getEvenNumbers(start, end) {
+    for (let i = start; i <= end; i++) {
+        if (i % 2 == 0) {
+            yield i;
+        }
+    }
+}
+
+//using for-of loop
+let evenNumbers = getEvenNumbers(3, 9);
+for (let n of evenNumbers) {
+    console.log(n);
+}
+
+//using next() method
+evenNumbers = getEvenNumbers(3, 9);
+let temp = { done: false }
+while (!temp.done) {
+    console.log(temp = evenNumbers.next());
+}
+--------------------------------------------------------------------------------------------------------
+keytool -genkey -noprompt -alias <your-alias> -keyalg RSA -keystore <your-file-name> -keypass <your-password>
+    -storepass <your-password> -dname "CN=<your-cert-name>, OU=<your-organization-unit>, O=<your-organization>,
+    L=<your-location>, ST=<state>, C=<two-letter-country-code>"
+	
+<Server ...>
+ ....
+   <Service name="Catalina">
+     .....
+      <Connector
+         protocol="org.apache.coyote.http11.Http11NioProtocol"
+         port="8443" maxThreads="200"
+         scheme="https" secure="true" SSLEnabled="true"
+         keystoreFile="C:\my-cert-dir\localhost-rsa.jks"
+         keystorePass="123456"
+         clientAuth="false" sslProtocol="TLS"/>
+     .....
+   </Service>
+</Server>
+
+ <plugin>
+     <groupId>org.apache.tomcat.maven</groupId>
+     <artifactId>tomcat7-maven-plugin</artifactId>
+     <version>2.2</version>
+     <configuration>
+         <path>/</path>
+         <httpsPort>8443</httpsPort>
+         <keystoreFile>C:\my-cert-dir\localhost-rsa.jks</keystoreFile>
+         <keystorePass>123456</keystorePass>
+     </configuration>
+ </plugin>
+ 
+ mvn tomcat7:run-war
+--------------------------------------------------------------------------------------------------------
+import com.mongodb.client.*;
+import org.bson.Document;
+
+public class QueryCollectionExample {
+    public static void main(String[] args) {
+        MongoClient mongoClient = MongoClients.create("mongodb://localhost:27017");
+        MongoDatabase database = mongoClient.getDatabase("my-database");
+        MongoCollection<Document> collection = database.getCollection("test-collection");
+
+        //query collection
+        //finding all
+        FindIterable<Document> documents = collection.find();
+        for (Document document : documents) {
+            System.out.println(document.toString());
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+let d: Date = new Date();
+let y: number = d.getFullYear();
+console.log(y);
+--------------------------------------------------------------------------------------------------------
+   @PostConstruct
+    public void init() {
+       requestMappingHandlerAdapter.setIgnoreDefaultModelOnRedirect(true);
+    }
+--------------------------------------------------------------------------------------------------------
+    // 2G network types
+    public static final String GSM = "gsm";
+    public static final String GPRS = "gprs";
+    public static final String EDGE = "edge";
+    // 3G network types
+    public static final String CDMA = "cdma";
+    public static final String UMTS = "umts";
+    public static final String HSPA = "hspa";
+    public static final String HSUPA = "hsupa";
+    public static final String HSDPA = "hsdpa";
+    public static final String ONEXRTT = "1xrtt";
+    public static final String EHRPD = "ehrpd";
+    // 4G network types
+    public static final String LTE = "lte";
+    public static final String UMB = "umb";
+    public static final String HSPA_PLUS = "hspa+";
+--------------------------------------------------------------------------------------------------------
+security.oauth2.resource.jwk.keySetUri=https://blog-samples.auth0.com/.well-known/jwks.json
+security.oauth2.resource.id=https://ads-api
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
+import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
+import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
+
+@Configuration
+@EnableResourceServer
+public class SecurityConfig extends ResourceServerConfigurerAdapter {
+    @Value("${security.oauth2.resource.id}")
+    private String resourceId;
+
+    @Override
+    public void configure(HttpSecurity http) throws Exception {
+        http.authorizeRequests()
+                .mvcMatchers("/ads/**").authenticated();
+    }
+
+    @Override
+    public void configure(ResourceServerSecurityConfigurer resources) {
+        resources.resourceId(resourceId);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.auth0.spring.security.api.JwtWebSecurityConfigurer;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+    @Value(value = "${auth0.apiAudience}")
+    private String apiAudience;
+    @Value(value = "${auth0.issuer}")
+    private String issuer;
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.cors();
+        JwtWebSecurityConfigurer
+                .forRS256(apiAudience, issuer)
+                .configure(http)
+                .authorizeRequests()
+                .antMatchers(HttpMethod.GET, "/").permitAll()
+                .antMatchers(HttpMethod.GET, "/secured").authenticated();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@EnableWebMvc
+@Configuration
+@ComponentScan({ "com.baeldung.web" })
+public class WebConfig implements WebMvcConfigurer {
+ 
+    @Override
+    public void configureMessageConverters(
+      List<HttpMessageConverter<?>> converters) {
+     
+        messageConverters.add(createXmlHttpMessageConverter());
+        messageConverters.add(new MappingJackson2HttpMessageConverter());
+    }
+    private HttpMessageConverter<Object> createXmlHttpMessageConverter() {
+        MarshallingHttpMessageConverter xmlConverter = 
+          new MarshallingHttpMessageConverter();
+ 
+        XStreamMarshaller xstreamMarshaller = new XStreamMarshaller();
+        xmlConverter.setMarshaller(xstreamMarshaller);
+        xmlConverter.setUnmarshaller(xstreamMarshaller);
+ 
+        return xmlConverter;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+     * <p>
+     *     getting a list of customers whose status is isActive
+     * </p>
+     * @return  list of customer instances as {@link List<Customer>}
+     */
+    @Override
+    public List<Customer> getActiveCustomers() {
+        Session session = null;
+        List<Customer> customerList = null;
+        try{
+            session = sessionFactory.openSession();
+            Criteria criteria = session.createCriteria(Customer.class).add(Restrictions.eq("isActive",true));
+            customerList = (List<Customer>) criteria.list();
+            System.out.println(" size ["+customerList.size()+"]");
+        }
+        finally {
+            if(session!=null){
+                session.close();
+            }
+        }
+        return customerList;
+    }
+--------------------------------------------------------------------------------------------------------
+    @Async
+    public Future<String> execute()
+    {
+
+        LOGGER.info("AsyncWorkerFuture: current thread [" + Thread.currentThread().getName() + "]");
+        try {
+            Thread.sleep(10000);
+            LOGGER.info("AsyncWorkerFuture returns after sleep");
+        } catch (InterruptedException ex) {
+            LOGGER.info(" sleeping thread interrupted ");
+        }
+
+        return new AsyncResult<String>(Long.toString(System.currentTimeMillis()));
+    }
+--------------------------------------------------------------------------------------------------------
+server.port  = 9091
+
+security.oauth2.client.client-id=client
+security.oauth2.client.client-secret=password
+
+security.oauth2.resource.token-info-uri=http://localhost:9090/oauth/check_token
+--------------------------------------------------------------------------------------------------------
+    @Bean(name = "authenticationManager")
+    @Override
+    public AuthenticationManager authenticationManagerBean() throws Exception {
+        return super.authenticationManagerBean();
+    }
+--------------------------------------------------------------------------------------------------------
+    @ApiOperation(value = "creating new user")
+    @PostMapping("/users")
+    public AddUserResponse createUser(@Valid @RequestBody AddUserRequest addUserRequest, BindingResult bindingResult) throws PersistentException {
+        if (bindingResult.hasErrors()) {
+            throw new PersistentException(bindingResult.getAllErrors().get(0).getDefaultMessage());
+        }
+        return userService.create(addUserRequest);
+    }
+--------------------------------------------------------------------------------------------------------
+    @Override
+    public void configure(WebSecurity web) throws Exception {
+        web.ignoring().antMatchers("/v2/api-docs",
+                        "/configuration/ui",
+                        "/swagger-resources",
+                        "/configuration/security",
+                        "/swagger-ui.html",
+                        "/webjars/**");
+    }
+--------------------------------------------------------------------------------------------------------
+import org.slf4j.MDC;
+import org.springframework.stereotype.Component;
+
+import javax.servlet.*;
+import java.io.IOException;
+
+@Component
+public class MdcLogEnhancerFilter implements Filter {
+
+    @Override
+    public void destroy() {
+
+    }
+
+    @Override
+    public void init(FilterConfig filterConfig) throws ServletException {
+
+    }
+
+    @Override
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException
+    {
+        MDC.put("userId", "www.SpringBootDev.com");
+        filterChain.doFilter(servletRequest, servletResponse);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+@Entity
+@Table(name = "student_courses")
+@IdClass(StudentCourseId.class)
+public class StudentCourseEnrollment implements Serializable
+{
+    @Id
+    @ManyToOne
+    @JoinColumn(name = "course_id", referencedColumnName = "id")
+    private Course course;
+
+    @Id
+    @ManyToOne
+    @JoinColumn(name = "student_id", referencedColumnName = "id")
+    private Student student;
+
+    @JoinColumn(name = "from_date")
+    private String fromDate;
+
+    @JoinColumn(name = "to_date")
+    private String toDate;
+
+    public Course getCourse() {
+        return course;
+    }
+--------------------------------------------------------------------------------------------------------
+@Configuration
+public class WebConfig extends WebMvcConfigurationSupport {
+
+  @Bean
+  public RequestMappingHandlerAdapter requestMappingHandlerAdapter() {
+    RequestMappingHandlerAdapter handlerAdapter = super.requestMappingHandlerAdapter();
+    handlerAdapter.getMessageConverters().add(0, getProtobufJsonMessageConverter());
+    return handlerAdapter;
+  }
+--------------------------------------------------------------------------------------------------------
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.Database;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+
+import javax.sql.DataSource;
+
+@Configuration
+@EnableJpaRepositories
+@EnableTransactionManagement
+public class AppConfiguration {
+
+    @Bean
+    public DataSource dataSource() {
+        EmbeddedDatabaseBuilder builder = new EmbeddedDatabaseBuilder();
+        return builder.setType(EmbeddedDatabaseType.HSQL).build();
+    }
+
+    @Bean
+    public LocalContainerEntityManagerFactoryBean entityManagerFactory() {
+        HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
+        vendorAdapter.setDatabase(Database.HSQL);
+        vendorAdapter.setGenerateDdl(true);
+
+        LocalContainerEntityManagerFactoryBean factory = new LocalContainerEntityManagerFactoryBean();
+        factory.setJpaVendorAdapter(vendorAdapter);
+        factory.setPackagesToScan(getClass().getPackage().getName());
+        factory.setDataSource(dataSource());
+
+        return factory;
+    }
+
+    @Bean
+    public PlatformTransactionManager transactionManager() {
+        return new JpaTransactionManager();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.chathuranga.rest.jwt.auth.SecretKeyProvider;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+ 
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.time.LocalDateTime;
+import java.util.Date;
+ 
+import static java.time.ZoneOffset.UTC;
+ 
+@Component
+public class JwtService {
+ 
+    private static final String ISSUER = "com.chathuranga.examples";
+ 
+    @Autowired
+    private SecretKeyProvider secretKeyProvider;
+ 
+    public String generateToken(String username) throws IOException, URISyntaxException {
+        byte[] secretKey = secretKeyProvider.getKey();
+        Date expiration = Date.from(LocalDateTime.now(UTC).plusHours(2).toInstant(UTC));
+        return Jwts.builder()
+                .setSubject(username)
+                .setExpiration(expiration)
+                .setIssuer(ISSUER)
+                .signWith(SignatureAlgorithm.HS512, secretKey)
+                .compact();
+    }
+ 
+    public String verifyToken(String token) throws IOException, URISyntaxException {
+        byte[] secretKey = secretKeyProvider.getKey();
+        Jws<Claims> claims = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
+        //returning authenticated/verified username
+        return claims.getBody().getSubject();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.chathuranga.rest.jwt.auth.SecretKeyProvider;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+ 
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.time.LocalDateTime;
+import java.util.Date;
+ 
+import static java.time.ZoneOffset.UTC;
+ 
+@Component
+public class JwtService {
+ 
+    private static final String ISSUER = "com.chathuranga.examples";
+ 
+    @Autowired
+    private SecretKeyProvider secretKeyProvider;
+ 
+    public String generateToken(String username) throws IOException, URISyntaxException {
+        byte[] secretKey = secretKeyProvider.getKey();
+        Date expiration = Date.from(LocalDateTime.now(UTC).plusHours(2).toInstant(UTC));
+        return Jwts.builder()
+                .setSubject(username)
+                .setExpiration(expiration)
+                .setIssuer(ISSUER)
+                .signWith(SignatureAlgorithm.HS512, secretKey)
+                .compact();
+    }
+ 
+    public String verifyToken(String token) throws IOException, URISyntaxException {
+        byte[] secretKey = secretKeyProvider.getKey();
+        Jws<Claims> claims = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
+        //returning authenticated/verified username
+        return claims.getBody().getSubject();
+    }
+}
 --------------------------------------------------------------------------------------------------------
 <plugin>
     <groupId>org.apache.maven.plugins</groupId>
