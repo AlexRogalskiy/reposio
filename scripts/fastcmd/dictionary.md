@@ -5050,6 +5050,55 @@ public ResponseEntity<StreamingResponseBody> getConfig() {
     }, headers, HttpStatus.OK);
 }
 --------------------------------------------------------------------------------------------------------
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+@RestController
+@RequestMapping("/app")
+public class ImageResource {
+
+    private static final String EXTENSION = ".jpg";
+    private static final String SERVER_LOCATION = "/server/images";
+
+    @RequestMapping(path = "/download", method = RequestMethod.GET)
+    public ResponseEntity<Resource> download(@RequestParam("image") String image) throws IOException {
+        File file = new File(SERVER_LOCATION + File.separator + image + EXTENSION);
+
+        HttpHeaders header = new HttpHeaders();
+        header.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=img.jpg");
+        header.add("Cache-Control", "no-cache, no-store, must-revalidate");
+        header.add("Pragma", "no-cache");
+        header.add("Expires", "0");
+
+        Path path = Paths.get(file.getAbsolutePath());
+        ByteArrayResource resource = new ByteArrayResource(Files.readAllBytes(path));
+
+        return ResponseEntity.ok()
+                .headers(header)
+                .contentLength(file.length())
+                .contentType(MediaType.parseMediaType("application/octet-stream"))
+                .body(resource);
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+Content-Disposition: inline
+Content-Disposition: attachment
+Content-Disposition: attachment; filename="java-tutorial.pdf"
+--------------------------------------------------------------------------------------------------------
 @PostMapping("/")
 @ResponseBody
 ResponseEntity<StreamingResponseBody> post(@RequestPart final MultipartFile file)
@@ -18151,6 +18200,78 @@ public class EventListenerConfig {
 		
 	}
 }
+--------------------------------------------------------------------------------------------------------
+    @Autowired
+    private SessionService sessionService;
+
+    @GetMapping("/created")
+    public ResponseEntity init() {
+        final Session session = new Session();
+        session.setId("c108cda3-8b4b-483d-a987-d65e6bfe3024");
+        session.setFilepath("C:\\git-project\\paragon.microservices.distributor");
+        session.setFilename("lombok.config");
+        this.sessionService.save(session);
+        return ResponseEntity.ok().build();
+    }
+--------------------------------------------------------------------------------------------------------
+@Test
+public void givenUsingCommonsIo_whenByteArrayInputStreamToAByteBuffer_thenLengthMustMatch() 
+  throws IOException {
+    byte[] input = new byte[] { 0, 1, 2 };
+    InputStream initialStream = new ByteArrayInputStream(input);
+    ByteBuffer byteBuffer = ByteBuffer.allocate(3);
+    ReadableByteChannel channel = newChannel(initialStream);
+    IOUtils.readFully(channel, byteBuffer);
+ 
+    assertEquals(byteBuffer.position(), input.length);
+}
+@Test
+public void givenUsingGuava__whenByteArrayInputStreamToAByteBuffer_thenLengthMustMatch() 
+  throws IOException {
+    InputStream initialStream = ByteSource
+      .wrap(new byte[] { 0, 1, 2 })
+      .openStream();
+    byte[] targetArray = ByteStreams.toByteArray(initialStream);
+    ByteBuffer bufferByte = ByteBuffer.wrap(targetArray);
+    while (bufferByte.hasRemaining()) {
+        bufferByte.get();
+    }
+ 
+    assertEquals(bufferByte.position(), targetArray.length);
+}
+@Test
+public void givenUsingCoreClasses_whenByteArrayInputStreamToAByteBuffer_thenLengthMustMatch() 
+  throws IOException {
+    byte[] input = new byte[] { 0, 1, 2 };
+    InputStream initialStream = new ByteArrayInputStream(input);
+    ByteBuffer byteBuffer = ByteBuffer.allocate(3);
+    while (initialStream.available() > 0) {
+        byteBuffer.put((byte) initialStream.read());
+    }
+ 
+    assertEquals(byteBuffer.position(), input.length);
+}
+--------------------------------------------------------------------------------------------------------
+    @Autowired
+    private SessionService sessionService;
+
+    @GetMapping("/created")
+    public ResponseEntity init() {
+        final Session session = new Session();
+        session.setId("c108cda3-8b4b-483d-a987-d65e6bfe3024");
+        session.setFilepath("C:\\git-project\\paragon.microservices.distributor");
+        session.setFilename("lombok.config");
+        this.sessionService.save(session);
+        return ResponseEntity.ok().build();
+    }
+--------------------------------------------------------------------------------------------------------
+    InputStreamResource resource = new InputStreamResource(new FileInputStream(file));
+
+    return ResponseEntity.ok()
+            .headers(headers)
+            .contentLength(file.length())
+            .contentType(MediaType.parseMediaType("application/octet-stream"))
+            .body(resource);
 --------------------------------------------------------------------------------------------------------
 //
 // Source code recreated from a .class file by IntelliJ IDEA

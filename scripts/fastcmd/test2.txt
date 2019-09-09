@@ -1,0 +1,326 @@
+package com.paragon.microservices.distributor.controller.impl;
+
+import com.google.common.io.ByteStreams;
+import com.paragon.microservices.distributor.annotation.SwaggerApi;
+import com.paragon.microservices.distributor.controller.interfaces.DownloadController;
+import com.paragon.microservices.distributor.model.domain.*;
+import com.paragon.microservices.distributor.model.enumeration.DownloadStatus;
+import com.paragon.microservices.distributor.service.interfaces.DownloadService;
+import com.paragon.microservices.distributor.service.interfaces.FileTransferService;
+import com.paragon.microservices.distributor.system.utils.HeaderUtils;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.Authorization;
+import io.swagger.annotations.AuthorizationScope;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.tomcat.util.http.fileupload.IOUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.MessageSource;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.DigestUtils;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+import org.springframework.web.servlet.view.RedirectView;
+
+import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+import static com.paragon.microservices.distributor.controller.impl.DownloadControllerImpl.CONTROLLER_ID;
+import static com.paragon.microservices.distributor.system.utils.FileTransferUtils.resolveFilePath;
+
+/**
+ * {@link DownloadController} implementation
+ */
+@Slf4j
+@Getter(AccessLevel.PROTECTED)
+@RestController(CONTROLLER_ID)
+@Transactional(rollbackFor = Exception.class, readOnly = true)
+@RequestMapping(
+        value = "/api/v0/distributor/download",
+        produces = {MediaType.APPLICATION_JSON_UTF8_VALUE}
+)
+@SwaggerApi
+@Api(
+        value = "/api/v0/distributor/download",
+        protocols = "http, https",
+        consumes = MediaType.APPLICATION_JSON_UTF8_VALUE,
+        produces = MediaType.APPLICATION_OCTET_STREAM_VALUE,
+        authorizations = {
+                @Authorization(value = "download_store_auth",
+                        scopes = {
+                                @AuthorizationScope(scope = "read:models", description = "read file streams")
+                        })
+        }
+)
+public class DownloadControllerImpl extends BaseControllerImpl implements DownloadController {
+    /**
+     * Default controller identifier
+     */
+    public static final String CONTROLLER_ID = "DownloadController";
+
+    private final DownloadService downloadService;
+    private final FileTransferService fileTransferService;
+    private final ApplicationEventPublisher eventPublisher;
+
+    @Autowired
+    public DownloadControllerImpl(final MessageSource messageSource,
+                                  final DownloadService downloadService,
+                                  final FileTransferService fileTransferService,
+                                  final ApplicationEventPublisher eventPublisher) {
+        super(messageSource);
+        this.downloadService = downloadService;
+        this.fileTransferService = fileTransferService;
+        this.eventPublisher = eventPublisher;
+    }
+
+    @Override
+    @GetMapping(params = {"productId", "!product"})
+    public RedirectView generateDownloadLink(@RequestParam(name = "productId", required = false) final UUID productId,
+                                             @RequestParam(name = "versionId", required = false) final UUID versionId,
+                                             @RequestParam(name = "binaryId") final UUID binaryId,
+                                             @AuthenticationPrincipal(errorOnInvalidType = true) final AuthenticatedUser authenticatedUser) {
+        final DownloadLink downloadLink = this.downloadService.generateDownloadLink(binaryId, authenticatedUser.getUserId());
+        final RedirectView redirectView = new RedirectView(downloadLink.getUrl(), true);
+        redirectView.setStatusCode(HttpStatus.PERMANENT_REDIRECT);
+        return redirectView;
+    }
+
+    @Override
+    @GetMapping(params = {"product", "!productId"})
+    public RedirectView generateDownloadLink(@RequestParam(name = "product") final String product,
+                                             @RequestParam(name = "version", required = false) final String version,
+                                             @RequestParam(name = "locale") final String locale,
+                                             @RequestParam(name = "platform") final String platform) {
+        return null;
+    }
+
+    @GetMapping("/1/{sessionId}/{fileName:[\\w]{0,512}}")
+    @Override
+    public ResponseEntity<StreamingResponseBody> getResourceAsStream(@PathVariable final UUID sessionId, @PathVariable final String fileName) throws IOException {
+        final FileMetaData fileMetaData = this.fileTransferService.getFileMetaData(sessionId);
+        final InputStream inputStream = this.fileTransferService.getFileInputStream(fileMetaData);
+        final String fileHash = DigestUtils.md5DigestAsHex(inputStream);
+        final StreamingResponseBody stream = this.toStreamResponseBody4(sessionId, inputStream);
+
+        final HttpHeaders headers = HeaderUtils.HeadersBuilder.builder()
+                .addFileNameHeader(fileMetaData.getFileName())
+                .addFileChecksumHeader(fileHash)
+                .addAttachmentContentDispositionHeader(fileMetaData.getFileName(), fileMetaData.getFileSize())
+                .addContentType(fileMetaData.getMediaType())
+                .addContentLength(fileMetaData.getFileSize())
+                .build();
+        return ResponseEntity.ok()
+                .headers(headers)
+                .cacheControl(CacheControl.noStore())
+                .body(stream);
+    }
+
+    @GetMapping("/2/{sessionId}/{fileName:[\\w]{0,512}}")
+    public ResponseEntity<Resource> getResourceAsStream2(@PathVariable final UUID sessionId, @PathVariable final String fileName) throws IOException {
+        final FileMetaData fileMetaData = this.fileTransferService.getFileMetaData(sessionId);
+        final Resource resource = new FileSystemResource(resolveFilePath(fileMetaData.getFilePath(), fileMetaData.getFilePath()));
+        final String fileHash = DigestUtils.md5DigestAsHex(resource.getInputStream());
+        //InputStreamResource resource = new InputStreamResource(new FileInputStream(file));
+//        final HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+//        final String header = request.getHeader("User-Agent");
+
+        final HttpHeaders headers = HeaderUtils.HeadersBuilder.builder()
+                .addFileNameHeader(fileMetaData.getFileName())
+                .addFileChecksumHeader(fileHash)
+                .addAttachmentContentDispositionHeader(fileMetaData.getFileName(), fileMetaData.getFileSize())
+                .addContentType(fileMetaData.getMediaType())
+                .addContentLength(fileMetaData.getFileSize())
+                .build();
+        return ResponseEntity.ok()
+                .headers(headers)
+                .cacheControl(CacheControl.noStore())
+                .body(resource);
+    }
+
+    @GetMapping("/3/{sessionId}/{fileName:[\\w]{0,512}}")
+    public ResponseEntity<InputStreamResource> getResourceAsStream3(@PathVariable final UUID sessionId, @PathVariable final String fileName) throws IOException {
+        final FileMetaData fileMetaData = this.fileTransferService.getFileMetaData(sessionId);
+        final InputStreamResource resource = new InputStreamResource(new FileInputStream(resolveFilePath(fileMetaData.getFilePath(), fileMetaData.getFileName()).toFile()));
+        final String fileHash = DigestUtils.md5DigestAsHex(resource.getInputStream());
+
+        final HttpHeaders headers = HeaderUtils.HeadersBuilder.builder()
+                .addFileNameHeader(fileData.getFileMetaData().getFileName())
+                .addFileChecksumHeader(fileHash)
+                .addAttachmentContentDispositionHeader(fileData.getFileMetaData().getFileName(), fileData.getFileMetaData().getFileSize())
+                .addContentType(fileData.getFileMetaData().getMediaType())
+                .addContentLength(fileData.getFileMetaData().getFileSize())
+                .build();
+        return ResponseEntity.ok()
+                .headers(headers)
+                .cacheControl(CacheControl.noStore())
+                .body(stream);
+    }
+
+    @GetMapping("/5/{sessionId}/{fileName:[\\w]{0,512}}")
+    public ResponseEntity<StreamingResponseBody> getResourceAsStream5(@PathVariable final UUID sessionId, @PathVariable final String fileName,
+                                                                      final HttpServletResponse response) throws IOException {
+        final FileData fileData = this.fileTransferService.getFileData(sessionId);
+        final String fileHash = DigestUtils.md5DigestAsHex(fileData.getFileStream());
+        final StreamingResponseBody stream = this.toZipStreamResponseBody(fileData);
+
+        final HttpHeaders headers = HeaderUtils.HeadersBuilder.builder()
+                .addFileNameHeader(fileData.getFileMetaData().getFileName())
+                .addFileChecksumHeader(fileHash)
+                .addAttachmentContentDispositionHeader(fileData.getFileMetaData().getFileName(), fileData.getFileMetaData().getFileSize())
+                .addContentType(fileData.getFileMetaData().getMediaType())
+                .addContentLength(fileData.getFileMetaData().getFileSize())
+                .build();
+        return ResponseEntity.ok()
+                .headers(headers)
+                .cacheControl(CacheControl.noStore())
+                .body(stream);
+    }
+
+    @GetMapping("/6/{sessionId}/{fileName:[\\w]{0,512}}")
+    public ResponseEntity<StreamingResponseBody> getResourceAsStream6(@PathVariable final UUID sessionId, @PathVariable final String fileName) throws IOException {
+        final FileData fileData = this.fileTransferService.getFileData(sessionId);
+        final String fileHash = DigestUtils.md5DigestAsHex(fileData.getFileStream());
+        final StreamingResponseBody stream = this.toBufferedStreamResponseBody(fileData);
+
+        final HttpHeaders headers = HeaderUtils.HeadersBuilder.builder()
+                .addFileNameHeader(fileData.getFileMetaData().getFileName())
+                .addFileChecksumHeader(fileHash)
+                .addAttachmentContentDispositionHeader(fileData.getFileMetaData().getFileName(), fileData.getFileMetaData().getFileSize())
+                .addContentType(fileData.getFileMetaData().getMediaType())
+                .addContentLength(fileData.getFileMetaData().getFileSize())
+                .build();
+        return ResponseEntity.ok()
+                .headers(headers)
+                .cacheControl(CacheControl.noStore())
+                .body(stream);
+    }
+
+    @GetMapping("/7/{sessionId}/{fileName:[\\w]{0,512}}")
+    public ResponseEntity<StreamingResponseBody> getResourceAsStream7(@PathVariable final UUID sessionId, @PathVariable final String fileName) throws IOException {
+        final FileData fileData = this.fileTransferService.getFileData(sessionId);
+        final String fileHash = DigestUtils.md5DigestAsHex(fileData.getFileStream());
+        final StreamingResponseBody stream = this.toStreamResponseBody(fileData);
+
+        final HttpHeaders headers = HeaderUtils.HeadersBuilder.builder()
+                .addFileNameHeader(fileData.getFileMetaData().getFileName())
+                .addFileChecksumHeader(fileHash)
+                .addAttachmentContentDispositionHeader(fileData.getFileMetaData().getFileName(), fileData.getFileMetaData().getFileSize())
+                .addContentType(fileData.getFileMetaData().getMediaType())
+                .addContentLength(fileData.getFileMetaData().getFileSize())
+                .build();
+        return ResponseEntity.ok()
+                .headers(headers)
+                .cacheControl(CacheControl.noStore())
+                .body(stream);
+    }
+
+    @GetMapping("/8/{sessionId}/{fileName}")
+    public StreamingResponseBody getResourceAsStream8(@ApiParam(value = "Session identifier to authenticate user request by", required = true) @PathVariable final UUID sessionId,
+                                                      @ApiParam(value = "File name to fetch by", required = true) @PathVariable final String fileName) throws IOException {
+        final FileData fileMetaData = this.fileTransferService.getFileData(sessionId);
+        final String fileHash = DigestUtils.md5DigestAsHex(fileMetaData.getFileStream());
+        final StreamingResponseBody stream = this.toStreamResponseBody(fileMetaData);
+
+        final StreamingResponseBody str = (out) -> out.write("get".getBytes());
+        return str;
+    }
+
+    private StreamingResponseBody toByteStreamResponseBody(final FileData fileData) {
+        return outputStream -> {
+            this.notifyEvent(fileData.getSessionId()).accept(DownloadStatus.DOWNLOADING);
+            this.eventPublisher.publishEvent(new DownloadEvent(this, MessageEntity.of(fileData.getSessionId(), DownloadStatus.DOWNLOADING)));
+            try {
+                ByteStreams.copy(fileData.getFileStream(), outputStream);
+                outputStream.flush();
+                this.notifyEvent(fileData.getSessionId()).accept(DownloadStatus.FINISHED);
+            } catch (final IOException ex) {
+                log.error("Unable to stream file source, message: {}", ex.getMessage());
+                this.notifyEvent(fileData.getSessionId()).accept(DownloadStatus.INTERRUPTED);
+            }
+        };
+    }
+
+    private StreamingResponseBody toZipStreamResponseBody(final FileData fileData) {
+        return outputStream -> {
+            this.notifyEvent(fileData.getSessionId()).accept(DownloadStatus.DOWNLOADING);
+            final ZipOutputStream zipOut = new ZipOutputStream(outputStream);
+            try {
+                final ZipEntry zipEntry = new ZipEntry(fileData.getFileMetaData().getFileName());
+                zipOut.putNextEntry(zipEntry);
+
+                final byte[] bytes = new byte[1024];
+                int length;
+                while ((length = fileData.getFileStream().read(bytes)) >= 0) {
+                    zipOut.write(bytes, 0, length);
+                }
+                fileData.getFileStream().close();
+                zipOut.close();
+                this.notifyEvent(fileData.getSessionId()).accept(DownloadStatus.FINISHED);
+            } catch (final IOException ex) {
+                log.error("Unable to stream file source, message: {}", ex.getMessage());
+                this.notifyEvent(fileData.getSessionId()).accept(DownloadStatus.INTERRUPTED);
+            }
+        };
+    }
+
+    private StreamingResponseBody toBufferedStreamResponseBody(final FileData fileData) {
+        return outputStream -> {
+            this.notifyEvent(fileData.getSessionId()).accept(DownloadStatus.DOWNLOADING);
+            try (final BufferedInputStream br = new BufferedInputStream(fileData.getFileStream())) {
+                byte[] contents = new byte[1024];
+                while (br.read(contents) != -1) {
+                    outputStream.write(contents);
+                    outputStream.flush();
+                    contents = new byte[1024];
+                }
+                this.notifyEvent(fileData.getSessionId()).accept(DownloadStatus.FINISHED);
+            } catch (IOException ex) {
+                try {
+                    fileData.getFileStream().close();
+                } catch (IOException closingException) {
+                    log.warn("could not close command result, a http connection may be leaked !", closingException);
+                }
+                log.error("Unable to stream file source, message: {}", ex.getMessage());
+                this.notifyEvent(fileData.getSessionId()).accept(DownloadStatus.INTERRUPTED);
+            }
+        };
+    }
+
+    private StreamingResponseBody toStreamResponseBody(final FileData fileData) {
+        return outputStream -> {
+            try {
+                this.notifyEvent(fileData.getSessionId()).accept(DownloadStatus.DOWNLOADING);
+                IOUtils.copyLarge(fileData.getFileStream(), outputStream);
+                outputStream.flush();
+                this.notifyEvent(fileData.getSessionId()).accept(DownloadStatus.FINISHED);
+            } catch (IOException ex) {
+                try {
+                    fileData.getFileStream().close();
+                } catch (IOException closingException) {
+                    log.warn("could not close command result, a http connection may be leaked!", closingException);
+                }
+                log.error("Unable to stream file source, message: {}", ex.getMessage());
+                this.notifyEvent(fileData.getSessionId()).accept(DownloadStatus.INTERRUPTED);
+            }
+        };
+    }
+
+    public Consumer<DownloadStatus> notifyEvent(final UUID sessionId) {
+        return status -> this.eventPublisher.publishEvent(new DownloadEvent(this, MessageEntity.of(sessionId, status)));
+    }
+}
