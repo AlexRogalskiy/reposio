@@ -15354,6 +15354,1205 @@ public class Employee implements Serializable {
     }
 }
 --------------------------------------------------------------------------------------------------------
+import static org.hamcrest.Matchers.equalTo;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest
+@AutoConfigureMockMvc
+public class HelloControllerTest {
+
+    @Autowired
+    private MockMvc mvc;
+
+    @Test
+    public void getHello() throws Exception {
+        mvc.perform(MockMvcRequestBuilders.get("/").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().string(equalTo("Greetings from Spring Boot!")));
+    }
+}
+
+public Address validateAddress(AddressDTO addressDTO) {
+
+        Address addressToSearch = new Address(addressDTO.getCountry(), addressDTO.getCity(), addressDTO.getPostcode(),
+            addressDTO.getStreet(), addressDTO.getStreetNumber());
+
+        //@formatter:off
+        ExampleMatcher matcher =
+            ExampleMatcher.matching()
+                    .withMatcher("country", startsWith().ignoreCase())
+                    .withMatcher("postcode", startsWith().ignoreCase())
+                    .withMatcher("street", contains().ignoreCase())
+                    .withMatcher("streetNumber", contains().ignoreCase())
+                    .withMatcher("city", contains().ignoreCase());
+
+        //@formatter:on
+        Example<Address> searchExample = Example.of(addressToSearch, matcher);
+
+        return addressRepository.findOne(searchExample);
+
+    }
+	
+	@Test
+public void testSingle() {
+	// tag::example-mono[]
+	Employee e = new Employee();
+	e.setFirstName("Bilbo");
+	Example<Employee> example = Example.of(e);
+	// end::example-mono[]
+
+	// tag::query-mono[]
+	Mono<Employee> singleEmployee = repository.findOne(example);
+	// end::query-mono[]
+
+	StepVerifier.create(singleEmployee)
+		.expectNextMatches(employee -> {
+			assertThat(employee).hasNoNullFieldsOrProperties();
+			assertThat(employee.getFirstName()).isEqualTo("Bilbo");
+			assertThat(employee.getLastName()).isEqualTo("Baggins");
+			assertThat(employee.getRole()).isEqualTo("burglar");
+			return true;
+		})
+		.expectComplete()
+		.verify();
+}
+--------------------------------------------------------------------------------------------------------
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+	
+/**
+ * Schema selecting multitenant provider.
+ *
+ * Works with PgSQL database and HikariCP pool.
+ */
+public class MultitenantSchemaProvider implements MultiTenantConnectionProvider {
+  /**
+   * Connection pool.
+   */
+  private HikariDataSource connectionProvider;
+ 
+  /**
+   * Switches search path on specified connection.
+   * @param c connection to operate on
+   * @param schema tenant id
+   * @throws SQLException is thrown when not able
+   * to return connection to the pool.
+   */
+  private void setSchemaTo(Connection c, String schema) throws SQLException {
+    try {
+      c.createStatement().execute("SET SCHEMA '" + schema.toLowerCase() + "'");
+    } catch (SQLException e) {
+      connectionProvider.evictConnection(c);
+      throw new HibernateException("Error while switching schema", e);
+    }
+  }
+ 
+  /**
+   * Here we instantiate database connection pool.
+   */
+  public MultitenantSchemaProvider() {
+    HikariConfig parameters = new HikariConfig();
+ 
+    parameters.setDataSourceClassName("org.postgresql.ds.PGSimpleDataSource");
+    parameters.setUsername("test");
+    parameters.setPassword("test");
+    parameters.setMaximumPoolSize(2);
+    parameters.addDataSourceProperty("databaseName", "test");
+    parameters.addDataSourceProperty("serverName", "192.168.75.5");
+ 
+    connectionProvider = new HikariDataSource(parameters);
+  }
+ 
+  @Override
+  public Connection getAnyConnection() throws SQLException {
+    return connectionProvider.getConnection();
+  }
+ 
+  @Override
+  public void releaseAnyConnection(Connection connection) throws SQLException {
+    connectionProvider.evictConnection(connection);
+  }
+ 
+  @Override
+  public Connection getConnection(String s) throws SQLException {
+    Connection c = getAnyConnection();
+    setSchemaTo(c, s);
+    return c;
+  }
+ 
+  @Override
+  public void releaseConnection(String s, Connection connection) throws SQLException {
+    setSchemaTo(connection, "public");
+    releaseAnyConnection(connection);
+  }
+ 
+  @Override
+  public boolean supportsAggressiveRelease() {
+    return false;
+  }
+ 
+  /* Spi related mandatory methods */
+  @Override
+  public boolean isUnwrappableAs(Class aClass) {
+    return false;
+  }
+ 
+  @Override
+  public <T> T unwrap(Class<T> aClass) {
+    return null;
+  }
+}
+
+https://easyjava.ru/data/hibernate/hibernate-schema-multitenancy/
+https://habr.com/ru/post/252353/
+
+<hibernate-configuration>
+  <session-factory>
+    <property name="hibernate.multiTenancy">SCHEMA</property>
+    <property name="hibernate.multi_tenant_connection_provider">ru.easyjava.data.hibernate.multitenancy.MultitenantSchemaProvider</property>
+ 
+    <property name="hibernate.hbm2ddl.auto">update</property>
+    <property name="hibernate.dialect">org.hibernate.dialect.PostgreSQL94Dialect</property>
+ 
+    <!-- mappings skipped -->
+  </session-factory>
+ 
+</hibernate-configuration>
+--------------------------------------------------------------------------------------------------------
+@Scope(proxyMode = ScopedProxyMode.INTERFACES)
+--------------------------------------------------------------------------------------------------------
+import com.questionmarks.model.dto.ExamCreationDTO;
+import com.questionmarks.model.dto.ExamUpdateDTO;
+import org.junit.Test;
+import org.modelmapper.ModelMapper;
+
+import static org.junit.Assert.assertEquals;
+
+public class ExamUT {
+    private static final ModelMapper modelMapper = new ModelMapper();
+
+    @Test
+    public void checkExamMapping() {
+        ExamCreationDTO creation = new ExamCreationDTO();
+        creation.setTitle("Testing title");
+        creation.setDescription("Testing description");
+
+        Exam exam = modelMapper.map(creation, Exam.class);
+        assertEquals(creation.getTitle(), exam.getTitle());
+        assertEquals(creation.getDescription(), exam.getDescription());
+        assertEquals(creation.getCreatedAt(), exam.getCreatedAt());
+        assertEquals(creation.getEditedAt(), exam.getEditedAt());
+
+        ExamUpdateDTO update = new ExamUpdateDTO();
+        update.setTitle("New title");
+        update.setDescription("New description");
+
+        modelMapper.map(update, exam);
+        assertEquals(update.getTitle(), exam.getTitle());
+        assertEquals(update.getDescription(), exam.getDescription());
+        assertEquals(creation.getCreatedAt(), exam.getCreatedAt());
+        assertEquals(update.getEditedAt(), exam.getEditedAt());
+    }
+}
+--------------------------------------------------------------------------------------------------------
+<Connector connectionTimeout="20000" asyncTimeout="30000" maxThreads="1000"
+    port="8080" protocol="org.apache.coyote.http11.Http11NioProtocol"
+    redirectPort="8443" />
+--------------------------------------------------------------------------------------------------------
+uname 	Displays  Linux system information
+uname -r 	Displays  kernel release information
+uptime 	Displays how long the system has been running including load average
+hostname 	Shows the system hostname
+hostname -i 	Displays the IP address of the system
+last reboot 	Shows system reboot history
+date 	Displays current system date and time
+timedatectl 	Query and change the System clock
+cal 	Displays the current calendar month and day
+w 	Displays currently  logged in users in the system
+whoami 	Displays who you are logged in as
+finger username 	Displays information about the user
+General
+su 	Switches user.
+	
+- <user> 	Switches to user.
+- 	Switches to root.
+	
+man 	Help on commands.
+	
+<section> 	Section numbers: 1. Programs, 2. System calls, 3. Library calls, 4. Special files, 5. File formats, 7. Miscellaneous, 8. System administration commands
+	
+echo 	Prints passed text.
+	
+-n 	Does not add newline at the end.
+-e 	Enables interpretation of backslashed letters.
+	
+xargs <cmd> 	Passes output from one command to arguments of another:
+'echo -a | xargs ls'
+	
+-t 	Echoes the command before executing it.
+-p 	Echoes command and asks for confirmation before execution.
+-0 	Input items are separated by null character instead of space.
+	
+tee <file> 	Sends output of a program to specified file and to standard output:
+'<cmd_1> | tee out_1.txt | <cmd_2>'
+	
+/dev/tty 	Sends output to terminal and to standard output
+	
+expr 	Evaluates passed expression.
+	
+1 + 1 	Prints '2'.
+	
+bc 	Evaluates input. It's basically a calculator, but also provides some control commands.
+	
+echo 1 + 1 | bc 	Prints '2'.
+echo "scale=5;3/4" | bc 	Prints '.75000'.
+	
+sh 	Runs command interpreter (shell). Can run a script even if not executable.
+	
+-c '<commands>' 	Starts new non-interactive shell and reads commands from arguments instead of 'stdin'.
+To append lines to system configuration file run:
+'sudo sh -c 'echo "<text>" >> <file>''
+	
+bash 	Runs bash command interpreter (shell).
+	
+-c 	Reads commands from arguments instead of 'stdin'.
+-n <script> 	Checks script for errors.
+-x 	Prints commands before execution. Useful for debugging.
+	
+gcc 	Gnu C compiler. Run 'g++' for C++ code.
+	
+-w 	Supresses warnings (Only prints errors).
+-Wall 	All warnings.
+-g 	Compile for debugging.
+-std=<std> 	Sets the standard. Suported standards for C are:
+'c90', 'gnu90', 'c99', 'gnu99', 'c11' and 'gnu11'.
+Suported standarts for C++ are:
+'c++98', 'gnu++98', 'c++11' and 'gnu++11'.
+'gnu90' and 'gnu++98' are the default options.
+-O<level> 	Optimization level. '0': Reduce compilation time (default), '1-3': - Level of optimization, 's' - Optimize for size, 'g' - Optimize debugging experience.
+	
+run-parts <dir> 	Runs all scripts or programs in a directory.
+	
+date 	Tells and sets date and time.
+	
+-s <string> 	Sets date.
++%T -s "10:13:13" 	Sets time.
+	
+timedatectl 	Controls the system time and date.
+	
+set-timezone CET 	Sets timezone.
+	
+cal 	Calendar
+	
+xclip 	Copies to clipboard.
+	
+mkfifo <pipe> 	Creates named pipe during that shell session.
+	
+mkisofs 	Creates a DVD/CD image.
+	
+genisoimage 	Creates a DVD/CD image (Debian).
+	
+cdrecord 	Writes to a CD/DVD.
+	
+acpi 	Checks battery.
+	
+fdisk -l (sudo) 	Shows partitions.
+	
+shutdown 	Closes down the system at a given time.
+	
+now 	Takes you to the single user mode.
+-h now 	Begins the shutdown procedure, same as 'halt' and 'poweroff'.
+-h 11:50 	At 11:50.
+-r now 	Same as 'reboot'.
+	
+make 	Utility that maintains groups of programs.
+	
+-q 	Doesn't run any commands, just returns '0' exit code if everything is up to date or non-zero otherwise.
+-B 	Unconditionally makes all targets.
+Files
+ls 	
+-d 	List directory names instead of contents
+-S 	Sort by size
+-t 	Sort by time
+-1 	One file per line
+./* 	Ls one level deep
+-i 	Get inode number of file (file id). Use 'sudo find / -inum <number>' to find all links that point to same file.
+	
+cp 	
+-i 	Interactive (Prompts before overwrite)
+-v 	Verbose (Explains what is being done)
+-R 	Copy directories recursively
+-p 	Preserve mode, ownership and timestamps
+--preserve=all 	Also preserves context, links and xattr
+	
+rm 	
+-i 	Interactive (Prompts before every removal)
+-v 	Verbose (Explains what is being done)
+-f 	Force remove (Does not prompt, useful if 'rm' is aliased with '-i')
+-R 	Removes directories and their content recursively
+	
+mkdir 	
+-p 	Make parents if needed
+	
+ln 	Makes links to the files
+	
+-s <file> <link> 	Makes symbolic link. If you want to use relative paths you must be in links directory !!!!!!!!!!!!!!!!!!!!!!
+	
+df 	
+-h 	Displays humanly readable free disk space
+	
+du 	
+-s <dir> 	Directory size
+	
+mc 	Midnight commander
+	
+Alt o 	Open parent dir in another panel
+Ctrl o 	Switch to bash
+	
+find <dir> 	
+-name <file> 	Search by name
+-regex <regex> 	Use regex for name search
+-not 	Insert before other options to negate
+-maxdepth <levels> 	Descend only to levels deep
+-samefile <file> 	Find all hard links of a file
+-xdev 	Don't descend directories on other filesystems
+-inum <inum> 	Find files with the inode number
+-type <f|d|b|...> 	Find files of type
+-delete 	Delete found files
+-exec <cmd> {} \; 	Find files and execute command for every found file. '{}' is replaced with filename
+-exec <cmd> {} + 	Find files and execute command with all filenames in place of '{}'
+-atime +/-n 	Find files that were last accessed less or more than n days.
+-print0 | xargs -0 <cmd> 	Sends found files to a command as parameters. Uses 'NUL' character as separator, necessary for filenames with spaces
+	
+locate <regex> 	Similar as 'find' but using index
+	
+-i 	Ignore case
+--regex 	Interprets all patterns as extended regex
+-0 | xargs -0 <cmd> 	Sends found files to a command as parameters.
+	
+updatedb (sudo) 	Update locate index
+	
+md5sum 	Prints md5 sum hash of a file
+	
+read 	Read single line from standard input
+	
+-n 1 	Print after reading one character
+-s 	Do not echo input coming from terminal
+	
+shred 	Securely remove files
+	
+file 	Determine file's type
+	
+tree 	Ls in a tree-like (hierarchical) format
+	
+install 	Copy files and set attributes
+	
+gpg 	Decrypt file with password
+	
+-c 	Encrypt
+	
+mktemp 	Create a temporary file or directory in '/tmp' and returns it's name.
+	
+rename 	
+s/<from>/<to> <files> 	Renames multiple files using 'sed' syntax
+	
+rsync 	A fast, versatile, remote (and local) file-copying tool
+	
+-Hbaz -e ssh 	'<src_dir> <user>@<host>:<dest_dir>' - Backs up the 'src-dir': '-H' preserves hard links, '-b' renames preexisting destination files (back up), '-a' preserve everything except hard links and '-z' compresses.
+cmp 	Compares two files, similar to diff but also for binaries
+	
+stat 	Displays files status
+	
+-c%X 	Time of last modification of the file
+	
+readlink 	
+-f 	Follow link recursively and print files path
+	
+xdg-open 	Open file with default application for the file type
+	
+dialog 	Display dialog box from shell script
+	
+watch 	Execute command periodically
+Archives
+dtrx 	
+<archive> 	Universal archive extractor
+	
+tar 	
+xvzf <file>.tar.gz (.tgz) 	Decompress and detar
+xvjf <file>.tar.bz2 	Decompress and detar
+-cf <archive>.tar <files> 	Compress
+	
+unzip 	
+\*.zip 	Backslash is necessary so that bash doesn't expand the '*'
+-d <dir> 	Extract into directory (create if doesn't exist)
+	
+zip 	
+-r <archive> <dir> 	Compress whole directory recursively.
+-g <archive> <files> 	Add files to existing archive (grow).
+	
+unrar 	
+e 	Extract files from rar archive
+	
+zcat 	Cats gziped file
+Packages
+dpkg 	Low level package manager for Debian.
+	
+-l 	Lists installed packages.
+-i <package> (sudo) 	Installs package from a package file.
+	
+apt-get 	Advanced Package Tool built on top of 'dpkg'. New command called simply 'apt' is also available. It merges the functionalities of 'apt-get' and 'apt-cache'.
+	
+update 	Updates local list of existing packages.
+-u dist-upgrade 	Upgrades by intelligently handling changing dependencies with new versions of packages. To regularly update put this line in 'crontab':
+'apt-get update && apt-get -u dist-upgrade'.
+upgrade 	Same as dist-upgrade, but will not remove installed packages or install new ones.
+install <package> 	Also updates single package.
+remove <package> 	Removes package but leaves its configurations.
+remove apt-listchanges 	Useful when Debian can't find a package.
+purge <package> 	Removes package and its configurations. Run 'apt-get autoremove' after to remove all dependencies that are not needed anymore.
+autoremove 	Removes unneeded packages.
+source <package> 	Downloads code.
+build-dep <package> 	Installs the build dependencies.
+--yes 	Answers with 'yes' to most questions (Except the ones that can have potentially harmful consequences).
+--force-yes 	Answers 'yes' to all questions (Not recommended).
+	
+apt-cache 	Queries the APT's internal database.
+	
+search <keyword> 	Searches packages like 'apropos', but globally.
+show <package> 	Shows package info like version, dependencies, etc.
+showpkg <package> 	Similar, but also shows the packages that depend on the searched package (reverse dependencies).
+policy <package> 	Shows installed and remote version.
+	
+apt-file 	APT package searching utility.
+	
+search <file> 	Search in which package a file is included.
+update 	Updates local list of package contents.
+	
+aptitude 	Enables package browsing (skin for apt-get).
+	
+search '~i!~M' 	Lists installed packages that were not installed as a dependency, with short description of each.
+search <package> 	Package search.
+winetricks 	Installs wine applications.
+	
+update-alternatives 	Maintains symbolic links determining default commands.
+	
+unattended-upgrade 	Automatic installation of security upgrades.
+Hardware
+dmesg 	Displays bootup messages
+cat /proc/cpuinfo 	Displays more information about CPU e.g model, model name, cores, vendor id
+cat /proc/meminfo 	Displays more information about hardware memory e.g. Total and Free memory
+lshw 	Displays information about system's hardware configuration
+lsblk 	Displays block devices related information
+free -m 	Displays free and used memory in the system (-m flag indicates memory in MB)
+lspci -tv 	Displays PCI devices in a tree-like diagram
+lsusb -tv 	Displays USB devices in a tree-like diagram
+dmidecode 	Displays hardware information from the BIOS
+hdparm -i /dev/xda 	Displays information about disk data
+hdparm -tT /dev/xda <:code> 	Conducts a read speed test on device xda
+badblocks -s /dev/xda 	Tests  for unreadable blocks on disk
+Users
+id 	Displays the details of the active user e.g. uid, gid, and groups
+last 	Shows the last logins in the system
+who 	Shows who is logged in to the system
+groupadd "admin" 	Adds the group 'admin'
+adduser "Sam" 	Adds user Sam
+userdel "Sam" 	Deletes user Sam
+usermod 	Used for changing / modifying user information
+File Commands
+ls -al 	Lists files - both regular &  hidden files and their permissions as well.
+pwd 	Displays the current directory file path
+mkdir 'directory_name' 	Creates a new directory
+rm file_name 	Removes a file
+rm -f filename 	Forcefully removes a file
+rm -r directory_name 	Removes a directory recursively
+rm -rf directory_name 	Removes a directory forcefully and recursively
+cp file1 file2 	Copies the contents of file1 to file2
+cp -r dir1 dir2 	Recursively Copies dir1 to dir2. dir2 is created if it does not exist
+mv file1 file2 	Renames file1 to file2
+ln -s /path/to/file_name   link_name 	Creates a symbolic link to file_name
+touch file_name 	Creates a new file
+cat > file_name 	Places standard input into a file
+more file_name 	Outputs the contents of a file
+head file_name 	Displays the first 10 lines of a file
+tail file_name 	Displays the last 10 lines of a file
+gpg -c file_name 	Encrypts a file
+gpg file_name.gpg 	Decrypts a file
+wc 	Prints the number of bytes, words and lines in a file
+xargs 	Executes commands from standard input
+Process Related
+ps 	Display currently active processes
+ps aux | grep 'telnet' 	Searches for the id of the process 'telnet'
+pmap 	Displays memory map of processes
+top 	 Displays all running processes
+kill pid 	Terminates process with a given pid
+killall proc 	Kills / Terminates all processes named proc
+pkill process-name 	Sends a signal to a process with its name
+bg 	Resumes suspended jobs in the background
+fg 	Brings suspended jobs to the foreground
+fg n 	job n to the foreground
+lsof 	Lists files that are open by processes
+renice 19 PID 	makes a process run with very low priority
+pgrep firefox 	find Firefox process ID
+pstree 	visualizing processes in tree model
+File Permission
+chmod octal filename 	Change file permissions of the file to octal
+	
+Example 	
+chmod 777 /data/test.c 	Set rwx permissions to owner, group and everyone (everyone else who has access to the server)
+chmod 755 /data/test.c 	Set rwx to the owner and r_x to group and everyone
+chmod 766 /data/test.c 	Sets rwx for owner, rw for group and everyone
+chown owner user-file 	Change ownership of the file
+chown owner-user:owner-group file_name 	Change owner and group owner of the file
+chown owner-user:owner-group directory 	Change owner and group owner of the directory
+Network
+ip addr show 	Displays IP addresses and all the network interfaces
+ip address add 192.168.0.1/24 dev eth0 	Assigns IP address 192.168.0.1 to interface eth0
+ifconfig  	Displays IP addresses of all network interfaces
+ping  host 	ping command sends an ICMP echo request to establish a connection to server / PC
+whois domain 	Retrieves more information about a domain name
+dig domain 	Retrieves DNS information about the domain
+dig -x host  	Performs reverse lookup on a domain
+host google.com  	Performs an IP lookup for the domain name
+hostname -i 	Displays local IP address
+wget file_name 	Downloads a file from an online source
+netstat -pnltu 	Displays all active listening ports
+Compression/Archives
+tar -cf home.tar home<:code> 	Creates archive file called 'home.tar' from file 'home'
+tar -xf files.tar 	Extract archive file 'files.tar'
+tar -zcvf home.tar.gz source-folder 	Creates gzipped tar archive file from the source folder
+gzip file 	Compression a file with .gz extension
+Install Packages
+rpm -i pkg_name.rpm 	Install an rpm package
+rpm -e pkg_name 	Removes an rpm package
+dnf install pkg_name 	Install package using dnf utility
+Install Source (Compilation)
+./configure 	Checks your system for the required software needed to build the program. It will build the Makefile containing the instructions required to effectively build the project
+make 	It reads the Makefile to compile the program with the required operations. The process may take some time, depending on your system and the size of the program
+make install 	The command installs the binaries in the default/modified paths after the compilation
+Search
+grep 'pattern' files 	Search for a given pattern in files
+grep -r pattern dir 	Search recursively for a pattern in a given directory
+locate file 	Find all instances of the file
+find /home/ -name "index"  	Find file names that begin with 'index' in /home folder
+find /home -size +10000k 	Find files greater than 10000k in the home folder
+Login
+ssh user@host 	Securely connect to host as user
+ssh -p port_number user@host  	Securely connect to host using a specified port
+ssh host 	Securely connect to the system via SSH default port 22
+telnet host 	Connect to host via telnet default port 23
+File Transfer
+scp file1.txt server2/tmp 	Securely copy file1.txt to server2 in /tmp directory
+rsync -a /home/apps  /backup/ 	Synchronize contents in /home/apps directory with /backup  directory
+Disk Usage
+df  -h 	Displays free space on mounted systems
+df  -i  	Displays free inodes on filesystems
+fdisk  -l 	Shows disk partitions, sizes, and types
+du  -sh 	Displays disk usage in the current directory in a human-readable format
+findmnt 	Displays target mount point for all filesystems
+mount device-path mount-point 	Mount a device
+Directory Traverse
+cd .. 	Move up one level in the directory tree structure
+cd 	Change directory to $HOME directory
+cd /test 	Change directory to /test directory
+--------------------------------------------------------------------------------------------------------
+    <resources>
+        <resource>
+            <directory>${project.basedir}/src/main/resources</directory>
+            <targetPath>${project.build.outputDirectory}/META-INF/resources/webjars</targetPath>
+        </resource>
+    </resources>
+--------------------------------------------------------------------------------------------------------
+	@Bean
+	public WebMvcConfigurer corsConfigurer() {
+		return new WebMvcConfigurerAdapter() {
+			@Override
+			public void addCorsMappings(CorsRegistry registry) {
+				registry.addMapping("/api/**").allowedOrigins("https://blog.lqdev.cn");
+			}
+		};
+	}
+--------------------------------------------------------------------------------------------------------
+@Accessors(chain = true)
+--------------------------------------------------------------------------------------------------------
+import java.io.Serializable;
+import java.util.Date;
+
+import com.baomidou.mybatisplus.activerecord.Model;
+import com.baomidou.mybatisplus.annotations.TableId;
+
+import lombok.Data;
+import lombok.experimental.Accessors;
+
+/**
+ * <p>
+ * 
+ * </p>
+ *
+ * @author oKong
+ * @since 2018-07-20
+ */
+@Data
+@Accessors(chain = true)
+public class User extends Model<User> {
+
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * 唯一标示
+     */
+    @TableId
+    private Long id;
+    /**
+     * 编码
+     */
+    private String code;
+    /**
+     * 名称
+     */
+    private String name;
+    
+    /**
+     * 状态1 启用 0 停用
+     */
+    private StatusEnum status;
+    /**
+     * 创建时间
+     */
+    private Date gmtCreate;
+    /**
+     * 修改时间
+     */
+    private Date gmtModified;
+
+
+    public static final String ID = "id";
+
+    public static final String CODE = "code";
+
+    public static final String NAME = "name";
+
+    public static final String GMT_CREATE = "gmt_create";
+
+    public static final String GMT_MODIFIED = "gmt_modified";
+
+    @Override
+    protected Serializable pkVal() {
+        return this.id;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@RequestMapping(path="/downloadFile",method=RequestMethod.GET)
+    @Consumes(MediaType.APPLICATION_JSON_VALUE)
+    public  ResponseEntity<InputStreamReader> downloadDocument(
+                String acquistionId,
+                String fileType,
+                Integer expressVfId) throws IOException {
+        File file2Upload = new File("C:\\Users\\admin\\Desktop\\bkp\\1.rtf");
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Cache-Control", "no-cache, no-store, must-revalidate");
+        headers.add("Pragma", "no-cache");
+        headers.add("Expires", "0");
+        InputStreamReader i = new InputStreamReader(new FileInputStream(file2Upload));
+        System.out.println("The length of the file is : "+file2Upload.length());
+
+        return ResponseEntity.ok().headers(headers).contentLength(file2Upload.length())
+                .contentType(MediaType.parseMediaType("application/octet-stream"))
+                .body(i);
+        }
+--------------------------------------------------------------------------------------------------------
+buildscript {
+    repositories {
+        maven { url "http://repo.spring.io/libs-release" }
+        mavenLocal()
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.1.6.RELEASE")
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'spring-boot'
+
+apply plugin: 'application'
+run {
+    args 'sample.txt'
+}
+
+jar {
+    baseName = 'gs-uploading-files'
+    version =  '0.1.0'
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven { url "http://repo.spring.io/libs-release" }
+}
+
+dependencies {
+    compile("org.springframework.boot:spring-boot-starter-web")
+    testCompile("junit:junit")
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '1.11'
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.logging.LoggingSystem;
+import org.springframework.boot.web.support.SpringBootServletInitializer;
+
+import lombok.extern.slf4j.Slf4j;
+
+@SpringBootApplication
+@Slf4j
+public class ChapterApplication extends SpringBootServletInitializer implements CommandLineRunner{
+
+	public static void main(String[] args) {
+		log.info("jar,chapter开始启动!");
+		SpringApplication.run(ChapterApplication.class, args);
+	//	new SpringApplicationBuilder().sources(ChapterApplication.class).web(false).run(args);
+    //之后这里设置业务逻辑 比如挂起一个线程 或者设置一个定时任务。保证不退出
+		//不然它就是一个启动类，启动后就停止了。
+		log.info("jar,chapter启动完成!");
+	} 
+	 
+	@Override
+	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+		log.info("外部tomcat,chapter启动!");
+		return application.sources(ChapterApplication.class);
+	}
+
+	@Override
+	public void run(String... args) throws Exception {
+		log.info("CommandLineRunner运行,info输出");
+//		loggingSystem.setLogLevel(null, LogLevel.DEBUG);
+		log.debug("CommandLineRunner运行:debug输出");
+	}
+	
+	@Autowired
+	LoggingSystem loggingSystem;
+}
+--------------------------------------------------------------------------------------------------------
+      @GetMapping(value = "/testCallable")
+      public Callable<String> echoHelloWorld()
+      {
+            return () ->
+            {
+                  Thread.sleep(ThreadLocalRandom.current().nextInt(5000));
+                   
+                  return "Hello World !!";
+            };
+      }
+	  
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+ 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
+ 
+import com.howtodoinjava.springasyncexample.web.controller.HelloWorldCallableController;
+ 
+@RunWith(SpringRunner.class)
+@WebMvcTest(HelloWorldCallableController.class)
+public class HelloWorldCallableControllerTest {
+ 
+      @Autowired
+      private MockMvc mockMvc;
+ 
+      @Test
+      public void testHelloWorldController() throws Exception
+      {
+            MvcResult mvcResult = mockMvc.perform(get("/testCallable"))
+                                                .andExpect(request().asyncStarted())
+                                                .andDo(MockMvcResultHandlers.log())
+                                                .andReturn();
+             
+            mockMvc.perform(asyncDispatch(mvcResult)).andExpect(status().isOk())
+                              .andExpect(content().contentTypeCompatibleWith("text/plain"))
+                              .andExpect(content().string("Hello World !!"));
+      }
+}
+--------------------------------------------------------------------------------------------------------
+    @RequestMapping("/test3")
+    public
+    @ResponseBody
+    WebAsyncTask<String> handleRequest (HttpServletRequest r) {
+        System.out.println("asyncSupported: " + r.isAsyncSupported());
+        System.out.println(Thread.currentThread().getName());
+
+        Callable<String> callable = () -> {
+            System.out.println(Thread.currentThread().getName());
+            return "WebAsyncTask test";
+        };
+
+        ConcurrentTaskExecutor t = new ConcurrentTaskExecutor(
+                  Executors.newFixedThreadPool(1));
+        return new WebAsyncTask<>(10000L, t, callable);
+    }
+	
+    @Bean
+    WebMvcConfigurer configurer(){
+        return new WebMvcConfigurerAdapter(){
+            @Override
+            public void configureAsyncSupport (AsyncSupportConfigurer configurer) {
+                ThreadPoolTaskExecutor t = new ThreadPoolTaskExecutor();
+                t.setCorePoolSize(10);
+                t.setMaxPoolSize(100);
+                t.setQueueCapacity(50);
+                t.setAllowCoreThreadTimeOut(true);
+                t.setKeepAliveSeconds(120);
+                t.initialize();
+                configurer.setTaskExecutor(t);
+            }
+        };
+    }
+--------------------------------------------------------------------------------------------------------
+List<Author> authors = em.createQuery("SELECT a FROM Author a ORDER BY a.id ASC", Author.class)
+                                    .setMaxResults(5)
+                                    .setFirstResult(0)
+                                    .getResultList();
+									
+TypedQuery<Author> q = em.createQuery(
+                "SELECT a FROM Author a WHERE a.id = :id", Author.class);
+q.setParameter("id", 1L);
+Author a = q.getSingleResult();
+
+TypedQuery<Book> q = em.createQuery(
+             "SELECT b FROM Book b WHERE b.id = function('calculate', 1, 2)",
+             Book.class);
+Book b = q.getSingleResult();
+
+EntityGraph graph = em.getEntityGraph("graph.Order.items");
+ 
+Order newOrder = em.find(Order.class, 1L, Collections.singletonMap("javax.persistence.fetchgraph", graph));
+RootGraph graph = GraphParser.parse(Order.class, "items", em);
+ 
+Order newOrder = em.find(Order.class, 1L, Collections.singletonMap("javax.persistence.fetchgraph", graph));
+RootGraph graph = GraphParser.parse(Order.class, "items(product(supplier))", em);
+ 
+Order newOrder = em.find(Order.class, 1L, Collections.singletonMap("javax.persistence.fetchgraph", graph));
+
+RootGraph graph1 = GraphParser.parse(Order.class, "items(product(supplier))", em);
+RootGraph graph2 = GraphParser.parse(Order.class, "customer", em);
+EntityGraph graph = EntityGraphs.merge(em, Order.class, graph1, graph2);
+ 
+Order newOrder = em.find(Order.class, 1L, Collections.singletonMap("javax.persistence.fetchgraph", graph));
+
+--------------------------------------------------------------------------------------------------------
+ExampleMatcher ignoringExampleMatcher = ExampleMatcher.matchingAny().withIgnorePaths("createdDate", "lastModifiedDate", "createdBy", "lastModifiedBy");
+
+final ExampleMatcher caseInsensitiveExampleMatcher = ExampleMatcher.matchingAll().withIgnoreCase();
+		
+caseInsensitiveExampleMatcher
+--------------------------------------------------------------------------------------------------------
+@Query("select case when count(c)> 0 then true else false end from Car c where lower(c.model) like lower(:model)")
+boolean existsCarLikeCustomQuery(@Param("model") String model);
+--------------------------------------------------------------------------------------------------------
+mvn archetype:generate 
+    -DgroupId=ru.carousel
+    -DartifactId=carousel 
+    -Dversion=1.0-SNAPSHOT 
+    -DarchetypeArtifactId=maven-archetype-quickstart
+	
+mvn install:install-file 
+    -Dfile=org.eclipse.swt.win32.win32.x86_3.7.1.v3738a.jar
+    -DgroupId=org.eclipse.swt.win32.win32.x86 
+    -DartifactId=org.eclipse.swt.win32.win32.x86 
+    -Dversion=3.7.1.v3738 
+    -Dpackaging=jar
+
+mvn install:install-file
+    -Dfile=org.eclipse.core.runtime_3.7.0.v20110110.jar
+    -DgroupId=org.eclipse.core.runtime
+    -DartifactId=org.eclipse.core.runtime
+    -Dversion=3.7.0.v20110110
+    -Dpackaging=jar
+
+mvn install:install-file
+    -Dfile=org.eclipse.core.commands_3.6.0.I20110111-0800.jar
+    -DgroupId=org.eclipse.core.commands
+    -DartifactId=org.eclipse.core.commands
+    -Dversion=3.6.0.I20110111-0800
+    -Dpackaging=jar
+
+mvn install:install-file
+    -Dfile=org.eclipse.equinox.common_3.6.0.v20110523.jar
+    -DgroupId=org.eclipse.equinox.common
+    -DartifactId=org.eclipse.equinox.common
+    -Dversion=3.6.0.v20110523
+    -Dpackaging=jar
+
+mvn install:install-file
+    -Dfile=org.eclipse.jface_3.5.2.M20100120-0800.jar
+    -DgroupId=org.eclipse.jface
+    -DartifactId=org.eclipse.jface
+    -Dversion=3.5.2.M20100120-0800
+    -Dpackaging=jar
+--------------------------------------------------------------------------------------------------------
+
+    mvn compile - компиляция проекта;
+    mvn test - выполнение теста;
+    mvn exec:java -Dexec.mainClass=ru.carousel.App - выполнение программы;
+    mvn jar:jar - сборка проекта;
+    mvn package - компиляция + тестирование + сборка;
+    mvn install –Dmaven.test.skip=true - компиляция + сборка;
+
+--------------------------------------------------------------------------------------------------------
+    <plugin>
+        <groupId>
+            com.akathist.maven.plugins.launch4j
+        </groupId>
+        <artifactId>launch4j-maven-plugin</artifactId>
+        <executions>
+            <execution>
+                <id>plugin-loader</id>
+                <phase>package</phase>
+                <goals>
+                    <goal>launch4j</goal>
+                </goals>
+                <configuration>
+                    <headerType>gui</headerType>
+                    <outfile>${exeFileName}.exe</outfile>
+                    <jar>${project.artifactId}.jar</jar>
+                    <errTitle>${product.title}</errTitle>
+                    <icon>favicon.ico</icon>
+                    <classPath>
+                        <mainClass>Boostrap</mainClass>
+                        <addDependencies>
+                            true
+                        </addDependencies>
+                        <preCp>anything</preCp>
+                    </classPath>
+                    <jre>
+                        <minVersion>
+                           ${jdkVersion}
+                        </minVersion>
+                    </jre>
+                    <versionInfo>
+                        <fileVersion>
+                            ${project.version}
+                        </fileVersion>
+                        <txtFileVersion>
+                            ${project.version}
+                        </txtFileVersion>
+                        <fileDescription>
+                            Swing application
+                        </fileDescription>
+                        <copyright>
+                          Copyright © 2011 ${product.company}
+                        </copyright>
+                        <productVersion>
+                            ${project.version}
+                        </productVersion>
+                        <txtProductVersion>
+                            ${project.version}
+                        </txtProductVersion>
+                        <companyName>
+                            ${product.company}
+                        </companyName>
+                        <productName>
+                            ${product.title}
+                        </productName>
+                        <internalName>
+                            ${exeFileName}
+                        </internalName>
+                        <originalFilename>
+                            ${exeFileName}.exe
+                        </originalFilename>
+                    </versionInfo>
+                </configuration>
+            </execution>
+        </executions>
+    </plugin>
+--------------------------------------------------------------------------------------------------------
+create sequence SEQ_USER
+minvalue 1
+start with 10
+increment by 1
+cache 5;
+
+  @Id
+    @GeneratedValue(strategy=GenerationType.SEQUENCE,
+                    generator="users_seq")
+    @SequenceGenerator(name="users_seq",
+                       sequenceName="SEQ_USER",
+                       allocationSize=5)
+    @Column(name="id", updatable=false, nullable=false)
+    private Integer  id;
+--------------------------------------------------------------------------------------------------------
+import javax.persistence.Query;
+import javax.persistence.EntityManager;
+
+import org.apache.commons.lang.StringUtils;
+
+...
+
+@SuppressWarnings("unchecked")
+public List<Author< getAuthorsByLastName(String lastName)
+{
+    String queryString = "SELECT a FROM Author a " +
+                         "WHERE LOWER(a.lastName) = :lastName";
+    Query query = getEntityManager().createQuery(queryString);
+    
+    query.setParameter("lastName", StringUtils.lowerCase(lastName));
+    return query.getResultList();
+}
+
+http://java-online.ru/hibernate-faq.xhtml
+
+List<User> users
+users = session.createCriteria(User.class)
+               .setFirstResult(2)
+               .setMaxResults(15).list();
+--------------------------------------------------------------------------------------------------------
+docker run --name questionmarks-psql \
+    -p 5432:5432 \
+    -e POSTGRES_DB=questionmarks \
+    -e POSTGRES_PASSWORD=mysecretpassword \
+    -d postgres
+spring.datasource.url=jdbc:postgresql://localhost/questionmarks
+spring.datasource.username=postgres
+spring.datasource.password=mysecretpassword
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+alter table exam
+  add column created_at timestamp without time zone not null default now(),
+  add column edited_at timestamp without time zone not null default now(),
+  add column published boolean not null default false;
+--------------------------------------------------------------------------------------------------------
+ExampleMatcher matcher = ExampleMatcher.matching()
+		.withIgnoreCase()
+		.withMatcher("lastName", startsWith())
+		.withIncludeNullValues();
+--------------------------------------------------------------------------------------------------------
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    String user="springstudent";
+    String pass="springstudent";
+    String jdbcUrl = "jdbc:mysql://localhost:3306/web_customer_tracker&allowPublicKeyRetrieval=false&useSSL=false&serverTimeZone=UTC";
+    String driver="com.mysql.cj.jdbc.Driver";
+
+    try {
+        PrintWriter out = response.getWriter();
+        out.println("Connecting to database "+jdbcUrl);
+
+        Class.forName(driver);
+        Connection myConn = DriverManager.getConnection(jdbcUrl,user,pass);
+
+        out.println("Success!");
+        myConn.close();
+    }catch(Exception e) {
+        e.printStackTrace();
+    }
+}
+
+ com.mysql.cj.jdbc.Driver
+--------------------------------------------------------------------------------------------------------
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.DiscriminatorType;
 import javax.persistence.Entity;
@@ -16096,7 +17295,6 @@ yyyy-MM-dd'T'HH:mm:ss.SSSZ
 curl -i -H "key1:val1" -H "key2:val2" http://localhost:8080/spring-rest/ex/foos
 @RequestMapping(value = "/ex/bars/{numericId:[\\d]+}", method = GET)
 curl -i -d id=100 http://localhost:8080/spring-rest/ex/bars
-
 --------------------------------------------------------------------------------------------------------
 @RequestParam Map<String, String> params
    /*
@@ -16112,6 +17310,3422 @@ curl -i -d id=100 http://localhost:8080/spring-rest/ex/bars
             + " date = " + date + " <br>" 
             + " time = " + time;
    }
+--------------------------------------------------------------------------------------------------------
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.validation.BindException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ *  统一异常处理类
+ * @author oKong
+ *
+ */
+@ControllerAdvice
+@Slf4j
+public class CommonExceptionHandler {
+
+	/**
+	 * 拦截 CommonException 的异常
+	 * @param ex
+	 * @return
+	 */
+	@ExceptionHandler(CommonException.class)
+	@ResponseBody
+	public Map<String,Object> exceptionHandler(CommonException ex){
+		log.info("CommonException：{}({})",ex.getMsg(), ex.getCode());
+		Map<String,Object> result = new HashMap<String,Object>();
+		result.put("respCode", ex.getCode());
+		result.put("respMsg", ex.getMsg());
+		return result; 
+	}
+	
+	/**
+	 *  拦截Exception类的异常
+	 * @param e
+	 * @return
+	 */
+	@ExceptionHandler(Exception.class)
+	@ResponseBody
+	public Map<String,Object> exceptionHandler(Exception e){
+		log.info("Exception：{}({})",e);
+		Map<String,Object> result = new HashMap<String,Object>();
+		result.put("respCode", "9999");
+		result.put("respMsg", e.getMessage());
+		//正常开发中，可创建一个统一响应实体，如CommonResp
+		return result; 
+	}
+	
+	@ExceptionHandler(MethodArgumentNotValidException.class)
+	@ResponseBody
+	public Map<String,Object> handleBindException(MethodArgumentNotValidException ex) {
+		FieldError fieldError = ex.getBindingResult().getFieldError();
+		log.info("参数校验异常:{}({})", fieldError.getDefaultMessage(),fieldError.getField());
+		Map<String,Object> result = new HashMap<String,Object>();
+		result.put("respCode", "01002");
+		result.put("respMsg", fieldError.getDefaultMessage());
+		return result;
+	}
+
+
+	@ExceptionHandler(BindException.class)
+	@ResponseBody
+	public Map<String,Object> handleBindException(BindException ex) {
+		//校验 除了 requestbody 注解方式的参数校验 对应的 bindingresult 为 BeanPropertyBindingResult
+		FieldError fieldError = ex.getBindingResult().getFieldError();
+		log.info("必填校验异常:{}({})", fieldError.getDefaultMessage(),fieldError.getField());
+		Map<String,Object> result = new HashMap<String,Object>();
+		result.put("respCode", "01002");
+		result.put("respMsg", fieldError.getDefaultMessage());
+		return result;
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import javax.servlet.Filter;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.boot.web.servlet.ServletComponentScan;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+
+import cn.lqdev.learning.chapter7.config.CustomFilter;
+import cn.lqdev.learning.chapter7.config.CustomHandlerInterceptor;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * 
+ *  拦截器、监听器、过滤器的使用
+ *  启动类
+ * @author oKong
+ *
+ */
+@SpringBootApplication
+@ServletComponentScan
+@Slf4j
+public class Chapter7Application {
+	
+	public static void main(String[] args) {
+		SpringApplication.run(Chapter7Application.class, args);
+		log.info("chapter7 服务启动");
+	}
+	
+	@Bean
+	public FilterRegistrationBean  filterRegistrationBean() {
+        FilterRegistrationBean registration = new FilterRegistrationBean();
+        //当过滤器有注入其他bean类时，可直接通过@bean的方式进行实体类过滤器，这样不可自动注入过滤器使用的其他bean类。
+        //当然，若无其他bean需要获取时，可直接new CustomFilter()，也可使用getBean的方式。
+        registration.setFilter(customFilter());
+        //过滤器名称
+        registration.setName("customFilter");
+        //拦截路径
+        registration.addUrlPatterns("/*");
+        //设置顺序
+        registration.setOrder(10);
+		return registration;
+	}
+
+	@Bean
+	public Filter customFilter() {
+		return new CustomFilter();
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+
+/**
+ * 
+ * @author oKong
+ *
+ */
+@Configuration
+public class WebMvcConfigurer extends WebMvcConfigurerAdapter{
+	
+	@Override
+	 public void addInterceptors(InterceptorRegistry registry) {
+		 //注册拦截器 拦截规则
+		//多个拦截器时 以此添加 执行顺序按添加顺序
+		registry.addInterceptor(getHandlerInterceptor()).addPathPatterns("/*");
+	 }
+	
+	@Bean
+	public static HandlerInterceptor getHandlerInterceptor() {
+		return new CustomHandlerInterceptor();
+	}
+}
+
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
+import javax.servlet.annotation.WebListener;
+
+import lombok.extern.slf4j.Slf4j;
+
+
+@WebListener
+@Slf4j
+public class CustomLister implements ServletContextListener{
+	
+	@Override
+	public void contextInitialized(ServletContextEvent sce) {
+		log.info("监听器：初始化");
+	}
+
+	@Override
+	public void contextDestroyed(ServletContextEvent sce) {
+		log.info("监听器：销毁");
+	}
+
+	
+}
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.ModelAndView;
+
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * 
+ * @author oKong
+ *
+ */
+@Slf4j
+public class CustomHandlerInterceptor implements HandlerInterceptor{
+
+	@Override
+	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
+			throws Exception {
+		log.info("preHandle:请求前调用");
+		//返回 false 则请求中断
+		return true;
+	}
+
+	@Override
+	public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
+			ModelAndView modelAndView) throws Exception {
+		log.info("postHandle:请求后调用");
+
+	}
+
+	@Override
+	public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex)
+			throws Exception {
+		log.info("afterCompletion:请求调用完成后回调方法，即在视图渲染完成后回调");
+
+	}
+
+}
+
+import java.io.IOException;
+
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ *  自定义过滤器
+ * 
+ * @author oKong
+ *
+ */
+//注册器名称为customFilter,拦截的url为所有
+//@WebFilter(filterName="customFilter",urlPatterns={"/*"})
+@Slf4j
+public class CustomFilter implements Filter{
+
+	@Override
+	public void init(FilterConfig filterConfig) throws ServletException {
+		log.info("filter 初始化");
+	}
+
+	@Override
+	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+			throws IOException, ServletException {
+		// TODO Auto-generated method stub
+		log.info("doFilter 请求处理");
+		//对request、response进行一些预处理
+		// 比如设置请求编码
+		// request.setCharacterEncoding("UTF-8");
+        // response.setCharacterEncoding("UTF-8");
+		//TODO 进行业务逻辑
+		
+		//链路 直接传给下一个过滤器
+		chain.doFilter(request, response);
+	}
+
+	@Override
+	public void destroy() {
+		log.info("filter 销毁");
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.amqp.core.AmqpTemplate;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
+import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
+import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import cn.lqdev.learning.springboot.chapter38.constant.ApplicationConstant;
+import cn.lqdev.learning.springboot.chapter38.entity.HttpEntity;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import lombok.extern.slf4j.Slf4j;
+
+/** 
+*
+* @ClassName   类名：HttpDemoController 
+* @Description 功能说明：
+* <p>
+* TODO
+*</p>
+************************************************************************
+* @date        创建日期：2019年7月17日
+* @author      创建人：xds
+* @version     版本号：V1.0
+*<p>
+***************************修订记录*************************************
+* 
+*   2019年7月17日   xds   创建该类功能。
+*
+***********************************************************************
+*</p>
+*/
+@Slf4j
+
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import springfox.documentation.builders.ApiInfoBuilder;
+import springfox.documentation.builders.PathSelectors;
+import springfox.documentation.builders.RequestHandlerSelectors;
+import springfox.documentation.service.ApiInfo;
+import springfox.documentation.service.Contact;
+import springfox.documentation.spi.DocumentationType;
+import springfox.documentation.spring.web.plugins.Docket;
+import springfox.documentation.swagger2.annotations.EnableSwagger2;
+
+@EnableSwagger2
+@Configuration
+public class SwaggerConfig {
+
+	//是否开启swagger，正式环境一般是需要关闭的，可根据springboot的多环境配置进行设置
+	@Value(value = "${swagger.enabled}")
+	Boolean swaggerEnabled;
+
+	@Bean
+	public Docket createRestApi() {
+		return new Docket(DocumentationType.SWAGGER_2).apiInfo(apiInfo())
+				// 是否开启
+				.enable(swaggerEnabled).select()
+				// 扫描的路径包
+				.apis(RequestHandlerSelectors.basePackage("cn.lqdev.learning.springboot.chapter38"))
+				// 指定路径处理PathSelectors.any()代表所有的路径
+				.paths(PathSelectors.any()).build().pathMapping("/");
+	}
+
+	//设置api信息
+	private ApiInfo apiInfo() {
+		return new ApiInfoBuilder()
+				.title("SpringBoot-rabbitMQ延迟队列-demo示例")
+				.description("oKong | 趔趄的猿")
+				// 作者信息
+				.contact(new Contact("oKong", "https://blog.lqdev.cn/", "499452441@qq.com"))
+				.version("1.0.0")
+				.build();
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.amqp.core.AcknowledgeMode;
+import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.DirectExchange;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.QueueBuilder;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import cn.lqdev.learning.springboot.chapter38.constant.ApplicationConstant;
+
+/** 
+*
+* @ClassName   类名：RabbitConfig 
+* @Description 功能说明：
+* <p>
+* TODO
+*</p>
+************************************************************************
+* @date        创建日期：2019年7月17日
+* @author      创建人：oKong
+* @version     版本号：V1.0
+*<p>
+***************************修订记录*************************************
+* 
+*   2019年7月17日   oKong   创建该类功能。
+*
+***********************************************************************
+*</p>
+*/
+@Configuration
+public class RabbitConfig {
+	
+	@Autowired
+	ConnectionFactory connectionFactory;
+	
+	/**
+	 * 消费者线程数 设置大点 大概率是能通知到的
+	 */
+	@Value("${http.notify.concurrency:50}")
+	int concurrency;
+	
+	/**
+	 * 延迟队列的消费者线程数 可设置小点
+	 */
+	@Value("${http.notify.delay.concurrency:20}")
+	int delayConcurrency;
+	
+	@Bean
+	public RabbitAdmin rabbitAdmin() {
+		return new RabbitAdmin(connectionFactory);
+	}
+	
+	@Bean
+	public DirectExchange httpMessageNotifyDirectExchange(RabbitAdmin rabbitAdmin) {
+		//durable 是否持久化
+		//autoDelete 是否自动删除，即服务端或者客服端下线后 交换机自动删除
+		DirectExchange directExchange = new DirectExchange(ApplicationConstant.HTTP_MESSAGE_EXCHANGE,true,false);
+		directExchange.setAdminsThatShouldDeclare(rabbitAdmin);
+		return directExchange;
+	}
+	
+	//设置消息队列
+	@Bean
+	public Queue httpMessageStartQueue(RabbitAdmin rabbitAdmin) {
+		 
+       /*
+                       创建接收队列，4个参数
+		 name - 队列名称
+		 durable - false，不进行持有化
+		 exclusive - true，独占性
+		 autoDelete - true，自动删除*/
+		Queue queue = new Queue(ApplicationConstant.HTTP_MESSAGE_START_QUEUE_NAME, true, false, false);
+		queue.setAdminsThatShouldDeclare(rabbitAdmin);
+		return queue;
+	}
+	
+    //队列绑定交换机
+	@Bean
+	public Binding bindingStartQuene(RabbitAdmin rabbitAdmin,DirectExchange httpMessageNotifyDirectExchange, Queue httpMessageStartQueue) {
+		Binding binding = BindingBuilder.bind(httpMessageStartQueue).to(httpMessageNotifyDirectExchange).with(ApplicationConstant.HTTP_MESSAGE_START_RK);
+		binding.setAdminsThatShouldDeclare(rabbitAdmin);
+		return binding;
+	}
+	
+	@Bean
+	public Queue httpMessageOneQueue(RabbitAdmin rabbitAdmin) {
+		Queue queue = new Queue(ApplicationConstant.HTTP_MESSAGE_ONE_QUEUE_NAME, true, false, false);
+		queue.setAdminsThatShouldDeclare(rabbitAdmin);
+		return queue;
+	}
+	
+	@Bean
+	public Binding bindingOneQuene(RabbitAdmin rabbitAdmin,DirectExchange httpMessageNotifyDirectExchange, Queue httpMessageOneQueue) {
+		Binding binding = BindingBuilder.bind(httpMessageOneQueue).to(httpMessageNotifyDirectExchange).with(ApplicationConstant.HTTP_MESSAGE_ONE_RK);
+		binding.setAdminsThatShouldDeclare(rabbitAdmin);
+		return binding;
+	}
+	
+	//-------------设置延迟队列--开始--------------------
+	@Bean
+	public Queue httpDelayOneQueue() {
+		//name - 队列名称
+		//durable - true
+		//exclusive - false
+		//autoDelete - false
+		return QueueBuilder.durable("http.message.dlx.one")
+				//以下是重点：当变成死信队列时，会转发至 路由为x-dead-letter-exchange及x-dead-letter-routing-key的队列中
+				.withArgument("x-dead-letter-exchange", ApplicationConstant.HTTP_MESSAGE_EXCHANGE)
+				.withArgument("x-dead-letter-routing-key", ApplicationConstant.HTTP_MESSAGE_ONE_RK)
+				.withArgument("x-message-ttl", 1*60*1000)//1分钟 过期时间（单位：毫秒），当过期后 会变成死信队列，之后进行转发
+				.build();
+	}
+	//绑定到交换机上
+	@Bean
+	public Binding bindingDelayOneQuene(RabbitAdmin rabbitAdmin, DirectExchange httpMessageNotifyDirectExchange, Queue httpDelayOneQueue) {
+		Binding binding = BindingBuilder.bind(httpDelayOneQueue).to(httpMessageNotifyDirectExchange).with("delay.one");
+		binding.setAdminsThatShouldDeclare(rabbitAdmin);
+		return binding;
+	}
+	//-------------设置延迟队列--结束--------------------
+
+	//建议将正常的队列和延迟处理的队列分开
+	//设置监听容器
+	@Bean("notifyListenerContainer")
+	public SimpleRabbitListenerContainerFactory httpNotifyListenerContainer() {
+		SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+		factory.setAcknowledgeMode(AcknowledgeMode.MANUAL);// 手动ack
+		factory.setConnectionFactory(connectionFactory);
+		factory.setPrefetchCount(1);
+		factory.setConcurrentConsumers(concurrency);
+		return factory;
+	}
+
+	// 设置监听容器
+	@Bean("delayNotifyListenerContainer")
+	public SimpleRabbitListenerContainerFactory httpDelayNotifyListenerContainer() {
+		SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+		factory.setAcknowledgeMode(AcknowledgeMode.MANUAL);// 手动ack
+		factory.setConnectionFactory(connectionFactory);
+		factory.setPrefetchCount(1);
+		factory.setConcurrentConsumers(delayConcurrency);
+		return factory;
+	}
+}
+--------------------------------------------------------------------------------------------------------
+<?xml version="1.0" encoding="UTF-8"?>
+<ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="ehcache.xsd">
+    <!--timeToIdleSeconds 当缓存闲置n秒后销毁 -->
+    <!--timeToLiveSeconds 当缓存存活n秒后销毁 -->
+    <!-- 缓存配置 
+        name:缓存名称。 
+        maxElementsInMemory：缓存最大个数。 
+        eternal:对象是否永久有效，一但设置了，timeout将不起作用。 
+        timeToIdleSeconds：设置对象在失效前的允许闲置时间（单位：秒）。仅当eternal=false对象不是永久有效时使用，可选属性，默认值是0，也就是可闲置时间无穷大。 
+        timeToLiveSeconds：设置对象在失效前允许存活时间（单位：秒）。最大时间介于创建时间和失效时间之间。仅当eternal=false对象不是永久有效时使用，默认是0.，也就是对象存活时间无穷大。 
+        overflowToDisk：当内存中对象数量达到maxElementsInMemory时，Ehcache将会对象写到磁盘中。 diskSpoolBufferSizeMB：这个参数设置DiskStore（磁盘缓存）的缓存区大小。默认是30MB。每个Cache都应该有自己的一个缓冲区。 
+        maxElementsOnDisk：硬盘最大缓存个数。 
+        diskPersistent：是否缓存虚拟机重启期数据 Whether the disk 
+        store persists between restarts of the Virtual Machine. The default value 
+        is false. 
+        diskExpiryThreadIntervalSeconds：磁盘失效线程运行时间间隔，默认是120秒。  memoryStoreEvictionPolicy：当达到maxElementsInMemory限制时，Ehcache将会根据指定的策略去清理内存。默认策略是 
+LRU（最近最少使用）。你可以设置为FIFO（先进先出）或是LFU（较少使用）。 
+        clearOnFlush：内存数量最大时是否清除。 -->
+    <!-- 磁盘缓存位置 -->
+    <diskStore path="java.io.tmpdir" />
+    <!-- 默认缓存 -->
+    <defaultCache 
+        maxElementsInMemory="10000" 
+        eternal="false"
+        timeToIdleSeconds="120" 
+        timeToLiveSeconds="120" 
+        maxElementsOnDisk="10000000"
+        diskExpiryThreadIntervalSeconds="120" 
+        memoryStoreEvictionPolicy="LRU">
+        <persistence strategy="localTempSwap" />
+    </defaultCache>
+
+    <!-- 指定cache，即对应cacheName的值 -->
+    <cache name="oKongCache" 
+        eternal="false" 
+        timeToIdleSeconds="2400"
+        timeToLiveSeconds="2400" 
+        maxEntriesLocalHeap="10000"
+        maxEntriesLocalDisk="10000000" 
+        diskExpiryThreadIntervalSeconds="120"
+        overflowToDisk="false" 
+        memoryStoreEvictionPolicy="LRU">
+    </cache>
+</ehcache>
+--------------------------------------------------------------------------------------------------------
+# REDIS (RedisProperties)
+# Redis数据库索引（默认为0）
+spring.redis.database=0
+# Redis服务器地址
+spring.redis.host=127.0.0.1
+# Redis服务器连接端口
+spring.redis.port=6379
+# Redis服务器连接密码（默认为空）
+spring.redis.password=
+# 连接池最大连接数（使用负值表示没有限制）
+spring.redis.pool.max-active=8
+# 连接池最大阻塞等待时间（使用负值表示没有限制）
+spring.redis.pool.max-wait=-1
+# 连接池中的最大空闲连接
+spring.redis.pool.max-idle=8
+# 连接池中的最小空闲连接
+spring.redis.pool.min-idle=0
+# 连接超时时间（毫秒）
+spring.redis.timeout=0
+
+# ehcache配置地址
+spring.cache.ehcache.config=ehcache.xml
+--------------------------------------------------------------------------------------------------------
+@RestController
+@Slf4j
+public class DemoController {
+	
+	@RequestMapping("/redis/{key}")
+	@Cacheable(value = "redis",key="#key",cacheManager=CacheConfig.CacheManagerName.REDIS_CACHE_MANAGER)
+	public String cacheRedisTest(@PathVariable("key") String key) {
+		log.info("redis,key={}", key);
+		return key;
+	}
+	
+	@RequestMapping("/ehcache/{key}")
+	@Cacheable(value = "oKongCache",key="#key",cacheManager=CacheConfig.CacheManagerName.EHCACHE_CACHE_MAANGER)
+	public String cacheEhcacheTest(@PathVariable("key") String key) {
+		log.info("ehcache,key={}", key);
+		return key;
+	}
+	
+	@RequestMapping("/default/{key}")
+	@Cacheable(value = "default",key="#key")
+	public String cacheDefaultTest(@PathVariable("key") String key) {
+		log.info("default,key={}", key);
+		return key;
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.ehcache.EhCacheCacheManager;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+/** 
+*
+* @ClassName   类名：CacheConfig 
+* @Description 功能说明：缓存配置类
+* <p>
+* TODO
+*</p>
+************************************************************************
+* @date        创建日期：2019年3月7日
+* @author      创建人：oKong
+* @version     版本号：V1.0
+*<p>
+***************************修订记录*************************************
+* 
+*   2019年3月7日   oKong   创建该类功能。
+*
+***********************************************************************
+*</p>
+*/
+@Configuration
+@EnableCaching
+public class CacheConfig {
+	
+	/**
+     * cacheManager名称
+     */
+    public interface CacheManagerName {
+        /**
+         * redis
+         */
+        String REDIS_CACHE_MANAGER = "redisCacheManager";
+
+        /**
+         * ehCache
+         */
+        String EHCACHE_CACHE_MAANGER = "ehCacheCacheManager";
+    }
+	/**
+     *  定义 StringRedisTemplate ，指定序列号和反序列化的处理类
+     * @param factory
+     * @return
+     */
+    @Bean
+    public RedisTemplate<String, String> redisTemplate(RedisConnectionFactory factory) {
+        StringRedisTemplate template = new StringRedisTemplate(factory);
+        Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer<>(
+                Object.class);
+        ObjectMapper om = new ObjectMapper();
+        om.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+        om.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
+        jackson2JsonRedisSerializer.setObjectMapper(om);
+        //序列化 值时使用此序列化方法
+        template.setValueSerializer(jackson2JsonRedisSerializer);
+        template.afterPropertiesSet();
+        return template;
+    }
+    
+    @Bean(CacheConfig.CacheManagerName.REDIS_CACHE_MANAGER)
+    @Primary
+    public RedisCacheManager redisCacheManager(RedisTemplate<String,String> redisTemplate) {
+        RedisCacheManager rcm = new RedisCacheManager(redisTemplate);
+        //使用前缀
+        rcm.setUsePrefix(true);
+        //缓存分割符 默认为 ":"
+//        rcm.setCachePrefix(new DefaultRedisCachePrefix(":"));
+        //设置缓存过期时间
+        //rcm.setDefaultExpiration(60);//秒
+        return rcm;
+    }
+    
+    @Bean(CacheConfig.CacheManagerName.EHCACHE_CACHE_MAANGER) 
+    public EhCacheCacheManager EhcacheManager() {
+    	EhCacheCacheManager ehCacheManager = new EhCacheCacheManager();
+    	return ehCacheManager;
+    }
+    
+//    @Bean(name = "cacheManager")
+//    @Primary
+//    public CompositeCacheManager cacheManager(RedisCacheManager redisCacheManager, EhCacheCacheManager ehCacheCacheManager) {
+//        CompositeCacheManager cacheManager = new CompositeCacheManager(redisCacheManager, ehCacheCacheManager);
+//        return cacheManager;
+//    }
+    
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+
+import javax.jws.WebService;
+
+import cn.lqdev.learning.springboot.cxf.config.WsConst;
+import cn.lqdev.learning.springboot.cxf.entity.AuthorDto;
+import cn.lqdev.learning.springboot.cxf.entity.Sex;
+
+
+@WebService(
+		 targetNamespace = WsConst.NAMESPACE_URI, //wsdl命名空间 
+		 name = "authorPortType",                 //portType名称 客户端生成代码时 为接口名称
+		 serviceName = "authorService",           //服务name名称
+		 portName = "authorPortName",             //port名称
+		 endpointInterface = "cn.lqdev.learning.springboot.cxf.service.AuthorService")//指定发布webservcie的接口类，此类也需要接入@WebService注解
+public class AuthorServiceImpl implements AuthorService{
+
+	@Override
+	public AuthorDto getAuthor(String name) {
+		AuthorDto author = new AuthorDto();
+    	author.setBirthday("1990-01-23");
+    	author.setName("姓名：" + name);
+    	author.setSex(Sex.MALE);
+    	author.setHobby(Arrays.asList("电影","旅游"));
+    	author.setDescription("描述：一枚趔趄的猿。现在时间：" + new Date().getTime());
+    	return author;
+	}
+
+	@Override
+	public List<AuthorDto> getAuthorList() {
+		List<AuthorDto> resultList = new ArrayList<>();
+		AuthorDto author = new AuthorDto();
+    	author.setBirthday("1990-01-23");
+    	author.setName("姓名：oKong");
+    	author.setSex(Sex.MALE);
+    	author.setHobby(Arrays.asList("电影","旅游"));
+    	author.setDescription("描述：一枚趔趄的猿。现在时间：" + new Date().getTime());
+    	resultList.add(author);
+    	resultList.add(author);
+		return resultList;
+	}
+
+	@Override
+	public String getAuthorString(String name) {
+		AuthorDto author = getAuthor(name);
+		return author.toString();
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.List;
+
+import javax.jws.WebMethod;
+import javax.jws.WebParam;
+import javax.jws.WebService;
+
+import cn.lqdev.learning.springboot.cxf.config.WsConst;
+import cn.lqdev.learning.springboot.cxf.entity.AuthorDto;
+
+/**
+ * 创建服务接口
+ * @author oKong
+ *
+ */
+@WebService(targetNamespace = WsConst.NAMESPACE_URI ,name = "authorPortType")
+public interface AuthorService {
+
+	/**
+	 * 根据名称获取作者信息
+	 * @author 作者：oKong
+	 */
+	@WebMethod(operationName="getAuthorByName")
+	AuthorDto getAuthor(@WebParam(name = "authorName") String name);
+
+	/**
+	 * 获取作者列表信息
+	 * @author oKong
+	 */
+	@WebMethod
+	List<AuthorDto> getAuthorList();
+	
+	/**
+	 * 返回字符串测试
+	 * @author oKong
+	 */
+	String getAuthorString(@WebParam(name = "authorName")String name);
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
+
+import cn.lqdev.learning.springboot.chapter32.event.CustomEvent;
+import cn.lqdev.learning.springboot.chapter32.event.MessageEntity;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * 监听配置类
+ * 
+ * @author oKong
+ *
+ */
+@Configuration
+@Slf4j
+public class EventListenerConfig {
+
+	@EventListener
+	public void handleEvent(Object event) {
+		//监听所有事件 可以看看 系统各类时间 发布了哪些事件
+		//可根据 instanceof 监听想要监听的事件
+//		if(event instanceof CustomEvent) {
+//			
+//		}
+		log.info("事件：{}", event);
+	}
+	
+	@EventListener
+	public void handleCustomEvent(CustomEvent customEvent) {
+		//监听 CustomEvent事件
+		log.info("监听到CustomEvent事件，消息为：{}, 发布时间：{}", customEvent.getMessageEntity(), customEvent.getTimestamp());
+	}
+	
+	/**
+	 * 监听 code为oKong的事件
+	 */
+	@Async
+	@EventListener(condition="#customEvent.messageEntity.code == 'oKong'")
+	public void handleCustomEventByCondition(CustomEvent customEvent) {
+		//监听 CustomEvent事件
+		log.info("监听到code为'oKong'的CustomEvent事件，消息为：{}, 发布时间：{}", customEvent.getMessageEntity(), customEvent.getTimestamp());
+	}
+	
+	@EventListener 
+	public void handleObjectEvent(MessageEntity messageEntity) {
+		//这个和eventbus post方法一样了
+		log.info("监听到对象事件，消息为：{}", messageEntity);
+		
+	}
+}
+--------------------------------------------------------------------------------------------------------
+//
+// Source code recreated from a .class file by IntelliJ IDEA
+// (powered by Fernflower decompiler)
+//
+
+package com.sun.applet2.preloader.event;
+
+import com.sun.deploy.trace.Trace;
+import com.sun.deploy.trace.TraceLevel;
+import java.net.URL;
+
+public class DownloadEvent extends PreloaderEvent {
+    public static final int DOWNLOADING = 0;
+    public static final int VERIFYING = 1;
+    public static final int PATCHING = 2;
+    private long completed;
+    private long total;
+    private int percent;
+    private URL url;
+    private String version;
+    private String resourceLabel;
+    private int downloadtype;
+    protected boolean isStart = false;
+    protected boolean isComplete = false;
+    protected boolean isExplicit = false;
+    private final String[] types = new String[]{"load", "verify", "patch"};
+
+    public DownloadEvent(int var1, URL var2, String var3, String var4, long var5, long var7, int var9) {
+        super(3);
+        this.downloadtype = var1;
+        this.url = var2;
+        this.version = var3;
+        this.resourceLabel = var4;
+        this.completed = var5;
+        this.total = var7;
+        this.percent = var9;
+    }
+
+    public void normalize(int var1) {
+        if (var1 < 100 && this.percent < 100) {
+            if (var1 < 0) {
+                Trace.println("warning: progress baseline could not be negative!", TraceLevel.PRELOADER);
+            } else if (this.percent < var1) {
+                Trace.println("warning: progress baseline above the progress value! " + this.percent + " < " + var1, TraceLevel.PRELOADER);
+                this.percent = 0;
+            } else {
+                this.percent = 100 * (this.percent - var1) / (100 - var1);
+                if (this.percent == 0) {
+                    this.percent = 1;
+                }
+
+            }
+        } else {
+            this.percent = 100;
+        }
+    }
+
+    public URL getURL() {
+        return this.url;
+    }
+
+    public String getVersion() {
+        return this.version;
+    }
+
+    public String getResourceLabel() {
+        return this.resourceLabel;
+    }
+
+    public int getDownloadType() {
+        return this.downloadtype;
+    }
+
+    public long getCompletedCount() {
+        return this.completed;
+    }
+
+    public long getTotalCount() {
+        return this.total;
+    }
+
+    public int getOverallPercentage() {
+        return this.percent;
+    }
+
+    public boolean isStart() {
+        return this.isStart;
+    }
+
+    public boolean isComplete() {
+        return this.isComplete;
+    }
+
+    public boolean isExplicit() {
+        return this.isExplicit;
+    }
+
+    public void sendExplicitEvent(boolean var1) {
+        this.isExplicit = var1;
+    }
+
+    public String toString() {
+        return "DownloadEvent[type=" + this.types[this.downloadtype] + ",loaded=" + this.getCompletedCount() + ", total=" + this.getTotalCount() + ", percent=" + this.getOverallPercentage() + "]";
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.Date;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.stereotype.Service;
+
+import cn.lqdev.learning.springboot.chapter31.biz.entity.NotifyMsg;
+import cn.lqdev.learning.springboot.chapter31.biz.service.NotifyMsgService;
+
+/**
+ * MongoTemplate 访问实现
+ * @author oKong
+ *
+ */
+@Service
+public class NotifyMsgServiceImpl implements NotifyMsgService{
+
+	@Autowired
+	MongoTemplate mongoTemplate;
+	
+	@Override
+	public NotifyMsg saveNotifyMsg(NotifyMsg msg) {
+		//使用 save和insert都可以进行插入
+		//区别：当存在"_id"时
+		//insert 插入已经存在的id时 会异常
+		//save 则会进行更新
+		//简单来说 save 就是不存在插入 存在更新
+		mongoTemplate.insert(msg);
+		mongoTemplate.save(msg);
+		
+		return msg;
+	}
+
+	@Override
+	public NotifyMsg findNotifyMsgByNo(String notifyNo) {
+		//根据Criteria 改造查询条件
+		Query query = new Query(Criteria.where("notifyNo").is(notifyNo));
+		return mongoTemplate.findOne(query, NotifyMsg.class);
+	}
+
+	@Override
+	public List<NotifyMsg> findNotifyMsgByDate(String notifyDate) {
+		//查找 notifyDate 根据Criteria 改造查询条件
+		Query query = new Query(Criteria.where("notifyDate").is(notifyDate));		
+		return mongoTemplate.find(query, NotifyMsg.class);
+	}
+
+	@Override
+	public NotifyMsg delNotifyMsgById(String id) {
+		//查找 id 根据Criteria 改造查询条件
+		Query query = new Query(Criteria.where("id").is(id));	
+		return mongoTemplate.findAndRemove(query, NotifyMsg.class);
+	}
+
+}
+
+import java.io.Serializable;
+import java.util.Date;
+
+
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/**
+ * 通知消息对象
+ * @author oKong
+ *
+ */
+@Document(collection="notify_msg")
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class NotifyMsg implements Serializable{
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -8985545025018238754L;
+
+	@Id
+	String id;
+	
+	/**
+	 * 消息类型
+	 */
+	@Indexed
+	String notifyType;
+	
+	/**
+	 * 消息单号
+	 */
+	@Indexed
+	String notifyNo;
+	
+	/**
+	 * 消息通知日期
+	 */
+	String notifyDate;
+	
+	/**
+	 * 消息体
+	 */
+	@Field("notifyMsg")//可指定存储时的字段名
+	String notifyMsg;
+	
+	/**
+	 * 创建时间
+	 */
+	@CreatedDate
+	Date gmtCreate;
+}
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
+
+import cn.lqdev.learning.springboot.chapter31.biz.entity.NotifyMsg;
+
+/**
+ * MongoRepository 示例
+ * @author oKong
+ *
+ */
+public interface NotifyMsgDao extends MongoRepository<NotifyMsg, String>{
+
+	/*
+	 * 根据消息号进行查询
+	 */
+	NotifyMsg findByNotifyNo(String notifyNo);
+	
+	/**
+	 * 根据日期查询 自定义查询
+	 * @author 作者：oKong
+	 */
+	//需要注意 查询的语法结构 ，同时这里和`jpa`不一样的地方是，第一个索引值从0 开始。。
+	@Query("{'notifyDate':?0}")
+	Page<NotifyMsg> queryBySql(String notifyDate,Pageable pageable);
+}
+--------------------------------------------------------------------------------------------------------
+import com.alibaba.dubbo.config.annotation.Service;
+
+import cn.lqdev.learning.springboot.dubbo.api.IHelloService;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * 定义一个服务实现类
+ * @author oKong
+ *
+ */
+// 这里注意 此类@service是dubbo的
+@Service(
+		version = "${demo.service.version}", //版本
+		application = "${dubbo.application.id}", //应用ID
+		protocol = "${dubbo.protocol.id}", //协议id
+		registry = "${dubbo.registry.id}")//注册中心id
+@Slf4j
+public class HelloServiceImpl implements IHelloService {
+	
+	@Override
+	public String hello(String name) {
+		log.info("dubbo提供者，参数name:{}", name);
+		return "hello " + name + ",this is a dubbo provider!";
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+# 邮件相关
+# SMTP服务器地址
+spring.mail.host=smtp.qq.com
+# SMTP服务器端口号 默认-1
+# spring.mail.port=-1
+# 发送方帐号
+spring.mail.username=邮箱
+# 发送方密码（授权码）
+spring.mail.password=邮箱密码
+#javaMailProperties 配置
+# 开启用户身份验证
+spring.mail.properties.mail.smtp.auth=true
+# STARTTLS：一种通信协议，具体可以搜索下
+#spring.mail.properties.mail.smtp.starttls.enable=true
+#spring.mail.properties.mail.smtp.starttls.required=true
+
+# 缓存配置 开发阶段应该配置为false 因为经常会改
+spring.freemarker.cache=false
+# 模版后缀名 默认为ftl
+spring.freemarker.suffix=.ftl
+# 文件编码
+spring.freemarker.charset=UTF-8
+# 模版加载的目录
+spring.freemarker.template-loader-path=classpath:/templates/
+--------------------------------------------------------------------------------------------------------
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.ui.freemarker.FreeMarkerTemplateUtils;
+import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * 发送邮件
+ * @author oKong
+ *
+ */
+@RestController
+public class EmailController {
+	
+	@Autowired
+	private JavaMailSender mailSender;
+	
+	/**
+	 * 纯文本格式
+	 * @return
+	 */
+	@GetMapping("/simple")
+	public String simpleSend() {
+		SimpleMailMessage message = new SimpleMailMessage();
+		message.setFrom("499452441@qq.com");
+		message.setTo("499452441@qq.com");
+		message.setSubject("主题：来自oKong邮件");
+		message.setText("公众号：一枚趔趄的猿(lqdevOps)，作者：oKong");
+		mailSender.send(message);		
+		return "发送成功!";
+	}
+	
+	@GetMapping("/attach")
+	public String attachSend() throws MessagingException {
+		MimeMessage mimeMessage = mailSender.createMimeMessage();
+
+		MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+		helper.setFrom("499452441@qq.com");
+		helper.setTo("499452441@qq.com");	
+		helper.setSubject("主题：来自oKong邮件(带附件)");
+		helper.setText("(含附件)公众号：一枚趔趄的猿(lqdevOps)，作者：oKong");
+		//添加附件
+		File qrCode = new File("wxgzh8cm.jpg");
+		//建议文件带上后缀，可支持在线预览 
+		helper.addAttachment("公众号二维码.jpg", qrCode);
+		mailSender.send(mimeMessage);
+		return "附件邮件发送成功!";
+	}
+	
+	/**
+	 * html格式
+	 * @return
+	 * @throws MessagingException
+	 */
+	@GetMapping("/html")
+	public String htmlSend() throws MessagingException {
+		MimeMessage mimeMessage = mailSender.createMimeMessage();
+
+		MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+		helper.setFrom("499452441@qq.com");
+		helper.setTo("499452441@qq.com");	
+		helper.setSubject("主题：来自oKong邮件(带附件)");
+		helper.setText("<html><body><div>(含附件)公众号：一枚趔趄的猿(lqdevOps)，作者：oKong</div><div><img src='cid:winxin'></div></body></html>",true);
+		
+		//抄送人
+//		helper.setCc("");
+		//密送人
+//		helper.setBcc("");
+		//添加附件
+		File qrCode = new File("wxgzh8cm.jpg");
+		//建议文件带上后缀，可支持在线预览 
+		helper.addAttachment("公众号二维码.jpg", qrCode);
+		helper.addInline("winxin", qrCode);
+
+		mailSender.send(mimeMessage);
+		return "附件邮件发送成功!";
+	}
+	
+	@GetMapping("/template")
+	public String template(String userName) throws Exception {
+		MimeMessage mimeMessage = mailSender.createMimeMessage();
+
+		MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+		helper.setFrom("499452441@qq.com");
+		helper.setTo("499452441@qq.com");	
+		helper.setSubject("主题：" + userName + ",你有一封来自oKong邮件(From模版)");
+		Map<String, Object> model = new HashMap<String, Object>();
+		model.put("userName", StringUtils.isEmpty(userName) ? "oKong" : userName);
+		String templateString = FreeMarkerTemplateUtils.processTemplateIntoString(freemarkerConfig.getTemplate("mail.ftl"), model);
+		helper.setText(templateString,true);
+		//抄送人
+//		helper.setCc("");
+		//密送人
+//		helper.setBcc("");
+		//添加附件
+		File qrCode = new File("wxgzh8cm.jpg");
+		//建议文件带上后缀，可支持在线预览 
+		helper.addAttachment("公众号二维码.jpg", qrCode);
+		helper.addInline("winxin", qrCode);
+		mailSender.send(mimeMessage);
+		
+		return "模版文件发送成功!";
+	}
+	//自动注入
+	@Autowired 
+	freemarker.template.Configuration freemarkerConfig;
+
+}
+--------------------------------------------------------------------------------------------------------
+logging.register-shutdown-hook=true
+
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.Layout;
+import ch.qos.logback.core.UnsynchronizedAppenderBase;
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+public class MyLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEvent>{
+
+    Layout<ILoggingEvent> layout;
+    
+    //自定义配置 
+	String printString;
+
+	
+    
+	@Override
+    public void start(){
+		//这里可以做些初始化判断 比如layout不能为null ,
+		if(layout == null) {
+			addWarn("Layout was not defined");
+		}
+		//或者写入数据库 或者redis时 初始化连接等等
+		 super.start();
+		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				// 执行资源释放操作
+
+			}
+		}));		 
+    }
+	
+
+    @Override
+    public void stop()
+    {
+       //释放相关资源，如数据库连接，redis线程池等等
+    	System.out.println("logback-stop方法被调用");
+    	if(!isStarted()) {
+    		return;
+    	}
+        super.stop();
+    }
+	
+	@Override
+	public void append(ILoggingEvent event) {
+		if (event == null || !isStarted()){
+            return;
+        }
+	         // 此处自定义实现输出			 
+			 // 获取输出值：event.getFormattedMessage()
+			 // System.out.print(event.getFormattedMessage());
+			 // 格式化输出		
+		System.out.print(printString + "：" + layout.doLayout(event));
+	      
+	}
+}
+
+import java.io.Serializable;
+
+import org.apache.logging.log4j.core.Filter;
+import org.apache.logging.log4j.core.Layout;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.plugins.Plugin;
+import org.apache.logging.log4j.core.config.plugins.PluginAttribute;
+import org.apache.logging.log4j.core.config.plugins.PluginElement;
+import org.apache.logging.log4j.core.config.plugins.PluginFactory;
+import org.apache.logging.log4j.core.layout.PatternLayout;
+
+/**
+ * 自定义log4j2输出源，简单的输出到控制台
+ * @author oKong
+ *
+ */
+//这里的 MyLog4j2 对应就是 xml中，
+/**
+ * 
+ *  <appenders>
+ *     <MyLog4j2 name="customAppender" printString="一枚趔趄的猿">
+ *     </MyLog4j2>
+ *  </appenders>
+ *
+ */
+@Plugin(name = "MyLog4j2", category = "Core", elementType = "appender", printObject = true)
+public class MyLog4j2Appender extends AbstractAppender {
+
+	String printString;
+   /**  
+	 *构造函数 可自定义参数 这里直接传入一个常量并输出
+	 * 
+	*/ 
+	protected MyLog4j2Appender(String name, Filter filter, Layout<? extends Serializable> layout,String printString) {
+		super(name, filter, layout);
+		this.printString = printString;
+	}
+
+	@Override
+	public void append(LogEvent event) {
+		 if (event != null && event.getMessage() != null) {
+	         // 此处自定义实现输出			 
+			 // 获取输出值：event.getMessage().toString()
+			 // System.out.print(event.getMessage().toString());
+			 // 格式化输出
+			 System.out.print(printString + "：" + getLayout().toSerializable(event));
+	      }
+		
+	}
+	
+	/**  接收配置文件中的参数 
+	 * 
+	 * @PluginAttribute 字面意思都知道，是xml节点的attribute值，如<oKong name="oKong"></oKong> 这里的name 就是 attribute
+	 * @PluginElement：表示xml子节点的元素，
+	 * 如
+	 *     <oKong name="oKong">
+	 *         <PatternLayout pattern="[%d{HH:mm:ss:SSS}] [%p] - %l - %m%n"/>
+	 *     </oKong>
+	 *   其中，PatternLayout就是 的 Layout，其实就是{@link Layout}的实现类。
+	 */ 
+	@PluginFactory
+	public static MyLog4j2Appender createAppender(
+			@PluginAttribute("name") String name,
+            @PluginElement("Filter") final Filter filter, 
+            @PluginElement("Layout") Layout<? extends Serializable> layout,
+            @PluginAttribute("printString") String printString) {
+		if (name == null) {
+            LOGGER.error("no name defined in conf."); 
+            return null; 
+        } 
+		//默认使用 PatternLayout
+        if (layout == null) { 
+            layout = PatternLayout.createDefaultLayout(); 
+        } 
+        
+        return new MyLog4j2Appender(name, filter, layout, printString);
+	}
+	
+	@Override
+	public void start() {
+		System.out.println("log4j2-start方法被调用");
+		super.start();
+	}
+	
+	@Override
+	public void stop() {
+		System.out.println("log4j2-stop方法被调用");
+		super.stop();
+	}
+}
+--------------------------------------------------------------------------------------------------------
+	@Autowired
+	ScheduledTask task;
+
+	@GetMapping("/timer")
+	public String doTimer() {
+		Timer timer = new Timer();
+		timer.schedule(new TimerTask() {
+			
+			@Override
+			public void run() {
+				log.info("Timer定时任务执行：" + new Date());
+				
+			}
+		}, 1000,1000);//延迟1秒启动，每1秒执行一次
+		log.info("Timer定时任务启动：" + new Date());
+		return "timer";
+	}
+	@GetMapping("/executor")
+	public String ScheduledExecutorService() {
+		//
+		ScheduledExecutorService service = Executors.newScheduledThreadPool(10);
+		service.scheduleAtFixedRate(new Runnable() {
+			
+			@Override
+			public void run() {
+				log.info("ScheduledExecutorService定时任务一执行：" + new Date());				
+			}
+		}, 1, 2, TimeUnit.SECONDS);//首次延迟1秒，之后每1秒执行一次
+		log.info("ScheduledExecutorService定时任务启动：" + new Date());	
+		
+		service.scheduleAtFixedRate(new Runnable() {
+			
+			@Override
+			public void run() {
+				log.info("ScheduledExecutorService定时任务二执行：" + new Date());			
+				
+			}
+		}, 0, 1, TimeUnit.SECONDS);
+		
+		return "ScheduledExecutorService!";		
+	}
+	
+	@Autowired
+	TaskScheduler taskScheduler;
+	
+	@GetMapping("/poolTask")
+	public String threadPoolTaskScheduler() {
+	
+		taskScheduler.schedule(new Runnable() {
+			
+			@Override
+			public void run() {
+				log.info("ThreadPoolTaskScheduler定时任务：" + new Date());
+			}
+		}, new CronTrigger("0/3 * * * * ?"));//每3秒执行一次
+		return "ThreadPoolTaskScheduler!";
+	}
+	
+--------------------------------------------------------------------------------------------------------
+    @RequestMapping(value = "/files/{file_name:.+}", method = RequestMethod.GET)
+    public void getFile(@PathVariable("file_name") String fileName, @RequestHeader String referer, HttpServletResponse response) {
+        if (referer == null || referer.isEmpty())
+            throw new RefererException("Missing header 'referer' when try download file: " + fileName);
+ 
+//...
+    }
+--------------------------------------------------------------------------------------------------------
+spring init --name=file-demo --dependencies=web file-demo
+
+        // Try to determine file's content type
+        String contentType = null;
+        try {
+            contentType = request.getServletContext().getMimeType(resource.getFile().getAbsolutePath());
+        } catch (IOException ex) {
+            logger.info("Could not determine file type.");
+        }
+		
+    @PostMapping("/")
+    public String handleFileUpload(@RequestParam("file") MultipartFile file,
+            RedirectAttributes redirectAttributes) {
+
+        storageService.store(file);
+        redirectAttributes.addFlashAttribute("message",
+                "You successfully uploaded " + file.getOriginalFilename() + "!");
+
+        return "redirect:/";
+    }
+	
+   @Bean
+    CommandLineRunner init(StorageService storageService) {
+        return (args) -> {
+            storageService.deleteAll();
+            storageService.init();
+        };
+    }
+--------------------------------------------------------------------------------------------------------
+import java.nio.file.Paths;
+import java.util.stream.Stream;
+
+import org.hamcrest.Matchers;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.fileUpload;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import hello.storage.StorageFileNotFoundException;
+import hello.storage.StorageService;
+
+@RunWith(SpringRunner.class)
+@AutoConfigureMockMvc
+@SpringBootTest
+public class FileUploadTests {
+
+    @Autowired
+    private MockMvc mvc;
+
+    @MockBean
+    private StorageService storageService;
+
+    @Test
+    public void shouldListAllFiles() throws Exception {
+        given(this.storageService.loadAll())
+                .willReturn(Stream.of(Paths.get("first.txt"), Paths.get("second.txt")));
+
+        this.mvc.perform(get("/")).andExpect(status().isOk())
+                .andExpect(model().attribute("files",
+                        Matchers.contains("http://localhost/files/first.txt",
+                                "http://localhost/files/second.txt")));
+    }
+
+    @Test
+    public void shouldSaveUploadedFile() throws Exception {
+        MockMultipartFile multipartFile = new MockMultipartFile("file", "test.txt",
+                "text/plain", "Spring Framework".getBytes());
+        this.mvc.perform(fileUpload("/").file(multipartFile))
+                .andExpect(status().isFound())
+                .andExpect(header().string("Location", "/"));
+
+        then(this.storageService).should().store(multipartFile);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void should404WhenMissingFile() throws Exception {
+        given(this.storageService.loadAsResource("test.txt"))
+                .willThrow(StorageFileNotFoundException.class);
+
+        this.mvc.perform(get("/files/test.txt")).andExpect(status().isNotFound());
+    }
+
+}
+
+https://www.baeldung.com/spring-file-upload
+--------------------------------------------------------------------------------------------------------
+curl -i \
+-H "Accept: application/json" \
+-H "Content-Type:application/json" \
+-X POST --data 
+  '{"username": "johnny", "password": "password"}' "https://localhost:8080/.../request"
+--------------------------------------------------------------------------------------------------------
+@Configuration
+public class TestBeanPostProcessor implements BeanPostProcessor {
+
+    @Override
+    public Object postProcessBeforeInitialization(Object o, String s) throws BeansException {
+        return o;
+    }
+
+    @Override
+    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+        if (beanName.equalsIgnoreCase("requestMappingHandlerAdapter")) {
+            RequestMappingHandlerAdapter requestMappingHandlerAdapter = (RequestMappingHandlerAdapter) bean;
+            List<HandlerMethodArgumentResolver> argumentResolvers = requestMappingHandlerAdapter.getArgumentResolvers();
+            List<HandlerMethodArgumentResolver> modifiedArgumentResolvers = new ArrayList<>(argumentResolvers.size());                
+            for(int i =1; i< argumentResolvers.size();i++){
+                modifiedArgumentResolvers.add(argumentResolvers.get(i));
+            }
+            modifiedArgumentResolvers.add(new TestRequestBodyMethodProcessor(requestMappingHandlerAdapter.getMessageConverters(), new ArrayList<Object>()));
+            ((RequestMappingHandlerAdapter) bean).setArgumentResolvers(null);
+            ((RequestMappingHandlerAdapter) bean).setArgumentResolvers(modifiedArgumentResolvers);
+        }
+        return bean;
+    }
+}
+
+public class TestRequestBodyMethodProcessor extends AbstractMessageConverterMethodProcessor {
+
+    public TestRequestBodyMethodProcessor(List<HttpMessageConverter<?>> converters) {
+        super(converters);
+    }
+
+    public TestRequestBodyMethodProcessor(List<HttpMessageConverter<?>> converters, ContentNegotiationManager manager) {
+        super(converters, manager);
+    }
+
+    public TestRequestBodyMethodProcessor(List<HttpMessageConverter<?>> converters, List<Object> requestResponseBodyAdvice) {
+        super(converters, null, requestResponseBodyAdvice);
+    }
+
+    public TestRequestBodyMethodProcessor(List<HttpMessageConverter<?>> converters,
+                                          ContentNegotiationManager manager, List<Object> requestResponseBodyAdvice) {
+        super(converters, manager, requestResponseBodyAdvice);
+    }
+
+    @Override
+    public boolean supportsParameter(MethodParameter parameter) {
+        return parameter.hasParameterAnnotation(RequestBody.class);
+    }
+
+    @Override
+    public boolean supportsReturnType(MethodParameter returnType) {
+        return (AnnotatedElementUtils.hasAnnotation(returnType.getContainingClass(), ResponseBody.class) ||
+                returnType.hasMethodAnnotation(ResponseBody.class));
+    }
+
+    @Override
+    public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
+                                  NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
+
+        parameter = parameter.nestedIfOptional();
+        BaseInsert trans_type_code = ;
+        Object arg = readWithMessageConverters(webRequest, parameter,
+                Test.getModelClassObject().getClass());
+        String name = Conventions.getVariableNameForParameter(parameter);
+
+        WebDataBinder binder = binderFactory.createBinder(webRequest, arg, name);
+        if (arg != null) {
+            validateIfApplicable(binder, parameter);
+            if (binder.getBindingResult().hasErrors() && isBindExceptionRequired(binder, parameter)) {
+                throw new MethodArgumentNotValidException(parameter, binder.getBindingResult());
+            }
+        }
+        mavContainer.addAttribute(BindingResult.MODEL_KEY_PREFIX + name, binder.getBindingResult());
+
+        return adaptArgumentIfNecessary(arg, parameter);
+    }
+
+    @Override
+    protected <T> Object readWithMessageConverters(NativeWebRequest webRequest, MethodParameter parameter,
+                                                   Type paramType) throws IOException, HttpMediaTypeNotSupportedException, HttpMessageNotReadableException {
+
+        HttpServletRequest servletRequest = webRequest.getNativeRequest(HttpServletRequest.class);
+        ServletServerHttpRequest inputMessage = new ServletServerHttpRequest(servletRequest);
+        Object arg = readWithMessageConverters(inputMessage, parameter, paramType);
+        if (arg == null) {
+            if (checkRequired(parameter)) {
+                throw new HttpMessageNotReadableException("Required request body is missing: " +
+                        parameter.getMethod().toGenericString());
+            }
+        }
+        return arg;
+    }
+
+    protected boolean checkRequired(MethodParameter parameter) {
+        return (parameter.getParameterAnnotation(RequestBody.class).required() && !parameter.isOptional());
+    }
+
+    @Override
+    public void handleReturnValue(Object returnValue, MethodParameter returnType,
+                                  ModelAndViewContainer mavContainer, NativeWebRequest webRequest)
+            throws IOException, HttpMediaTypeNotAcceptableException, HttpMessageNotWritableException {
+
+        mavContainer.setRequestHandled(true);
+        ServletServerHttpRequest inputMessage = createInputMessage(webRequest);
+        ServletServerHttpResponse outputMessage = createOutputMessage(webRequest);
+        // Try even with null return value. ResponseBodyAdvice could get involved.
+        writeWithMessageConverters(returnValue, returnType, inputMessage, outputMessage);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+ @Test
+  public void resolveArgumentTypeVariableWithNonGenericConverter() throws Exception {
+    Method method = MyParameterizedController.class.getMethod("handleDto", Identifiable.class);
+    HandlerMethod handlerMethod = new HandlerMethod(new MySimpleParameterizedController(), method);
+    MethodParameter methodParam = handlerMethod.getMethodParameters()[0];
+
+    String content = "{\"name\" : \"Jad\"}";
+    this.servletRequest.setContent(content.getBytes("UTF-8"));
+    this.servletRequest.setContentType(MediaType.APPLICATION_JSON_VALUE);
+
+    List<HttpMessageConverter<?>> converters = new ArrayList<HttpMessageConverter<?>>();
+    HttpMessageConverter target = new MappingJackson2HttpMessageConverter();
+    HttpMessageConverter proxy =
+        ProxyFactory.getProxy(HttpMessageConverter.class, new SingletonTargetSource(target));
+    converters.add(proxy);
+    RequestResponseBodyMethodProcessor processor =
+        new RequestResponseBodyMethodProcessor(converters);
+
+    SimpleBean result =
+        (SimpleBean)
+            processor.resolveArgument(methodParam, mavContainer, webRequest, binderFactory);
+
+    assertNotNull(result);
+    assertEquals("Jad", result.getName());
+  }
+--------------------------------------------------------------------------------------------------------
+//get the mimetype
+			String mimeType = URLConnection.guessContentTypeFromName(file.getName());
+			if (mimeType == null) {
+				//unknown mimetype so set the mimetype to application/octet-stream
+				mimeType = "application/octet-stream";
+			}
+--------------------------------------------------------------------------------------------------------
+setCustomArgumentResolvers
+
+RequestMappingHandlerAdapter requestMappingHandlerAdapter
+
+    @PostConstruct
+    public void init() {
+        this.adapter.setCustomArgumentResolvers(Collections.singletonList(new RequestMethodProcessor(this.objectMapper, this.modelMapper, this.validator)));
+        this.adapter.setCustomReturnValueHandlers(Collections.singletonList(new ResponseMethodProcessor(this.objectMapper, this.modelMapper, this.validator)));
+    }
+--------------------------------------------------------------------------------------------------------
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.request.async.DeferredResult;
+import org.springframework.web.context.request.async.WebAsyncTask;
+
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * spring方式实现异步请求
+ * 
+ * @author oKong
+ *
+ */
+@Slf4j
+@RestController
+public class SpringController {
+
+	@RequestMapping("/callable")
+	public Callable<String> callable() {
+		log.info("外部线程：" + Thread.currentThread().getName());
+		return new Callable<String>() {
+
+			@Override
+			public String call() throws Exception {
+				log.info("内部线程：" + Thread.currentThread().getName());
+				return "callable!";
+			}
+		};
+	}
+	
+	@RequestMapping("/deferredresult")
+	public DeferredResult<String> deferredResult(){
+		log.info("外部线程：" + Thread.currentThread().getName());
+		//设置超时时间
+		DeferredResult<String> result = new DeferredResult<String>(60*1000L);
+		//处理超时事件 采用委托机制
+		result.onTimeout(new Runnable() {
+			
+			@Override
+			public void run() {
+				log.error("DeferredResult超时");
+				result.setResult("超时了!");
+			}
+		});
+		result.onCompletion(new Runnable() {
+			
+			@Override
+			public void run() {
+				//完成后
+				log.info("调用完成");
+			}
+		});
+		FIXED_THREAD_POOL.execute(new Runnable() {
+			
+			@Override
+			public void run() {
+				//处理业务逻辑
+				log.info("内部线程：" + Thread.currentThread().getName());
+				//返回结果
+				result.setResult("DeferredResult!!");
+			}
+		});
+		return result;
+	}
+	
+	/**
+	 * 线程池
+	 */
+    public static ExecutorService FIXED_THREAD_POOL = Executors.newFixedThreadPool(30);
+    
+    
+    @RequestMapping("/webAsyncTask")
+    public WebAsyncTask<String> webAsyncTask() {
+    	log.info("外部线程：" + Thread.currentThread().getName());
+    	WebAsyncTask<String> result = new WebAsyncTask<String>(60*1000L, new Callable<String>() {
+
+			@Override
+			public String call() throws Exception {
+				log.info("内部线程：" + Thread.currentThread().getName());
+				return "WebAsyncTask!!!";
+			}
+		});
+    	result.onTimeout(new Callable<String>() {
+			
+			@Override
+			public String call() throws Exception {
+				// TODO Auto-generated method stub
+				return "WebAsyncTask超时!!!";
+			}
+		});
+    	result.onCompletion(new Runnable() {
+			
+			@Override
+			public void run() {
+				//超时后 也会执行此方法
+				log.info("WebAsyncTask执行结束");
+			}
+		});
+    	return result;
+    }
+}
+
+import javax.servlet.AsyncContext;
+import javax.servlet.AsyncEvent;
+import javax.servlet.AsyncListener;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * 使用servlet方式进行异步请求
+ * @author oKong
+ *
+ */
+@Slf4j
+@RestController
+public class ServletController {
+	
+	@RequestMapping("/servlet/orig")
+	public void todo(HttpServletRequest request,
+            HttpServletResponse response) throws Exception {
+		//这里来个休眠
+		Thread.sleep(100);
+		response.getWriter().println("这是【正常】的请求返回");
+	}
+	
+	@RequestMapping("/servlet/async")
+	public void todoAsync(HttpServletRequest request,
+            HttpServletResponse response) {
+		AsyncContext asyncContext = request.startAsync();
+		asyncContext.addListener(new AsyncListener() {
+			
+			@Override
+			public void onTimeout(AsyncEvent event) throws IOException {
+				log.info("超时了：");
+				//做一些超时后的相关操作
+				
+			}
+			
+			@Override
+			public void onStartAsync(AsyncEvent event) throws IOException {
+				// TODO Auto-generated method stub
+				log.info("线程开始");
+			}
+			
+			@Override
+			public void onError(AsyncEvent event) throws IOException {
+				log.info("发生错误：",event.getThrowable());
+				
+			}
+			
+			@Override
+			public void onComplete(AsyncEvent event) throws IOException {
+				log.info("执行完成");
+				//这里可以做一些清理资源的操作
+				
+			}
+		});
+		//设置超时时间
+		asyncContext.setTimeout(200);
+		//也可以不使用start 进行异步调用
+//		new Thread(new Runnable() {
+//			
+//			@Override
+//			public void run() {
+//				编写业务逻辑
+//				
+//			}
+//		}).start();
+		
+		asyncContext.start(new Runnable() {			
+			@Override
+			public void run() {
+				try {
+					Thread.sleep(100);
+					log.info("内部线程：" + Thread.currentThread().getName());
+					asyncContext.getResponse().setCharacterEncoding("utf-8");
+					asyncContext.getResponse().setContentType("text/html;charset=UTF-8");
+					asyncContext.getResponse().getWriter().println("这是【异步】的请求返回");
+				} catch (Exception e) {
+					log.error("异常：",e);
+				}
+				//异步请求完成通知
+				//此时整个请求才完成
+				//其实可以利用此特性 进行多条消息的推送 把连接挂起。。
+				asyncContext.complete();
+			}
+		});
+		//此时之类 request的线程连接已经释放了
+		log.info("线程：" + Thread.currentThread().getName());
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.web.socket.config.annotation.EnableWebSocket;
+import org.springframework.web.socket.server.standard.ServerEndpointExporter;
+
+import lombok.extern.slf4j.Slf4j;
+
+@SpringBootApplication
+@EnableWebSocket
+@Slf4j
+public class Chapter19Application {
+
+	public static void main(String[] args) {
+		SpringApplication.run(Chapter19Application.class, args);
+		log.info("Chapter19启动!");
+	}
+	
+	/**
+	 * 会自动注册使用了@ServerEndpoint注解声明的Websocket endpoint
+	 * 要注意，如果使用独立的servlet容器，
+	 * 而不是直接使用springboot的内置容器，
+	 * 就不要注入ServerEndpointExporter，因为它将由容器自己提供和管理。
+	 */
+	@Bean
+	public ServerEndpointExporter serverEndpointExporter() {
+		return new ServerEndpointExporter();
+	}
+}
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import javax.websocket.RemoteEndpoint.Async;
+import javax.websocket.Session;
+
+public class WebSocketUtil {
+
+	/**
+	 * 简单使用map进行存储在线的session
+	 * 
+	 */
+    private static final Map<String, Session> ONLINE_SESSION = new ConcurrentHashMap<>();
+    
+    public static void addSession(String userNick,Session session) {
+    	//putIfAbsent 添加键—值对的时候，先判断该键值对是否已经存在
+    	//不存在：新增，并返回null
+    	//存在：不覆盖，直接返回已存在的值
+//    	ONLINE_SESSION.putIfAbsent(userNick, session);
+    	//简单示例 不考虑复杂情况。。怎么简单怎么来了。。
+    	ONLINE_SESSION.put(userNick, session);
+    }
+    
+    public static void remoteSession(String userNick) {
+    	ONLINE_SESSION.remove(userNick);
+    }
+    
+    /**
+     * 向某个用户发送消息
+     * @param session 某一用户的session对象
+     * @param message
+     */
+    public static void sendMessage(Session session, String message) {
+    	if(session == null) {
+    		return;
+    	}
+    	// getAsyncRemote()和getBasicRemote()异步与同步
+    	Async async = session.getAsyncRemote();
+    	//发送消息
+    	async.sendText(message);
+    }
+    
+    /**
+     * 向所有在线人发送消息
+     * @param message
+     */
+    public static void sendMessageForAll(String message) {
+    	//jdk8 新方法
+    	ONLINE_SESSION.forEach((sessionId, session) -> sendMessage(session, message));
+    }
+}
+
+import java.io.IOException;
+
+import javax.websocket.OnClose;
+import javax.websocket.OnError;
+import javax.websocket.OnMessage;
+import javax.websocket.OnOpen;
+import javax.websocket.Session;
+import javax.websocket.server.PathParam;
+import javax.websocket.server.ServerEndpoint;
+
+import org.springframework.stereotype.Component;
+
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * websocket 简易聊天
+ * @author oKong
+ *
+ */
+//由于是websocket 所以原本是@RestController的http形式 
+//直接替换成@ServerEndpoint即可，作用是一样的 就是指定一个地址
+//表示定义一个websocket的Server端
+@Component
+@ServerEndpoint(value = "/my-chat/{usernick}")
+@Slf4j
+public class WebSocketController {
+	
+	/**
+	 * 连接事件 加入注解
+	 * @param session
+	 */
+	@OnOpen
+	public void onOpen(@PathParam(value = "usernick") String userNick,Session session) {
+		String message = "有新游客[" + userNick + "]加入聊天室!";
+		log.info(message);
+		WebSocketUtil.addSession(userNick, session);	
+		//此时可向所有的在线通知 某某某登录了聊天室			
+		WebSocketUtil.sendMessageForAll(message);
+	}
+	
+	@OnClose
+	public void onClose(@PathParam(value = "usernick") String userNick,Session session) {
+		String message = "游客[" + userNick + "]退出聊天室!";
+		log.info(message);
+		WebSocketUtil.remoteSession(userNick);	
+		//此时可向所有的在线通知 某某某登录了聊天室			
+		WebSocketUtil.sendMessageForAll(message);
+	}
+	
+	@OnMessage
+	public void OnMessage(@PathParam(value = "usernick") String userNick, String message) {
+		//类似群发
+		String info = "游客[" + userNick + "]：" + message;
+		log.info(info);
+		WebSocketUtil.sendMessageForAll(info);
+	} 
+	
+	@OnError
+	public void onError(Session session, Throwable throwable) {
+		log.error("异常:", throwable);
+		try {
+			session.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		throwable.printStackTrace();
+	}
+}
+
+    @Override
+    public void addArgumentResolvers(List<HandlerMethodArgumentResolver> argumentResolvers) {
+        super.addArgumentResolvers(argumentResolvers);
+        ObjectMapper objectMapper = Jackson2ObjectMapperBuilder.json().applicationContext(this.applicationContext).build();
+        argumentResolvers.add(new DTOModelMapper(objectMapper, entityManager));
+    }
+--------------------------------------------------------------------------------------------------------
+    @Bean
+    public ServletRegistrationBean servletRegistrationBean() {
+        FacesServlet servlet = new FacesServlet();
+        return new ServletRegistrationBean(servlet, "*.jsf");
+    }
+
+    @Bean
+    public FilterRegistrationBean rewriteFilter() {
+        FilterRegistrationBean rwFilter = new FilterRegistrationBean(new RewriteFilter());
+        rwFilter.setDispatcherTypes(EnumSet.of(DispatcherType.FORWARD, DispatcherType.REQUEST,
+                DispatcherType.ASYNC, DispatcherType.ERROR));
+        rwFilter.addUrlPatterns("/*");
+        return rwFilter;
+    }
+--------------------------------------------------------------------------------------------------------
+FROM frolvlad/alpine-oraclejdk8:slim
+VOLUME /tmp
+ADD target/spring-session-0.1-SNAPSHOT.jar /app.jar
+RUN sh -c 'touch /app.jar'
+ENV JAVA_OPTS=""
+ENTRYPOINT [ "sh", "-c", "java $JAVA_OPTS -Djava.security.egd=file:/dev/./urandom -jar /app.jar" ]
+
+FROM redis
+ENV REDIS_PASSWORD secret
+CMD ["sh", "-c", "exec redis-server --requirepass \"$REDIS_PASSWORD\""]
+
+FROM nginx
+RUN rm /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+upstream my-app {
+    server 172.17.0.1:8081 weight=1;
+    server 172.17.0.1:8082 weight=1;
+}
+
+server {
+    location / {
+        proxy_pass http://my-app;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+minicom -D /dev/ttyACM0 #macOS should be /dev/tty.usbserial or similar
+--------------------------------------------------------------------------------------------------------
+import org.apache.catalina.startup.Tomcat;
+
+import java.io.File;
+import java.io.IOException;
+
+public class Main {
+    private static final int PORT = 8080;
+
+    public static void main(String[] args) throws Exception {
+        String appBase = ".";
+        Tomcat tomcat = new Tomcat();
+        tomcat.setBaseDir(createTempDir());
+        tomcat.setPort(PORT);
+        tomcat.getHost().setAppBase(appBase);
+        tomcat.addWebapp("", appBase);
+        tomcat.start();
+        tomcat.getServer().await();
+    }
+
+    // based on AbstractEmbeddedServletContainerFactory
+    private static String createTempDir() {
+        try {
+            File tempDir = File.createTempFile("tomcat.", "." + PORT);
+            tempDir.delete();
+            tempDir.mkdir();
+            tempDir.deleteOnExit();
+            return tempDir.getAbsolutePath();
+        } catch (IOException ex) {
+            throw new RuntimeException(
+                    "Unable to create tempDir. java.io.tmpdir is set to " + System.getProperty("java.io.tmpdir"),
+                    ex
+            );
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.auth0.spring.security.api.JwtWebSecurityConfigurer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
+
+@EnableWebSecurity
+public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+    private static final String TOKEN_AUDIENCE = "spring5";
+    private static final String TOKEN_ISSUER = "https://bkrebs.auth0.com/";
+    private static final String API_ENDPOINT = "/api/**";
+    private static final String PUBLIC_URLS = "/**";
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        JwtWebSecurityConfigurer
+                .forRS256(TOKEN_AUDIENCE, TOKEN_ISSUER)
+                .configure(http)
+                .authorizeRequests()
+                .mvcMatchers(API_ENDPOINT).fullyAuthenticated()
+                .mvcMatchers(PUBLIC_URLS).permitAll()
+                .anyRequest().authenticated().and()
+                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+IntStream.of(1, 2, 3, 5, 6, 7)
+          .filter((var i) -> i % 3 == 0)
+          .forEach(System.out::println);
+--------------------------------------------------------------------------------------------------------
+# rabbitmq相关配置
+spring.rabbitmq.host=127.0.0.1
+spring.rabbitmq.port=5672
+spring.rabbitmq.username=guest
+spring.rabbitmq.password=guest
+--------------------------------------------------------------------------------------------------------
+import org.springframework.amqp.rabbit.annotation.RabbitHandler;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.stereotype.Component;
+
+import lombok.extern.slf4j.Slf4j;
+
+@Component
+//@RabbitListener 监听 okong 队列
+@RabbitListener(queues = "okong")
+@Slf4j
+public class Consumer {
+
+	/**
+	 * @RabbitHandler 指定消息的处理方法
+	 * @param message
+	 */
+	@RabbitHandler
+	public void process(String message) {
+        log.info("接收的消息为: {}", message);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.quartz.DisallowConcurrentExecution;
+import org.quartz.JobDataMap;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import cn.lqdev.java.scheduler.biz.entity.SchedConfig;
+import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Mono;
+
+/** 
+*
+* @ClassName   类名：TaskJob 
+* @Description 功能说明：
+* <p>
+* TODO
+*</p>
+************************************************************************
+* @date        创建日期：2019年3月4日
+* @author      创建人：oKong
+* @version     版本号：V1.0
+*<p>
+***************************修订记录*************************************
+* 
+*   2019年3月4日   oKong   创建该类功能。
+*
+***********************************************************************
+*</p>
+*/
+//@DisallowConcurrentExecution 说明在一个任务执行时，另一个定时点来临时不会执行任务，比如一个定时是间隔3分钟一次，但任务执行了5分钟，此时会等上个任务完成后再执行下一次定时任务
+@DisallowConcurrentExecution
+@Slf4j
+public class TaskJob implements org.quartz.Job{
+	
+	/**
+	 * spring5中 异步restTemplate已被标记位作废了
+	 * 这里尝试使用webClient
+	 */ 
+	@Autowired
+	@Qualifier("balanceWebClient")
+	private WebClient.Builder balanceWebClientBuilder;
+	
+	@Autowired
+	@Qualifier("webClient")
+	private WebClient.Builder webClientBuilder;
+	
+	
+	@Override
+	public void execute(JobExecutionContext context) throws JobExecutionException {
+		//执行方法
+		//获取任务实体对象
+		JobDataMap jobDataMap = context.getJobDetail().getJobDataMap();
+		SchedConfig schedConfig = (SchedConfig) jobDataMap.get("config");
+		log.info("执行定时任务：{}", schedConfig);
+		//根据不同类型进行不同的处理逻辑
+		Mono<String> monoRst = null;
+		switch (schedConfig.getTargetServiceType()) {
+		case "01":
+			//springcloud方式
+			//利用loadBalancerClient 获取实际服务地址
+			monoRst = balanceWebClientBuilder.build().post().uri(schedConfig.getTargerService()).retrieve().bodyToMono(String.class);
+			 break;
+		case "02":
+			//普通http方式
+			monoRst =webClientBuilder.build().post().uri(schedConfig.getTargerService()).retrieve().bodyToMono(String.class);//无参数
+			break;
+		case "03":
+			//dubbo方式
+			//TODO 暂时未实现
+			break;
+		default:
+
+		}
+		if(monoRst != null) {
+		  log.info("调用服务结果为：{}", monoRst.block());
+		}
+	}
+
+}
+
+
+import org.quartz.spi.TriggerFiredBundle;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
+import org.springframework.scheduling.quartz.AdaptableJobFactory;
+
+/**
+ *
+ * @ClassName 类名：QuartzJobFactory
+ * @Description 功能说明：对执行的job字段进行自动注入
+ *              <p>
+ *              TODO
+ *              </p>
+ ************************************************************************
+ * @date 创建日期：2019年3月4日
+ * @author 创建人：oKong
+ * @version 版本号：V1.0
+ *          <p>
+ ***************************          修订记录*************************************
+ * 
+ *          2019年3月4日 oKong 创建该类功能。
+ *
+ ***********************************************************************
+ *          </p>
+ */
+public class QuartzJobFactory extends AdaptableJobFactory {
+	@Autowired
+	private AutowireCapableBeanFactory capableBeanFactory;
+
+	protected Object createJobInstance(TriggerFiredBundle bundle) throws Exception {
+		// 调用父类的方法
+		Object jobInstance = super.createJobInstance(bundle);
+		//主动注入
+		capableBeanFactory.autowireBean(jobInstance);
+		return jobInstance;
+	}
+}
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.quartz.SchedulerFactoryBean;
+
+/** 
+*
+* @ClassName   类名：QuartzConfig 
+* @Description 功能说明：quartz配置，主要设置SchedulerFactoryBean
+* <p>
+* TODO
+*</p>
+************************************************************************
+* @date        创建日期：2019年3月5日
+* @author      创建人：oKong
+* @version     版本号：V1.0
+*<p>
+***************************修订记录*************************************
+* 
+*   2019年3月5日   oKong   创建该类功能。
+*
+***********************************************************************
+*</p>
+*/
+@Configuration
+public class QuartzConfig {
+	
+	@Bean
+    public SchedulerFactoryBean schedulerFactoryBean(){
+        SchedulerFactoryBean factory = new SchedulerFactoryBean();
+        factory.setOverwriteExistingJobs(true);
+        // 延时启动
+        factory.setStartupDelay(20);
+        // 自定义Job Factory，用于Spring注入
+        factory.setJobFactory(quartzJobFactory());
+        return factory;
+    }
+	
+	@Bean
+	public QuartzJobFactory quartzJobFactory() {
+		return new QuartzJobFactory();
+	
+--------------------------------------------------------------------------------------------------------
+spring.application.name=shedlock-demo
+server.port=8001
+
+# REDIS (RedisProperties)
+# Redis数据库索引（默认为0）
+spring.redis.database=0
+# Redis服务器地址
+spring.redis.host=127.0.0.1
+# Redis服务器连接端口
+spring.redis.port=6379  
+# Redis服务器连接密码（默认为空）
+#spring.redis.password=
+# 连接池最大连接数（使用负值表示没有限制）
+spring.redis.lettuce.pool.max-active=8  
+# 连接池最大阻塞等待时间（使用负值表示没有限制）Duration
+spring.redis.lettuce.pool.max-wait=-1ms 
+# 连接池中的最大空闲连接
+spring.redis.lettuce.pool.max-idle=8  
+# 连接池中的最小空闲连接
+spring.redis.lettuce.pool.min-idle=0  
+# 连接超时时间-Duration 不能设置为0 一般上设置个200ms
+spring.redis.timeout=200ms
+
+#spring.profiles.active=dev
+
+#指定注册中心地址
+eureka.client.service-url.defaultZone=http://127.0.0.1:1000/eureka
+# 启用ip配置 这样在注册中心列表中看见的是以ip+端口呈现的
+eureka.instance.prefer-ip-address=true
+# 实例名称  最后呈现地址：ip:2000
+eureka.instance.instance-id=${spring.cloud.client.ip-address}:${server.port}
+--------------------------------------------------------------------------------------------------------
+import java.util.Date;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.core.SchedulerLock;
+
+/** 
+*
+* @ClassName   类名：SimpleTask 
+* @Description 功能说明：
+* <p>
+* TODO
+*</p>
+************************************************************************
+* @date        创建日期：2019年3月3日
+* @author      创建人：oKong
+* @version     版本号：V1.0
+*<p>
+***************************修订记录*************************************
+* 
+*   2019年3月3日   oKong   创建该类功能。
+*
+***********************************************************************
+*</p>
+*/
+//@Component
+@Slf4j
+public class SimpleTask {
+	
+	//区分服务
+	@Value("${server.port}")
+	String port;
+	
+	//为了方便测试 设置cron表达式 
+	@Scheduled(cron = "*/5 * * * * ?")
+	//lockAtLeastFor：保证在设置的期间类不执行多次任务，单位是毫秒，此处可以根据实际任务运行情况进行设置，
+	//简单来说，一个每15分钟执行的任务，若每次任务执行的时间为几分钟，则可以设置lockAtLeastFor大于其最大估计最大执行时间
+	//避免一次任务未执行完，下一个定时任务又启动了。
+	//任务执行完，会自动释放锁。
+	@SchedulerLock(name="simpleTask",lockAtLeastFor = 1*1000)
+	public void getCurrentDate() {
+        log.info("端口({}),Scheduled定时任务执行：{}", port, new Date());
+    }
+}
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+
+import net.javacrumbs.shedlock.core.LockProvider;
+import net.javacrumbs.shedlock.provider.redis.spring.RedisLockProvider;
+import net.javacrumbs.shedlock.spring.annotation.EnableSchedulerLock;
+
+/** 
+*
+* @ClassName   类名：ShedLockRedisConfig 
+* @Description 功能说明：redis配置
+* <p>
+* TODO
+*</p>
+************************************************************************
+* @date        创建日期：2019年3月3日
+* @author      创建人：oKong
+* @version     版本号：V1.0
+*<p>
+***************************修订记录*************************************
+* 
+*   2019年3月3日   oKong   创建该类功能。
+*
+***********************************************************************
+*</p>
+*/
+@Configuration
+//defaultLockAtMostFor 指定在执行节点结束时应保留锁的默认时间使用ISO8601 Duration格式
+//作用就是在被加锁的节点挂了时，无法释放锁，造成其他节点无法进行下一任务
+//这里默认30s
+//关于ISO8601 Duration格式用的不到，具体可上网查询下相关资料，应该就是一套规范，规定一些时间表达方式
+@EnableSchedulerLock(defaultLockAtMostFor = "PT30S")
+public class ShedLockRedisConfig {
+	
+	//正常情况下 应该按实际环境来区分的
+	//这里为了方便 写成test便于是测试
+//	@Value("${spring.profiles.active}")
+	String env = "test";
+	
+	@Bean
+	public LockProvider lockProvider(RedisConnectionFactory connectionFactory) {
+		//环境变量 -需要区分不同环境避免冲突，如dev环境和test环境，两者都部署时，只有一个实例进行，此时会造成相关环境未启动情况
+	    return new RedisLockProvider(connectionFactory, env);
+	}
+}
+--------------------------------------------------------------------------------------------------------
+spring.datasource.url=jdbc:h2:mem:batchdb
+spring.datasource.driverClassName=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=password
+spring.jpa.database-platform=org.hibernate.dialect.H2Dialect
+spring.h2.console.enabled=true
+--------------------------------------------------------------------------------------------------------
+    @GenericGenerator (name="uuid", strategy="org.hibernate.id.UUIDGenerator")
+--------------------------------------------------------------------------------------------------------
+public class ReflectionWithPublicFieldSingleton {
+
+    public static void main(String[] args) {
+
+        Singleton instance1 = Singleton.getInstance();
+
+        Singleton instance2 = null;
+
+        try {
+
+            Field instance = Singleton.class.getDeclaredField("instance");
+            instance.setAccessible(true);
+            instance.set(instance, null);
+
+            Constructor[] cstr = Singleton.class.getDeclaredConstructors();
+
+            for (Constructor constructor: cstr) {
+
+                //Setting constructor accessible
+
+                constructor.setAccessible(true);
+
+                instance2 = (Singleton) constructor.newInstance();
+
+                break;
+
+            }
+
+        } catch (Exception e) {
+
+            System.out.println(e);
+
+        }
+
+        System.out.println(instance1.hashCode());
+
+        System.out.println(instance2.hashCode());
+
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+import com.techshard.batch.dao.entity.Voltage;
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.Step;
+import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
+import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
+import org.springframework.batch.item.database.JdbcBatchItemWriter;
+import org.springframework.batch.item.database.builder.JdbcBatchItemWriterBuilder;
+import org.springframework.batch.item.file.FlatFileItemReader;
+import org.springframework.batch.item.file.LineMapper;
+import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
+import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
+import org.springframework.batch.item.file.mapping.DefaultLineMapper;
+import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
+
+import javax.sql.DataSource;
+
+@Configuration
+@EnableBatchProcessing
+public class BatchConfiguration {
+
+    @Autowired
+    public JobBuilderFactory jobBuilderFactory;
+
+    @Autowired
+    public StepBuilderFactory stepBuilderFactory;
+
+    @Bean
+    public FlatFileItemReader<Voltage> reader() {
+        return new FlatFileItemReaderBuilder<Voltage>()
+                .name("voltItemReader")
+                .resource(new ClassPathResource("Volts.csv"))
+                .delimited()
+                .names(new String[]{"volt", "time"})
+                .lineMapper(lineMapper())
+                .fieldSetMapper(new BeanWrapperFieldSetMapper<Voltage>() {{
+                    setTargetType(Voltage.class);
+                }})
+                .build();
+    }
+
+    @Bean
+    public LineMapper<Voltage> lineMapper() {
+
+        final DefaultLineMapper<Voltage> defaultLineMapper = new DefaultLineMapper<>();
+        final DelimitedLineTokenizer lineTokenizer = new DelimitedLineTokenizer();
+        lineTokenizer.setDelimiter(";");
+        lineTokenizer.setStrict(false);
+        lineTokenizer.setNames(new String[] {"volt","time"});
+
+        final VoltageFieldSetMapper fieldSetMapper = new VoltageFieldSetMapper();
+        defaultLineMapper.setLineTokenizer(lineTokenizer);
+        defaultLineMapper.setFieldSetMapper(fieldSetMapper);
+
+        return defaultLineMapper;
+    }
+
+    @Bean
+    public VoltageProcessor processor() {
+        return new VoltageProcessor();
+    }
+
+    @Bean
+    public JdbcBatchItemWriter<Voltage> writer(final DataSource dataSource) {
+        return new JdbcBatchItemWriterBuilder<Voltage>()
+                .itemSqlParameterSourceProvider(new BeanPropertyItemSqlParameterSourceProvider<>())
+                .sql("INSERT INTO voltage (volt, time) VALUES (:volt, :time)")
+                .dataSource(dataSource)
+                .build();
+    }
+
+    @Bean
+    public Job importVoltageJob(NotificationListener listener, Step step1) {
+        return jobBuilderFactory.get("importVoltageJob")
+                .incrementer(new RunIdIncrementer())
+                .listener(listener)
+                .flow(step1)
+                .end()
+                .build();
+    }
+
+    @Bean
+    public Step step1(JdbcBatchItemWriter<Voltage> writer) {
+        return stepBuilderFactory.get("step1")
+                .<Voltage, Voltage> chunk(10)
+                .reader(reader())
+                .processor(processor())
+                .writer(writer)
+                .build();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.jms.annotation.EnableJms;
+import org.springframework.jms.annotation.JmsListener;
+import org.springframework.stereotype.Component;
+
+@Component
+@EnableJms
+public class MessageConsumer {
+
+    private final Logger logger = LoggerFactory.getLogger(MessageConsumer.class);
+
+    @JmsListener(destination = "test-queue")
+    public void listener(String message){
+        logger.info("Message received {} ", message);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for `sched_config`
+-- ----------------------------
+DROP TABLE IF EXISTS `sched_config`;
+CREATE TABLE `sched_config` (
+  `id` bigint(20) NOT NULL,
+  `code` varchar(50) DEFAULT NULL COMMENT '任务编码',
+  `name` varchar(200) DEFAULT NULL COMMENT '任务名称',
+  `target_service_type` varchar(2) DEFAULT NULL COMMENT '目标任务类型：01 springcloud 02 http 03 dubbo',
+  `targer_service` varchar(50) DEFAULT NULL COMMENT '目标服务：可为服务地址，或者dubbo服务名',
+  `cron_config` varchar(20) DEFAULT NULL COMMENT 'cron表达式',
+  `status` varchar(1) DEFAULT NULL COMMENT '状态：1启用 0 停用',
+  `remark` varchar(200) DEFAULT NULL COMMENT '备注说明',
+  `extra_dubbo_group` varchar(50) DEFAULT NULL COMMENT 'dubbo组名',
+  `extra_dubbo_version` varchar(50) DEFAULT NULL COMMENT 'dubbo服务版本信息',
+  `gmt_create` datetime DEFAULT NULL COMMENT '创建时间',
+  `gmt_modified` datetime DEFAULT NULL COMMENT '修改时间',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+--------------------------------------------------------------------------------------------------------
+	@Bean
+    public CacheManager cacheManager(RedisTemplate<String,String> redisTemplate) {
+        RedisCacheManager rcm = new RedisCacheManager(redisTemplate);
+        //使用前缀
+        rcm.setUsePrefix(true);
+        //缓存分割符 默认为 ":"
+//        rcm.setCachePrefix(new DefaultRedisCachePrefix(":"));
+        //设置缓存过期时间
+        //rcm.setDefaultExpiration(60);//秒
+        return rcm;
+    }
+--------------------------------------------------------------------------------------------------------
+# freemarker配置
+
+spring.freemarker.enabled=false
+
+# 缓存配置 开发阶段应该配置为false 因为经常会改
+spring.freemarker.cache=false
+
+# 模版后缀名 默认为:.ftl
+spring.freemarker.suffix=.html
+
+# 文件编码
+spring.freemarker.charset=UTF-8
+
+# 模版加载的目录
+spring.freemarker.template-loader-path=classpath:/templates/
+
+# 配置
+# locale	该选项指定该模板所用的国家/语言选项
+# number_format	指定格式化输出数字的格式：currency、
+# boolean_format	指定两个布尔值的语法格式,默认值是true,false
+# date_format,time_format,datetime_format	定格式化输出日期的格式
+# time_zone	设置格式化输出日期时所使用的时区
+# 数字 千分位标识
+spring.freemarker.settings.number_format=,##0.00 
+
+# thymeleaf配置 
+# 启用缓存:建议生产开启
+spring.thymeleaf.cache=false
+
+# 建议模版是否存在
+spring.thymeleaf.check-template-location=true
+# Content-Type 值
+spring.thymeleaf.content-type=text/html
+# 是否启用
+spring.thymeleaf.enabled=true
+# 模版编码
+spring.thymeleaf.encoding=UTF-8
+# 应该从解析中排除的视图名称列表（用逗号分隔）
+spring.thymeleaf.excluded-view-names=
+# 模版模式
+spring.thymeleaf.mode=HTML5
+# 模版存放路径
+spring.thymeleaf.prefix=classpath:/templates/
+# 模版后缀
+spring.thymeleaf.suffix=.html
+
+spring.profiles.active=jsp
+
+# 最大支持文件大小 即单个文件大小
+spring.http.multipart.max-file-size=1Mb
+# 最大支持请求大小 即一次性上传的总文件大小
+spring.http.multipart.max-request-size=10Mb
+
+# 使用fileUpload
+spring.http.multipart.enabled=false
+--------------------------------------------------------------------------------------------------------
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+
+@Configuration
+public class WebConfig extends WebMvcConfigurerAdapter{
+
+	@Override
+	public void addResourceHandlers(ResourceHandlerRegistry registry) {
+		//配置映射关系
+		//即：/webjars/** 映射到 classpath:/META-INF/resources/webjars/ 
+		registry.addResourceHandler("/webjars/**")
+		        .addResourceLocations("classpath:/META-INF/resources/webjars/")
+				//新增 resourceChain 配置即开启缓存配置。
+		        //不知道为何不加这个配置 设置了 webjars-locator 未生效。。
+		        .resourceChain(true);//生产时建议开启缓存（只是缓存了资源路径而不是资源内容）,开发是可以设置为false
+	}
+}
+--------------------------------------------------------------------------------------------------------
+# issuing requests to unsecured endpoints
+curl localhost:8080/hello
+
+# issuing requests to secured endpoints
+CLIENT_ID="d85mVhuL6EPYitTES37pA8rbi716IYCA"
+CLIENT_SECRET="AeeFp-g5YGwxFOWwLVMdxialnxOnoyuwGXoE5kPiHs8kGJeC2FJ0BCj6xTLlNKkY"
+
+JWT=$(curl -X POST -H 'content-type: application/json' -d '{
+    "client_id": "'$CLIENT_ID'",
+    "client_secret": "'$CLIENT_SECRET'",
+    "audience":"spring5",
+    "grant_type":"client_credentials"
+}' https://bkrebs.auth0.com/oauth/token | jq .access_token)
+
+curl -H "Authorization: Bearer "$JWT http://localhost:8080/products
+--------------------------------------------------------------------------------------------------------
+# use Maven wrapper
+mvn -N io.takari:maven:wrapper -Dmaven=3.5.4
+
+# use Maven to package the application in a fat JAR file
+./mvnw clean package
+
+# run the fat JAR artifact
+java -jar target/jsf-javaee-microblog-thorntail.jar
+--------------------------------------------------------------------------------------------------------
+group 'com.auth0.samples'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+
+// 1 - apply application and shadow plugins
+apply plugin: 'application'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+mainClassName = 'com.auth0.samples.Main'
+
+// 2 - define the dependency to the shadow plugin
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.1'
+    }
+}
+
+// 3 - merge service descriptors
+shadowJar {
+    mergeServiceFiles()
+}
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    compile group: 'org.apache.tomcat.embed', name: 'tomcat-embed-jasper', version: '8.0.47'
+    compile group: 'org.springframework', name: 'spring-webmvc', version: '5.0.1.RELEASE'
+}
+--------------------------------------------------------------------------------------------------------
+# build the dockerized application image
+docker build -t without-spring-session .
+
+# running instance number one
+docker run -d -p 8081:8080 --name without-spring-session-1 -e "APPLICATION_TITLE=First instance" without-spring-session
+# running instance number two
+docker run -d -p 8082:8080 --name without-spring-session-2 -e "APPLICATION_TITLE=Second instance" without-spring-session
+
+# create redis image
+docker build -t spring-session-redis redis
+
+# run redis
+docker run -p 6379:6379 -d --name spring-session-redis spring-session-redis
+
+# remove previous instances
+docker rm -f without-spring-session-1 without-spring-session-2
+
+# compile and package the application
+mvn clean package
+
+# build the dockerized application image
+docker build -t spring-session .
+
+# running instance number one
+docker run -d -p 8081:8080 --name spring-session-1 -e "APPLICATION_TITLE=First instance" spring-session
+# running instance number two
+docker run -d -p 8082:8080 --name spring-session-2 -e "APPLICATION_TITLE=Second instance" spring-session
+
+# build the dockerized NGINX load balancer
+docker build -t spring-session-nginx nginx
+
+# run load balancer
+docker run -p 8080:80 -d --name spring-session-nginx spring-session-nginx
+--------------------------------------------------------------------------------------------------------
+import org.ocpsoft.rewrite.annotation.Join;
+import org.ocpsoft.rewrite.el.ELBeanName;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
+
+@Scope(value = "session")
+@Component(value = "productController")
+@ELBeanName(value = "productController")
+@Join(path = "/product", to = "/product-form.jsf")
+public class ProductController {
+    @Autowired
+    private ProductRepository productRepository;
+
+    private Product product = new Product();
+
+    public String save() {
+        productRepository.save(product);
+        product = new Product();
+        return "/product-list.xhtml?faces-redirect=true";
+    }
+
+    public Product getProduct() {
+        return product;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+npm install yo generator-jhipster
+
+# In case you picked Maven:
+mvn spring-boot:run
+
+# In case you picked Gradle:
+gradle bootRun
+--------------------------------------------------------------------------------------------------------
+@RunWith(SpringRunner.class)
+@WebMvcTest(controllers = SubscriberApiController.class)
+
+public class ApiControllerTest {
+
+private MockMvc mvc;
+
+@Autowired
+private WebApplicationContext webApplicationContext;
+
+@MockBean
+private ApiService service;
+
+@Before
+public void setUp() {
+//  mvc = MockMvcBuilders.standaloneSetup(new HandlerController()).build();
+    mvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+}
+
+@Test
+public void getIndex() throws Exception {
+    mvc.perform(get("/my-service/api/check?email=someone@someone.com").accept(MediaType.APPLICATION_JSON))
+       .andExpect(status().isOk());
+
+}
+}
+--------------------------------------------------------------------------------------------------------
+# issue a GET request to see the (empty) list of tasks
+curl http://localhost:8080/tasks
+
+# issue a POST request to create a new task
+curl -H "Content-Type: application/json" -X POST -d '{
+    "description": "Buy some milk(shake)"
+}'  http://localhost:8080/tasks
+
+# issue a PUT request to update the recently created task
+curl -H "Content-Type: application/json" -X PUT -d '{
+    "description": "Buy some milk"
+}'  http://localhost:8080/tasks/1
+
+# issue a DELETE request to remove the existing task
+curl -X DELETE http://localhost:8080/tasks/1
+--------------------------------------------------------------------------------------------------------
+databaseChangeLog:
+    - includeAll:
+        path: db/changelog/changes/
+--------------------------------------------------------------------------------------------------------
+  @Bean
+  CorsConfigurationSource corsConfigurationSource() {
+    final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", new CorsConfiguration().applyPermitDefaultValues());
+    return source;
+  }
+--------------------------------------------------------------------------------------------------------
+# create a variable with our token
+ACCESS_TOKEN=<OUR_ACCESS_TOKEN>
+
+# use this variable to fetch contacts
+curl -H 'Authorization: Bearer '$ACCESS_TOKEN http://localhost:8080/contacts/
+--------------------------------------------------------------------------------------------------------
+import java.util.List;
+ 
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+ 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+ 
+@Configuration
+@EnableWebMvc
+@ComponentScan(basePackages = "com.websystique.springmvc")
+public class HelloWorldConfiguration extends WebMvcConfigurerAdapter{
+     
+     
+    @Override
+    public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
+        converters.add(mappingJackson2HttpMessageConverter());
+    }
+     
+    @Bean
+    public MappingJackson2HttpMessageConverter mappingJackson2HttpMessageConverter() {
+        MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
+        converter.setObjectMapper(new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false));
+        return converter;
+    }
+     
+     
+}
+--------------------------------------------------------------------------------------------------------
+executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+
+
+import java.text.ParseException;
+import java.util.Date;
+
+import org.quartz.Trigger;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.quartz.CronTriggerFactoryBean;
+import org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean;
+import org.springframework.scheduling.quartz.SchedulerFactoryBean;
+import org.springframework.stereotype.Component;
+
+import lombok.extern.slf4j.Slf4j;
+
+@Configuration
+@Slf4j
+public class QuartzConfig {
+	
+	/**
+	 * 通过工厂类，创建job实例
+	 * @return
+	 */
+	@Bean
+	public MethodInvokingJobDetailFactoryBean customJobDetailFactoryBean() {
+        
+		MethodInvokingJobDetailFactoryBean jobDetail = new MethodInvokingJobDetailFactoryBean();
+        //设置执行任务的bean
+		jobDetail.setTargetBeanName("quartzTask");
+		//设置具体执行的方法
+        jobDetail.setTargetMethod("quartzTask");
+        //同步执行，上一任务未执行完，下一任务等待
+        //true 任务并发执行
+        //false 下一个任务必须等待上一任务完成
+        jobDetail.setConcurrent(false);
+        return jobDetail; 
+	}
+	
+	/**
+	 * 通过工厂类创建Trigger
+	 * @param jobDetailFactoryBean
+	 * @return
+	 * @throws ParseException 
+	 */
+	@Bean(name = "cronTriggerBean")
+	public Trigger cronTriggerBean(MethodInvokingJobDetailFactoryBean jobDetailFactoryBean) throws ParseException {
+		CronTriggerFactoryBean cronTriggerFactoryBean = new CronTriggerFactoryBean();
+		cronTriggerFactoryBean.setJobDetail(jobDetailFactoryBean.getObject());
+		cronTriggerFactoryBean.setCronExpression("0/3 * * * * ?");//每3秒执行一次
+		cronTriggerFactoryBean.setName("customCronTrigger");
+		cronTriggerFactoryBean.afterPropertiesSet();
+		return cronTriggerFactoryBean.getObject();
+
+	}
+	
+	/**
+	 * 调度工厂类,自动注入Trigger
+	 * @return
+	 */
+	@Bean
+	public SchedulerFactoryBean schedulerFactoryBean(Trigger... triggers) {
+		SchedulerFactoryBean bean = new SchedulerFactoryBean();
+		
+		//也可以直接注入 ApplicationContext,利于 getBeansOfType获取trigger
+//		Map<String,Trigger> triggerMap = appContext.getBeansOfType(Trigger.class);
+//		if(triggerMap != null) {
+//			List<Trigger> triggers = new ArrayList<>(triggerMap.size());
+//			//
+//			triggerMap.forEach((key,trigger)->{
+//				triggers.add(trigger);
+//			});
+//			bean.setTriggers(triggers.toArray(new Trigger[triggers.size()]));
+//		}
+		//这里注意 对应的trigger 不能为null 不然会异常的
+		bean.setTriggers(triggers);
+		return bean;
+	} 
+	
+	@Component("quartzTask")
+	public class QuartzTask {
+	  
+		public void quartzTask() {
+			log.info("Quartz定时任务：" + new Date());
+		}
+	}
+}
+--------------------------------------------------------------------------------------------------------
+additional-spring-configuration-metadata.json
+
+{
+	"properties": [
+		{
+			"name": "blog.address",
+			"type": "java.lang.String",
+			"description": "博客地址"
+		}
+	]
+}
+
+    @EventListener(condition = "#downloadEvent.messageEntity.code == 'oKong'")
+--------------------------------------------------------------------------------------------------------
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.mongodb.config.EnableMongoAuditing;
+import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
+
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * mongodb 集成示例
+ * @author oKong
+ *
+ */
+@SpringBootApplication
+@EnableMongoAuditing
+//@EnableMongoRepositories(basePackages="cn.lqdev")//当有些dao不在default page下时 可通过此方法进行注册扫描包
+@Slf4j
+public class MongodbApplication {
+
+	public static void main(String[] args) throws Exception {
+		SpringApplication.run(MongodbApplication.class, args);
+		log.info("spring-boot-mongodb-chapter31启动!");
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.context.ApplicationListener;
+import org.springframework.stereotype.Component;
+
+import cn.lqdev.learning.springboot.chapter32.event.CustomEvent;
+import lombok.extern.slf4j.Slf4j;
+
+
+@Component
+@Slf4j
+public class EventListener implements ApplicationListener<CustomEvent>{
+
+	@Override
+	public void onApplicationEvent(CustomEvent event) {
+		//这里也可以监听所有事件 使用  ApplicationEvent 类即可
+		//这里仅仅监听自定义事件 CustomEvent
+		log.info("ApplicationListener方式监听事件：{}", event);
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import javax.jws.WebMethod;
+import javax.jws.WebParam;
+import javax.jws.WebResult;
+import javax.jws.WebService;
+import javax.xml.bind.annotation.XmlSeeAlso;
+import javax.xml.ws.RequestWrapper;
+import javax.xml.ws.ResponseWrapper;
+
+/**
+ * This class was generated by Apache CXF 3.2.5
+ * 2018-11-10T20:20:08.070+08:00
+ * Generated source version: 3.2.5
+ *
+ */
+@WebService(targetNamespace = "http://www.lqdev.cn/webservice", name = "authorPortType")
+@XmlSeeAlso({ObjectFactory.class})
+public interface AuthorPortType {
+
+    @WebMethod
+    @RequestWrapper(localName = "getAuthorByName", targetNamespace = "http://www.lqdev.cn/webservice", className = "cn.lqdev.webservice.GetAuthorByName")
+    @ResponseWrapper(localName = "getAuthorByNameResponse", targetNamespace = "http://www.lqdev.cn/webservice", className = "cn.lqdev.webservice.GetAuthorByNameResponse")
+    @WebResult(name = "return", targetNamespace = "")
+    public cn.lqdev.webservice.AuthorDto getAuthorByName(
+        @WebParam(name = "authorName", targetNamespace = "")
+        java.lang.String authorName
+    );
+
+    @WebMethod
+    @RequestWrapper(localName = "getAuthorList", targetNamespace = "http://www.lqdev.cn/webservice", className = "cn.lqdev.webservice.GetAuthorList")
+    @ResponseWrapper(localName = "getAuthorListResponse", targetNamespace = "http://www.lqdev.cn/webservice", className = "cn.lqdev.webservice.GetAuthorListResponse")
+    @WebResult(name = "return", targetNamespace = "")
+    public java.util.List<cn.lqdev.webservice.AuthorDto> getAuthorList();
+
+    @WebMethod
+    @RequestWrapper(localName = "getAuthorString", targetNamespace = "http://www.lqdev.cn/webservice", className = "cn.lqdev.webservice.GetAuthorString")
+    @ResponseWrapper(localName = "getAuthorStringResponse", targetNamespace = "http://www.lqdev.cn/webservice", className = "cn.lqdev.webservice.GetAuthorStringResponse")
+    @WebResult(name = "return", targetNamespace = "")
+    public java.lang.String getAuthorString(
+        @WebParam(name = "authorName", targetNamespace = "")
+        java.lang.String authorName
+    );
+}
+--------------------------------------------------------------------------------------------------------
+	@Bean
+	public ConfigurationCustomizer configurationCustomizer() {
+		ConfigurationCustomizer config = new ConfigurationCustomizer() {
+			
+			@Override
+			public void customize(org.apache.ibatis.session.Configuration configuration) {
+//				TypeAliasRegistry typeAliasRegistry = configuration.getTypeAliasRegistry();
+				// mapper接口注册器
+//				MapperRegistry mapperRegistry = configuration.getMapperRegistry();
+				// 类型处理器
+				TypeHandlerRegistry typeHandlerRegistry = configuration.getTypeHandlerRegistry();
+				typeHandlerRegistry.register(StatusEnum.class, EnumOrdinalTypeHandler.class);
+			}
+		};
+		
+		return config;
+	}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.context.annotation.Configuration;
+
+import com.ulisesbocchio.jasyptspringboot.annotation.EncryptablePropertySource;
+
+/** 
+*
+* @ClassName   类名：JasyptConfig 
+* @Description 功能说明：自定义配置文件加解密配置
+* <p>
+* TODO
+*</p>
+************************************************************************
+* @date        创建日期：2019年5月8日
+* @author      创建人：oKong
+* @version     版本号：V1.0
+*<p>
+***************************修订记录*************************************
+* 
+*   2019年5月8日   oKong   创建该类功能。
+*
+***********************************************************************
+*</p>
+*/
+@Configuration
+//这里可加载多个 使用{}方式
+@EncryptablePropertySource(name = "encryptedProperties", value = "classpath:encrypted.properties")
+public class JasyptConfig {
+
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.amqp.core.AmqpTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import cn.hutool.http.HttpUtil;
+import cn.lqdev.learning.springboot.chapter38.constant.ApplicationConstant;
+import cn.lqdev.learning.springboot.chapter38.entity.HttpEntity;
+import lombok.extern.slf4j.Slf4j;
+
+/** 
+*
+* @ClassName   类名：HttpMessagerService 
+* @Description 功能说明：
+* <p>
+* TODO
+*</p>
+************************************************************************
+* @date        创建日期：2019年7月17日
+* @author      创建人：oKong
+* @version     版本号：V1.0
+*<p>
+***************************修订记录*************************************
+* 
+*   2019年7月17日   oKong   创建该类功能。
+*
+***********************************************************************
+*</p>
+*/
+@Component
+@Slf4j
+public class HttpMessagerService {
+	
+	@Autowired
+	AmqpTemplate mqTemplate;	
+	
+	public void notify(String queue,HttpEntity httpEntity) {
+		//发起请求
+		log.info("开始发起http请求:{}", httpEntity);
+		try {
+			switch(httpEntity.getMethod().toLowerCase()) {
+			case "POST":
+				  HttpUtil.post(httpEntity.getUrl(), httpEntity.getParams());
+				  break;
+			case "GET":
+			default:
+				HttpUtil.get(httpEntity.getUrl(), httpEntity.getParams());
+			}
+		} catch (Exception e) {
+			//发生异常，放入延迟队列中
+			String nextRk = ApplicationConstant.delayRefMap.get(queue);
+			if(ApplicationConstant.HTTP_MESSAGE_ONE_QUEUE_NAME.equals(queue)) {
+				//若已经是最后一个延迟队列的消息队列了，则后续可直接放入数据库中 待后续定时策略进行再次发送
+				log.warn("http通知已经通知N次失败，进入定时进行发起通知,url={}", httpEntity.getUrl());
+			} else {
+			   log.warn("http重新发送通知：{}, 通知队列rk为：{}, 原队列：{}", httpEntity.getUrl(), nextRk, queue);
+			   mqTemplate.convertAndSend(ApplicationConstant.HTTP_MESSAGE_EXCHANGE, nextRk, cn.hutool.json.JSONUtil.toJsonStr(httpEntity));
+			}
+		}
+	}
+
+}
+
+
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import com.rabbitmq.client.Channel;
+
+import cn.hutool.json.JSONUtil;
+import cn.lqdev.learning.springboot.chapter38.constant.ApplicationConstant;
+import cn.lqdev.learning.springboot.chapter38.entity.HttpEntity;
+import cn.lqdev.learning.springboot.chapter38.service.HttpMessagerService;
+import lombok.extern.slf4j.Slf4j;
+
+/** 
+*
+* @ClassName   类名：HttpMessagerLister 
+* @Description 功能说明：http通知消费监听接口
+* <p>
+* TODO
+*</p>
+************************************************************************
+* @date        创建日期：2019年7月17日
+* @author      创建人：oKong
+* @version     版本号：V1.0
+*<p>
+***************************修订记录*************************************
+* 
+*   2019年7月17日   oKong   创建该类功能。
+*
+***********************************************************************
+*</p>
+*/
+@Component
+@Slf4j
+public class HttpMessagerLister {
+	
+	@Autowired
+	HttpMessagerService messagerService;
+	
+	@RabbitListener(id = "httpMessageNotifyConsumer", queues = {ApplicationConstant.HTTP_MESSAGE_START_QUEUE_NAME}, containerFactory = "notifyListenerContainer")
+	public void httpMessageNotifyConsumer(Message message, Channel channel) throws Exception {
+		doHandler(message, channel);
+	}
+	
+	@RabbitListener(id= "httpDelayMessageNotifyConsumer", queues = {
+			ApplicationConstant.HTTP_MESSAGE_ONE_QUEUE_NAME,}, containerFactory = "delayNotifyListenerContainer")
+	public void httpDelayMessageNotifyConsumer(Message message, Channel channel) throws Exception {
+		doHandler(message, channel);
+	}
+	
+	private void doHandler(Message message, Channel channel) throws Exception {
+		String body = new String(message.getBody(),"utf-8");
+		String queue = message.getMessageProperties().getConsumerQueue();
+		log.info("接收到通知请求：{}，队列名：{}",body, queue);
+		//消息对象转换
+		try {
+			HttpEntity httpNotifyDto = JSONUtil.toBean(body, HttpEntity.class);
+			channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+			//发送通知
+			messagerService.notify(queue, httpNotifyDto);
+		} catch(Exception e) {
+			log.error(e.getMessage());
+			//ack
+			channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+		}
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+@echo off
+set/p input=待加密的明文字符串：
+set/p password=加密密钥(盐值)：
+echo 加密中......
+java -cp jasypt-1.9.2.jar org.jasypt.intf.cli.JasyptPBEStringEncryptionCLI input=%input% password=%password% algorithm=PBEWithMD5AndDES
+pause
+```
 --------------------------------------------------------------------------------------------------------
 @Controller
 @RequestMapping("/dept")
@@ -40635,6 +45249,2753 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
  *	   }
  * }
  * </pre>
+--------------------------------------------------------------------------------------------------------
+sh -e /etc/init.d/xvfb start
+--------------------------------------------------------------------------------------------------------
+import java.util.concurrent.*;
+
+public class Application
+{
+    public static void main(String[] args) throws InterruptedException
+    {
+        System.out.println("main thread is started");
+        ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(5);
+
+        scheduledExecutorService.scheduleAtFixedRate(() -> {
+            System.out.println("Thread [" + Thread.currentThread().getName() + "] is executing the task");
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                System.out.println("sleeping thread get interrupted");
+            }
+        }, 5, 2, TimeUnit.SECONDS);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.*;
+
+public class Application {
+
+    public static void main(String[] args) throws InterruptedException {
+        System.out.println("main thread is started");
+
+        ExecutorService executorService = Executors.newCachedThreadPool();
+        CountDownLatch countDownLatch = new CountDownLatch(10);
+
+        List<Callable<String>> allCallableList = new ArrayList<>();
+
+        for (int taskIndex = 0; taskIndex < 10; taskIndex++) {
+            //creating the callable object
+            Callable<String> callable = () -> {
+                System.out.println("Thread [" + Thread.currentThread().getName() + "] is executing the task");
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    System.out.println("sleeping thread get interrupted");
+                }
+                countDownLatch.countDown();
+                return "done";
+            };
+
+            allCallableList.add(callable);
+        }
+
+        //execute all the callables in background threads
+        executorService.invokeAll(allCallableList);
+        countDownLatch.await();
+
+        System.out.println("main thread completed ");
+    }
+}
+--------------------------------------------------------------------------------------------------------
+    @Override
+    public void configureMessageConverters(List<HttpMessageConverter<?>> httpMessageConverters) {
+        httpMessageConverters.add(new BookCaseMessageConverter(new MediaType("text", "csv")));
+    }
+--------------------------------------------------------------------------------------------------------
+vimport au.com.bytecode.opencsv.CSVReader;
+import au.com.bytecode.opencsv.CSVWriter;
+import org.springframework.http.HttpInputMessage;
+import org.springframework.http.HttpOutputMessage;
+import org.springframework.http.MediaType;
+import org.springframework.http.converter.AbstractHttpMessageConverter;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.http.converter.HttpMessageNotWritableException;
+
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.util.List;
+
+public class BookCaseMessageConverter extends AbstractHttpMessageConverter<BookCase> {
+
+    public BookCaseMessageConverter() {
+    }
+
+    public BookCaseMessageConverter(MediaType supportedMediaType) {
+        super(supportedMediaType);
+    }
+
+    public BookCaseMessageConverter(MediaType... supportedMediaTypes) {
+        super(supportedMediaTypes);
+    }
+
+    @Override
+    protected boolean supports(Class<?> clazz) {
+        return BookCase.class.equals(clazz);
+    }
+
+    @Override
+    protected BookCase readInternal(Class<? extends BookCase> clazz, HttpInputMessage httpInputMessage) throws IOException, HttpMessageNotReadableException {
+        CSVReader reader = new CSVReader(new InputStreamReader(httpInputMessage.getBody()));
+        List<String[]> rows = reader.readAll();
+        BookCase bookCase = new BookCase();
+        for (String[] row : rows) {
+            bookCase.add(new Book(row[0], row[1]));
+        }
+        return bookCase;
+    }
+
+    @Override
+    protected void writeInternal(BookCase books, HttpOutputMessage httpOutputMessage) throws IOException, HttpMessageNotWritableException {
+        CSVWriter writer = new CSVWriter(new OutputStreamWriter(httpOutputMessage.getBody()));
+        for (Book book : books) {
+            writer.writeNext(new String[]{book.getIsbn(), book.getTitle()});
+        }
+        writer.close();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@RunWith(SpringJUnit4ClassRunner.class)
+@WebAppConfiguration
+@ContextConfiguration(classes = MyWebConfig.class)
+public class RegistrationControllerTest {
+
+    @Autowired
+    private WebApplicationContext wac;
+
+    private MockMvc mockMvc;
+
+    @Before
+    public void setup () {
+        DefaultMockMvcBuilder builder = MockMvcBuilders.webAppContextSetup(this.wac);
+        this.mockMvc = builder.build();
+    }
+
+    @Test
+    public void testController () throws Exception {
+        ResultMatcher ok = MockMvcResultMatchers.status()
+                                                .isOk();
+
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/message")
+                                                        .contentType(MediaType.TEXT_PLAIN)
+                                                        .content("test message");
+        this.mockMvc.perform(builder)
+                    .andExpect(ok)
+                    .andDo(MockMvcResultHandlers.print());
+
+    }
+}
+
+@RunWith(SpringJUnit4ClassRunner.class)
+@WebAppConfiguration
+@ContextConfiguration(classes = MyWebConfig.class)
+public class RegistrationControllerTest {
+
+    @Autowired
+    private WebApplicationContext wac;
+
+    private MockMvc mockMvc;
+
+    @Before
+    public void setup () {
+        DefaultMockMvcBuilder builder = MockMvcBuilders.webAppContextSetup(this.wac);
+        this.mockMvc = builder.build();
+    }
+
+    @Test
+    public void testFormPostController () throws Exception {
+        ResultMatcher ok = MockMvcResultMatchers.status()
+                                                .isOk();
+
+        MockHttpServletRequestBuilder builder =
+                   MockMvcRequestBuilders.post("/message")
+                                         .contentType("application/x-www-form-urlencoded")
+                                         //use param instead of content
+                                         .param("name", "joe");
+
+        this.mockMvc.perform(builder)
+                    .andExpect(ok);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
+import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
+import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
+import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
+import org.springframework.security.oauth2.provider.token.TokenStore;
+import org.springframework.security.oauth2.provider.token.store.InMemoryTokenStore;
+
+@Configuration
+@EnableAuthorizationServer
+public class AuthorizationServerConfiguration extends AuthorizationServerConfigurerAdapter {
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private TokenStore tokenStore;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+
+    @Override
+    public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
+
+        clients.inMemory()
+                .withClient("client")
+                .authorizedGrantTypes("password", "authorization_code", "refresh_token", "implicit")
+                .scopes("read", "write")
+                .secret(passwordEncoder.encode("password"));
+    }
+
+
+    @Override
+    public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+        endpoints
+                .authenticationManager(authenticationManager)
+                .tokenStore(tokenStore);
+    }
+
+    @Bean
+    public TokenStore tokenStore() {
+        return new InMemoryTokenStore();
+    }
+
+    @Override
+    public void configure(AuthorizationServerSecurityConfigurer oauthServer) throws Exception {
+		oauthServer.checkTokenAccess("isAuthenticated()");
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
+import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
+import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
+import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
+import org.springframework.security.oauth2.provider.token.TokenStore;
+import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
+import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
+
+@Configuration
+@EnableAuthorizationServer
+public class AuthorizationServerConfiguration extends AuthorizationServerConfigurerAdapter {
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private TokenStore tokenStore;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+
+    @Override
+    public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
+
+        clients.inMemory()
+                .withClient("client")
+                .authorizedGrantTypes("password", "authorization_code", "refresh_token", "implicit")
+                .scopes("read", "write")
+                .autoApprove(true)
+                .secret(passwordEncoder.encode("password"));
+    }
+
+
+    @Override
+    public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+        endpoints
+                .authenticationManager(authenticationManager)
+                .accessTokenConverter(accessTokenConverter())
+                .tokenStore(tokenStore);
+    }
+
+
+
+    @Override
+    public void configure(AuthorizationServerSecurityConfigurer oauthServer) throws Exception {
+		oauthServer.checkTokenAccess("isAuthenticated()");
+    }
+
+
+    @Bean
+    public TokenStore tokenStore() {
+        return new JwtTokenStore(accessTokenConverter());
+    }
+
+    @Bean
+    public JwtAccessTokenConverter accessTokenConverter() {
+        JwtAccessTokenConverter converter = new JwtAccessTokenConverter();
+        converter.setSigningKey("123");
+        return converter;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+  @RolesAllowed({"ROLE_USER"})
+  @GetMapping("/user")
+  public String welcomeUser() {
+    return "welcome user";
+  }
+      @Secured("ROLE_USER")
+    @GetMapping(value = "/user/hello")
+    public String welcomeAppUser(@AuthenticationPrincipal User user) {
+        return "Welcome User " + user.getName();
+    }
+    @PreAuthorize("hasRole('USER') OR hasRole('ADMIN')")
+    @GetMapping(value = "/user/hello3")
+    public String welcomeAppUser3(@AuthenticationPrincipal User user) {
+        return "Welcome User " + user.getName();
+    }
+	
+	    /**
+     * <p>
+     * This method can be accessed by any user with ROLE_USER.
+     * But the content will be returned if the user has the ROLE_ADMIN and
+     * authenticated principal name is same as the username of the return object.
+     * </p>
+     *
+     * @param user
+     * @return
+     */
+    @PreAuthorize("hasRole('USER')")
+    @PostAuthorize("(returnObject.username == principal.name) AND hasRole('ADMIN')")
+    @GetMapping(value = "/user/hello5")
+    public UserProfile welcomeAppUser5(@AuthenticationPrincipal User user) {
+        return new UserProfile("chathuranga", "Chathuranga Tennakoon");
+    }
+	
+
+    @Bean
+    public NoOpPasswordEncoder passwordEncoder()
+    {
+        return (NoOpPasswordEncoder) NoOpPasswordEncoder.getInstance();
+    }
+	
+	   @Bean
+    @Profile("prod")
+    public AppConfiguration getProductionConfiguration()
+    {
+        return new AppConfiguration("production_config");
+    }
+--------------------------------------------------------------------------------------------------------
+import com.springbootdev.examples.consumer.model.Car;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.annotation.RabbitHandler;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.stereotype.Component;
+
+@Component
+@RabbitListener(queues = {"all_cars_queue", "nissan_cars_queue"})
+public class ConsumerService
+{
+    private static final Logger logger = LoggerFactory.getLogger(ConsumerService.class);
+
+    @RabbitHandler
+    public void receiveMessage(Car car)
+    {
+        logger.info(" receive message [" + car.toString() + "] ");
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.springbootdev.samples.rabbitmq.consumer.model.Item;
+import com.springbootdev.samples.rabbitmq.consumer.model.Order;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.converter.DefaultClassMapper;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@Configuration
+public class RabbitMqConfig {
+
+    @Bean
+    public MessageConverter messageConverter()
+    {
+        Jackson2JsonMessageConverter jsonMessageConverter = new Jackson2JsonMessageConverter();
+        jsonMessageConverter.setClassMapper(classMapper());
+        return jsonMessageConverter;
+    }
+
+
+    @Bean
+    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory)
+    {
+        RabbitTemplate template = new RabbitTemplate(connectionFactory);
+        template.setMessageConverter(messageConverter());
+        return template;
+    }
+
+    @Bean
+    public DefaultClassMapper classMapper()
+    {
+        DefaultClassMapper classMapper = new DefaultClassMapper();
+        Map<String, Class<?>> idClassMapping = new HashMap<>();
+        idClassMapping.put("com.springbootdev.samples.producer.model.Order", Order.class);
+        classMapper.setIdClassMapping(idClassMapping);
+        return classMapper;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+    public byte[] getKey() throws URISyntaxException, IOException {
+        return Files.readAllBytes(Paths.get(this.getClass().getResource("/sample.key").toURI()));
+    }
+--------------------------------------------------------------------------------------------------------
+import org.springframework.web.client.RestTemplate;
+
+public class RestClient
+{
+    //REST api endpoint
+    private static final String REST_API_ENDPOINT = "https://localhost:8443/logged_info";
+
+
+    static {
+        //for localhost testing only
+        javax.net.ssl.HttpsURLConnection.setDefaultHostnameVerifier(
+                new javax.net.ssl.HostnameVerifier() {
+
+                    public boolean verify(String hostname, javax.net.ssl.SSLSession sslSession) {
+                        return hostname.equals("localhost");
+                    }
+                });
+    }
+
+
+    public static String getRemoteMessage()
+    {
+        //configuring the keyStore and trustStore for the client application
+        System.setProperty("javax.net.ssl.keyStore", "/Users/chathuranga/Projects/spring-boot-ssl-x509/keystores/clientkeystore.p12");
+        System.setProperty("javax.net.ssl.keyStorePassword", "3edc4rfv");
+        System.setProperty("javax.net.ssl.trustStore", "/Users/chathuranga/Projects/spring-boot-ssl-x509/keystores/clienttruststore.p12");
+        System.setProperty("javax.net.ssl.trustStorePassword", "3edc4rfv");
+
+        RestTemplate restTemplate = new RestTemplate();
+        return restTemplate.getForObject(REST_API_ENDPOINT, String.class);
+    }
+}
+
+server.port = 8443
+#keystore details
+server.ssl.key-store=/Users/chathuranga/Projects/spring-boot-ssl-x509/keystores/serverkeystore.p12
+server.ssl.key-store-password=1qaz2wsx
+
+#truststore details
+server.ssl.trust-store=/Users/chathuranga/Projects/spring-boot-ssl-x509/keystores/servertruststore.p12
+server.ssl.trust-store-password=1qaz2wsx
+server.ssl.client-auth=need
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.User;
+
+@EnableWebSecurity
+public class AppSpringSecurityConfig extends WebSecurityConfigurerAdapter {
+
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        super.configure(auth);
+    }
+
+    /**
+     * subjectPrincipalRegex("CN=(.*?)(?:,|$)") :- The regular expression used to extract a username from the client certificate’s subject name.
+     * (CN value of the client certificate)
+     */
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        //Enabling X.509 client authentication is very straightforward. just add x509()
+        http.x509().subjectPrincipalRegex("CN=(.*?)(?:,|$)").
+                and().authorizeRequests().anyRequest().authenticated().
+                and().userDetailsService(userDetailsService());
+    }
+
+
+    @Bean
+    public UserDetailsService userDetailsService() {
+        return new UserDetailsService() {
+            @Override
+            public User loadUserByUsername(String username) {
+                if (username != null) {
+                    return new User(username, "", AuthorityUtils.commaSeparatedStringToAuthorityList("ROLE_USER"));
+                }
+                return null;
+            }
+        };
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import javax.jws.WebMethod;
+import javax.jws.WebParam;
+import javax.jws.WebResult;
+import javax.jws.WebService;
+import javax.xml.bind.annotation.XmlSeeAlso;
+import javax.xml.ws.RequestWrapper;
+import javax.xml.ws.ResponseWrapper;
+import com.chathurangaonline.apache.cxf.jaxws.spring.samples.ObjectFactory;
+
+
+/**
+ * This class was generated by the JAX-WS RI.
+ * JAX-WS RI 2.2.4-b01
+ * Generated source version: 2.2
+ * 
+ */
+@WebService(name = "CalculatorService", targetNamespace = "http://samples.spring.jaxws.cxf.apache.chathurangaonline.com/")
+@XmlSeeAlso({
+    ObjectFactory.class
+})
+public interface CalculatorService {
+
+
+    /**
+     * 
+     * @param arg1
+     * @param arg0
+     * @return
+     *     returns double
+     */
+    @WebMethod
+    @WebResult(targetNamespace = "")
+    @RequestWrapper(localName = "multiply", targetNamespace = "http://samples.spring.jaxws.cxf.apache.chathurangaonline.com/", className = "com.chathurangaonline.apache.cxf.jaxws.spring.samples.Multiply")
+    @ResponseWrapper(localName = "multiplyResponse", targetNamespace = "http://samples.spring.jaxws.cxf.apache.chathurangaonline.com/", className = "com.chathurangaonline.apache.cxf.jaxws.spring.samples.MultiplyResponse")
+    public double multiply(
+        @WebParam(name = "arg0", targetNamespace = "")
+        double arg0,
+        @WebParam(name = "arg1", targetNamespace = "")
+        double arg1);
+
+}
+--------------------------------------------------------------------------------------------------------
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebInitParam;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+/**
+ * <p>
+ *     you can see that we can pass init param for the servlet through the annotations.
+ * </p>
+ */
+@WebServlet(
+        name = "hello",
+        urlPatterns = {"/hello"},
+        initParams = {
+                @WebInitParam(name = "username",value = "chathuranga"),
+                @WebInitParam(name = "email",value = "chathuranga.t@gmail.com")
+        },
+        loadOnStartup = 1
+)
+public class HelloServlet extends HttpServlet{
+
+    private static final Logger logger = LoggerFactory.getLogger(HelloServlet.class);
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        logger.info(" this servlet will be executed after executing the all relevant filters according to their order ");
+        response.setContentType("text/plain");
+        response.getWriter().write(" Welcome to Servlet Annotation with Servlet 3");
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.servlet.*;
+import javax.servlet.annotation.WebFilter;
+import java.io.IOException;
+
+/**
+ * <p>
+ *     filter execution order has been defined in the web.xml file
+ * </p>
+ */
+@WebFilter(
+        filterName = "helloFilterOne",
+        urlPatterns = {"/hello"}
+
+)
+public class FilterOne implements Filter{
+
+    private FilterConfig filterConfig;
+    private static final Logger logger = LoggerFactory.getLogger(FilterOne.class);
+
+    @Override
+    public void init(FilterConfig filterConfig) throws ServletException {
+        this.filterConfig = filterConfig;
+    }
+
+    @Override
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+        logger.info(" inside the filter one ");
+        filterChain.doFilter(servletRequest,servletResponse);
+    }
+
+    @Override
+    public void destroy() {
+       //releasing the resources
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.hsenidmobile.recruitment.model.EmailMessage;
+import org.apache.commons.lang.StringUtils;
+import org.apache.velocity.app.VelocityEngine;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.mail.javamail.MimeMessagePreparator;
+import org.springframework.stereotype.Component;
+import org.springframework.ui.velocity.VelocityEngineUtils;
+
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+import java.io.File;
+
+@Component("emailSender")
+public class EmailSender {
+
+    @Autowired
+    private JavaMailSender mailSender;
+
+    @Autowired
+    private VelocityEngine velocityEngine;
+
+
+    public void sendEmail(final String toEmailAddresses, final String fromEmailAddress,
+                          final String subject) {
+        sendEmail(toEmailAddresses, fromEmailAddress, subject, null, null,null);
+    }
+
+//    public void sendEmailWithAttachment(final String toEmailAddresses, final String fromEmailAddress,
+//                                        final String subject, final String attachmentPath,
+//                                        final String attachmentName) {
+//        sendEmail(toEmailAddresses, fromEmailAddress, subject, attachmentPath, attachmentName);
+//    }
+
+//    private void sendEmail(final String toEmailAddresses, final String fromEmailAddress,
+//                           final String subject, final String attachmentPath,
+//                           final String attachmentName) {
+//        MimeMessagePreparator preparator = new MimeMessagePreparator() {
+//            public void prepare(MimeMessage mimeMessage) throws Exception {
+//                MimeMessageHelper message = new MimeMessageHelper(mimeMessage, true);
+//                message.setTo(toEmailAddresses);
+//                message.setFrom(new InternetAddress(fromEmailAddress));
+//                message.setSubject(subject);
+//                String body = VelocityEngineUtils.mergeTemplateIntoString(
+//                        velocityEngine, "templates/reminder.vm", "UTF-8", null);
+//                message.setText(body, true);
+//                if (!StringUtils.isBlank(attachmentPath)) {
+//                    FileSystemResource file = new FileSystemResource(attachmentPath);
+//                    message.addAttachment(attachmentName, file);
+//                }
+//            }
+//        };
+//        this.mailSender.send(preparator);
+//    }
+
+
+
+    private void sendEmail(final String toEmailAddresses, final String fromEmailAddress,
+                           final String subject, final String attachmentPath,
+                           final String attachmentName,final String image) {
+        MimeMessagePreparator preparator = new MimeMessagePreparator() {
+            public void prepare(MimeMessage mimeMessage) throws Exception {
+                MimeMessageHelper message = new MimeMessageHelper(mimeMessage, true);
+                message.setTo(toEmailAddresses);
+                message.setFrom(new InternetAddress(fromEmailAddress));
+                message.setSubject(subject);
+                String body = VelocityEngineUtils.mergeTemplateIntoString(
+                        velocityEngine, "templates/reminder.vm", "UTF-8", null);
+                message.setText(body, true);
+                //  message.addInline(image, new ClassPathResource("templates/staticmap.png"));
+                message.addInline("image", new ClassPathResource("templates/staticmap.png"));
+                if (!StringUtils.isBlank(attachmentPath)) {
+                    FileSystemResource file = new FileSystemResource(attachmentPath);
+                    message.addAttachment(attachmentName, file);
+                }
+            }
+        };
+        this.mailSender.send(preparator);
+    }
+
+
+
+    public void sendEmail(final EmailMessage emailMessage){
+        MimeMessagePreparator preparator = new MimeMessagePreparator() {
+            public void prepare(MimeMessage mimeMessage) throws Exception {
+                MimeMessageHelper message = new MimeMessageHelper(mimeMessage, true);
+                message.setTo(emailMessage.getToAddress());
+                message.setFrom(new InternetAddress(emailMessage.getFrom()));
+                message.setSubject(emailMessage.getEmailTemplate().getSubject());
+                String body = VelocityEngineUtils.mergeTemplateIntoString(
+                        velocityEngine, "templates/reminder.vm", "UTF-8", null);
+                message.setText(body, true);
+                FileSystemResource img = new FileSystemResource(new File("templates/staticmap.png"));
+                message.addInline("imgId", img);
+//               if (!StringUtils.isBlank(attachmentPath)) {
+//                   FileSystemResource file = new FileSystemResource(attachmentPath);
+//                   message.addAttachment(attachmentName, file);
+//               }
+            }
+        };
+        //sending email as a thread
+        EmailService emailService = new EmailService(preparator,mailSender);
+        emailService.start();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.chathurangaonline.examples.dao.GenericDao;
+import com.chathurangaonline.examples.exception.ApplicationException;
+import org.hibernate.Criteria;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.service.ServiceRegistry;
+import java.io.Serializable;
+import java.util.List;
+
+
+public  class GenericDaoImpl<T,PK extends Serializable>  implements GenericDao<T,PK>{
+
+    private Class<T> entityClass;
+
+    private static SessionFactory sessionFactory;
+
+    public GenericDaoImpl(Class<T> entityClass) {
+        this.entityClass = entityClass;
+    }
+
+    public SessionFactory getSessionFactory(){
+        if(sessionFactory==null){
+            Configuration configuration = new Configuration();
+            configuration.configure();
+            ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder().applySettings(configuration.getProperties()).build();
+            sessionFactory = configuration.buildSessionFactory(serviceRegistry);
+        }
+        return sessionFactory;
+    }
+
+    public   Session getSession(){
+        SessionFactory sessionFactory = this.getSessionFactory();
+        return sessionFactory.openSession();
+    }
+
+    @Override
+    public T findById(Serializable id) {
+        T object = null;
+        if(id!=null){
+            Session session = this.getSession();
+            object =  (T)session.get(entityClass,id);
+            return object;
+        }
+        return object;
+    }
+
+
+    @Override
+    public void save(T object) {
+        Session session = null;
+        try{
+            session = getSession();
+            session.beginTransaction();
+            session.save(object);
+            session.getTransaction().commit();
+        }
+        catch (HibernateException ex){
+            if(session!=null && session.getTransaction()!=null){
+                session.getTransaction().rollback();
+            }
+            throw new ApplicationException("ERROR_SAVE",ex);
+        }
+        finally {
+            if(session!=null){
+                session.close();
+            }
+        }
+    }
+
+
+    @Override
+    public List<T> findAll() {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public Integer countAll() {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void delete(T object) {
+        if(object!=null){
+            Session session = null;
+            try{
+                session = this.getSessionFactory().openSession();
+                session.beginTransaction();
+                session.delete(object);
+                session.getTransaction().commit();
+            }
+            catch (HibernateException ex){
+                if(session!=null && session.getTransaction()!=null){
+                    session.getTransaction().rollback();
+                }
+                throw new ApplicationException("ERROR_DELETE",ex);
+            }
+            finally {
+                if(session!=null){
+                    session.close();
+                }
+            }
+        }
+    }
+
+
+
+    public Class<T> getEntityClass() {
+        return entityClass;
+    }
+
+    public void setEntityClass(Class<T> entityClass) {
+        this.entityClass = entityClass;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+    ByteArrayHttpMessageConverter – converts byte arrays
+    StringHttpMessageConverter – converts Strings
+    ResourceHttpMessageConverter – converts org.springframework.core.io.Resource for any type of octet stream
+    SourceHttpMessageConverter – converts javax.xml.transform.Source
+    FormHttpMessageConverter – converts form data to/from a MultiValueMap<String, String>.
+    Jaxb2RootElementHttpMessageConverter – converts Java objects to/from XML (added only if JAXB2 is present on the classpath)
+    MappingJackson2HttpMessageConverter – converts JSON (added only if Jackson 2 is present on the classpath)
+    MappingJacksonHttpMessageConverter – converts JSON (added only if Jackson is present on the classpath)
+    AtomFeedHttpMessageConverter – converts Atom feeds (added only if Rome is present on the classpath)
+    RssChannelHttpMessageConverter – converts RSS feeds (added only if Rome is present on the classpath)
+--------------------------------------------------------------------------------------------------------
+@Bean
+public HttpMessageConverter<Object> createXmlHttpMessageConverter() {
+    MarshallingHttpMessageConverter xmlConverter = new MarshallingHttpMessageConverter();
+ 
+    // ...
+ 
+    return xmlConverter;
+}
+
+@Test
+public void givenConsumingXml_whenReadingTheFoo_thenCorrect() {
+    String URI = BASE_URI + "foos/{id}";
+    RestTemplate restTemplate = new RestTemplate();
+    restTemplate.setMessageConverters(getMessageConverters());
+ 
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(Arrays.asList(MediaType.APPLICATION_XML));
+    HttpEntity<String> entity = new HttpEntity<String>(headers);
+ 
+    ResponseEntity<Foo> response = 
+      restTemplate.exchange(URI, HttpMethod.GET, entity, Foo.class, "1");
+    Foo resource = response.getBody();
+ 
+    assertThat(resource, notNullValue());
+}
+private List<HttpMessageConverter<?>> getMessageConverters() {
+    XStreamMarshaller marshaller = new XStreamMarshaller();
+    MarshallingHttpMessageConverter marshallingConverter = 
+      new MarshallingHttpMessageConverter(marshaller);
+     
+    List<HttpMessageConverter<?>> converters = 
+      ArrayList<HttpMessageConverter<?>>();
+    converters.add(marshallingConverter);
+    return converters; 
+}
+
+@Test
+public void givenConsumingJson_whenReadingTheFoo_thenCorrect() {
+    String URI = BASE_URI + "foos/{id}";
+ 
+    RestTemplate restTemplate = new RestTemplate();
+    restTemplate.setMessageConverters(getMessageConverters());
+ 
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+    HttpEntity<String> entity = new HttpEntity<String>(headers);
+ 
+    ResponseEntity<Foo> response = 
+      restTemplate.exchange(URI, HttpMethod.GET, entity, Foo.class, "1");
+    Foo resource = response.getBody();
+ 
+    assertThat(resource, notNullValue());
+}
+private List<HttpMessageConverter<?>> getMessageConverters() {
+    List<HttpMessageConverter<?>> converters = 
+      new ArrayList<HttpMessageConverter<?>>();
+    converters.add(new MappingJackson2HttpMessageConverter());
+    return converters;
+}
+
+@Test
+public void givenConsumingXml_whenWritingTheFoo_thenCorrect() {
+    String URI = BASE_URI + "foos/{id}";
+    RestTemplate restTemplate = new RestTemplate();
+    restTemplate.setMessageConverters(getMessageConverters());
+ 
+    Foo resource = new Foo(4, "jason");
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+    headers.setContentType((MediaType.APPLICATION_XML));
+    HttpEntity<Foo> entity = new HttpEntity<Foo>(resource, headers);
+ 
+    ResponseEntity<Foo> response = restTemplate.exchange(
+      URI, HttpMethod.PUT, entity, Foo.class, resource.getId());
+    Foo fooResponse = response.getBody();
+ 
+    Assert.assertEquals(resource.getId(), fooResponse.getId());
+}
+--------------------------------------------------------------------------------------------------------
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        id: http://localhost:8080/api
+        jwk:
+          jwk-set-uri: https://blog-samples.auth0.com/.well-known/jwks.json
+          issuer-uri: https://blog-samples.auth0.com/
+--------------------------------------------------------------------------------------------------------
+
+import com.example.movieapi.model.Movie;
+import com.example.movieapi.model.repository.MovieRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+@RestController
+@RequestMapping("/movies")
+public class MovieController {
+
+    private MovieRepository movieRepository;
+
+    public MovieController(MovieRepository movieRepository){
+        this.movieRepository = movieRepository;
+    }
+
+    @GetMapping
+    public Flux<Movie> getMovies(){
+        return movieRepository.findAll();
+    }
+
+    @GetMapping("{id}")
+    public Mono<ResponseEntity<Movie>> getMovie(@PathVariable String id){
+        return movieRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public Mono<Movie> saveMovie(@RequestBody Movie movie){
+        return movieRepository.save(movie);
+    }
+
+    @PutMapping("{id}")
+    public Mono<ResponseEntity<Movie>> updateMovie(@PathVariable(value = "id") String id, @RequestBody Movie movie){
+        return movieRepository.findById(id)
+                .flatMap(existingMovie -> {
+                    existingMovie.setName(movie.getName());
+                    existingMovie.setGenre(movie.getGenre());
+                    existingMovie.setReleaseDate(movie.getReleaseDate());
+                    return movieRepository.save(existingMovie);
+                })
+                .map(ResponseEntity::ok)
+                .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("{id}")
+    public Mono<ResponseEntity<Void>> deleteMovie(@PathVariable(value = "id") String id){
+        return movieRepository.findById(id)
+                .flatMap(existingMovie ->
+                        movieRepository.delete(existingMovie)
+                                .then(Mono.just(ResponseEntity.ok().<Void>build()))
+                )
+                .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping
+    public Mono<Void> deleteAllMovies(){
+        return movieRepository.deleteAll();
+    }
+}
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
+import org.springframework.security.oauth2.jwt.ReactiveJwtDecoders;
+import org.springframework.security.web.server.SecurityWebFilterChain;
+
+@EnableWebFluxSecurity
+public class SecurityConfig {
+
+    @Value("${spring.security.oauth2.resourceserver.jwk.issuer-uri}")
+    private String issuerUri;
+
+    @Bean
+    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http){
+        http
+                .authorizeExchange()
+                .pathMatchers(HttpMethod.GET,"/movies/**").permitAll()
+                .anyExchange().authenticated()
+                .and()
+                .oauth2ResourceServer()
+                .jwt();
+        return http.build();
+    }
+
+    @Bean
+    public ReactiveJwtDecoder jwtDecoder() {
+        return ReactiveJwtDecoders.fromOidcIssuerLocation(issuerUri);
+    }
+}
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import com.example.movieapi.model.Movie;
+import com.example.movieapi.model.repository.MovieRepository;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.data.mongodb.core.ReactiveMongoOperations;
+import reactor.core.publisher.Flux;
+
+import java.time.LocalDateTime;
+
+@SpringBootApplication
+public class MovieApiApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(MovieApiApplication.class, args);
+	}
+
+	//Keep the rest of the code untouched. Just add the following method
+	@Bean
+	CommandLineRunner init(ReactiveMongoOperations operations, MovieRepository movieRepository) {
+		return args -> {
+			Flux<Movie> productFlux = Flux.just(
+					new Movie(null, "Avenger: Infinity Wars", "Action", LocalDateTime.now()),
+					new Movie(null, "Gladiator", "Drama/Action", LocalDateTime.now()),
+					new Movie(null, "Black Panther", "Action", LocalDateTime.now()))
+					.flatMap(movieRepository::save);
+
+			productFlux
+					.thenMany(movieRepository.findAll())
+					.subscribe(System.out::println);
+		};
+	}
+}
+
+--------------------------------------------------------------------------------------------------------
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.integration.channel.PublishSubscribeChannel;
+import org.springframework.integration.dsl.IntegrationFlow;
+import org.springframework.integration.dsl.IntegrationFlows;
+import org.springframework.integration.file.dsl.FileInboundChannelAdapterSpec;
+import org.springframework.integration.file.dsl.Files;
+import org.springframework.messaging.MessageHandler;
+import org.springframework.web.reactive.HandlerMapping;
+import org.springframework.web.reactive.handler.SimpleUrlHandlerMapping;
+import org.springframework.web.reactive.socket.WebSocketHandler;
+import org.springframework.web.reactive.socket.WebSocketMessage;
+import org.springframework.web.reactive.socket.server.support.WebSocketHandlerAdapter;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
+
+import java.io.File;
+import java.util.Collections;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
+
+
+@Configuration
+public class WebSocketConfiguration {
+    @Bean
+    public IntegrationFlow fileFlow(PublishSubscribeChannel channel, @Value("file://${HOME}/Desktop/in") File file) {
+        FileInboundChannelAdapterSpec in = Files.inboundAdapter(file).autoCreateDirectory(true);
+//        return IntegrationFlows.from(
+//        in,
+//                new Consumer<SourcePollingChannelAdapterSpec>() {
+//                    @Override
+//                    public void accept(SourcePollingChannelAdapterSpec p) {
+//                        p.poller(new Function<PollerFactory, PollerSpec>() {
+//                            @Override
+//                            public PollerSpec apply(PollerFactory pollerFactory) {
+//                                return pollerFactory.fixedRate(1000);
+//                            }
+//                        });
+//                    }
+//                }
+        return IntegrationFlows.from(
+                in,
+                p -> p.poller(pollerFactory -> {
+                    return pollerFactory.fixedRate(1000);
+                })
+        ).channel(channel).get();
+    }
+
+    @Bean
+    @Primary
+    public PublishSubscribeChannel incomingFilesChannel() {
+        return new PublishSubscribeChannel();
+    }
+
+    @Bean
+    public WebSocketHandlerAdapter webSocketHandlerAdapter() {
+        return new WebSocketHandlerAdapter();
+    }
+
+    @Bean
+    public WebSocketHandler webSocketHandler(PublishSubscribeChannel channel) {
+        return session -> {
+            Map<String, MessageHandler> connections = new ConcurrentHashMap<>();
+            Flux<WebSocketMessage> publisher = Flux.create((Consumer<FluxSink<WebSocketMessage>>) fluxSink -> {
+                connections.put(session.getId(), new ForwardingMessageHandler(session, fluxSink));
+                channel.subscribe(connections.get(session.getId()));
+            }).doFinally(signalType -> {
+                channel.unsubscribe(connections.get(session.getId()));
+                connections.remove(session.getId());
+            });
+            return session.send(publisher);
+        };
+    }
+
+    @Bean
+    public HandlerMapping handlerMapping(WebSocketHandler webSocketHandler) {
+        SimpleUrlHandlerMapping handlerMapping = new SimpleUrlHandlerMapping();
+        handlerMapping.setOrder(10);
+        handlerMapping.setUrlMap(Collections.singletonMap("/ws/files", webSocketHandler));
+        return handlerMapping;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+curl http://localhost:8080/exams
+
+curl -X POST -H "Content-Type: application/json" -d '{
+    "title": "First exam"
+}' http://localhost:8080/exams
+
+curl -X POST -H "Content-Type: application/json" -d '{
+    "title": "Another show exam",
+    "description": "Another show exam desc"
+}' http://localhost:8080/exams
+
+curl -X POST -H "Content-Type: application/json" -d '{
+    "title": "First exam",
+    "description": "Just a test",
+    "url": "trying-to-hack",
+    "published": true
+}' http://localhost:8080/exams
+
+curl -X PUT -H "Content-Type: application/json" -d '{
+    "title": "First exam",
+    "description": "Just a test",
+    "url": "trying-to-hack",
+    "published": true
+}' http://localhost:8080/exams
+
+curl -X PUT -H "Content-Type: application/json" -d '{
+    "id": 1,
+    "title": "First exam",
+    "description": "Just a test"
+}' http://localhost:8080/exams
+
+curl -X PUT -H "Content-Type: application/json" -d '{
+    "id": 2,
+    "title": "The third exam is amazing",
+    "description": "Just a test"
+}' http://localhost:8080/exams
+--------------------------------------------------------------------------------------------------------
+alter table exam
+  add column created_at timestamp without time zone not null default now(),
+  add column edited_at timestamp without time zone not null default now(),
+  add column published boolean not null default false;
+--------------------------------------------------------------------------------------------------------
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Collections;
+
+public class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
+
+    public JWTLoginFilter(String url, AuthenticationManager authManager) {
+        super(new AntPathRequestMatcher(url));
+        setAuthenticationManager(authManager);
+    }
+
+    @Override
+    public Authentication attemptAuthentication(
+            HttpServletRequest req, HttpServletResponse res)
+            throws AuthenticationException, IOException, ServletException {
+        AccountCredentials creds = new ObjectMapper()
+                .readValue(req.getInputStream(), AccountCredentials.class);
+        return getAuthenticationManager().authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        creds.getUsername(),
+                        creds.getPassword(),
+                        Collections.emptyList()
+                )
+        );
+    }
+
+    @Override
+    protected void successfulAuthentication(
+            HttpServletRequest req,
+            HttpServletResponse res, FilterChain chain,
+            Authentication auth) throws IOException, ServletException {
+        TokenAuthenticationService
+                .addAuthentication(res, auth.getName());
+    }
+}
+--------------------------------------------------------------------------------------------------------
+mvn spring-boot:run -Drun.arguments="--auth0.secret=YOUR_SECRET_KEY"
+--------------------------------------------------------------------------------------------------------
+import feign.Feign;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.cloud.openfeign.AnnotatedParameterProcessor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.MethodParameter;
+import org.springframework.core.convert.ConversionService;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.method.annotation.RequestHeaderMethodArgumentResolver;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.web.servlet.mvc.method.annotation.PathVariableMethodArgumentResolver;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
+import org.springframework.web.servlet.mvc.method.annotation.RequestResponseBodyMethodProcessor;
+import org.springframework.web.servlet.mvc.method.annotation.ServletCookieValueMethodArgumentResolver;
+
+import javax.annotation.PostConstruct;
+import javax.validation.Valid;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * VenusFeignAutoConfig
+ *
+ * @author Charles He
+ */
+@Configuration
+@ConditionalOnClass(Feign.class)
+public class VenusFeignAutoConfig {
+
+    @Autowired
+    private RequestMappingHandlerAdapter adapter;
+
+    @Autowired
+    private ConfigurableBeanFactory beanFactory;
+
+    @Bean
+    public VenusRequestInterceptor feignRequestInterceptor() {
+        return new VenusRequestInterceptor();
+    }
+
+    @Bean
+    public VenusSpringMvcContract feignSpringMvcContract(@Autowired(required = false) List<AnnotatedParameterProcessor> parameterProcessors,
+                                                         ConversionService conversionService) {
+        if (null == parameterProcessors) {
+            parameterProcessors = new ArrayList<>();
+        }
+        return new VenusSpringMvcContract(parameterProcessors, conversionService);
+    }
+
+    public static MethodParameter interfaceMethodParameter(MethodParameter parameter, Class annotationType) {
+        if (!parameter.hasParameterAnnotation(annotationType)) {
+            for (Class<?> itf : parameter.getDeclaringClass().getInterfaces()) {
+                try {
+                    Method method = itf.getMethod(parameter.getMethod().getName(), parameter.getMethod().getParameterTypes());
+                    MethodParameter itfParameter = new MethodParameter(method, parameter.getParameterIndex());
+                    if (itfParameter.hasParameterAnnotation(annotationType)) {
+                        return itfParameter;
+                    }
+                } catch (NoSuchMethodException e) {
+                    continue;
+                }
+            }
+        }
+        return parameter;
+    }
+
+    @PostConstruct
+    public void modifyArgumentResolvers() {
+        List<HandlerMethodArgumentResolver> list = new ArrayList<>(adapter.getArgumentResolvers());
+
+        // PathVariable 支持接口注解
+        list.add(0, new PathVariableMethodArgumentResolver() {
+            @Override
+            public boolean supportsParameter(MethodParameter parameter) {
+                return super.supportsParameter(interfaceMethodParameter(parameter, PathVariable.class));
+            }
+
+            @Override
+            protected NamedValueInfo createNamedValueInfo(MethodParameter parameter) {
+                return super.createNamedValueInfo(interfaceMethodParameter(parameter, PathVariable.class));
+            }
+        });
+
+        // RequestHeader 支持接口注解
+        list.add(0, new RequestHeaderMethodArgumentResolver(beanFactory) {
+            @Override
+            public boolean supportsParameter(MethodParameter parameter) {
+                return super.supportsParameter(interfaceMethodParameter(parameter, RequestHeader.class));
+            }
+
+            @Override
+            protected NamedValueInfo createNamedValueInfo(MethodParameter parameter) {
+                return super.createNamedValueInfo(interfaceMethodParameter(parameter, RequestHeader.class));
+            }
+        });
+
+        // CookieValue 支持接口注解
+        list.add(0, new ServletCookieValueMethodArgumentResolver(beanFactory) {
+            @Override
+            public boolean supportsParameter(MethodParameter parameter) {
+                return super.supportsParameter(interfaceMethodParameter(parameter, CookieValue.class));
+            }
+
+            @Override
+            protected NamedValueInfo createNamedValueInfo(MethodParameter parameter) {
+                return super.createNamedValueInfo(interfaceMethodParameter(parameter, CookieValue.class));
+            }
+        });
+
+        // RequestBody Valid 支持接口注解
+        list.add(0, new RequestResponseBodyMethodProcessor(adapter.getMessageConverters()) {
+            @Override
+            public boolean supportsParameter(MethodParameter parameter) {
+                return super.supportsParameter(interfaceMethodParameter(parameter, RequestBody.class));
+            }
+
+            @Override
+            protected void validateIfApplicable(WebDataBinder binder, MethodParameter methodParam) {
+                super.validateIfApplicable(binder, interfaceMethodParameter(methodParam, Valid.class));
+            }
+        });
+
+        // 修改ArgumentResolvers, 支持接口注解
+        adapter.setArgumentResolvers(list);
+    }
+}
+
+https://github.com/SpringCloud/venus-cloud-feign/blob/master/venus-cloud-feign-core/src/main/java/cn/springcloud/feign/VenusFeignAutoConfig.java
+--------------------------------------------------------------------------------------------------------
+mvn help:describe -Dcmd= compile
+mvn help:describe -Dplugin=compiler
+mvn help:describe -Dcmd= dependency:get
+mvn dependency:list
+mvn help:effective-pom
+mvn compiler:compile
+
+mvn tomcat7:deploy
+mvn tomcat7:redeploy
+mvn tomcat7:undeploy
+
+mvn install:install-file
+-Dfile="D:\thirdParty\jortho.jar"
+-DgroupId=com.inet.jortho
+-DartifactId=jortho 
+-Dversion=1.0 
+-Dpackaging=jar
+
+mvn    archetype:generate   -DgroupId={ project-group-id}    - DartifactId={ project-name}    - DarchetypeArtifactId= maven-archetype-quickstart   - DinteractiveMode= false 
+
+mvn  exec:java -Dexec.mainClass="com.logicbig.App"
+
+mvn -Dmaven.surefire.debug test
+mvn -Dmaven.surefire.debug="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000 -Xnoagent -Djava.compiler=NONE" test
+
+mvn -q test
+mvn -q test -Dtest=TestClass3
+mvn -q test -Dtest=TestClass3,TestClass1
+mvn -q test -Dtest=T*lass1
+mvn -q test -Dtest=TestClass2#test4
+mvn -q test -Dtest=#test4
+mvn -q  test -Dtest=TestClass3#test5+test7
+mvn -q test "-Dtest=!TestClass1"
+
+                    <compilerArgs>
+                        <arg>-g</arg>
+                        <arg>-Xlint</arg>
+                     </compilerArgs>
+--------------------------------------------------------------------------------------------------------
+let compare = Symbol();
+class Math {
+    constructor() {
+        this.desc = "math utility";
+    }
+    //a method
+    [compare](x, y) {
+        return x === y ? 0 : x < y ? -1 : 1;
+    }
+}
+
+let math = new Math();
+console.log(math);
+let doCompare = math[compare];
+let result = doCompare(7, 5);
+console.log(result);
+--------------------------------------------------------------------------------------------------------
+function shape(inputClass) {
+    return class extends inputClass {
+        draw() {
+            console.log("shape is drawing");
+        }
+    };
+}
+
+function component(inputClass) {
+    return class extends inputClass {
+        display() {
+            console.log("component is displaying");
+        }
+    };
+}
+
+class Rectangle {
+    constructor(w, h) {
+        this.w = w;
+        this.h = h;
+    }
+    area() {
+        return this.w * this.h;
+    }
+}
+
+let SquareBase = shape(component(Rectangle));
+//above is equivalent to: class Shape extends (class Component extends Rectangle{}){}
+
+class Square extends SquareBase {
+    constructor(sideLength) {
+        super(sideLength, sideLength); //calling Rectangle constructor
+    }
+}
+
+let square = new Square(4);
+square.draw();
+square.display();
+let area = square.area();
+console.log(area);
+--------------------------------------------------------------------------------------------------------
+#!/bin/sh
+
+git clone --recursive git://github.com/0x90/wifi-arsenal
+git clone --recursive git://github.com/0x90/ism-arsenal
+git clone --recursive git://github.com/0x90/gsm-arsenal
+git clone --recursive git://github.com/0x90/bluetooth-arsenal
+git clone --recursive git://github.com/0x90/sdr-arsenal
+git clone --recursive git://github.com/0x90/atheros-arsenal
+git clone --recursive git://github.com/0x90/broadcom-arsenal
+git clone --recursive git://github.com/0x90/firmware-arsenal
+git clone --recursive git://github.com/0x90/esp-arsenal
+git clone --recursive git://github.com/0x90/vpn-arsenal
+git clone --recursive git://github.com/0x90/ss7-arsenal
+git clone --recursive git://github.com/0x90/nrf51-arsenal
+git clone --recursive git://github.com/0x90/nrf24-arsenal
+--------------------------------------------------------------------------------------------------------
+    <dependency>
+     <groupId>com.fasterxml.jackson.dataformat</groupId>
+     <artifactId>jackson-dataformat-xml</artifactId>
+    </dependency>
+	    @GetMapping(path = "/{id}", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+    public UserModel getUser(@PathVariable String id)
+    {
+       // other code here to create UserModel object
+     return userModel;
+    }
+--------------------------------------------------------------------------------------------------------
+spring.jpa.hibernate.naming.physical-strategy=org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+--------------------------------------------------------------------------------------------------------
+    @Transactional
+    @Modifying
+    @Query(value = "UPDATE Users u set EMAIL_VERIFICATION_STATUS =:emailVerificationStatus where u.USER_ID = :userId",
+            nativeQuery = true)
+void updateUser(@Param("emailVerificationStatus") boolean emailVerificationStatus, @Param("userId") String userId);
+
+    @GetMapping("/products/page")
+    @Timed
+    @Override
+    public ResponseEntity<Iterable<ProductGetResponse>> getAllProductRecords(@RequestParam(value = "page", defaultValue = "0") int page,
+                                                                             @RequestParam(value = "limit", defaultValue = "30") int limit) {
+        final Iterable<ProductGetResponse> result = this.getModelMapper().mapAll(this.getProductService().getAllProductRecords(PageRequest.of(page, limit)), ProductGetResponse.class);
+        return buildBodyHeaderResponse(getTotalElementsHeader(result), result);
+    }
+	
+    @Query(value="select * from Users u where u.first_name like %:keyword% or u.last_name like %:keyword%", nativeQuery=true)
+    List<UserEntity> findUsersByKeyword(@Param("keyword") String keyword);
+	
+
+    %:keyword  – ends with a value that the named parameter “keyword” holds,
+    :keyword% – begins with a value that the named parameter “keyword” holds,
+    %:keyword% – contains the value that the named parameter “keyword” holds,
+
+--------------------------------------------------------------------------------------------------------
+    # application properties
+    server.port=8090
+    # MongoDB properties
+    spring.data.mongodb.uri=mongodb://appsdeveloperblog:password@ds915721.mlab.com:29670/appsdeveloperblog_db
+	
+   private int getDiffYears(Date first, Date last) {
+       Calendar a = getCalendar(first);
+       Calendar b = getCalendar(last);
+       int diff = b.get(YEAR) - a.get(YEAR);
+       if (a.get(MONTH) > b.get(MONTH) ||
+               (a.get(MONTH) == b.get(MONTH) && a.get(DATE) > b.get(DATE))) {
+           diff--;
+       }
+       return diff;
+   }
+--------------------------------------------------------------------------------------------------------
+logging.level.org.hibernate.SQL=debug
+logging.level.org.hibernate.type.descriptor.sql=trace
+--------------------------------------------------------------------------------------------------------
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
+@SpringBootApplication
+public class DeployableWarApplication extends SpringBootServletInitializer {
+ public static void main(String[] args) {
+  SpringApplication.run(DeployableWarApplication.class, args);
+ }
+ 
+ @Override
+ protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+  return application.sources(DeployableWarApplication.class);
+ }
+}
+http://appsdeveloperblog.com/create-a-deployable-war-file-with-spring-boot/
+--------------------------------------------------------------------------------------------------------
+    <dependency>
+     <groupId>org.springframework.boot</groupId>
+     <artifactId>spring-boot-starter-log4j2</artifactId>
+    </dependency>
+	
+    <dependency>
+     <groupId>org.springframework.boot</groupId>
+     <artifactId>spring-boot-starter-logging</artifactId>
+    </dependency>
+--------------------------------------------------------------------------------------------------------
+    <dependency>
+     <groupId>com.amazonaws</groupId>
+     <artifactId>aws-java-sdk-ses</artifactId>
+    </dependency>
+	
+    @JsonBackReference
+    private User userDetails;
+	
+	@JsonManagedReference
+    private List<Address> addresses;
+	
+http://appsdeveloperblog.com/infinite-recursion-in-objects-with-bidirectional-relationships/
+--------------------------------------------------------------------------------------------------------
+    package com.appsdeveloperblog.ws.service.impl;
+    import com.appsdeveloperblog.ws.io.dao.Database;
+    import com.appsdeveloperblog.ws.io.entity.UserProfileEntity;
+    import com.appsdeveloperblog.ws.service.UsersService;
+    import com.appsdeveloperblog.ws.shared.dto.UserProfileDto;
+    import com.appsdeveloperblog.ws.shared.exceptions.UserServiceException;
+    import com.appsdeveloperblog.ws.utils.AuthenticationUtil;
+    import java.security.spec.InvalidKeySpecException;
+    import java.util.logging.Level;
+    import java.util.logging.Logger;
+    import org.springframework.beans.BeanUtils;
+    import org.springframework.beans.factory.annotation.Autowired;
+    import org.springframework.stereotype.Service;
+     
+    @Service("usersService")
+    public class UsersServiceImpl implements UsersService {
+        Database database;
+        AuthenticationUtil authenticationUtil;
+        
+        @Autowired
+        public UsersServiceImpl(Database database, AuthenticationUtil authenticationUtil)
+        {
+            this.database = database;
+            this.authenticationUtil = authenticationUtil;
+        }
+        @Override
+        public UserProfileDto saveUser(UserProfileDto userDto) throws UserServiceException {
+            
+            UserProfileDto returnValue = null;
+            
+            // Generate salt
+            String salt = authenticationUtil.generateSalt(30);
+            
+            // Generate secure user password 
+            String secureUserPassword = null;
+            
+            try {
+                secureUserPassword = authenticationUtil.
+                        generateSecurePassword(userDto.getUserPassword(), salt);
+            } catch (InvalidKeySpecException ex) {
+                Logger.getLogger(UsersServiceImpl.class.getName()).log(Level.SEVERE, null, ex);
+                throw new UserServiceException(ex.getLocalizedMessage());
+            } 
+            
+            //Generate secure public user id
+            String securePublicUserId = authenticationUtil.generateUserId(30);
+            
+            userDto.setSalt(salt);
+            userDto.setUserPassword(secureUserPassword); 
+            userDto.setUserId(securePublicUserId);
+                    
+            UserProfileEntity userEntity = new UserProfileEntity();
+            BeanUtils.copyProperties(userDto, userEntity);
+         
+            // Connect to database 
+            try {
+                this.database.openConnection();
+                UserProfileEntity storedUserEntity = this.database.saveUserProfile(userEntity);
+                if(storedUserEntity != null && storedUserEntity.getId()>0)
+                {
+                    returnValue = new UserProfileDto();
+                    BeanUtils.copyProperties(storedUserEntity, returnValue);
+                }
+            }  finally {
+                this.database.closeConnection();
+            }
+            
+            return returnValue;
+        }
+    }
+--------------------------------------------------------------------------------------------------------
+    @Id
+    @SequenceGenerator(
+            name = "fruitsSequence",
+            sequenceName = "known_fruits_id_seq",
+            allocationSize = 1,
+            initialValue = 10)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "fruitsSequence")
+    private Integer id;
+--------------------------------------------------------------------------------------------------------
+Time/Space Complexities of an Unsorted Array List
+
+Worst-Case Time Complexity (Unsorted Array List)
+
+    Find: O(n) — We need to iterate over all n elements to find the query
+    Insert: O(n) — If we insert at the front of the Array List, we need to move over each of the n elements
+    Remove: O(n) — If we remove from the front of the Array List, we need to move over each of the n elements
+
+Average-Case Time Complexity (Unsorted Array List)
+
+    Find: O(n) — The average number of checks is 1+2+...+nn=∑ni=1in=n(n+1)2n=n+12
+
+
+Insert: O(n) — The average number of "element moves" is n+(n−1)+...+1+0n=∑ni=0in=n(n+1)2n=n+12
+
+Remove: O(n) — The average number of "element moves" is (n−1)+(n−2)+...+1+0n=∑n−1i=0in=n(n−1)2n=n−12
+
+
+Best-Case Time Complexity (Unsorted Array List)
+
+    Find: O(1) — The query is the first element in the Array List
+    Insert: O(1) — If we insert at the end of the Array List, we don't need to move any elements
+    Remove: O(1) — If we remove from the end of the Array List, we don't need to move any elements
+
+Space Complexity (Unsorted Array List)
+
+    O(n) — The two extremes are just before resizing (completely full, so the array is of size n) or just after resizing (array is half full, so the array is of size 2n)
+
+
+Time/Space Complexities of a Sorted Array List
+
+Worst-Case Time Complexity (Sorted Array List)
+
+    Find: O(log n) — We can perform Binary Search to find an element
+    Insert: O(n) — If we insert at the front of the Array List, we need to move over each of the n elements
+    Remove: O(n) — If we remove from the front of the Array List, we need to move over each of the n elements
+
+Average-Case Time Complexity (Sorted Array List)
+
+    Find: O(log n) — The derivation is too complex for a summary slide, but it's the average case of Binary Search
+    Insert: O(n) — The average number of "element moves" is n+(n−1)+...+1+0n=∑ni=0in=n(n+1)2n=n+12
+
+
+Remove: O(n) — The average number of "element moves" is (n−1)+(n−2)+...+1+0n=∑n−1i=0in=n(n−1)2n=n2
+
+
+Best-Case Time Complexity (Sorted Array List)
+
+    Find: O(1) — The query is the first element in the Array List we check via Binary Search
+    Insert: O(1) — If we insert at the end of the Array List, we don't need to move any elements
+    Remove: O(1) — If we remove from the end of the Array List, we don't need to move any elements
+
+Space Complexity (Sorted Array List)
+
+    O(n) — The two extremes are just before resizing (completely full, so the array is of size n) or just after resizing (array is half full, so the array is of size 2n)
+
+19
+Step 1 
+--------------------------------------------------------------------------------------------------------
+const express = require('express');
+
+const app = express();
+
+app.get('/', (req, res) => {
+	res.sendFile('index.html', { root : __dirname});
+});
+
+let port = process.env.PORT || 5000;
+app.listen(port, () => {
+	console.log(__dirname);
+	console.log("Listening Port " + port);
+});
+--------------------------------------------------------------------------------------------------------
+/**
+ * <span class="startHere">&laquo; start here</span>Auto-configuration for {@link JmxService}.
+ *
+ * <p>
+ * This auto-configuration constructs a {@link Bean} of {@link JmxServiceFactory} type if application doesn't provide its own {@link Bean}
+ * of {@link JmxServiceFactory} type and if {@code 'hekate.jmx.enable'} application property is set to {@code true}.
+ * </p>
+ *
+ * @see JmxService
+ * @see HekateConfigurer
+ */
+@ConditionalOnHekateEnabled
+@ConditionalOnMissingBean(JmxServiceFactory.class)
+@ConditionalOnProperty(value = "hekate.jmx.enable", havingValue = "true")
+public class HekateJmxServiceConfigurer {
+    /**
+     * Constructs the {@link JmxServiceFactory}.
+     *
+     * @return Service factory.
+     */
+    @Bean
+    @ConfigurationProperties(prefix = "hekate.jmx")
+    public JmxServiceFactory jmxServiceFactory() {
+        return new JmxServiceFactory();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+IntStream stream = "aibohphobia".chars(); // It returns IntStream!
+IntStream oddNumbersStream = IntStream.iterate(1, x -> x + 2);
+Stream<User> userStream = Stream.generate(User::new);
+DoubleStream randomStream = DoubleStream.generate(Math::random);
+LongStream rangedStream = LongStream.rangeClosed(100_000, 1_000_000);
+String longWord = words.stream()
+        .filter(w -> w.length() < 4)
+        .map(String::toUpperCase)
+        .distinct()
+        .reduce("", String::concat); // terminal operation
+		
+// list of authors
+final List<String> authors = javaBooks.stream()
+        .flatMap(book -> book.getAuthors().stream())
+        .distinct()
+        .collect(Collectors.toList());
+		
+
+public static IntPredicate negateEachAndConjunctAll(Collection<IntPredicate> predicates) {
+    return predicates.stream()
+            .map(IntPredicate::negate)
+            .reduce(n -> true, IntPredicate::and);
+}
+
+stream().collect(Collectors.toCollection(HashSet::new));
+
+Map<Account.State, Long> sumByStates = accounts.stream()
+        .collect(groupingBy(Account::getState, summingLong(Account::getBalance)));
+		
+Function<Integer, Stream<Integer>> f = x -> Stream.iterate(1, y -> y + 1).limit(x);
+--------------------------------------------------------------------------------------------------------
+  import java.util.Optional;
+   
+  public class Example03 {
+      
+      public static Optional<Double> multiplyBy2(double n) {
+          return Optional.of(n * 2);
+      }
+      
+      public static Optional<Double> divideBy3(double n) {
+          return Optional.of(n/3);    
+      }
+      
+      public static Optional<Double> round(double n) {
+          return Optional.of(Double.valueOf(Math.round(n)));
+      }
+      
+      public static Optional<Double> applyOperation(double n1) {
+          return multiplyBy2(n1)
+                    .flatMap(n -> divideBy3(n))
+                    .flatMap(n -> round(n));
+      }
+   
+      public static void main(String[] args) {                
+          System.out.println("Output = " + applyOperation(12).get());
+      }    
+  }
+
+
+Read more: http://mrbool.com/getting-started-with-java-monads/34302#ixzz5yzGLLuui
+
+--------------------------------------------------------------------------------------------------------
+throw Throwables.propagate(e);
+--------------------------------------------------------------------------------------------------------
+
+            return Pattern
+                // Compile splitter into a regular expression (regex).
+                .compile(splitter)
+
+                // Use the regex to split the file into a stream of
+                // strings.
+                .splitAsStream(bytes)
+
+                // Filter out any empty strings.
+                .filter(((Predicate<String>) String::isEmpty).negate())
+                
+                // Collect the results into a string.
+                .collect(toList());
+--------------------------------------------------------------------------------------------------------
+<dependency>
+  <groupId>org.jscience</groupId>
+  <artifactId>jscience</artifactId>
+  <version>4.3.1</version>
+</dependency>
+--------------------------------------------------------------------------------------------------------
+sudo snap install heroku --classic
+heroku login
+heroku create
+
+git push heroku master
+
+heroku ps:scale web=1
+heroku open
+heroku logs --tail
+web: java -jar target/java-getting-started-1.0.jar
+heroku ps
+heroku ps:scale web=0
+heroku ps:scale web=1
+heroku local web
+heroku open hello
+heroku config:set ENERGY="20 GeV"
+heroku config
+heroku run java -version
+heroku addons
+heroku addons:open papertrail
+heroku pg
+heroku pg:psql
+
+
+<plugin>
+  <groupId>org.liquibase</groupId>
+  <artifactId>liquibase-maven-plugin</artifactId>
+  <configuration>
+    <changeLogFile>src/main/resources/db/changelog/db.changelog-master.yaml</changeLogFile>
+    <url>${env.JDBC_DATABASE_URL}</url>
+  </configuration>
+</plugin>
+
+<plugin>
+  <groupId>org.flywaydb</groupId>
+  <artifactId>flyway-maven-plugin</artifactId>
+  <configuration>
+    <url>${env.JDBC_DATABASE_URL}</url>
+  </configuration>
+</plugin>
+
+
+java -jar target/dependency/liquibase.jar --changeLogFile=src/main/resources/db/changelog/db.changelog-master.yaml --url=$JDBC_DATABASE_URL --classpath=target/dependency/postgres.jar update
+mvn -s settings.xml dependency:list
+heroku config:set MAVEN_SETTINGS_PATH=support/jboss-settings.xml
+
+heroku run bash
+--------------------------------------------------------------------------------------------------------
+$ mvn heroku:deploy
+$ HEROKU_API_KEY="xxx-xxx-xxxx" mvn heroku:deploy
+$ mvn heroku:run-war
+
+
+    mvn heroku:deploy-only deploys without running package or vendoring dependencies
+    mvn heroku:dashboard opens the Dashboard for the application on Heroku.com
+    mvn heroku:eclipse-launch-config generates launch configurations for Eclipse IDE
+    mvn heroku:run-war runs a war file locally
+
+--------------------------------------------------------------------------------------------------------
+    /**
+     * HTTP Accept header model.
+     */
+    public static enum Accept implements Header {
+        JSON("application/json"),
+        TEXT("text/plain");
+
+        private String value;
+        static String ACCEPT = "Accept";
+
+        Accept(String val) {
+            this.value = val;
+        }
+
+        @Override
+        public String getHeaderName() {
+            return ACCEPT;
+        }
+
+        @Override
+        public String getHeaderValue() {
+            return value;
+        }
+
+    }
+
+    /**
+     * HTTP Status codes. Not all are implemented. Only those used by the Heroku API.
+     */
+    public static enum Status {
+        OK(200), CREATED(201), ACCEPTED(202), PAYMENT_REQUIRED(402), FORBIDDEN(403), NOT_FOUND(404), UNPROCESSABLE_ENTITY(422), INTERNAL_SERVER_ERROR(500), SERVICE_UNAVAILABLE(503);
+
+        public final int statusCode;
+
+        Status(int statusCode) {
+            this.statusCode = statusCode;
+        }
+
+        public boolean equals(int code) {
+            return statusCode == code;
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+git log --graph --all --pretty=format:'%C(yellow)%h -%C(auto)%d %C(bold cyan)%s %C(bold white)(%cr)%Creset %C(dim white)<%an>'
+
+
+    %h - abbreviated commit hash.
+    %d - shows the different branch names.
+    %s - adds the commit message.
+    %cr - one of many date placeholders. This particular one shows how long ago the commit was created.
+    %an - adds the author of the commit.
+    %C(...) - sets the color you define in the brackets
+    %Creset - resets the color
+git config --global alias.lg "log --graph --all --pretty=format:'%C(yellow)%h -%C(auto)%d %C(bold cyan)%s %C(bold white)(%cr)%Creset %C(dim white)<%an>'"
+--------------------------------------------------------------------------------------------------------    public static void runInTransaction(Transaction transaction) throws Exception {
+
+        Connection dbConnection = createDatabaseConnection();
+        dbConnection.setAutoCommit(false);
+
+        try {
+
+            System.out.println("Starting transaction");
+            transaction.execute(dbConnection);
+
+
+            System.out.println("Committing transaction");
+            dbConnection.commit();
+
+        } catch (Exception e) {
+
+            System.out.println(e.getMessage());
+            System.out.println("Rolling back...");
+            dbConnection.rollback();
+        } finally {
+            dbConnection.close();
+        }
+    }
+
+    private static Connection createDatabaseConnection() throws Exception {
+
+        Class.forName("com.mysql.jdbc.Driver");
+        return DriverManager.getConnection("jdbc:mysql://localhost:3306/ticket_system", "user", "password");
+    }
+	    public static void runInTransaction(Transaction transaction) throws Exception {
+
+        Connection dbConnection = createDatabaseConnection();
+        dbConnection.setAutoCommit(false);
+
+        try {
+
+            System.out.println("Starting transaction");
+            transaction.execute(dbConnection);
+
+
+            System.out.println("Committing transaction");
+            dbConnection.commit();
+
+        } catch (Exception e) {
+
+            System.out.println(e.getMessage());
+            System.out.println("Rolling back...");
+            dbConnection.rollback();
+        } finally {
+            dbConnection.close();
+        }
+    }
+
+    private static Connection createDatabaseConnection() throws Exception {
+
+        Class.forName("com.mysql.jdbc.Driver");
+        return DriverManager.getConnection("jdbc:mysql://localhost:3306/ticket_system", "user", "password");
+    }
+package com.deadcoderising;
+
+import javax.servlet.ServletContextEvent;  
+import javax.servlet.ServletContextListener;
+
+public class ExampleContextListener implements ServletContextListener {
+
+    @Override
+    public void contextInitialized(ServletContextEvent servletContextEvent) {
+        System.out.println("Starting up!");
+    }
+
+    @Override
+    public void contextDestroyed(ServletContextEvent servletContextEvent) {
+        System.out.println("Shutting down!");
+    }
+}
+@WebListener
+public class ExampleContextListener implements ServletContextListener {  
+    // ...
+}
+IntStream.range(1, 5).max().getAsInt();  
+// > 4
+IntStream.range(1, 5).min().getAsInt();  
+IntStream.range(1, 5).parallel().forEach(i -> heavyOperation());  
+
+
+--------------------------------------------------------------------------------------------------------
+public class PublishArticlesUseCase {
+
+    private Publisher publisher;
+
+    public PublishArticlesUseCase(Publisher publisher) {
+        this.publisher = publisher;
+    }
+
+    public List<PublishResult> publishArticles(List<Article> articles) throws InterruptedException, ExecutionException {
+
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+
+        return articles.stream()
+                .map(article -> {
+
+                    Future<PublishResult> task = executorService.submit(() -> publisher.publish(article));
+
+                    try {
+                        return task.get(10, TimeUnit.SECONDS);
+                    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                        return PublishResult.FAILED(article);
+                    }
+                })
+                .collect(Collectors.toList());
+    }
+}
+--------------------------------------------------------------------------------------------------------
+Collector.of(  
+  () -> new int[1],
+  (result, article) -> result[0] += article.getWordCount(),
+  (result1, result2) -> {
+    result1[0] += result2[0];
+    return result1;
+  },
+  total -> total[0] 
+);
+
+map.merge("Java", javaArticles, (list1, list2) ->  
+  Stream.of(list1, list2)
+    .flatMap(Collection::stream)
+    .collect(Collectors.toList()));
+	
+ map.reduceValues(1, List::size, (total, elem) -> total + elem);
+ 
+Function<List<Article>, List<Article>> sortByDate =  
+    articles -> articles.stream()
+        .sorted((x, y) -> y.published().compareTo(x.published()))
+        .collect(Collectors.toList());
+
+Function<List<Article>, Optional<Article>> first =  
+    a -> a.stream().findFirst();
+	
+Function<List<Article>, Optional<Article>> newest =  
+    first.compose(sortByDate);
+--------------------------------------------------------------------------------------------------------
+ExecutorService executor = Executors.newFixedThreadPool(4);
+
+List<String> topSites = Arrays.asList(
+        "www.google.com", "www.youtube.com", "www.yahoo.com", "www.msn.com"
+);
+
+List<CompletableFuture<Double>> relevanceFutures = topSites.stream().
+        map(site -> CompletableFuture.supplyAsync(() -> downloadSite(site), executor)).
+        map(contentFuture -> contentFuture.thenApply(this::parse)).
+        map(docFuture -> docFuture.thenCompose(this::calculateRelevance)).
+        collect(Collectors.<CompletableFuture<Double>>toList());
+--------------------------------------------------------------------------------------------------------
+CompletableFuture.supplyAsync(this::hangingMsg)  
+                 .completeOnTimeout(new Result(Status.TIMED_OUT),1, TimeUnit.MINUTES);
+CompletableFuture.supplyAsync(this::hangingMsg)  
+                 .orTimeout(1, TimeUnit.MINUTES);
+--------------------------------------------------------------------------------------------------------
+@Configuration
+@ConditionalOnMissingBean(Hekate.class)
+@ConditionalOnProperty(name = "hekate.enable", havingValue = "true", matchIfMissing = true)
+--------------------------------------------------------------------------------------------------------
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+
+public class Results {
+
+    public static final CompletionStage<Object> NOT_FOUND = CompletableFuture.completedFuture(Result.NOT_FOUND);
+    
+    public enum Result {
+        
+        NOT_FOUND,
+    }
+}
+--------------------------------------------------------------------------------------------------------
+    /**
+     * Generate the MD5 hash out of the given {@link ByteBuffer}
+     */
+    private static String md5(byte[] buffer) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(buffer);
+            byte[] digest = md.digest();
+            return new String(FlexBase64.encodeBytes(digest, 0, digest.length, false), StandardCharsets.US_ASCII);
+        } catch (NoSuchAlgorithmException e) {
+            // Should never happen
+            throw new InternalError("MD5 not supported on this platform");
+        }
+    }
+--------------------------------------------------------------------------------------------------------
+    public static class Builder {
+
+        private final Map<UndertowOption<?>, Object> values = new HashMap<>();
+
+        public <T> Builder set(UndertowOption<T> option, T value) {
+            values.put(option, value);
+            return this;
+        }
+
+        public Builder addAll(UndertowOptionMap workerOptions) {
+            values.putAll(workerOptions.values);
+            return this;
+        }
+
+        public UndertowOptionMap getMap() {
+            return new UndertowOptionMap(new HashMap<>(values));
+        }
+    }
+--------------------------------------------------------------------------------------------------------
+
+import org.reactivestreams.Publisher;
+
+import io.quarkus.qute.PublisherFactory;
+import io.quarkus.qute.Template.Rendering;
+import io.reactivex.Flowable;
+import io.reactivex.processors.UnicastProcessor;
+
+public class RxjavaPublisherFactory implements PublisherFactory {
+
+    @Override
+    public Publisher<String> createPublisher(Rendering rendering) {
+        return Flowable.defer(() -> {
+            UnicastProcessor<String> processor = UnicastProcessor.create();
+            rendering.consume(s -> processor.onNext(s))
+                    .whenComplete((v, t) -> {
+                        if (t == null) {
+                            processor.onComplete();
+                        } else {
+                            processor.onError(t);
+                        }
+                    });
+            return processor;
+        });
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+kogito
+keycloak
+--------------------------------------------------------------------------------------------------------
+    server.servlet.context-path=/mobile-app-ws
+    server.port=8888
+--------------------------------------------------------------------------------------------------------
+    <!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-engine -->
+    <dependency>
+     <groupId>org.junit.jupiter</groupId>
+     <artifactId>junit-jupiter-engine</artifactId>
+     <scope>test</scope>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.junit.platform/junit-platform-launcher -->
+    <dependency>
+     <groupId>org.junit.platform</groupId>
+     <artifactId>junit-platform-launcher</artifactId>
+     <version>1.2.0</version>
+     <scope>test</scope>
+    </dependency>
+--------------------------------------------------------------------------------------------------------
+mvn spring-boot:run -Dspring-boot.run.arguments=--spring.profiles.active=production
+
+    @SpringBootApplication
+    public class ProfilesTutorialApplication {
+        public static void main(String[] args) {
+            SpringApplication.run(ProfilesTutorialApplication.class, args);
+        }
+        @Profile("production")
+        @Bean
+        public DatabaseConfiguration getProdDatabaseConfiguration() {
+            return new AppConfigurationProd();
+        }
+        @Profile("developer")
+        @Bean
+        public DatabaseConfiguration getDevDatabaseConfiguration() {
+            return new AppConfigurationDev();
+        }
+    }
+--------------------------------------------------------------------------------------------------------
+    @Override
+    public List<Person> findByBirthDateAfter(Date date) {
+       Query query = new Query();
+       query.addCriteria(Criteria.where("dateOfBirth").gt(date));
+       return mongoTemplate.find(query, Person.class);
+    }
+    @Override
+    public List<Person> findByAgeRange(int lowerBound, int upperBound) {
+       Query query = new Query();
+       query.addCriteria(Criteria.where("age").gt(lowerBound)
+               .andOperator(Criteria.where("age").lt(upperBound)));
+       return mongoTemplate.find(query, Person.class);
+    }
+    @Override
+    public List<Person> findByFavoriteBooks(String favoriteBook) {
+       Query query = new Query();
+       query.addCriteria(Criteria.where("favoriteBooks").in(favoriteBook));
+       return mongoTemplate.find(query, Person.class);
+    }
+--------------------------------------------------------------------------------------------------------
+    # Enabling H2 Console
+    spring.h2.console.enabled=true
+--------------------------------------------------------------------------------------------------------
+    curl -X PUT \
+      http://localhost:8080/api/users/2d8d4927572642cebccdf5257880a393 \
+      -H 'cache-control: no-cache' \
+      -H 'content-type: application/json' \
+      -d '{
+      "lastName":"Kargopolov",
+      "firstName":"Sergey"
+    }'
+--------------------------------------------------------------------------------------------------------
+    @GetMapping()
+    public String getUsers(@RequestParam(value = "page", defaultValue = "1") int page,
+               @RequestParam(value = "limit", defaultValue = "30") int limit)
+    {
+     return "get users was called. </br> Page = " + page  + " and limit = " +  limit;
+    }
+	    @GetMapping()
+    public String getUsers(@RequestParam(value = "sort", required=false) String sort)
+    {
+     return "get users was called with Sort option = " + sort;
+    }
+--------------------------------------------------------------------------------------------------------
+function* getEvenNumbers(start, end) {
+    for (let i = start; i <= end; i++) {
+        if (i % 2 == 0) {
+            yield i;
+        }
+    }
+}
+
+//using for-of loop
+let evenNumbers = getEvenNumbers(3, 9);
+for (let n of evenNumbers) {
+    console.log(n);
+}
+
+//using next() method
+evenNumbers = getEvenNumbers(3, 9);
+let temp = { done: false }
+while (!temp.done) {
+    console.log(temp = evenNumbers.next());
+}
+--------------------------------------------------------------------------------------------------------
+keytool -genkey -noprompt -alias <your-alias> -keyalg RSA -keystore <your-file-name> -keypass <your-password>
+    -storepass <your-password> -dname "CN=<your-cert-name>, OU=<your-organization-unit>, O=<your-organization>,
+    L=<your-location>, ST=<state>, C=<two-letter-country-code>"
+	
+<Server ...>
+ ....
+   <Service name="Catalina">
+     .....
+      <Connector
+         protocol="org.apache.coyote.http11.Http11NioProtocol"
+         port="8443" maxThreads="200"
+         scheme="https" secure="true" SSLEnabled="true"
+         keystoreFile="C:\my-cert-dir\localhost-rsa.jks"
+         keystorePass="123456"
+         clientAuth="false" sslProtocol="TLS"/>
+     .....
+   </Service>
+</Server>
+
+ <plugin>
+     <groupId>org.apache.tomcat.maven</groupId>
+     <artifactId>tomcat7-maven-plugin</artifactId>
+     <version>2.2</version>
+     <configuration>
+         <path>/</path>
+         <httpsPort>8443</httpsPort>
+         <keystoreFile>C:\my-cert-dir\localhost-rsa.jks</keystoreFile>
+         <keystorePass>123456</keystorePass>
+     </configuration>
+ </plugin>
+ 
+ mvn tomcat7:run-war
+--------------------------------------------------------------------------------------------------------
+import com.mongodb.client.*;
+import org.bson.Document;
+
+public class QueryCollectionExample {
+    public static void main(String[] args) {
+        MongoClient mongoClient = MongoClients.create("mongodb://localhost:27017");
+        MongoDatabase database = mongoClient.getDatabase("my-database");
+        MongoCollection<Document> collection = database.getCollection("test-collection");
+
+        //query collection
+        //finding all
+        FindIterable<Document> documents = collection.find();
+        for (Document document : documents) {
+            System.out.println(document.toString());
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+let d: Date = new Date();
+let y: number = d.getFullYear();
+console.log(y);
+--------------------------------------------------------------------------------------------------------
+   @PostConstruct
+    public void init() {
+       requestMappingHandlerAdapter.setIgnoreDefaultModelOnRedirect(true);
+    }
+--------------------------------------------------------------------------------------------------------
+    // 2G network types
+    public static final String GSM = "gsm";
+    public static final String GPRS = "gprs";
+    public static final String EDGE = "edge";
+    // 3G network types
+    public static final String CDMA = "cdma";
+    public static final String UMTS = "umts";
+    public static final String HSPA = "hspa";
+    public static final String HSUPA = "hsupa";
+    public static final String HSDPA = "hsdpa";
+    public static final String ONEXRTT = "1xrtt";
+    public static final String EHRPD = "ehrpd";
+    // 4G network types
+    public static final String LTE = "lte";
+    public static final String UMB = "umb";
+    public static final String HSPA_PLUS = "hspa+";
+--------------------------------------------------------------------------------------------------------
+security.oauth2.resource.jwk.keySetUri=https://blog-samples.auth0.com/.well-known/jwks.json
+security.oauth2.resource.id=https://ads-api
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
+import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
+import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
+
+@Configuration
+@EnableResourceServer
+public class SecurityConfig extends ResourceServerConfigurerAdapter {
+    @Value("${security.oauth2.resource.id}")
+    private String resourceId;
+
+    @Override
+    public void configure(HttpSecurity http) throws Exception {
+        http.authorizeRequests()
+                .mvcMatchers("/ads/**").authenticated();
+    }
+
+    @Override
+    public void configure(ResourceServerSecurityConfigurer resources) {
+        resources.resourceId(resourceId);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.auth0.spring.security.api.JwtWebSecurityConfigurer;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+    @Value(value = "${auth0.apiAudience}")
+    private String apiAudience;
+    @Value(value = "${auth0.issuer}")
+    private String issuer;
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.cors();
+        JwtWebSecurityConfigurer
+                .forRS256(apiAudience, issuer)
+                .configure(http)
+                .authorizeRequests()
+                .antMatchers(HttpMethod.GET, "/").permitAll()
+                .antMatchers(HttpMethod.GET, "/secured").authenticated();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@EnableWebMvc
+@Configuration
+@ComponentScan({ "com.baeldung.web" })
+public class WebConfig implements WebMvcConfigurer {
+ 
+    @Override
+    public void configureMessageConverters(
+      List<HttpMessageConverter<?>> converters) {
+     
+        messageConverters.add(createXmlHttpMessageConverter());
+        messageConverters.add(new MappingJackson2HttpMessageConverter());
+    }
+    private HttpMessageConverter<Object> createXmlHttpMessageConverter() {
+        MarshallingHttpMessageConverter xmlConverter = 
+          new MarshallingHttpMessageConverter();
+ 
+        XStreamMarshaller xstreamMarshaller = new XStreamMarshaller();
+        xmlConverter.setMarshaller(xstreamMarshaller);
+        xmlConverter.setUnmarshaller(xstreamMarshaller);
+ 
+        return xmlConverter;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+     * <p>
+     *     getting a list of customers whose status is isActive
+     * </p>
+     * @return  list of customer instances as {@link List<Customer>}
+     */
+    @Override
+    public List<Customer> getActiveCustomers() {
+        Session session = null;
+        List<Customer> customerList = null;
+        try{
+            session = sessionFactory.openSession();
+            Criteria criteria = session.createCriteria(Customer.class).add(Restrictions.eq("isActive",true));
+            customerList = (List<Customer>) criteria.list();
+            System.out.println(" size ["+customerList.size()+"]");
+        }
+        finally {
+            if(session!=null){
+                session.close();
+            }
+        }
+        return customerList;
+    }
+--------------------------------------------------------------------------------------------------------
+    @Async
+    public Future<String> execute()
+    {
+
+        LOGGER.info("AsyncWorkerFuture: current thread [" + Thread.currentThread().getName() + "]");
+        try {
+            Thread.sleep(10000);
+            LOGGER.info("AsyncWorkerFuture returns after sleep");
+        } catch (InterruptedException ex) {
+            LOGGER.info(" sleeping thread interrupted ");
+        }
+
+        return new AsyncResult<String>(Long.toString(System.currentTimeMillis()));
+    }
+--------------------------------------------------------------------------------------------------------
+server.port  = 9091
+
+security.oauth2.client.client-id=client
+security.oauth2.client.client-secret=password
+
+security.oauth2.resource.token-info-uri=http://localhost:9090/oauth/check_token
+--------------------------------------------------------------------------------------------------------
+    @Bean(name = "authenticationManager")
+    @Override
+    public AuthenticationManager authenticationManagerBean() throws Exception {
+        return super.authenticationManagerBean();
+    }
+--------------------------------------------------------------------------------------------------------
+    @ApiOperation(value = "creating new user")
+    @PostMapping("/users")
+    public AddUserResponse createUser(@Valid @RequestBody AddUserRequest addUserRequest, BindingResult bindingResult) throws PersistentException {
+        if (bindingResult.hasErrors()) {
+            throw new PersistentException(bindingResult.getAllErrors().get(0).getDefaultMessage());
+        }
+        return userService.create(addUserRequest);
+    }
+--------------------------------------------------------------------------------------------------------
+    @Override
+    public void configure(WebSecurity web) throws Exception {
+        web.ignoring().antMatchers("/v2/api-docs",
+                        "/configuration/ui",
+                        "/swagger-resources",
+                        "/configuration/security",
+                        "/swagger-ui.html",
+                        "/webjars/**");
+    }
+--------------------------------------------------------------------------------------------------------
+import org.slf4j.MDC;
+import org.springframework.stereotype.Component;
+
+import javax.servlet.*;
+import java.io.IOException;
+
+@Component
+public class MdcLogEnhancerFilter implements Filter {
+
+    @Override
+    public void destroy() {
+
+    }
+
+    @Override
+    public void init(FilterConfig filterConfig) throws ServletException {
+
+    }
+
+    @Override
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException
+    {
+        MDC.put("userId", "www.SpringBootDev.com");
+        filterChain.doFilter(servletRequest, servletResponse);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+@Entity
+@Table(name = "student_courses")
+@IdClass(StudentCourseId.class)
+public class StudentCourseEnrollment implements Serializable
+{
+    @Id
+    @ManyToOne
+    @JoinColumn(name = "course_id", referencedColumnName = "id")
+    private Course course;
+
+    @Id
+    @ManyToOne
+    @JoinColumn(name = "student_id", referencedColumnName = "id")
+    private Student student;
+
+    @JoinColumn(name = "from_date")
+    private String fromDate;
+
+    @JoinColumn(name = "to_date")
+    private String toDate;
+
+    public Course getCourse() {
+        return course;
+    }
+--------------------------------------------------------------------------------------------------------
+@Configuration
+public class WebConfig extends WebMvcConfigurationSupport {
+
+  @Bean
+  public RequestMappingHandlerAdapter requestMappingHandlerAdapter() {
+    RequestMappingHandlerAdapter handlerAdapter = super.requestMappingHandlerAdapter();
+    handlerAdapter.getMessageConverters().add(0, getProtobufJsonMessageConverter());
+    return handlerAdapter;
+  }
+--------------------------------------------------------------------------------------------------------
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.Database;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+
+import javax.sql.DataSource;
+
+@Configuration
+@EnableJpaRepositories
+@EnableTransactionManagement
+public class AppConfiguration {
+
+    @Bean
+    public DataSource dataSource() {
+        EmbeddedDatabaseBuilder builder = new EmbeddedDatabaseBuilder();
+        return builder.setType(EmbeddedDatabaseType.HSQL).build();
+    }
+
+    @Bean
+    public LocalContainerEntityManagerFactoryBean entityManagerFactory() {
+        HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
+        vendorAdapter.setDatabase(Database.HSQL);
+        vendorAdapter.setGenerateDdl(true);
+
+        LocalContainerEntityManagerFactoryBean factory = new LocalContainerEntityManagerFactoryBean();
+        factory.setJpaVendorAdapter(vendorAdapter);
+        factory.setPackagesToScan(getClass().getPackage().getName());
+        factory.setDataSource(dataSource());
+
+        return factory;
+    }
+
+    @Bean
+    public PlatformTransactionManager transactionManager() {
+        return new JpaTransactionManager();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.chathuranga.rest.jwt.auth.SecretKeyProvider;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+ 
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.time.LocalDateTime;
+import java.util.Date;
+ 
+import static java.time.ZoneOffset.UTC;
+ 
+@Component
+public class JwtService {
+ 
+    private static final String ISSUER = "com.chathuranga.examples";
+ 
+    @Autowired
+    private SecretKeyProvider secretKeyProvider;
+ 
+    public String generateToken(String username) throws IOException, URISyntaxException {
+        byte[] secretKey = secretKeyProvider.getKey();
+        Date expiration = Date.from(LocalDateTime.now(UTC).plusHours(2).toInstant(UTC));
+        return Jwts.builder()
+                .setSubject(username)
+                .setExpiration(expiration)
+                .setIssuer(ISSUER)
+                .signWith(SignatureAlgorithm.HS512, secretKey)
+                .compact();
+    }
+ 
+    public String verifyToken(String token) throws IOException, URISyntaxException {
+        byte[] secretKey = secretKeyProvider.getKey();
+        Jws<Claims> claims = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
+        //returning authenticated/verified username
+        return claims.getBody().getSubject();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.chathuranga.rest.jwt.auth.SecretKeyProvider;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+ 
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.time.LocalDateTime;
+import java.util.Date;
+ 
+import static java.time.ZoneOffset.UTC;
+ 
+@Component
+public class JwtService {
+ 
+    private static final String ISSUER = "com.chathuranga.examples";
+ 
+    @Autowired
+    private SecretKeyProvider secretKeyProvider;
+ 
+    public String generateToken(String username) throws IOException, URISyntaxException {
+        byte[] secretKey = secretKeyProvider.getKey();
+        Date expiration = Date.from(LocalDateTime.now(UTC).plusHours(2).toInstant(UTC));
+        return Jwts.builder()
+                .setSubject(username)
+                .setExpiration(expiration)
+                .setIssuer(ISSUER)
+                .signWith(SignatureAlgorithm.HS512, secretKey)
+                .compact();
+    }
+ 
+    public String verifyToken(String token) throws IOException, URISyntaxException {
+        byte[] secretKey = secretKeyProvider.getKey();
+        Jws<Claims> claims = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
+        //returning authenticated/verified username
+        return claims.getBody().getSubject();
+    }
+}
 --------------------------------------------------------------------------------------------------------
 <plugin>
     <groupId>org.apache.maven.plugins</groupId>
