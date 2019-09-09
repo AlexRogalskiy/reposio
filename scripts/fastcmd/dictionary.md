@@ -46827,6 +46827,12 @@ throw Throwables.propagate(e);
                 // Collect the results into a string.
                 .collect(toList());
 --------------------------------------------------------------------------------------------------------
+<dependency>
+  <groupId>org.jscience</groupId>
+  <artifactId>jscience</artifactId>
+  <version>4.3.1</version>
+</dependency>
+--------------------------------------------------------------------------------------------------------
 sudo snap install heroku --classic
 heroku login
 heroku create
@@ -46836,8 +46842,45 @@ git push heroku master
 heroku ps:scale web=1
 heroku open
 heroku logs --tail
+web: java -jar target/java-getting-started-1.0.jar
+heroku ps
+heroku ps:scale web=0
+heroku ps:scale web=1
+heroku local web
+heroku open hello
+heroku config:set ENERGY="20 GeV"
+heroku config
+heroku run java -version
+heroku addons
+heroku addons:open papertrail
+heroku pg
+heroku pg:psql
 
 
+<plugin>
+  <groupId>org.liquibase</groupId>
+  <artifactId>liquibase-maven-plugin</artifactId>
+  <configuration>
+    <changeLogFile>src/main/resources/db/changelog/db.changelog-master.yaml</changeLogFile>
+    <url>${env.JDBC_DATABASE_URL}</url>
+  </configuration>
+</plugin>
+
+<plugin>
+  <groupId>org.flywaydb</groupId>
+  <artifactId>flyway-maven-plugin</artifactId>
+  <configuration>
+    <url>${env.JDBC_DATABASE_URL}</url>
+  </configuration>
+</plugin>
+
+
+java -jar target/dependency/liquibase.jar --changeLogFile=src/main/resources/db/changelog/db.changelog-master.yaml --url=$JDBC_DATABASE_URL --classpath=target/dependency/postgres.jar update
+mvn -s settings.xml dependency:list
+heroku config:set MAVEN_SETTINGS_PATH=support/jboss-settings.xml
+
+heroku run bash
+--------------------------------------------------------------------------------------------------------
 $ mvn heroku:deploy
 $ HEROKU_API_KEY="xxx-xxx-xxxx" mvn heroku:deploy
 $ mvn heroku:run-war
@@ -46847,6 +46890,147 @@ $ mvn heroku:run-war
     mvn heroku:dashboard opens the Dashboard for the application on Heroku.com
     mvn heroku:eclipse-launch-config generates launch configurations for Eclipse IDE
     mvn heroku:run-war runs a war file locally
+
+--------------------------------------------------------------------------------------------------------
+    /**
+     * HTTP Accept header model.
+     */
+    public static enum Accept implements Header {
+        JSON("application/json"),
+        TEXT("text/plain");
+
+        private String value;
+        static String ACCEPT = "Accept";
+
+        Accept(String val) {
+            this.value = val;
+        }
+
+        @Override
+        public String getHeaderName() {
+            return ACCEPT;
+        }
+
+        @Override
+        public String getHeaderValue() {
+            return value;
+        }
+
+    }
+
+    /**
+     * HTTP Status codes. Not all are implemented. Only those used by the Heroku API.
+     */
+    public static enum Status {
+        OK(200), CREATED(201), ACCEPTED(202), PAYMENT_REQUIRED(402), FORBIDDEN(403), NOT_FOUND(404), UNPROCESSABLE_ENTITY(422), INTERNAL_SERVER_ERROR(500), SERVICE_UNAVAILABLE(503);
+
+        public final int statusCode;
+
+        Status(int statusCode) {
+            this.statusCode = statusCode;
+        }
+
+        public boolean equals(int code) {
+            return statusCode == code;
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+git log --graph --all --pretty=format:'%C(yellow)%h -%C(auto)%d %C(bold cyan)%s %C(bold white)(%cr)%Creset %C(dim white)<%an>'
+
+
+    %h - abbreviated commit hash.
+    %d - shows the different branch names.
+    %s - adds the commit message.
+    %cr - one of many date placeholders. This particular one shows how long ago the commit was created.
+    %an - adds the author of the commit.
+    %C(...) - sets the color you define in the brackets
+    %Creset - resets the color
+git config --global alias.lg "log --graph --all --pretty=format:'%C(yellow)%h -%C(auto)%d %C(bold cyan)%s %C(bold white)(%cr)%Creset %C(dim white)<%an>'"
+--------------------------------------------------------------------------------------------------------    public static void runInTransaction(Transaction transaction) throws Exception {
+
+        Connection dbConnection = createDatabaseConnection();
+        dbConnection.setAutoCommit(false);
+
+        try {
+
+            System.out.println("Starting transaction");
+            transaction.execute(dbConnection);
+
+
+            System.out.println("Committing transaction");
+            dbConnection.commit();
+
+        } catch (Exception e) {
+
+            System.out.println(e.getMessage());
+            System.out.println("Rolling back...");
+            dbConnection.rollback();
+        } finally {
+            dbConnection.close();
+        }
+    }
+
+    private static Connection createDatabaseConnection() throws Exception {
+
+        Class.forName("com.mysql.jdbc.Driver");
+        return DriverManager.getConnection("jdbc:mysql://localhost:3306/ticket_system", "user", "password");
+    }
+	    public static void runInTransaction(Transaction transaction) throws Exception {
+
+        Connection dbConnection = createDatabaseConnection();
+        dbConnection.setAutoCommit(false);
+
+        try {
+
+            System.out.println("Starting transaction");
+            transaction.execute(dbConnection);
+
+
+            System.out.println("Committing transaction");
+            dbConnection.commit();
+
+        } catch (Exception e) {
+
+            System.out.println(e.getMessage());
+            System.out.println("Rolling back...");
+            dbConnection.rollback();
+        } finally {
+            dbConnection.close();
+        }
+    }
+
+    private static Connection createDatabaseConnection() throws Exception {
+
+        Class.forName("com.mysql.jdbc.Driver");
+        return DriverManager.getConnection("jdbc:mysql://localhost:3306/ticket_system", "user", "password");
+    }
+package com.deadcoderising;
+
+import javax.servlet.ServletContextEvent;  
+import javax.servlet.ServletContextListener;
+
+public class ExampleContextListener implements ServletContextListener {
+
+    @Override
+    public void contextInitialized(ServletContextEvent servletContextEvent) {
+        System.out.println("Starting up!");
+    }
+
+    @Override
+    public void contextDestroyed(ServletContextEvent servletContextEvent) {
+        System.out.println("Shutting down!");
+    }
+}
+@WebListener
+public class ExampleContextListener implements ServletContextListener {  
+    // ...
+}
+IntStream.range(1, 5).max().getAsInt();  
+// > 4
+IntStream.range(1, 5).min().getAsInt();  
+IntStream.range(1, 5).parallel().forEach(i -> heavyOperation());  
+
 
 --------------------------------------------------------------------------------------------------------
 public class PublishArticlesUseCase {
