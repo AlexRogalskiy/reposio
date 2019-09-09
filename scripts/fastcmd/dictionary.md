@@ -46456,6 +46456,633 @@ square.display();
 let area = square.area();
 console.log(area);
 --------------------------------------------------------------------------------------------------------
+#!/bin/sh
+
+git clone --recursive git://github.com/0x90/wifi-arsenal
+git clone --recursive git://github.com/0x90/ism-arsenal
+git clone --recursive git://github.com/0x90/gsm-arsenal
+git clone --recursive git://github.com/0x90/bluetooth-arsenal
+git clone --recursive git://github.com/0x90/sdr-arsenal
+git clone --recursive git://github.com/0x90/atheros-arsenal
+git clone --recursive git://github.com/0x90/broadcom-arsenal
+git clone --recursive git://github.com/0x90/firmware-arsenal
+git clone --recursive git://github.com/0x90/esp-arsenal
+git clone --recursive git://github.com/0x90/vpn-arsenal
+git clone --recursive git://github.com/0x90/ss7-arsenal
+git clone --recursive git://github.com/0x90/nrf51-arsenal
+git clone --recursive git://github.com/0x90/nrf24-arsenal
+--------------------------------------------------------------------------------------------------------
+    <dependency>
+     <groupId>com.fasterxml.jackson.dataformat</groupId>
+     <artifactId>jackson-dataformat-xml</artifactId>
+    </dependency>
+	    @GetMapping(path = "/{id}", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+    public UserModel getUser(@PathVariable String id)
+    {
+       // other code here to create UserModel object
+     return userModel;
+    }
+--------------------------------------------------------------------------------------------------------
+spring.jpa.hibernate.naming.physical-strategy=org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+--------------------------------------------------------------------------------------------------------
+    @Transactional
+    @Modifying
+    @Query(value = "UPDATE Users u set EMAIL_VERIFICATION_STATUS =:emailVerificationStatus where u.USER_ID = :userId",
+            nativeQuery = true)
+void updateUser(@Param("emailVerificationStatus") boolean emailVerificationStatus, @Param("userId") String userId);
+
+    @GetMapping("/products/page")
+    @Timed
+    @Override
+    public ResponseEntity<Iterable<ProductGetResponse>> getAllProductRecords(@RequestParam(value = "page", defaultValue = "0") int page,
+                                                                             @RequestParam(value = "limit", defaultValue = "30") int limit) {
+        final Iterable<ProductGetResponse> result = this.getModelMapper().mapAll(this.getProductService().getAllProductRecords(PageRequest.of(page, limit)), ProductGetResponse.class);
+        return buildBodyHeaderResponse(getTotalElementsHeader(result), result);
+    }
+	
+    @Query(value="select * from Users u where u.first_name like %:keyword% or u.last_name like %:keyword%", nativeQuery=true)
+    List<UserEntity> findUsersByKeyword(@Param("keyword") String keyword);
+	
+
+    %:keyword  – ends with a value that the named parameter “keyword” holds,
+    :keyword% – begins with a value that the named parameter “keyword” holds,
+    %:keyword% – contains the value that the named parameter “keyword” holds,
+
+--------------------------------------------------------------------------------------------------------
+    # application properties
+    server.port=8090
+    # MongoDB properties
+    spring.data.mongodb.uri=mongodb://appsdeveloperblog:password@ds915721.mlab.com:29670/appsdeveloperblog_db
+	
+   private int getDiffYears(Date first, Date last) {
+       Calendar a = getCalendar(first);
+       Calendar b = getCalendar(last);
+       int diff = b.get(YEAR) - a.get(YEAR);
+       if (a.get(MONTH) > b.get(MONTH) ||
+               (a.get(MONTH) == b.get(MONTH) && a.get(DATE) > b.get(DATE))) {
+           diff--;
+       }
+       return diff;
+   }
+--------------------------------------------------------------------------------------------------------
+logging.level.org.hibernate.SQL=debug
+logging.level.org.hibernate.type.descriptor.sql=trace
+--------------------------------------------------------------------------------------------------------
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
+@SpringBootApplication
+public class DeployableWarApplication extends SpringBootServletInitializer {
+ public static void main(String[] args) {
+  SpringApplication.run(DeployableWarApplication.class, args);
+ }
+ 
+ @Override
+ protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+  return application.sources(DeployableWarApplication.class);
+ }
+}
+http://appsdeveloperblog.com/create-a-deployable-war-file-with-spring-boot/
+--------------------------------------------------------------------------------------------------------
+    <dependency>
+     <groupId>org.springframework.boot</groupId>
+     <artifactId>spring-boot-starter-log4j2</artifactId>
+    </dependency>
+	
+    <dependency>
+     <groupId>org.springframework.boot</groupId>
+     <artifactId>spring-boot-starter-logging</artifactId>
+    </dependency>
+--------------------------------------------------------------------------------------------------------
+    <dependency>
+     <groupId>com.amazonaws</groupId>
+     <artifactId>aws-java-sdk-ses</artifactId>
+    </dependency>
+	
+    @JsonBackReference
+    private User userDetails;
+	
+	@JsonManagedReference
+    private List<Address> addresses;
+	
+http://appsdeveloperblog.com/infinite-recursion-in-objects-with-bidirectional-relationships/
+--------------------------------------------------------------------------------------------------------
+    package com.appsdeveloperblog.ws.service.impl;
+    import com.appsdeveloperblog.ws.io.dao.Database;
+    import com.appsdeveloperblog.ws.io.entity.UserProfileEntity;
+    import com.appsdeveloperblog.ws.service.UsersService;
+    import com.appsdeveloperblog.ws.shared.dto.UserProfileDto;
+    import com.appsdeveloperblog.ws.shared.exceptions.UserServiceException;
+    import com.appsdeveloperblog.ws.utils.AuthenticationUtil;
+    import java.security.spec.InvalidKeySpecException;
+    import java.util.logging.Level;
+    import java.util.logging.Logger;
+    import org.springframework.beans.BeanUtils;
+    import org.springframework.beans.factory.annotation.Autowired;
+    import org.springframework.stereotype.Service;
+     
+    @Service("usersService")
+    public class UsersServiceImpl implements UsersService {
+        Database database;
+        AuthenticationUtil authenticationUtil;
+        
+        @Autowired
+        public UsersServiceImpl(Database database, AuthenticationUtil authenticationUtil)
+        {
+            this.database = database;
+            this.authenticationUtil = authenticationUtil;
+        }
+        @Override
+        public UserProfileDto saveUser(UserProfileDto userDto) throws UserServiceException {
+            
+            UserProfileDto returnValue = null;
+            
+            // Generate salt
+            String salt = authenticationUtil.generateSalt(30);
+            
+            // Generate secure user password 
+            String secureUserPassword = null;
+            
+            try {
+                secureUserPassword = authenticationUtil.
+                        generateSecurePassword(userDto.getUserPassword(), salt);
+            } catch (InvalidKeySpecException ex) {
+                Logger.getLogger(UsersServiceImpl.class.getName()).log(Level.SEVERE, null, ex);
+                throw new UserServiceException(ex.getLocalizedMessage());
+            } 
+            
+            //Generate secure public user id
+            String securePublicUserId = authenticationUtil.generateUserId(30);
+            
+            userDto.setSalt(salt);
+            userDto.setUserPassword(secureUserPassword); 
+            userDto.setUserId(securePublicUserId);
+                    
+            UserProfileEntity userEntity = new UserProfileEntity();
+            BeanUtils.copyProperties(userDto, userEntity);
+         
+            // Connect to database 
+            try {
+                this.database.openConnection();
+                UserProfileEntity storedUserEntity = this.database.saveUserProfile(userEntity);
+                if(storedUserEntity != null && storedUserEntity.getId()>0)
+                {
+                    returnValue = new UserProfileDto();
+                    BeanUtils.copyProperties(storedUserEntity, returnValue);
+                }
+            }  finally {
+                this.database.closeConnection();
+            }
+            
+            return returnValue;
+        }
+    }
+--------------------------------------------------------------------------------------------------------
+    @Id
+    @SequenceGenerator(
+            name = "fruitsSequence",
+            sequenceName = "known_fruits_id_seq",
+            allocationSize = 1,
+            initialValue = 10)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "fruitsSequence")
+    private Integer id;
+--------------------------------------------------------------------------------------------------------
+Time/Space Complexities of an Unsorted Array List
+
+Worst-Case Time Complexity (Unsorted Array List)
+
+    Find: O(n) — We need to iterate over all n elements to find the query
+    Insert: O(n) — If we insert at the front of the Array List, we need to move over each of the n elements
+    Remove: O(n) — If we remove from the front of the Array List, we need to move over each of the n elements
+
+Average-Case Time Complexity (Unsorted Array List)
+
+    Find: O(n) — The average number of checks is 1+2+...+nn=∑ni=1in=n(n+1)2n=n+12
+
+
+Insert: O(n) — The average number of "element moves" is n+(n−1)+...+1+0n=∑ni=0in=n(n+1)2n=n+12
+
+Remove: O(n) — The average number of "element moves" is (n−1)+(n−2)+...+1+0n=∑n−1i=0in=n(n−1)2n=n−12
+
+
+Best-Case Time Complexity (Unsorted Array List)
+
+    Find: O(1) — The query is the first element in the Array List
+    Insert: O(1) — If we insert at the end of the Array List, we don't need to move any elements
+    Remove: O(1) — If we remove from the end of the Array List, we don't need to move any elements
+
+Space Complexity (Unsorted Array List)
+
+    O(n) — The two extremes are just before resizing (completely full, so the array is of size n) or just after resizing (array is half full, so the array is of size 2n)
+
+
+Time/Space Complexities of a Sorted Array List
+
+Worst-Case Time Complexity (Sorted Array List)
+
+    Find: O(log n) — We can perform Binary Search to find an element
+    Insert: O(n) — If we insert at the front of the Array List, we need to move over each of the n elements
+    Remove: O(n) — If we remove from the front of the Array List, we need to move over each of the n elements
+
+Average-Case Time Complexity (Sorted Array List)
+
+    Find: O(log n) — The derivation is too complex for a summary slide, but it's the average case of Binary Search
+    Insert: O(n) — The average number of "element moves" is n+(n−1)+...+1+0n=∑ni=0in=n(n+1)2n=n+12
+
+
+Remove: O(n) — The average number of "element moves" is (n−1)+(n−2)+...+1+0n=∑n−1i=0in=n(n−1)2n=n2
+
+
+Best-Case Time Complexity (Sorted Array List)
+
+    Find: O(1) — The query is the first element in the Array List we check via Binary Search
+    Insert: O(1) — If we insert at the end of the Array List, we don't need to move any elements
+    Remove: O(1) — If we remove from the end of the Array List, we don't need to move any elements
+
+Space Complexity (Sorted Array List)
+
+    O(n) — The two extremes are just before resizing (completely full, so the array is of size n) or just after resizing (array is half full, so the array is of size 2n)
+
+19
+Step 1 
+--------------------------------------------------------------------------------------------------------
+const express = require('express');
+
+const app = express();
+
+app.get('/', (req, res) => {
+	res.sendFile('index.html', { root : __dirname});
+});
+
+let port = process.env.PORT || 5000;
+app.listen(port, () => {
+	console.log(__dirname);
+	console.log("Listening Port " + port);
+});
+--------------------------------------------------------------------------------------------------------
+/**
+ * <span class="startHere">&laquo; start here</span>Auto-configuration for {@link JmxService}.
+ *
+ * <p>
+ * This auto-configuration constructs a {@link Bean} of {@link JmxServiceFactory} type if application doesn't provide its own {@link Bean}
+ * of {@link JmxServiceFactory} type and if {@code 'hekate.jmx.enable'} application property is set to {@code true}.
+ * </p>
+ *
+ * @see JmxService
+ * @see HekateConfigurer
+ */
+@ConditionalOnHekateEnabled
+@ConditionalOnMissingBean(JmxServiceFactory.class)
+@ConditionalOnProperty(value = "hekate.jmx.enable", havingValue = "true")
+public class HekateJmxServiceConfigurer {
+    /**
+     * Constructs the {@link JmxServiceFactory}.
+     *
+     * @return Service factory.
+     */
+    @Bean
+    @ConfigurationProperties(prefix = "hekate.jmx")
+    public JmxServiceFactory jmxServiceFactory() {
+        return new JmxServiceFactory();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+IntStream stream = "aibohphobia".chars(); // It returns IntStream!
+IntStream oddNumbersStream = IntStream.iterate(1, x -> x + 2);
+Stream<User> userStream = Stream.generate(User::new);
+DoubleStream randomStream = DoubleStream.generate(Math::random);
+LongStream rangedStream = LongStream.rangeClosed(100_000, 1_000_000);
+String longWord = words.stream()
+        .filter(w -> w.length() < 4)
+        .map(String::toUpperCase)
+        .distinct()
+        .reduce("", String::concat); // terminal operation
+		
+// list of authors
+final List<String> authors = javaBooks.stream()
+        .flatMap(book -> book.getAuthors().stream())
+        .distinct()
+        .collect(Collectors.toList());
+		
+
+public static IntPredicate negateEachAndConjunctAll(Collection<IntPredicate> predicates) {
+    return predicates.stream()
+            .map(IntPredicate::negate)
+            .reduce(n -> true, IntPredicate::and);
+}
+
+stream().collect(Collectors.toCollection(HashSet::new));
+
+Map<Account.State, Long> sumByStates = accounts.stream()
+        .collect(groupingBy(Account::getState, summingLong(Account::getBalance)));
+		
+Function<Integer, Stream<Integer>> f = x -> Stream.iterate(1, y -> y + 1).limit(x);
+--------------------------------------------------------------------------------------------------------
+  import java.util.Optional;
+   
+  public class Example03 {
+      
+      public static Optional<Double> multiplyBy2(double n) {
+          return Optional.of(n * 2);
+      }
+      
+      public static Optional<Double> divideBy3(double n) {
+          return Optional.of(n/3);    
+      }
+      
+      public static Optional<Double> round(double n) {
+          return Optional.of(Double.valueOf(Math.round(n)));
+      }
+      
+      public static Optional<Double> applyOperation(double n1) {
+          return multiplyBy2(n1)
+                    .flatMap(n -> divideBy3(n))
+                    .flatMap(n -> round(n));
+      }
+   
+      public static void main(String[] args) {                
+          System.out.println("Output = " + applyOperation(12).get());
+      }    
+  }
+
+
+Read more: http://mrbool.com/getting-started-with-java-monads/34302#ixzz5yzGLLuui
+
+--------------------------------------------------------------------------------------------------------
+throw Throwables.propagate(e);
+--------------------------------------------------------------------------------------------------------
+
+            return Pattern
+                // Compile splitter into a regular expression (regex).
+                .compile(splitter)
+
+                // Use the regex to split the file into a stream of
+                // strings.
+                .splitAsStream(bytes)
+
+                // Filter out any empty strings.
+                .filter(((Predicate<String>) String::isEmpty).negate())
+                
+                // Collect the results into a string.
+                .collect(toList());
+--------------------------------------------------------------------------------------------------------
+sudo snap install heroku --classic
+heroku login
+heroku create
+
+git push heroku master
+
+heroku ps:scale web=1
+heroku open
+heroku logs --tail
+
+
+$ mvn heroku:deploy
+$ HEROKU_API_KEY="xxx-xxx-xxxx" mvn heroku:deploy
+$ mvn heroku:run-war
+
+
+    mvn heroku:deploy-only deploys without running package or vendoring dependencies
+    mvn heroku:dashboard opens the Dashboard for the application on Heroku.com
+    mvn heroku:eclipse-launch-config generates launch configurations for Eclipse IDE
+    mvn heroku:run-war runs a war file locally
+
+--------------------------------------------------------------------------------------------------------
+public class PublishArticlesUseCase {
+
+    private Publisher publisher;
+
+    public PublishArticlesUseCase(Publisher publisher) {
+        this.publisher = publisher;
+    }
+
+    public List<PublishResult> publishArticles(List<Article> articles) throws InterruptedException, ExecutionException {
+
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+
+        return articles.stream()
+                .map(article -> {
+
+                    Future<PublishResult> task = executorService.submit(() -> publisher.publish(article));
+
+                    try {
+                        return task.get(10, TimeUnit.SECONDS);
+                    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                        return PublishResult.FAILED(article);
+                    }
+                })
+                .collect(Collectors.toList());
+    }
+}
+--------------------------------------------------------------------------------------------------------
+Collector.of(  
+  () -> new int[1],
+  (result, article) -> result[0] += article.getWordCount(),
+  (result1, result2) -> {
+    result1[0] += result2[0];
+    return result1;
+  },
+  total -> total[0] 
+);
+
+map.merge("Java", javaArticles, (list1, list2) ->  
+  Stream.of(list1, list2)
+    .flatMap(Collection::stream)
+    .collect(Collectors.toList()));
+	
+ map.reduceValues(1, List::size, (total, elem) -> total + elem);
+ 
+Function<List<Article>, List<Article>> sortByDate =  
+    articles -> articles.stream()
+        .sorted((x, y) -> y.published().compareTo(x.published()))
+        .collect(Collectors.toList());
+
+Function<List<Article>, Optional<Article>> first =  
+    a -> a.stream().findFirst();
+	
+Function<List<Article>, Optional<Article>> newest =  
+    first.compose(sortByDate);
+--------------------------------------------------------------------------------------------------------
+ExecutorService executor = Executors.newFixedThreadPool(4);
+
+List<String> topSites = Arrays.asList(
+        "www.google.com", "www.youtube.com", "www.yahoo.com", "www.msn.com"
+);
+
+List<CompletableFuture<Double>> relevanceFutures = topSites.stream().
+        map(site -> CompletableFuture.supplyAsync(() -> downloadSite(site), executor)).
+        map(contentFuture -> contentFuture.thenApply(this::parse)).
+        map(docFuture -> docFuture.thenCompose(this::calculateRelevance)).
+        collect(Collectors.<CompletableFuture<Double>>toList());
+--------------------------------------------------------------------------------------------------------
+CompletableFuture.supplyAsync(this::hangingMsg)  
+                 .completeOnTimeout(new Result(Status.TIMED_OUT),1, TimeUnit.MINUTES);
+CompletableFuture.supplyAsync(this::hangingMsg)  
+                 .orTimeout(1, TimeUnit.MINUTES);
+--------------------------------------------------------------------------------------------------------
+@Configuration
+@ConditionalOnMissingBean(Hekate.class)
+@ConditionalOnProperty(name = "hekate.enable", havingValue = "true", matchIfMissing = true)
+--------------------------------------------------------------------------------------------------------
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+
+public class Results {
+
+    public static final CompletionStage<Object> NOT_FOUND = CompletableFuture.completedFuture(Result.NOT_FOUND);
+    
+    public enum Result {
+        
+        NOT_FOUND,
+    }
+}
+--------------------------------------------------------------------------------------------------------
+    /**
+     * Generate the MD5 hash out of the given {@link ByteBuffer}
+     */
+    private static String md5(byte[] buffer) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(buffer);
+            byte[] digest = md.digest();
+            return new String(FlexBase64.encodeBytes(digest, 0, digest.length, false), StandardCharsets.US_ASCII);
+        } catch (NoSuchAlgorithmException e) {
+            // Should never happen
+            throw new InternalError("MD5 not supported on this platform");
+        }
+    }
+--------------------------------------------------------------------------------------------------------
+    public static class Builder {
+
+        private final Map<UndertowOption<?>, Object> values = new HashMap<>();
+
+        public <T> Builder set(UndertowOption<T> option, T value) {
+            values.put(option, value);
+            return this;
+        }
+
+        public Builder addAll(UndertowOptionMap workerOptions) {
+            values.putAll(workerOptions.values);
+            return this;
+        }
+
+        public UndertowOptionMap getMap() {
+            return new UndertowOptionMap(new HashMap<>(values));
+        }
+    }
+--------------------------------------------------------------------------------------------------------
+
+import org.reactivestreams.Publisher;
+
+import io.quarkus.qute.PublisherFactory;
+import io.quarkus.qute.Template.Rendering;
+import io.reactivex.Flowable;
+import io.reactivex.processors.UnicastProcessor;
+
+public class RxjavaPublisherFactory implements PublisherFactory {
+
+    @Override
+    public Publisher<String> createPublisher(Rendering rendering) {
+        return Flowable.defer(() -> {
+            UnicastProcessor<String> processor = UnicastProcessor.create();
+            rendering.consume(s -> processor.onNext(s))
+                    .whenComplete((v, t) -> {
+                        if (t == null) {
+                            processor.onComplete();
+                        } else {
+                            processor.onError(t);
+                        }
+                    });
+            return processor;
+        });
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+kogito
+keycloak
+--------------------------------------------------------------------------------------------------------
+    server.servlet.context-path=/mobile-app-ws
+    server.port=8888
+--------------------------------------------------------------------------------------------------------
+    <!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-engine -->
+    <dependency>
+     <groupId>org.junit.jupiter</groupId>
+     <artifactId>junit-jupiter-engine</artifactId>
+     <scope>test</scope>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.junit.platform/junit-platform-launcher -->
+    <dependency>
+     <groupId>org.junit.platform</groupId>
+     <artifactId>junit-platform-launcher</artifactId>
+     <version>1.2.0</version>
+     <scope>test</scope>
+    </dependency>
+--------------------------------------------------------------------------------------------------------
+mvn spring-boot:run -Dspring-boot.run.arguments=--spring.profiles.active=production
+
+    @SpringBootApplication
+    public class ProfilesTutorialApplication {
+        public static void main(String[] args) {
+            SpringApplication.run(ProfilesTutorialApplication.class, args);
+        }
+        @Profile("production")
+        @Bean
+        public DatabaseConfiguration getProdDatabaseConfiguration() {
+            return new AppConfigurationProd();
+        }
+        @Profile("developer")
+        @Bean
+        public DatabaseConfiguration getDevDatabaseConfiguration() {
+            return new AppConfigurationDev();
+        }
+    }
+--------------------------------------------------------------------------------------------------------
+    @Override
+    public List<Person> findByBirthDateAfter(Date date) {
+       Query query = new Query();
+       query.addCriteria(Criteria.where("dateOfBirth").gt(date));
+       return mongoTemplate.find(query, Person.class);
+    }
+    @Override
+    public List<Person> findByAgeRange(int lowerBound, int upperBound) {
+       Query query = new Query();
+       query.addCriteria(Criteria.where("age").gt(lowerBound)
+               .andOperator(Criteria.where("age").lt(upperBound)));
+       return mongoTemplate.find(query, Person.class);
+    }
+    @Override
+    public List<Person> findByFavoriteBooks(String favoriteBook) {
+       Query query = new Query();
+       query.addCriteria(Criteria.where("favoriteBooks").in(favoriteBook));
+       return mongoTemplate.find(query, Person.class);
+    }
+--------------------------------------------------------------------------------------------------------
+    # Enabling H2 Console
+    spring.h2.console.enabled=true
+--------------------------------------------------------------------------------------------------------
+    curl -X PUT \
+      http://localhost:8080/api/users/2d8d4927572642cebccdf5257880a393 \
+      -H 'cache-control: no-cache' \
+      -H 'content-type: application/json' \
+      -d '{
+      "lastName":"Kargopolov",
+      "firstName":"Sergey"
+    }'
+--------------------------------------------------------------------------------------------------------
+    @GetMapping()
+    public String getUsers(@RequestParam(value = "page", defaultValue = "1") int page,
+               @RequestParam(value = "limit", defaultValue = "30") int limit)
+    {
+     return "get users was called. </br> Page = " + page  + " and limit = " +  limit;
+    }
+	    @GetMapping()
+    public String getUsers(@RequestParam(value = "sort", required=false) String sort)
+    {
+     return "get users was called with Sort option = " + sort;
+    }
+--------------------------------------------------------------------------------------------------------
 function* getEvenNumbers(start, end) {
     for (let i = start; i <= end; i++) {
         if (i % 2 == 0) {
