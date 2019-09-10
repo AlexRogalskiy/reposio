@@ -18556,6 +18556,9 @@ public class DateTimeFormatConfiguration extends WebMvcConfigurerAdapter {
             objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             objectMapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
 --------------------------------------------------------------------------------------------------------
+@EntityGraph(attributePaths = "authorities")
+The Class-Path manifest attribute in C:\Users\rogalski\.m2\repository\org\glassfish\jaxb\jaxb-runtime\2.3.1\jaxb-runtime-2.3.1.jar referenced one or more files that do not exist: file:/C:/Users/rogalski/.m2/repository/org/glassfish/jaxb/jaxb-runtime/2.3.1/jaxb-api-2.3.1.jar,file:/C:/Users/rogalski/.m2/repository/org/glassfish/jaxb/jaxb-runtime/2.3.1/txw2-2.3.1.jar,file:/C:/Users/rogalski/.m2/repository/org/glassfish/jaxb/jaxb-runtime/2.3.1/istack-commons-runtime-3.0.7.jar,file:/C:/Users/rogalski/.m2/repository/org/glassfish/jaxb/jaxb-runtime/2.3.1/stax-ex-1.8.jar,file:/C:/Users/rogalski/.m2/repository/org/glassfish/jaxb/jaxb-runtime/2.3.1/FastInfoset-1.2.15.jar,file:/C:/Users/rogalski/.m2/repository/org/glassfish/jaxb/jaxb-runtime/2.3.1/javax.activation-api-1.2.0.jar
+--------------------------------------------------------------------------------------------------------
 /**
  * Mapper for the entity User and its DTO UserDTO.
  */
@@ -44382,6 +44385,171 @@ curl -X POST \
     "amount": 1
    }'
 --------------------------------------------------------------------------------------------------------
+ @Repository
+ public interface SecurityMessageRepository extends MessageRepository {
+ 
+        @Query("select m from Message m where m.to.id = ?#{ principal?.id }")
+        List<Message> findAll();
+ }
+--------------------------------------------------------------------------------------------------------
+import org.joda.time.DateTime;
+import org.joda.time.LocalDate;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import org.abcgo.domain.util.CustomDateTimeDeserializer;
+import org.abcgo.domain.util.CustomDateTimeSerializer;
+import org.abcgo.domain.util.CustomLocalDateSerializer;
+import org.abcgo.domain.util.ISO8601LocalDateDeserializer;
+import com.fasterxml.jackson.datatype.joda.JodaModule;
+
+@Configuration
+public class JacksonConfiguration {
+
+    @Bean
+    public  JodaModule jacksonJodaModule() {
+        JodaModule module = new JodaModule();
+        module.addSerializer(DateTime.class, new CustomDateTimeSerializer());
+        module.addDeserializer(DateTime.class, new CustomDateTimeDeserializer());
+        module.addSerializer(LocalDate.class, new CustomLocalDateSerializer());
+        module.addDeserializer(LocalDate.class, new ISO8601LocalDateDeserializer());
+        return module;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
+import org.springframework.aop.interceptor.SimpleAsyncUncaughtExceptionHandler;
+import org.springframework.boot.bind.RelaxedPropertyResolver;
+import org.springframework.context.EnvironmentAware;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.core.env.Environment;
+import org.springframework.scheduling.annotation.AsyncConfigurer;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+
+import java.util.concurrent.Executor;
+
+import org.abcgo.async.ExceptionHandlingAsyncTaskExecutor;
+
+@Configuration
+@EnableAsync
+@EnableScheduling
+@Profile("!" + Constants.SPRING_PROFILE_FAST)
+public class AsyncConfiguration implements AsyncConfigurer, EnvironmentAware {
+
+    private final Logger log = LoggerFactory.getLogger(AsyncConfiguration.class);
+
+    private RelaxedPropertyResolver propertyResolver;
+
+    @Override
+    public  void setEnvironment(Environment environment) {
+        this.propertyResolver = new RelaxedPropertyResolver(environment, "async.");
+    }
+
+    @Override
+    @Bean
+    public  Executor getAsyncExecutor() {
+        log.debug("Creating Async Task Executor");
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(propertyResolver.getProperty("corePoolSize", Integer.class, 2));
+        executor.setMaxPoolSize(propertyResolver.getProperty("maxPoolSize", Integer.class, 50));
+        executor.setQueueCapacity(propertyResolver.getProperty("queueCapacity", Integer.class, 10000));
+        executor.setThreadNamePrefix("abcgo-Executor-");
+        return new ExceptionHandlingAsyncTaskExecutor(executor);
+    }
+
+    @Override
+    public  AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
+        return new SimpleAsyncUncaughtExceptionHandler();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.huixinpn.dionysus.domain.article.Article;
+import com.huixinpn.dionysus.domain.article.Blog;
+import com.huixinpn.dionysus.domain.article.Category;
+import com.huixinpn.dionysus.domain.article.OfficialArticle;
+import com.huixinpn.dionysus.domain.chat.ChatMessage;
+import com.huixinpn.dionysus.domain.chat.Room;
+import com.huixinpn.dionysus.domain.course.Course;
+import com.huixinpn.dionysus.domain.course.CourseCategory;
+import com.huixinpn.dionysus.domain.psychtest.PsychTest;
+import com.huixinpn.dionysus.domain.psychtest.PsychTestQuestion;
+import com.huixinpn.dionysus.domain.psychtest.PsychTestQuestionOption;
+import com.huixinpn.dionysus.domain.psychtest.PsychTestResult;
+import com.huixinpn.dionysus.domain.site.Menu;
+import com.huixinpn.dionysus.domain.user.*;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.data.rest.core.config.RepositoryRestConfiguration;
+import org.springframework.data.rest.webmvc.config.RepositoryRestMvcConfiguration;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+
+@Configuration
+@Import(RepositoryRestMvcConfiguration.class)
+public class RestfulConfiguration extends RepositoryRestMvcConfiguration {
+
+  @Override
+  protected  void configureRepositoryRestConfiguration(RepositoryRestConfiguration config) {
+    config.exposeIdsFor(Article.class, Category.class, Menu.class,
+        PsychTest.class, PsychTestQuestion.class, PsychTestResult.class, PsychTestQuestionOption.class,
+        Consultant.class, Profile.class, ProfileItem.class, User.class,
+        CourseCategory.class, Course.class, OfficialArticle.class, Blog.class, ConsExpertise.class, Room.class, ChatMessage.class);
+    try {
+      config.setReturnBodyOnCreate(true);
+      config.setReturnBodyOnUpdate(true);
+      config.setBaseUri(new URI("/api/v1"));
+    } catch (URISyntaxException e) {
+      e.printStackTrace();
+    }
+  }
+}
+--------------------------------------------------------------------------------------------------------
+import javax.annotation.PostConstruct;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+import org.springframework.web.context.WebApplicationContext;
+
+import com.baeldung.data.repositories.UserRepository;
+import com.baeldung.models.AppUser;
+
+@Service
+public class CustomUserDetailsService implements UserDetailsService {
+
+    @Autowired
+    private WebApplicationContext applicationContext;
+    private UserRepository userRepository;
+
+    public CustomUserDetailsService() {
+        super();
+    }
+
+    @PostConstruct
+    public void completeSetup() {
+        userRepository = applicationContext.getBean(UserRepository.class);
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(final String username) {
+        final AppUser appUser = userRepository.findByUsername(username);
+        if (appUser == null) {
+            throw new UsernameNotFoundException(username);
+        }
+        return new AppUserPrincipal(appUser);
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
 import java.util.List;
 
 import org.joda.time.LocalDate; import org.springframework.beans.factory.annotation.Autowired; import org.springframework.context.annotation.Bean; import org.springframework.context.annotation.ComponentScan; import org.springframework.context.annotation.Configuration; import org.springframework.http.ResponseEntity; import org.springframework.web.bind.annotation.RequestMethod; import org.springframework.web.context.request.async.DeferredResult; import org.springframework.web.servlet.config.annotation.EnableWebMvc;
@@ -44538,6 +44706,8 @@ public class XcareVitalinqConnectorWebMvcConfigurerAdapter extends WebMvcConfigu
         return result;
     }
 }
+
+{"downloadStatus":0,"filename":"lombokd.config","filepath":"C:\\git-project\\paragon.microservices.distributor","id":"c108cda3-8b4b-483d-a987-d65e6bfe3024"}
 --------------------------------------------------------------------------------------------------------
 @Override
   protected List<ConfigIssue> init() {
