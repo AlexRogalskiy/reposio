@@ -18214,6 +18214,912 @@ public class EventListenerConfig {
         return ResponseEntity.ok().build();
     }
 --------------------------------------------------------------------------------------------------------
+@Entity
+
+@Indexed
+
+@AnalyzerDefs({
+
+@AnalyzerDef(name = "en",
+
+tokenizer = @TokenizerDef(factory = StandardTokenizerFactory.class),
+
+filters = {
+
+@TokenFilterDef(factory = LowerCaseFilterFactory.class),
+
+@TokenFilterDef(factory = SnowballPorterFilterFactory.class, params = {
+
+@Parameter(name = "language", value = "English")
+
+})
+
+}),
+
+@AnalyzerDef(name = "de",
+
+tokenizer = @TokenizerDef(factory = StandardTokenizerFactory.class),
+
+filters = {
+
+@TokenFilterDef(factory = LowerCaseFilterFactory.class),
+
+@TokenFilterDef(factory = GermanStemFilterFactory.class)
+
+})
+
+})
+
+public class Article {
+
+private Integer id;
+
+private String language;
+
+private String text;
+
+@Id @GeneratedValue
+
+public Integer getId() {
+
+return id;
+
+}
+
+public void setId(Integer id) {
+
+this.id = id;
+
+}
+
+@Field(store = Store.YES)
+
+@AnalyzerDiscriminator(impl = LanguageDiscriminator.class)
+
+public String getLanguage() {
+
+return language;
+
+}
+
+public void setLanguage(String language) {
+
+this.language = language;
+
+}
+
+@Field(store = Store.YES)
+
+public String getText() {
+
+return text;
+
+}
+
+...
+
+}
+
+public class LanguageDiscriminator implements Discriminator {
+
+@Override
+
+public String getAnalyzerDefinitionName(Object value, Object entity, String field) {
+
+if ( value == null || !( entity instanceof Article ) ) {
+
+return null;
+
+}
+return (String) value;
+}
+}
+
+@Field(store = Store.YES)
+
+@AnalyzerDiscriminator(impl = LanguageDiscriminator.class)
+
+public String getLanguage() {
+
+return language;
+
+}
+
+public void setLanguage(String language) {
+
+this.language = language;
+
+}
+
+@Field(store = Store.YES)
+
+public String getText() {
+
+return text;
+
+}
+
+
+--------------------------------------------------------------------------------------------------------
+https://in.relation.to/
+
+  - ./mvnw $BUILD_OPTIONS -B -q clean install javadoc:javadoc
+    -DskipTests -Dmaven.javadoc.skip=true -Dcheckstyle.skip=true -Dforbiddenapis.skip=true -Djqassistant.skip=true
+--------------------------------------------------------------------------------------------------------
+language: java
+jdk:
+  - oraclejdk8
+  - openjdk8
+  - openjdk9
+  - openjdk10
+  - openjdk11
+script: mvn clean verify
+
+# The main CI of Hibernate Search is https://ci.hibernate.org/job/hibernate-search/. Travis CI can be
+# used in github forks. https://travis-ci.org/hibernate/hibernate-search is
+# therefore deactivated. Activating Travis for your own fork is as easy as
+# activating it in the travis site of your fork.
+
+dist: trusty
+language: java
+jdk:
+  - oraclejdk8
+cache:
+  directories:
+    - $HOME/.m2
+env:
+  global:
+    # Unset _JAVA_OPTIONS to avoid raising the memory used by Elasticsearch
+    # See https://hibernate.atlassian.net/browse/HSEARCH-3252
+    - _JAVA_OPTIONS=
+    # Ensure Maven doesn't eat up too much memory
+    - MAVEN_OPTS=-Xmx756m
+before_install:
+  # Build options must be set before install, so that we properly retrieve *all* the necessary dependencies
+  - BUILD_OPTIONS='-Pdist -Pcoverage -Pjqassistant'
+install:
+  # The Maven install provided by Travis is outdated, use Maven wrapper to get the latest version
+  - mvn -N io.takari:maven:wrapper
+  - ./mvnw -v
+  # First run to download most Maven dependencies without logging and to install our artifacts for the early checkstyle execution
+  # We want to start as many plugins as possible (so that their dependencies are downloaded),
+  # but we want the plugins to be skipped if they are not essential,
+  # because they will be re-executed later and we don't want to waste time.
+  - ./mvnw $BUILD_OPTIONS -B -q clean install javadoc:javadoc
+    -DskipTests -Dmaven.javadoc.skip=true -Dcheckstyle.skip=true -Dforbiddenapis.skip=true -Djqassistant.skip=true
+script:
+  # We run checks first to fail fast if there is a styling error, then we run the actual build.
+  - ./mvnw $BUILD_OPTIONS checkstyle:check
+    && ./mvnw $BUILD_OPTIONS install javadoc:javadoc -Dcheckstyle.skip
+before_cache:
+  # Do not put the artifacts we just built into the cache
+  - rm -r $HOME/.m2/repository/org/hibernate/search/
+  - rm -r $HOME/.m2/repository/org/hibernate/hibernate-search*
+--------------------------------------------------------------------------------------------------------
+import java.util.List;
+ 
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.queryParser.MultiFieldQueryParser;
+import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.search.Query;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+import org.hibernate.search.FullTextSession;
+import org.hibernate.search.Search;
+ 
+import com.fric.noc.model.User;
+import com.fric.noc.utils.HibernateUtil;
+ 
+public class UserDAOImpl implements UserDAO {
+ 
+	@Override
+	public List<User> search() {
+		Session session;
+		List<User> users = null;
+		try {
+			session = HibernateUtil.getSessionFactory().openSession();
+			FullTextSession fullTextSession = Search
+					.createFullTextSession(session);
+			Transaction transaction = fullTextSession.beginTransaction();
+			String[] fields = new String[] { "firstName", "patronymic",
+					"lastName", "sex", "phone", "email", "country", "region",
+					"city", "address", "other" };
+			MultiFieldQueryParser parser = new MultiFieldQueryParser(fields,
+					new StandardAnalyzer());
+			Query queryLucene = parser.parse("Stas");
+			org.hibernate.Query queryHibernate = fullTextSession
+					.createFullTextQuery(queryLucene, User.class);
+			users = queryHibernate.list();
+			transaction.commit();
+			session.close();
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+		return users;
+	}
+ 
+}
+--------------------------------------------------------------------------------------------------------
+import com.springio.store.aop.logging.LoggingAspect;
+
+import io.github.jhipster.config.JHipsterConstants;
+
+import org.springframework.context.annotation.*;
+import org.springframework.core.env.Environment;
+
+@Configuration
+@EnableAspectJAutoProxy
+public class LoggingAspectConfiguration {
+
+    @Bean
+    @Profile(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT)
+    public LoggingAspect loggingAspect(Environment env) {
+        return new LoggingAspect(env);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+import io.github.jhipster.config.JHipsterConstants;
+import io.github.jhipster.config.liquibase.AsyncSpringLiquibase;
+
+import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
+import liquibase.integration.spring.SpringLiquibase;
+import org.h2.tools.Server;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.liquibase.LiquibaseProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.core.env.Environment;
+import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
+import org.springframework.core.task.TaskExecutor;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+
+import javax.sql.DataSource;
+import java.sql.SQLException;
+
+@Configuration
+@EnableJpaRepositories("com.springio.store.repository")
+@EnableJpaAuditing(auditorAwareRef = "springSecurityAuditorAware")
+@EnableTransactionManagement
+@EnableElasticsearchRepositories("com.springio.store.repository.search")
+public class DatabaseConfiguration {
+
+    private final Logger log = LoggerFactory.getLogger(DatabaseConfiguration.class);
+
+    private final Environment env;
+
+    public DatabaseConfiguration(Environment env) {
+        this.env = env;
+    }
+
+    /**
+     * Open the TCP port for the H2 database, so it is available remotely.
+     *
+     * @return the H2 database TCP server
+     * @throws SQLException if the server failed to start
+     */
+    @Bean(initMethod = "start", destroyMethod = "stop")
+    @Profile(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT)
+    public Server h2TCPServer() throws SQLException {
+        return Server.createTcpServer("-tcp","-tcpAllowOthers");
+    }
+
+    @Bean
+    public SpringLiquibase liquibase(@Qualifier("taskExecutor") TaskExecutor taskExecutor,
+            DataSource dataSource, LiquibaseProperties liquibaseProperties) {
+
+        // Use liquibase.integration.spring.SpringLiquibase if you don't want Liquibase to start asynchronously
+        SpringLiquibase liquibase = new AsyncSpringLiquibase(taskExecutor, env);
+        liquibase.setDataSource(dataSource);
+        liquibase.setChangeLog("classpath:config/liquibase/master.xml");
+        liquibase.setContexts(liquibaseProperties.getContexts());
+        liquibase.setDefaultSchema(liquibaseProperties.getDefaultSchema());
+        liquibase.setDropFirst(liquibaseProperties.isDropFirst());
+        if (env.acceptsProfiles(JHipsterConstants.SPRING_PROFILE_NO_LIQUIBASE)) {
+            liquibase.setShouldRun(false);
+        } else {
+            liquibase.setShouldRun(liquibaseProperties.isEnabled());
+            log.debug("Configuring Liquibase");
+        }
+        return liquibase;
+    }
+
+    @Bean
+    public Hibernate5Module hibernate5Module() {
+        return new Hibernate5Module();
+    }
+}
+
+https://www.programcreek.com/java-api-examples/?code=deepu105%2Fspring-io%2Fspring-io-master%2Fspring-io%2Fsrc%2Fmain%2Fjava%2Fcom%2Fspringio%2Fstore%2Fweb%2Frest%2FUserResource.java#
+--------------------------------------------------------------------------------------------------------
+import org.springframework.context.annotation.Configuration;
+import org.springframework.format.FormatterRegistry;
+import org.springframework.format.datetime.standard.DateTimeFormatterRegistrar;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+
+@Configuration
+public class DateTimeFormatConfiguration extends WebMvcConfigurerAdapter {
+
+    @Override
+    public void addFormatters(FormatterRegistry registry) {
+        DateTimeFormatterRegistrar registrar = new DateTimeFormatterRegistrar();
+        registrar.setUseIsoFormat(true);
+        registrar.registerFormatters(registry);
+    }
+}
+
+            objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            objectMapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
+--------------------------------------------------------------------------------------------------------
+/**
+ * Mapper for the entity User and its DTO UserDTO.
+ */
+@Mapper(componentModel = "spring", uses = {})
+public interface UserMapper {
+
+    UserDTO userToUserDTO(User user);
+
+    List<UserDTO> usersToUserDTOs(List<User> users);
+
+    @Mapping(target = "createdBy", ignore = true)
+    @Mapping(target = "createdDate", ignore = true)
+    @Mapping(target = "lastModifiedBy", ignore = true)
+    @Mapping(target = "lastModifiedDate", ignore = true)
+    @Mapping(target = "activationKey", ignore = true)
+    @Mapping(target = "resetKey", ignore = true)
+    @Mapping(target = "resetDate", ignore = true)
+    @Mapping(target = "password", ignore = true)
+    User userDTOToUser(UserDTO userDTO);
+--------------------------------------------------------------------------------------------------------
+import org.springframework.security.config.annotation.SecurityConfigurerAdapter;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.DefaultSecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+public class JWTConfigurer extends SecurityConfigurerAdapter<DefaultSecurityFilterChain, HttpSecurity> {
+
+    public static final String AUTHORIZATION_HEADER = "Authorization";
+
+    public static final String AUTHORIZATION_TOKEN = "access_token";
+
+    private TokenProvider tokenProvider;
+
+    public JWTConfigurer(TokenProvider tokenProvider) {
+        this.tokenProvider = tokenProvider;
+    }
+
+    @Override
+    public void configure(HttpSecurity http) throws Exception {
+        JWTFilter customFilter = new JWTFilter(tokenProvider);
+        http.addFilterBefore(customFilter, UsernamePasswordAuthenticationFilter.class);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd
+                        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+    <property name="now" value="now()" dbms="h2"/>
+
+    <property name="now" value="now()" dbms="mysql"/>
+    <property name="autoIncrement" value="true"/>
+
+    <property name="floatType" value="float4" dbms="postgresql, h2"/>
+    <property name="floatType" value="float" dbms="mysql, oracle, mssql"/>
+
+    <!--
+        Added the entity Brand.
+    -->
+    <changeSet id="20170518145708-1" author="jhipster">
+        <createTable tableName="brand">
+            <column name="id" type="bigint" autoIncrement="${autoIncrement}">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="varchar(255)">
+                <constraints nullable="false" />
+            </column>
+
+            <column name="start_date" type="timestamp">
+                <constraints nullable="true" />
+            </column>
+
+            <column name="user_id" type="bigint">
+                <constraints nullable="true" />
+            </column>
+
+            <!-- jhipster-needle-liquibase-add-column - JHipster will add columns here, do not remove-->
+        </createTable>
+        <dropDefaultValue tableName="brand" columnName="start_date" columnDataType="datetime"/>
+        
+    </changeSet>
+</databaseChangeLog>
+
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd">
+    <!--
+        Added the constraints for entity Product.
+    -->
+    <changeSet id="20170518145709-2" author="jhipster">
+        
+        <addForeignKeyConstraint baseColumnNames="products_id"
+                                 baseTableName="product_subcategory"
+                                 constraintName="fk_product_subcategory_products_id"
+                                 referencedColumnNames="id"
+                                 referencedTableName="product"/>
+        <addForeignKeyConstraint baseColumnNames="subcategories_id"
+                                 baseTableName="product_subcategory"
+                                 constraintName="fk_product_subcategory_subcategories_id"
+                                 referencedColumnNames="id"
+                                 referencedTableName="sub_category"/>
+        
+        <addForeignKeyConstraint baseColumnNames="brand_id"
+                                 baseTableName="product"
+                                 constraintName="fk_product_brand_id"
+                                 referencedColumnNames="id"
+                                 referencedTableName="brand"/>
+
+    </changeSet>
+</databaseChangeLog>
+
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd
+                        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+    <property name="now" value="now()" dbms="h2"/>
+
+    <property name="now" value="now()" dbms="mysql"/>
+    <property name="autoIncrement" value="true"/>
+
+    <property name="floatType" value="float4" dbms="postgresql, h2"/>
+    <property name="floatType" value="float" dbms="mysql, oracle, mssql"/>
+
+    <!--
+        Added the entity Category.
+    -->
+    <changeSet id="20170518145710-1" author="jhipster">
+        <createTable tableName="category">
+            <column name="id" type="bigint" autoIncrement="${autoIncrement}">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="varchar(255)">
+                <constraints nullable="true" />
+            </column>
+
+            <column name="status" type="varchar(255)">
+                <constraints nullable="true" />
+            </column>
+
+            <!-- jhipster-needle-liquibase-add-column - JHipster will add columns here, do not remove-->
+        </createTable>
+        
+    </changeSet>
+</databaseChangeLog>
+
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd
+                        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+    <property name="now" value="now()" dbms="h2"/>
+
+    <property name="now" value="now()" dbms="mysql"/>
+    <property name="autoIncrement" value="true"/>
+
+    <property name="floatType" value="float4" dbms="postgresql, h2"/>
+    <property name="floatType" value="float" dbms="mysql, oracle, mssql"/>
+
+    <!--
+        Added the entity Product.
+    -->
+    <changeSet id="20170518145709-1" author="jhipster">
+        <createTable tableName="product">
+            <column name="id" type="bigint" autoIncrement="${autoIncrement}">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="varchar(255)">
+                <constraints nullable="true" />
+            </column>
+
+            <column name="description" type="varchar(255)">
+                <constraints nullable="true" />
+            </column>
+
+            <column name="image" type="longblob">
+                <constraints nullable="true" />
+            </column>
+            <column name="image_content_type" type="varchar(255)">
+                <constraints nullable="true" />
+            </column>
+
+            <column name="price" type="decimal(10,2)">
+                <constraints nullable="true" />
+            </column>
+
+            <column name="jhi_size" type="varchar(255)">
+                <constraints nullable="true" />
+            </column>
+
+            <column name="available_until" type="timestamp">
+                <constraints nullable="true" />
+            </column>
+
+            <column name="brand_id" type="bigint">
+                <constraints nullable="true" />
+            </column>
+
+            <!-- jhipster-needle-liquibase-add-column - JHipster will add columns here, do not remove-->
+        </createTable>
+        <dropDefaultValue tableName="product" columnName="available_until" columnDataType="datetime"/>
+        
+        <createTable tableName="product_subcategory">
+            <column name="subcategories_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="products_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey columnNames="products_id, subcategories_id" tableName="product_subcategory"/>
+        
+    </changeSet>
+</databaseChangeLog>
+
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd
+                        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+    <property name="now" value="now()" dbms="h2"/>
+    <property name="now" value="now()" dbms="mysql"/>
+    <property name="autoIncrement" value="true"/>
+
+    <!--
+        JHipster core tables.
+        The initial schema has the '00000000000001' id, so that it is over-written if we re-generate it.
+    -->
+    <changeSet id="00000000000001" author="jhipster">
+        <createTable tableName="jhi_user">
+            <column name="id" type="bigint" autoIncrement="${autoIncrement}">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="login" type="varchar(100)">
+                <constraints unique="true" nullable="false"/>
+            </column>
+            <column name="password_hash" type="varchar(60)"/>
+            <column name="first_name" type="varchar(50)"/>
+            <column name="last_name" type="varchar(50)"/>
+            <column name="email" type="varchar(100)">
+                <constraints unique="true" nullable="true"/>
+            </column>
+            <column name="image_url" type="varchar(256)"/>
+            <column name="activated" type="boolean" valueBoolean="false">
+                <constraints nullable="false" />
+            </column>
+            <column name="lang_key" type="varchar(5)"/>
+            <column name="activation_key" type="varchar(20)"/>
+            <column name="reset_key" type="varchar(20)"/>
+            <column name="created_by" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_date" type="timestamp" defaultValueDate="${now}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reset_date" type="timestamp">
+                <constraints nullable="true"/>
+            </column>
+            <column name="last_modified_by" type="varchar(50)"/>
+            <column name="last_modified_date" type="timestamp"/>
+        </createTable>
+        <createIndex indexName="idx_user_login"
+            tableName="jhi_user"
+            unique="true">
+            <column name="login" type="varchar(100)"/>
+        </createIndex>
+
+        <createIndex indexName="idx_user_email"
+            tableName="jhi_user"
+            unique="true">
+            <column name="email" type="varchar(100)"/>
+        </createIndex>
+        <createTable tableName="jhi_authority">
+            <column name="name" type="varchar(50)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="jhi_user_authority">
+            <column name="user_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="authority_name" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey columnNames="user_id, authority_name" tableName="jhi_user_authority"/>
+
+        <addForeignKeyConstraint baseColumnNames="authority_name"
+                                 baseTableName="jhi_user_authority"
+                                 constraintName="fk_authority_name"
+                                 referencedColumnNames="name"
+                                 referencedTableName="jhi_authority"/>
+
+        <addForeignKeyConstraint baseColumnNames="user_id"
+                                 baseTableName="jhi_user_authority"
+                                 constraintName="fk_user_id"
+                                 referencedColumnNames="id"
+                                 referencedTableName="jhi_user"/>
+        <loadData encoding="UTF-8"
+                  file="config/liquibase/users.csv"
+                  separator=";"
+                  tableName="jhi_user">
+            <column name="activated" type="boolean"/>
+            <column name="created_date" type="timestamp"/>
+        </loadData>
+        <dropDefaultValue tableName="jhi_user" columnName="created_date" columnDataType="datetime"/>
+
+        <loadData encoding="UTF-8"
+                  file="config/liquibase/authorities.csv"
+                  separator=";"
+                  tableName="jhi_authority"/>
+
+        <loadData encoding="UTF-8"
+                  file="config/liquibase/users_authorities.csv"
+                  separator=";"
+                  tableName="jhi_user_authority"/>
+        <createTable tableName="jhi_persistent_audit_event">
+            <column name="event_id" type="bigint" autoIncrement="${autoIncrement}">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="principal" type="varchar(100)">
+                <constraints nullable="false" />
+            </column>
+            <column name="event_date" type="timestamp"/>
+            <column name="event_type" type="varchar(255)"/>
+        </createTable>
+
+        <createTable tableName="jhi_persistent_audit_evt_data">
+            <column name="event_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="varchar(150)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="value" type="varchar(255)"/>
+        </createTable>
+        <addPrimaryKey columnNames="event_id, name" tableName="jhi_persistent_audit_evt_data"/>
+
+        <createIndex indexName="idx_persistent_audit_event"
+                     tableName="jhi_persistent_audit_event"
+                     unique="false">
+            <column name="principal" type="varchar(100)"/>
+            <column name="event_date" type="timestamp"/>
+        </createIndex>
+
+        <createIndex indexName="idx_persistent_audit_evt_data"
+                     tableName="jhi_persistent_audit_evt_data"
+                     unique="false">
+            <column name="event_id" type="bigint"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="event_id"
+                                 baseTableName="jhi_persistent_audit_evt_data"
+                                 constraintName="fk_evt_pers_audit_evt_data"
+                                 referencedColumnNames="event_id"
+                                 referencedTableName="jhi_persistent_audit_event"/>
+
+        <!-- Social -->
+        <createTable tableName="jhi_social_user_connection">
+            <column name="id" type="bigint" autoIncrement="${autoIncrement}">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="provider_id" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="provider_user_id" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rank" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="display_name" type="varchar(255)"/>
+            <column name="profile_url" type="varchar(255)"/>
+            <column name="image_url" type="varchar(255)"/>
+            <column name="access_token" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="secret" type="varchar(255)"/>
+            <column name="refresh_token" type="varchar(255)"/>
+            <column name="expire_time" type="bigint"/>
+        </createTable>
+
+        <addUniqueConstraint tableName="jhi_social_user_connection" columnNames="user_id, provider_id, provider_user_id"/>
+
+        <addUniqueConstraint tableName="jhi_social_user_connection" columnNames="user_id, provider_id, rank"/>
+    </changeSet>
+
+</databaseChangeLog>
+
+
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration scan="true">
+    <include resource="org/springframework/boot/logging/logback/base.xml"/>
+
+<!-- The FILE and ASYNC appenders are here as examples for a production configuration -->
+<!--
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logFile.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>90</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <charset>utf-8</charset>
+            <Pattern>%d %-5level [%thread] %logger{0}: %msg%n</Pattern>
+        </encoder>
+    </appender>
+
+    <appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>512</queueSize>
+        <appender-ref ref="FILE"/>
+    </appender>
+-->
+
+    <logger name="com.springio.store" level="#logback.loglevel#"/>
+
+    <logger name="io.github.jhipster" level="DEBUG"/>
+
+    <logger name="javax.activation" level="WARN"/>
+    <logger name="javax.mail" level="WARN"/>
+    <logger name="javax.xml.bind" level="WARN"/>
+    <logger name="ch.qos.logback" level="WARN"/>
+    <logger name="com.codahale.metrics" level="WARN"/>
+    <logger name="com.ryantenney" level="WARN"/>
+    <logger name="com.sun" level="WARN"/>
+    <logger name="com.zaxxer" level="WARN"/>
+    <logger name="io.undertow" level="WARN"/>
+    <logger name="io.undertow.websockets.jsr" level="ERROR"/>
+    <logger name="org.ehcache" level="WARN"/>
+    <logger name="org.apache" level="WARN"/>
+    <logger name="org.apache.catalina.startup.DigesterFactory" level="OFF"/>
+    <logger name="org.bson" level="WARN"/>
+    <logger name="org.elasticsearch" level="WARN"/>
+    <logger name="org.hibernate.validator" level="WARN"/>
+    <logger name="org.hibernate" level="WARN"/>
+    <logger name="org.hibernate.ejb.HibernatePersistence" level="OFF"/>
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="org.springframework.web" level="WARN"/>
+    <logger name="org.springframework.security" level="WARN"/>
+    <logger name="org.springframework.cache" level="WARN"/>
+    <logger name="org.thymeleaf" level="WARN"/>
+    <logger name="org.xnio" level="WARN"/>
+    <logger name="springfox" level="WARN"/>
+    <logger name="sun.rmi" level="WARN"/>
+    <logger name="liquibase" level="WARN"/>
+    <logger name="LiquibaseSchemaResolver" level="INFO"/>
+    <logger name="sun.rmi.transport" level="WARN"/>
+
+    <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
+        <resetJUL>true</resetJUL>
+    </contextListener>
+
+    <root level="#logback.loglevel#">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+</configuration>
+--------------------------------------------------------------------------------------------------------
+   @ElementCollection
+    @MapKeyColumn(name = "name")
+    @Column(name = "value")
+    @CollectionTable(name = "jhi_persistent_audit_evt_data", joinColumns=@JoinColumn(name="event_id"))
+    private Map<String, String> data = new HashMap<>();
+--------------------------------------------------------------------------------------------------------
+    @Bean
+    public CorsFilter corsFilter() {
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        CorsConfiguration config = jHipsterProperties.getCors();
+        if (config.getAllowedOrigins() != null && !config.getAllowedOrigins().isEmpty()) {
+            log.debug("Registering CORS filter");
+            source.registerCorsConfiguration("/api/**", config);
+            source.registerCorsConfiguration("/v2/api-docs", config);
+        }
+        return new CorsFilter(source);
+    }
+--------------------------------------------------------------------------------------------------------
+  @ExceptionHandler(ConcurrencyFailureException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ResponseBody
+    public ErrorVM processConcurrencyError(ConcurrencyFailureException ex) {
+        return new ErrorVM(ErrorConstants.ERR_CONCURRENCY_FAILURE);
+    }
+	
+	response.addHeader(JWTConfigurer.AUTHORIZATION_HEADER, "Bearer " + jwt);
+	
+    @GetMapping("/signup")
+    public RedirectView signUp(WebRequest webRequest, @CookieValue(name = "NG_TRANSLATE_LANG_KEY", required = false, defaultValue = "\"en\"") String langKey) {
+        try {
+            Connection<?> connection = providerSignInUtils.getConnectionFromSession(webRequest);
+            socialService.createSocialUser(connection, langKey.replace("\"", ""));
+            return new RedirectView(URIBuilder.fromUri("/#/social-register/" + connection.getKey().getProviderId())
+                .queryParam("success", "true")
+                .build().toString(), true);
+        } catch (Exception e) {
+            log.error("Exception creating social user: ", e);
+            return new RedirectView(URIBuilder.fromUri("/#/social-register/no-provider")
+                .queryParam("success", "false")
+                .build().toString(), true);
+        }
+    }
+--------------------------------------------------------------------------------------------------------
+    /**
+     * GET  /audits : get a page of AuditEvents between the fromDate and toDate.
+     *
+     * @param fromDate the start of the time period of AuditEvents to get
+     * @param toDate the end of the time period of AuditEvents to get
+     * @param pageable the pagination information
+     * @return the ResponseEntity with status 200 (OK) and the list of AuditEvents in body
+     */
+    @GetMapping(params = {"fromDate", "toDate"})
+    public ResponseEntity<List<AuditEvent>> getByDates(
+        @RequestParam(value = "fromDate") LocalDate fromDate,
+        @RequestParam(value = "toDate") LocalDate toDate,
+        @ApiParam Pageable pageable) {
+
+        Page<AuditEvent> page = auditEventService.findByDates(
+            fromDate.atStartOfDay(ZoneId.systemDefault()).toInstant(),
+            toDate.atStartOfDay(ZoneId.systemDefault()).plusDays(1).toInstant(),
+            pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(page, "/management/audits");
+        return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
+    }
+--------------------------------------------------------------------------------------------------------
+#!/bin/bash
+
+JAVA_OPTIONS="${JAVA_OPTIONS} -Xmx1024m -Xms512m -XX:MaxMetaspaceSize=256m"
+JAR_FILE="target/luke-swing-with-deps.jar"
+
+LOG_DIR=${HOME}/.luke.d/
+if [[ ! -d ${LOG_DIR} ]]; then
+  mkdir ${LOG_DIR}
+fi
+
+LUKE_PATH=$(cd $(dirname $0) && pwd)
+cd ${LUKE_PATH}
+nohup java ${JAVA_OPTIONS} -jar ${JAR_FILE} > ${LOG_DIR}/luke_out.log 2>&1 &
+
+
+
+@echo off
+set JAVA_OPTIONS=%JAVA_OPTIONS% -Xmx1024m -Xms512m -XX:MaxMetaspaceSize=256m
+start javaw %JAVA_OPTIONS% -Dswing.systemlaf=com.jgoodies.looks.plastic.PlasticXPLookAndFeel -jar .\target\luke-swing-with-deps.jar
+--------------------------------------------------------------------------------------------------------
 @Test
 public void givenUsingCommonsIo_whenByteArrayInputStreamToAByteBuffer_thenLengthMustMatch() 
   throws IOException {
@@ -47057,6 +47963,278 @@ http://appsdeveloperblog.com/infinite-recursion-in-objects-with-bidirectional-re
             initialValue = 10)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "fruitsSequence")
     private Integer id;
+--------------------------------------------------------------------------------------------------------
+@ToString(exclude="email")
+--------------------------------------------------------------------------------------------------------
+Sort sort = builder
+  .sort()
+    .byField("release_date")
+    .andByField("title").desc()
+  .createSort();
+org.apache.lucene.search.Query luceneQuery = queryBuilder
+			.keyword()
+			.onField("id")
+			.from(50).to(100)
+			.createQuery();
+			
+org.apache.lucene.search.Query luceneQuery = queryBuilder
+			.keyword()
+			.wildcard()		//it is necessary if we want to make use of wildcards
+			.onFields("username", "email", "userDetail.lastName")
+				.boostedTo(5f)
+			.andField("userDetail.firstName")
+			.matching(searchText + "*")
+			.createQuery();
+			
+org.apache.lucene.search.Query luceneQuery = queryBuilder
+              .keyword()
+              .onField("email")
+              .matching("edard.stark@winterfell.com")
+              .createQuery();
+			  
+@Autowired
+private EntityManager entityManager;
+
+...
+
+//inside UserDAO method
+
+FullTextEntityManager fullTextEntityManager = Search.getFullTextEntityManager(entityManager);
+	
+QueryBuilder queryBuilder = fullTextEntityManager.getSearchFactory()
+				                  .buildQueryBuilder()
+				                  .forEntity(User.class)
+				                  .get();
+query.setSort(sort)
+--------------------------------------------------------------------------------------------------------
+import javax.persistence.*;
+import javax.transaction.*;
+
+import org.hibernate.search.jpa.*;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.stereotype.*;
+
+
+@Component
+public class UsersHibernateSearchInit implements ApplicationListener<ContextRefreshedEvent> {
+
+	@PersistenceContext
+	private EntityManager entityManager;
+	
+
+	@Override
+	@Transactional
+	public void onApplicationEvent(ContextRefreshedEvent event) {
+		
+		FullTextEntityManager fullTextEntityManager = Search.getFullTextEntityManager(entityManager);
+		try {
+			fullTextEntityManager.createIndexer().startAndWait();
+		} catch (InterruptedException e) {
+			System.out.println("Error occured trying to build Hibernate Search indexes "
+					+ e.toString());
+		}
+	}
+}
+--------------------------------------------------------------------------------------------------------
+  @Field(index = Index.YES, analyze=Analyze.NO, store = Store.YES)
+  @DateBridge(resolution = Resolution.DAY)
+  private Date createDate;
+--------------------------------------------------------------------------------------------------------
+@Aspect
+@Component
+@Order(-13)
+public class RoorUserLoggingAspect{
+
+  @Before("execution(* saveUser(..))")
+  public void saveUser() {
+
+      System.out.println("It is 1st Aspect");
+  }
+}
+
+@Aspect
+@Component
+@Order(0)
+public class RoorUserLoggingAspect{
+
+  @Before("execution(* saveUser(..))")
+  public void saveUser() {
+
+      System.out.println("It is 2nd Aspect");
+  }
+}
+
+@Aspect
+@Component
+@Order(75)
+public class RoorUserLoggingAspect{
+
+  @Before("execution(* saveUser(..))")
+  public void saveUser() {
+
+      System.out.println("It is 3rd Aspect");
+  }
+}
+
+--------------------------------------------------------------------------------------------------------
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Properties;
+
+import javax.sql.DataSource;
+
+import org.apache.commons.dbcp.DriverManagerConnectionFactory;
+import org.apache.commons.dbcp.PoolableConnection;
+import org.apache.commons.dbcp.PoolableConnectionFactory;
+import org.apache.commons.dbcp.PoolingDataSource;
+import org.apache.commons.pool.impl.GenericObjectPool;
+
+public class LogsConnectionFactory {
+
+	private static interface Singleton {
+        final LogsConnectionFactory INSTANCE = new LogsConnectionFactory();
+    }
+	
+	private final DataSource dataSource;
+	
+	private String datasourceURL = "jdbc:mysql://localhost:3306/library_db?autoReconnect=true&useSSL=false&useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC";
+	private String userName = "library-spring";
+	private String pass = "library-spring";
+	
+	private LogsConnectionFactory() {		 
+		
+	        Properties properties = new Properties();
+	        properties.setProperty("user", userName);
+	        properties.setProperty("password", pass);
+	        
+	        
+	        GenericObjectPool<PoolableConnection> pool = new GenericObjectPool<PoolableConnection>();
+	        DriverManagerConnectionFactory connectionFactory = new DriverManagerConnectionFactory(
+	        		datasourceURL, properties
+	        );
+	        
+	        new PoolableConnectionFactory(
+	                connectionFactory, pool, null, "SELECT 1", 3, false, false, Connection.TRANSACTION_READ_COMMITTED
+	        );
+	 
+	        this.dataSource = new PoolingDataSource(pool);
+	}
+	 
+	public static Connection getDatabaseConnection() throws SQLException {
+	        return Singleton.INSTANCE.dataSource.getConnection();
+	}
+	
+}
+
+CREATE TABLE `user_logs` (
+	`id` int(12) NOT NULL AUTO_INCREMENT,
+    	`level` varchar(10) NOT NULL,
+    	`dated` TIMESTAMP NOT  NULL DEFAULT CURRENT_TIMESTAMP,
+    	`username` varchar(64) NOT NULL,
+    	`field` varchar(60) NOT NULL,
+    	`from_value` varchar(1000) NOT NULL DEFAULT '',
+    	`to_value` varchar(1000) NOT NULL DEFAULT '',
+    	`message` varchar(500) NOT NULL,
+    
+    	PRIMARY KEY (`id`),
+    
+    	KEY `user` (`username`),
+    	CONSTRAINT `FK_USERNAME` FOREIGN KEY (`username`)
+    	REFERENCES `user` (`username`)
+    	ON DELETE NO ACTION ON UPDATE NO ACTION
+
+)ENGINE=InnoDB DEFAULT CHARSET=utf8;
+--------------------------------------------------------------------------------------------------------
+apply plugin: 'com.bmuschko.tomcat'
+apply plugin: 'eclipse-wtp'
+
+
+buildscript {
+       repositories {
+             jcenter()
+       }
+       dependencies {
+             classpath 'com.bmuschko:gradle-tomcat-plugin:2.4.1'
+       }
+}
+
+
+dependencies {
+         def tomcatVersion = '8.0.46'
+         tomcat "org.apache.tomcat.embed:tomcat-embed-core:${tomcatVersion}",
+         "org.apache.tomcat.embed:tomcat-embed-logging-juli:${tomcatVersion}",
+         "org.apache.tomcat.embed:tomcat-embed-jasper:${tomcatVersion}"
+         api 'org.apache.commons:commons-math3:3.6.1'
+}
+
+
+tomcat {
+         httpPort = 8080
+         enableSSL = true
+         contextPath = '/library-spring'
+}
+--------------------------------------------------------------------------------------------------------
+//declaring pointcuts
+@Pointcut("execution(void saveUser*(..))")
+public void saveUserMethod() {}
+
+@Pointcut("within(com.wkrzywiec.library.service.*)")
+public void inServicePackage() {}
+
+
+//implementing pointcuts
+//combine two of them
+@Before("saveUserMethod() && inServicePackage()")
+public void saveUserMethodInServicePackage() {
+ 
+  System.out.println("User is saved using UserService class located in Service package.");
+}
+
+//use only one of them
+@Before("saveUserMethod()")
+public void saveUserMethodInAnyPackage() {
+  
+  System.out.println("User is saved, but don't know from which package method was used!");
+}
+
+
+import java.sql.SQLSyntaxErrorException;
+
+/*here is my sample code that will catch all SQL syntax exceptions
+  in service package and it will print me its stacktrace
+*/
+@AfterThrowing(
+    pointcut="execution(* com.wkrzywiec.spring.library.service.*.*(..))",
+    throwing="exec")
+public void catchAllSQLSyntaxErrors(SQLSyntaxErrorException exec) {
+ 
+  System.out.println("Here is the exception stacktrace: " + \n + exec.printStackTrace());
+}
+--------------------------------------------------------------------------------------------------------
+dependencies {
+
+  def springAopVersion = '5.0.4.RELEASE'
+  
+  compile "org.springframework:spring-aop:${springAopVersion}"
+  compile 'org.aspectj:aspectjweaver:1.8.13'
+  compile 'org.aspectj:aspectjrt:1.8.13'
+
+}
+--------------------------------------------------------------------------------------------------------
+@AfterReturning(
+    pointcut="execution(* saveUser(..))",
+    returning="userID")
+public void saveUserMethod(JoinPoint joinPoint, Object userID) {
+ 
+  //getting argument passed to the method
+  Object[] args = joinPoint.getArgs();
+  UserDTO user = (UserDTO) args[0];
+  
+  //printing userID
+  System.out.println("User: " + user.getUsername() + " has been assign to ID: " + userID.toString());
+  
+}
 --------------------------------------------------------------------------------------------------------
 Time/Space Complexities of an Unsorted Array List
 
