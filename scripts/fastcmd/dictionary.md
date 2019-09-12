@@ -19392,6 +19392,185 @@ public interface ExCustomRepository<T extends AbstractEntity, P extends EntityPa
     }
 }
 --------------------------------------------------------------------------------------------------------
+hibernate.hbm2ddl.auto=update
+#hibernate.hbm2ddl.auto=create
+#hibernate.hbm2ddl.auto=create-drop
+#hibernate.hbm2ddl.auto=validate
+--------------------------------------------------------------------------------------------------------
+
+import com.google.common.collect.Lists;
+import entity.QUser;
+import entity.User;
+import entity.UserGroup;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import repository.UserRepository;
+
+import java.util.List;
+
+@Service
+public class UserService {
+
+    @Autowired
+    UserRepository repository;
+
+    //ищем по возрасту, исключая границы
+    public List<User> getByAgeExcluding(Integer minAge, Integer maxAge) {
+        return Lists.newArrayList(repository.findAll(QUser.user.age.between(minAge, maxAge)));
+    }
+
+    //ищем по возрасту, включая границы
+    public List<User> getByAgeIncluding(Integer minAge, Integer maxAge) {
+        return Lists.newArrayList(repository.findAll(QUser.user.age.goe(minAge).and(QUser.user.age.loe(maxAge))));
+    }
+
+    //ищем по ID
+    public User getById(Long id) {
+        return repository.findOne(QUser.user.id.eq(id)).orElse(new User());
+    }
+
+    public User get(Long id) {
+        return repository.findById(id).orElse(new User());
+    }
+
+    //ищем по группам
+    public List<User> getByGroups(List<UserGroup> groups) {
+        return Lists.newArrayList(repository.findAll(QUser.user.group.in(groups)));
+    }
+
+    //ищем по имени
+    public List<User> get(String name) {
+        return Lists.newArrayList(repository.findAll(QUser.user.name.ne(name)));
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+ 
+@Configuration
+@EnableJpaAuditing(dateTimeProviderRef = "dateTimeProvider")
+@EnableJpaRepositories(basePackages = {
+        "net.petrikainulainen.springdata.jpa.todo"
+})
+@EnableTransactionManagement
+class PersistenceContext {
+ 
+    @Bean
+    NamedParameterJdbcTemplate jdbcTemplate(DataSource dataSource) {
+        return new NamedParameterJdbcTemplate(dataSource);
+    }
+     
+    //Other beans are omitted for the sake of clarity
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+ 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+ 
+@Repository
+final class TodoRepositoryImpl implements CustomTodoRepository {
+ 
+    private static final String SEARCH_TODO_ENTRIES = "SELECT id, title FROM todos t WHERE " +
+            "LOWER(t.title) LIKE LOWER(CONCAT('%',:searchTerm, '%')) OR " +
+            "LOWER(t.description) LIKE LOWER(CONCAT('%',:searchTerm, '%')) " +
+            "ORDER BY t.title ASC";
+ 
+    private final NamedParameterJdbcTemplate jdbcTemplate;
+ 
+    @Autowired
+    TodoRepositoryImpl(NamedParameterJdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+ 
+    @Transactional(readOnly = true)
+    @Override
+    public List<TodoSearchResultDTO> findBySearchTerm(String searchTerm) {
+        Map<String, String> queryParams = new HashMap<>();
+        queryParams.put("searchTerm", searchTerm);
+ 
+        List<TodoSearchResultDTO> searchResults = jdbcTemplate.query(SEARCH_TODO_ENTRIES,
+                queryParams,
+                new BeanPropertyRowMapper<>(TodoSearchResultDTO.class)
+        );
+ 
+        return searchResults;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+    @Value("#{T(java.lang.Boolean).parseBoolean('${hibernate.format_sql}')}")
+    private Boolean dbFormatSql;
+--------------------------------------------------------------------------------------------------------
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public static TypedQuery createCriteriaQueryForEntity(final Class entityClazz, final List criteriaFilters) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery createQuery = cb.createQuery(entityClazz);
+        Root root = createQuery.from(entityClazz);
+        CriteriaQuery select = createQuery.select(root);
+        Predicate[] predicates = buildPredicates(criteriaFilters, root, cb);
+        TypedQuery typedQuery = em.createQuery(select.where(cb.and(predicates)));
+        return typedQuery;
+    }
+	
+public class Specifications {
+
+	public static Specification search(final List filters) {
+		return new Specification() {
+			@Override
+			public Predicate toPredicate(Root root, 
+						CriteriaQuery< ?> query, 
+						CriteriaBuilder cb) {
+				Predicate[] p = buildPredicates(filters, root, cb);
+				return cb.and(p);
+			}
+           
+			private Predicate[] buildPredicates(List filters, 
+							Root root, 
+							CriteriaBuilder cb) {
+				//Build your predicates here.
+			}
+		};
+	}
+}
+
+public static Predicate search(Entity agEntity) {
+    QEntity qEntity = QEntity.entity;
+    BooleanBuilder booleanBuilder = new BooleanBuilder();
+    if (!StringUtils.isEmpty(agEntity.getAddress())){                                                                          
+
+    booleanBuilder.and(qEntity.address.contains(agEntity.getAddress()));`
+    /* Many other if conditions*/
+
+
+    QEntity entitySubquery = QEntity.entity;      
+    booleanBuilder=booleanBuilder.and(qEntity.version.eq(JPAExpressions
+            .select(qEntity.version.max())
+            .from(entitySubquery )
+            .where(entitySubquery.id.eq(qagEntity.id))));
+}
+--------------------------------------------------------------------------------------------------------
+Predicate titleAndDescriptionAre = QTodo.todo.title.eq("Foo")
+                .and(QTodo.todo.description.eq("Bar"));
+				
+final class TodoPredicates {
+ 
+    private TodoPredicates() {}
+ 
+    static Predicate hasTitle(String title) {
+        return QTodo.todo.title.eq(title);
+    }
+}
+--------------------------------------------------------------------------------------------------------
 language: java
 
 script: ./gradlew build jacocoTestReport
@@ -23429,6 +23608,20 @@ public class TestRequestBodyMethodProcessor extends AbstractMessageConverterMeth
     assertNotNull(result);
     assertEquals("Jad", result.getName());
   }
+--------------------------------------------------------------------------------------------------------
+private static class ConstantNumberExpression extends NumberExpression<Integer> {
+    private static final long serialVersionUID = 1220768215234001828L;
+
+    public ConstantNumberExpression(final int constant) {
+        super(new ConstantImpl<>(constant));
+    }
+
+    @Override
+    @Nullable
+    public <R, C> R accept(final Visitor<R, C> v, @Nullable final C context) {
+        return v.visit((Constant<Integer>) mixin, context);
+    }
+}
 --------------------------------------------------------------------------------------------------------
 //get the mimetype
 			String mimeType = URLConnection.guessContentTypeFromName(file.getName());
