@@ -7899,6 +7899,12 @@ script:
 after_failure:
   - cat hs_err*
 --------------------------------------------------------------------------------------------------------
+<changeSet author="mark" id="2013-07-15-01">
+    <update tableName="MyTable">
+        <column name="MyColumn" valueComputed="upper(MyColumn)"/>
+    </update>
+</changeSet>
+--------------------------------------------------------------------------------------------------------
 @FieldBridge(impl = ScanResultBridge.class)
 
 spring:
@@ -19383,6 +19389,17 @@ queryFactory.selectFrom(department)
                             .from(playerScore2))
                             .where(playerScore2.playerId.eq(playerScore.playerId)))
 --------------------------------------------------------------------------------------------------------
+public interface MyUserRepository extends JpaRepository<MyUser, Long>, 
+  QuerydslPredicateExecutor<MyUser>, QuerydslBinderCustomizer<QMyUser> {
+    @Override
+    default public void customize(
+      QuerydslBindings bindings, QMyUser root) {
+        bindings.bind(String.class)
+          .first((SingleValueBinding<StringPath, String>) StringExpression::containsIgnoreCase);
+        bindings.excluding(root.email);
+      }
+}
+--------------------------------------------------------------------------------------------------------
 @NoRepositoryBean
 public interface ExCustomRepository<T extends AbstractEntity, P extends EntityPathBase<T>, ID extends Serializable>
         extends JpaRepository<T, ID>, QuerydslPredicateExecutor<T>, QuerydslBinderCustomizer<P> {
@@ -19391,6 +19408,1123 @@ public interface ExCustomRepository<T extends AbstractEntity, P extends EntityPa
     default void customize(QuerydslBindings bindings, P root) {
     }
 }
+--------------------------------------------------------------------------------------------------------
+package com.paragon.microservices.distributor.service.impl;
+
+import com.paragon.microservices.distributor.model.domain.ProductParameters;
+import com.paragon.microservices.distributor.model.domain.VersionParameters;
+import com.paragon.microservices.distributor.model.entity.*;
+import com.paragon.microservices.distributor.repository.FileRepository;
+import com.paragon.microservices.distributor.repository.VersionRepository;
+import com.paragon.microservices.distributor.service.interfaces.ProductService;
+import com.paragon.microservices.distributor.service.interfaces.VersionService;
+import com.paragon.microservices.distributor.system.utils.ServiceUtils;
+import com.querydsl.core.types.Predicate;
+import lombok.*;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.hibernate.search.jpa.FullTextEntityManager;
+import org.hibernate.search.jpa.FullTextQuery;
+import org.hibernate.search.jpa.Search;
+import org.hibernate.search.query.dsl.QueryBuilder;
+import org.springframework.core.convert.ConversionService;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+
+import static com.paragon.mailingcontour.commons.exception.ResourceNotFoundException.throwResourceNotFound;
+import static com.paragon.microservices.distributor.exception.EmptyContentException.throwEmptyContent;
+import static com.paragon.microservices.distributor.exception.InvalidFormatException.throwInvalidFormat;
+import static com.paragon.microservices.distributor.exception.InvalidParameterException.throwInvalidParameter;
+import static com.paragon.microservices.distributor.system.utils.ServiceUtils.DEFAULT_COMPLETABLE_ACTION;
+import static com.paragon.microservices.distributor.system.utils.ServiceUtils.copyNonNullProperties;
+import static java.util.Arrays.asList;
+
+/**
+ * {@link VersionService} implementation
+ */
+@Slf4j
+@Service
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
+@Getter(AccessLevel.PROTECTED)
+@RequiredArgsConstructor
+public class VersionServiceImpl extends AuditServiceImpl<VersionEntity, QVersionEntity, UUID> implements VersionService {
+    /**
+     * Default version format error messages
+     */
+    public static final String ERROR_VERSION_FORMAT_INVALID_MESSAGE_TEMPLATE = "error.version.format.invalid";
+
+    private final VersionRepository versionRepository;
+    private final ProductService productService;
+    private final ConversionService conversionService;
+    private final FileRepository fileRepository;
+
+    @Override
+    public Optional<VersionEntity> getVersionRecord(final VersionParameters versionParameters) {
+        log.info("Fetching version record by input parameters: {}", versionParameters);
+        return this.getRepository().findByIdAndProductId(versionParameters.getVersionId(), versionParameters.getProductId());
+    }
+
+    @Override
+    public <S extends VersionEntity> Iterable<S> getAllVersionRecords(final ProductParameters productParameters) {
+        log.info("Fetching all version records by input parameters: {}", productParameters);
+        return this.getRepository().<S>findAllByProductId(productParameters.getProductId())
+                .thenApply(ServiceUtils::ofEmpty)
+                .whenCompleteAsync(DEFAULT_COMPLETABLE_ACTION, this.getAsyncTaskExecutor())
+                .join()
+                .orElseThrow(() -> throwEmptyContent(this.getMessageSource()));
+    }
+
+    @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public VersionEntity createVersionRecord(final ProductParameters productParameters, final VersionEntity versionEntity) {
+        log.info("Creating new version record by input parameters: {}, versionEntity: {}", productParameters, versionEntity);
+        return this.getProductService().findById(productParameters.getProductId())
+                .map(entity -> {
+                    versionEntity.setProduct(entity);
+                    Optional.ofNullable(versionEntity.getFiles()).ifPresent(v -> v.forEach(fileEntity -> fileEntity.setVersion(versionEntity)));
+                    return versionEntity;
+                })
+                .map(this::save)
+                .orElseThrow(() -> throwResourceNotFound(this.getMessageSource(), ERROR_RESOURCE_NOT_FOUND, productParameters));
+    }
+
+    @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public VersionEntity updateVersionRecord(final VersionParameters versionParameters, final VersionEntity versionEntity) {
+        log.info("Updating version record by input parameters: {}, entity: {}", versionParameters, versionEntity);
+        return this.getVersionRecord(versionParameters)
+                .map(entity -> {
+                    copyNonNullProperties(versionEntity, entity);
+                    return entity;
+                })
+                .map(this::save)
+                .orElseThrow(() -> throwResourceNotFound(this.getMessageSource(), ERROR_RESOURCE_NOT_FOUND, versionParameters));
+    }
+
+    @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public VersionEntity deleteVersionRecord(final VersionParameters versionParameters) {
+        log.info("Deleting version record by input parameters: {}", versionParameters);
+        return this.getVersionRecord(versionParameters)
+                .map(entity -> {
+                    final Set<VersionEntity> versions = entity.getProduct().getVersions();
+                    Optional.ofNullable(versions).ifPresent(v -> v.removeIf(current -> Objects.equals(current, entity)));
+                    this.delete(entity);
+                    return entity;
+                })
+                .orElseThrow(() -> throwResourceNotFound(this.getMessageSource(), ERROR_RESOURCE_NOT_FOUND, versionParameters));
+    }
+
+    public Iterable<VersionEntity> searchVersions(final String searchText, int pageNo, int resultsPerPage) {
+        final FullTextQuery jpaQuery = this.searchVersionsQuery(searchText);
+        jpaQuery.setMaxResults(resultsPerPage);
+        jpaQuery.setFirstResult((pageNo - 1) * resultsPerPage);
+        return jpaQuery.getResultList();
+    }
+
+    public int searchVersionsTotalCount(final String searchText) {
+        final FullTextQuery jpaQuery = this.searchVersionsQuery(searchText);
+        return jpaQuery.getResultSize();
+    }
+
+    private FullTextQuery searchVersionsQuery(final String searchText) {
+        final FullTextEntityManager fullTextEntityManager = Search.getFullTextEntityManager(this.getEntityManager());
+        final QueryBuilder queryBuilder = fullTextEntityManager.getSearchFactory()
+                .buildQueryBuilder()
+                .forEntity(VersionEntity.class)
+                .get();
+
+        final org.apache.lucene.search.Query luceneQuery = queryBuilder
+                .keyword()
+                .wildcard()
+                .onField("version")
+                .boostedTo(5f)
+                .matching(searchText + "*")
+                .createQuery();
+        return fullTextEntityManager.createFullTextQuery(luceneQuery, VersionEntity.class);
+    }
+
+    /**
+     * Returns {@link FileEntity} by input search parameters
+     *
+     * @param product  - initial input {@link String} product name
+     * @param version  - intial input {@link String} version name
+     * @param locale   - initial input {@link String} locale name
+     * @param platform - initial input {@link String} platform name
+     * @return {@link FileEntity}
+     */
+    public FileEntity getBinaryRecordByParams(final String product, final String version, final String locale, final String platform) {
+        log.info("Fetching binary record by input parameters: product: {}, version: {}, locale: {}, platform: {}", product, version, locale, platform);
+        final Predicate predicate = this.buildBinaryRecordSearchPredicate(product, version, locale, platform);
+        return this.fileRepository.findOne(predicate).orElseThrow(() -> throwInvalidParameter(this.getMessageSource(), asList(product, version, locale, platform)));
+    }
+
+    /**
+     * Returns search {@link Predicate} by input search parameters
+     *
+     * @param product  - initial input {@link String} product name
+     * @param version  - intial input {@link String} version name
+     * @param locale   - initial input {@link String} locale name
+     * @param platform - initial input {@link String} platform name
+     * @return search {@link Predicate}
+     */
+    private Predicate buildBinaryRecordSearchPredicate(final String product, final String version, final String locale, final String platform) {
+        if (StringUtils.isBlank(version)) {
+            return QVersionEntity.versionEntity.versionInfo().isNotNull();
+        } else {
+            final VersionInfoEntity versionInfoEntity = this.buildVersionInfo(version);
+            return QFileEntity.fileEntity.version().product().name.equalsIgnoreCase(product)
+                    .and(QFileEntity.fileEntity.version().versionInfo().eq(versionInfoEntity))
+                    .and(QFileEntity.fileEntity.version().locale.equalsIgnoreCase(locale))
+                    .and(QFileEntity.fileEntity.fileInfo().filePlatform.eq(platform));
+        }
+    }
+
+    /**
+     * Returns {@link VersionInfoEntity} by input {@link String} version
+     *
+     * @param version - initial input {@link String} version
+     * @return {@link VersionInfoEntity}
+     */
+    private VersionInfoEntity buildVersionInfo(final String version) {
+        try {
+            return new VersionInfoEntity(this.getConversionService().convert(version, int[].class));
+        } catch (IllegalArgumentException ex) {
+            throw throwInvalidFormat(this.getMessageSource(), ERROR_VERSION_FORMAT_INVALID_MESSAGE_TEMPLATE, version);
+        }
+    }
+
+    @Override
+    protected VersionRepository getRepository() {
+        return this.versionRepository;
+    }
+}
+package com.paragon.microservices.distributor.controller.impl;
+
+import com.google.common.io.ByteStreams;
+import com.paragon.microservices.distributor.controller.interfaces.DownloadController;
+import com.paragon.microservices.distributor.model.domain.*;
+import com.paragon.microservices.distributor.model.entity.FileEntity;
+import com.paragon.microservices.distributor.model.entity.ProductEntity;
+import com.paragon.microservices.distributor.model.entity.VersionEntity;
+import com.paragon.microservices.distributor.model.enumeration.DownloadStatus;
+import com.paragon.microservices.distributor.model.search.SearchOperation;
+import com.paragon.microservices.distributor.model.search.SearchPredicatesBuilder;
+import com.paragon.microservices.distributor.repository.ProductRepository;
+import com.paragon.microservices.distributor.repository.VersionRepository;
+import com.paragon.microservices.distributor.service.impl.VersionServiceImpl;
+import com.paragon.microservices.distributor.service.interfaces.DownloadService;
+import com.paragon.microservices.distributor.service.interfaces.FileTransferService;
+import com.paragon.microservices.distributor.service.interfaces.SessionService;
+import com.paragon.microservices.distributor.system.constraint.FileNamePattern;
+import com.querydsl.core.types.Predicate;
+import com.querydsl.core.types.dsl.BooleanExpression;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.tomcat.util.http.fileupload.IOUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.MessageSource;
+import org.springframework.data.querydsl.binding.QuerydslPredicate;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+import org.springframework.web.servlet.view.RedirectView;
+
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+import static com.paragon.microservices.distributor.system.utils.HeaderUtils.getFileDownloadHeaders;
+
+/**
+ * {@link DownloadController} implementation
+ */
+@Slf4j
+@Getter(AccessLevel.PROTECTED)
+@RestController
+@Transactional(rollbackFor = Exception.class, readOnly = true)
+@RequestMapping(
+        value = "/api/v0/distributor/download",
+        produces = {MediaType.APPLICATION_JSON_UTF8_VALUE}
+)
+public class DownloadControllerImpl extends BaseControllerImpl implements DownloadController {
+    private final DownloadService downloadService;
+    private final FileTransferService fileTransferService;
+    private final ApplicationEventPublisher eventPublisher;
+
+    @Autowired
+    public DownloadControllerImpl(final MessageSource messageSource,
+                                  final DownloadService downloadService,
+                                  final FileTransferService fileTransferService,
+                                  final ApplicationEventPublisher eventPublisher) {
+        super(messageSource);
+        this.downloadService = downloadService;
+        this.fileTransferService = fileTransferService;
+        this.eventPublisher = eventPublisher;
+    }
+
+    @Override
+    @GetMapping(params = {"productId", "!product"})
+    public RedirectView generateDownloadLink(final UUID productId, final UUID versionId, final UUID binaryId, final AuthenticatedUser authenticatedUser) {
+        final DownloadLink downloadLink = this.getDownloadService().generateDownloadLink(binaryId, authenticatedUser.getUserId());
+        final RedirectView redirectView = new RedirectView(downloadLink.getUrl(), true);
+        redirectView.setStatusCode(HttpStatus.PERMANENT_REDIRECT);
+        return redirectView;
+    }
+
+    @Override
+    @GetMapping(params = {"product", "!productId"})
+    public RedirectView generateDownloadLink(final String product, final String version, final String locale, final String platform) {
+        return null;
+    }
+
+    @GetMapping("/{sessionId}/{fileName}")
+    @Override
+    public ResponseEntity<StreamingResponseBody> getResourceAsStream(@PathVariable final UUID sessionId, @PathVariable @FileNamePattern final String fileName) {
+        final FileData fileData = this.getFileTransferService().getFileData(sessionId);
+        final StreamingResponseBody stream = this.toByteStreamResponseBody(fileData);
+        return ResponseEntity.ok()
+                .headers(getFileDownloadHeaders(fileData.getFileMetaData()))
+                .body(stream);
+    }
+
+    @GetMapping("/2/{sessionId}/{fileName}")
+    public ResponseEntity<StreamingResponseBody> getResourceAsStream2(@PathVariable final UUID sessionId, @PathVariable @FileNamePattern final String fileName) {
+        final FileData fileData = this.getFileTransferService().getFileData(sessionId);
+        final StreamingResponseBody stream = this.toZipStreamResponseBody(fileData);
+        return ResponseEntity.ok()
+                .headers(getFileDownloadHeaders(fileData.getFileMetaData()))
+                .body(stream);
+    }
+
+    @GetMapping("/3/{sessionId}/{fileName}")
+    public ResponseEntity<StreamingResponseBody> getResourceAsStream3(@PathVariable final UUID sessionId, @PathVariable @FileNamePattern final String fileName) {
+        final FileData fileData = this.getFileTransferService().getFileData(sessionId);
+        final StreamingResponseBody stream = this.toBufferedStreamResponseBody(fileData);
+        return ResponseEntity.ok()
+                .headers(getFileDownloadHeaders(fileData.getFileMetaData()))
+                .body(stream);
+    }
+
+    @GetMapping("/4/{sessionId}/{fileName}")
+    public ResponseEntity<StreamingResponseBody> getResourceAsStream4(@PathVariable final UUID sessionId, @PathVariable @FileNamePattern final String fileName) {
+        final FileData fileData = this.getFileTransferService().getFileData(sessionId);
+        final StreamingResponseBody stream = this.toStreamResponseBody(fileData);
+        return ResponseEntity.ok()
+                .headers(getFileDownloadHeaders(fileData.getFileMetaData()))
+                .body(stream);
+    }
+
+    @Autowired
+    private SessionService sessionService;
+    @Autowired
+    private ProductRepository productRepository;
+    @Autowired
+    private VersionServiceImpl versionService;
+    @Autowired
+    private VersionRepository versionRepository;
+
+    @GetMapping("/version")
+    public ResponseEntity<Integer> version(@RequestParam(name = "search") final String search) {
+        return ResponseEntity.ok().body(this.getVersionService().searchVersionsTotalCount(search));
+    }
+
+    @RequestMapping(method = RequestMethod.GET, value = "/api/myusers")
+    @ResponseBody
+    public Iterable<VersionEntity> findAllByWebQuerydsl(@QuerydslPredicate(root = VersionEntity.class) Predicate predicate) {
+        return this.getVersionRepository().findAll(predicate);
+    }
+
+    @RequestMapping(method = RequestMethod.GET, value = "/myusers2")
+    @ResponseBody
+    public FileEntity findAllByQueryds2(@RequestParam(value = "product") String product,
+                                        @RequestParam(value = "version") String version,
+                                        @RequestParam(value = "locale") String locale,
+                                        @RequestParam(value = "platform") String platform) {
+        return this.versionService.getBinaryRecordByParams(product, version, locale, platform);
+    }
+
+    @RequestMapping(method = RequestMethod.GET, value = "/myusers")
+    @ResponseBody
+    public Iterable<VersionEntity> findAllByQuerydsl(@RequestParam(value = "search") String search) {
+        final SearchPredicatesBuilder builder = new SearchPredicatesBuilder();
+        if (search != null) {
+            final Pattern pattern = Pattern.compile("(\\w+?)(:|<|>)(\\w+?),");
+            final Matcher matcher = pattern.matcher(search + ",");
+            while (matcher.find()) {
+                builder.with(matcher.group(1), SearchOperation.findByOperation(matcher.group(2)), matcher.group(3));
+            }
+        }
+        final BooleanExpression exp = builder.build(VersionEntity.class);
+        return this.getVersionRepository().findAll(exp);
+    }
+
+//    @RequestMapping(method = RequestMethod.GET, value = "/users")
+//    @ResponseBody
+//    public List<VersionEntity> findAll(@RequestParam(value = "search", required = false) String search) {
+//        final List<SearchCriteria> params = new ArrayList<>();
+//        if (search != null) {
+//            final Pattern pattern = Pattern.compile("(\\w+?)(:|<|>)(\\w+?),");
+//            final Matcher matcher = pattern.matcher(search + ",");
+//            while (matcher.find()) {
+//                params.add(SearchCriteria.of(matcher.group(1), SearchOperation.findByOperation(matcher.group(2)), matcher.group(3)));
+//            }
+//        }
+//        return this.versionService.searchUser(params);
+//    }
+
+    @GetMapping("/user")
+    public ResponseEntity<CompletableFuture<Iterable<ProductEntity>>> user() {
+        return ResponseEntity.ok().body(this.getProductRepository().findByUserIsCurrentUser());
+    }
+
+    @GetMapping("/created")
+    public ResponseEntity init() {
+        final Session session = new Session();
+        session.setId("c108cda3-8b4b-483d-a987-d65e6bfe3024");
+        session.setFilepath("C:\\git-project\\paragon.microservices.distributor");
+        session.setFilename("lombok.config");
+        session.setDownloadStatus(DownloadStatus.NEW);
+        this.getSessionService().save(session);
+        return ResponseEntity.ok().build();
+    }
+
+    private StreamingResponseBody toByteStreamResponseBody(final FileData fileData) {
+        return outputStream -> {
+            this.notifyEvent(fileData).accept(DownloadStatus.DOWNLOADING);
+            try {
+                ByteStreams.copy(fileData.getFileStream(), outputStream);
+                outputStream.flush();
+                this.notifyEvent(fileData).accept(DownloadStatus.FINISHED);
+            } catch (final IOException ex) {
+                log.error("Unable to stream file source, message: {}", ex.getMessage());
+                this.notifyEvent(fileData).accept(DownloadStatus.INTERRUPTED);
+            }
+        };
+    }
+
+    private StreamingResponseBody toZipStreamResponseBody(final FileData fileData) {
+        return outputStream -> {
+            this.notifyEvent(fileData).accept(DownloadStatus.DOWNLOADING);
+            final ZipOutputStream zipOut = new ZipOutputStream(outputStream);
+            try {
+                final ZipEntry zipEntry = new ZipEntry(fileData.getFileMetaData().getFileName());
+                zipOut.putNextEntry(zipEntry);
+
+                final byte[] bytes = new byte[1024];
+                int length;
+                while ((length = fileData.getFileStream().read(bytes)) >= 0) {
+                    zipOut.write(bytes, 0, length);
+                }
+                fileData.getFileStream().close();
+                zipOut.close();
+                this.notifyEvent(fileData).accept(DownloadStatus.FINISHED);
+            } catch (final IOException ex) {
+                log.error("Unable to stream file source, message: {}", ex.getMessage());
+                this.notifyEvent(fileData).accept(DownloadStatus.INTERRUPTED);
+            }
+        };
+    }
+
+    private StreamingResponseBody toBufferedStreamResponseBody(final FileData fileData) {
+        return outputStream -> {
+            this.notifyEvent(fileData).accept(DownloadStatus.DOWNLOADING);
+            try (final BufferedInputStream br = new BufferedInputStream(fileData.getFileStream())) {
+                byte[] contents = new byte[1024];
+                while (br.read(contents) != -1) {
+                    outputStream.write(contents);
+                    outputStream.flush();
+                    contents = new byte[1024];
+                }
+                this.notifyEvent(fileData).accept(DownloadStatus.FINISHED);
+            } catch (IOException ex) {
+                try {
+                    fileData.getFileStream().close();
+                } catch (IOException closingException) {
+                    log.warn("could not close command result, a http connection may be leaked !", closingException);
+                }
+                log.error("Unable to stream file source, message: {}", ex.getMessage());
+                this.notifyEvent(fileData).accept(DownloadStatus.INTERRUPTED);
+            }
+        };
+    }
+
+    private StreamingResponseBody toStreamResponseBody(final FileData fileData) {
+        return outputStream -> {
+            try {
+                this.notifyEvent(fileData).accept(DownloadStatus.DOWNLOADING);
+                IOUtils.copyLarge(fileData.getFileStream(), outputStream);
+                outputStream.flush();
+                this.notifyEvent(fileData).accept(DownloadStatus.FINISHED);
+            } catch (IOException ex) {
+                try {
+                    fileData.getFileStream().close();
+                } catch (IOException closingException) {
+                    log.warn("could not close command result, a http connection may be leaked!", closingException);
+                }
+                log.error("Unable to stream file source, message: {}", ex.getMessage());
+                this.notifyEvent(fileData).accept(DownloadStatus.INTERRUPTED);
+            }
+        };
+    }
+
+    private Consumer<DownloadStatus> notifyEvent(final FileData fileData) {
+        return status -> this.getEventPublisher().publishEvent(new DownloadEvent(this, MessageEntity.of(fileData.getSessionId(), status)));
+    }
+}
+
+--------------------------------------------------------------------------------------------------------
+//package com.paragon.microservices.distributor.model.search;
+//
+//import java.util.Arrays;
+//import java.util.Collections;
+//import java.util.Deque;
+//import java.util.HashMap;
+//import java.util.LinkedList;
+//import java.util.Map;
+//import java.util.regex.Matcher;
+//import java.util.regex.Pattern;
+//
+//import com.google.common.base.Joiner;
+//
+//public class CriteriaParser {
+//
+//    private static Map<String, Operator> ops;
+//
+//    private static Pattern SpecCriteraRegex = Pattern.compile("^(\\w+?)(" + Joiner.on("|")
+//        .join(SearchOperation.SIMPLE_OPERATION_SET) + ")(\\p{Punct}?)(\\w+?)(\\p{Punct}?)$");
+//
+//    private enum Operator {
+//        OR(1), AND(2);
+//        final int precedence;
+//
+//        Operator(int p) {
+//            precedence = p;
+//        }
+//    }
+//
+//    static {
+//        Map<String, Operator> tempMap = new HashMap<>();
+//        tempMap.put("AND", Operator.AND);
+//        tempMap.put("OR", Operator.OR);
+//        tempMap.put("or", Operator.OR);
+//        tempMap.put("and", Operator.AND);
+//
+//        ops = Collections.unmodifiableMap(tempMap);
+//    }
+//
+//    private static boolean isHigerPrecedenceOperator(String currOp, String prevOp) {
+//        return (ops.containsKey(prevOp) && ops.get(prevOp).precedence >= ops.get(currOp).precedence);
+//    }
+//
+//    public Deque<?> parse(String searchParam) {
+//
+//        Deque<Object> output = new LinkedList<>();
+//        Deque<String> stack = new LinkedList<>();
+//
+//        Arrays.stream(searchParam.split("\\s+")).forEach(token -> {
+//            if (ops.containsKey(token)) {
+//                while (!stack.isEmpty() && isHigerPrecedenceOperator(token, stack.peek()))
+//                    output.push(stack.pop()
+//                        .equalsIgnoreCase(SearchOperation.OR_OPERATOR) ? SearchOperation.OR_OPERATOR : SearchOperation.AND_OPERATOR);
+//                stack.push(token.equalsIgnoreCase(SearchOperation.OR_OPERATOR) ? SearchOperation.OR_OPERATOR : SearchOperation.AND_OPERATOR);
+//            } else if (token.equals(SearchOperation.LEFT_PARANTHESIS)) {
+//                stack.push(SearchOperation.LEFT_PARANTHESIS);
+//            } else if (token.equals(SearchOperation.RIGHT_PARANTHESIS)) {
+//                while (!stack.peek()
+//                    .equals(SearchOperation.LEFT_PARANTHESIS))
+//                    output.push(stack.pop());
+//                stack.pop();
+//            } else {
+//
+//                Matcher matcher = SpecCriteraRegex.matcher(token);
+//                while (matcher.find()) {
+//                    output.push(new SpecSearchCriteria(matcher.group(1), matcher.group(2), matcher.group(3), matcher.group(4), matcher.group(5)));
+//                }
+//            }
+//        });
+//
+//        while (!stack.isEmpty())
+//            output.push(stack.pop());
+//
+//        return output;
+//    }
+//
+//}
+
+package com.paragon.microservices.distributor.model.search;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.validation.annotation.Validated;
+
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+
+/**
+ * Search criteria model
+ *
+ * @param <T> type of search value
+ */
+@Data
+@Builder
+@Validated
+@NoArgsConstructor
+@AllArgsConstructor
+public class SearchCriteria<T> {
+    @NotBlank(message = "{model.domain.search-criteria.key.notBlank}")
+    private String key;
+
+    @NotNull(message = "{model.domain.search-criteria.operation.notNull}")
+    private SearchOperation operation;
+
+    @NotBlank(message = "{model.domain.search-criteria.value.notBlank}")
+    private T value;
+
+    /**
+     * Returns new {@link SearchCriteria} by input arguments
+     *
+     * @param <T>       type of search value
+     * @param key       - initial input {@link String} key
+     * @param operation - initial input {@link SearchOperation}
+     * @param value     - initial input {@link String} value
+     * @return new {@link SearchCriteria}
+     */
+    public static <T> SearchCriteria<T> of(final String key, final SearchOperation operation, final T value) {
+        return new SearchCriteria<>(key, operation, value);
+    }
+}
+package com.paragon.microservices.distributor.model.search;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+import javax.annotation.Nullable;
+import java.util.Arrays;
+import java.util.Objects;
+
+@Getter
+@RequiredArgsConstructor
+public enum SearchOperation {
+    EQUALITY(":"),
+    NEGATION("!"),
+    GREATER_THAN(">"),
+    LESS_THAN("<"),
+    LIKE("~"),
+    STARTS_WITH("!<"),
+    ENDS_WITH(">!"),
+    CONTAINS("_");
+
+    /**
+     * Symbolic operation value
+     */
+    private final String operation;
+
+    public static final String[] SIMPLE_OPERATION_SET = {":", "!", ">", "<", "~"};
+    public static final String OR_PREDICATE_FLAG = "'";
+    public static final String ZERO_OR_MORE_REGEX = "*";
+    public static final String OR_OPERATOR = "OR";
+    public static final String AND_OPERATOR = "AND";
+    public static final String LEFT_PARANTHESIS = "(";
+    public static final String RIGHT_PARANTHESIS = ")";
+
+    /**
+     * Returns {@link SearchOperation} by input {@link String}
+     *
+     * @param operation - initial input {@link String} operation
+     * @return {@link SearchOperation}
+     */
+    @JsonCreator
+    @Nullable
+    public static SearchOperation findByOperation(final String operation) {
+        return Arrays.stream(values())
+                .filter(type -> type.getOperation().equalsIgnoreCase(operation))
+                .findFirst()
+                .orElse(null);
+    }
+
+    /**
+     * Checks whether input {@link SearchOperation} is equal to {@code EQUALITY}
+     *
+     * @param operation - initial input {@link SearchOperation}
+     * @return true - if input {@link SearchOperation} is {@code EQUALITY}, false - otherwise
+     */
+    public static boolean isEqual(final SearchOperation operation) {
+        return Objects.equals(operation, EQUALITY);
+    }
+
+    /**
+     * Checks whether input {@link SearchOperation} is equal to {@code GREATER_THAN}
+     *
+     * @param operation - initial input {@link SearchOperation}
+     * @return true - if input {@link SearchOperation} is {@code GREATER_THAN}, false - otherwise
+     */
+    public static boolean isGreater(final SearchOperation operation) {
+        return Objects.equals(operation, GREATER_THAN);
+    }
+
+    /**
+     * Checks whether input {@link SearchOperation} is equal to {@code LESS_THAN}
+     *
+     * @param operation - initial input {@link SearchOperation}
+     * @return true - if input {@link SearchOperation} is {@code LESS_THAN}, false - otherwise
+     */
+    public static boolean isLess(final SearchOperation operation) {
+        return Objects.equals(operation, LESS_THAN);
+    }
+}
+package com.paragon.microservices.distributor.model.search;
+
+import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.NumberPath;
+import com.querydsl.core.types.dsl.PathBuilder;
+import com.querydsl.core.types.dsl.StringPath;
+
+import static org.hibernate.query.criteria.internal.ValueHandlerFactory.isNumeric;
+
+/**
+ * Search predicate model
+ *
+ * @param <T> type of criteria search
+ */
+public class SearchPredicate<T> {
+    private final SearchCriteria<T> criteria;
+    private final Class<? extends T> typeClass;
+
+    public SearchPredicate(final SearchCriteria<T> criteria, final Class<? extends T> typeClass) {
+        this.criteria = criteria;
+        this.typeClass = typeClass;
+    }
+
+    public BooleanExpression getPredicate() {
+        final PathBuilder<T> entityPath = new PathBuilder<>(this.typeClass, this.typeClass.getSimpleName());
+        if (isNumeric(this.criteria.getValue())) {
+            final NumberPath<Integer> path = entityPath.getNumber(this.criteria.getKey(), Integer.class);
+            final Integer value = Integer.parseInt(this.criteria.getValue().toString());
+            switch (this.criteria.getOperation()) {
+                case EQUALITY:
+                    return path.eq(value);
+                case GREATER_THAN:
+                    return path.goe(value);
+                case LESS_THAN:
+                    return path.loe(value);
+            }
+        }
+        final StringPath path = entityPath.getString(this.criteria.getKey());
+        if (SearchOperation.isEqual(this.criteria.getOperation())) {
+            return path.containsIgnoreCase(this.criteria.getValue().toString());
+        }
+        return null;
+    }
+}
+
+package com.paragon.microservices.distributor.model.search;
+
+import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Expressions;
+import org.springframework.util.CollectionUtils;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+public class SearchPredicatesBuilder<T> {
+    private final List<SearchCriteria<T>> params;
+
+    public SearchPredicatesBuilder() {
+        this.params = new ArrayList<>();
+    }
+
+    public SearchPredicatesBuilder with(final String key, final SearchOperation operation, final T value) {
+        this.params.add(SearchCriteria.of(key, operation, value));
+        return this;
+    }
+
+    public BooleanExpression build(final Class<? extends T> typeClass) {
+        if (CollectionUtils.isEmpty(this.params)) {
+            return null;
+        }
+
+        final List<BooleanExpression> predicates = this.params.stream()
+                .map(param -> {
+                    final SearchPredicate predicate = new SearchPredicate(param, typeClass);
+                    return predicate.getPredicate();
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        BooleanExpression result = Expressions.asBoolean(true).isTrue();
+        for (final BooleanExpression predicate : predicates) {
+            result = result.and(predicate);
+        }
+        return result;
+    }
+}
+
+//package com.paragon.microservices.distributor.model.search;
+//
+//public class SpecSearchCriteria {
+//
+//    private String key;
+//    private SearchOperation operation;
+//    private Object value;
+//    private boolean orPredicate;
+//
+//    public SpecSearchCriteria() {
+//
+//    }
+//
+//    public SpecSearchCriteria(final String key, final SearchOperation operation, final Object value) {
+//        super();
+//        this.key = key;
+//        this.operation = operation;
+//        this.value = value;
+//    }
+//
+//    public SpecSearchCriteria(final String orPredicate, final String key, final SearchOperation operation, final Object value) {
+//        super();
+//        this.orPredicate = orPredicate != null && orPredicate.equals(SearchOperation.OR_PREDICATE_FLAG);
+//        this.key = key;
+//        this.operation = operation;
+//        this.value = value;
+//    }
+//
+//    public SpecSearchCriteria(String key, String operation, String prefix, String value, String suffix) {
+//        SearchOperation op = SearchOperation.getOperation(operation.charAt(0));
+//        if (op != null) {
+//            if (op == SearchOperation.EQUALITY) { // the operation may be complex operation
+//                final boolean startWithAsterisk = prefix != null && prefix.contains(SearchOperation.ZERO_OR_MORE_REGEX);
+//                final boolean endWithAsterisk = suffix != null && suffix.contains(SearchOperation.ZERO_OR_MORE_REGEX);
+//
+//                if (startWithAsterisk && endWithAsterisk) {
+//                    op = SearchOperation.CONTAINS;
+//                } else if (startWithAsterisk) {
+//                    op = SearchOperation.ENDS_WITH;
+//                } else if (endWithAsterisk) {
+//                    op = SearchOperation.STARTS_WITH;
+//                }
+//            }
+//        }
+//        this.key = key;
+//        this.operation = op;
+//        this.value = value;
+//    }
+//
+//    public String getKey() {
+//        return key;
+//    }
+//
+//    public void setKey(final String key) {
+//        this.key = key;
+//    }
+//
+//    public SearchOperation getOperation() {
+//        return operation;
+//    }
+//
+//    public void setOperation(final SearchOperation operation) {
+//        this.operation = operation;
+//    }
+//
+//    public Object getValue() {
+//        return value;
+//    }
+//
+//    public void setValue(final Object value) {
+//        this.value = value;
+//    }
+//
+//    public boolean isOrPredicate() {
+//        return orPredicate;
+//    }
+//
+//    public void setOrPredicate(boolean orPredicate) {
+//        this.orPredicate = orPredicate;
+//    }
+//
+//}package com.paragon.microservices.distributor.model.search;
+
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+import java.util.function.Consumer;
+
+public class UserSearchQueryCriteriaConsumer implements Consumer<SearchCriteria> {
+    private Predicate predicate;
+    private final CriteriaBuilder builder;
+    private final Root root;
+
+    public UserSearchQueryCriteriaConsumer(final Predicate predicate, final CriteriaBuilder builder, final Root root) {
+        this.predicate = predicate;
+        this.builder = builder;
+        this.root = root;
+    }
+
+    @Override
+    public void accept(SearchCriteria param) {
+        if (SearchOperation.GREATER_THAN.equals(param.getOperation())) {
+            this.predicate = this.builder.and(this.predicate, builder.greaterThanOrEqualTo(this.root.get(param.getKey()), param.getValue().toString()));
+        } else if (SearchOperation.LESS_THAN.equals(param.getOperation())) {
+            this.predicate = this.builder.and(this.predicate, this.builder.lessThanOrEqualTo(this.root.get(param.getKey()), param.getValue().toString()));
+        } else if (SearchOperation.EQUALITY.equals(param.getOperation())) {
+            if (root.get(param.getKey()).getJavaType() == String.class) {
+                this.predicate = this.builder.and(this.predicate, this.builder.like(this.root.get(param.getKey()), "%" + param.getValue() + "%"));
+            } else {
+                this.predicate = this.builder.and(this.predicate, this.builder.equal(this.root.get(param.getKey()), param.getValue()));
+            }
+        }
+    }
+
+    public Predicate getPredicate() {
+        return this.predicate;
+    }
+}
+
+package com.paragon.microservices.distributor.model.search;
+
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+import java.util.function.Consumer;
+
+public class UserSearchQueryCriteriaConsumer implements Consumer<SearchCriteria> {
+    private Predicate predicate;
+    private final CriteriaBuilder builder;
+    private final Root root;
+
+    public UserSearchQueryCriteriaConsumer(final Predicate predicate, final CriteriaBuilder builder, final Root root) {
+        this.predicate = predicate;
+        this.builder = builder;
+        this.root = root;
+    }
+
+    @Override
+    public void accept(SearchCriteria param) {
+        if (SearchOperation.GREATER_THAN.equals(param.getOperation())) {
+            this.predicate = this.builder.and(this.predicate, builder.greaterThanOrEqualTo(this.root.get(param.getKey()), param.getValue().toString()));
+        } else if (SearchOperation.LESS_THAN.equals(param.getOperation())) {
+            this.predicate = this.builder.and(this.predicate, this.builder.lessThanOrEqualTo(this.root.get(param.getKey()), param.getValue().toString()));
+        } else if (SearchOperation.EQUALITY.equals(param.getOperation())) {
+            if (root.get(param.getKey()).getJavaType() == String.class) {
+                this.predicate = this.builder.and(this.predicate, this.builder.like(this.root.get(param.getKey()), "%" + param.getValue() + "%"));
+            } else {
+                this.predicate = this.builder.and(this.predicate, this.builder.equal(this.root.get(param.getKey()), param.getValue()));
+            }
+        }
+    }
+
+    public Predicate getPredicate() {
+        return this.predicate;
+    }
+}
+
+//package com.paragon.microservices.distributor.model.search;
+//
+//import com.paragon.microservices.distributor.model.entity.VersionEntity;
+//import org.springframework.data.jpa.domain.Specification;
+//
+//import javax.persistence.criteria.CriteriaBuilder;
+//import javax.persistence.criteria.CriteriaQuery;
+//import javax.persistence.criteria.Predicate;
+//import javax.persistence.criteria.Root;
+//
+//public class UserSpecification implements Specification<VersionEntity> {
+//
+//    private SpecSearchCriteria criteria;
+//
+//    public UserSpecification(final SpecSearchCriteria criteria) {
+//        super();
+//        this.criteria = criteria;
+//    }
+//
+//    public SpecSearchCriteria getCriteria() {
+//        return criteria;
+//    }
+//
+//    @Override
+//    public Predicate toPredicate(final Root<VersionEntity> root, final CriteriaQuery<?> query, final CriteriaBuilder builder) {
+//        switch (criteria.getOperation()) {
+//            case EQUALITY:
+//                return builder.equal(root.get(criteria.getKey()), criteria.getValue());
+//            case NEGATION:
+//                return builder.notEqual(root.get(criteria.getKey()), criteria.getValue());
+//            case GREATER_THAN:
+//                return builder.greaterThan(root.get(criteria.getKey()), criteria.getValue().toString());
+//            case LESS_THAN:
+//                return builder.lessThan(root.get(criteria.getKey()), criteria.getValue().toString());
+//            case LIKE:
+//                return builder.like(root.get(criteria.getKey()), criteria.getValue().toString());
+//            case STARTS_WITH:
+//                return builder.like(root.get(criteria.getKey()), criteria.getValue() + "%");
+//            case ENDS_WITH:
+//                return builder.like(root.get(criteria.getKey()), "%" + criteria.getValue());
+//            case CONTAINS:
+//                return builder.like(root.get(criteria.getKey()), "%" + criteria.getValue() + "%");
+//            default:
+//                return null;
+//        }
+//    }
+//}
+
+//package com.paragon.microservices.distributor.model.search;
+//
+//import com.paragon.microservices.distributor.model.entity.VersionEntity;
+//import org.springframework.data.jpa.domain.Specification;
+//
+//import java.util.ArrayList;
+//import java.util.List;
+//
+//public final class UserSpecificationsBuilder {
+//
+//    private final List<SpecSearchCriteria> params;
+//
+//    public UserSpecificationsBuilder() {
+//        params = new ArrayList<>();
+//    }
+//
+//    public final UserSpecificationsBuilder with(final String key, final String operation, final Object value, final String prefix, final String suffix) {
+//        return with(null, key, operation, value, prefix, suffix);
+//    }
+//
+//    public final UserSpecificationsBuilder with(final String orPredicate, final String key, final String operation, final Object value, final String prefix, final String suffix) {
+//        SearchOperation op = SearchOperation.getOperation(operation.charAt(0));
+//        if (op != null) {
+//            if (op == SearchOperation.EQUALITY) { // the operation may be complex operation
+//                final boolean startWithAsterisk = prefix != null && prefix.contains(SearchOperation.ZERO_OR_MORE_REGEX);
+//                final boolean endWithAsterisk = suffix != null && suffix.contains(SearchOperation.ZERO_OR_MORE_REGEX);
+//
+//                if (startWithAsterisk && endWithAsterisk) {
+//                    op = SearchOperation.CONTAINS;
+//                } else if (startWithAsterisk) {
+//                    op = SearchOperation.ENDS_WITH;
+//                } else if (endWithAsterisk) {
+//                    op = SearchOperation.STARTS_WITH;
+//                }
+//            }
+//            params.add(new SpecSearchCriteria(orPredicate, key, op, value));
+//        }
+//        return this;
+//    }
+//
+//    public Specification<VersionEntity> build() {
+//        if (params.size() == 0)
+//            return null;
+//
+//        Specification<VersionEntity> result = new UserSpecification(params.get(0));
+//
+//        for (int i = 1; i < params.size(); i++) {
+//            result = params.get(i).isOrPredicate()
+//                    ? Specification.where(result).or(new UserSpecification(params.get(i)))
+//                    : Specification.where(result).and(new UserSpecification(params.get(i)));
+//        }
+//
+//        return result;
+//    }
+//
+//    public final UserSpecificationsBuilder with(UserSpecification spec) {
+//        params.add(spec.getCriteria());
+//        return this;
+//    }
+//
+//    public final UserSpecificationsBuilder with(SpecSearchCriteria criteria) {
+//        params.add(criteria);
+//        return this;
+//    }
+//}
+--------------------------------------------------------------------------------------------------------
+    @RequestMapping(method = RequestMethod.GET, value = "/api/myusers")
+    @ResponseBody
+    public Iterable<VersionEntity> findAllByWebQuerydsl(@QuerydslPredicate(root = VersionEntity.class) Predicate predicate) {
+        return this.getVersionRepository().findAll(predicate);
+    }
+    @RequestMapping(method = RequestMethod.GET, value = "/myusers")
+    @ResponseBody
+    public Iterable<VersionEntity> findAllByQuerydsl(@RequestParam(value = "search") String search) {
+        final SearchPredicatesBuilder builder = new SearchPredicatesBuilder();
+        if (search != null) {
+            final Pattern pattern = Pattern.compile("(\\w+?)(:|<|>)(\\w+?),");
+            final Matcher matcher = pattern.matcher(search + ",");
+            while (matcher.find()) {
+                builder.with(matcher.group(1), SearchOperation.findByOperation(matcher.group(2)), matcher.group(3));
+            }
+        }
+        final BooleanExpression exp = builder.build(VersionEntity.class);
+        return this.getVersionRepository().findAll(exp);
+    }
+--------------------------------------------------------------------------------------------------------
+    public Iterable<VersionEntity> searchVersions(final String searchText, int pageNo, int resultsPerPage) {
+        final FullTextQuery jpaQuery = this.searchVersionsQuery(searchText);
+        jpaQuery.setMaxResults(resultsPerPage);
+        jpaQuery.setFirstResult((pageNo - 1) * resultsPerPage);
+        return jpaQuery.getResultList();
+    }
+
+    public int searchVersionsTotalCount(final String searchText) {
+        final FullTextQuery jpaQuery = this.searchVersionsQuery(searchText);
+        return jpaQuery.getResultSize();
+    }
+
+    private FullTextQuery searchVersionsQuery(final String searchText) {
+        final FullTextEntityManager fullTextEntityManager = Search.getFullTextEntityManager(this.getEntityManager());
+        final QueryBuilder queryBuilder = fullTextEntityManager.getSearchFactory()
+                .buildQueryBuilder()
+                .forEntity(VersionEntity.class)
+                .get();
+
+        final org.apache.lucene.search.Query luceneQuery = queryBuilder
+                .keyword()
+                .wildcard()
+                .onField("version")
+                .boostedTo(5f)
+                .matching(searchText + "*")
+                .createQuery();
+        return fullTextEntityManager.createFullTextQuery(luceneQuery, VersionEntity.class);
+    }
+--------------------------------------------------------------------------------------------------------
+query.from(bonusPayout)
+    .where(bonusPayout.id.eq(
+        query.from(employeeBonuses)
+            where(employeeBonuses.employee.id.eq('someid'))
+            .uniqueResult(employeeBonuses.bonusPayout.id.max()))
+    .uniqueResult(bonusPayout);
+or, using .in()
+
+query.from(bonusPayout)
+    .where(bonusPayout.id.in(
+        query.from(employeeBonuses)
+            where(employeeBonuses.employee.id.eq('someid'))
+            .list(employeeBonuses.bonusPayout.id.max()))
+    .uniqueResult(bonusPayout);
+Both of these statements fail when the subquery finds nothing. The only way I've been able to get this to work is by using coalesce() like this:
+
+query.from(bonusPayout)
+    .where(bonusPayout.id.in(
+        query.from(employeeBonuses)
+            where(employeeBonuses.employee.id.eq('someid'))
+            .list(employeeBonuses.bonusPayout.id.max().coalesce(0L)))
+    .uniqueResult(bonusPayout);
 --------------------------------------------------------------------------------------------------------
 hibernate.hbm2ddl.auto=update
 #hibernate.hbm2ddl.auto=create
@@ -38024,6 +39158,418 @@ public class EntityA {
 
 SELECT * FROM INFORMATION_SCHEMA.SEQUENCES
 -------------------------------------------------------------------------------------------------------
+  @Entity
+    private static class HasEmbeddedIndex {
+        @Id
+        private ObjectId id;
+        @Indexed
+        private String name;
+        @Embedded
+        private EmbeddedIndex embeddedIndex;
+    }
+
+    @Embedded
+    @Indexes(@Index(fields = @Field(value = "color", type = DESC)))
+    private static class EmbeddedIndex {
+        @Indexed
+        private String name;
+        private String color;
+    }
+-------------------------------------------------------------------------------------------------------
+CREATE SEQUENCE public.hibernate_sequence INCREMENT 1 START 1 MINVALUE 1;
+-------------------------------------------------------------------------------------------------------
+public class EmbeddedFieldNamesSessionCustomizer implements SessionCustomizer {
+
+@SuppressWarnings("rawtypes")
+@Override
+public void customize(Session session) throws Exception {
+    Map<Class, ClassDescriptor> descriptors = session.getDescriptors();
+    for (ClassDescriptor classDescriptor : descriptors.values()) {
+        for (DatabaseMapping databaseMapping : classDescriptor.getMappings()) {
+            if (databaseMapping.isAggregateObjectMapping()) {
+                AggregateObjectMapping m = (AggregateObjectMapping) databaseMapping;
+                Map<String, DatabaseField> mapping = m.getAggregateToSourceFields();
+
+                ClassDescriptor refDesc = descriptors.get(m.getReferenceClass());
+                for (DatabaseMapping refMapping : refDesc.getMappings()) {
+                    if (refMapping.isDirectToFieldMapping()) {
+                        DirectToFieldMapping refDirectMapping = (DirectToFieldMapping) refMapping;
+                        String refFieldName = refDirectMapping.getField().getName();
+                        if (!mapping.containsKey(refFieldName)) {
+                            DatabaseField mappedField = refDirectMapping.getField().clone();
+                            mappedField.setName(m.getAttributeName() + "_" + mappedField.getName());
+                            mapping.put(refFieldName, mappedField);
+                        }
+                    }
+
+                }
+            }
+
+        }
+    }
+}
+
+}
+
+@Entity 
+public class Person {
+  @AttributeOverrides({
+    @AttributeOverride(name="street",column=@Column(name="homeStreet")),
+    ...
+  })
+  @Embedded public Address home;
+
+  @AttributeOverrides({
+    @AttributeOverride(name="street",column=@Column(name="workStreet")),
+    ...
+  })
+  @Embedded public Address work;
+  }
+
+  @Embeddable public class Address {
+    @Basic public String street;
+    ...
+  }
+}
+
+
+@Entity
+@Indexed
+public class Address {
+    @Id
+    @GeneratedValue
+    @DocumentId
+    private Long id;
+
+    @Field(index= Index.TOKENIZED)
+    private String street;
+
+    @IndexedEmbedded(depth = 1, prefix = "ownedBy_", targetElement = Owner.class)
+    @Target(Owner.class)
+    private Person ownedBy;
+
+
+    ...
+}
+
+@Embeddable
+public class Owner implements Person { ... }
+
+https://docs.jboss.org/hibernate/search/3.3/reference/en-US/html/search-mapping.html#search-mapping-associated
+=================================================================================
+SELECT nextval('public.user_id_seq'); -- Returns 1
+SELECT nextval('public.user_id_seq'); -- Returns 2
+=================================================================================
+@Id
+@GeneratedValue(
+    strategy= GenerationType.AUTO,
+    generator="native"
+)
+@GenericGenerator(
+    name = "native",
+    strategy = "native"
+)
+private Long id;
+=================================================================================
+@Embeddable
+public class IntegrationEJBPk implements Serializable {
+
+    //...
+
+
+    @ManyToOne(cascade = {}, fetch = FetchType.EAGER)
+    @JoinColumn(name = "APPLICATION")
+    public ApplicationEJB getApplication() {
+        return application;
+    }
+
+
+    @Column(name = "ENTITY", unique = false, nullable = false, insertable = true, updatable = true)
+    public String getEntity() {
+        return entity;
+    }
+
+    @GeneratedValue(strategy = GenerationType.AUTO, generator = "INTEGRATION_ID_GEN")
+    @SequenceGenerator(name = "INTEGRATION_ID_GEN", sequenceName = "OMP_INTEGRATION_CANONICAL_SEQ")
+    @Column(name = "CANONICAL_ID", unique = false, nullable = false, insertable = true, updatable = true)
+    public String getCanonicalId() {
+        return canonicalId;
+    }
+
+    @Column(name = "NATIVE_ID", unique = false, nullable = false, insertable = true, updatable = true)
+    public String getNativeId() {
+        return nativeId;
+    }
+
+    @Column(name = "NATIVE_KEY", unique = false, nullable = false, insertable = true, updatable = true)
+    public String getNativeKey() {
+        return nativeKey;
+    }
+
+    //...
+}
+
+@Entity
+@IdClass(ChildId.class)
+public class ChildEntity {
+   // The child table will have a composite PK:
+   // (parent_ID, child_name)
+       @Id 
+       @ManyToOne
+       int parentEntity;
+=================================================================================
+@GenericGenerator(name = "optimized-sequence", strategy = "enhanced-sequence", parameters = {
+    @Parameter(name = "prefer_sequence_per_entity", value = "true"),
+    @Parameter(name = "optimizer", value = "hilo"),
+    @Parameter(name = "increment_size", value = "50") })
+package org.example.myproject;
+
+import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Parameter;
+=================================================================================
+SELECT next_val as id_val
+FROM hibernate_sequence FOR UPDATE
+ 
+UPDATE hibernate_sequence
+SET next_val= 2 where next_val=1
+ 
+SELECT next_val as id_val
+FROM hibernate_sequence FOR UPDATE
+ 
+UPDATE hibernate_sequence
+SET next_val= 3 where next_val=1
+ 
+SELECT next_val as id_val
+FROM hibernate_sequence FOR UPDATE
+ 
+UPDATE hibernate_sequence
+SET next_val= 4 where next_val=3
+ 
+INSERT INTO post (title, id)
+VALUES ('High-Performance Java Persistence, Part 1', 1)
+ 
+INSERT INTO post (title, id)
+VALUES ('High-Performance Java Persistence, Part 2', 2)
+ 
+INSERT INTO post (title, id)
+VALUES ('High-Performance Java Persistence, Part 3', 3)
+=================================================================================
+## Datasource
+spring.datasource.url=jdbc:postgresql://localhost:5432/dirasat_api_db
+spring.datasource.username=***
+spring.datasource.password=***
+## Hibernate Settings
+# Hibernate DDL auto (create, create-drop, validate, update)
+spring.jpa.database=postgresql
+spring.jpa.database-platform=postgres
+spring.jpa.hibernate.ddl-auto=create
+spring.jpa.show-sql=true
+spring.jooq.sql-dialect=postgres
+## Flyway configuration
+flyway.enabled=false
+flyway.baseline-version=1
+flyway.baseline-on-migrate=true
+flyway.url=${spring.datasource.url}
+flyway.user=${spring.datasource.username}
+flyway.password=${spring.datasource.password}
+flyway.schemas=public
+flyway.locations=classpath:db/migrations
+flyway.validate-on-migrate=true
+=================================================================================
+@Embedded
+@AttributeOverrides({
+  @AttributeOverride( name = "firstName", column = @Column(name = "contact_first_name")),
+  @AttributeOverride( name = "lastName", column = @Column(name = "contact_last_name")),
+  @AttributeOverride( name = "phone", column = @Column(name = "contact_phone"))
+})
+private ContactPerson contactPerson;
+
+https://marcin-chwedczuk.github.io/introduction-to-hibernate-embeddable-types
+
+@Entity
+public class User {
+  @Id
+  @GeneratedValue(generator = "user_id_seq", strategy = GenerationType.SEQUENCE)
+  @SequenceGenerator(
+      name = "user_id_seq", 
+      sequenceName = "user_id_seq", 
+      allocationSize = 50
+  )
+  private Long id;
+}
+
+ALTER SEQUENCE public.user_id_seq INCREMENT 50;
+-------------------------------------------------------------------------------------------------------
+<?xml version="1.0" encoding="UTF-8"?>
+<ehcache:config
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ehcache="http://www.ehcache.org/v3"
+    xsi:schemaLocation="http://www.ehcache.org/v3 http://www.ehcache.org/schema/ehcache-core-3.0.xsd">
+
+    <ehcache:persistence directory="${java.io.tmpdir}/.cache"></ehcache:persistence>
+
+    <ehcache:thread-pools>
+        <ehcache:thread-pool alias="defaultDiskPool" min-size="1" max-size="8"/>
+        <ehcache:thread-pool alias="defaultWriteBehindPool" min-size="1" max-size="8"/>
+        <ehcache:thread-pool alias="cache2Pool" min-size="2" max-size="5"/>
+    </ehcache:thread-pools>
+
+    <ehcache:event-dispatch thread-pool="defaultEventPool"/>
+    <ehcache:write-behind thread-pool="defaultWriteBehindPool"/>
+    <ehcache:disk-store thread-pool="defaultDiskPool"/>
+
+    <ehcache:cache alias="default" uses-template="default-template">
+        <ehcache:key-type>java.lang.String</ehcache:key-type>
+        <ehcache:value-type>java.lang.String</ehcache:value-type>
+    </ehcache:cache>
+
+    <ehcache:cache alias="idempotent" uses-template="default-template">
+        <ehcache:key-type>java.lang.String</ehcache:key-type>
+        <ehcache:value-type>java.lang.Boolean</ehcache:value-type>
+
+        <ehcache:expiry>
+            <ehcache:none/>
+        </ehcache:expiry>
+
+        <ehcache:loader-writer>
+            <ehcache:class>com.dinamexoft.carol.triggers.cache.DelegatedCacheLoaderWriter</ehcache:class>
+            <ehcache:write-behind thread-pool="cache2Pool">
+                <ehcache:batching batch-size="20">
+                    <ehcache:max-write-delay>10</ehcache:max-write-delay>
+                </ehcache:batching>
+            </ehcache:write-behind>
+        </ehcache:loader-writer>
+    </ehcache:cache>
+
+    <ehcache:cache alias="aggregate" uses-template="default-template">
+        <ehcache:key-type>java.lang.String</ehcache:key-type>
+        <ehcache:value-type>org.apache.camel.impl.DefaultExchangeHolder</ehcache:value-type>
+
+        <ehcache:expiry>
+            <ehcache:ttl>20</ehcache:ttl>
+        </ehcache:expiry>
+    </ehcache:cache>
+
+    <ehcache:cache-template name="default-template">
+        <ehcache:listeners dispatcher-thread-pool="cache2Pool">
+            <ehcache:listener>
+                <ehcache:class>com.dinamexoft.carol.triggers.cache.DelegatedCacheEventListener</ehcache:class>
+                <ehcache:event-firing-mode>ASYNCHRONOUS</ehcache:event-firing-mode>
+                <ehcache:event-ordering-mode>UNORDERED</ehcache:event-ordering-mode>
+                <ehcache:events-to-fire-on>CREATED</ehcache:events-to-fire-on>
+                <ehcache:events-to-fire-on>UPDATED</ehcache:events-to-fire-on>
+                <ehcache:events-to-fire-on>EXPIRED</ehcache:events-to-fire-on>
+                <ehcache:events-to-fire-on>REMOVED</ehcache:events-to-fire-on>
+                <ehcache:events-to-fire-on>EVICTED</ehcache:events-to-fire-on>
+            </ehcache:listener>
+        </ehcache:listeners>
+
+        <ehcache:resources>
+            <ehcache:disk persistent="true" unit="MB">500</ehcache:disk>
+            <ehcache:heap unit="MB">200</ehcache:heap>
+            <ehcache:offheap unit="MB">260</ehcache:offheap>
+        </ehcache:resources>
+
+        <ehcache:disk-store-settings thread-pool="cache2Pool" writer-concurrency="4"/>
+    </ehcache:cache-template>
+
+</ehcache:config>
+
+  cache:
+    type: EHCACHE
+    ehcache:
+      config: classpath:ehcache-config.xml
+-------------------------------------------------------------------------------------------------------
+FullTextEntityManager fullTextEntityManager =
+        org.hibernate.search.jpa.Search.getFullTextEntityManager(em);
+QueryBuilder qb = fullTextEntityManager.getSearchFactory()
+        .buildQueryBuilder().forEntity(AT.class).get();
+org.apache.lucene.search.Query luceneQuery = qb.bool()
+        .must(qb
+                .range()
+                .onField("dateType")
+                .from(parseDate(startDate))
+                .to(parseDate(endDate)).excludeLimit()
+                .createQuery())
+        .must(qb
+        .keyword()
+        .onField("arr")
+        .matching(crsArrId).createQuery())
+        .createQuery();
+Sort sort = null;
+if (order == OrderEnum.ASCENDING) {
+    sort = new Sort(
+            new SortField("dateType", SortField.Type.STRING));
+} else {
+    sort = new Sort(
+            new SortField("dateType", SortField.Type.STRING, true));
+}
+FullTextQuery jpaQuery = fullTextEntityManager.createFullTextQuery(luceneQuery, AT.class);
+jpaQuery.setSort(sort);
+jpaQuery.setFirstResult(offset);
+jpaQuery.setMaxResults(maxReturnedEvents);
+
+return jpaQuery.getResultList();
+-------------------------------------------------------------------------------------------------------
+@Entity
+public class A {
+
+    @Id
+    @SequenceGenerator(name = "C_SEQUENCE", sequenceName = "S_ARRM_01")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "C_SEQUENCE")
+    @Column(name = "IDE_ARR")
+    private Long id;
+}
+-------------------------------------------------------------------------------------------------------
+java -jar liquibase.jar --driver=org.h2.Driver --classpath=h2-1.3.170.jar --changeLogFile=yourchangelogpath/changelog.yaml --url=jdbc:h2:D:/Variaciok/db/variation --username=sa --password= updateSQL
+java -jar liquibase.jar --defaultsFile=our_database.properties updateSQL
+- changeSet:
+  id: 1.0/7
+  author: stivlo
+  changes:
+    - sql:
+        sql: insert into my_table (id, name) values (1, "One")
+    - sql:
+        sql: insert into my_table (id, name) values (2, "Two")
+		
+- changeSet:
+    id: 1.0/7
+    author: stivlo
+    comment: "Some comments go here"
+    changes:
+     - insert:
+         tableName: my_table
+         columns:
+         - column:
+             name: id
+             value: "1"
+         - column:
+             name: name
+             value: "One"
+     - insert:
+         tableName: my_table
+         columns:
+         - column:
+             name: id
+             value: "2"
+         - column:
+             name: name
+             value: "Two"
+-------------------------------------------------------------------------------------------------------
+changeSet:
+  id: insert-example
+  author: liquibase-docs
+  changes:
+  - insert:
+      catalogName: cat
+      columns:
+      - column:
+          name: address
+          type: varchar(255)
+      dbms: h2, oracle
+      schemaName: public
+      tableName: person
+-------------------------------------------------------------------------------------------------------
 @Embeddable
 public class Report {
   private String description;
@@ -51517,6 +53063,14 @@ git clone --recursive git://github.com/0x90/nrf24-arsenal
     }
 --------------------------------------------------------------------------------------------------------
 spring.jpa.hibernate.naming.physical-strategy=org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+--------------------------------------------------------------------------------------------------------
+ObjectQuotingStrategy originalStrategy = referenceDatabase.getObjectQuotingStrategy();
+        try {
+            referenceDatabase.setObjectQuotingStrategy(ObjectQuotingStrategy.QUOTE_ALL_OBJECTS);
+            return SnapshotGeneratorFactory.getInstance().createSnapshot(schemas, targetDatabase, snapshotControl);
+        } finally {
+            referenceDatabase.setObjectQuotingStrategy(originalStrategy);
+        }
 --------------------------------------------------------------------------------------------------------
     @Transactional
     @Modifying
