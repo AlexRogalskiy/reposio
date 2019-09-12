@@ -19356,6 +19356,125 @@ public class JWTConfigurer extends SecurityConfigurerAdapter<DefaultSecurityFilt
     }
 }
 --------------------------------------------------------------------------------------------------------
+logging:
+  level:
+    root: WARN        
+    org:
+      springframework:
+        security: DEBUG
+        web: ERROR    
+      hibernate: DEBUG        
+      apache:
+        commons:
+          dbcp2: DEBUG  		  
+--------------------------------------------------------------------------------------------------------
+@XmlElement(name = "code", nillable = false, required = true, namespace = "com.jakubstas.swagger")
+--------------------------------------------------------------------------------------------------------
+query.from(interval).orderBy(interval.end.desc()).fetchFirst();
+JPAQuery query = new JPAQuery(entityManager);
+ query.from(qEntity).singleResult(qEntity.id.max());
+QDepartment department = QDepartment.department;
+QDepartment d = new QDepartment("d");
+queryFactory.selectFrom(department)
+    .where(department.size.eq(
+        JPAExpressions.select(d.size.max()).from(d)))
+     .fetch();
+.where(playerScore.score.eq(JPAExpressions.select(playerScore2.score.max())
+                            .from(playerScore2))
+                            .where(playerScore2.playerId.eq(playerScore.playerId)))
+--------------------------------------------------------------------------------------------------------
+@NoRepositoryBean
+public interface ExCustomRepository<T extends AbstractEntity, P extends EntityPathBase<T>, ID extends Serializable>
+        extends JpaRepository<T, ID>, QuerydslPredicateExecutor<T>, QuerydslBinderCustomizer<P> {
+
+    @Override
+    default void customize(QuerydslBindings bindings, P root) {
+    }
+}
+--------------------------------------------------------------------------------------------------------
+language: java
+
+script: ./gradlew build jacocoTestReport
+
+jdk:
+  - oraclejdk8
+
+# Cache local Maven repository.
+cache:
+  directories:
+    - $HOME/.m2
+before_cache:
+  - rm -Rf $HOME/.m2/repository/com/github/vineey/archelix-rsql
+
+before_install:
+ - chmod +x gradlew
+
+after_success:
+ - ./gradlew jacocoRootReport coveralls
+--------------------------------------------------------------------------------------------------------
+   @Id
+    @Column(name = "id")
+    @SequenceGenerator(name = "general_seq", sequenceName = "generalSequenceGenerator")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "general_seq")
+    public Long getId() {
+        return id;
+    }
+--------------------------------------------------------------------------------------------------------
+https://github.com/JakubStas?tab=repositories
+https://evilinside.ru/php-2/
+
+@Bean
+public SwaggerSpringMvcPlugin customImplementation() {
+    RelativeSwaggerPathProvider relativeSwaggerPathProvider = new RelativeSwaggerPathProvider(servletContext);
+    AnnotationConfigWebApplicationContext context = (AnnotationConfigWebApplicationContext) applicationContext;
+    if (context.getServletConfig() != null) {
+        String path = context.getNamespace().replace("'", "").replace("-servlet", "").toLowerCase();
+        relativeSwaggerPathProvider.setApiResourcePrefix(path);
+    }
+ 
+    return new SwaggerSpringMvcPlugin(this.springSwaggerConfig).ignoredParameterTypes(HttpSession.class)
+            .includePatterns(".*?").pathProvider(relativeSwaggerPathProvider); // Scan everything
+}
+ 
+ 
+@PostConstruct
+public void postSetup(){
+    ModelConverters.addConverter(new AccessHiddenModelConverter(), true);
+    FilterFactory.setFilter(new AccessHiddenSpecFilter());
+}
+ [ApiExplorerSettings(IgnoreApi = true)]
+--------------------------------------------------------------------------------------------------------
+/**
+ * Updates users avatar.
+ */
+@PUT
+@Path("/{userName}/avatar")
+@Consumes(MediaType.MULTIPART_FORM_DATA)
+@ApiImplicitParams(@ApiImplicitParam(dataType = "file", name = "avatar", paramType = "body"))
+@ApiOperation(value = "Updates users avatar", notes = "Provides means to upload new versions of avatar based on username")
+@ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successful retrieval of users avatar", response = User.class),
+            @ApiResponse(code = 404, message = "User with given username does not exist"),
+            @ApiResponse(code = 500, message = "Internal server error") })
+public Response updateUsersAvatar(@ApiParam(name = "userName", value = "Alphanumeric login to application", required = true) @PathParam("userName") String userName,
+        @FormDataParam("avatar") InputStream avatarInputStream) {
+    ...
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.boot.context.embedded.ConfigurableEmbeddedServletContainer;
+import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomizer;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Component;
+@Component
+@Profile("prod")
+public class ProdCustomizer implements EmbeddedServletContainerCustomizer {
+	@Override
+	public void customize(ConfigurableEmbeddedServletContainer container) {
+		container.setContextPath("/spring-boot-prod");
+		container.setPort(8585);
+	}
+} 
+--------------------------------------------------------------------------------------------------------
 <?xml version="1.0" encoding="utf-8"?>
 <databaseChangeLog
     xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
@@ -20770,6 +20889,12 @@ public class CallMonitoringAspect {
 
 }
 --------------------------------------------------------------------------------------------------------
+public class PairAConverter extends
+    ConversionServiceAwareConverter<Pair<ClassA, Param>, Response> {
+
+public class PairBConverter extends
+    ConversionServiceAwareConverter<Pair<ClassB, Param>, Response> {
+--------------------------------------------------------------------------------------------------------
 @Override
 public void configure(WebSecurity web) throws Exception {
     //@formatter:off
@@ -20783,6 +20908,11 @@ public void configure(WebSecurity web) throws Exception {
 public HttpFirewall defaultHttpFirewall() {
     return new DefaultHttpFirewall();
 }
+
+ final Constructor<TypeDescriptor> constructor = TypeDescriptor.class.getConstructor(ResolvableType.class, Class.class, Annotation[].class);
+        final ResolvableType resolvableType = ResolvableType.forClassWithGenerics(List.class, String.class);
+        final TypeDescriptor toType = constructor.newInstance(resolvableType, List.class, null);
+        final List<String> finalResponse = conversionService.<List<String>>convert(source, TypeDescriptor.valueOf(String.class), toType);
 --------------------------------------------------------------------------------------------------------
 
 import java.util.Arrays;
