@@ -5917,6 +5917,112 @@ public class BaseErrorController implements ErrorController {
     }
 }
 --------------------------------------------------------------------------------------------------------
+   ReflectionTestUtils.setField(tokenProvider, "secretKey", "test secret");
+--------------------------------------------------------------------------------------------------------
+
+import com.springio.store.security.AuthoritiesConstants;
+import io.github.jhipster.config.JHipsterProperties;
+import org.junit.Before;
+import org.junit.Test;
+import org.springframework.http.HttpStatus;
+import org.springframework.mock.web.MockFilterChain;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.Collections;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+public class JWTFilterTest {
+
+
+    private TokenProvider tokenProvider;
+
+    private JWTFilter jwtFilter;
+
+    @Before
+    public void setup() {
+        JHipsterProperties jHipsterProperties = new JHipsterProperties();
+        tokenProvider = new TokenProvider(jHipsterProperties);
+        ReflectionTestUtils.setField(tokenProvider, "secretKey", "test secret");
+        ReflectionTestUtils.setField(tokenProvider, "tokenValidityInMilliseconds", 60000);
+        jwtFilter = new JWTFilter(tokenProvider);
+        SecurityContextHolder.getContext().setAuthentication(null);
+    }
+
+    @Test
+    public void testJWTFilter() throws Exception {
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+            "test-user",
+            "test-password",
+            Collections.singletonList(new SimpleGrantedAuthority(AuthoritiesConstants.USER))
+        );
+        String jwt = tokenProvider.createToken(authentication, false);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader(JWTConfigurer.AUTHORIZATION_HEADER, "Bearer " + jwt);
+        request.setRequestURI("/api/test");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain filterChain = new MockFilterChain();
+        jwtFilter.doFilter(request, response, filterChain);
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+        assertThat(SecurityContextHolder.getContext().getAuthentication().getName()).isEqualTo("test-user");
+        assertThat(SecurityContextHolder.getContext().getAuthentication().getCredentials().toString()).isEqualTo(jwt);
+    }
+
+    @Test
+    public void testJWTFilterInvalidToken() throws Exception {
+        String jwt = "wrong_jwt";
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader(JWTConfigurer.AUTHORIZATION_HEADER, "Bearer " + jwt);
+        request.setRequestURI("/api/test");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain filterChain = new MockFilterChain();
+        jwtFilter.doFilter(request, response, filterChain);
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+    }
+
+    @Test
+    public void testJWTFilterMissingAuthorization() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRequestURI("/api/test");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain filterChain = new MockFilterChain();
+        jwtFilter.doFilter(request, response, filterChain);
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+    }
+
+    @Test
+    public void testJWTFilterMissingToken() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader(JWTConfigurer.AUTHORIZATION_HEADER, "Bearer ");
+        request.setRequestURI("/api/test");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain filterChain = new MockFilterChain();
+        jwtFilter.doFilter(request, response, filterChain);
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+    }
+
+    @Test
+    public void testJWTFilterWrongScheme() throws Exception {
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+            "test-user",
+            "test-password",
+            Collections.singletonList(new SimpleGrantedAuthority(AuthoritiesConstants.USER))
+        );
+        String jwt = tokenProvider.createToken(authentication, false);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader(JWTConfigurer.AUTHORIZATION_HEADER, "Basic " + jwt);
+        request.setRequestURI("/api/test");
+    }
+}
+--------------------------------------------------------------------------------------------------------
 public class ExceptionResponse {
 
   private Integer status;
@@ -5973,6 +6079,11 @@ public class ExceptionResponse {
     this.path = path;
   }
 }
+--------------------------------------------------------------------------------------------------------
+    /** MediaType for JSON UTF8 */
+    public static final MediaType APPLICATION_JSON_UTF8 = new MediaType(
+            MediaType.APPLICATION_JSON.getType(),
+            MediaType.APPLICATION_JSON.getSubtype(), Charset.forName("utf8"));
 --------------------------------------------------------------------------------------------------------
 @FeignClient(name = "currency-exchange")
 @RibbonClient(name = "currency-exchange")
@@ -58346,6 +58457,777 @@ ResponseEntity<String> result = template.get().exchange(
                     String.class);
 >>>>>>> b494d6cea61253f648b912ce216862387070907c
 --------------------------------------------------------------------------------------------------------
+public class ApiError {
+
+    private int code;
+    private String message;
+    private Instant timestamp;
+
+    public ApiError(int code, String message) {
+        this.code = code;
+        this.message = message;
+        this.timestamp = Instant.now();
+    }
+
+    public ApiError(int code, String message, Instant timestamp) {
+        this.code = code;
+        this.message = message;
+        this.timestamp = timestamp;
+    }
+
+    // Getters and setters here...
+}
+
+For REST controllers, I would recommend to use Zalando Problem Spring Web.
+
+https://github.com/zalando/problem-spring-web
+
+If Spring Boot aims to embed some auto-configuration, this library does more for exception handling. You just need to add the dependency:
+
+<dependency>
+    <groupId>org.zalando</groupId>
+    <artifactId>problem-spring-web</artifactId>
+    <version>LATEST</version>
+</dependency>
+And then define one or more advice traits for your exceptions (or use those provided by default)
+
+public interface NotAcceptableAdviceTrait extends AdviceTrait {
+
+    @ExceptionHandler
+    default ResponseEntity<Problem> handleMediaTypeNotAcceptable(
+            final HttpMediaTypeNotAcceptableException exception,
+            final NativeWebRequest request) {
+        return Responses.create(Status.NOT_ACCEPTABLE, exception, request);
+    }
+
+}
+Then you can defined the controller advice for exception handling as:
+
+@ControllerAdvice
+class ExceptionHandling implements MethodNotAllowedAdviceTrait, NotAcceptableAdviceTrait {
+
+}
+--------------------------------------------------------------------------------------------------------
+@Controller
+@ControllerAdvice
+public class ExceptionHandlerController {
+
+    @ExceptionHandler(Exception.class)
+    public ModelAndView exceptionHandler(HttpServletRequest request, HttpServletResponse response, Exception ex) {
+        //If exception has a ResponseStatus annotation then use its response code
+        ResponseStatus responseStatusAnnotation = AnnotationUtils.findAnnotation(ex.getClass(), ResponseStatus.class);
+
+        return buildModelAndViewErrorPage(request, response, ex, responseStatusAnnotation != null ? responseStatusAnnotation.value() : HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @RequestMapping("*")
+    public ModelAndView fallbackHandler(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        return buildModelAndViewErrorPage(request, response, null, HttpStatus.NOT_FOUND);
+    }
+
+    private ModelAndView buildModelAndViewErrorPage(HttpServletRequest request, HttpServletResponse response, Exception ex, HttpStatus httpStatus) {
+        response.setStatus(httpStatus.value());
+
+        ModelAndView mav = new ModelAndView("error.html");
+        if (ex != null) {
+            mav.addObject("title", ex);
+        }
+        mav.addObject("content", request.getRequestURL());
+        return mav;
+    }
+}
+
+@EnableWebMvc
+@ControllerAdvice
+public class ServiceExceptionHandler extends ResponseEntityExceptionHandler {
+
+    @ExceptionHandler(Throwable.class)
+    @ResponseBody
+    ResponseEntity<Object> handleControllerException(HttpServletRequest req, Throwable ex) {
+        ErrorResponse errorResponse = new ErrorResponse(ex);
+        if(ex instanceof ServiceException) {
+            errorResponse.setDetails(((ServiceException)ex).getDetails());
+        }
+        if(ex instanceof ServiceHttpException) {
+            return new ResponseEntity<Object>(errorResponse,((ServiceHttpException)ex).getStatus());
+        } else {
+            return new ResponseEntity<Object>(errorResponse,HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleNoHandlerFoundException(NoHandlerFoundException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
+        Map<String,String> responseBody = new HashMap<>();
+        responseBody.put("path",request.getContextPath());
+        responseBody.put("message","The URL you have reached is not in service at this time (404).");
+        return new ResponseEntity<Object>(responseBody,HttpStatus.NOT_FOUND);
+    }
+    ...
+}
+--------------------------------------------------------------------------------------------------------
+mvn -Dmaven.test.skip -U clean package
+--------------------------------------------------------------------------------------------------------
+import java.util.Map;
+import javax.servlet.RequestDispatcher;
+import javax.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.servlet.error.ErrorAttributes;
+import org.springframework.boot.web.servlet.error.ErrorController;
+import org.springframework.stereotype.Controller;
+import org.springframework.util.Assert;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.context.request.WebRequest;
+
+@Controller
+public class CustomErrorController implements ErrorController {
+
+    // ErrorAttributes object is used to save all error attributes value.
+    private final ErrorAttributes errorAttributes;
+
+    @Autowired
+    public CustomErrorController(ErrorAttributes errorAttributes) {
+        Assert.notNull(errorAttributes, "ErrorAttributes must not be null");
+        this.errorAttributes = errorAttributes;
+    }
+
+    /* Return the error page path. */
+    @Override
+    public String getErrorPath() {
+        return "/error";
+    }
+
+    // Handle the /error path invoke.
+    @RequestMapping("/error")
+   /* @ResponseBody annotation will return the error page content instead of the template error page name. */
+    @ResponseBody
+    public String processError(HttpServletRequest request, WebRequest webRequest) {
+
+        // Get error status code.
+        Integer statusCode = (Integer)request.getAttribute(RequestDispatcher.ERROR_STATUS_CODE);
+
+        if(statusCode.intValue() == 500)
+        {
+            // If you want to return template error page, then remove the @ResponseBody annotation of this method.
+            return "error-500.html";
+        }else
+        {
+            // Get error message.
+            String message = (String)request.getAttribute(RequestDispatcher.ERROR_MESSAGE);
+
+            // Get exception object.
+            Exception exception = (Exception)request.getAttribute(RequestDispatcher.ERROR_EXCEPTION);
+
+            // Get error stack trace map object. 
+            Map<String, Object> body = errorAttributes.getErrorAttributes(webRequest, true);
+            // Extract stack trace string.
+            String trace = (String) body.get("trace");
+
+            StringBuffer retBuf = new StringBuffer();
+            retBuf.append("<pre>");
+
+            if(statusCode != null)
+            {
+                retBuf.append("Status Code : ");
+                retBuf.append(statusCode);
+            }
+
+            if(message != null && message.trim().length() > 0)
+            {
+                retBuf.append("\n\rError Message : ");
+                retBuf.append(message);
+            }
+
+            if(trace != null){
+                retBuf.append("\n\rStack Trace : ");
+                retBuf.append(trace);
+            }
+
+            retBuf.append("</pre>");
+
+            return retBuf.toString();
+        }
+
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@SpringBootApplication(exclude = ErrorMvcAutoConfiguration.class )
+--------------------------------------------------------------------------------------------------------
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: pazfernando
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            schemaName: sa
+            tableName: PROVEEDORBIENSERVICIO
+      changes:
+        - renameTable:
+            newTableName: PROVEEDORBIENSERVICIO
+            oldTableName: PROVEEDORSERVICIO
+            schemaName: sa
+			
+<changeSet author="asdf" id="1234">
+    <sql dbms="h2" endDelimiter=";">
+        CREATE SCHEMA schema
+    </sql>
+</changeSet>
+
+databaseChangeLog:
+- changeSet:
+    id: changeSet-id
+    author: myName
+    preConditions:
+      - onFail: MARK_RAN
+      - sqlCheck:
+          expectedResult: 1
+          sql: "select count(*) from foo where some-condition"
+    changes:
+      - sql: "your sql script"
+	  
+changeSet:
+  id: addColumn-example
+  author: francis
+  preConditions:
+    - columnExist:
+      schemaName: earls
+      tableName: category
+      columnName: display_name                    
+  changes:
+    - addColumn:
+      columns:
+        - column:
+          name: display_name
+          type: varchar(100)
+		  
+<changeSet id="addColumn-example">
+  <preConditions onFail="MARK_RAN">
+     <columnExists schemaName="earls" 
+           tableName="category" columnName="display_name"/>
+  </preConditions>
+  <dropColumn columnName="display_name" schemaName="earls" tableName="category"/>
+</changeSet>
+
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: mraible
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          sequenceExists:
+            schemaName: public
+            sequenceName: hibernate_sequence
+      changes:
+      - createSequence:
+          sequenceName: hibernate_sequence
+--------------------------------------------------------------------------------------------------------
+@Bean
+public Docket api() {
+    return new Docket(DocumentationType.SWAGGER_2)
+            .select()
+            .apis(RequestHandlerSelectors.any())
+            .paths(paths())
+            .build().apiInfo(metadata());
+}
+
+private Predicate<String> paths() {
+    return or(
+            regex("/firstContext.*"),
+            regex("/secondContext.*"));
+}
+
+private ApiInfo metadata() {
+    return new ApiInfoBuilder()
+            .title("SomeTitle")
+            .description("SomeDescription")
+            .build();
+}
+
+
+// Only select apis that matches the given Predicates.
+private Predicate<String> paths() {
+// Match all paths except /error
+    return Predicates.and(
+    PathSelectors.regex("/customer.*"),
+    Predicates.not(PathSelectors.regex("/error.*"))
+    ;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+.authorizeExchange()
+    .pathMatchers(HttpMethod.DELETE).denyAll()
+    .pathMatchers("/login", "/logout").permitAll()
+    .pathMatchers(HttpMethod.GET, "/managers-can-see-this-folder/**", "/and-this-page")
+	    .hasRole("MANAGER")
+    .matchers(exchange -> new MediaTypeServerWebExchangeMatcher(MediaType.APPLICATION_PDF).matches(exchange))
+	    .hasRole("ADMIN")
+    .anyExchange().authenticated()
+	
+.formLogin()
+    .loginPage("/login")
+    .authenticationFailureHandler((exchange, exception) -> Mono.error(exception))
+    .authenticationSuccessHandler(new WebFilterChainServerAuthenticationSuccessHandler());
+	
+.exceptionHandling()
+    .authenticationEntryPoint((exchange, exception) -> Mono.error(exception))
+    .accessDeniedHandler((exchange, exception) -> Mono.error(exception))
+	
+@Bean
+public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
+    return http
+		.authorizeExchange()
+			.anyExchange().permitAll()
+		.and().formLogin()
+			.loginPage("/login")
+			.authenticationFailureHandler((exchange, exception) -> Mono.error(exception))
+			.authenticationSuccessHandler(new WebFilterChainServerAuthenticationSuccessHandler())
+		.and()
+			.securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
+		.exceptionHandling()
+			.authenticationEntryPoint((exchange, exception) -> Mono.error(exception))
+			.accessDeniedHandler((exchange, exception) -> Mono.error(exception))
+		.and()
+			.csrf().disable()
+		.logout().disable()
+		.build();
+}
+
+@PreAuthorize("hasPermission(#user, 'edit')")
+public Mono<Void> processUser(Mono<User> user) {
+   ...
+}
+--------------------------------------------------------------------------------------------------------
+import com.octoperf.auth.api.UserAuthenticationService;
+import com.octoperf.user.entity.User;
+import lombok.AllArgsConstructor;
+import lombok.NonNull;
+import lombok.experimental.FieldDefaults;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import static lombok.AccessLevel.PACKAGE;
+import static lombok.AccessLevel.PRIVATE;
+
+@RestController
+@RequestMapping("/users")
+@FieldDefaults(level = PRIVATE, makeFinal = true)
+@AllArgsConstructor(access = PACKAGE)
+final class SecuredUsersController {
+  @NonNull
+  UserAuthenticationService authentication;
+
+  @GetMapping("/current")
+  User getCurrent(@AuthenticationPrincipal final User user) {
+    return user;
+  }
+
+  @GetMapping("/logout")
+  boolean logout(@AuthenticationPrincipal final User user) {
+    authentication.logout(user);
+    return true;
+  }
+}
+--------------------------------------------------------------------------------------------------------
+    public Iterable<VersionEntity> searchVersionsRecords(final String searchText, int pageNumber, int pageSize) {
+        final FullTextQuery jpaQuery = this.searchVersionsChangelogQuery(searchText);
+        jpaQuery.setMaxResults(pageSize);
+        jpaQuery.setFirstResult((pageNumber - 1) * pageSize);
+        return jpaQuery.getResultList();
+    }
+
+    public int searchVersionsRecordsTotalCount(final String searchText) {
+        final FullTextQuery jpaQuery = this.searchVersionsChangelogQuery(searchText);
+        return jpaQuery.getResultSize();
+    }
+
+    private FullTextQuery searchVersionsChangelogQuery(final String searchText) {
+        final FullTextEntityManager fullTextEntityManager = Search.getFullTextEntityManager(this.getEntityManager());
+        final QueryBuilder queryBuilder = fullTextEntityManager.getSearchFactory()
+                .buildQueryBuilder()
+                .forEntity(VersionEntity.class)
+                .get();
+        final org.apache.lucene.search.Query luceneQuery = queryBuilder
+                .keyword()
+                .wildcard()
+                .onField("changelog")
+                .boostedTo(5f)
+                .matching(searchText + "*")
+                .createQuery();
+        return fullTextEntityManager.createFullTextQuery(luceneQuery, VersionEntity.class);
+    }
+--------------------------------------------------------------------------------------------------------
+WADL
+RESTDocs
+Swagger or OpenDocs
+--------------------------------------------------------------------------------------------------------
+server:
+  port: ${PORT:8081}
+
+messages:
+  home: Hello, Memorynotfound!
+
+spring:
+  thymeleaf:
+    cache: false
+    check-template: true
+    check-template-location: true
+    content-type: text/html
+    enabled: true
+    encoding: UTF-8
+    # excluded-view-names:
+    # mode: HTML5
+    # prefix: /templates/
+    # suffix: .html
+    # template-resolver-order:
+    # view-names:
+
+logging:
+  level:
+      - ".=info"
+      - "com.memorynotfound=debug"
+      - "org.springframework=info"
+--------------------------------------------------------------------------------------------------------
+<dependencies>
+    <dependency>
+        <groupId>com.naturalprogrammer.spring-lemon</groupId>
+        <artifactId>spring-lemon-exceptions</artifactId>
+        <version>1.0.0.M6</version>
+    </dependency>
+</dependencies>
+--------------------------------------------------------------------------------------------------------
+# ln -s /home/ec2-user/reservation-microservice-0.0.1-SNAPSHOT.jar /etc/init.d/springApp
+# /etc/init.d/springApp
+Usage: /etc/init.d/springApp {start|stop|force-stop|restart|force-reload|status|run}
+--------------------------------------------------------------------------------------------------------
+@SpringBootApplication
+public class Application implements WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> {
+
+    @Override
+    public void customize(ConfigurableServletWebServerFactory factory) {
+        factory.addErrorPages(new ErrorPage(HttpStatus.FORBIDDEN, "/errors/403.html"));
+        factory.addErrorPages(new ErrorPage(HttpStatus.NOT_FOUND, "/errors/404.html"));
+        factory.addErrorPages(new ErrorPage("/errors/500.html"));
+    }
+
+}
+
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.web.ErrorAttributes;
+import org.springframework.boot.autoconfigure.web.ErrorController;
+import org.springframework.util.Assert;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/error")
+public class SimpleErrorController implements ErrorController {
+
+  private final ErrorAttributes errorAttributes;
+
+  @Autowired
+  public SimpleErrorController(ErrorAttributes errorAttributes) {
+    Assert.notNull(errorAttributes, "ErrorAttributes must not be null");
+    this.errorAttributes = errorAttributes;
+  }
+
+  @Override
+  public String getErrorPath() {
+    return "/error";
+  }
+
+  @RequestMapping
+  public Map<String, Object> error(HttpServletRequest aRequest){
+     Map<String, Object> body = getErrorAttributes(aRequest,getTraceParameter(aRequest));
+     String trace = (String) body.get("trace");
+     if(trace != null){
+       String[] lines = trace.split("\n\t");
+       body.put("trace", lines);
+     }
+     return body;
+  }
+
+  private boolean getTraceParameter(HttpServletRequest request) {
+    String parameter = request.getParameter("trace");
+    if (parameter == null) {
+        return false;
+    }
+    return !"false".equals(parameter.toLowerCase());
+  }
+
+  private Map<String, Object> getErrorAttributes(HttpServletRequest aRequest, boolean includeStackTrace) {
+    RequestAttributes requestAttributes = new ServletRequestAttributes(aRequest);
+    return errorAttributes.getErrorAttributes(requestAttributes, includeStackTrace);
+  }
+}
+
+
+
+--------------------------------------------------------------------------------------------------------
+package com.octoperf.demo;
+
+import okhttp3.Credentials;
+import okhttp3.Interceptor;
+import okhttp3.Request;
+import okhttp3.Response;
+
+import java.io.IOException;
+
+final class BasicAuthInterceptor implements Interceptor {
+
+  private final String credentials;
+
+  BasicAuthInterceptor(final String user, final String password) {
+    this.credentials = Credentials.basic(user, password);
+  }
+
+  @Override
+  public Response intercept(Chain chain) throws IOException {
+    final Request request = chain.request();
+    final Request authenticatedRequest = request.newBuilder()
+      .header("Authorization", credentials).build();
+    return chain.proceed(authenticatedRequest);
+  }
+}
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import okhttp3.Credentials;
+import okhttp3.Interceptor;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+import retrofit2.Retrofit;
+import retrofit2.converter.jackson.JacksonConverterFactory;
+
+import java.io.IOException;
+
+import static org.junit.Assert.assertEquals;
+import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = { DemoApplication.class }, webEnvironment = RANDOM_PORT)
+public class PersonControllerRetrofitTest {
+
+  @Value("${local.server.port}")
+  private int port;
+
+  private Retrofit retrofit;
+
+  @Before
+  public void setUp() {
+    final OkHttpClient client = new OkHttpClient.Builder()
+      .addInterceptor(new BasicAuthInterceptor("admin", "passw0rd"))
+      .build();
+
+    retrofit = new Retrofit.Builder()
+      .baseUrl("http://localhost:"+port)
+      .client(client)
+      .addConverterFactory(JacksonConverterFactory.create(new ObjectMapper()))
+      .build();
+  }
+
+  @Test
+  public void shouldSayHello() throws IOException {
+    final PersonApi api = retrofit.create(PersonApi.class);
+    final Person person = api.johnSmith().execute().body();
+    assertEquals("John", person.getFirstname());
+    assertEquals("Smith", person.getLastname());
+  }
+}
+
+@Controller
+@RequestMapping("/")
+public class RedirectController {
+     
+    @GetMapping("/redirectWithRedirectView")
+    public RedirectView redirectWithUsingRedirectView(
+      RedirectAttributes attributes) {
+        attributes.addFlashAttribute("flashAttribute", "redirectWithRedirectView");
+        attributes.addAttribute("attribute", "redirectWithRedirectView");
+        return new RedirectView("redirectedUrl");
+    }
+}
+
+@Controller
+@RequestMapping("/")
+public class RedirectController {
+     
+    @GetMapping("/redirectWithRedirectPrefix")
+    public ModelAndView redirectWithUsingRedirectPrefix(ModelMap model) {
+        model.addAttribute("attribute", "redirectWithRedirectPrefix");
+        return new ModelAndView("redirect:/redirectedUrl", model);
+    }
+}
+
+@PostMapping("/redirectPostToPost")
+public ModelAndView redirectPostToPost(HttpServletRequest request) {
+    request.setAttribute(
+      View.RESPONSE_STATUS_ATTRIBUTE, HttpStatus.TEMPORARY_REDIRECT);
+    return new ModelAndView("redirect:/redirectedPostToPost");
+}
+
+@PostMapping("/redirectedPostToPost")
+public ModelAndView redirectedPostToPost() {
+    return new ModelAndView("redirection");
+}
+
+curl -L --verbose -X POST http://localhost:8080/spring-rest/redirectPostToPost
+--------------------------------------------------------------------------------------------------------
+@Configuration
+public class SslWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapter {
+
+	@Override
+	protected void configure(HttpSecurity http) throws Exception {
+		// Customize the application security
+		http.requiresChannel().anyRequest().requiresSecure();
+	}
+}
+
+@Entity
+@RevisionEntity(AuditRevisionListener.class)
+@Table(name = "REVINFO", schema = "audit")
+@AttributeOverrides({
+        @AttributeOverride(name = "timestamp", column = @Column(name = "REVTSTMP")),
+        @AttributeOverride(name = "id", column = @Column(name = "REV"))})
+@Getter
+@Setter
+public class AuditRevisionEntity extends DefaultRevisionEntity {
+
+    @Column(name = "USERNAME", nullable = false)
+    private String username;
+}
+public class AuditRevisionListener implements RevisionListener {
+
+    @Override
+    public void newRevision(Object revisionEntity) {
+        AuditRevisionEntity audit = (AuditRevisionEntity) revisionEntity;
+        audit.setUsername("admin");
+    }
+}
+
+ll create it's own tables in the PUBLIC schema, regardless - before applying any changesets:
+If you run 
+--------------------------------------------------------------------------------------------------------
+@Test
+public void onAuthenticationSuccessHasSavedRequest() throws Exception {
+    String redirectUrl = "http://localhost/appcontext/page";
+    RedirectStrategy redirectStrategy = mock(RedirectStrategy.class);
+    RequestCache requestCache = mock(RequestCache.class);
+    SavedRequest savedRequest = mock(SavedRequest.class);
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    MockHttpServletResponse response = new MockHttpServletResponse();
+    when(savedRequest.getRedirectUrl()).thenReturn(redirectUrl);
+    when(requestCache.getRequest(request, response)).thenReturn(savedRequest);
+    SavedRequestAwareAuthenticationSuccessHandler handler = new SavedRequestAwareAuthenticationSuccessHandler();
+    handler.setRequestCache(requestCache);
+    handler.setRedirectStrategy(redirectStrategy);
+    handler.onAuthenticationSuccess(request, response, mock(Authentication.class));
+    verify(redirectStrategy).sendRedirect(request, response, redirectUrl);
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.boot.web.servlet.error.DefaultErrorAttributes;
+import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.WebRequest;
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Map;
+
+@Component
+public class CustomErrorAttributes extends DefaultErrorAttributes {
+
+    private static final DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+
+    @Override
+    public Map<String, Object> getErrorAttributes(WebRequest webRequest, boolean includeStackTrace) {
+
+        // Let Spring handle the error first, we will modify later :)
+        Map<String, Object> errorAttributes = super.getErrorAttributes(webRequest, includeStackTrace);
+
+        // format & update timestamp
+        Object timestamp = errorAttributes.get("timestamp");
+        if (timestamp == null) {
+            errorAttributes.put("timestamp", dateFormat.format(new Date()));
+        } else {
+            errorAttributes.put("timestamp", dateFormat.format((Date) timestamp));
+        }
+
+        // insert a new key
+        errorAttributes.put("version", "1.2");
+
+        return errorAttributes;
+
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+@RunWith(SpringRunner.class)
+@SpringBootTest(webEnvironment = SprintBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureMockMvc
+@ActiveProfiles("dev")
+public class GlobalExceptionHandlerIntegrationTest {
+
+    public static final String ISO8601_DATE_REGEX =
+        "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$";
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    @WithMockUser(roles = "DEVICE_SCAN_HOSTS")
+    public void invalidUrl_returnsHttp404() throws Exception {
+        RequestBuilder requestBuilder = getGetRequestBuilder("/does-not-exist");
+        mockMvc.perform(requestBuilder)
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.code", is(1000)))
+            .andExpect(jsonPath("$.message", is("No handler found for your request.")))
+            .andExpect(jsonPath("$.timestamp", RegexMatcher.matchesRegex(ISO8601_DATE_REGEX)));
+    }
+
+    private RequestBuilder getGetRequestBuilder(String url) {
+        return MockMvcRequestBuilders
+            .get(url)
+            .accept(MediaType.APPLICATION_JSON);
+    }
+--------------------------------------------------------------------------------------------------------
+// NEW CODE ABOVE REPLACES THIS! (2015-12-04)
+@Configuration
+public class MyAppConfig {
+    @Bean  // Magic entry 
+    public DispatcherServlet dispatcherServlet() {
+        DispatcherServlet ds = new DispatcherServlet();
+        ds.setThrowExceptionIfNoHandlerFound(true);
+        return ds;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+    static {
+        final HibernateValidatorConfiguration config = Validation.byProvider(HibernateValidator.class).configure();
+        final ConstraintMapping constraintMapping = config.createConstraintMapping();
+        constraintMapping.constraintDefinition(URL.class).includeExistingValidators(false).validatedBy(URLValidator.class);
+        config.addMapping(constraintMapping);
+
+        final ValidatorFactory validatorFactory = config.buildValidatorFactory();
+        validator = validatorFactory.usingContext().getValidator();
+        validatorFactory.close();
+    }
+--------------------------------------------------------------------------------------------------------
     /**
      * Default parsing patterns
      */
@@ -59447,6 +60329,31 @@ Display link commands and arguments
 ip neigh help
 
 Display neighbour commands and arguments
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
