@@ -5872,6 +5872,624 @@ ResponseEntity<StreamingResponseBody> post(@RequestPart final MultipartFile file
             .body(body);
 }
 --------------------------------------------------------------------------------------------------------
+@ManagementContextConfiguration public class MappingsEndpointAutoConfiguration { @Bean @ConditionalOnEnabledEndpoint public MappingsEndpoint mappingsEndpoint(ApplicationContext applicationContext, ObjectProvider<Collection<MappingDescriptionProvider>> descriptionProviders) { return new MappingsEndpoint( descriptionProviders.getIfAvailable(Collections::emptyList), applicationContext); } @Configuration @ConditionalOnWebApplication(type = Type.SERVLET) static class ServletWebConfiguration { @Bean ServletsMappingDescriptionProvider servletMappingDescriptionProvider() { return new ServletsMappingDescriptionProvider(); } @Bean FiltersMappingDescriptionProvider filterMappingDescriptionProvider() { return new FiltersMappingDescriptionProvider(); } @Configuration @ConditionalOnClass(DispatcherServlet.class) @ConditionalOnBean(DispatcherServlet.class) static class SpringMvcConfiguration { @Bean DispatcherServletsMappingDescriptionProvider dispatcherServletMappingDescriptionProvider() { return new DispatcherServletsMappingDescriptionProvider(); } } } @Configuration @ConditionalOnWebApplication(type = Type.REACTIVE) @ConditionalOnClass(DispatcherHandler.class) @ConditionalOnBean(DispatcherHandler.class) static class ReactiveWebConfiguration { @Bean public DispatcherHandlersMappingDescriptionProvider dispatcherHandlerMappingDescriptionProvider( ApplicationContext applicationContext) { return new DispatcherHandlersMappingDescriptionProvider(); } } }
+
+
+作者：go4it
+链接：https://juejin.im/post/5adeeeb16fb9a07aae14d060
+来源：掘金
+著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
+--------------------------------------------------------------------------------------------------------
+@ConditionalOnProperty(name="user.endpoint", havingValue = “mock”,  matchIfMissing = false)
+
+public MyBean condition1() {}
+
+ 
+
+@ConditionalOnProperty(name="user.endpoint", havingValue = “mock”,  matchIfMissing = true)
+
+public MyBean condition2() {}
+--------------------------------------------------------------------------------------------------------
+curl -X PUT \
+  http://localhost:8080/company/ \
+  -H 'content-type: application/json' \
+  -d '{
+ "id": 8,
+    "name": "FantaUpdated"
+}'
+
+curl -X POST \
+  http://localhost:8080/company \
+  -H 'content-type: application/json' \
+  -d '{
+    "name": "7up",
+    "departments": [
+        {
+            "name": "Administrative Accounting",
+            "employees": [
+                {
+                    "name": "Jim",
+                    "surname": "Lahey"
+                }
+            ]
+        }
+    ]
+}'
+--------------------------------------------------------------------------------------------------------
+
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
+import java.io.Serializable;
+
+import javax.annotation.concurrent.GuardedBy;
+import javax.annotation.concurrent.ThreadSafe;
+
+import com.mysema.query.annotations.QueryExclude;
+
+@ThreadSafe
+@QueryExclude
+public abstract class APropertyChangeSupported implements Comparable<Object>, Cloneable, Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    private transient PropertyChangeSupport propertyChangeSupport;
+
+    private synchronized PropertyChangeSupport lazyGetPropertyChangeSupport(final boolean initializeIfNull) {
+        if (initializeIfNull && propertyChangeSupport == null) {
+            propertyChangeSupport = new PropertyChangeSupport(this);
+        }
+        return propertyChangeSupport;
+    }
+
+    public final void addPropertyChangeListener(final PropertyChangeListener listener) {
+        if (listener != null) {
+            lazyGetPropertyChangeSupport(true).addPropertyChangeListener(listener);
+        }
+    }
+
+    public final void addPropertyChangeListener(final String property, final PropertyChangeListener listener) {
+        if (listener != null) {
+            lazyGetPropertyChangeSupport(true).addPropertyChangeListener(property, listener);
+        }
+    }
+
+    public final void removePropertyChangeListener(final PropertyChangeListener listener) {
+        final PropertyChangeSupport ref = lazyGetPropertyChangeSupport(false);
+        if (ref != null) {
+            ref.removePropertyChangeListener(listener);
+        }
+    }
+
+    public final void removePropertyChangeListener(final String property, final PropertyChangeListener listener) {
+        final PropertyChangeSupport ref = lazyGetPropertyChangeSupport(false);
+        if (ref != null) {
+            ref.removePropertyChangeListener(property, listener);
+        }
+    }
+
+    public final boolean hasListeners(final String propertyName) {
+        final PropertyChangeSupport ref = lazyGetPropertyChangeSupport(false);
+        return ref != null && ref.hasListeners(propertyName);
+    }
+
+    protected final void fireIndexedPropertyChange(final String propertyName, final int index, final Object oldValue,
+            final Object newValue) {
+        final PropertyChangeSupport ref = lazyGetPropertyChangeSupport(false);
+        if (ref != null) {
+            ref.fireIndexedPropertyChange(propertyName, index, oldValue, newValue);
+        }
+    }
+
+    protected final void firePropertyChange(final String propertyName, final Object oldValue, final Object newValue) {
+        final PropertyChangeSupport ref = lazyGetPropertyChangeSupport(false);
+        if (ref != null) {
+            ref.firePropertyChange(propertyName, oldValue, newValue);
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+cubejs create hello-world -d postgres
+--------------------------------------------------------------------------------------------------------
+@Configuration
+@EnableTransactionManagement
+@EnableJpaRepositories(
+ entityManagerFactoryRef = "customerEntityManagerFactory",
+ transactionManagerRef = "customerTransactionManager",
+ basePackages = {
+  "com.javadevjournal.customer.repo"
+ }
+)
+public class CustomerConfig {
+
+ @Primary
+ @Bean(name = "customerDataSource")
+ @ConfigurationProperties(prefix = "spring.datasource")
+ public DataSource customerDataSource() {
+  return DataSourceBuilder.create().build();
+ }
+
+ @Primary
+ @Bean(name = "customerEntityManagerFactory")
+ public LocalContainerEntityManagerFactoryBean
+ entityManagerFactory(
+  EntityManagerFactoryBuilder builder,
+  @Qualifier("customerDataSource") DataSource dataSource
+ ) {
+  return builder
+   .dataSource(dataSource)
+   .packages("com.javadevjournal.customer.data")
+   .persistenceUnit("db1")
+   .build();
+ }
+
+ @Primary
+ @Bean(name = "customerTransactionManager")
+ public PlatformTransactionManager customerTransactionManager(
+  @Qualifier("customerEntityManagerFactory") EntityManagerFactory customerEntityManagerFactory
+ ) {
+  return new JpaTransactionManager(customerEntityManagerFactory);
+ }
+}
+
+@Configuration
+@EnableTransactionManagement
+@EnableJpaRepositories(
+ entityManagerFactoryRef = "productEntityManagerFactory",
+ transactionManagerRef = "productTransactionManager",
+ basePackages = {
+  "com.javadevjournal.product.repo"
+ }
+)
+public class ProductConfig {
+
+ @Bean(name = "productDataSource")
+ @ConfigurationProperties(prefix = "db2.datasource")
+ public DataSource dataSource() {
+  return DataSourceBuilder.create().build();
+ }
+
+ @Bean(name = "productEntityManagerFactory")
+ public LocalContainerEntityManagerFactoryBean
+ barEntityManagerFactory(
+  EntityManagerFactoryBuilder builder,
+  @Qualifier("productDataSource") DataSource dataSource
+ ) {
+  return
+  builder
+   .dataSource(dataSource)
+   .packages("com.javadevjournal.product.data")
+   .persistenceUnit("db2")
+   .build();
+ }
+
+ @Bean(name = "productTransactionManager")
+ public PlatformTransactionManager productTransactionManager(
+  @Qualifier("productEntityManagerFactory") EntityManagerFactory productEntityManagerFactory
+ ) {
+  return new JpaTransactionManager(productEntityManagerFactory);
+ }
+}
+
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class MultipleDataSourcesProductTests {
+
+    @Autowired
+    private ProductRepository productRepository;
+    
+    @Test
+    @Transactional("productTransactionManager")
+    public void create_check_product() {
+        ProductModel product = new ProductModel("228781","Running Shoes", 20.0);
+        product = productRepository.save(product);
+
+        assertNotNull(productRepository.findById(product.getId()));
+    }
+
+}
+//Customer test
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class MultipleDataSourcesCustomerTests {
+
+
+    @Autowired
+    private CustomerRepository customerRepository;
+
+    @Test
+    @Transactional("customerTransactionManager")
+    public void create_check_customer() {
+
+        CustomerModel customer = new CustomerModel("user@www.javadevjournal.com","Robert","Hickle");
+        customer = customerRepository.save(customer);
+
+        assertNotNull(customerRepository.findById(customer.getId()));
+        assertEquals(customerRepository.findById(customer.getId()).get().getEmail() ,"user@www.javadevjournal.com");
+    }
+}
+--------------------------------------------------------------------------------------------------------
+  @Bean
+  public Module javaTimeModule() {
+    return new JavaTimeModule();
+  }
+
+  @Bean
+  public Module jdk8Module() {
+    return new Jdk8Module();
+  }
+  
+import static org.mockito.BDDMockito.given;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.wiegandt.toepferportal.controllers.TerminController;
+import eu.wiegandt.toepferportal.entities.Termin;
+
+@RunWith(SpringRunner.class)
+@WebMvcTest(TerminController.class)
+@AutoConfigureMockMvc(secure = false)
+public class TerminControllerTest {
+  @Autowired
+  private MockMvc mvc;
+
+
+  @Test
+  public void testGetAll() throws Exception {
+    final List<Termin> testTermine = new ArrayList<>();
+
+    final ObjectMapper objectMapper = new ObjectMapper();
+    mvc.perform(get("/termine").accept(MediaType.APPLICATION_JSON_UTF8)).andExpect(status().isOk())
+        .andExpect(content().json(objectMapper.writeValueAsString(testTermine)));
+  }
+}  
+--------------------------------------------------------------------------------------------------------
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>com.spotify</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>0.23.0</version>
+                <configuration>
+                    <imageName>${project.groupId}/${project.artifactId}</imageName>
+                    <tag>${project.version}</tag>
+                    <dockerDirectory>src/main/docker</dockerDirectory>
+                    <resources>
+                        <resource>
+                            <targetPath>/</targetPath>
+                            <directory>${project.build.directory}</directory>
+                            <include>${project.build.finalName}.jar</include>
+                        </resource>
+                    </resources>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <environmentVariables>
+                        <TOEPFERPLANER_DB_HOST>localhost</TOEPFERPLANER_DB_HOST>
+                        <TOEPFERPLANER_DB_PORT>${it-database.port}</TOEPFERPLANER_DB_PORT>
+                        <TOEPFERPLANER_DB_DATABASE>${test.db.name}</TOEPFERPLANER_DB_DATABASE>
+                        <TOEPFERPLANER_DB_USER>${test.db.user.name}</TOEPFERPLANER_DB_USER>
+                        <TOEPFERPLANER_DB_PASSWORD>${test.db.user.pw}</TOEPFERPLANER_DB_PASSWORD>
+                    </environmentVariables>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>0.20.1</version>
+                <executions>
+                    <execution>
+                        <id>prepare-it-database</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>start</goal>
+                        </goals>
+                        <configuration>
+                            <images>
+                                <image>
+                                    <name>mariadb:latest</name>
+                                    <alias>it-database</alias>
+                                    <run>
+                                        <ports>
+                                            <port>it-database.port:3306</port>
+                                        </ports>
+                                        <env>
+                                            <MYSQL_ROOT_PASSWORD>${test.db.root.pw}</MYSQL_ROOT_PASSWORD>
+                                            <MYSQL_DATABASE>${test.db.name}</MYSQL_DATABASE>
+                                            <MYSQL_USER>${test.db.user.name}</MYSQL_USER>
+                                            <MYSQL_PASSWORD>${test.db.user.pw}</MYSQL_PASSWORD>
+                                        </env>
+                                        <wait>
+                                            <log>mysqld: ready for connections</log>
+                                            <time>20000</time>
+                                        </wait>
+                                    </run>
+                                </image>
+                            </images>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>remove-it-database</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>stop</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+        <resources>
+            <resource>
+                <directory>src/main/docker</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+    </build>
+-------------------------------------------------------------------------------------------------------
+vue init nuxt-community/starter-template cproject-names
+find / -print > filelist 2> no_access
+diff -u <(sort file1) <(sofr file2) | less
+
+--------------------------------------------------------------------------------------------------------
+docket-machine ip
+yum list available
+dig +noall +answer www any
+
+ip addr show up
+ip link set etho0 up
+
+while [ $lines -le $maxlines ]  
+do
+	echo >> $BUFFER
+	lines = $((lines + 1))
+done
+
+if [ -d $file -o \(-f $file -a -r $file\) ]
+--------------------------------------------------------------------------------------------------------
+List<String> lines = Files.readAllLines(Paths.get(res.getURI()),
+        StandardCharsets.UTF_8);
+--------------------------------------------------------------------------------------------------------
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.MessageSource;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.support.ReloadableResourceBundleMessageSource;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
+
+@SpringBootApplication
+public class Application {
+
+    @Bean
+    public MessageSource messageSource() {
+        ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
+        messageSource.setBasename("classpath:messages");
+        messageSource.setDefaultEncoding("UTF-8");
+        return messageSource;
+    }
+
+    @Bean
+    public LocalValidatorFactoryBean validator() {
+        LocalValidatorFactoryBean bean = new LocalValidatorFactoryBean();
+        bean.setValidationMessageSource(messageSource());
+        return bean;
+    }
+
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+}
+
+import org.springframework.context.MessageSource;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.support.ReloadableResourceBundleMessageSource;
+import org.springframework.validation.Validator;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+
+@Configuration
+@EnableWebMvc
+public class WebConfiguration extends WebMvcConfigurerAdapter {
+
+    @Bean
+    public MessageSource messageSource() {
+        ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
+        messageSource.setBasename("classpath:messages");
+        messageSource.setDefaultEncoding("UTF-8");
+        return messageSource;
+    }
+
+    @Bean
+    @Override
+    public Validator getValidator() {
+        LocalValidatorFactoryBean bean = new LocalValidatorFactoryBean();
+        bean.setValidationMessageSource(messageSource());
+        return bean;
+    }
+
+    // other methods...
+}
+--------------------------------------------------------------------------------------------------------
+@RunWith(SpringRunner.class) 
+@WebMvcTest
+@AutoConfigureMockMvc
+public class UserControllerIntegrationTest {
+ 
+    @MockBean
+    private UserRepository userRepository;
+     
+    @Autowired
+    UserController userController;
+ 
+    @Autowired
+    private MockMvc mockMvc;
+ 
+    //...
+     
+}
+
+@Test
+public void whenPostRequestToUsersAndValidUser_thenCorrectResponse() throws Exception {
+    MediaType textPlainUtf8 = new MediaType(MediaType.TEXT_PLAIN, Charset.forName("UTF-8"));
+    String user = "{\"name\": \"bob\", \"email\" : \"bob@domain.com\"}";
+    mockMvc.perform(MockMvcRequestBuilders.post("/users")
+      .content(user)
+      .contentType(MediaType.APPLICATION_JSON_UTF8))
+      .andExpect(MockMvcResultMatchers.status().isOk())
+      .andExpect(MockMvcResultMatchers.content()
+        .contentType(textPlainUtf8));
+}
+ 
+@Test
+public void whenPostRequestToUsersAndInValidUser_thenCorrectResponse() throws Exception {
+    String user = "{\"name\": \"\", \"email\" : \"bob@domain.com\"}";
+    mockMvc.perform(MockMvcRequestBuilders.post("/users")
+      .content(user)
+      .contentType(MediaType.APPLICATION_JSON_UTF8))
+      .andExpect(MockMvcResultMatchers.status().isBadRequest())
+      .andExpect(MockMvcResultMatchers.jsonPath("$.name", Is.is("Name is mandatory")))
+      .andExpect(MockMvcResultMatchers.content()
+        .contentType(MediaType.APPLICATION_JSON_UTF8));
+    }
+}
+--------------------------------------------------------------------------------------------------------
+public @interface ContextConfiguration {
+
+    @AliasFor("locations")
+    String[] value() default {};
+
+    @AliasFor("value")
+    String[] locations() default {};
+
+    // ...
+}
+--------------------------------------------------------------------------------------------------------
+import org.junit.Test;
+
+import org.junit.runner.RunWith;
+
+import org.springframework.boot.test.context.SpringBootTest;
+
+import org.springframework.test.context.junit4.SpringRunner;
+
+@RunWith(SpringRunner.class)
+
+@SpringBootTest
+
+public class SpringBoot2RestServiceApplicationTests {
+
+  @Test
+
+  public void contextLoads() {
+
+  }
+
+}
+--------------------------------------------------------------------------------------------------------
+import lombok.Builder;
+import lombok.Data;
+
+@Data
+@Builder
+public class ResponseDTO<T> {
+    private String status;
+
+    @Builder.Default
+    private String message = "Success!";
+
+    private T body;
+}
+--------------------------------------------------------------------------------------------------------
+spring.devtools.restart.poll-interval=10
+spring.devtools.restart.quiet-period=5
+spring.devtools.restart.exclude=public/myPage2.html
+--------------------------------------------------------------------------------------------------------
+spring.jpa.hibernate.naming.physical-strategy=org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+--------------------------------------------------------------------------------------------------------
+@Component
+public class ExampleClient {
+
+  @Autowired
+  private EmployeeRepository repo;
+
+  public void run() {
+      List<Employee> employees = createEmployees();
+      repo.saveAll(employees);
+      System.out.println("-- employees persisted --");
+      employees.forEach(System.out::println);
+
+      System.out.println(" -- employees having salary greater than 3000 order by salary --");
+      //BooleanExpression implements Predicate
+      //goe='greater than or equals'
+      BooleanExpression booleanExpression = QEmployee.employee.salary.goe(3000);
+      OrderSpecifier<Integer> orderSpecifier = QEmployee.employee.salary.asc();
+      Iterable<Employee> employees2 = repo.findAll(booleanExpression, orderSpecifier);
+      employees2.forEach(System.out::println);
+
+      System.out.println(" -- employees in IT and Admin depts and salary between 3000 and 5000 --");
+      BooleanExpression booleanExpression2 = QEmployee.employee.dept.in("IT", "Admin").and(
+              QEmployee.employee.salary.between(3000, 5000));
+              Iterable<Employee> employee3 = repo.findAll(booleanExpression2);
+      employee3.forEach(System.out::println);
+
+      System.out.println(" -- find employee Mike --");
+      BooleanExpression booleanExpression3 = QEmployee.employee.name.eq("Mike");
+      Optional<Employee> opt = repo.findOne(booleanExpression3);
+      System.out.println(opt.get());
+  }
+
+  private List<Employee> createEmployees() {
+      return Arrays.asList(
+              Employee.create("Diana", "Admin", 2000),
+              Employee.create("Mike", "Sales", 1000),
+              Employee.create("Rose", "IT", 4000),
+              Employee.create("Sara", "Admin", 3500),
+              Employee.create("Randy", "Sales", 3000),
+              Employee.create("Charlie", "IT", 2500)
+      );
+  }
+}
+--------------------------------------------------------------------------------------------------------
+QBean<Parent> parentProjection = Projections.fields(Parent.class, QParent.parent.id);
+QBean<Child> childProjection = Projections.fields(Child.class, QChild.child.id);
+EnumPath<Hobby> hobbies = Expressions.enumPath(Hobby.class, "hobbies");
+Map<Parent, Group> result = from(QParent.parent)
+    .innerJoin(QParent.children, QChild.child)
+    .innerJoin(QChild.child.hobbies, hobbies);
+    .transform(GroupBy.groupBy(parentProjection).as(GroupBy.list(childProjection), GroupBy.list(hobbies);
+
+result.forEach((parent, groups) -> {
+    parent.setChildren(groups.getList(childProjection));
+    // How to get the hobbies of the parent children?
+});
+--------------------------------------------------------------------------------------------------------
 package com.paragon.microservices.distributor.controller.impl;
 
 import com.paragon.mailingcontour.commons.configuration.BaseExceptionHandler;
