@@ -6380,6 +6380,106 @@ public void whenPostRequestToUsersAndInValidUser_thenCorrectResponse() throws Ex
     }
 }
 --------------------------------------------------------------------------------------------------------
+   @Test
+    public void sum() throws Exception {
+        final NumberPath<BigDecimal> num = new NumberPath<BigDecimal>(BigDecimal.class, "num");
+        final CollQuery query = CollQueryFactory.from(num, Arrays.asList(new BigDecimal("1.6"), new BigDecimal("1.3")));
+
+        // fail because sum use longValue
+        assertEquals(new BigDecimal("2.9"), query.uniqueResult(num.sum()));
+    }
+	public final class CollQueryFunctions {
+...
+    private static final BinaryFunction SUM = new BinaryFunction() {
+        @Override
+        public Number apply(Number num1, Number num2) {
+            if (num1 instanceof Double || num1 instanceof Float) {
+                return num1.doubleValue() + num2.doubleValue();
+            } else {
+                return num1.longValue() + num2.longValue();
+            }
+        }
+    };
+...
+}
+https://vike.io/ru/169783/
+https://stackoverflow.com/questions/18300465/spring-data-jpa-and-querydsl-to-fetch-subset-of-columns-using-bean-constructor-p
+https://www.baeldung.com/intro-to-querydsl
+--------------------------------------------------------------------------------------------------------
+@Entity
+@Table(name = "doc_documents")
+public class Document {
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long id;
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "doc_document_mesh_thes_terms",
+        joinColumns =
+            @JoinColumn(name = "document_id"))
+    @Column(name = "thesaurus_term", nullable = false, length = FieldLength.STRING_MED)
+    @OrderColumn(name = "idx")
+    private List<String> meshThesaurusTerms = new ArrayList<>();
+    ….
+}   
+--------------------------------------------------------------------------------------------------------
+        final JPAQueryFactory queryFactory = new JPAQueryFactory(this.getEntityManager());
+        final QFileEntity user = QFileEntity.fileEntity;
+        final FileEntity c = queryFactory.selectFrom(user)
+                .where(user.version().locales.contains(new LocaleInfoEntity(searchParameters.getLocale())))
+                .fetchOne();
+--------------------------------------------------------------------------------------------------------
+@Entity
+@Table(name="projet")
+public class Project {
+
+    @Id 
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", columnDefinition="serial")
+    private int id;
+
+    @Column(name="code")
+    private String code;
+
+    @Column(name="designation")
+    private String designation;
+
+    @OneToMany(cascade = CascadeType.ALL, mappedBy="project", orphanRemoval=true)
+    @OrderBy(clause="id DESC")
+    private List<ProjectHasChief> chiefs = new ArrayList<ProjectHasChief>();
+}
+--------------------------------------------------------------------------------------------------------
+public class LocalDateStringType 
+  extends AbstractSingleColumnStandardBasicType<LocalDate> {
+ 
+    public static final LocalDateStringType INSTANCE = new LocalDateStringType();
+ 
+    public LocalDateStringType() {
+        super(VarcharTypeDescriptor.INSTANCE, LocalDateStringJavaDescriptor.INSTANCE);
+    }
+ 
+    @Override
+    public String getName() {
+        return "LocalDateString";
+    }
+}
+
+public class LocalDateStringJavaDescriptor extends AbstractTypeDescriptor<LocalDate> {
+ 
+    public static final LocalDateStringJavaDescriptor INSTANCE = 
+      new LocalDateStringJavaDescriptor();
+ 
+    public LocalDateStringJavaDescriptor() {
+        super(LocalDate.class, ImmutableMutabilityPlan.INSTANCE);
+    }
+     
+    // other methods
+}
+
+https://www.baeldung.com/hibernate-custom-types
+https://habr.com/ru/post/91328/
+https://habr.com/ru/post/91434/
+--------------------------------------------------------------------------------------------------------
 public @interface ContextConfiguration {
 
     @AliasFor("locations")
@@ -20105,6 +20205,36 @@ logging:
 --------------------------------------------------------------------------------------------------------
 @XmlElement(name = "code", nillable = false, required = true, namespace = "com.jakubstas.swagger")
 --------------------------------------------------------------------------------------------------------
+queryFactory.query()
+        .select(user.version().locales)
+        .from(user)
+        //.where(QVersionEntity.versionEntity.locales.contains())
+        .limit(3)
+        .fetch()
+queryFactory.query()
+        .select(user.version().locales)
+        .from(user)
+        .where(user.version.locales.contains(new LocaleInfoEntity("ru")))
+        .limit(3)
+        .fetch()
+JPAQuery query = new JPAQuery(this.entityManager, EclipseLinkTemplates.DEFAULT);
+queryFactory.selectFrom(user)
+        .where(user.version().locales.any().in(new LocaleInfoEntity("ru")))
+        .limit(1);
+
+final JPAQueryFactory queryFactory = new JPAQueryFactory(HQLTemplates.DEFAULT, this.getEntityManager());
+queryFactory.selectFrom(user)
+        .where(user.version().locales.contains((new LocaleInfoEntity("ru"))))
+        .limit(1).fetch()
+		
+	queryFactory.query()
+        .select(QFileEntity.fileEntity.version().locales)
+        .from(QFileEntity.fileEntity)
+        .where(QFileEntity.fileEntity.version().product().sku.equalsIgnoreCase(searchParameters.getSku())
+        .and(QFileEntity.fileEntity.version().locales.contains(new LocaleInfoEntity(searchParameters.getLocale())))
+        .and(QFileEntity.fileEntity.fileInfo().filePlatform.eq(searchParameters.getPlatform()))).fetch()
+queryFactory.query().select(user.version().locales).from(user).fetch()
+
 query.from(interval).orderBy(interval.end.desc()).fetchFirst();
 JPAQuery query = new JPAQuery(entityManager);
  query.from(qEntity).singleResult(qEntity.id.max());
@@ -39403,6 +39533,39 @@ https://www.logicbig.com/tutorials/java-ee-tutorial/bean-validation/predefined_c
   List<Employee> resultList = typedQuery.getResultList();
   
   
+  CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+CriteriaQuery<FileEntity> criteria = builder.createQuery(FileEntity.class);
+Root<FileEntity> fromPerson = criteria.from(FileEntity.class);
+criteria.select(fromPerson).where(builder.equal(fromPerson.get("version"), 1000));
+TypedQuery<FileEntity> query = entityManager.createQuery(criteria);
+List<FileEntity> peeps = query.getResultList();
+
+Criteria criteria = entityManager.createCriteria(Person.class);
+Criteria languageCriteria = criteria.createCriteria("language");
+
+languageCriteria.add(Restrictions.like("locale", locale));
+
+criteria.add(Restrictions.like("name", name));
+criteria.add(Restrictions.between("time", startDate, endDate));
+
+criteria.addOrder(Order.asc("name"));
+
+and my first try at JPA 2.0:
+
+CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+CriteriaQuery<Person> criteria = builder.createCriteria(Person.class);
+Root<Person> pRoot = criteria.from(Person.class);
+Join<Person, Language> langJoin = criteria.join("language", JoinType.LEFT);
+
+Predicate conjunction = builder.conjunction();
+
+criteria.where(builder.and(
+    builder.like(langJoin.get(Language_.locale), locale),
+    builder.like(pRoot.get(Person_.name), name),
+    builder.between(pRoot.get(Person_.time), startDate, endDate));
+
+criteria.orderBy(builder.asc(pRoot.get(Person_.name)));
+  
   private static void findEmployeesWithTasks() {
       System.out.println("-- find employees with tasks --");
       EntityManager em = entityManagerFactory.createEntityManager();
@@ -39483,6 +39646,549 @@ public class Employee {
   private static Timestamp localToTimeStamp(LocalDate date) {
       return Timestamp.from(date.atStartOfDay().toInstant(ZoneOffset.UTC));
   }
+-------------------------------------------------------------------------------------------------------
+@Entity
+@Access(AccessType.FIELD)
+public class MutualFund implements Serializable {
+
+    @Id
+    private final String schemeName;
+
+    @Convert(attributeName="key",converter=LocalDatePersistenceConverter.class)
+    @ElementCollection
+    private Map<LocalDate, Price> nav;
+
+    //Other fields and methods
+}
+-------------------------------------------------------------------------------------------------------
+package com.paragon.microservices.distributor.service.impl;
+
+import com.paragon.mailingcontour.commons.utils.ValidationUtils;
+import com.paragon.microservices.distributor.model.domain.FileParameters;
+import com.paragon.microservices.distributor.model.domain.FileSearchParameters;
+import com.paragon.microservices.distributor.model.domain.VersionParameters;
+import com.paragon.microservices.distributor.model.entity.FileEntity;
+import com.paragon.microservices.distributor.model.entity.LocaleInfoEntity;
+import com.paragon.microservices.distributor.model.entity.QFileEntity;
+import com.paragon.microservices.distributor.model.entity.VersionInfoEntity;
+import com.paragon.microservices.distributor.repository.FileRepository;
+import com.paragon.microservices.distributor.service.interfaces.FileService;
+import com.paragon.microservices.distributor.service.interfaces.VersionService;
+import com.paragon.microservices.distributor.system.formatter.VersionInfoFormatter;
+import com.paragon.microservices.distributor.system.utils.ServiceUtils;
+import com.querydsl.core.types.Predicate;
+import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.HQLTemplates;
+import com.querydsl.jpa.impl.JPAQueryFactory;
+import lombok.*;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
+
+import java.text.ParseException;
+import java.util.*;
+
+import static com.paragon.mailingcontour.commons.exception.ResourceNotFoundException.throwResourceNotFound;
+import static com.paragon.microservices.distributor.exception.EmptyContentException.throwEmptyContent;
+import static com.paragon.microservices.distributor.exception.InvalidFormatException.throwInvalidFormat;
+import static com.paragon.microservices.distributor.system.utils.ServiceUtils.DEFAULT_COMPLETABLE_ACTION;
+import static com.paragon.microservices.distributor.system.utils.ServiceUtils.copyNonNullProperties;
+
+/**
+ * {@link FileService} implementation
+ */
+@Slf4j
+@Validated
+@Service
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
+@Getter(AccessLevel.PROTECTED)
+@RequiredArgsConstructor
+public class FileServiceImpl extends AuditServiceImpl<FileEntity, QFileEntity, UUID> implements FileService {
+    /**
+     * Default version format error messages
+     */
+    public static final String ERROR_VERSION_FORMAT_INVALID_MESSAGE_TEMPLATE = "error.version.format.invalid";
+    public static final String ERROR_RESOURCE_BY_REQUEST_NOT_FOUND_MESSAGE_TEMPLATE = "error.resource.by.request.not-found";
+
+    private final FileRepository fileRepository;
+    private final VersionService versionService;
+    private final VersionInfoFormatter versionInfoFormatter;
+
+    @Override
+    public Optional<FileEntity> getFileRecord(final FileParameters fileParameters) {
+        log.info("Fetching file record by parameters: {}", fileParameters);
+        return this.getRepository().findByProductVersionFileId(fileParameters.getProductId(), fileParameters.getVersionId(), fileParameters.getBinaryId());
+    }
+
+    @Override
+    public <S extends FileEntity> Iterable<S> getAllFileRecords(final VersionParameters versionParameters) {
+        log.info("Fetching all file records by parameters: {}", versionParameters);
+        return this.getRepository().<S>findAllByProductVersionId(versionParameters.getProductId(), versionParameters.getVersionId())
+                .thenApply(ServiceUtils::ofEmpty)
+                .whenCompleteAsync(DEFAULT_COMPLETABLE_ACTION, this.getAsyncTaskExecutor())
+                .join()
+                .orElseThrow(() -> throwEmptyContent(this.getMessageSource()));
+    }
+
+    @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public FileEntity createFileRecord(final VersionParameters versionParameters, final FileEntity fileEntity) {
+        log.info("Creating new file record by parameters: {}, fileEntity: {}", versionParameters, fileEntity);
+        return this.getVersionService().getVersionRecord(versionParameters)
+                .map(entity -> {
+                    fileEntity.setVersion(entity);
+                    return fileEntity;
+                })
+                .map(this::save)
+                .orElseThrow(() -> throwResourceNotFound(this.getMessageSource(), ERROR_RESOURCE_NOT_FOUND, versionParameters));
+    }
+
+    @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public FileEntity updateFileRecord(final FileParameters fileParameters, final FileEntity fileEntity) {
+        log.info("Updating file record by parameters: {}, entity: {}", fileParameters, fileEntity);
+        return this.getFileRecord(fileParameters)
+                .map(entity -> {
+                    copyNonNullProperties(fileEntity, entity);
+                    return entity;
+                })
+                .map(this::save)
+                .orElseThrow(() -> throwResourceNotFound(this.getMessageSource(), ERROR_RESOURCE_NOT_FOUND, fileParameters));
+    }
+
+    @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public FileEntity deleteFileRecord(final FileParameters fileParameters) {
+        log.info("Removing file record by parameters: {}", fileParameters);
+        return this.getFileRecord(fileParameters)
+                .map(entity -> {
+                    final Set<FileEntity> files = entity.getVersion().getFiles();
+                    Optional.ofNullable(files).ifPresent(f -> f.removeIf(current -> Objects.equals(current, entity)));
+                    this.delete(entity);
+                    return entity;
+                })
+                .orElseThrow(() -> throwResourceNotFound(this.getMessageSource(), ERROR_RESOURCE_NOT_FOUND, fileParameters));
+    }
+
+    /**
+     * Returns {@link FileEntity} by input {@link FileSearchParameters} parameters
+     *
+     * @param searchParameters - initial input {@link FileSearchParameters} to fetch by
+     * @return {@link FileEntity}
+     */
+    @Override
+    public FileEntity searchFileRecord(final FileSearchParameters searchParameters) {
+        log.info("Fetching file record by input search parameters: {}", searchParameters);
+        final Predicate predicate = this.buildFileRecordSearchPredicate(searchParameters);
+        return this.getFileRepository().findOne(predicate).orElseThrow(() -> throwResourceNotFound(this.getMessageSource(), ERROR_RESOURCE_BY_REQUEST_NOT_FOUND_MESSAGE_TEMPLATE, searchParameters));
+    }
+
+    /**
+     * Returns {@link FileEntity} search {@link Predicate} by input search parameters
+     *
+     * @param searchParameters - initial input {@link FileSearchParameters} to build search predicate by
+     * @return {@link FileEntity} search {@link Predicate}
+     */
+    private Predicate buildFileRecordSearchPredicate(final FileSearchParameters searchParameters) {
+        ValidationUtils.checkNotNull(searchParameters, "File search parameters should not be null");
+
+//        CriteriaBuilder builder = this.getEntityManager().getCriteriaBuilder();
+//        CriteriaQuery<FileEntity> criteria = builder.createQuery(FileEntity.class);
+//        Root<FileEntity> fromPerson = criteria.from(FileEntity.class);
+
+//        javax.persistence.criteria.Predicate greaterThanPrice = builder.equal(fromPerson.get(FileEntity_.version).get(VersionEntity_.product).get(ProductEntity_.sku), searchParameters.getSku());
+//        javax.persistence.criteria.Predicate chairItems = builder.equal(fromPerson.get(FileEntity_.fileInfo).get(FileInfoEntity_.filePlatform), searchParameters.getPlatform());
+//        javax.persistence.criteria.Predicate chairItems2 = builder.equal(fromPerson.get(FileEntity_.version).get(VersionEntity_.versionInfo), this.buildVersionInfo(searchParameters.getVersion()));
+//        javax.persistence.criteria.Predicate chairItems3 = builder.isMember(new LocaleInfoEntity(searchParameters.getLocale()), fromPerson.get(FileEntity_.version).get(VersionEntity_.locales));
+
+//        criteria.select(fromPerson).where(builder.and(greaterThanPrice, chairItems, chairItems2, chairItems3));
+//        TypedQuery<FileEntity> query = this.getEntityManager().createQuery(criteria);
+//        List<FileEntity> peeps = query.getResultList();
+
+        final JPAQueryFactory queryFactory = new JPAQueryFactory(HQLTemplates.DEFAULT, this.getEntityManager());
+        final QFileEntity user = QFileEntity.fileEntity;
+        final FileEntity c = queryFactory
+                .selectFrom(user)
+                .where(user.version().locales.contains(new LocaleInfoEntity(searchParameters.getLocale())))
+                .fetchOne();
+
+        final BooleanExpression searchPredicate = QFileEntity.fileEntity.version().product().sku.equalsIgnoreCase(searchParameters.getSku())
+                .and(QFileEntity.fileEntity.fileInfo().filePlatform.equalsIgnoreCase(searchParameters.getPlatform()))
+                .and(QFileEntity.fileEntity.version().locales.contains(new LocaleInfoEntity(searchParameters.getLocale())));
+        if (StringUtils.isBlank(searchParameters.getVersion())) {
+            for (int i = 0; i < 4; i++) {
+//                searchPredicate
+//                        .and(QFileEntity.fileEntity.version().versionInfo().tokens.get(i).eq(QFileEntity.fileEntity.version().versionInfo().tokens.get(i).max()));
+            }
+            return searchPredicate;
+        }
+        final VersionInfoEntity versionInfoEntity = this.buildVersionInfo(searchParameters.getVersion());
+        return searchPredicate.and(QFileEntity.fileEntity.version().versionInfo().eq(versionInfoEntity));
+    }
+
+    /**
+     * Returns {@link VersionInfoEntity} by input {@link String} version
+     *
+     * @param version - initial input {@link String} version
+     * @return {@link VersionInfoEntity}
+     */
+    private VersionInfoEntity buildVersionInfo(final String version) {
+        try {
+            return this.versionInfoFormatter.parse(version, Locale.getDefault());
+        } catch (ParseException e) {
+            throw throwInvalidFormat(this.getMessageSource(), ERROR_VERSION_FORMAT_INVALID_MESSAGE_TEMPLATE, version);
+        }
+    }
+
+    @Override
+    protected FileRepository getRepository() {
+        return this.fileRepository;
+    }
+}
+
+-------------------------------------------------------------------------------------------------------
+QInvoice invoice = QInvoice.invoice;
+QCompany company = QCompany.company;
+
+List<Invoice> list = new HibernateQuery(sessionFactory.getCurrentSession())
+      .from(invoice).where(
+      new HibernateSubQuery().from(invoice, company).where(
+              invoice.supplier.number.eq(company.number).and(
+              company.active.eq(true))).exists()).list(invoice);
+			  
+BooleanExpression exp = invoice.supplier.number.in(new JPASubQuery()
+    .from(company)
+    .where(company.active.isTrue())
+    .list(company.nu‌​mber));
+	
+public class WhereClauseBuilder implements Predicate, Cloneable
+{
+    private BooleanBuilder delegate;
+
+    public WhereClauseBuilder()
+    {
+        this.delegate = new BooleanBuilder();
+    }
+
+    public WhereClauseBuilder(Predicate pPredicate)
+    {
+        this.delegate = new BooleanBuilder(pPredicate);
+    }
+
+    public WhereClauseBuilder and(Predicate right)
+    {
+        return new WhereClauseBuilder(delegate.and(right));
+    }
+
+    public <V> WhereClauseBuilder optionalAnd(@Nullable V pValue, LazyBooleanExpression pBooleanExpression)
+    {
+        return applyIfNotNull(pValue, this::and, pBooleanExpression);
+    }
+
+    private <V> WhereClauseBuilder applyIfNotNull(@Nullable V pValue, Function<Predicate, WhereClauseBuilder> pFunction, LazyBooleanExpression pBooleanExpression)
+    {
+        if (pValue != null)
+        {
+            return new WhereClauseBuilder(pFunction.apply(pBooleanExpression.get()));
+        }
+
+        return this;
+    }
+   }
+
+    @FunctionalInterface
+    public interface LazyBooleanExpression
+    {
+        BooleanExpression get();
+    }
+	
+	
+	public EmployeeEntity getEmployees(String firstName, String lastName) {
+    QEmployeeEntity employee = QEmployeeEntity.employeeEntity;
+
+    return empployeeDAO.findAll
+    (
+       new WhereClauseBuilder()
+           .optionalAnd(firstName, () -> employee.firstName.eq(firstName))
+           .optionalAnd(lastName, () -> employee.lastName.eq(lastName))
+    );
+}
+
+@Controller
+class UserController {
+
+  @Autowired UserRepository repository;
+
+  @RequestMapping(value = "/", method = RequestMethod.GET)
+  String index(Model model, @QuerydslPredicate(root = User.class) Predicate predicate,    
+          Pageable pageable, @RequestParam MultiValueMap<String, String> parameters) {
+
+    model.addAttribute("users", repository.findAll(predicate, pageable));
+
+    return "index";
+  }
+}
+
+@Entity
+@NamedEntityGraph(name = "graph.CardCategoryLevel", attributeNodes = { @NamedAttributeNode("cardCategory"), @NamedAttributeNode("level") })
+@Table(name = "card_categories_levels")
+public class CardCategoryLevel extends BaseEntity implements Serializable {
+
+    @Id
+    @SequenceGenerator(name = "card_categories_levels_id_seq", sequenceName = "card_categories_levels_id_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.AUTO, generator = "card_categories_levels_id_seq")
+    private Long id;
+
+    @OneToOne
+    @JoinColumn(name = "card_category_id")
+    private CardCategory cardCategory;
+
+    @OneToOne
+    @JoinColumn(name = "level_id")
+    private Level level;
+
+    @Column(name = "card_drop_rate")
+    private Float cardDropRate;
+
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "cardCategoryLevel")
+    private List<Card> cards = new ArrayList<Card>();
+
+...
+}
+
+@Repository
+public interface CardCategoryLevelRepository extends JpaRepository<CardCategoryLevel, Long>, QueryDslPredicateExecutor<CardCategoryLevel> {
+
+    @Override
+    @EntityGraph(value = "graph.CardCategoryLevel", type = EntityGraphType.FETCH)
+    Page<CardCategoryLevel> findAll(Predicate predicate, Pageable pageable);
+
+....
+}
+
+public interface PersonRepository extends JpaRepository<Job, Integer>,
+        QueryDslPredicateExecutor<Person>, QuerydslBinderCustomizer<QJob> {
+
+    @Override
+    public default void customize(final QuerydslBindings bindings, final QPerson person)     {
+        bindings.bind(person.pets.any().name).first((path, value) -> {
+            return path.eq(value);
+        });
+    }
+}
+
+
+
+    @Override
+    public default void customize(final QuerydslBindings bindings, final QPerson person)     {
+        bindings.bind(person.pets.any().name).first((path, value) -> {
+            return path.eq(value);
+        });
+    }
+-------------------------------------------------------------------------------------------------------
+LocalDate start = LocalDate.now();
+LocalDate end = LocalDate.now().plusMonths(1).with(TemporalAdjusters.lastDayOfMonth());
+ 
+//Create stream of dates
+List<LocalDate> dates = Stream.iterate(start, date -> date.plusDays(1))
+                            .limit(ChronoUnit.DAYS.between(start, end))
+                            .collect(Collectors.toList());
+ 
+// Get Min or Max Date
+LocalDate maxDate = dates.stream()
+                            .max( Comparator.comparing( LocalDate::toEpochDay ) )
+                            .get();
+ 
+LocalDate minDate = dates.stream()
+                            .min( Comparator.comparing( LocalDate::toEpochDay ) )
+                            .get();
+ 
+System.out.println("maxDate = " + maxDate);
+System.out.println("minDate = " + minDate);
+-------------------------------------------------------------------------------------------------------
+public
+class
+ QueryExtensions {
+    @QueryDelegate(Date.class)
+public
+static
+ BooleanExpression inPeriod(DatePath<Date> date, Pair<Date,Date> period) {
+return
+ date.goe(period.getFirst()).and(date.loe(period.getSecond()));
+    }
+    @QueryDelegate(Timestamp.class)
+public
+static
+ BooleanExpression inDatePeriod(DateTimePath<Timestamp> timestamp, Pair<Date,Date> period) {
+        Timestamp first = 
+new
+ Timestamp(DateUtils.truncate(period.getFirst(), Calendar.DAY_OF_MONTH).getTime());
+        Calendar second = Calendar.getInstance();
+        second.setTime(DateUtils.truncate(period.getSecond(), Calendar.DAY_OF_MONTH));
+        second.add(
+1
+, Calendar.DAY_OF_MONTH);
+return
+ timestamp.goe(first).and(timestamp.lt(
+new
+ Timestamp(second.getTimeInMillis())));
+    }
+}
+-------------------------------------------------------------------------------------------------------
+import javax.persistence.Column;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.MappedSuperclass;
+
+@MappedSuperclass
+public abstract class AbstractEntity implements Cloneable{
+
+    @Id
+    @Column(name = "ID")
+    @GeneratedValue(generator="SEQUENCE")
+    private long id;
+
+    public long getId() {
+        return id;
+    }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException{
+        return super.clone();
+    }
+}
+-------------------------------------------------------------------------------------------------------
+<project>
+        <build>
+        <plugins>
+          ...
+          <plugin>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <generatedSourcesDirectory>target/generated-sources/java</generatedSourcesDirectory>
+              <compilerArgs>
+                <arg>-Aquerydsl.entityAccessors=true</arg>
+                <arg>-Aquerydsl.useFields=false</arg>
+              </compilerArgs>
+            </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>com.querydsl</groupId>
+                <artifactId>querydsl-apt</artifactId>
+                <version>${querydsl.version}</version>
+                <classifier>jpa</classifier>
+              </dependency>
+              <dependency>
+                <groupId>org.hibernate.javax.persistence</groupId>
+                <artifactId>hibernate-jpa-2.1-api</artifactId>
+                <version>1.0.0.Final</version>
+              </dependency>
+            </dependencies>
+          </plugin>
+          ...
+        </plugins>
+        </build>
+      </project>
+-------------------------------------------------------------------------------------------------------
+<plugin>
+  <groupId>org.bsc.maven</groupId>
+  <artifactId>maven-processor-plugin</artifactId>
+  <executions>
+    <execution>
+      <id>process</id>
+      <goals>
+        <goal>process</goal>
+      </goals>
+      <phase>generate-sources</phase>
+      <configuration>
+        <processors>
+          <processor>org.hibernate.jpamodelgen.JPAMetaModelEntityProcessor</processor>
+        </processors>
+      </configuration>
+    </execution>
+  </executions>
+  <dependencies>
+    <dependency>        
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-jpamodelgen</artifactId>
+      <version>4.3.4.Final</version>
+    </dependency>
+  </dependencies>
+</plugin>
+-------------------------------------------------------------------------------------------------------
+PUT http://localhost:8089/api/admin/v0/distributor/products/b7d41c8c-3072-486f-a640-1ae183e77fbb/versions/c4dfe4f0-bda1-4e3d-ae20-b184a545a408
+
+{
+  "version": "9.6.7.6.5675",
+  "locales": "[{\"locale\":\"enet\"},{\"locale\":\"def5ers\"}]",
+  "changelog": "changelog"
+}
+https://easyjava.ru/data/jpa/jpa-criteria/
+GET http://localhost:8089/api/v0/distributor/download/myusers2?sku=sku-333d497a&version=9.7.6.5&locale=de&platform=x86
+
+CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+CriteriaQuery<FileEntity> criteria = builder.createQuery(FileEntity.class);
+Root<FileEntity> fromPerson = criteria.from(FileEntity.class);
+criteria.select(fromPerson).where(builder.equal(fromPerson.get("version"), 1000));
+TypedQuery<FileEntity> query = entityManager.createQuery(criteria);
+List<FileEntity> peeps = query.getResultList();
+
+this.getFileRepository().findOne(
+QFileEntity.fileEntity.version().product().sku.equalsIgnoreCase(searchParameters.getSku())
+.and(QFileEntity.fileEntity.version().locales.contains(new LocaleInfoEntity(searchParameters.getLocale())))
+.and(QFileEntity.fileEntity.fileInfo().filePlatform.eq(searchParameters.getPlatform()))
+)
+
+this.getFileRepository().findOne(QFileEntity.fileEntity.version().locales.contains(new LocaleInfoEntity(searchParameters.getLocale())))
+
+this.getFileRepository().findOne(QFileEntity.fileEntity.version().versionInfo().tokens.eq(new int[]{7,7,8,9}))
+this.getFileRepository().findOne(QFileEntity.fileEntity.version().versionInfo().eq(new VersionInfoEntity(new int[]{1,2,3,4})))
+
+QFileEntity.fileEntity.version().locales.any().in(new LocaleInfoEntity(searchParameters.getLocale()))
+
+https://github.com/dpolican/jpaQuery
+
+https://grokonez.com/spring-framework/spring-boot/how-to-execute-asynchronous-query-with-spring-jpa-and-postgresql-spring-boot
+this.buildVersionInfo(searchParameters.getVersion())
+queryFactory.selectFrom(user)
+        .where(user.version().locales.any().in(new LocaleInfoEntity(searchParameters.getLocale())))
+        .fetchAll().fetchResults();
+queryFactory.selectFrom(user)
+                .where(user.version().locales.any().localeName.isnotnull)
+                .fetchAll().fetchResults();
+queryFactory.selectFrom(user)
+                .where(user.version().locales.contains(new LocaleInfoEntity(searchParameters.getLocale())))
+                .fetchCount();
+queryFactory.selectFrom(user)
+                .where(user.version().locales.any().isnotnull)
+                .fetchAll().fetchResults();
+
+queryFactory.selectFrom(user)
+                .where(user.version().locales.any().isnotnull)
+                .fetchCount();
+queryFactory.selectFrom(user)
+                .where(user.version().locales.any().localeName.eq("ru"))
+                .fetchAll().fetchResults();
+
+List<License> result = query.from(license)
+    .where(license.tags.any().in(tags))
+    .listDistinct(license);
+JPAQuery query = new JPAQuery (entityManager, EclipseLinkTemplates.DEFAULT);
+
+
+
+
+https://javabeat.net/spring-data-jpa-querydsl-integration/
+
+
+JPAQuery query = new JPAQuery(this.entityManager, EclipseLinkTemplates.DEFAULT);
+query.from(user)
+        .where(user.version().locales.any().in(new LocaleInfoEntity("ru")))
+        .limit(1)
 -------------------------------------------------------------------------------------------------------
   public static void main(String[] args) throws Exception {
       EntityManagerFactory emf =
