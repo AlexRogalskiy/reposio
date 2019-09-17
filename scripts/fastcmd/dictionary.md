@@ -39849,7 +39849,346 @@ public class FileServiceImpl extends AuditServiceImpl<FileEntity, QFileEntity, U
         return this.fileRepository;
     }
 }
+-------------------------------------------------------------------------------------------------------
 
+import org.spring.boot.common.PagehelperUtils;
+
+public interface IUserInfoService {
+	/**
+	 * @Title: listUser
+	 * @Description: 查询用户列表
+	 * @return List<UserInfo>
+	 */
+	@SuppressWarnings("rawtypes")
+	public PagehelperUtils listUser();
+
+	public void insert() throws Exception;
+}
+-------------------------------------------------------------------------------------------------------
+import javax.sql.DataSource;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+
+import com.alibaba.druid.pool.DruidDataSource;
+
+@Configuration
+public class DruidDataSourceConfiguration {
+	@Bean  
+	@Primary
+    @ConfigurationProperties(prefix = "spring.datasource") 
+    public DataSource druidDataSource() {  
+        DruidDataSource druidDataSource = new DruidDataSource();  
+        return druidDataSource;  
+    }  
+}
+-------------------------------------------------------------------------------------------------------
+@SpringBootApplication
+
+public class SpringBootActuatorExampleApplication {
+
+ public static void main(String[] args) {
+
+  SpringApplication.run(SpringBootActuatorExampleApplication.class, args);
+
+ }
+
+ @Bean
+
+ CommandLineRunner init(AccountRepository accountRepository,
+
+  UsernamesRepository usernamesRepository) {
+
+  return (evt) -> Arrays.asList(
+
+    "ricksanchez,mortysmith,bethsmith,jerrysmith,summersmith,birdperson,squanchy,picklerick".split(","))
+
+   .forEach(
+
+    a -> {
+
+     Account account = accountRepository.save(new Account(a,
+
+      "password"));
+
+     usernamesRepository.save(new Usernames(account,
+
+      "http://example.com/login", a + "1"));
+
+     usernamesRepository.save(new Usernames(account,
+
+      "http://example2.com/login", "the_" + a));
+
+    });
+ }
+}
+-------------------------------------------------------------------------------------------------------
+import java.util.Set;
+ 
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
+ 
+import com.howtodoinjava.example.model.User;
+ 
+public class TestHibernateValidator
+{
+    public static void main(String[] args)
+    {
+        //Create ValidatorFactory which returns validator
+        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+         
+        //It validates bean instances
+        Validator validator = factory.getValidator();
+ 
+        User user = new User(null, "1", "abcgmail.com");
+ 
+        //Validate bean
+        Set<ConstraintViolation<User>> constraintViolations = validator.validate(user);
+ 
+        //Show errors
+        if (constraintViolations.size() > 0) {
+            for (ConstraintViolation<User> violation : constraintViolations) {
+                System.out.println(violation.getMessage());
+            }
+        } else {
+            System.out.println("Valid Object");
+        }
+    }
+}
+
+Validator validator = Validation.byDefaultProvider()
+        .configure()
+        .messageInterpolator(
+                new ResourceBundleMessageInterpolator(
+                        new AggregateResourceBundleLocator(
+                                Arrays.asList(
+                                        "messages",
+                                        "otherMessages"
+                                )
+                        )
+                )
+        )
+        .buildValidatorFactory()
+        .getValidator();
+-------------------------------------------------------------------------------------------------------
+/**
+ * @author Guillaume Smet
+ */
+public class FrenchAddressMixDirectAnnotationAndListContainer extends Address {
+
+  @Override
+  @FrenchZipcodeMixDirectAnnotationAndListContainer
+  public String getZipCode() {
+    return super.getZipCode();
+  }
+
+  @Pattern(regexp = ".....")
+  @Pattern.List({ @Pattern(regexp = "bar") })
+  @Constraint(validatedBy = FrenchZipcodeMixDirectAnnotationAndListContainerConstraintValidator.class)
+  @Documented
+  @Target({ METHOD, FIELD, TYPE })
+  @Retention(RUNTIME)
+  public @interface FrenchZipcodeMixDirectAnnotationAndListContainer {
+    String message() default "Wrong zipcode";
+
+    Class<?>[] groups() default { };
+
+    Class<? extends Payload>[] payload() default {};
+
+    @OverridesAttribute(constraint = Pattern.class, name = "regexp", constraintIndex = 1)
+    String regex() default "\\d*";
+  }
+}
+-------------------------------------------------------------------------------------------------------
+@Documented
+@Constraint(validatedBy = MyValidator.class)
+@Target({METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface MyAnnotation {
+
+    String message() default "message";
+
+    Class<?>[] groups() default {};
+
+    Class<? extends Payload>[] payload() default {};
+}
+
+private MyAnnotation annotation;
+
+@Override
+public void initialize(MyAnnotation a)
+{
+    this.annotation = a;
+}
+
+@Override
+public boolean isValid(String value, ConstraintValidatorContext ctx)
+{
+    String diff = getDiff(value, cleanForHTMLContext(value));
+    if (diff.isEmpty())
+        return true;
+
+    String message = annotation.message();
+    HibernateConstraintValidatorContext hctx = ctx.unwrap(HibernateConstraintValidatorContext.class);
+
+    ctx.disableDefaultConstraintViolation();
+    ctx.addExpressionVariable("diff", diff)
+       .buildConstraintViolationWithTemplate(message)
+       .addConstraintViolation();
+    return false;
+}
+-------------------------------------------------------------------------------------------------------
+        @Bean
+        public EmbeddedServletContainerFactory servletContainer() {
+            TomcatEmbeddedServletContainerFactory tomcat = new TomcatEmbeddedServletContainerFactory() {
+                @Override
+                protected void postProcessContext(Context context) {
+                    SecurityConstraint securityConstraint = new SecurityConstraint();
+                    securityConstraint.setUserConstraint("CONFIDENTIAL");
+                    SecurityCollection collection = new SecurityCollection();
+                    collection.addPattern("/*");
+                    securityConstraint.addCollection(collection);
+                    context.addConstraint(securityConstraint);
+                }
+            };
+            tomcat.addAdditionalTomcatConnectors(redirectConnector());
+            return tomcat;
+        }
+        private Connector redirectConnector() {
+            Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
+            connector.setScheme("http");
+            connector.setPort(8080);    // if requires comes from 8080 then redurect to 8443
+            connector.setSecure(false);
+            connector.setRedirectPort(8443);   // application will run on 8443
+            return connector;
+        }
+		
+server.ssl.enabled
+-------------------------------------------------------------------------------------------------------
+import javax.servlet.http.HttpServletRequest;
+
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.annotation.After;
+import org.aspectj.lang.annotation.AfterReturning;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
+import org.aspectj.lang.annotation.Pointcut;
+import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+@Aspect
+@Component
+public class HttpAspect {
+	
+	@Pointcut("execution(public * org.spring.boot.controller.ExampleController.*(..))")
+	public void log() {
+		System.out.println("--------------------");
+	}
+	
+	@Before("log()")
+	public void doBefore(JoinPoint joinPoint) {
+		ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+		HttpServletRequest request = requestAttributes.getRequest();
+		System.out.println("url = " + request.getRequestURL().toString());
+		System.out.println("ip = " + request.getRemoteAddr());
+		System.out.println("method = " + request.getMethod());
+		System.out.println("class_method = " + joinPoint.getSignature().getDeclaringTypeName() + "." + joinPoint.getSignature().getName());
+		System.out.println("args = " + Arrays.toString(joinPoint.getArgs()));
+	}
+	
+	@After("log()")
+	public void doAfter() {
+		System.out.println("---------2---------");
+	}
+	@AfterReturning(pointcut = "log()", returning = "obj")
+	public void AfterReturn(Object obj) {
+		System.out.println(obj.toString());
+	}
+	
+	
+}
+-------------------------------------------------------------------------------------------------------
+import javax.servlet.annotation.WebFilter;
+import javax.servlet.annotation.WebInitParam;
+
+import com.alibaba.druid.support.http.WebStatFilter;
+
+@WebFilter(filterName = "druidWebStatFilter", urlPatterns = "/*", initParams = {
+		@WebInitParam(name = "exclusions", value = "*.js,*.gif,*.jpg,*.bmp,*.png,*.css,*.ico,/druid/*")
+})		// 忽略资源
+public class DruidStatFilter extends WebStatFilter {
+}
+-------------------------------------------------------------------------------------------------------
+import javax.servlet.annotation.WebInitParam;
+import javax.servlet.annotation.WebServlet;
+
+import com.alibaba.druid.support.http.StatViewServlet;
+
+@WebServlet(urlPatterns = "/druid/*", initParams = { @WebInitParam(name = "allow", value = "127.0.0.1"), // IP白名单(没有配置或者为空，则允许所有访问)
+																											
+		// IP黑名单 (存在共同时，deny优先于allow) : 如果满足deny的话提示:Sorry, you are not
+		// permitted to view this page.
+		@WebInitParam(name = "deny", value = "192.168.1.73"), // IP黑名单
+		@WebInitParam(name = "loginUsername", value = "admin"), // 用户名
+		@WebInitParam(name = "loginPassword", value = "admin"), // 密码
+		@WebInitParam(name = "resetEnable", value = "false")// 禁用HTML页面上的“Reset All”功能
+})
+public class DruidStatViewServlet extends StatViewServlet {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+}
+-------------------------------------------------------------------------------------------------------
+server:
+  port: 8080
+  context-path: /example
+user: 
+  admin: 
+    name: hello
+    role: admin
+#数据库设置
+spring:
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://172.16.192.103:3306/vport_oneway?characterEncoding=utf-8&autoReconnect=true&failOverReadOnly=false 
+    username: oneway
+    password: oneway
+#-----------------------
+#下面为连接池补充设置
+    initialSize: 5
+    # 配置获取连接等待超时的时间   
+    maxWait: 60000
+    # 配置间隔多久才进行一次检测，检测需要关闭的空闲连接，单位是毫秒
+    timeBetweenEvictionRunsMillis: 60000
+    # 配置一个连接在池中最小生存的时间，单位是毫秒 
+    minEvictableIdleTimeMillis: 300000
+    validationQuery: SELECT 1 FROM DUAL
+    testWhileIdle: true
+    testOnBorrow: false
+    testOnReturn: false
+    # 打开PSCache，并且指定每个连接上PSCache的大小
+    poolPreparedStatements: true
+    connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+    # 合并多个DruidDataSource的监控数据 
+    useGlobalDataSourceStat: true
+    
+mybatis:
+  mapper-locations: classpath*:org/spring/boot/mapper/*.xml
+  check-config-location: true
+  type-aliases-package: org.spring.boot.po
+    
+pagehelper: 
+  autoDialect: true
+  closeConn: false
+  reasonable: true
 -------------------------------------------------------------------------------------------------------
 QInvoice invoice = QInvoice.invoice;
 QCompany company = QCompany.company;
@@ -41585,6 +41924,268 @@ public class CardController {
     }
 
 }
+-------------------------------------------------------------------------------------------------------
+@JsonProperty
+@Field(store = Store.YES, index = Index.UN_TOKENIZED)
+@DateBridge(resolution = Resolution.SECOND)
+@Column(nullable = false, updatable = false)
+public Date getCreateDate() {
+	return createDate;
+}
+
+@Field(store = Store.YES, index = Index.NO)
+@Min(0)
+@Digits(integer = 12, fraction = 3)
+@Column(nullable = false, precision = 21, scale = 6)
+public BigDecimal getMarketPrice() {
+	return marketPrice;
+}
+@Field(store = Store.YES, index = Index.UN_TOKENIZED)
+@NumericField
+@Column(nullable = false, precision = 12, scale = 6)
+public Float getScore() {
+	return score;
+}
+@Fields({
+    @Field(index = Index.YES, analyze = Analyze.YES, store = Store.NO),
+    @Field(name = "keySort", index = Index.YES, analyze = Analyze.NO, store = Store.NO)
+})
+@Override
+public String getKey() {
+  return key;
+}
+/**
+ * Returns the alternate terminology ids.
+ *
+ * @return the alternate terminology ids
+ */
+/* see superclass */
+@Override
+@FieldBridge(impl = MapKeyValueToCsvBridge.class)
+@Field(name = "alternateTerminologyIds", index = Index.YES, analyze = Analyze.YES, store = Store.NO)
+public Map<String, String> getAlternateTerminologyIds() {
+  if (alternateTerminologyIds == null) {
+    alternateTerminologyIds = new HashMap<>(2);
+  }
+  return alternateTerminologyIds;
+}
+@XmlJavaTypeAdapter(UserRoleMapAdapter.class)
+@Fields({
+    @Field(bridge = @FieldBridge(impl = UserRoleBridge.class), index = Index.YES, analyze = Analyze.YES, store = Store.NO),
+    @Field(name = "userAnyRole", bridge = @FieldBridge(impl = UserMapUserNameBridge.class), index = Index.YES, analyze = Analyze.YES, store = Store.NO)
+})
+@Override
+public Map<User, UserRole> getUserRoleMap() {
+  if (userRoleMap == null) {
+    userRoleMap = new HashMap<>();
+  }
+  return userRoleMap;
+}
+@Type(type = "org.openyu.commons.entity.usertype.AuditEntityUserType")
+@Column(name = "audit", length = 570)
+@Field(store = Store.YES, index = Index.YES, analyze = Analyze.NO)
+@FieldBridge(impl = AuditEntityBridge.class)
+public AuditEntity getAudit()
+{
+	return audit;
+}
+-------------------------------------------------------------------------------------------------------
+
+import com.joe.easysocket.server.ext.mvc.Bean;
+import com.joe.easysocket.server.ext.mvc.context.RequestContext;
+import com.joe.easysocket.server.ext.mvc.exception.ResourceInvokeException;
+import lombok.Data;
+
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.ValidationException;
+import javax.validation.Validator;
+import javax.validation.executable.ExecutableValidator;
+import java.lang.reflect.Method;
+import java.util.List;
+import java.util.Set;
+
+/**
+ * 资源接口
+ *
+ * @author joe
+ */
+@Data
+public class Resource<T> implements Bean {
+    private static final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
+    private static final ExecutableValidator executableValidator = validator.forExecutables();
+    // 该资源对应的实体类
+    private Class<T> resourceClass;
+    // 该资源对应的方法
+    private Method resourceMethod;
+    // 该资源的访问路径，格式是/aa/bb，以/开头
+    private String name;
+    // 访问该资源需要的参数
+    private List<Param<?>> params;
+    private T instance;
+    // 响应数据格式
+    private String produce;
+    // 接收数据格式
+    private String consume;
+
+    /**
+     * 调用资源
+     *
+     * @param requestContext 请求上线文
+     * @return 调用结果
+     * @throws ResourceInvokeException 资源调用异常
+     */
+    public Object invoke(RequestContext requestContext) throws ResourceInvokeException {
+        try {
+            return resourceMethod.invoke(instance, requestContext.getParams());
+        } catch (Throwable e) {
+            throw new ResourceInvokeException(e);
+        }
+    }
+
+    /**
+     * 检查参数是否符合注解（用户自行加的验证注解）
+     *
+     * @param params 参数
+     * @throws ValidationException 当参数不符合规定时抛出该异常
+     */
+    public void check(Object[] params) throws ValidationException {
+        Set<ConstraintViolation<T>> methodValidators = executableValidator.validateParameters(instance,
+                resourceMethod, params);
+        for (ConstraintViolation<T> constraintViolation : methodValidators) {
+            throw new ValidationException(constraintViolation.getMessage());
+        }
+    }
+}
+-------------------------------------------------------------------------------------------------------
+mvn compile exec:java -Dexec.mainClass=com.mastertheboss.jpa.JpaTest
+-------------------------------------------------------------------------------------------------------
+public List<Etude> search(String text, Map<String, String> allParams) {
+        text = stripAccents(text);
+        // get the full text entity manager
+        FullTextEntityManager fullTextEntityManager = getFullTextEntityManager(entityManager);
+
+        // create the query using Hibernate Search query DSL
+        QueryBuilder queryBuilder = fullTextEntityManager
+                .getSearchFactory()
+                .buildQueryBuilder()
+                .forEntity(Etude.class)
+                .get();
+
+        // Simple Query String queries
+        Query query = queryBuilder
+                .simpleQueryString()
+                .onFields("n0Cet")
+                .andField("anneeCet")
+                .andField("noDansAnneeCet")
+                .andField("sigleEtude")
+                .andField("titreEtude")
+                .andField("traitement1")
+                .andField("traitement2")
+                .andField("traitement3")
+                .andField("traitement4")
+                .andField("traitement5")
+                .andField("demandeurIgr.nomInvestigateurIgr")
+                .andField("investigateurHorsIgr.nomInvestigateur")
+                .andField("investigateurIgr.nomInvestigateurIgr")
+                .andField("promoteur.nomPromoteur")
+                .matching(text)
+                .createQuery();
+
+        // wrap Lucene query in an Hibernate Query object
+        FullTextQuery fullTextQuery = fullTextEntityManager
+                .createFullTextQuery(query, Etude.class)
+                .setMaxResults(101);
+
+        // Here allParams contains
+        // avisDefinitifCet => 'acceptation',
+        // clasCet1ErPassage => 'acceptation'
+        allParams.forEach((key, value) -> {
+            fullTextQuery.enableFullTextFilter("etudeFilter").setParameter(key, value);
+        });
+
+        return (List<Etude>) fullTextQuery.getResultList();
+    }
+-------------------------------------------------------------------------------------------------------
+@Factory
+    public Query getFilter() {
+        return new BooleanQuery.Builder()
+                .add(new TermQuery(new Term("avisDefinitifCet", this.avisDefinitifCet.toLowerCase())), BooleanClause.Occur.SHOULD)
+                .add(new TermQuery(new Term("clasCet1ErPassage", this.clasCet1ErPassage.toLowerCase())), BooleanClause.Occur.SHOULD)
+                .build();
+    }
+-------------------------------------------------------------------------------------------------------
+https://grokonez.com/frontend/vue-js/vue-js-spring-boot-h2-database-example-embedded-mode-spring-data-jpa-restapis-crud-example
+
+– jdbc:h2:mem is for in-memory databases.
+– jdbc:h2:file is for disk-based databases.
+-------------------------------------------------------------------------------------------------------
+private Query createQuery(QueryBuilder queryBuilder, String fieldName, String term) {
+  return queryBuilder
+      .keyword()
+      .onField( fieldName )
+      .ignoreFieldBridge()
+      .matching( term )
+      .createQuery();
+}
+
+/**
+ * @param fields
+ * @param text
+ * @return full text query
+ */
+protected QueryBuilder getFullTextQueryBuilder() {
+  FullTextSession fullTextSession = getFullTextSession();
+  return fullTextSession.getSearchFactory().buildQueryBuilder().forEntity(getEntityClass()).get();
+}
+
+Query combinedQuery = querybuilder
+.bool()
+    .should( firstNameQuery )
+    .should( lastNameQuery )
+.createQuery();
+-------------------------------------------------------------------------------------------------------
+@Transactional
+public  search(String searchText) {
+    FullTextEntityManager fullTextEntityManager = org.hibernate.search.jpa.Search
+            .getFullTextEntityManager(entityManager);
+    QueryBuilder qb = fullTextEntityManager.getSearchFactory().buildQueryBuilder().forEntity(Employee.class).get();
+    org.apache.lucene.search.Query luceneQuery = qb.keyword().wildcard()
+            .onFields("firstName", "middleName", "lastName").matching(searchText + "*").createQuery();
+    javax.persistence.Query jpaQuery = fullTextEntityManager.createFullTextQuery(luceneQuery, Employee.class);
+    List result = jpaQuery.getResultList();
+    List<EmployeeSearchDTO> listOfDTO = new ArrayList<>();
+    EmployeeSearchDTO employeeDTO;
+    Iterator<Employee> itr = result.iterator();
+    while (itr.hasNext()) {
+        Employee employee = itr.next();
+        employeeDTO = new EmployeeSearchDTO(employee);
+        listOfDTO.add(employeeDTO);
+    }
+}
+-------------------------------------------------------------------------------------------------------
+@Indexed
+public class PatientIdentifier extends BaseChangeableOpenmrsData implements java.io.Serializable, Cloneable, Comparable<PatientIdentifier> {
+
+  @DocumentId
+  private Integer patientIdentifierId;
+
+  @IndexedEmbedded(includeEmbeddedObjectId = true)
+  private Patient patient;
+
+  @Fields({
+      @Field(name = "identifierPhrase", analyzer = @Analyzer(definition = LuceneAnalyzers.PHRASE_ANALYZER), boost = @Boost(8f)),
+      @Field(name = "identifierExact", analyzer = @Analyzer(definition = LuceneAnalyzers.EXACT_ANALYZER), boost = @Boost(4f)),
+      @Field(name = "identifierStart", analyzer = @Analyzer(definition = LuceneAnalyzers.START_ANALYZER), boost = @Boost(2f)),
+      @Field(name = "identifierAnywhere", analyzer = @Analyzer(definition = LuceneAnalyzers.ANYWHERE_ANALYZER))
+  })
+  private String identifier;
+
+  @IndexedEmbedded(includeEmbeddedObjectId = true)
+  private PatientIdentifierType identifierType;
+
+  @Field
+  private Boolean preferred = false;
 -------------------------------------------------------------------------------------------------------
     @Override
         public void run() {
