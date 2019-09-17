@@ -2631,6 +2631,34 @@ public MailReceiver imapMailReceiver(String imapUrl) {
     return receiver;
 }*/
 --------------------------------------------------------------------------------------------------------
+java -jar liquibase.jar \
+      --driver=oracle.jdbc.OracleDriver \
+      --classpath=website.war \
+      --changeLogFile=com/example/db.changelog.xml \
+      --url=jdbc:oracle:thin:@localhost:1521:oracle \
+      --username=scott \
+      --password=tiger \
+      update
+	  
+java -jar liquibase.jar \
+        --driver=oracle.jdbc.OracleDriver \
+        --classpath=jdbcdriver.jar \
+        --url=jdbc:oracle:thin:@localhost:1521:oracle \
+        --username=scott \
+        --password=tiger \
+        updateSQL > /tmp/script.sql
+
+java -jar liquibase.jar \
+        --driver=oracle.jdbc.OracleDriver \
+        --classpath=jdbcdriver.jar \
+        --url=jdbc:oracle:thin:@localhost:1521:oracle \
+        --username=scott \
+        --password=tiger \
+        listLocks
+		
+java -jar liquibase.jar --changeLogFile="./data/<insert file name> " --diffTypes="data" generateChangeLog
+liquibase.bat update -Dengine=myisam
+--------------------------------------------------------------------------------------------------------
 import java.io.Serializable;
 
 import org.springframework.boot.SpringApplication;
