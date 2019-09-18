@@ -2631,6 +2631,59 @@ public MailReceiver imapMailReceiver(String imapUrl) {
     return receiver;
 }*/
 --------------------------------------------------------------------------------------------------------
+o.e.i.i.r.RobustResilienceStrategy       : Ehcache key com.paragon.microservices.distributor.model.entity.LocaleVersionEntity#LocaleVersionEntity.LocaleVersionID(locale=LocaleEntity(super=BaseAudiEntity(super=AuditEntity(createdDate=2019-08-26T12:39:16Z, createdBy=AuthenticatedUser(userId=ee9cb324-1781-4bb6-6131-08d727c2cbb2, ownerId=b3a341c7-43d0-41b9-af35-cb4cf3b13476), lastModifiedDate=null, lastModifiedBy=null), id=8c7eb5e1-c302-472f-9206-b9d7d01ad257, rowVersion=0), localeName=ru), version=VersionEntity(super=BaseAudiEntity(super=AuditEntity(createdDate=2019-08-26T12:39:16Z, createdBy=AuthenticatedUser(userId=ee9cb324-1781-4bb6-6131-08d727c2cbb2, ownerId=b3a341c7-43d0-41b9-af35-cb4cf3b13476), lastModifiedDate=null, lastModifiedBy=null), id=c4dfe4f0-bda1-4e3d-ae20-b184a545a408, rowVersion=0), product=ProductEntity(super=BaseAudiEntity(super=AuditEntity(createdDate=2019-08-26T12:39:16Z, createdBy=AuthenticatedUser(userId=ee9cb324-1781-4bb6-6131-08d727c2cbb2, ownerId=b3a341c7-43d0-41b9-af35-cb4cf3b13476), lastModifiedDate=null, lastModifiedBy=null), id=b7d41c8c-3072-486f-a640-1ae183e77fbb, rowVersion=0), sku=sku-b7d41c8c, name=product-01), versionInfo=VersionInfoEntity(tokens=[9, 6, 7, 4]), changelog=changelog-c4dfe4f0)) in possible inconsistent state - Similar messages will be suppressed for 30 seconds
+--------------------------------------------------------------------------------------------------------
+https://www.jdoodle.com/online-java-compiler/
+--------------------------------------------------------------------------------------------------------
+org.hibernate.HibernateException: A collection with cascade="all-delete-orphan" was no longer referenced by the owning entity instance: com.paragon.microservices.distributor.model.entity.VersionEntity.locales
+
+        <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-hikaricp</artifactId>
+            <version>6.0.0.Alpha2</version>
+        </dependency>
+--------------------------------------------------------------------------------------------------------
+    /**
+     * Parses the given {@link String} representation to {@link Iterable} collection of {@link VersionInfoEntity}s
+     *
+     * @param value  - initial input {@link String} value to parse, must not be {@literal null} or empty
+     * @param locale - initial input {@link Locale}
+     * @return {@link Iterable} collection of {@link VersionInfoEntity}s
+     */
+    @Override
+    public Set<LocaleVersionEntity> parse(final String value, final Locale locale) throws ParseException {
+        ValidationUtils.checkNotEmpty(value, "Locale must not be null or empty!");
+
+        try {
+            return Optional.ofNullable(this.conversionService.convert(value, Set.class))
+                    .map(v -> (Set<String>) v)
+                    .map(this.localeService::getLocaleRecordsByNames)
+                    .map(this::getLocaleVersions)
+                    .orElse(null);
+        } catch (IllegalArgumentException ex) {
+            log.error("ERROR: cannot process input source = {}, message = {}", value, ex.getMessage());
+            throw new ParseException(String.format(LOCALE_PARSE_ERROR, value, ex.getMessage()), 0);
+        }
+    }
+--------------------------------------------------------------------------------------------------------
+integer ARRAY
+integer[]
+
+	@Bean
+	public ErrorPageCustomizer errorPageCustomizer() {
+		return new ErrorPageCustomizer(this.serverProperties, this.dispatcherServletPath);
+	}
+	ErrorMvcAutoConfiguration
+HTTP 1/1 200 OK
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 99
+X-RateLimit-Reset: 2016-10-12T11:00:00Z
+
+POST https://domainname/oauth/token  
+Authorization: Basic Y2xpZW50X2lkOmNsaWVudCBzZWNyZXQ=
+Content-Type: application/x-www-form-urlencoded
+username=user&password=pass&scope=eBanking&grant_type=password
+--------------------------------------------------------------------------------------------------------
 java -jar liquibase.jar \
       --driver=oracle.jdbc.OracleDriver \
       --classpath=website.war \
@@ -60857,7 +60910,130 @@ public class CustomErrorController implements ErrorController {
     }
 }
 --------------------------------------------------------------------------------------------------------
+2
+3
+4
+List<String> filteredList = listOfOptionals.stream()
+  .filter(Optional::isPresent)
+  .map(Optional::get)
+  .collect(Collectors.toList());
+3. Using flatMap()
+The other option would be to use flatMap with a lambda expression that converts an empty Optional to an empty Stream instance, and non-empty Optional to a Stream instance containing only one element:
+
+1
+2
+3
+List<String> filteredList = listOfOptionals.stream()
+  .flatMap(o -> o.isPresent() ? Stream.of(o.get()) : Stream.empty())
+  .collect(Collectors.toList());
+Alternatively, you could apply the same approach using a different way of converting an Optional to Stream:
+
+1
+2
+3
+List<String> filteredList = listOfOptionals.stream()
+  .flatMap(o -> o.map(Stream::of).orElseGet(Stream::empty))
+  .collect(Collectors.toList());
+--------------------------------------------------------------------------------------------------------
+testImplementation('org.springframework.boot:spring-boot-starter-test') {
+    exclude group: 'org.hamcrest', module: 'hamcrest-core'
+    exclude group: 'org.skyscreamer', module: 'jsonassert'
+}
+--------------------------------------------------------------------------------------------------------
+@Query("select case when count(c)> 0 then true else false end from Car c where lower(c.model) like lower(:model)")
+boolean existsCarLikeCustomQuery(@Param("model") String model);
+--------------------------------------------------------------------------------------------------------
+<plugin>
+<groupId>org.apache.maven.plugins</groupId>
+<artifactId>maven-compiler-plugin</artifactId>
+<version>3.7.0</version>
+<configuration>
+<source>11</source>
+<target>11</target>
+<compilerArgs>
+<arg>--add-modules</arg>>
+<arg>org.openqa.selenium.remote</arg>
+<arg>--patch-module</arg>
+<arg>org.openqa.selenium.remote=C:\Users\soapui\.m2\repository\org\hamcrest\hamcrest-all\1.3\hamcrest-all-1.3.jar</arg>
+</compilerArgs>
+</configuration>
+</plugin>
+--------------------------------------------------------------------------------------------------------
+<plugin>
+<groupId>org.apache.maven.plugins</groupId>
+<artifactId>maven-compiler-plugin</artifactId>
+<version>3.7.0</version>
+<configuration>
+<source>11</source>
+<target>11</target>
+<excludes>
+<exclude>javax.xml.stream</exclude>
+<exclude>stax</exclude>
+</excludes>
+</configuration>
+</plugin>
+--------------------------------------------------------------------------------------------------------
 @SpringBootApplication(exclude = ErrorMvcAutoConfiguration.class )
+--------------------------------------------------------------------------------------------------------
+In Java 11 the java.nio.file.Files class was extended by two new utility methods to write a string into a file. The first method (see JavaDoc here) uses the charset UTF-8 as default:
+
+Files.writeString(Path.of("my", "path"), "My String");
+And the second method (see JavaDoc here) allows to specify an individual charset:
+
+Files.writeString(Path.of("my", "path"), "My String", StandardCharset.ISO_8859_1);
+Both methods have an optional Varargs parameter for setting file handling options (see JavaDoc here). The following example would create a non-existing file or append the string to an existing one:
+
+Files.writeString(Path.of("my", "path"), "String to append", StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+--------------------------------------------------------------------------------------------------------
+import java.util.*;
+import java.text.*;
+
+
+public class Available {
+    static public void main(String[] args) {
+        Locale list[] = DateFormat.getAvailableLocales();
+        for (Locale aLocale : list) {
+            System.out.println("INSERT INTO locales(id, locale_name, row_version, created, created_by) VALUES ('" + UUID.randomUUID() + "', '" + aLocale.toString() + "', 0, '2019-08-26T12:39:16+00:00', '{\"userId\":\"ee9cb324-1781-4bb6-6131-08d727c2cbb2\",\"ownerId\":\"b3a341c7-43d0-41b9-af35-cb4cf3b13476\"}')");
+        }
+    }
+}
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.*;
+import java.text.*;
+
+public class Available {
+    static public void main(String[] args) throws IOException {
+        final Locale list[] = DateFormat.getAvailableLocales();
+        final BufferedWriter writer = new BufferedWriter(new FileWriter("test.sql"));
+        for (Locale aLocale : list) {
+            writer.write("- sql: \"INSERT INTO locales(id, locale_name, row_version, created, created_by) VALUES ('" + UUID.randomUUID() + "', '" + aLocale.toString() + "', 0, '2019-08-26T12:39:16+00:00', '{\"userId\":\"ee9cb324-1781-4bb6-6131-08d727c2cbb2\",\"ownerId\":\"b3a341c7-43d0-41b9-af35-cb4cf3b13476\"}')\"");
+        }
+    }
+}
+
+package com.paragon.microservices.distributor.service.impl;
+
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.DateFormat;
+import java.util.Locale;
+import java.util.UUID;
+
+public class Available {
+    static public void main(String[] args) throws IOException {
+        final Locale list[] = DateFormat.getAvailableLocales();
+        final FileWriter writer = new FileWriter("test.sql");
+        for (final Locale aLocale : list) {
+            writer.write("- sql: \"INSERT INTO locales(id, locale_name, row_version, created, created_by) VALUES ('" + UUID.randomUUID() + "', '" + aLocale.toString() + "', 0, '2019-08-26T12:39:16+00:00', '{\\\"userId\\\":\\\"ee9cb324-1781-4bb6-6131-08d727c2cbb2\\\",\\\"ownerId\\\":\\\"b3a341c7-43d0-41b9-af35-cb4cf3b13476\\\"}')\"\r\n");
+        }
+        writer.flush();
+        writer.close();
+    }
+}
 --------------------------------------------------------------------------------------------------------
 databaseChangeLog:
   - changeSet:
