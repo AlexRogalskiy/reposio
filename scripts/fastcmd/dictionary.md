@@ -42135,6 +42135,259 @@ public List<Etude> search(String text, Map<String, String> allParams) {
         return (List<Etude>) fullTextQuery.getResultList();
     }
 -------------------------------------------------------------------------------------------------------
+npm install -g snyk
+cd ~/projects/my-project/
+snyk monitor
+-------------------------------------------------------------------------------------------------------
+cd c:/mychangelogs/
+liquibase --url=jdbc:mysql://localhost:3306/liquiblog --driver=com.mysql.jdbc.Driver --username=root --password="" --changeLogFile=db.changelog-0.1.0.xml update
+-------------------------------------------------------------------------------------------------------
+@Bean
+public SpringLiquibase liquibase() {
+    SpringLiquibase liquibase = new SpringLiquibase();
+    liquibase.setChangeLog("classpath:liquibase-changeLog.xml");
+    liquibase.setDataSource(dataSource());
+    return liquibase;
+}
+-------------------------------------------------------------------------------------------------------
+<dependency>
+    <groupId>org.liquibase</groupId>
+    <artifactId>liquibase-maven-plugin</artifactId>
+    <version>3.4.1</version>
+</dependency> 
+...
+<plugins>
+    <plugin>
+        <groupId>org.liquibase</groupId>
+        <artifactId>liquibase-maven-plugin</artifactId>
+        <version>3.4.1</version>
+        <configuration>                  
+            <propertyFile>src/main/resources/liquibase.properties</propertyFile>
+        </configuration>                
+    </plugin> 
+</plugins>
+
+mvn liquibase:generateChangeLog
+
+url=jdbc:mysql://localhost:3306/oauth_reddit
+username=tutorialuser
+password=tutorialmy5ql
+driver=com.mysql.jdbc.Driver
+outputChangeLogFile=src/main/resources/liquibase-outputChangeLog.xml
+
+mvn liquibase:diff
+changeLogFile=src/main/resources/liquibase-changeLog.xml
+url=jdbc:mysql://localhost:3306/oauth_reddit
+username=tutorialuser
+password=tutorialmy5ql
+driver=com.mysql.jdbc.Driver
+referenceUrl=jdbc:h2:mem:oauth_reddit
+diffChangeLogFile=src/main/resources/liquibase-diff-changeLog.xml
+referenceDriver=org.h2.Driver
+referenceUsername=sa
+referencePassword=
+
+
+<plugins>
+    <plugin>
+        <groupId>org.liquibase</groupId>
+        <artifactId>liquibase-maven-plugin</artifactId>
+        <version>3.4.1</version>
+        <configuration>                  
+            <propertyFile>src/main/resources/liquibase.properties</propertyFile>
+        </configuration> 
+        <dependencies>
+            <dependency>
+                <groupId>org.liquibase.ext</groupId>
+                <artifactId>liquibase-hibernate4</artifactId>
+                <version>3.5</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-beans</artifactId>
+                <version>4.1.7.RELEASE</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.data</groupId>
+                <artifactId>spring-data-jpa</artifactId>
+                <version>1.7.3.RELEASE</version>
+            </dependency>
+        </dependencies>               
+    </plugin> 
+</plugins>
+
+
+changeLogFile=classpath:liquibase-changeLog.xml
+url=jdbc:mysql://localhost:3306/oauth_reddit
+username=tutorialuser
+password=tutorialmy5ql
+driver=com.mysql.jdbc.Driver
+referenceUrl=hibernate:spring:org.baeldung.persistence.model
+  ?dialect=org.hibernate.dialect.MySQLDialect
+diffChangeLogFile=src/main/resources/liquibase-diff-changeLog.xml
+
+https://www.baeldung.com/liquibase-refactor-schema-of-java-app
+-------------------------------------------------------------------------------------------------------
+<dependency>
+    <groupId>org.hibernate.orm</groupId>
+    <artifactId>hibernate-hikaricp</artifactId>
+    <version>6.0.0.Alpha2</version>
+</dependency>
+-------------------------------------------------------------------------------------------------------
+@Controller
+@RequestMapping
+@SessionAttributes("reservation")
+public class ReservationFormController {
+ 
+    private ReservationService reservationService;
+    private ReservationValidator validator;
+ 
+    @Autowired
+    public ReservationFormController(ReservationService reservationService, ReservationValidator validator){
+        this.reservationService = reservationService;
+        this.validator = validator;
+    }
+ 
+    @Autowired
+    private ConversionService conversionService;
+    @InitBinder
+    protected void initBinder(ServletRequestDataBinder binder) {
+        binder.setConversionService(conversionService);
+    }
+ 
+    /*@InitBinder
+    protected void initBinder(ServletRequestDataBinder binder) {
+        binder.registerCustomEditor(Date.class, new CustomDateEditor(new SimpleDateFormat("dd-MM-yyyy"), true));
+        binder.registerCustomEditor(SportType.class, new SportTypeEditorSupport(reservationService));
+    }*/
+ 
+    /*@Autowired
+    private PropertyEditorRegistrar propertyEditorRegistrar;
+    @InitBinder
+    protected void initBinder(ServletRequestDataBinder binder) {
+        propertyEditorRegistrar.registerCustomEditors(binder);
+    }*/
+ 
+    @ModelAttribute("sportTypes")
+    public Iterable<SportType> getSportTypes(){
+        return SportType.list();
+    }
+ 
+    @RequestMapping(value="/reservationForm/{userName}", method=RequestMethod.GET)
+    public String initForm(Model model, @PathVariable String userName){
+        Reservation reservation = new Reservation();
+        reservation.setPlayer(new Player(userName, null));
+        reservation.setSportType(SportType.TENNIS);
+        model.addAttribute("reservation", reservation);
+        return "reservationForm";
+    }
+ 
+    @RequestMapping(value="/reservationForm/{userName}",method=RequestMethod.POST)
+    public String reserve(@Valid Reservation reservation, BindingResult bindingResult, SessionStatus sessionStatus){
+        validator.validate(reservation, bindingResult);
+        if(bindingResult.hasErrors()){
+            return "/reservationForm";
+        } else{
+            reservationService.make(reservation);
+            sessionStatus.setComplete();
+            return "redirect:../reservationSuccess";
+        }
+    }
+ 
+    @RequestMapping("/reservationSuccess")
+    public void success(){
+ 
+    }
+}
+-------------------------------------------------------------------------------------------------------
+    @RequestMapping(value="/reservationForm/{captainName}",method=RequestMethod.POST)
+    public String reserve(@Valid Reservation reservation, BindingResult bindingResult, SessionStatus sessionStatus){
+        validator.validate(reservation, bindingResult);
+        if(bindingResult.hasErrors()){
+            return "/reservationForm";
+        } else{
+            reservationService.make(reservation);
+            sessionStatus.setComplete();
+            return "redirect:../reservationSuccess";
+        }
+    }
+-------------------------------------------------------------------------------------------------------
+liquibase 
+ --driver=com.microsoft.sqlserver.jdbc.SQLServerDriver 
+ --classpath="C:\\Program Files\\Microsoft JDBC Driver 6.0 for SQL Server\\sqljdbc_6.0\\enu\\jre8\\sqljdbc42.jar" 
+ --url="jdbc:sqlserver://localhost:1433;databaseName=AdventureWorks2017;integratedSecurity=false;" 
+ --changeLogFile="D:\Source\generateChangeLog.xml" 
+ --username=liquibase 
+ --password=liquibase@123  
+ --logLevel=info
+generateChangeLog
+-------------------------------------------------------------------------------------------------------
+<plugin>
+            <groupId>org.liquibase</groupId>
+            <artifactId>liquibase-maven-plugin</artifactId>
+            <version>2.0.1</version>
+            <configuration>
+                <changeLogFile>src/main/resources/sql/postGre/changelog-master.xml</changeLogFile>
+                <promptOnNonLocalDatabase>false</promptOnNonLocalDatabase>
+                <defaultschemaName><<my application schema>> </defaultschemaName>
+                <driver>org.postgresql.Driver</driver>
+                <url>jdbc:<<mydburl>> </url>
+                <username>user</username>
+                <password>pwd</password>
+            </configuration>
+            <executions>
+                <execution>
+                    <goals>
+                        <goal>update</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
+-------------------------------------------------------------------------------------------------------
+./liquibase --url=jdbc:mysql://localhost:3306/liquiblog --driver=com.mysql.jdbc.Driver --username=root --password="" --changeLogFile=db.changelog-0.1.0.xml update
+
+<databasechangelog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemalocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-2.0.xsd">
+  <changeset id="init-1" author="mueller@synyx.de"> 
+    <insert tablename="Person"> 
+      <column name="name" value="John Doe"> 
+      </column>
+    </insert>
+    <rollback> 
+      DELETE FROM Person WHERE name LIKE 'John Doe'; 
+    </rollback>
+  </changeset>
+</databasechangelog>
+
+select id, md5sum, description from DATABASECHANGELOG; 
+-------------------------------------------------------------------------------------------------------
+java -Dfile.encoding=UTF-8 -Duser.language=en -Duser.country=US ^
+-jar lib/liquibase.jar ^
+--logLevel=info ^
+--classpath=lib/liquibase-ojdbc.jar ^
+--driver=oracle.jdbc.OracleDriver ^
+--changeLogFile=install.xml ^
+--url="jdbc:oracle:thin:@127.0.0.1:1521:xe" ^
+--username=akk0rd87 ^
+--password=12345 ^
+update
+
+create user akk0rd87 identified by "12345" default tablespace users quota 100m on users;
+grant dba to akk0rd87;
+-------------------------------------------------------------------------------------------------------
+ <preConditions>
+     <or>
+         <and>
+            <dbms type="oracle" />
+            <runningAs username="SYSTEM" />
+         </and>
+         <and>
+            <dbms type="mssql" />
+            <runningAs username="sa" />
+         </and>
+     </or>
+ </preConditions>
+ <sqlCheck expectedResult="1">SELECT COUNT(1) FROM pg_tables WHERE TABLENAME = 'myRequiredTable'</sqlCheck>
+-------------------------------------------------------------------------------------------------------
 @Factory
     public Query getFilter() {
         return new BooleanQuery.Builder()
