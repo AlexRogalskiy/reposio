@@ -42562,6 +42562,374 @@ public @interface VersionApi {
 -------------------------------------------------------------------------------------------------------
 @ErrorCodes(values = {"sms.verification.code.fail"})
 -------------------------------------------------------------------------------------------------------
+<plugin>
+
+    <groupId>org.asciidoctor</groupId>
+
+    <artifactId>asciidoctor-maven-plugin</artifactId>
+
+    <version>1.5.6</version>
+
+    <executions>
+
+        <execution>
+
+            <id>generate-docs</id>
+
+            <phase>prepare-package</phase>
+
+            <goals>
+
+                <goal>process-asciidoc</goal>
+
+            </goals>
+
+            <configuration>
+
+                <backend>html</backend>
+
+                <doctype>book</doctype>
+
+                <attributes>
+
+                    <project-version>${project.version}</project-version>
+
+                </attributes>
+
+            </configuration>
+
+        </execution>
+
+    </executions>
+
+    <dependencies>
+
+        <dependency>
+
+            <groupId>org.springframework.restdocs</groupId>
+
+            <artifactId>spring-restdocs-asciidoctor</artifactId>
+
+            <version>2.0.0.RELEASE</version>
+
+        </dependency>
+
+    </dependencies>
+
+</plugin>
+-------------------------------------------------------------------------------------------------------
+<dependency>
+
+    <groupId>org.springframework.restdocs</groupId>
+
+    <artifactId>spring-restdocs-mockmvc</artifactId>
+
+    <scope>test</scope>
+
+</dependency>
+-------------------------------------------------------------------------------------------------------
+@RunWith(SpringRunner.class)
+
+@WebMvcTest(EmployeeController.class)
+
+@AutoConfigureRestDocs
+
+public class EmployeeControllerTest {
+
+    @MockBean
+
+    EmployeeRepository repository;
+
+    @Autowired
+
+    MockMvc mockMvc;
+
+    private ObjectMapper mapper = new ObjectMapper();
+
+    @Before
+
+    public void setUp() {
+
+        Employee e = new Employee(1L, 1L, "John Smith", 33, "Developer");
+
+        e.setId(1L);
+
+        when(repository.add(Mockito.any(Employee.class))).thenReturn(e);
+
+        when(repository.findById(1L)).thenReturn(e);
+
+    }
+
+    @Test
+
+    public void addPerson() throws JsonProcessingException, Exception {
+
+        Employee employee = new Employee(1L, 1L, "John Smith", 33, "Developer");
+
+        mockMvc.perform(post("/").contentType(MediaType.APPLICATION_JSON).content(mapper.writeValueAsString(employee)))
+
+            .andExpect(status().isOk())
+
+            .andDo(document("{method-name}/", requestFields(
+
+                fieldWithPath("id").description("Employee id").ignored(),
+
+                fieldWithPath("organizationId").description("Employee's organization id"),
+
+                fieldWithPath("departmentId").description("Employee's department id"),
+
+                fieldWithPath("name").description("Employee's name"),
+
+                fieldWithPath("age").description("Employee's age"),
+
+                fieldWithPath("position").description("Employee's position inside organization")
+
+            )));
+
+    }
+
+    @Test
+
+    public void findPersonById() throws JsonProcessingException, Exception {
+
+        this.mockMvc.perform(get("/{id}", 1).accept(MediaType.APPLICATION_JSON))
+
+            .andExpect(status().isOk())
+
+            .andDo(document("{method-name}/", responseFields(
+
+                fieldWithPath("id").description("Employee id"),
+
+                fieldWithPath("organizationId").description("Employee's organization id"),
+
+                fieldWithPath("departmentId").description("Employee's department id"),
+
+                fieldWithPath("name").description("Employee's name"),
+
+                fieldWithPath("age").description("Employee's age"),
+
+                fieldWithPath("position").description("Employee's position inside organization")
+
+            ), pathParameters(parameterWithName("id").description("Employee id"))));
+
+    }
+
+}
+-------------------------------------------------------------------------------------------------------
+<plugin>
+
+    <artifactId>maven-resources-plugin</artifactId>
+
+    <executions>
+
+        <execution>
+
+            <id>copy-resources</id>
+
+            <phase>prepare-package</phase>
+
+            <goals>
+
+                <goal>copy-resources</goal>
+
+            </goals>
+
+            <configuration>
+
+                <outputDirectory>
+
+                    ${project.build.outputDirectory}/static/docs
+
+                </outputDirectory>
+
+                <resources>
+
+                    <resource>
+
+                        <directory>
+
+                            ${project.build.directory}/generated-docs
+
+                        </directory>
+
+                    </resource>
+
+                </resources>
+
+            </configuration>
+
+        </execution>
+
+    </executions>
+
+</plugin>
+-------------------------------------------------------------------------------------------------------
+ @Bean
+    public Docket api() throws IOException, XmlPullParserException {
+        MavenXpp3Reader reader = new MavenXpp3Reader();
+        Model model = reader.read(new FileReader("pom.xml"));
+        return new Docket(DocumentationType.SWAGGER_2)
+          .select()
+          .apis(RequestHandlerSelectors.basePackage("pl.piomin.microservices.advanced.account.api"))
+          .paths(PathSelectors.any())
+          .build().apiInfo(new ApiInfo("Account Service Api Documentation", "Documentation automatically generated", model.getParent().getVersion(), null, new Contact("Piotr Mińkowski", "piotrminkowski.wordpress.com", "piotr.minkowski@gmail.com"), null, null));
+}
+-------------------------------------------------------------------------------------------------------
+@Component
+@Primary
+@EnableAutoConfiguration
+public class DocumentationController implements SwaggerResourcesProvider {
+
+	@Override
+	public List get() {
+		List resources = new ArrayList<>();
+		resources.add(swaggerResource("account-service", "/api/account/v2/api-docs", "2.0"));
+		resources.add(swaggerResource("customer-service", "/api/customer/v2/api-docs", "2.0"));
+		resources.add(swaggerResource("product-service", "/api/product/v2/api-docs", "2.0"));
+		resources.add(swaggerResource("transfer-service", "/api/transfer/v2/api-docs", "2.0"));
+		return resources;
+	}
+
+	private SwaggerResource swaggerResource(String name, String location, String version) {
+		SwaggerResource swaggerResource = new SwaggerResource();
+		swaggerResource.setName(name);
+		swaggerResource.setLocation(location);
+		swaggerResource.setSwaggerVersion(version);
+		return swaggerResource;
+	}
+
+}
+-------------------------------------------------------------------------------------------------------
+.paths(regex("^(?!/error).*$")) // Ignore all '/error' handlers.
+-------------------------------------------------------------------------------------------------------
+@Bean
+public Docket customImplementation() {
+    return new Docket(DocumentationType.SWAGGER_2)
+            .select()
+            .apis(RequestHandlerSelectors.basePackage("com.craigstjean.hello.api"))
+            .build()
+            .directModelSubstitute(org.joda.time.LocalDate.class, java.sql.Date.class)
+            .directModelSubstitute(org.joda.time.DateTime.class, java.util.Date.class)
+            .apiInfo(apiInfo());
+}
+ 
+-------------------------------------------------------------------------------------------------------
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import springfox.documentation.builders.ApiInfoBuilder;
+import springfox.documentation.builders.PathSelectors;
+import springfox.documentation.builders.RequestHandlerSelectors;
+import springfox.documentation.service.ApiInfo;
+import springfox.documentation.spi.DocumentationType;
+import springfox.documentation.spring.web.plugins.Docket;
+import springfox.documentation.swagger2.annotations.EnableSwagger2;
+
+@Configuration
+@EnableSwagger2
+@Profile("!prod")
+public class SwaggerConfig {
+
+    @Value("${swagger.api.title}")
+    private String title;
+
+    @Value("${swagger.api.description}")
+    private String description;
+
+    @Value("${swagger.api.termsOfServiceUrl}")
+    private String termsOfServiceUrl;
+
+    @Value("${swagger.api.version}")
+    private String version;
+
+    @Value("${swagger.api.controller.basepackage}")
+    private String basePackage;
+
+    @Bean
+    public Docket swaggerApi() {
+        return new Docket(DocumentationType.SWAGGER_2).select().apis(RequestHandlerSelectors.basePackage(basePackage))
+                .paths(PathSelectors.ant("/**")).build().apiInfo(metaData());
+    }
+
+    private ApiInfo metaData() {
+        return new ApiInfoBuilder().title(title).description(description).termsOfServiceUrl(termsOfServiceUrl)
+                .version(version).build();
+    }
+}
+-------------------------------------------------------------------------------------------------------
+@EnableSwagger2WebMvc
+<dependency>
+            <groupId>org.springframework.plugin</groupId>
+            <artifactId>spring-plugin-core</artifactId>
+            <version>1.2.0.RELEASE</version>
+        </dependency>
+-------------------------------------------------------------------------------------------------------
+import java.time.LocalDate;
+import java.time.Period;
+
+import org.springframework.stereotype.Component;
+
+import pl.piomin.services.versioning.model.PersonCurrent;
+import pl.piomin.services.versioning.model.PersonOld;
+
+@Component
+public class PersonMapper {
+
+	public PersonCurrent map(PersonOld person) {
+		int age = Period.between(person.getBirthDate(), LocalDate.now()).getYears();
+		return new PersonCurrent(person.getId(), person.getName(), person.getGender(), age);
+	}
+	
+}
+-------------------------------------------------------------------------------------------------------
+@Bean
+public Docket swaggerPersonApi12() {
+    return new Docket(DocumentationType.SWAGGER_2)
+        .groupName("person-api-1.2")
+        .select()
+            .apis(p -> {
+                if (p.produces() != null) {
+                    for (MediaType mt : p.produces()) {
+                        if (mt.toString().equals("application/vnd.piomin.app-v1.2+json")) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            })
+        .build()
+        .produces(Collections.singleton("application/vnd.piomin.app-v1.2+json"))
+        .apiInfo(new ApiInfoBuilder().version("1.2").title("Person API").description("Documentation Person API v1.2").build());
+}
+-------------------------------------------------------------------------------------------------------
+@TestConfiguration
+
+static class CustomizationConfiguration implements RestDocsMockMvcConfigurationCustomizer {
+
+    @Override
+
+    public void customize(MockMvcRestDocumentationConfigurer configurer) {
+
+        configurer.operationPreprocessors()
+
+            .withRequestDefaults(prettyPrint())
+
+            .withResponseDefaults(prettyPrint());
+
+    }
+
+    @Bean
+
+    public RestDocumentationResultHandler restDocumentation() {
+
+        return MockMvcRestDocumentation.document("{method-name}");
+
+    }
+
+}
+-------------------------------------------------------------------------------------------------------
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface JsonField {
