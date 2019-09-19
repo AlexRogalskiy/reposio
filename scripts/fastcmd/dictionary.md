@@ -42287,6 +42287,837 @@ https://www.baeldung.com/liquibase-refactor-schema-of-java-app
     <version>6.0.0.Alpha2</version>
 </dependency>
 -------------------------------------------------------------------------------------------------------
+    private static Optional<Integer> resolve( String string ) {
+        try {
+            return Optional.of( Integer.valueOf( string ) );
+        }
+        catch ( NumberFormatException e )
+        {
+            System.out.println( '"' + string + '"' + " is not an integer");
+            return Optional.empty();
+        }
+    }
+-------------------------------------------------------------------------------------------------------
+./gradlew releaseDocs
+./gradlew clean build bintrayUpload -PreleaseType=<MAJOR|MINOR|PATCH>
+ --stacktrace
+ 
+ ./gradlew publishSnapshot
+     ./gradlew release -PreleaseType=<MAJOR|MINOR|PATCH> -i
+    ./gradlew publishDocs
+-------------------------------------------------------------------------------------------------------
+  //Here is an example where we select any api that matches one of these paths
+  private Predicate<String> paths() {
+    return or(
+        regex("/business.*"),
+        regex("/some.*"),
+        regex("/contacts.*"),
+        regex("/pet.*"),
+        regex("/springsRestController.*"),
+        regex("/test.*"));
+  }
+-------------------------------------------------------------------------------------------------------
+// if com.qualified.ReplaceWith is not a Class that can be created using Class.forName(...)
+// Original will be replaced with the new class
+@ApiModelProperty(dataType = "com.qualified.ReplacedWith")
+public Original getOriginal() { ... }
+
+// if ReplaceWith is not a Class that can be created using Class.forName(...) Original will be preserved
+@ApiModelProperty(dataType = "ReplaceWith")
+public Original getAnotherOriginal() { ... }
+-------------------------------------------------------------------------------------------------------
+import static com.google.common.base.Strings.isNullOrEmpty;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.core.MethodParameter;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.method.HandlerMethod;
+
+import com.google.common.base.Optional;
+
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import springfox.documentation.service.ObjectVendorExtension;
+import springfox.documentation.service.StringVendorExtension;
+import springfox.documentation.service.VendorExtension;
+import springfox.documentation.spi.DocumentationType;
+import springfox.documentation.spi.service.OperationBuilderPlugin;
+import springfox.documentation.spi.service.contexts.OperationContext;
+import springfox.documentation.swagger.annotations.Annotations;
+import springfox.documentation.swagger.common.SwaggerPluginSupport;
+
+@Component
+@Order(SwaggerPluginSupport.SWAGGER_PLUGIN_ORDER)
+public class CustomAwsExtensionsReader implements OperationBuilderPlugin {
+
+	private static final String AWS_X_AMAZON_APIGATEWAY_INTEGRATION = "x-amazon-apigateway-integration";
+	private static final String AWS_X_AMAZON_APIGATEWAY_INTEGRATION_TYPE = "type";
+	private static final String AWS_X_AMAZON_APIGATEWAY_INTEGRATION_HTTPMETHOD = "httpMethod";
+	private static final String AWS_X_AMAZON_APIGATEWAY_INTEGRATION_URI = "uri";
+	private static final String AWS_X_AMAZON_APIGATEWAY_INTEGRATION_REQUEST_PARAMS = "requestParameters";
+	private static final String AWS_X_AMAZON_APIGATEWAY_INTEGRATION_REQUEST_RESPONSES = "responses";
+
+
+	@Override
+	public void apply(OperationContext context) {
+
+		HandlerMethod handlerMethod = context.getHandlerMethod();
+		Optional<ApiOperation> apiOperationOperational = Annotations
+				.findApiOperationAnnotation(handlerMethod.getMethod());
+		String awsApiGatewayBaseUri  = "";//Fetch it from DB/Service
+		
+		if (apiOperationOperational.isPresent()) {
+			ApiOperation apiOperation = apiOperationOperational.get();
+			ObjectVendorExtension extension = new ObjectVendorExtension(
+					ensurePrefixed(AWS_X_AMAZON_APIGATEWAY_INTEGRATION));
+			extension.addProperty(new StringVendorExtension(AWS_X_AMAZON_APIGATEWAY_INTEGRATION_TYPE, "http"));
+			extension.addProperty(new StringVendorExtension(AWS_X_AMAZON_APIGATEWAY_INTEGRATION_HTTPMETHOD, apiOperation.httpMethod()));
+			extension.addProperty(new StringVendorExtension(AWS_X_AMAZON_APIGATEWAY_INTEGRATION_URI, awsApiGatewayBaseUri + getRequestUri(handlerMethod)));
+
+			ObjectVendorExtension requestParameters = new ObjectVendorExtension(AWS_X_AMAZON_APIGATEWAY_INTEGRATION_REQUEST_PARAMS);
+
+			processApiParamAnnotation(requestParameters, handlerMethod);
+			processApiImplicitParamsAnnotation(handlerMethod, requestParameters);
+
+			ObjectVendorExtension awsResponses = new ObjectVendorExtension(AWS_X_AMAZON_APIGATEWAY_INTEGRATION_REQUEST_RESPONSES);
+			processApiResponsesAnnotation( awsResponses,handlerMethod);
+
+			if (requestParameters != null && requestParameters.getValue() != null
+					&& requestParameters.getValue().size() > 0) {
+				extension.addProperty(requestParameters);
+			}
+			if (awsResponses != null && awsResponses.getValue() != null
+					&& awsResponses.getValue().size() > 0) {
+				extension.addProperty(awsResponses);
+			}
+			
+			List<VendorExtension> extensions = new ArrayList<VendorExtension>();
+			extensions.add(extension);
+			context.operationBuilder().extensions(extensions);
+
+		}
+	}
+
+	private String getRequestUri(HandlerMethod handlerMethod){
+		RequestMapping requestMapping = handlerMethod.getMethodAnnotation(RequestMapping.class);
+		RequestMapping controllerRequestMapping = handlerMethod.getBeanType().getAnnotation(RequestMapping.class);
+		String[] paths = requestMapping.path();
+		String[] requestPaths = controllerRequestMapping.value();
+		String requestUri = "";
+		if (requestPaths != null && requestPaths.length > 0) {
+			requestUri = requestPaths[0];
+			if (paths != null && paths.length > 0) {
+				requestUri = requestUri + paths[0];
+			}
+		}
+		return requestUri;
+	}
+	private void processApiResponsesAnnotation(ObjectVendorExtension awsResponses,HandlerMethod handlerMethod) {
+		Optional<ApiResponses> apiResponsesOptional = Annotations
+				.findApiResponsesAnnotations(handlerMethod.getMethod());
+		if (apiResponsesOptional.isPresent()) {
+			ApiResponses apiResponses = apiResponsesOptional.get();
+			ApiResponse[] apiResponseArray = apiResponses.value();
+			for (ApiResponse apiResponse : apiResponseArray) {
+				ObjectVendorExtension awsResponse = new ObjectVendorExtension(String.valueOf(apiResponse.code()));
+				awsResponse
+						.addProperty(new StringVendorExtension("statusCode", String.valueOf(apiResponse.code())));
+				awsResponses.addProperty(awsResponse);
+			}
+
+		}
+	}
+
+	private void processApiImplicitParamsAnnotation(HandlerMethod handlerMethod,
+			ObjectVendorExtension requestParameters) {
+		ApiImplicitParams apiImplicitParams = handlerMethod.getMethodAnnotation(ApiImplicitParams.class);
+		if (apiImplicitParams != null) {
+			String requestParameterIntegration = "";
+			String requestParameterMethod = "";
+			for (ApiImplicitParam apiImplicitParam : apiImplicitParams.value()) {
+				if (apiImplicitParam.paramType() != null && apiImplicitParam.paramType().equals("path")) {
+					requestParameterIntegration = "integration.request.path." + apiImplicitParam.name();
+					requestParameterMethod = "method.request.path." + apiImplicitParam.name();
+					requestParameters.addProperty(
+							new StringVendorExtension(requestParameterIntegration, requestParameterMethod));
+				} else if (apiImplicitParam.paramType() != null && apiImplicitParam.paramType().equals("query")) {
+					requestParameterIntegration = "integration.request.querystring." + apiImplicitParam.name();
+					requestParameterMethod = "method.request.querystring." + apiImplicitParam.name();
+					requestParameters.addProperty(
+							new StringVendorExtension(requestParameterIntegration, requestParameterMethod));
+				}
+			}
+		}
+	}
+
+	private void processApiParamAnnotation(ObjectVendorExtension requestParameters, HandlerMethod handlerMethod) {
+		MethodParameter[] methodParameters = handlerMethod.getMethodParameters();
+		for (MethodParameter methodParameter : methodParameters) {
+			ApiParam apiParam = methodParameter.getParameterAnnotation(ApiParam.class);
+			String requestParameterIntegration = "";
+			String requestParameterMethod = "";
+			if (apiParam != null) {
+				PathVariable pathVariable = methodParameter.getParameterAnnotation(PathVariable.class);
+				RequestParam requestParam = methodParameter.getParameterAnnotation(RequestParam.class);
+				if (pathVariable != null) {
+					requestParameterIntegration = "integration.request.path." + apiParam.name();
+					requestParameterMethod = "method.request.path." + apiParam.name();
+					requestParameters.addProperty(
+							new StringVendorExtension(requestParameterIntegration, requestParameterMethod));
+				} else if (requestParam != null) {
+					requestParameterIntegration = "integration.request.querystring." + apiParam.name();
+					requestParameterMethod = "method.request.querystring." + apiParam.name();
+					requestParameters.addProperty(
+							new StringVendorExtension(requestParameterIntegration, requestParameterMethod));
+				}
+			}
+		}
+	}
+
+	private String ensurePrefixed(String name) {
+		if (!isNullOrEmpty(name)) {
+			if (!name.startsWith("x-")) {
+				name = "x-" + name;
+			}
+		}
+		return name;
+	}
+
+	@Override
+	public boolean supports(DocumentationType delimiter) {
+		return SwaggerPluginSupport.pluginDoesApply(delimiter);
+	}
+}
+
+-------------------------------------------------------------------------------------------------------
+@Configuration
+public class WebSecurityConfigEntryPointApplication extends WebSecurityConfigurerAdapter {
+
+    private static final List<String> AUTH_LIST = Arrays.asList(
+            "/swagger-resources/**",
+            "/swagger-ui.html**",
+            "/webjars/**",
+            "favicon.ico");
+
+    @Autowired
+    private RestAuthenticationEntryPoint restAuthenticationEntryPoint;
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http
+                .antMatcher("/**").authorizeRequests().anyRequest().authenticated()
+                .and()
+                .exceptionHandling()
+                .defaultAuthenticationEntryPointFor(swaggerAuthenticationEntryPoint(), new CustomRequestMatcher(AUTH_LIST))
+                .and()
+                .httpBasic()
+                .authenticationEntryPoint(restAuthenticationEntryPoint)
+                .and()
+                .csrf().disable();
+    }
+
+    @Bean
+    public BasicAuthenticationEntryPoint swaggerAuthenticationEntryPoint() {
+        BasicAuthenticationEntryPoint entryPoint = new BasicAuthenticationEntryPoint();
+        entryPoint.setRealmName("Swagger Realm");
+        return entryPoint;
+    }
+
+    private class CustomRequestMatcher implements RequestMatcher {
+
+        private List<AntPathRequestMatcher> matchers;
+
+        private CustomRequestMatcher(List<String> matchers) {
+            this.matchers = matchers.stream().map(AntPathRequestMatcher::new).collect(Collectors.toList());
+        }
+
+        @Override
+        public boolean matches(HttpServletRequest request) {
+            return matchers.stream().anyMatch(a -> a.matches(request));
+        }
+
+    }
+
+}
+-------------------------------------------------------------------------------------------------------
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Target({ ElementType.PARAMETER, ElementType.METHOD, ElementType.FIELD})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface VersionApi {
+}
+-------------------------------------------------------------------------------------------------------
+@ErrorCodes(values = {"sms.verification.code.fail"})
+-------------------------------------------------------------------------------------------------------
+@Target(ElementType.PARAMETER)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface JsonField {
+
+	// field name, supports nesting
+	String value() default DEFAULT_NONE;
+
+	// if the property is required
+	boolean required() default true;
+
+	// default value to use if not found
+	// will implicitly make required=false
+	String defaultValue() default DEFAULT_NONE;
+
+	// default string which is unlikely to conflict
+	// with any real string provided by a user
+	public static final String DEFAULT_NONE = "\n\t\t\n\t\t\n\uE000\uE001\uE002\n\t\t\t\t\n";
+}
+-------------------------------------------------------------------------------------------------------
+@Component
+@Order(SwaggerPluginSupport.SWAGGER_PLUGIN_ORDER + 1)
+public class SwaggerErrorCodesConfiguration implements OperationBuilderPlugin {
+
+    /**
+     * Appends note of operation. Adds error codes to note of operation.
+     * <code>
+     *     <h3>List of possible errors:</h3>
+     *     <ul>
+     *         <li>error.code.1</li>
+     *         <li>error.code.2</li>
+     *         <li>error.code.3</li>
+     *     </ul>
+     * </code>
+     * @param context operation context
+     */
+    @Override
+    public void apply(OperationContext context) {
+        Method operationMethod = context.getHandlerMethod().getMethod();
+
+        // Check method is annotated by @ApiOperation
+        ApiOperation apiOperation = findApiOperationAnnotation(operationMethod).orNull();
+        if (apiOperation == null) {
+            return;
+        }
+
+        // Check method is annotated by @ErrorCodes
+        ErrorCodes errorCodes = findAnnotation(operationMethod, ErrorCodes.class);
+        if (errorCodes == null) {
+            return;
+        }
+
+        // Prepend notes by using current value of notes in @ApiOperation
+        StringBuilder errorCodesNote = new StringBuilder(apiOperation.notes());
+        errorCodesNote.append("<h3>List of possible errors:</h3>");
+        errorCodesNote.append("<ul>");
+
+        for (String errorCode: errorCodes.values()) {
+            errorCodesNote.append("<li>").append(errorCode).append("</li>");
+        }
+
+        errorCodesNote.append("</ul>");
+
+        // Write new version of notes.
+        context.operationBuilder().notes(errorCodesNote.toString()).build();
+    }
+
+    @Override
+    public boolean supports(DocumentationType delimiter) {
+        return SwaggerPluginSupport.pluginDoesApply(delimiter);
+    }
+}
+-------------------------------------------------------------------------------------------------------
+@ApiOperation(
+    value = "Some description.",
+    notes = "List of possible error codes:" +
+            "<ul>" +
+            "   <li>sms.verification.code.fail</li>" +
+            "</ul>")
+@PostMapping("/security/confirmation/check")
+@ErrorCodes(values = {"sms.verification.code.fail"})
+public ResponseDto check(@ApiParam @RequestBody @Valid RequestDto request) {... }
+-------------------------------------------------------------------------------------------------------
+import com.fasterxml.classmate.TypeResolver;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
+import springfox.documentation.service.ResolvedMethodParameter;
+import springfox.documentation.spi.DocumentationType;
+import springfox.documentation.spi.service.ParameterBuilderPlugin;
+import springfox.documentation.spi.service.contexts.ParameterContext;
+import springfox.documentation.swagger.common.SwaggerPluginSupport;
+
+import java.util.Optional;
+
+// tag::parameter-builder-plugin[]
+@Component
+@Order(SwaggerPluginSupport.SWAGGER_PLUGIN_ORDER + 1000) //<1>
+public class VersionApiReader implements ParameterBuilderPlugin {
+  private TypeResolver resolver;
+
+  public VersionApiReader(TypeResolver resolver) {
+    this.resolver = resolver;
+  }
+
+  @Override
+  public void apply(ParameterContext parameterContext) {
+    ResolvedMethodParameter methodParameter = parameterContext.resolvedMethodParameter();
+    Optional<VersionApi> requestParam = methodParameter.findAnnotation(VersionApi.class);
+    if (requestParam.isPresent()) { //<2>
+      parameterContext.parameterBuilder()
+          .parameterType("header")
+          .name("v")
+          .type(resolver.resolve(String.class)); //<3>
+    }
+  }
+
+  @Override
+  public boolean supports(DocumentationType documentationType) {
+    return true; //<4>
+  }
+}
+// tag::parameter-builder-plugin[]
+-------------------------------------------------------------------------------------------------------
+import static springfox.documentation.builders.PathSelectors.regex;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+
+import springfox.documentation.builders.ApiInfoBuilder;
+import springfox.documentation.builders.OAuthBuilder;
+import springfox.documentation.builders.RequestHandlerSelectors;
+import springfox.documentation.service.ApiInfo;
+import springfox.documentation.service.AuthorizationCodeGrant;
+import springfox.documentation.service.AuthorizationScope;
+import springfox.documentation.service.GrantType;
+import springfox.documentation.service.SecurityScheme;
+import springfox.documentation.service.TokenEndpoint;
+import springfox.documentation.service.TokenRequestEndpoint;
+import springfox.documentation.spi.DocumentationType;
+import springfox.documentation.spring.web.plugins.Docket;
+import springfox.documentation.swagger.web.ApiKeyVehicle;
+import springfox.documentation.swagger.web.SecurityConfiguration;
+import springfox.documentation.swagger2.annotations.EnableSwagger2;
+
+@Configuration
+@EnableSwagger2
+public class SwaggerConfig {
+	@Value("${info.app.name}")
+	private String serviceName;
+	@Value("${info.app.desc}")
+	private String serviceDesc;
+	@Value("${uaa.clientId}")
+	String clientId;
+	@Value("${uaa.clientSecret}")
+	String clientSecret;
+	
+	@Value("${uaa.url}")
+	String oAuthServerUri;
+
+	@Bean
+	public Docket postsApi() {
+		return new Docket(DocumentationType.SWAGGER_2).groupName("public-api")
+				.apiInfo(apiInfo()).select().paths(postPaths())
+				.apis(Predicates.not(RequestHandlerSelectors.basePackage("org.springframework.boot")))	
+				.paths(springBootActuatorJmxPaths())
+				.build()		
+				.securitySchemes(Collections.singletonList(oauth()))
+		;
+	}
+
+	private Predicate<String> postPaths() {
+		return regex("/.*");
+	}   
+
+	private Predicate<String> springBootActuatorJmxPaths() {
+		return regex("^/(?!env|restart|pause|resume|refresh).*$");
+	} 
+
+	
+	private ApiInfo apiInfo() {
+		return new ApiInfoBuilder().title(serviceName).description(serviceDesc).build();
+	}	
+	
+	@Bean
+	List<GrantType> grantTypes() {
+		List<GrantType> grantTypes = new ArrayList<>();
+		TokenRequestEndpoint tokenRequestEndpoint = new TokenRequestEndpoint(oAuthServerUri+"/oauth/authorize", clientId, clientSecret );
+        TokenEndpoint tokenEndpoint = new TokenEndpoint(oAuthServerUri+"/oauth/token", "token");
+        grantTypes.add(new AuthorizationCodeGrant(tokenRequestEndpoint, tokenEndpoint));
+        return grantTypes;
+	}
+	
+	@Bean
+    SecurityScheme oauth() {
+        return new OAuthBuilder()
+                .name("OAuth2")
+                .scopes(scopes())
+                .grantTypes(grantTypes())
+                .build();
+    }
+	
+	private List<AuthorizationScope> scopes() {
+		List<AuthorizationScope> list = new ArrayList();
+		list.add(new AuthorizationScope("read_scope","Grants read access"));
+		list.add(new AuthorizationScope("write_scope","Grants write access"));
+		list.add(new AuthorizationScope("admin_scope","Grants read write and delete access"));
+		return list;
+    }	
+
+	@Bean
+    public SecurityConfiguration securityInfo() {
+        return new SecurityConfiguration(clientId, clientSecret, "realm", clientId, "apiKey", ApiKeyVehicle.HEADER, "api_key", "");
+    }
+	
+}
+-------------------------------------------------------------------------------------------------------
+@Configuration
+public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
+  @Override
+  public void configure(WebSecurity web) throws Exception {
+    web.ignoring()
+      .antMatchers(
+        "/v2/api-docs",
+        "/swagger-resources/**",
+        "/swagger-ui.html**",
+        "/webjars/**");
+  }
+}
+-------------------------------------------------------------------------------------------------------
+security:
+  ignored: /swagger-resources/**
+-------------------------------------------------------------------------------------------------------
+@Configuration
+public class WebConfig extends WebMvcConfigurerAdapter {
+
+    //https://stackoverflow.com/questions/31724994/spring-data-rest-and-cors
+    @Bean
+    public FilterRegistrationBean corsFilter() {
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+
+        CorsConfiguration config = new CorsConfiguration().applyPermitDefaultValues();
+        config.setAllowCredentials(false);
+        source.registerCorsConfiguration("/**", config);
+
+        FilterRegistrationBean bean = new FilterRegistrationBean(new CorsFilter(source));
+        bean.setOrder(0);
+
+        return bean;
+    }
+}
+-------------------------------------------------------------------------------------------------------
+  private static final String SPRING_HATEOAS_OBJECT_MAPPER = "_halObjectMapper";
+
+  @Autowired
+  @Qualifier(SPRING_HATEOAS_OBJECT_MAPPER)
+  private ObjectMapper springHateoasObjectMapper;
+
+  @Primary
+  @Bean
+  @Order(value=Ordered.HIGHEST_PRECEDENCE)
+  @DependsOn(SPRING_HATEOAS_OBJECT_MAPPER)
+  public ObjectMapper objectMapper() {
+    return springHateoasObjectMapper;
+  }
+-------------------------------------------------------------------------------------------------------
+@Configuration
+public class MyWebAutoConfiguration extends WebMvcConfigurerAdapter {
+
+    @Override
+    public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
+        ObjectMapper objectMapper = null;
+        for (HttpMessageConverter converter : converters) {
+            if (converter instanceof MappingJackson2HttpMessageConverter) {
+                MappingJackson2HttpMessageConverter jacksonConverter =
+                        ((MappingJackson2HttpMessageConverter) converter);
+
+                if (objectMapper == null) {
+                    objectMapper = jacksonConverter.getObjectMapper();
+                } else {
+                    jacksonConverter.setObjectMapper(objectMapper);
+                }
+            }
+        }
+    }
+}
+-------------------------------------------------------------------------------------------------------
+@Configuration
+public class SwaggerWsEndpointsConfig {
+
+    @Primary
+    @Bean
+    public SwaggerResourcesProvider swaggerResourcesProvider(InMemorySwaggerResourcesProvider defaultResourcesProvider) {
+        return () -> {
+            SwaggerResource wsResource = new SwaggerResource();
+            wsResource.setName("ws endpoints");
+            wsResource.setSwaggerVersion("2.0");
+            wsResource.setLocation("/v2/websockets.json");
+
+            List<SwaggerResource> resources = new ArrayList<>(defaultResourcesProvider.get());
+            resources.add(wsResource);
+            return resources;
+        };
+    }
+}
+-------------------------------------------------------------------------------------------------------
+
+import com.fasterxml.classmate.TypeResolver;
+import org.joda.time.LocalDate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.context.request.async.DeferredResult;
+import springfox.documentation.builders.ParameterBuilder;
+import springfox.documentation.builders.PathSelectors;
+import springfox.documentation.builders.RequestHandlerSelectors;
+import springfox.documentation.builders.ResponseMessageBuilder;
+import springfox.documentation.schema.ModelRef;
+import springfox.documentation.schema.WildcardType;
+import springfox.documentation.service.ApiKey;
+import springfox.documentation.service.AuthorizationScope;
+import springfox.documentation.service.SecurityReference;
+import springfox.documentation.service.Tag;
+import springfox.documentation.spi.DocumentationType;
+import springfox.documentation.spi.service.contexts.SecurityContext;
+import springfox.documentation.spring.web.plugins.Docket;
+import springfox.documentation.swagger.web.DocExpansion;
+import springfox.documentation.swagger.web.ModelRendering;
+import springfox.documentation.swagger.web.OperationsSorter;
+import springfox.documentation.swagger.web.SecurityConfiguration;
+import springfox.documentation.swagger.web.SecurityConfigurationBuilder;
+import springfox.documentation.swagger.web.TagsSorter;
+import springfox.documentation.swagger.web.UiConfiguration;
+import springfox.documentation.swagger.web.UiConfigurationBuilder;
+import springfox.documentation.swagger2.annotations.EnableSwagger2;
+import springfox.petstore.controller.PetController;
+
+import java.util.List;
+
+import static com.google.common.collect.Lists.*;
+import static springfox.documentation.schema.AlternateTypeRules.*;
+
+@SpringBootApplication
+@EnableSwagger2
+@ComponentScan(basePackageClasses = {
+    PetController.class
+})
+public class Swagger2SpringBoot {
+
+  public static void main(String[] args) {
+    ApplicationContext ctx = SpringApplication.run(Swagger2SpringBoot.class, args);
+  }
+
+
+  @Bean
+  public Docket petApi() {
+    return new Docket(DocumentationType.SWAGGER_2)
+        .select()
+          .apis(RequestHandlerSelectors.any())
+          .paths(PathSelectors.any())
+          .build()
+        .pathMapping("/")
+        .directModelSubstitute(LocalDate.class, String.class)
+        .genericModelSubstitutes(ResponseEntity.class)
+        .alternateTypeRules(
+            newRule(typeResolver.resolve(DeferredResult.class,
+                typeResolver.resolve(ResponseEntity.class, WildcardType.class)),
+                typeResolver.resolve(WildcardType.class)))
+        .useDefaultResponseMessages(false)
+        .globalResponseMessage(RequestMethod.GET,
+            newArrayList(new ResponseMessageBuilder()
+                .code(500)
+                .message("500 message")
+                .responseModel(new ModelRef("Error"))
+                .build()))
+        .securitySchemes(newArrayList(apiKey()))
+        .securityContexts(newArrayList(securityContext()))
+        .enableUrlTemplating(true)
+        .globalOperationParameters(
+            newArrayList(new ParameterBuilder()
+                .name("someGlobalParameter")
+                .description("Description of someGlobalParameter")
+                .modelRef(new ModelRef("string"))
+                .parameterType("query")
+                .required(true)
+                .build()))
+        .tags(new Tag("Pet Service", "All apis relating to pets")) 
+        .additionalModels(typeResolver.resolve(AdditionalModel.class)) 
+        ;
+  }
+
+  @Autowired
+  private TypeResolver typeResolver;
+
+  private ApiKey apiKey() {
+    return new ApiKey("mykey", "api_key", "header");
+  }
+
+  private SecurityContext securityContext() {
+    return SecurityContext.builder()
+        .securityReferences(defaultAuth())
+        .forPaths(PathSelectors.regex("/anyPath.*"))
+        .build();
+  }
+
+  List<SecurityReference> defaultAuth() {
+    AuthorizationScope authorizationScope
+        = new AuthorizationScope("global", "accessEverything");
+    AuthorizationScope[] authorizationScopes = new AuthorizationScope[1];
+    authorizationScopes[0] = authorizationScope;
+    return newArrayList(
+        new SecurityReference("mykey", authorizationScopes));
+  }
+
+  @Bean
+  SecurityConfiguration security() {
+    return SecurityConfigurationBuilder.builder()
+        .clientId("test-app-client-id")
+        .clientSecret("test-app-client-secret")
+        .realm("test-app-realm")
+        .appName("test-app")
+        .scopeSeparator(",")
+        .additionalQueryStringParams(null)
+        .useBasicAuthenticationWithAccessCodeGrant(false)
+        .build();
+  }
+
+  @Bean
+  UiConfiguration uiConfig() {
+    return UiConfigurationBuilder.builder()
+        .deepLinking(true)
+        .displayOperationId(false)
+        .defaultModelsExpandDepth(1)
+        .defaultModelExpandDepth(1)
+        .defaultModelRendering(ModelRendering.EXAMPLE)
+        .displayRequestDuration(false)
+        .docExpansion(DocExpansion.NONE)
+        .filter(false)
+        .maxDisplayedTags(null)
+        .operationsSorter(OperationsSorter.ALPHA)
+        .showExtensions(false)
+        .tagsSorter(TagsSorter.ALPHA)
+        .supportedSubmitMethods(UiConfiguration.Constants.DEFAULT_SUBMIT_METHODS)
+        .validatorUrl(null)
+        .build();
+  }
+
+}
+-------------------------------------------------------------------------------------------------------
+
+
+<dependency>
+    <groupId>io.springfox</groupId>
+    <artifactId>springfox-data-rest</artifactId>
+    <version>2.9.2</version>
+</dependency>
+
+
+-------------------------------------------------------------------------------------------------------
+       protected void configure(HttpSecurity http) throws Exception {
+    http.authorizeRequests()
+        .anyRequest().authenticated()
+        .and().exceptionHandling().accessDeniedHandler(new AccessDeniedHandlerImpl())
+        .and().logout().logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler())
+        .and().csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+        .and()
+        .addFilterBefore(ssoFilter(ApplicationConfiguration.API_BASE_PATH + "/login"), BasicAuthenticationFilter.class)
+        .requiresChannel().anyRequest().requireSecure();
+  }
+
+  @Bean
+  public FilterRegistrationBean oauth2ClientFilterRegistration(OAuth2ClientContextFilter filter) {
+    FilterRegistrationBean frb = new FilterRegistrationBean();
+    frb.setFilter(filter);
+    frb.setOrder(SecurityProperties.DEFAULT_FILTER_ORDER);
+    return frb;
+  }
+
+  @Bean
+  @ConfigurationProperties("oauth2.client")
+  public OAuth2ProtectedResourceDetails authDetails() {
+    return new AuthorizationCodeResourceDetails();
+  }
+
+  @Bean
+  public SecurityConfiguration swaggerSecurityConfiguration() {
+    return new SecurityConfiguration("client-id", "client-secret", "realm",
+        "", "{{X-XSRF-COOKIE}}", ApiKeyVehicle.HEADER, "X-XSRF-TOKEN", ",");
+  }
+
+  private Filter ssoFilter(String path) {
+    OAuth2ClientAuthenticationProcessingFilter oAuth2ClientAuthenticationFilter = new OAuth2ClientAuthenticationProcessingFilter(path);
+    OAuth2RestTemplate oAuth2RestTemplate = new OAuth2RestTemplate(authDetails(), oauth2ClientContext);
+    DefaultRedirectStrategy defaultRedirectStrategy = new DefaultRedirectStrategy();
+    oAuth2ClientAuthenticationFilter.setRestTemplate(oAuth2RestTemplate);
+    oAuth2ClientAuthenticationFilter.setTokenServices(resourceServerTokenServices);
+    oAuth2ClientAuthenticationFilter.setAuthenticationSuccessHandler(
+        (request, response, authentication) -> {
+          String redirectUrl = request.getParameter(REDIRECT_URL_PARAM);
+          if (redirectUrl == null) {
+            redirectUrl = DEFAULT_REDIRECT_URL;
+          } else {
+            if (!redirectUrlValidator.validateRedirectUrl(redirectUrl)) {
+              request.setAttribute(MESSAGE_ATTRIBUTE_NAME,
+                  messageSource.getMessage("ivalid.redirect.url", new String[] { redirectUrl }, LocaleContextHolder.getLocale()));
+              response.sendError(HttpStatus.FORBIDDEN.value());
+            }
+          }
+          defaultRedirectStrategy.sendRedirect(request, response, redirectUrl);
+        });
+    return oAuth2ClientAuthenticationFilter;
+  }
+-------------------------------------------------------------------------------------------------------
+  @Bean
+  public Docket api() throws IOException, URISyntaxException {
+    final List<ResponseMessage> globalResponses = Arrays.asList(
+        new ResponseMessageBuilder()
+            .code(200)
+            .message("OK")
+            .build(),
+        new ResponseMessageBuilder()
+            .code(400)
+            .message("Bad Request")
+            .build(),
+        new ResponseMessageBuilder()
+            .code(500)
+            .message("Internal Error")
+            .build());
+    final ApiInfo apiInfo = new ApiInfo("REST API", new BufferedReader(new InputStreamReader(getClass().getResourceAsStream(CHANGELOG_FILENAME)))
+        .lines()
+        .collect(Collectors.joining(System.lineSeparator())),
+        "1.0.0-RC1", "", new Contact("team", "", "bla@bla.com"), "", "", Collections.emptyList());
+    return new Docket(DocumentationType.SWAGGER_2),
+        .securitySchemes(Arrays.asList(new ApiKey("Token Access", HttpHeaders.AUTHORIZATION, In.HEADER.name()))))
+        .useDefaultResponseMessages(false)
+        .globalResponseMessage(RequestMethod.GET, globalResponses)
+        .globalResponseMessage(RequestMethod.POST, globalResponses)
+        .globalResponseMessage(RequestMethod.DELETE, globalResponses)
+        .globalResponseMessage(RequestMethod.PATCH, globalResponses)
+        .select()
+        .apis(RequestHandlerSelectors.basePackage("com.controller"))
+        .build()
+        .apiInfo(apiInfo)
+        .directModelSubstitute(Temporal.class, String.class);
+  }
+-------------------------------------------------------------------------------------------------------
 @Controller
 @RequestMapping
 @SessionAttributes("reservation")
