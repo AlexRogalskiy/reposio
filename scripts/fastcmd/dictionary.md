@@ -44646,6 +44646,44 @@ static {
 		VERSION = version;
 	}
 --------------------------------------------------------------------------------------------------------
+abstract class ParentBase implements Parent
+{
+  @Override
+  public final Long getParentProperty()
+  {
+      return parentProperty_;
+  }
+
+
+  protected void setParentProperty(Long value)
+  {
+      parentProperty_ = value;
+  }
+
+
+  private Long parentProperty_;
+}
+
+
+abstract class ParentBuilder<T extends ParentBuilder<T>>
+{
+  T withParentProperty(Long value)
+  {
+      getParent().setParentProperty(value);
+      return getThis();
+  }
+
+
+  protected abstract ParentBase getParent();
+
+
+  protected abstract T getThis();
+}
+
+
+final class ConcreteChild1 extends ParentBase implements Child1
+{
+--------------------------------------------------------------------------------------------------------
 <?xml version="1.0"?>
 <config>
     <className>SubMealBuilderB</className>
@@ -53430,6 +53468,262 @@ public class XcareVitalinqConnectorWebMvcConfigurerAdapter extends WebMvcConfigu
 }
 
 {"downloadStatus":0,"filename":"lombokd.config","filepath":"C:\\git-project\\paragon.microservices.distributor","id":"c108cda3-8b4b-483d-a987-d65e6bfe3024"}
+--------------------------------------------------------------------------------------------------------
+@EnableSwagger2
+@Configuration
+public class SwaggerConfiguration {
+
+    @Bean
+    public AlternateTypeRuleConvention springDataWebPropertiesConvention(final SpringDataWebProperties webProperties) {
+        return new AlternateTypeRuleConvention() {
+            @Override
+            public int getOrder() { return Ordered.HIGHEST_PRECEDENCE; }
+
+            @Override
+            public List<AlternateTypeRule> rules() {
+                return singletonList(
+                        newRule(Pageable.class, pageableDocumentedType(webProperties.getPageable(), webProperties.getSort()))
+                );
+            }
+        };
+    }
+
+    private Type pageableDocumentedType(SpringDataWebProperties.Pageable pageable, SpringDataWebProperties.Sort sort) {
+        final String firstPage = pageable.isOneIndexedParameters() ? "1" : "0";
+        return new AlternateTypeBuilder()
+                .fullyQualifiedClassName(fullyQualifiedName(Pageable.class))
+                .property(property(pageable.getPageParameter(), Integer.class, ImmutableMap.of(
+                        "value", "Page " + (pageable.isOneIndexedParameters() ? "Number" : "Index"),
+                        "defaultValue", firstPage,
+                        "allowableValues", String.format("range[%s, %s]", firstPage, Integer.MAX_VALUE),
+                        "example", firstPage
+                )))
+                .property(property(pageable.getSizeParameter(), Integer.class, ImmutableMap.of(
+                        "value", "Page Size",
+                        "defaultValue", String.valueOf(pageable.getDefaultPageSize()),
+                        "allowableValues", String.format("range[1, %s]", pageable.getMaxPageSize()),
+                        "example", "5"
+                )))
+                .property(property(sort.getSortParameter(), String[].class, ImmutableMap.of(
+                        "value", "Page Multi-Sort: fieldName,(asc|desc)"
+                )))
+                .build();
+    }
+
+    private String fullyQualifiedName(Class<?> convertedClass) {
+        return String.format("%s.generated.%s", convertedClass.getPackage().getName(), convertedClass.getSimpleName());
+    }
+
+    private AlternateTypePropertyBuilder property(String name, Class<?> type, Map<String, Object> parameters) {
+        return new AlternateTypePropertyBuilder()
+                .withName(name)
+                .withType(type)
+                .withCanRead(true)
+                .withCanWrite(true)
+                .withAnnotations(Collections.singletonList(AnnotationProxy.of(ApiParam.class, parameters)));
+    }
+}
+
+
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Accessors(fluent = true)
+public class AnnotationProxy implements Annotation, InvocationHandler {
+    @Getter
+    private final Class<? extends Annotation> annotationType;
+    private final Map<String, Object> values;
+
+    public static <A extends Annotation> A of(Class<A> annotation, Map<String, Object> values) {
+        return (A) Proxy.newProxyInstance(annotation.getClassLoader(),
+                new Class[]{annotation},
+                new AnnotationProxy(annotation, new HashMap<String, Object>(values) {{
+                    put("annotationType", annotation); // Required because getDefaultValue() returns null for this call
+                }}));
+    }
+
+    public Object invoke(Object proxy, Method method, Object[] args) {
+        return values.getOrDefault(method.getName(), method.getDefaultValue());
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@Configuration
+@EnableSwagger2
+public class SwaggerConfig {
+    @Bean
+    public Docket api() {
+        return new Docket(DocumentationType.SWAGGER_2)
+                .select()
+                .apis(RequestHandlerSelectors.basePackage("com.archisoft.mtx.controller"))
+                .paths(regex("/api.*"))
+                .build()
+                .apiInfo(apiInfo());
+    }
+
+    private ApiInfo apiInfo() {
+        ApiInfo apiInfo = new ApiInfo(
+                "Backend API Services",
+                "Backend APIs for Business to Business",
+                "V1.0",
+                "Terms of service",
+                "Sadun | Tharanga email",
+                "Archisoft Global",
+                "Archisoft URL");
+        return apiInfo;
+    }
+
+    @Bean
+    public AlternateTypeRuleConvention pageableConvention(
+            final TypeResolver resolver,
+            final RepositoryRestConfiguration restConfiguration) {
+        return new AlternateTypeRuleConvention() {
+
+            @Override
+            public int getOrder() {
+                return Ordered.HIGHEST_PRECEDENCE;
+            }
+
+            @Override
+            public List<AlternateTypeRule> rules() {
+                return singletonList(
+                        newRule(resolver.resolve(Pageable.class), resolver.resolve(pageableMixin()))
+                );
+            }
+        };
+    }
+
+    private Type pageableMixin() {
+        return new AlternateTypeBuilder()
+                .fullyQualifiedClassName(
+                        String.format("%s.generated.%s",
+                                Pageable.class.getPackage().getName(),
+                                Pageable.class.getSimpleName()))
+                .withProperties(Stream.of(
+                        property(Integer.class, "page"),
+                        property(Integer.class, "size"),
+                        property(String.class, "sort")
+                ).collect(toList()))
+                .build();
+    }
+
+    private AlternateTypePropertyBuilder property(Class<?> type, String name) {
+        return new AlternateTypePropertyBuilder()
+                .withName(name)
+                .withType(type)
+                .withCanRead(true)
+                .withCanWrite(true);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import static com.google.common.collect.Lists.newArrayList;
+import static springfox.documentation.spi.schema.contexts.ModelContext.inputParam;
+
+import com.fasterxml.classmate.ResolvedType;
+import com.fasterxml.classmate.TypeResolver;
+import com.google.common.base.Function;
+import com.google.common.collect.Sets;
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import lombok.SneakyThrows;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Component;
+import springfox.documentation.builders.OperationBuilder;
+import springfox.documentation.builders.ParameterBuilder;
+import springfox.documentation.schema.ModelReference;
+import springfox.documentation.schema.ResolvedTypes;
+import springfox.documentation.schema.TypeNameExtractor;
+import springfox.documentation.service.Parameter;
+import springfox.documentation.service.ResolvedMethodParameter;
+import springfox.documentation.spi.DocumentationType;
+import springfox.documentation.spi.schema.contexts.ModelContext;
+import springfox.documentation.spi.service.OperationBuilderPlugin;
+import springfox.documentation.spi.service.contexts.OperationContext;
+import springfox.documentation.spi.service.contexts.ParameterContext;
+
+@Component
+@Order(Ordered.LOWEST_PRECEDENCE)
+public class OperationPageableParameterReader implements OperationBuilderPlugin {
+    private final TypeNameExtractor nameExtractor;
+    private final ResolvedType pageableType;
+    private final TypeResolver resolver;
+
+    @Autowired
+    public OperationPageableParameterReader(TypeNameExtractor nameExtractor, TypeResolver resolver) {
+        this.nameExtractor = nameExtractor;
+        this.resolver = resolver;
+        this.pageableType = resolver.resolve(Pageable.class);
+    }
+
+    @Override
+    @SneakyThrows
+    public void apply(OperationContext context) {
+        List<ResolvedMethodParameter> methodParameters = context.getParameters();
+        List<Parameter> parameters = newArrayList();
+
+        for (ResolvedMethodParameter methodParameter : methodParameters) {
+            ResolvedType resolvedType = methodParameter.getParameterType();
+            if (!pageableType.equals(resolvedType)) {
+                continue;
+            }
+
+            ParameterContext parameterContext = new ParameterContext(methodParameter, new ParameterBuilder(),
+                    context.getDocumentationContext(), context.getGenericsNamingStrategy(), context);
+            Function<ResolvedType, ? extends ModelReference> factory = createModelRefFactory(parameterContext);
+
+            ModelReference intModel = factory.apply(resolver.resolve(Integer.TYPE));
+            ModelReference stringModel = factory.apply(resolver.resolve(List.class, String.class));
+
+            parameters.add(new ParameterBuilder().parameterType("query")
+                    .name("page")
+                    .modelRef(intModel)
+                    .description("Results page you want to retrieve (0..N)")
+                    .build());
+            parameters.add(new ParameterBuilder().parameterType("query")
+                    .name("size")
+                    .modelRef(intModel)
+                    .description("Number of records per page")
+                    .build());
+            parameters.add(new ParameterBuilder().parameterType("query")
+                    .name("sort")
+                    .modelRef(stringModel)
+                    .allowMultiple(true)
+                    .description("Sorting criteria in the format: property(,asc|desc). "
+                            + "Default sort order is ascending. " + "Multiple sort criteria are supported.")
+                    .build());
+
+            final OperationBuilder operationBuilder = context.operationBuilder();
+            operationBuilder.parameters(parameters);
+
+            Set<String> toDelete = Sets.newLinkedHashSet(Arrays
+                    .asList("offset", "pageNumber", "pageSize", "paged", "sort.sorted", "sort.unsorted", "unpaged"));
+            final Field field = operationBuilder.getClass().getDeclaredField("parameters");
+            field.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            final List<Parameter> list = (List<Parameter>) field.get(operationBuilder);
+            field.set(operationBuilder,
+                    list.stream().filter(p -> !toDelete.contains(p.getName())).collect(Collectors.toList()));
+        }
+    }
+
+    private Function<ResolvedType, ? extends ModelReference> createModelRefFactory(ParameterContext context) {
+        ModelContext modelContext = inputParam(context.getGroupName(),
+                context.resolvedMethodParameter().getParameterType(),
+                context.getDocumentationType(),
+                context.getAlternateTypeProvider(),
+                context.getGenericNamingStrategy(),
+                context.getIgnorableParameterTypes());
+        return ResolvedTypes.modelRefFactory(modelContext, nameExtractor);
+    }
+
+    @Override
+    public boolean supports(DocumentationType delimiter) {
+        return true;
+    }
+}
 --------------------------------------------------------------------------------------------------------
 @Override
   protected List<ConfigIssue> init() {
