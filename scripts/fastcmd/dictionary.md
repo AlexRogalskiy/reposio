@@ -42919,6 +42919,37 @@ public class SwaggerConfig {
     }
 }
 -------------------------------------------------------------------------------------------------------
+   @Bean
+    public CacheManagerCustomizer<CaffeineCacheManager> caffeineCacheManager() {
+        return cacheManager -> cacheManager
+                .setCaffeine(Caffeine.newBuilder()
+                        .expireAfterWrite(1, TimeUnit.MINUTES));
+    }
+	  @Bean
+    public Cache myCache() {
+        return new CaffeineCache(
+                "my-cache",
+                Caffeine.newBuilder()
+                        .maximumSize(10)
+                        .build());
+    }
+	
+spring.cache.type: NONE
+spring.data.redis.repositories.enabled=false
+
+---
+spring:
+  profiles: no-redis
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+	  
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
++     - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+-------------------------------------------------------------------------------------------------------
 BUILD_TYPE="commercial"
 IMPLEMENTOR="Oracle Corporation"
 JAVA_VERSION="13"
@@ -43478,7 +43509,46 @@ public class Swagger2SpringBoot {
         .validatorUrl(null)
         .build();
   }
-
+}
+-------------------------------------------------------------------------------------------------------
+@Test
+public void whenFilteringAndTransformingCollection_thenCorrect() {
+    Predicate<String> predicate = new Predicate<String>() {
+        @Override
+        public boolean apply(String input) {
+            return input.startsWith("A") || input.startsWith("T");
+        }
+    };
+ 
+    Function<String, Integer> func = new Function<String,Integer>(){
+        @Override
+        public Integer apply(String input) {
+            return input.length();
+        }
+    };
+ 
+    List<String> names = Lists.newArrayList("John", "Jane", "Adam", "Tom");
+    Collection<Integer> result = FluentIterable.from(names)
+                                               .filter(predicate)
+                                               .transform(func)
+                                               .toList();
+ 
+    assertEquals(2, result.size());
+    assertThat(result, containsInAnyOrder(4, 3));
+}
+-------------------------------------------------------------------------------------------------------
+@Test
+public void givenListOfCustomers_whenTransformed_thenListOfAddress() {
+    Collection<Address> addressCol = CollectionUtils.collect(list1, 
+      new Transformer<Customer, Address>() {
+        public Address transform(Customer customer) {
+            return customer.getAddress();
+        }
+    });
+     
+    List<Address> addressList = new ArrayList<>(addressCol);
+    assertTrue(addressList.size() == 3);
+    assertTrue(addressList.get(0).getLocality().equals("locality1"));
 }
 -------------------------------------------------------------------------------------------------------
 
