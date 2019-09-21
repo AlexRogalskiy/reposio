@@ -42919,6 +42919,38 @@ public class SwaggerConfig {
     }
 }
 -------------------------------------------------------------------------------------------------------
+BUILD_TYPE="commercial"
+IMPLEMENTOR="Oracle Corporation"
+JAVA_VERSION="13"
+JAVA_VERSION_DATE="2019-09-17"
+MODULES="java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.vm.ci jdk.management jdk.unsupported jdk.internal.vm.compiler jdk.aot jdk.internal.jvmstat jdk.attach jdk.charsets jdk.compiler jdk.crypto.ec jdk.crypto.cryptoki jdk.crypto.mscapi jdk.dynalink jdk.internal.ed jdk.editpad jdk.hotspot.agent jdk.httpserver jdk.internal.le jdk.internal.opt jdk.internal.vm.compiler.management jdk.jartool jdk.javadoc jdk.jcmd jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jshell jdk.jsobject jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.pack jdk.rmic jdk.scripting.nashorn jdk.scripting.nashorn.shell jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported.desktop jdk.xml.dom jdk.zipfs"
+OS_ARCH="x86_64"
+OS_NAME="Windows"
+SOURCE=".:hg:b322ad7c3ff6 open:hg:9c250a7600e1"
+
+-------------------------------------------------------------------------------------------------------
+mvn install -Dmaven.test.skip
+mvn clean install -DskipTests
+mvn clean package -DskipIT
+mvn clean test-compile failsafe:integration-test
+mvn clean package -Dmaven.skip.tests=true
+mvn verify -Pfailsafe
+-------------------------------------------------------------------------------------------------------
+git log --stat
+git log --summary
+git status --long
+git checkout HEAD~4
+
+git log --grep="Commit message fragment"
+git checkout b20eb8bdb8daf5fcec3ceb191c6b9b25507376ca
+
+git checkout HEAD
+
+git fetch origin
+git fetch -t
+
+
+-------------------------------------------------------------------------------------------------------
 @EnableSwagger2WebMvc
 <dependency>
             <groupId>org.springframework.plugin</groupId>
