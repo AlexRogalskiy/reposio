@@ -8828,6 +8828,20 @@ spring:
               action: create
               create-target: create.sql
 --------------------------------------------------------------------------------------------------------
+  /**
+   * Returns this default value if the new value is null
+   *
+   * @param newValue     - new value
+   * @param defaultValue - default value
+   * @param <T>          - Represents any type that is nullable
+   * @return Coalesces the newValue and defaultValue to return a non-null value
+   */
+  public static <T> T defaultIfAbsent(T newValue, T defaultValue) {
+    return Optional.fromNullable(newValue)
+        .or(Optional.fromNullable(defaultValue))
+        .orNull();
+  }
+--------------------------------------------------------------------------------------------------------
 $ ./gradlew clean build && java -jar build/libs/gs-actuator-service-0.1.0.jar
 
 --------------------------------------------------------------------------------------------------------
@@ -39890,6 +39904,58 @@ public class FileServiceImpl extends AuditServiceImpl<FileEntity, QFileEntity, U
 //        TypedQuery<FileEntity> query = this.getEntityManager().createQuery(criteria);
 //        List<FileEntity> peeps = query.getResultList();
 
+public List<Group> findGroupsByUser(Integer userId) {
+    JPQLQuery query = new JPAQuery(getEntityManager());
+    ??????
+    return result;
+}
+
+final JPAQueryFactory queryFactory = new JPAQueryFactory(HQLTemplates.DEFAULT, this.getEntityManager());
+final QFileEntity file = QFileEntity.fileEntity;
+final QVersionEntity version = QVersionEntity.versionEntity;
+final QLocaleVersionEntity localeVersion = QLocaleVersionEntity.localeVersionEntity;
+final FileEntity fileEntity = queryFactory
+        .selectFrom(file)
+        .innerJoin(file.version, version)
+        .innerJoin(file.version.locales, localeVersion)
+        .where(
+                file.fileInfo.filePlatform.eq("x86")
+                        .and(version.versionInfo.tokens.eq(new int[]{1, 2, 3, 4}))
+                        .and(version.product.sku.eq("sku-333d497a"))
+                        .and(localeVersion.locale().localeName.eq("ru"))
+        )
+        .fetchOne();
+
+final JPAQueryFactory queryFactory = new JPAQueryFactory(HQLTemplates.DEFAULT, this.getEntityManager());
+final QFileEntity file = QFileEntity.fileEntity;
+final QVersionEntity version = QVersionEntity.versionEntity;
+final QLocaleVersionEntity localeVersion = QLocaleVersionEntity.localeVersionEntity;
+final FileEntity fileEntity = queryFactory
+        .selectFrom(file)
+        .innerJoin(file.version, version)
+        .innerJoin(file.version.locales, localeVersion)
+        .where(
+                file.fileInfo.filePlatform.eq("x86")
+                        .and(version.versionInfo.eq(this.buildVersionInfo("4.6.7.8")))
+                        .and(version.product.sku.eq("sku-333d497a"))
+                        .and(localeVersion.id.locale.localeName.eq("za"))
+        )
+        .fetchOne();
+
+final JPAQueryFactory queryFactory = new JPAQueryFactory(HQLTemplates.DEFAULT, this.getEntityManager());
+final QFileEntity file = QFileEntity.fileEntity;
+final QVersionEntity version = QVersionEntity.versionEntity;
+final QLocaleVersionEntity localeVersion = QLocaleVersionEntity.localeVersionEntity;
+final FileEntity fileEntity = queryFactory
+        .selectFrom(file).innerJoin(file.version, version).innerJoin(file.version.locales, localeVersion)
+        .where(file.version.product.sku.eq("sku-333d497a"))
+        .fetchOne();
+		
+
+from(user).innerJoin(user.groups, group)
+  .where(user.id.eq(userId))
+  .list(group);
+  
         final JPAQueryFactory queryFactory = new JPAQueryFactory(HQLTemplates.DEFAULT, this.getEntityManager());
         final QFileEntity user = QFileEntity.fileEntity;
         final FileEntity c = queryFactory
@@ -39928,6 +39994,164 @@ public class FileServiceImpl extends AuditServiceImpl<FileEntity, QFileEntity, U
     @Override
     protected FileRepository getRepository() {
         return this.fileRepository;
+    }
+}
+-------------------------------------------------------------------------------------------------------
+    /**
+     * Returns {@link FileEntity} by input {@link FileSearchParameters} parameters
+     *
+     * @param fileSearchParameters - initial input {@link FileSearchParameters} to fetch by
+     * @return {@link FileEntity}
+     */
+    @SuppressWarnings("unchecked")
+    @Override
+    public Optional<FileEntity> searchFileRecord(final FileSearchParameters fileSearchParameters) {
+        log.info("Fetching file record by input search parameters: {}", fileSearchParameters);
+//        final FullTextEntityManager fullTextEntityManager = this.getFullTextEntityManager();
+//        final QueryBuilder querybuilder = this.getFullTextQueryBuilder(fullTextEntityManager, FileEntity.class);
+//        final Query filePlatformQuery = querybuilder
+//                .keyword()
+//                //.fuzzy()
+//                //.withEditDistanceUpTo(1)
+//                //.withPrefixLength(1)
+//                .onFields("fileInfo.filePlatform")
+//                .matching(fileSearchParameters.getPlatform())
+//                .createQuery();
+//        final Query productSkuQuery = querybuilder
+//                .keyword()
+//                //.fuzzy()
+//                //.withEditDistanceUpTo(1)
+//                //.withPrefixLength(1)
+//                .onFields("version.product.sku")
+//                .matching(fileSearchParameters.getSku())
+//                .createQuery();
+//        final Query versionQuery = querybuilder
+//                .keyword()
+//                //.fuzzy()
+//                //.withEditDistanceUpTo(1)
+//                //.withPrefixLength(1)
+//                .onFields("version.version")
+//                .matching(this.buildVersionInfo(fileSearchParameters.getVersion()))
+//                .createQuery();
+//        final Query localeQuery = querybuilder
+//                .keyword()
+//                //.fuzzy()
+//                //.withEditDistanceUpTo(1)
+//                //.withPrefixLength(1)
+//                .onFields("version.locales")
+//                .matching(new LocaleEntity())
+//                .createQuery();
+//        final Query combinedQuery = querybuilder
+//                .bool()
+//                .must(filePlatformQuery)
+//                .must(productSkuQuery)
+//                .must(versionQuery)
+//                .must(localeQuery)
+//                .createQuery();
+//        final javax.persistence.Query jpaQuery = fullTextEntityManager.createFullTextQuery(combinedQuery, FileEntity.class);
+//        return Optional.of((FileEntity) jpaQuery.getSingleResult());
+
+        final FileEntity fileEntity = this.getFileRecordByParameters(fileSearchParameters);
+        if (StringUtils.isNotBlank(fileSearchParameters.getVersion())) {
+            final VersionInfoEntity versionInfoEntity = this.buildVersionInfo(fileSearchParameters.getVersion());
+            predicate.and(QFileEntity.fileEntity.version().versionInfo.eq(versionInfoEntity));
+            return StreamSupport.stream(this.getFileRepository().findAll(predicate).spliterator(), false)
+                    .filter(value -> value.getVersion().getLocales().stream().anyMatch(locale -> Objects.equals(locale, new LocaleInfoEntity(fileSearchParameters.getLocale()))))
+                    .findFirst();
+                    //.orElseThrow(() -> throwResourceNotFound(this.getMessageSource(), ERROR_RESOURCE_BY_REQUEST_NOT_FOUND_MESSAGE_TEMPLATE, fileSearchParameters));
+        }
+        return StreamSupport.stream(this.getFileRepository().findAll(predicate).spliterator(), false)
+                .filter(value -> value.getVersion().getLocales().stream().anyMatch(locale -> Objects.equals(locale, new LocaleInfoEntity(fileSearchParameters.getLocale()))))
+                .max(Comparator.comparing(value -> value.getVersion().getVersionInfo()));
+                //.orElseThrow(() -> throwResourceNotFound(this.getMessageSource(), ERROR_RESOURCE_BY_REQUEST_NOT_FOUND_MESSAGE_TEMPLATE, fileSearchParameters));
+    }
+-------------------------------------------------------------------------------------------------------
+//        final FullTextEntityManager fullTextEntityManager = this.getFullTextEntityManager();
+//        final QueryBuilder querybuilder = this.getFullTextQueryBuilder(fullTextEntityManager, FileEntity.class);
+//        final Query filePlatformQuery = querybuilder
+//                .keyword()
+//                //.fuzzy()
+//                //.withEditDistanceUpTo(1)
+//                //.withPrefixLength(1)
+//                .onFields("fileInfo.filePlatform")
+//                .matching(fileSearchParameters.getPlatform())
+//                .createQuery();
+//        final Query productSkuQuery = querybuilder
+//                .keyword()
+//                //.fuzzy()
+//                //.withEditDistanceUpTo(1)
+//                //.withPrefixLength(1)
+//                .onFields("version.product.sku")
+//                .matching(fileSearchParameters.getSku())
+//                .createQuery();
+//        final Query versionQuery = querybuilder
+//                .keyword()
+//                //.fuzzy()
+//                //.withEditDistanceUpTo(1)
+//                //.withPrefixLength(1)
+//                .onFields("version.version")
+//                .matching(this.buildVersionInfo(fileSearchParameters.getVersion()))
+//                .createQuery();
+//        final Query localeQuery = querybuilder
+//                .keyword()
+//                //.fuzzy()
+//                //.withEditDistanceUpTo(1)
+//                //.withPrefixLength(1)
+//                .onFields("version.locales")
+//                .matching(new LocaleEntity())
+//                .createQuery();
+//        final Query combinedQuery = querybuilder
+//                .bool()
+//                .must(filePlatformQuery)
+//                .must(productSkuQuery)
+//                .must(versionQuery)
+//                .must(localeQuery)
+//                .createQuery();
+//        final javax.persistence.Query jpaQuery = fullTextEntityManager.createFullTextQuery(combinedQuery, FileEntity.class);
+//        return Optional.of((FileEntity) jpaQuery.getSingleResult());
+-------------------------------------------------------------------------------------------------------
+    @SuppressWarnings("unchecked")
+    public Class<T> getTypeParameterClass() {
+        Type type = getClass().getGenericSuperclass();
+        ParameterizedType paramType = (ParameterizedType) type;
+        return (Class<T>) paramType.getActualTypeArguments()[0];
+    }
+	
+	@SuppressWarnings("SpringJavaAutowiringInspection")
+-------------------------------------------------------------------------------------------------------
+    @Bean
+    public DataSource dataSource() {
+        EmbeddedDatabaseBuilder builder = new EmbeddedDatabaseBuilder();
+        EmbeddedDatabase datasource = builder
+                .setType(EmbeddedDatabaseType.HSQL)
+                .addScript("db/create-db.sql")
+                .build();
+
+        return datasource;
+    }
+-------------------------------------------------------------------------------------------------------
+import java.util.UUID;
+import org.dozer.BeanFactory;
+
+/**
+ * {@code UuidBeanFactory} configures Dozer mapper to map UUID fields.
+ * <p/>
+ *
+ * @author Indra Basak
+ * @since 3/18/17
+ */
+public class UuidBeanFactory implements BeanFactory {
+    @Override
+    public Object createBean(Object source, Class<?> sourceClass,
+            String targetBeanId) {
+        if (source == null) {
+            return null;
+        }
+
+        UUID uuidSrc = (UUID) source;
+        UUID uuidDest = new UUID(uuidSrc.getMostSignificantBits(),
+                uuidSrc.getLeastSignificantBits());
+        return uuidDest;
     }
 }
 -------------------------------------------------------------------------------------------------------
@@ -40409,6 +40633,21 @@ public interface PersonRepository extends JpaRepository<Job, Integer>,
             return path.eq(value);
         });
     }
+-------------------------------------------------------------------------------------------------------
+@Controller
+class UserController {
+
+  @Autowired UserRepository repository;
+
+  @RequestMapping(value = "/", method = RequestMethod.GET)
+  String index(Model model, @QuerydslPredicate(root = User.class) Predicate predicate,    
+          Pageable pageable, @RequestParam MultiValueMap<String, String> parameters) {
+
+    model.addAttribute("users", repository.findAll(predicate, pageable));
+
+    return "index";
+  }
+}
 -------------------------------------------------------------------------------------------------------
 LocalDate start = LocalDate.now();
 LocalDate end = LocalDate.now().plusMonths(1).with(TemporalAdjusters.lastDayOfMonth());
@@ -42498,7 +42737,6 @@ public class CustomAwsExtensionsReader implements OperationBuilderPlugin {
 		return SwaggerPluginSupport.pluginDoesApply(delimiter);
 	}
 }
-
 -------------------------------------------------------------------------------------------------------
 @Configuration
 public class WebSecurityConfigEntryPointApplication extends WebSecurityConfigurerAdapter {
@@ -42990,6 +43228,8 @@ static class CustomizationConfiguration implements RestDocsMockMvcConfigurationC
 
 }
 -------------------------------------------------------------------------------------------------------
+mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+-------------------------------------------------------------------------------------------------------
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface JsonField {
@@ -43007,6 +43247,141 @@ public @interface JsonField {
 	// default string which is unlikely to conflict
 	// with any real string provided by a user
 	public static final String DEFAULT_NONE = "\n\t\t\n\t\t\n\uE000\uE001\uE002\n\t\t\t\t\n";
+}
+-------------------------------------------------------------------------------------------------------
+project:
+    artifactId: menagerie
+    name: menagerie
+    version: 1.0.0-SNAPSHOT
+    description: Demo project for info endpoint
+
+# For Spring Actuator /info endpoint
+info:
+    artifact: ${project.artifactId}
+    name: ${project.name}
+    description: ${project.description}
+    version: ${project.version}
+
+eureka:
+  instance:
+    # interval for periodic heartbeat to the registry; default 10
+    leaseRenewalIntervalInSeconds: 10
+  client:
+    enabled: true
+    registryFetchIntervalSeconds: 5
+    # by default, Eureka uses the client heartbeat to determine if a client is up. Unless specified otherwise the
+    # Discovery Client will not propagate the current health check status of the application.
+    # should only be set in application.yml
+    healthcheck:
+      enabled: true
+    serviceUrl:
+      defaultZone: ${EUREKA_ZONE}
+
+# use a HTTP port 8080
+server:
+  port: 8080
+
+datasource:
+  validationQuery: SELECT 1
+  initialSize: 1
+  maxActive: 3
+  testWhileIdle: true
+  testOnBorrow: true
+
+jpa:
+  show-sql: true
+  format_sql: true
+  properties:
+    org:
+      hibernate:
+        flushMode: AUTO
+
+spring:
+  output:
+    ansi:
+      enabled: ALWAYS
+
+#banner:
+#  image:
+#    location: images/favicon-32x32.png
+
+  
+spring:
+  application:
+    name: menagerie
+  cloud:
+    config:
+#      uri: ${vcap.services.${PREFIX:}configserver.credentials.uri:http://user:password@localhost:8888}
+      enabled: false
+    discovery:
+      enabled: true
+-------------------------------------------------------------------------------------------------------
+<dependency>
+    <groupId>io.springfox</groupId>
+    <artifactId>springfox-spring-web</artifactId>
+    <version>2.9.2</version>
+</dependency>
+        <dependency>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-staticdocs</artifactId>
+            <version>${swagger-staticdocs.version}</version>
+            <scope>test</scope>
+        </dependency>
+-------------------------------------------------------------------------------------------------------
+       <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-joda</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+-------------------------------------------------------------------------------------------------------
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="warn" monitorInterval="30">
+    <Appenders>
+        <Console name="STDOUT" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{yyyy-MM-dd'T'HH:mm:ss.SSSZZ}: [%p] %t %c - %m%n"/>
+        </Console>
+        <Console name="STDERR" target="SYSTEM_ERR">
+            <PatternLayout pattern="%d{yyyy-MM-dd'T'HH:mm:ss.SSSZZ}: [%p] %t %c - %m%n"/>
+        </Console>
+        <Async name="asyncManager" blocking="false" bufferSize="1024">
+            <AppenderRef ref="STDOUT"/>
+        </Async>
+    </Appenders>
+    <Loggers>
+
+        <Logger name="com.basaki" additivity="false" level="warn">
+            <AppenderRef ref="asyncManager"/>
+        </Logger>
+        <Root level="warn">
+            <AppenderRef ref="asyncManager"/>
+        </Root>
+    </Loggers>
+
+</Configuration>
+-------------------------------------------------------------------------------------------------------
+@ApiOperationSince(value = "1.0", description = "Release 1.0")
+@RequestMapping(method = RequestMethod.POST, value = TIGER_URL,
+        consumes = MediaType.APPLICATION_JSON_VALUE,
+        produces = MediaType.APPLICATION_JSON_VALUE)
+@ResponseStatus(HttpStatus.CREATED)
+public Tiger create(
+        @ApiParam(value = "Transaction ID as UUID", defaultValue = TYPE_UUID)
+        @RequestHeader(HEADER_TXN_ID) UUID txnId,
+        @ApiParam(value = "ISO formatted Transaction Date", defaultValue = TYPE_ISO_DATE_TIME)
+        @RequestHeader(HEADER_TXN_DATE) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Date txnDate,
+        @RequestBody MenagerieRequest request) {
+    return service.create(request);
 }
 -------------------------------------------------------------------------------------------------------
 @Component
@@ -44682,7 +45057,183 @@ abstract class ParentBuilder<T extends ParentBuilder<T>>
 
 
 final class ConcreteChild1 extends ParentBase implements Child1
-{
+{}
+--------------------------------------------------------------------------------------------------------
+import static com.google.common.collect.Lists.newArrayList;
+import static springfox.documentation.spi.schema.contexts.ModelContext.inputParam;
+
+import com.fasterxml.classmate.ResolvedType;
+import com.fasterxml.classmate.TypeResolver;
+import com.google.common.base.Function;
+import com.google.common.collect.Sets;
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import lombok.SneakyThrows;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Component;
+import springfox.documentation.builders.OperationBuilder;
+import springfox.documentation.builders.ParameterBuilder;
+import springfox.documentation.schema.ModelReference;
+import springfox.documentation.schema.ResolvedTypes;
+import springfox.documentation.schema.TypeNameExtractor;
+import springfox.documentation.service.Parameter;
+import springfox.documentation.service.ResolvedMethodParameter;
+import springfox.documentation.spi.DocumentationType;
+import springfox.documentation.spi.schema.contexts.ModelContext;
+import springfox.documentation.spi.service.OperationBuilderPlugin;
+import springfox.documentation.spi.service.contexts.OperationContext;
+import springfox.documentation.spi.service.contexts.ParameterContext;
+
+@Component
+@Order(Ordered.LOWEST_PRECEDENCE)
+public class OperationPageableParameterReader implements OperationBuilderPlugin {
+    private final TypeNameExtractor nameExtractor;
+    private final ResolvedType pageableType;
+    private final TypeResolver resolver;
+
+    @Autowired
+    public OperationPageableParameterReader(TypeNameExtractor nameExtractor, TypeResolver resolver) {
+        this.nameExtractor = nameExtractor;
+        this.resolver = resolver;
+        this.pageableType = resolver.resolve(Pageable.class);
+    }
+
+    @Override
+    @SneakyThrows
+    public void apply(OperationContext context) {
+        List<ResolvedMethodParameter> methodParameters = context.getParameters();
+        List<Parameter> parameters = newArrayList();
+
+        for (ResolvedMethodParameter methodParameter : methodParameters) {
+            ResolvedType resolvedType = methodParameter.getParameterType();
+            if (!pageableType.equals(resolvedType)) {
+                continue;
+            }
+
+            ParameterContext parameterContext = new ParameterContext(methodParameter, new ParameterBuilder(),
+                    context.getDocumentationContext(), context.getGenericsNamingStrategy(), context);
+            Function<ResolvedType, ? extends ModelReference> factory = createModelRefFactory(parameterContext);
+
+            ModelReference intModel = factory.apply(resolver.resolve(Integer.TYPE));
+            ModelReference stringModel = factory.apply(resolver.resolve(List.class, String.class));
+
+            parameters.add(new ParameterBuilder().parameterType("query")
+                    .name("page")
+                    .modelRef(intModel)
+                    .description("Results page you want to retrieve (0..N)")
+                    .build());
+            parameters.add(new ParameterBuilder().parameterType("query")
+                    .name("size")
+                    .modelRef(intModel)
+                    .description("Number of records per page")
+                    .build());
+            parameters.add(new ParameterBuilder().parameterType("query")
+                    .name("sort")
+                    .modelRef(stringModel)
+                    .allowMultiple(true)
+                    .description("Sorting criteria in the format: property(,asc|desc). "
+                            + "Default sort order is ascending. " + "Multiple sort criteria are supported.")
+                    .build());
+
+            final OperationBuilder operationBuilder = context.operationBuilder();
+            operationBuilder.parameters(parameters);
+
+            Set<String> toDelete = Sets.newLinkedHashSet(Arrays
+                    .asList("offset", "pageNumber", "pageSize", "paged", "sort.sorted", "sort.unsorted", "unpaged"));
+            final Field field = operationBuilder.getClass().getDeclaredField("parameters");
+            field.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            final List<Parameter> list = (List<Parameter>) field.get(operationBuilder);
+            field.set(operationBuilder,
+                    list.stream().filter(p -> !toDelete.contains(p.getName())).collect(Collectors.toList()));
+        }
+    }
+
+    private Function<ResolvedType, ? extends ModelReference> createModelRefFactory(ParameterContext context) {
+        ModelContext modelContext = inputParam(context.getGroupName(),
+                context.resolvedMethodParameter().getParameterType(),
+                context.getDocumentationType(),
+                context.getAlternateTypeProvider(),
+                context.getGenericNamingStrategy(),
+                context.getIgnorableParameterTypes());
+        return ResolvedTypes.modelRefFactory(modelContext, nameExtractor);
+    }
+
+    @Override
+    public boolean supports(DocumentationType delimiter) {
+        return true;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+    {
+      "name": "security.cors.allowed-paths",
+      "type": "java.lang.String",
+      "description": "Security CORS allowed paths."
+    },
+    {
+      "name": "security.cors.allowed-methods",
+      "type": "java.lang.String",
+      "description": "Security CORS allowed methods."
+    },
+    {
+      "name": "security.cors.allowed-origins",
+      "type": "java.lang.String",
+      "description": "Security CORS allowed origins."
+    },
+    {
+      "name": "security.cors.allowed-headers",
+      "type": "java.lang.String",
+      "description": "Security CORS allowed headers."
+    },
+    {
+      "name": "security.cors.exposed-headers",
+      "type": "java.lang.String",
+      "description": "Security CORS exposed headers."
+    },
+    {
+      "name": "security.cors.allow-credentials",
+      "type": "java.lang.String",
+      "description": "Security CORS allow credentials option."
+    },
+    {
+      "name": "security.cors.max-age",
+      "type": "java.lang.String",
+      "description": "Security CORS maximum age."
+    }
+--------------------------------------------------------------------------------------------------------
+            <artifactId>springfox-swagger2</artifactId>
+            <version>2.8.0</version>
+            <artifactId>springfox-swagger-ui</artifactId>
+            <version>2.8.0</version>
+            <artifactId>springfox-data-rest</artifactId>
+            <version>2.8.0</version>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-bean-validators</artifactId>
+            <version>2.8.0</version>
+--------------------------------------------------------------------------------------------------------
+    @ApiOperation(value = "Find partners")
+    @ApiImplicitParams({
+        @ApiImplicitParam(name = "page", dataType = "integer", paramType = "query",
+                value = "Results page you want to retrieve (0..N)"),
+        @ApiImplicitParam(name = "size", dataType = "integer", paramType = "query",
+                value = "Number of records per page."),
+        @ApiImplicitParam(name = "sort", allowMultiple = true, dataType = "string", paramType = "query",
+                value = "Sorting criteria in the format: property(,asc|desc). " +
+                        "Default sort order is ascending. " +
+                        "Multiple sort criteria are supported.")
+    })
+    @RequestMapping(value = "/v1/partners", method = RequestMethod.GET)
+    @ResponseBody
+    @ResponseStatus(HttpStatus.OK)
+    public List<Partner> findAll(@ApiIgnore final Pageable pageable) {
+            ...
+    }
 --------------------------------------------------------------------------------------------------------
 <?xml version="1.0"?>
 <config>
