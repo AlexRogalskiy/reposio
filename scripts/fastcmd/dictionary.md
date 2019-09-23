@@ -43511,6 +43511,727 @@ public class Swagger2SpringBoot {
   }
 }
 -------------------------------------------------------------------------------------------------------
+    final Set<Integer> elements = new HashSet<>();
+    Stream.of(1, 2, 3, 1, 9, 2, 5, 3, 4, 8, 2)
+        .collect(Collectors.partitioningBy(elements::add))
+        .forEach((isUnique, list) -> System.out.format("%s: %s%n", isUnique ? "unique" : "repetitive", list));
+
+-------------------------------------------------------------------------------------------------------
+@ExtendWith(SpringExtension.class)
+@WebMvcTest(controllers = ValidateRequestBodyController.class)
+class ValidateRequestBodyControllerTest {
+
+  @Autowired
+  private MockMvc mvc;
+
+  @Autowired
+  private ObjectMapper objectMapper;
+
+  @Test
+  void whenInputIsInvalid_thenReturnsStatus400() throws Exception {
+    Input input = invalidInput();
+    String body = objectMapper.writeValueAsString(input);
+
+    mvc.perform(post("/validateBody")
+            .contentType("application/json")
+            .content(body))
+            .andExpect(status().isBadRequest());
+  }
+}
+
+@ExtendWith(SpringExtension.class)
+@DataJpaTest
+class ValidatingRepositoryTest {
+
+  @Autowired
+  private ValidatingRepository repository;
+
+  @Autowired
+  private EntityManager entityManager;
+
+  @Test
+  void whenInputIsInvalid_thenThrowsException() {
+    Input input = invalidInput();
+
+    assertThrows(ConstraintViolationException.class, () -> {
+      repository.save(input);
+      entityManager.flush();
+    });
+  }
+}
+
+@ExtendWith(SpringExtension.class)
+@SpringBootTest
+class ProgrammaticallyValidatingServiceTest {
+
+  @Autowired
+  private ProgrammaticallyValidatingService service;
+
+  @Test
+  void whenInputIsInvalid_thenThrowsException(){
+    Input input = invalidInput();
+
+    assertThrows(ConstraintViolationException.class, () -> {
+      service.validateInput(input);
+    });
+  }
+
+  @Test
+  void givenInjectedValidator_whenInputIsInvalid_thenThrowsException(){
+    Input input = invalidInput();
+
+    assertThrows(ConstraintViolationException.class, () -> {
+      service.validateInputWithInjectedValidator(input);
+    });
+  }
+}
+
+@ExtendWith(SpringExtension.class)
+@SpringBootTest
+class ValidatingServiceWithGroupsTest {
+
+  @Autowired
+  private ValidatingServiceWithGroups service;
+
+  @Test
+  void whenInputIsInvalidForCreate_thenThrowsException() {
+    InputWithGroups input = validInput();
+    input.setId(42L);
+    
+    assertThrows(ConstraintViolationException.class, () -> {
+      service.validateForCreate(input);
+    });
+  }
+
+  @Test
+  void whenInputIsInvalidForUpdate_thenThrowsException() {
+    InputWithGroups input = validInput();
+    input.setId(null);
+    
+    assertThrows(ConstraintViolationException.class, () -> {
+      service.validateForUpdate(input);
+    });
+  }
+}
+-------------------------------------------------------------------------------------------------------
+package com.paragon.microservices.distributor.service.impl;
+
+import com.google.common.base.Objects;
+import com.paragon.microservices.distributor.model.entity.LocaleEntity;
+import com.paragon.microservices.distributor.model.entity.LocaleVersionEntity;
+import com.paragon.microservices.distributor.model.entity.QLocaleVersionEntity;
+import com.paragon.microservices.distributor.model.entity.VersionEntity;
+import com.paragon.microservices.distributor.repository.LocaleVersionRepository;
+import com.paragon.microservices.distributor.service.interfaces.LocaleVersionService;
+import lombok.*;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static com.google.common.collect.Sets.newHashSet;
+import static com.paragon.mailingcontour.commons.constraint.utils.ConstraintUtils.not;
+import static com.paragon.mailingcontour.commons.exception.InvalidParameterException.throwInvalidParameter;
+import static com.paragon.mailingcontour.commons.utils.ServiceUtils.streamOf;
+import static com.paragon.microservices.distributor.system.utils.ServiceUtils.contains;
+
+/**
+ * {@link LocaleVersionService} implementation
+ */
+@Slf4j
+@Service
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
+@Getter(AccessLevel.PROTECTED)
+@RequiredArgsConstructor
+public class LocaleVersionServiceImpl extends AuditServiceImpl<LocaleVersionEntity, QLocaleVersionEntity, LocaleVersionEntity.LocaleVersionID> implements LocaleVersionService {
+    private final LocaleVersionRepository localeVersionRepository;
+
+    @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    @SuppressWarnings("unchecked")
+    public <S extends LocaleVersionEntity> Iterable<S> createLocaleVersionBindings(final VersionEntity version, final Iterable<LocaleEntity> locales) {
+        log.info("Creating locale version records by input parameters: version: {}, locales: {}", version, locales);
+        return (Iterable<S>) Optional.ofNullable(version)
+                .map(value -> streamOf(locales)
+                        .map(locale -> this.buildLocaleVersionEntity(locale, value))
+                        .collect(Collectors.toList()))
+                .map(this::saveAll)
+                .orElseThrow(() -> throwInvalidParameter(this.getMessageSource(), version, locales));
+    }
+
+    @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public LocaleVersionEntity createLocaleVersionBinding(final VersionEntity version, final LocaleEntity locale) {
+        log.info("Creating locale version record by input parameters: version: {}, locale: {}", version, locale);
+        return Optional.ofNullable(version)
+                .map(value -> this.buildLocaleVersionEntity(locale, value))
+                .map(this::save)
+                .orElseThrow(() -> throwInvalidParameter(this.getMessageSource(), version, locale));
+    }
+
+    @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    @SuppressWarnings("unchecked")
+    public <S extends LocaleVersionEntity> Iterable<S> deleteLocaleVersionBindings(final VersionEntity version, final Iterable<LocaleEntity> locales) {
+        log.info("Deleting locale version records by input parameters: version: {}, locales: {}", version, locales);
+        return (Iterable<S>) Optional.ofNullable(version)
+                .map(value -> streamOf(locales)
+                        .map(locale -> this.buildLocaleVersionEntity(locale, value))
+                        .collect(Collectors.toList()))
+                .map(this::deleteAll)
+                .orElseThrow(() -> throwInvalidParameter(this.getMessageSource(), version, locales));
+    }
+
+    @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public LocaleVersionEntity deleteLocaleVersionBinding(final VersionEntity version, final LocaleEntity locale) {
+        log.info("Deleting locale version record by input parameters: version: {}, locale: {}", version, locale);
+        return Optional.ofNullable(version)
+                .map(value -> this.buildLocaleVersionEntity(locale, value))
+                .map(this::delete)
+                .orElseThrow(() -> throwInvalidParameter(this.getMessageSource(), version, locale));
+    }
+
+    @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    @SuppressWarnings("unchecked")
+    public <S extends LocaleVersionEntity> Iterable<S> updateLocaleVersionBindings(final VersionEntity version, final Iterable<LocaleEntity> locales) {
+        log.info("Updating locale version records by input parameters: version: {}, locales: {}", version, locales);
+        return (Iterable<S>) Optional.ofNullable(version)
+                .map(entity -> {
+                            final Set<LocaleVersionEntity> localeVersions = new HashSet<>();
+                            final List<LocaleVersionEntity> l = streamOf(entity.getLocales())
+                                    .map(locale -> {
+                                        if (newHashSet(locales).contains(locale.getLocale())) {
+                                            localeVersions.add(locale);
+                                        } else {
+                                            final Set<LocaleVersionEntity> result = locale.getLocale().getVersions().stream().filter(lo -> !Objects.equal(lo, locale)).collect(Collectors.toSet());
+                                            locale.getLocale().setVersions(result);
+                                        }
+                                        return locale;
+                                    })
+                                    .filter(not(locale -> contains(locales, locale.getLocale())))
+                                    .collect(Collectors.toList());
+                            version.setLocales(localeVersions);
+                            return l;
+                        }
+                )
+                //.map(this::deleteAll)
+                .map(entity -> {
+                    streamOf(locales)
+                            .filter(locale -> version.getLocales().stream().noneMatch(l -> Objects.equal(l.getLocale(), locale)))
+                            .map(locale -> this.buildLocaleVersionEntity(locale, version))
+                            .forEach(version::addLocale);
+                    return entity;
+                })
+                .map(entity -> version.getLocales())
+                //.map(this::saveAll)
+                .orElseThrow(() -> throwInvalidParameter(this.getMessageSource(), version, locales));
+    }
+
+    private LocaleVersionEntity buildLocaleVersionEntity(final LocaleEntity locale, final VersionEntity version) {
+        final LocaleVersionEntity localeVersionEntity = new LocaleVersionEntity();
+        localeVersionEntity.setLocale(locale);
+        localeVersionEntity.setVersion(version);
+        return localeVersionEntity;
+    }
+
+    @Override
+    protected LocaleVersionRepository getRepository() {
+        return this.localeVersionRepository;
+    }
+}
+-------------------------------------------------------------------------------------------------------
+  #  - changeSet:
+  #      id: 18
+  #      author: chuprikov (generated)
+  #      objectQuotingStrategy: QUOTE_ALL_OBJECTS
+  #      preConditions:
+  #        - onFail: MARK_RAN
+  #        - not:
+  #            - tableExists:
+  #                tableName: REVCHANGES
+  #      changes:
+  #        - createTable:
+  #            columns:
+  #              - column:
+  #                  constraints:
+  #                    nullable: false
+  #                  name: REV
+  #                  type: INTEGER
+  #              - column:
+  #                  constraints:
+  #                    nullable: false
+  #                  name: ENTITYNAME
+  #                  type: VARCHAR(255)
+  #            tableName: REVCHANGES
+  #  - changeSet:
+  #      id: 19
+  #      author: chuprikov (generated)
+  #      objectQuotingStrategy: QUOTE_ALL_OBJECTS
+  #      preConditions:
+  #        - onFail: MARK_RAN
+  #        - not:
+  #            - primaryKeyExists:
+  #                primaryKeyName: REVCHANGES_pkey
+  #                tableName: REVCHANGES
+  #      changes:
+  #        - addPrimaryKey:
+  #            columnNames: REV
+  #            constraintName: REVCHANGES_pkey
+  #            tableName: REVCHANGES
+  #  - changeSet:
+  #      id: 20
+  #      author: chuprikov (generated)
+  #      objectQuotingStrategy: QUOTE_ALL_OBJECTS
+  #      preConditions:
+  #        - onFail: MARK_RAN
+  #        - not:
+  #            - foreignKeyConstraintExists:
+  #                foreignKeyName: fk_revchanges_revinfo_id
+  #      changes:
+  #        - addForeignKeyConstraint:
+  #            baseColumnNames: REV
+  #            baseTableName: REVCHANGES
+  #            constraintName: fk_revchanges_revinfo_id
+  #            deferrable: true
+  #            initiallyDeferred: true
+  #            onDelete: CASCADE
+  #            onUpdate: RESTRICT
+  #            referencedColumnNames: id
+  #            referencedTableName: REVINFO
+-------------------------------------------------------------------------------------------------------
+package com.paragon.microservices.distributor.controller.impl;
+
+import com.google.common.io.ByteStreams;
+import com.paragon.mailingcontour.commons.security.model.AuthenticatedUser;
+import com.paragon.microservices.distributor.controller.interfaces.DownloadController;
+import com.paragon.microservices.distributor.model.domain.*;
+import com.paragon.microservices.distributor.model.entity.FileEntity;
+import com.paragon.microservices.distributor.model.entity.ProductEntity;
+import com.paragon.microservices.distributor.model.enumeration.DownloadStatus;
+import com.paragon.microservices.distributor.repository.ProductRepository;
+import com.paragon.microservices.distributor.repository.VersionRepository;
+import com.paragon.microservices.distributor.service.impl.VersionServiceImpl;
+import com.paragon.microservices.distributor.service.interfaces.DownloadService;
+import com.paragon.microservices.distributor.service.interfaces.FileService;
+import com.paragon.microservices.distributor.service.interfaces.FileTransferService;
+import com.paragon.microservices.distributor.service.interfaces.SessionService;
+import com.paragon.microservices.distributor.system.constraint.FileNamePattern;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.tomcat.util.http.fileupload.IOUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+import org.springframework.web.servlet.view.RedirectView;
+
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+import static com.paragon.microservices.distributor.system.configuration.SwaggerConfiguration.ResourceEndpoint.DOWNLOAD_RESOURCE_ENDPOINT;
+import static com.paragon.microservices.distributor.system.utils.HeaderUtils.getFileDownloadHeaders;
+
+/**
+ * {@link DownloadController} implementation
+ */
+@Slf4j
+@Getter(AccessLevel.PROTECTED)
+@RestController
+@Validated
+@Transactional(rollbackFor = Exception.class, readOnly = true)
+@RequestMapping(
+        value = DOWNLOAD_RESOURCE_ENDPOINT,
+        produces = {MediaType.APPLICATION_JSON_UTF8_VALUE}
+)
+public class DownloadControllerImpl extends BaseControllerImpl implements DownloadController {
+    private final DownloadService downloadService;
+    private final FileTransferService fileTransferService;
+    private final FileService fileService;
+    private final ApplicationEventPublisher eventPublisher;
+
+    @Autowired
+    public DownloadControllerImpl(final MessageSource messageSource,
+                                  final DownloadService downloadService,
+                                  final FileTransferService fileTransferService,
+                                  final FileService fileService,
+                                  final ApplicationEventPublisher eventPublisher) {
+        super(messageSource);
+        this.downloadService = downloadService;
+        this.fileTransferService = fileTransferService;
+        this.fileService = fileService;
+        this.eventPublisher = eventPublisher;
+    }
+
+    @Override
+    @GetMapping(name = "generateDownloadLinkByIds", params = {"productId", "versionId", "binaryId"})
+    public RedirectView generateDownloadLinkByIds(final UUID productId,
+                                                  final UUID versionId,
+                                                  final UUID binaryId,
+                                                  final AuthenticatedUser authenticatedUser) {
+        return Stream.of(this.getDownloadService().generateDownloadLink(binaryId, authenticatedUser.getUserId()))
+                .map(downloadLink -> {
+                    final RedirectView redirectView = new RedirectView(downloadLink.getUrl(), true);
+                    redirectView.setStatusCode(HttpStatus.PERMANENT_REDIRECT);
+                    return redirectView;
+                })
+                .findFirst()
+                .get();
+    }
+
+    @Override
+    @GetMapping(name = "generateDownloadLinkByNames", params = {"sku", "version", "locale", "platform"})
+    public RedirectView generateDownloadLinkByNames(final String sku,
+                                                    final String version,
+                                                    final String locale,
+                                                    final String platform,
+                                                    final AuthenticatedUser authenticatedUser) {
+        return Stream.of(FileSearchParameters.of(sku, version, locale, platform, authenticatedUser.getUserId()))
+                .map(params -> this.getDownloadService().generateDownloadLink(params))
+                .map(downloadLink -> {
+                    final RedirectView redirectView = new RedirectView(downloadLink.getUrl(), true);
+                    redirectView.setStatusCode(HttpStatus.PERMANENT_REDIRECT);
+                    return redirectView;
+                })
+                .findFirst()
+                .get();
+    }
+
+    @GetMapping("/{sessionId}/{fileName}")
+    @Override
+    public ResponseEntity<StreamingResponseBody> getResourceAsStream(@PathVariable final UUID sessionId,
+                                                                     @PathVariable final String fileName) {
+        return Stream.of(this.getFileTransferService().getFileData(sessionId))
+                .map(fileData -> ResponseEntity.ok()
+                        .headers(getFileDownloadHeaders(fileData.getFileMetaData()))
+                        .body(this.toByteStreamResponseBody(fileData))
+                )
+                .findFirst()
+                .get();
+    }
+
+    @GetMapping("/2/{sessionId}/{fileName}")
+    public ResponseEntity<StreamingResponseBody> getResourceAsStream2(@PathVariable final UUID sessionId,
+                                                                      @PathVariable @FileNamePattern final String fileName) {
+        return Stream.of(this.getFileTransferService().getFileData(sessionId))
+                .map(fileData -> ResponseEntity.ok()
+                        .headers(getFileDownloadHeaders(fileData.getFileMetaData()))
+                        .body(this.toZipStreamResponseBody(fileData))
+                )
+                .findFirst()
+                .get();
+    }
+
+    @GetMapping("/3/{sessionId}/{fileName}")
+    public ResponseEntity<StreamingResponseBody> getResourceAsStream3(@PathVariable final UUID sessionId,
+                                                                      @PathVariable @FileNamePattern final String fileName) {
+        return Stream.of(this.getFileTransferService().getFileData(sessionId))
+                .map(fileData -> ResponseEntity.ok()
+                        .headers(getFileDownloadHeaders(fileData.getFileMetaData()))
+                        .body(this.toBufferedStreamResponseBody(fileData))
+                )
+                .findFirst()
+                .get();
+    }
+
+    @GetMapping("/4/{sessionId}/{fileName}")
+    public ResponseEntity<StreamingResponseBody> getResourceAsStream4(@PathVariable final UUID sessionId,
+                                                                      @PathVariable @FileNamePattern final String fileName) {
+        return Stream.of(this.getFileTransferService().getFileData(sessionId))
+                .map(fileData -> ResponseEntity.ok()
+                        .headers(getFileDownloadHeaders(fileData.getFileMetaData()))
+                        .body(this.toStreamResponseBody(fileData))
+                )
+                .findFirst()
+                .get();
+    }
+
+    @Autowired
+    private SessionService sessionService;
+    @Autowired
+    private ProductRepository productRepository;
+    @Autowired
+    private VersionServiceImpl versionService;
+    @Autowired
+    private VersionRepository versionRepository;
+
+    @GetMapping("/myusers2")
+    public ResponseEntity<FileEntity> findAllByQuerydsl2(@RequestParam(value = "sku") String sku,
+                                                         @RequestParam(value = "version", required = false) String version,
+                                                         @RequestParam(value = "locale") String locale,
+                                                         @RequestParam(value = "platform") String platform) {
+        return ResponseEntity.ok(this.getFileService().searchFileRecord(FileSearchParameters.of(sku, version, locale, platform)).get());
+    }
+
+    @GetMapping("/user")
+    public ResponseEntity<CompletableFuture<Iterable<ProductEntity>>> user() {
+        return ResponseEntity.ok().body(this.getProductRepository().findByUserIsCurrentUser());
+    }
+
+    @GetMapping("/created")
+    public ResponseEntity init() {
+        final Session session = new Session();
+        session.setId("c108cda3-8b4b-483d-a987-d65e6bfe3024");
+        session.setFilepath("C:\\git-project\\paragon.microservices.distributor");
+        session.setFilename("lombok.config");
+        session.setDownloadStatus(DownloadStatus.NEW);
+        this.getSessionService().save(session);
+        return ResponseEntity.ok().build();
+    }
+
+    private StreamingResponseBody toByteStreamResponseBody(final FileData fileData) {
+        return outputStream -> {
+            this.notifyEvent(fileData).accept(DownloadStatus.DOWNLOADING);
+            try {
+                ByteStreams.copy(fileData.getFileStream(), outputStream);
+                outputStream.flush();
+                this.notifyEvent(fileData).accept(DownloadStatus.FINISHED);
+            } catch (final IOException ex) {
+                log.error("Unable to stream file source, message: {}", ex.getMessage());
+                this.notifyEvent(fileData).accept(DownloadStatus.INTERRUPTED);
+            }
+        };
+    }
+
+    private StreamingResponseBody toZipStreamResponseBody(final FileData fileData) {
+        return outputStream -> {
+            this.notifyEvent(fileData).accept(DownloadStatus.DOWNLOADING);
+            final ZipOutputStream zipOut = new ZipOutputStream(outputStream);
+            try {
+                final ZipEntry zipEntry = new ZipEntry(fileData.getFileMetaData().getFileName());
+                zipOut.putNextEntry(zipEntry);
+
+                final byte[] bytes = new byte[1024];
+                int length;
+                while ((length = fileData.getFileStream().read(bytes)) >= 0) {
+                    zipOut.write(bytes, 0, length);
+                }
+                fileData.getFileStream().close();
+                zipOut.close();
+                this.notifyEvent(fileData).accept(DownloadStatus.FINISHED);
+            } catch (final IOException ex) {
+                log.error("Unable to stream file source, message: {}", ex.getMessage());
+                this.notifyEvent(fileData).accept(DownloadStatus.INTERRUPTED);
+            }
+        };
+    }
+
+    private StreamingResponseBody toBufferedStreamResponseBody(final FileData fileData) {
+        return outputStream -> {
+            this.notifyEvent(fileData).accept(DownloadStatus.DOWNLOADING);
+            try (final BufferedInputStream br = new BufferedInputStream(fileData.getFileStream())) {
+                byte[] contents = new byte[1024];
+                while (br.read(contents) != -1) {
+                    outputStream.write(contents);
+                    outputStream.flush();
+                    contents = new byte[1024];
+                }
+                this.notifyEvent(fileData).accept(DownloadStatus.FINISHED);
+            } catch (IOException ex) {
+                try {
+                    fileData.getFileStream().close();
+                } catch (IOException closingException) {
+                    log.warn("could not close command result, a http connection may be leaked !", closingException);
+                }
+                log.error("Unable to stream file source, message: {}", ex.getMessage());
+                this.notifyEvent(fileData).accept(DownloadStatus.INTERRUPTED);
+            }
+        };
+    }
+
+    private StreamingResponseBody toStreamResponseBody(final FileData fileData) {
+        return outputStream -> {
+            try {
+                this.notifyEvent(fileData).accept(DownloadStatus.DOWNLOADING);
+                IOUtils.copyLarge(fileData.getFileStream(), outputStream);
+                outputStream.flush();
+                this.notifyEvent(fileData).accept(DownloadStatus.FINISHED);
+            } catch (IOException ex) {
+                try {
+                    fileData.getFileStream().close();
+                } catch (IOException closingException) {
+                    log.warn("could not close command result, a http connection may be leaked!", closingException);
+                }
+                log.error("Unable to stream file source, message: {}", ex.getMessage());
+                this.notifyEvent(fileData).accept(DownloadStatus.INTERRUPTED);
+            }
+        };
+    }
+
+    private Consumer<DownloadStatus> notifyEvent(final FileData fileData) {
+        return status -> this.getEventPublisher().publishEvent(new DownloadEvent(this, MessageEntity.of(fileData.getSessionId(), status)));
+    }
+}
+
+-------------------------------------------------------------------------------------------------------
+    //    private Type pageableMixin() {
+//        return new AlternateTypeBuilder()
+//                .fullyQualifiedClassName(
+//                        String.format("%s.generated.%s",
+//                                Pageable.class.getPackage().getName(),
+//                                Pageable.class.getSimpleName()))
+//                .withProperties(Arrays.asList(
+//                        property(Integer.class, "page"),
+//                        property(Integer.class, "limit"),
+//                        property(String.class, "sort")
+//                ))
+//                .build();
+//    }
+-------------------------------------------------------------------------------------------------------
+@Configuration
+@EnableWebMvc
+public class WebConfig extends WebMvcConfigurerAdapter {
+
+
+@Override
+public void addViewControllers(ViewControllerRegistry registry) {
+
+    registry.addRedirectViewController("/v1/subscriptions/doc", "/doc?group=subscriptions");
+
+
+}
+}
+-------------------------------------------------------------------------------------------------------
+### direct log messages to stdout ###
+log4j.appender.stdout=org.apache.log4j.ConsoleAppender
+log4j.appender.stdout.Target=System.out
+log4j.appender.stdout.layout=org.apache.log4j.PatternLayout
+log4j.appender.stdout.layout.ConversionPattern=%d{ABSOLUTE} %5p %c{1}:%L - %m%n
+ 
+### direct messages to file hibernate.log ###
+#log4j.appender.file=org.apache.log4j.FileAppender
+#log4j.appender.file.File=hibernate.log
+#log4j.appender.file.layout=org.apache.log4j.PatternLayout
+#log4j.appender.file.layout.ConversionPattern=%d{ABSOLUTE} %5p %c{1}:%L - %m%n
+ 
+### set log levels - for more verbose logging change 'info' to 'debug' ###
+ 
+log4j.rootLogger=warn, stdout
+ 
+log4j.logger.javax.naming=none
+ 
+#log4j.logger.org.hibernate=info
+log4j.logger.org.hibernate=warn
+ 
+### log HQL query parser activity
+#log4j.logger.org.hibernate.hql.ast.AST=debug
+ 
+### log just the SQL
+log4j.logger.org.hibernate.SQL=debug
+ 
+### log JDBC bind parameters ###
+log4j.logger.org.hibernate.type=debug
+ 
+### log schema export/update ###
+#log4j.logger.org.hibernate.tool.hbm2ddl=debug
+ 
+### log HQL parse trees
+#log4j.logger.org.hibernate.hql=debug
+ 
+### log cache activity ###
+#log4j.logger.org.hibernate.cache=debug
+ 
+### log transaction activity
+#log4j.logger.org.hibernate.transaction=debug
+ 
+### log JDBC resource acquisition
+#log4j.logger.org.hibernate.jdbc=debug
+ 
+### enable the following line if you want to track down connection ###
+### leakages when using DriverManagerConnectionProvider ###
+#log4j.logger.org.hibernate.connection.DriverManagerConnectionProvider=trace
+-------------------------------------------------------------------------------------------------------
+@Entity
+@Where(clause = "DELETED = 0")
+public class Foo {
+    // other mappings
+ 
+    @Column(name = "DELETED")
+    private Integer deleted = 0;
+     
+    // getters and setters
+ 
+    public void setDeleted() {
+        this.deleted = 1;
+    }
+}
+-------------------------------------------------------------------------------------------------------
+    IntFunction<IntFunction<String>> function = i -> j -> String.format("%d x %2d = %2d", i, j, i * j);
+    IntFunction<IntFunction<IntFunction<String>>> repeaterX = count -> i -> j ->
+            IntStream.range(0, count)
+                    .mapToObj(delta -> function.apply(i + delta).apply(j))
+                    .collect(Collectors.joining("\t"));
+    IntFunction<IntFunction<IntFunction<IntFunction<String>>>> repeaterY = countY -> countX -> i -> j ->
+            IntStream.range(0, countY)
+                    .mapToObj(deltaY -> repeaterX.apply(countX).apply(i).apply(j + deltaY))
+                    .collect(Collectors.joining("\n"));
+    IntFunction<String> row = i -> repeaterY.apply(10).apply(4).apply(i).apply(1) + "\n";
+    IntStream.of(2, 6).mapToObj(row).forEach(System.out::println);
+
+-------------------------------------------------------------------------------------------------------
+@PostMapping("/result")
+    public String result(@Valid @ModelAttribute("employee") Employee employee, BindingResult bindingResult){
+        List<FieldError> errors = bindingResult.getFieldErrors();
+        for (FieldError error : errors ) {
+         System.out.println (error.getObjectName() + " - " +error.getDefaultMessage());
+        }
+        System.out.print(employee.getName()); 
+        empService.save(employee);
+        return "result"; 
+    }
+-------------------------------------------------------------------------------------------------------
+@XmlRootElement(name = "employee")
+@XmlAccessorType(XmlAccessType.FIELD)
+public class EmployeeVO extends ResourceSupport implements Serializable
+{
+    private Integer employeeId;
+    private String firstName;
+    private String lastName;
+    private String email;
+ 
+    public EmployeeVO(Integer id, String firstName, String lastName, String email) {
+        super();
+        this.employeeId = id;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+    }
+ 
+    public EmployeeVO() {
+    }
+     
+    //Removed setter/getter for readability
+}
+-------------------------------------------------------------------------------------------------------
+List<T> intersect = list1.stream()
+    .filter(list2::contains)
+    .collect(Collectors.toList());
+
+List<T> union = Stream.concat(list1.stream(), list2.stream())
+    .distinct()
+    .collect(Collectors.toList());
+-------------------------------------------------------------------------------------------------------
 @Test
 public void whenFilteringAndTransformingCollection_thenCorrect() {
     Predicate<String> predicate = new Predicate<String>() {
