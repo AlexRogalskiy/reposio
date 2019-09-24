@@ -40634,6 +40634,154 @@ public interface PersonRepository extends JpaRepository<Job, Integer>,
         });
     }
 -------------------------------------------------------------------------------------------------------
+@Component
+public class SwaggerWebFilter implements WebFilter {
+    @Override
+    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+        ServerHttpRequest request = exchange.getRequest();
+        String path = request.getPath().pathWithinApplication().value();
+        if (path.startsWith("/api/swagger-ui.html") || path.startsWith("/api/webjars")
+                || path.startsWith("/api/api-docs") || path.startsWith("/api/configuration")
+                || path.startsWith("/api/swagger-resources") || path.startsWith("/api/v2"))) {
+            exchange = exchange.mutate().request(request.mutate().path(path.substring(4)).build()).build();
+        }
+        return chain.filter(exchange);
+    }
+}
+
+-------------------------------------------------------------------------------------------------------
+//package com.paragon.microservices.distributor.system.handler;
+//
+//import com.paragon.mailingcontour.commons.configuration.BaseExceptionHandler;
+//import lombok.RequiredArgsConstructor;
+//import org.springframework.beans.factory.annotation.Value;
+////import org.springframework.boot.web.servlet.error.ErrorAttributes;
+//import org.springframework.boot.web.servlet.error.ErrorController;
+//import org.springframework.http.HttpStatus;
+//import org.springframework.http.ResponseEntity;
+//import org.springframework.stereotype.Controller;
+//import org.springframework.web.bind.annotation.RequestMapping;
+//import org.springframework.web.bind.annotation.ResponseBody;
+//import org.springframework.web.context.request.WebRequest;
+//
+//import javax.servlet.http.HttpServletResponse;
+//import java.util.HashMap;
+//import java.util.Map;
+//
+//@Controller
+//@RequiredArgsConstructor
+//public class BaseErrorController implements ErrorController {
+//    //private final ErrorAttributes errorAttributes;
+//
+//    @Value("${server.error.path:${error.path:/error}}")
+//    private String path;
+//
+//    @RequestMapping("${server.error.path:${error.path:/error}}")
+//    @ResponseBody
+//    public ResponseEntity<BaseExceptionHandler.ExceptionResponse> handleError(final WebRequest request, final HttpServletResponse response) {
+//        final Map<String, Object> errorAttributes = this.getErrorAttributes(request, false);
+//        return BaseExceptionHandler.buildResponse(String.valueOf(errorAttributes.get("path")), String.valueOf(errorAttributes.get("message")), HttpStatus.valueOf(response.getStatus()));
+//    }
+//
+//    @Override
+//    public String getErrorPath() {
+//        return this.path;
+//    }
+//
+//    private Map<String, Object> getErrorAttributes(final WebRequest request, final boolean includeStackTrace) {
+//        final Map<String, Object> errorMap = new HashMap<>();
+//        //errorMap.putAll(this.errorAttributes.getErrorAttributes(request, includeStackTrace));
+//        return errorMap;
+//    }
+//}
+-------------------------------------------------------------------------------------------------------
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.paragon.microservices.distributor.system.constraint.LocaleNamePattern;
+import com.querydsl.core.annotations.QueryEmbeddable;
+import com.querydsl.core.annotations.QueryEmbedded;
+import com.querydsl.core.annotations.QueryInit;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.UtilityClass;
+import org.hibernate.search.annotations.*;
+import org.springframework.validation.annotation.Validated;
+
+import javax.persistence.MappedSuperclass;
+import java.io.Serializable;
+
+import static com.paragon.microservices.distributor.model.entity.LocaleInfoEntity.Info.LOCALE_NAME;
+import static com.paragon.microservices.distributor.model.entity.LocaleInfoEntity.Info.MODEL_NAME;
+
+/**
+ * Locale info entity model
+ */
+@Data
+@Builder
+@Validated
+@MappedSuperclass
+@QueryEmbeddable
+@AllArgsConstructor
+@NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+@Indexed(index = MODEL_NAME)
+@Analyzer(impl = org.apache.lucene.analysis.standard.StandardAnalyzer.class)
+public class LocaleInfoEntity implements Serializable {
+
+    /**
+     * Default explicit serialVersionUID for interoperability
+     */
+    private static final long serialVersionUID = -6290509514067539190L;
+
+    @QueryEmbedded
+    @QueryInit("*.*")
+    @JsonProperty(value = LOCALE_NAME, required = true)
+    @Field(name = LOCALE_NAME, index = Index.YES, analyze = Analyze.YES, store = Store.YES)
+    @LocaleNamePattern(message = "{model.entity.locale.name.pattern.notValid}")
+    private String localeName;
+
+    @UtilityClass
+    public static final class Info {
+        /**
+         * Default model ID
+         */
+        static final String MODEL_NAME = "LocaleInfo";
+        /**
+         * Default field names
+         */
+        public static final String LOCALE_NAME = "locale";
+    }
+}
+-------------------------------------------------------------------------------------------------------
+String input = ...;
+try {
+    DateTimeFormatter formatter =
+                      DateTimeFormatter.ofPattern("MMM d yyyy");
+    LocalDate date = LocalDate.parse(input, formatter);
+    System.out.printf("%s%n", date);
+}
+catch (DateTimeParseException exc) {
+    System.out.printf("%s is not parsable!%n", input);
+    throw exc;      // Rethrow the exception.
+}
+
+ZoneId leavingZone = ...;
+ZonedDateTime departure = ...;
+
+try {
+    DateTimeFormatter format = DateTimeFormatter.ofPattern("MMM d yyyy  hh:mm a");
+    String out = departure.format(format);
+    System.out.printf("LEAVING:  %s (%s)%n", out, leavingZone);
+}
+catch (DateTimeException exc) {
+    System.out.printf("%s can't be formatted!%n", departure);
+    throw exc;
+}
+-------------------------------------------------------------------------------------------------------
 @Controller
 class UserController {
 
