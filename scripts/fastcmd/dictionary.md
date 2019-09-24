@@ -46301,6 +46301,1159 @@ fragment Y      : [yY];
 fragment Z      : [zZ];
 fragment SPACE  : ' ';
 --------------------------------------------------------------------------------------------------------
+@ComponentScan(basePackages = {"xxx.xxx.xxx"})
+@Configuration
+@EnableAspectJAutoProxy
+@Import({
+        SwaggerConfiguration.class
+})
+@EnableWebMvc
+public class WebConfig extends WebMvcConfigurerAdapter {
+
+    private static final Logger logger = LoggerFactory.getLogger(WebConfig.class);
+
+    private static final int CACHE_PERIOD = 3600; // one year
+
+    @Autowired
+    private RequestMappingHandlerAdapter requestMappingHandlerAdapter;
+
+
+
+    @Inject
+    private Environment env;
+
+    public WebConfig() {
+        super();
+    }
+
+    @PostConstruct
+    public void init() {
+        requestMappingHandlerAdapter.setIgnoreDefaultModelOnRedirect(true);
+    }
+
+
+    @Override
+    public void configureDefaultServletHandling(DefaultServletHandlerConfigurer configurer) {
+        if(env.getActiveProfiles().length > 0)
+            logger.info("Web application  configuration , using profile {} ", Arrays.toString(env.getActiveProfiles()));
+
+        //configurer.enable();
+    }
+
+    @Override
+    public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
+        ObjectMapper objectMapper = null;
+        for (HttpMessageConverter converter : converters) {
+            if (converter instanceof MappingJackson2HttpMessageConverter) {
+                MappingJackson2HttpMessageConverter jacksonConverter =
+                        ((MappingJackson2HttpMessageConverter) converter);
+
+                if (objectMapper == null) {
+                    objectMapper = jacksonConverter.getObjectMapper();
+                } else {
+                    jacksonConverter.setObjectMapper(objectMapper);
+                }
+            }
+        }
+    }
+
+
+
+    @Profile(ProfileConsts.GNG_DEV)
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+
+        logger.debug("Registering swagger ui path begun");
+
+        registry
+                .addResourceHandler("swagger-ui.html")
+                .addResourceLocations("classpath:/META-INF/resources/swagger-ui.html")
+                .setCachePeriod(CACHE_PERIOD)
+                .resourceChain(true)
+                .addResolver(new GzipResourceResolver())
+                .addResolver(new PathResourceResolver());
+
+        registry
+                .addResourceHandler("/webjars/** ")
+                .addResourceLocations("classpath:/META-INF/resources/webjars/")
+                .setCachePeriod(CACHE_PERIOD)
+                .resourceChain(true)
+                .addResolver(new GzipResourceResolver())
+                .addResolver(new PathResourceResolver());
+
+        logger.debug("Swagger ui path registered successfully !! ");
+
+    }
+
+    @Override
+    public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
+        super.configureMessageConverters(converters);
+    }
+
+    @Override
+    public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {
+
+        logger.debug("Registering content negotiation configurer started ...");
+
+
+        configurer.favorPathExtension(false)
+                .favorParameter(true)
+                .parameterName("mediaType")
+                .ignoreAcceptHeader(true)
+                .useJaf(false)
+                .defaultContentType(MediaType.APPLICATION_JSON)
+                .mediaType("xml", MediaType.APPLICATION_XML)
+                .mediaType("json", MediaType.APPLICATION_JSON);
+
+        logger.debug("Registering content negotiation configurer completed");
+    }
+
+    @Bean
+    public ViewResolver internalResourceViewResolver() {
+        logger.debug("Registering view resolver started ...");
+
+        InternalResourceViewResolver viewResolver = new InternalResourceViewResolver();
+        viewResolver.setViewClass(JstlView.class);
+        viewResolver.setPrefix("/WEB-INF/views/jsp/");
+        viewResolver.setSuffix(".jsp");
+
+        logger.debug("Registering view resolver completed successfully  ...");
+
+        return viewResolver;
+    }
+
+    @Bean
+    public CommonsMultipartResolver multipartResolver() {
+        logger.debug("Registering multipart resolver started ...");
+
+        CommonsMultipartResolver commonsMultipartResolver = new CommonsMultipartResolver();
+        commonsMultipartResolver.setMaxInMemorySize(1048576);
+        commonsMultipartResolver.setMaxUploadSize(52428800);
+
+        logger.debug("Registering multipart resolver completed successfully !!");
+
+        return commonsMultipartResolver;
+    }
+
+    @Override
+    public org.springframework.validation.Validator getValidator() {
+        return new LocalValidatorFactoryBean();
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        logger.debug("Registering interceptor started ...");
+
+        registry.addInterceptor(new LocaleChangeInterceptor());
+        registry.addInterceptor(interceptor()).addPathPatterns("/**");
+
+        logger.debug("Registering interceptor completed successfully !!");
+
+    }
+
+    @Bean
+    public TokenAuthInterceptor interceptor() {
+        return new TokenAuthInterceptor();
+    }
+
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+
+        logger.debug("Registration of cors started ... ");
+
+        registry
+                .addMapping("/** ")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowCredentials(false)
+                .allowedHeaders("Content-Type,X-Requested-With,accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers,token-key,username,password")
+                .maxAge(1);
+
+        logger.debug("Registration of cors completed successfully !! ");
+
+    }
+
+    @Override
+    public void configureHandlerExceptionResolvers(List<HandlerExceptionResolver> exceptionResolvers) {
+        exceptionResolvers.add(exceptionHandlerExceptionResolver());
+        exceptionResolvers.add(restExceptionResolver());
+    }
+
+    @Bean
+    public ExceptionHandlerExceptionResolver exceptionHandlerExceptionResolver() {
+
+        logger.info("Registering of rest exception handling started ...");
+
+        ExceptionHandlerExceptionResolver resolver = new ExceptionHandlerExceptionResolver();
+
+        resolver.setMessageConverters(HttpMessageConverterUtils.getDefaultHttpMessageConverters());
+
+        logger.debug("Registration of rest exception handling completed successfully !! ");
+
+        return resolver;
+    }
+
+    @Bean
+    public RestHandlerExceptionResolver restExceptionResolver() {
+        return RestHandlerExceptionResolver
+                .builder()
+                .messageSource(httpErrorMessageSource())
+                .defaultContentType(MediaType.APPLICATION_JSON)
+                .addErrorMessageHandler(EmptyResultDataAccessException.class, org.springframework.http.HttpStatus.NOT_FOUND)
+                .build();
+    }
+
+    @Bean
+    public MessageSource httpErrorMessageSource() {
+        ReloadableResourceBundleMessageSource m = new ReloadableResourceBundleMessageSource();
+        m.setBasename("classpath:/org/example/messages");
+        m.setDefaultEncoding("UTF-8");
+        return m;
+    }
+
+    @Override
+    public void addFormatters(FormatterRegistry registry) {
+
+        logger.debug("Registration of formatter started ...");
+
+        logger.info("Setting date time formatter ");
+
+        DateTimeFormatterRegistrar registrar = new DateTimeFormatterRegistrar();
+
+        registrar.setUseIsoFormat(true);
+
+        registrar.registerFormatters(registry);
+
+        logger.debug("Registration of formatter completed successfully ...");
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+@ApiImplicitParam(name = "Authorization", value = "Access Token", required = true, allowEmptyValue = false, paramType = "header", dataTypeClass = String::class, example = "Bearer access_token")
+fun addJob(jobRequest: Job): ResponseEntity<*>{}
+--------------------------------------------------------------------------------------------------------@Bean
+public Docket postsApi() {
+
+    //Adding Header
+    ParameterBuilder aParameterBuilder = new ParameterBuilder();
+    List<Parameter> aParameters = new ArrayList<Parameter>();
+
+    aParameters.clear();
+
+    aParameterBuilder.name("myHeaderParam0").modelRef(new ModelRef("string")).parameterType("header").required(false).build();
+    aParameters.add(aParameterBuilder.build());
+    aParameterBuilder.name("myHeaderParam1").modelRef(new ModelRef("string")).parameterType("header").required(false).build();
+    aParameters.add(aParameterBuilder.build());
+   ....
+   ....
+
+    return new Docket(DocumentationType.SWAGGER_2).groupName("public-api")
+            .apiInfo(apiInfo()).select().paths(postPaths()).build().ignoredParameterTypes(HeaderVo.class).globalOperationParameters(aParameters);
+
+   }
+--------------------------------------------------------------------------------------------------------
+    @Bean
+    public UiConfiguration uiConfig() {
+      return UiConfiguration.DEFAULT;
+    }
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
+import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
+import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
+import org.springframework.security.oauth2.provider.token.TokenStore;
+import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
+import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
+
+@Configuration
+@EnableResourceServer
+public class ApplicationSecurityConfiguration extends ResourceServerConfigurerAdapter {
+    private final TokenStore tokenStore;
+
+    @Autowired
+    public ApplicationSecurityConfiguration(TokenStore tokenStore) {
+        this.tokenStore = tokenStore;
+    }
+
+    @Override
+    public void configure(ResourceServerSecurityConfigurer resources) throws Exception {
+        // We're protecting a customers resource here.
+        resources.resourceId("af4ddbce-481c-4a70-95e0-5dfeaa98eb07").tokenStore(tokenStore);
+    }
+
+    @Override
+    public void configure(HttpSecurity http) throws Exception {
+        // Disable CSRF, we're a microservice not a website.
+        // Next configure the exception handling for authentication to return a 401 instead of a login page.
+        http.csrf().disable()
+                .exceptionHandling()
+                .authenticationEntryPoint((request, response, authException) -> response.sendError(401))
+            .and()
+                // Authorization is required for all requests
+                // Except for the OPTIONS request which requires anonymous access
+                .authorizeRequests()
+                    .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                    .antMatchers("/**").authenticated()
+            .and()
+                // Use basic authentication headers because
+                // JSON web tokens are transported in the authorization header
+                .httpBasic()
+            // Enable CORS
+            .and()
+                .cors();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+spring:
+  application:
+    name: API Gateway
+zuul:
+  routes:
+    aanvragen:
+      path: /aanvragen/**
+      url: http://altiis10.test.alfam.nl/moneyou/aanvragenservice/
+    vkm:
+      path: /vkm/**
+      url: http://altiis10.test.alfam.nl/moneyou/vkmservice/
+    tarieven:
+      path: /tarieven/**
+      url: http://altiis10.test.alfam.nl/moneyou/tarievenservice/
+--------------------------------------------------------------------------------------------------------
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.netflix.zuul.EnableZuulProxy;
+
+@EnableZuulProxy
+@SpringBootApplication
+public class ApigatewayApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(ApigatewayApplication.class, args);
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import com.github.bucket4j.Bandwidth;
+import com.github.bucket4j.Bucket;
+import com.github.bucket4j.Bucket4j;
+import com.github.bucket4j.Refill;
+import com.netflix.zuul.context.RequestContext;
+import org.springframework.stereotype.Component;
+
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Throttles requests based on a bucket/token algorithm
+ */
+@Component
+public class Throttler {
+    private final Map<String, Bucket> buckets;
+
+    /**
+     * Initializes a new instance of the throttler
+     */
+    public Throttler() {
+        buckets = new HashMap<>();
+    }
+
+    /**
+     * Throttles the current request by using the specified amount of tokens
+     *
+     * @param context Context for the request
+     * @param amount  Amount of tokens used by the request
+     * @return Returns true when the request can be executed; Otherwise false
+     */
+    public boolean throttle(RequestContext context, long amount) {
+        String identifier = clientIdentifier(context);
+
+        if (!buckets.containsKey(identifier)) {
+            buckets.put(identifier, createBucket());
+        }
+
+        return buckets.get(identifier).tryConsume(amount);
+    }
+
+    /**
+     * Generates an identifier for the client that we want to be throttled
+     *
+     * @param context Request context
+     * @return Returns the client identifier for the request
+     */
+    private String clientIdentifier(RequestContext context) {
+        String clientIpAddress = context.getRequest().getRemoteAddr();
+        String accessToken = getAccessToken(context);
+
+        if (accessToken != null && !accessToken.isEmpty()) {
+            return accessToken;
+        }
+
+        return clientIpAddress;
+    }
+
+    /**
+     * Retrieves the access token from the request
+     *
+     * @param context Request context
+     * @return Returns the access token
+     */
+    private String getAccessToken(RequestContext context) {
+        String authorizationHeader = context.getRequest().getHeader("Authorization");
+
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer")) {
+            return authorizationHeader.substring("Bearer".length() + 1);
+        }
+
+        return null;
+    }
+
+    /**
+     * Creates a new bucket for incoming requests
+     *
+     * @return Returns the bucket for the incoming requests
+     */
+    private Bucket createBucket() {
+        Refill refill = Refill.smooth(1000, Duration.ofHours(1));
+        Bandwidth limit = Bandwidth.classic(1000, refill);
+
+        return Bucket4j.builder().addLimit(limit).build();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.netflix.zuul.ZuulFilter;
+import com.netflix.zuul.context.RequestContext;
+import nl.fizzylogic.apigateway.services.Throttler;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+/**
+ * Limits the amount of requests a client can send
+ */
+@Component
+public class RateLimitingFilter extends ZuulFilter {
+    private final Throttler throttler;
+
+    /**
+     * Initializes a new instance of {@link RateLimitingFilter}
+     *
+     * @param throttler Throttler to use for the filter
+     */
+    @Autowired
+    public RateLimitingFilter(Throttler throttler) {
+        this.throttler = throttler;
+    }
+
+    /**
+     * Gets the type of filter
+     *
+     * @return
+     */
+    @Override
+    public String filterType() {
+        return "pre";
+    }
+
+    /**
+     * Gets the priority for the filter
+     *
+     * @return
+     */
+    @Override
+    public int filterOrder() {
+        return 0;
+    }
+
+    /**
+     * Checks whether the filter should be executed
+     *
+     * @return
+     */
+    @Override
+    public boolean shouldFilter() {
+        return true;
+    }
+
+    /**
+     * Executes the filter refusing requests that are over the limit
+     *
+     * @return
+     */
+    @Override
+    public Object run() {
+        RequestContext context = RequestContext.getCurrentContext();
+
+        if (!throttler.throttle(context, 1)) {
+            context.setSendZuulResponse(false);
+
+            context.setResponseStatusCode(429);
+            context.setResponseBody("{ \"message\": \"Too many requests\" }");
+            context.getResponse().setContentType("application/json");
+        }
+
+        return null;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.apache.commons.cli.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+public class Program {
+    private static final String COMMANDLINE_ARG_INPUT = "in";
+    private static final String COMMANDLINE_ARG_OUTPUT = "out";
+
+    private Logger logger = LoggerFactory.getLogger(Program.class);
+
+    // CHANGE THIS: Make sure that you enter the correct indices to be masked with hashed values.
+    private static final List<Integer> MASKED_FIELDS = Arrays.asList(1,3,4);
+
+    public static void main(String[] args) {
+        new Program().run(args);
+    }
+
+    public void run(String[] args) {
+        CommandLine commandLine = parseArguments(args);
+
+        if (commandLine == null) {
+            System.exit(1);
+            return;
+        }
+
+        HashedValueRegistry valueRegistry = new HashedValueRegistry();
+
+        Path inputFolder = Paths.get(commandLine.getOptionValue(COMMANDLINE_ARG_INPUT));
+        Path outputFolder = Paths.get(commandLine.getOptionValue(COMMANDLINE_ARG_OUTPUT));
+
+        try (DirectoryStream<Path> inputFiles = Files.newDirectoryStream(inputFolder)) {
+            for (Path inputFile : inputFiles) {
+                CsvFileProcessor processor = new CsvFileProcessor(valueRegistry, inputFile, outputFolder);
+                processor.process(MASKED_FIELDS);
+            }
+        } catch (IOException e) {
+            logger.error("Could not read from the input folder.", e);
+        }
+    }
+
+    private Options commandLineArguments() {
+        return new Options()
+                .addOption(Option.builder(COMMANDLINE_ARG_INPUT).hasArg().required().build())
+                .addOption(Option.builder(COMMANDLINE_ARG_OUTPUT).hasArg().required().build());
+    }
+
+    private CommandLine parseArguments(String[] args) {
+        CommandLineParser parser = new DefaultParser();
+
+        try {
+            return parser.parse(commandLineArguments(), args);
+        } catch (ParseException e) {
+            logger.error("Failed to parse the commandline arguments", e);
+            return null;
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+POST /.../{resource}/{resource-id}/actions/{action}
+GET /.../{resource}[?page_index={page_index}]
+/{resource}/{resource-id}/{sub-resource}/{sub-resource-id}
+--------------------------------------------------------------------------------------------------------
+bin\kafka-topic.sh --zookeeper localhost:2181 --create --replication-factor 1 --partitions 1 --topic events
+bin/zookeeper-server-start.sh config/zookeeper.properties
+bin/kafka-server-start.sh config/server.properties
+--------------------------------------------------------------------------------------------------------
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.*;
+
+public class ConsumerApp {
+    private static final Logger log = LoggerFactory.getLogger(ConsumerApp.class);
+
+    public static void main(String[] args) throws Exception {
+
+        // Required properties:
+        //  - broker host used to discover brokers in your cluster from which messages need to be fetched
+        //  - group ID to identify the application that is fetching (you can have multiple instances of a consumer)
+
+        Properties consumerProperties = new Properties();
+        consumerProperties.put("bootstrap.servers", "localhost:9092");
+        consumerProperties.put("group.id", "consumerapp");
+
+        // Set some default deserializers for the consumed messages.
+        // This is required because otherwise Kafka doesn't know what to do with the data.
+        consumerProperties.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+        consumerProperties.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+
+        // Use autocommit settings so that you don't need to commit the messages you received.
+        // This is typically done in scenarios where consistency isn't an issue.
+        consumerProperties.put("enable.auto.commit", "true");
+        consumerProperties.put("auto.commit.interval.ms", "1000");
+
+        KafkaConsumer<String, String> consumer = new KafkaConsumer<String, String>(consumerProperties);
+
+        // Always call subscribe first!
+        // Otherwise you can poll all you want, but get nothing in return.
+        consumer.subscribe(Arrays.asList("events"));
+
+        while (true) {
+            // Use a polling timeout to retrieve messages.
+            // Increase the timeout value to slow down the message flow and decrease the load on the brokers.
+            // You will get more messages each time you poll with a longer timeout setting.
+            // But it does mean you have to wait longer for the messages to come in.
+            ConsumerRecords<String, String> records = consumer.poll(100);
+
+            // Process the messages here.
+            records.forEach(msg -> log.info("Received message: {}", msg.value()));
+        }
+    }
+}
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.common.TopicPartition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
+
+public class ConsumerApp {
+    private static final Logger log = LoggerFactory.getLogger(ConsumerApp.class);
+
+    public static void main(String[] args) throws Exception {
+
+        // Required properties:
+        //  - broker host used to discover brokers in your cluster from which messages need to be fetched
+        //  - group ID to identify the application that is fetching (you can have multiple instances of a consumer)
+
+        Properties consumerProperties = new Properties();
+        consumerProperties.put("bootstrap.servers", "localhost:9092");
+        consumerProperties.put("group.id", "consumerapp");
+
+        // Set some default deserializers for the consumed messages.
+        // This is required because otherwise Kafka doesn't know what to do with the data.
+        consumerProperties.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+        consumerProperties.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+
+        KafkaConsumer<String,String> consumer = new KafkaConsumer<String, String>(consumerProperties);
+
+        // Always call subscribe first!
+        // Otherwise you can poll all you want, but get nothing in return.
+        consumer.subscribe(Arrays.asList("events"));
+
+        while(true) {
+            Map<TopicPartition, OffsetAndMetadata> committedOffsets = new HashMap<>();
+
+            // Use a polling timeout to retrieve messages.
+            // Increase the timeout value to slow down the message flow and decrease the load on the brokers.
+            // You will get more messages each time you poll with a longer timeout setting.
+            // But it does mean you have to wait longer for the messages to come in.
+            ConsumerRecords<String,String> records = consumer.poll(100);
+
+            records.forEach(msg -> {
+                log.info("Received message: {}",msg.value());
+
+                // Mark the current message as processed by putting them in the commit map.
+                // Any messages that fail to process are left out of this map.
+                committedOffsets.put(
+                        new TopicPartition(msg.topic(), msg.partition()),
+                        new OffsetAndMetadata(msg.offset()));
+            });
+
+            // Mark the processed messages as committed on the server.
+            // With Kafka you can have multiple messages that are uncomitted, just leave them
+            // out of the map and commit the rest using the commitSync or commitAsync method.
+            consumer.commitSync(committedOffsets);
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+script: mvn deploy --settings .travis-oss-settings.xml
+--------------------------------------------------------------------------------------------------------
+import scala.concurrent.Future;
+import scala.concurrent.impl.Promise.DefaultPromise;
+
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+
+public final class Scala {
+	
+    public static <T> Future<T> asFuture(ListenableFuture<T> future) {
+        final scala.concurrent.Promise<T> promise = new DefaultPromise<T>();
+        Futures.addCallback(future, new FutureCallback<T>() {
+            @Override public void onSuccess(T result) {
+                promise.success(result);
+            }
+            @Override public void onFailure(Throwable t) {
+                promise.failure(t);
+            }
+        });
+        return promise.future();
+    }
+    
+    public static <T, A> Future<Fun.Tuple2<T, A>> asFuture(ListenableFuture<T> future, A a) {
+        final scala.concurrent.Promise<Fun.Tuple2<T, A>> promise = new DefaultPromise<Fun.Tuple2<T, A>>();
+        Futures.addCallback(future, new FutureCallback<T>() {
+            @Override public void onSuccess(T result) {
+                promise.success(new Fun.Tuple2<T, A>(result, a));
+            }
+            @Override public void onFailure(Throwable t) {
+                promise.failure(t);
+            }
+        });
+        return promise.future();
+    }
+    
+    public static <T, A, B> Future<Fun.Tuple3<T, A, B>> asFuture(ListenableFuture<T> future, A a, B b) {
+        final scala.concurrent.Promise<Fun.Tuple3<T, A, B>> promise = new DefaultPromise<Fun.Tuple3<T, A, B>>();
+        Futures.addCallback(future, new FutureCallback<T>() {
+            @Override public void onSuccess(T result) {
+                promise.success(new Fun.Tuple3<T, A, B>(result, a, b));
+            }
+            @Override public void onFailure(Throwable t) {
+                promise.failure(t);
+            }
+        });
+        return promise.future();
+    }
+    
+    public static <T, A, B, C> Future<Fun.Tuple4<T, A, B, C>> asFuture(ListenableFuture<T> future, A a, B b, C c) {
+        final scala.concurrent.Promise<Fun.Tuple4<T, A, B, C>> promise = new DefaultPromise<Fun.Tuple4<T, A, B, C>>();
+        Futures.addCallback(future, new FutureCallback<T>() {
+            @Override public void onSuccess(T result) {
+                promise.success(new Fun.Tuple4<T, A, B, C>(result, a, b, c));
+            }
+            @Override public void onFailure(Throwable t) {
+                promise.failure(t);
+            }
+        });
+        return promise.future();
+    }
+    
+    public static <T, A, B, C, D> Future<Fun.Tuple5<T, A, B, C, D>> asFuture(ListenableFuture<T> future, A a, B b, C c, D d) {
+        final scala.concurrent.Promise<Fun.Tuple5<T, A, B, C, D>> promise = new DefaultPromise<Fun.Tuple5<T, A, B, C, D>>();
+        Futures.addCallback(future, new FutureCallback<T>() {
+            @Override public void onSuccess(T result) {
+                promise.success(new Fun.Tuple5<T, A, B, C, D>(result, a, b, c, d));
+            }
+            @Override public void onFailure(Throwable t) {
+                promise.failure(t);
+            }
+        });
+        return promise.future();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+https://github.com/wmeints/casser/blob/develop/src/main/java/com/noorq/casser/mapping/javatype/UUIDJavaType.java
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.SecurityProperties;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+
+import javax.sql.DataSource;
+
+@Configuration
+@Order(SecurityProperties.ACCESS_OVERRIDE_ORDER)
+public class ApplicationSecurity extends WebSecurityConfigurerAdapter {
+
+    @Autowired
+    private DataSource dataSource;
+
+    public void configure(HttpSecurity httpSecurity) throws Exception {
+        httpSecurity.csrf().disable();
+
+        httpSecurity.authorizeRequests()
+                .antMatchers("/app/**")
+                .permitAll()
+                .and()
+                .authorizeRequests()
+                .anyRequest()
+                .authenticated()
+                .and()
+                .formLogin().loginPage("/account/logon").failureUrl("/account/logon?error")
+                .permitAll()
+                .and()
+                .logout()
+                .logoutUrl("/account/logoff")
+                .permitAll();
+
+    }
+
+    public void configure(AuthenticationManagerBuilder authentication) throws Exception {
+        authentication.jdbcAuthentication().dataSource(dataSource)
+                .withUser("admin").password("admin").roles("ADMIN");
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.Comparator;
+
+public enum TypeAndOrdinalColumnComparator implements Comparator<CasserProperty> {
+
+	INSTANCE;
+
+	public int compare(CasserProperty thisVal, CasserProperty anotherVal) {
+
+		int c = Integer.compare(thisVal.getColumnType().ordinal(), anotherVal.getColumnType().ordinal());
+		
+		if (c == 0) {
+			c = Integer.compare(thisVal.getOrdinal(), anotherVal.getOrdinal());
+		}
+
+		return c;
+	}
+	
+}
+--------------------------------------------------------------------------------------------------------
+
+import java.lang.reflect.Method;
+import java.util.function.Function;
+
+public enum GetterMethodDetector implements Function<Method, Boolean> {
+
+	INSTANCE;
+	
+	@Override
+	public Boolean apply(Method method) {
+		
+		if (method == null) {
+			throw new IllegalArgumentException("empty parameter");
+		}
+		
+		if (method.getParameterCount() != 0 || method.getReturnType() == void.class) {
+			return false;
+		}
+		
+		return true;
+	    
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+            Properties consumerProperties = new Properties();
+            consumerProperties.put("bootstrap.servers", cmd.getOptionValue("broker"));
+            consumerProperties.put("group.id", cmd.getOptionValue("group"));
+
+            // Set some default deserializers for the consumed messages.
+            // This is required because otherwise Kafka doesn't know what to do with the data.
+            consumerProperties.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+            consumerProperties.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+
+            // Use autocommit settings so that you don't need to commit the messages you received.
+            // This is typically done in scenarios where consistency isn't an issue.
+            consumerProperties.put("enable.auto.commit", "true");
+            consumerProperties.put("auto.commit.interval.ms", "1000");
+--------------------------------------------------------------------------------------------------------
+#!/bin/bash
+
+if [ "$TRAVIS_BRANCH" == "master" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
+    echo 'Master branch: trigger QA'
+    gradle sonarqube -Dsonar.login=$SONAR_TOKEN
+elif [ "$TRAVIS_PULL_REQUEST" != "false" ] && [ -n "${GITHUB_TOKEN:-}" ]; then
+    echo 'Pull request: trigger QA and preview analysis'
+
+    gradle sonarqube -Dsonar.login=$SONAR_TOKEN \
+        -Dsonar.github.oauth=$GITHUB_TOKEN \
+        -Dsonar.github.repository=$TRAVIS_REPO_SLUG \
+        -Dsonar.github.pullRequest=$TRAVIS_PULL_REQUEST \
+        -Dsonar.login=$SONAR_TOKEN \
+        -Dsonar.analysis.mode=preview
+fi
+--------------------------------------------------------------------------------------------------------
+import com.netflix.zuul.ZuulFilter;
+import com.netflix.zuul.context.RequestContext;
+import io.jsonwebtoken.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+
+import javax.servlet.http.HttpServletRequest;
+import java.io.InputStream;
+import java.security.Key;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+
+/**
+ * Validates JSON Web tokens send by clients
+ */
+@Component
+public class AuthenticationFilter extends ZuulFilter {
+    private final Logger logger = LoggerFactory.getLogger(AuthenticationFilter.class);
+
+    /**
+     * Gets the type of filter
+     */
+    @Override
+    public String filterType() {
+        return "pre";
+    }
+
+    /**
+     * Gets the filter priority
+     */
+    @Override
+    public int filterOrder() {
+        return 0;
+    }
+
+    /**
+     * Checks whether the filter should be executed
+     */
+    @Override
+    public boolean shouldFilter() {
+        return false;
+    }
+
+    /**
+     * Executes the filter
+     */
+    @Override
+    public Object run() {
+        HttpServletRequest request = RequestContext.getCurrentContext().getRequest();
+        String authorizationHeader = request.getHeader("Authorization");
+
+        if (authorizationHeader != null && !authorizationHeader.isEmpty() && authorizationHeader.startsWith("Bearer")) {
+            String token = authorizationHeader.substring("Bearer".length() + 1);
+            logger.info("Received JWT {}", token);
+
+            try {
+                Jwts.parser().setSigningKey(loadKey()).parse(token);
+                return null;
+            } catch (ExpiredJwtException ex) {
+                logger.error("Provided token is expired");
+            } catch (MalformedJwtException ex) {
+                logger.error("Provided token is malformed", ex);
+            } catch (SignatureException ex) {
+                logger.error("Provided token has an invalid signature", ex);
+            }
+        }
+
+        sendUnauthorizedResponse();
+
+        return null;
+    }
+
+    /**
+     * Sends an unauthorized response
+     */
+    private void sendUnauthorizedResponse() {
+        RequestContext context = RequestContext.getCurrentContext();
+
+        context.setSendZuulResponse(false);
+        context.setResponseStatusCode(401);
+        context.setResponseBody("{ \"message\": \"You are not authorized\" }");
+
+        context.getResponse().setContentType("application/json");
+    }
+
+    /**
+     * Loads a public key from a resource in the JAR file
+     *
+     * @return Returns the public key for validating JSON Web Tokens
+     */
+    private Key loadKey() {
+        try {
+            InputStream certificateStream = AuthenticationFilter.class
+                    .getClassLoader()
+                    .getResourceAsStream("auth-server.cer");
+
+            CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+            Certificate certificate = certificateFactory.generateCertificate(certificateStream);
+
+            return certificate.getPublicKey();
+        } catch (CertificateException e) {
+            logger.error("Failed to create certificate factory", e);
+            return null;
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.jwt.crypto.sign.RsaVerifier;
+import org.springframework.security.oauth2.provider.token.TokenStore;
+import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
+import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
+import org.springframework.security.oauth2.provider.token.store.jwk.JwkTokenStore;
+
+@Configuration
+public class JsonWebTokenConfiguration {
+
+    @Bean
+    public TokenStore tokenStore(@Value("${authorizationserver.keyUrl}")String keyUrl) {
+        return new JwkTokenStore(keyUrl);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.ModelAndView;
+
+@Controller
+public class HomeController {
+    @RequestMapping("/")
+    public ModelAndView index() {
+        return new ModelAndView("redirect:/swagger-ui.html");
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.vertx.core.json.JsonObject;
+import lombok.*;
+
+import java.util.Map;
+
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
+@JsonIgnoreProperties(ignoreUnknown = true)
+@Getter
+@ToString
+public class Outcome {
+    private final String intent;
+    private final Map<String, JsonObject> entities;
+    private final double confidence;
+}
+--------------------------------------------------------------------------------------------------------
+@Configuration
+public class AppConfig {
+
+ @Bean
+ public FilterRegistrationBean < CustomURLFilter > filterRegistrationBean() {
+  FilterRegistrationBean < CustomURLFilter > registrationBean = new FilterRegistrationBean();
+  CustomURLFilter customURLFilter = new CustomURLFilter();
+
+  registrationBean.setFilter(customURLFilter);
+  registrationBean.addUrlPatterns("/greeting/*");
+  registrationBean.setOrder(2); //set precedence
+  return registrationBean;
+ }
+}
+
+
+public class CustomURLFilter implements Filter {
+
+ private static final Logger LOGGER = LoggerFactory.getLogger(CustomURLFilter.class);
+
+ @Override
+ public void init(FilterConfig filterConfig) throws ServletException {
+  LOGGER.info("########## Initiating CustomURLFilter filter ##########");
+ }
+
+ @Override
+ public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+
+  HttpServletRequest request = (HttpServletRequest) servletRequest;
+  HttpServletResponse response = (HttpServletResponse) servletResponse;
+
+  LOGGER.info("This Filter is only called when request is mapped for /customer resource");
+
+  //call next filter in the filter chain
+  filterChain.doFilter(request, response);
+ }
+
+ @Override
+ public void destroy() {
+
+ }
+}
+--------------------------------------------------------------------------------------------------------
+@Configuration
+@Order(Ordered.HIGHEST_PRECEDENCE)
+public class CustomFilter implements Filter {
+
+ private static final Logger LOGGER = LoggerFactory.getLogger(CustomFilter.class);
+
+ @Override
+ public void init(FilterConfig filterConfig) throws ServletException {
+  LOGGER.info("########## Initiating Custom filter ##########");
+ }
+
+ @Override
+ public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+
+  HttpServletRequest request = (HttpServletRequest) servletRequest;
+  HttpServletResponse response = (HttpServletResponse) servletResponse;
+
+  LOGGER.info("Logging Request  {} : {}", request.getMethod(), request.getRequestURI());
+
+  //call next filter in the filter chain
+  filterChain.doFilter(request, response);
+
+  LOGGER.info("Logging Response :{}", response.getContentType());
+ }
+
+ @Override
+ public void destroy() {
+  // TODO: 7/4/18
+ }
+}
+--------------------------------------------------------------------------------------------------------
+@Configuration
+@EnableSwagger2
+@Profile(ProfileConsts.GNG_DEV)
+public class SwaggerConfiguration {
+
+    private final Logger logger = LoggerFactory.getLogger(SwaggerConfiguration.class);
+
+
+    @Bean
+    public Docket api() {
+
+        logger.debug("Starting Swagger");
+        StopWatch watch = new StopWatch();
+        watch.start();
+
+        Docket docket = new Docket(DocumentationType.SWAGGER_2)
+                .select()
+                .apis(RequestHandlerSelectors.any())
+                .paths(PathSelectors.any())
+                .build()
+                .apiInfo(apiInfo());
+
+        watch.stop();
+        logger.debug("Started Swagger in {} ms", watch.getTotalTimeMillis());
+
+        return docket;
+    }
+
+    private ApiInfo apiInfo() {
+        return new ApiInfoBuilder()
+                .title("GoNoGO API")
+                .description("GoNoGo api for developers")
+                .version("2.0")
+                .termsOfServiceUrl("http://terms-of-services.url")
+                .license("LICENSE")
+                .licenseUrl("http://url-to-license.com")
+                .build();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+ @ApiParam(access="hide")
+ @ApiModelProperty(hidden = true)
+--------------------------------------------------------------------------------------------------------
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Arrays;
