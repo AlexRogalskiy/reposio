@@ -47106,6 +47106,103 @@ public class ApplicationSecurity extends WebSecurityConfigurerAdapter {
     }
 }
 --------------------------------------------------------------------------------------------------------
+@Entity
+@Table(name = "container")
+@Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+@Document(indexName = "container")
+public class Container implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
+    @SequenceGenerator(name = "sequenceGenerator")
+    private Long id;
+
+    @NotNull
+    @Column(name = "name", nullable = false)
+    private String name;
+
+    @ManyToMany
+    @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+    @JoinTable(name = "container_item",
+               joinColumns = @JoinColumn(name="container_id", referencedColumnName="id"),
+               inverseJoinColumns = @JoinColumn(name="items_id", referencedColumnName="id"))
+    private Set<Item> items = new HashSet<>();
+}
+
+@Entity
+@Table(name = "item")
+@Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+@Document(indexName = "item")
+public class Item implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
+    @SequenceGenerator(name = "sequenceGenerator")
+    private Long id;
+
+    @NotNull
+    @Column(name = "name", nullable = false)
+    private String name;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type", nullable = false)
+    private Type type;
+
+    @ManyToMany(mappedBy = "items")
+    @JsonIgnore
+    @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+    private Set<Container> containers = new HashSet<>();
+}
+--------------------------------------------------------------------------------------------------------
+@Entity(name="products")
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name="product_type", 
+  discriminatorType = DiscriminatorType.INTEGER)
+public class MyProduct {
+    // ...
+}
+
+@Entity
+@DiscriminatorValue("1")
+public class Book extends MyProduct {
+    // ...
+}
+
+@Entity
+@DiscriminatorValue("2")
+public class Pen extends MyProduct {
+    // ...
+}
+
+@Entity
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorFormula("case when author is not null then 1 else 2 end")
+public class MyProduct { ... }
+
+@Entity
+@Inheritance(strategy = InheritanceType.JOINED)
+public class Animal {
+    @Id
+    private long animalId;
+    private String species;
+ 
+    // constructor, getters, setters 
+}
+
+@Entity
+@PrimaryKeyJoinColumn(name = "petId")
+public class Pet extends Animal {
+    // ...
+}
+
+@Entity
+@Polymorphism(type = PolymorphismType.EXPLICIT)
+public class Bag implements Item { ...}
+--------------------------------------------------------------------------------------------------------
 import java.util.Comparator;
 
 public enum TypeAndOrdinalColumnComparator implements Comparator<CasserProperty> {
