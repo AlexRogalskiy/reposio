@@ -9649,6 +9649,113 @@ SQL Server\MSSQL12.SQL2014\SQLServerAge
                 <version>${junit-jupiter.version}</version>
             </dependency>
 --------------------------------------------------------------------------------------------------------
+	@Converter(autoApply = false)
+	public static class UrlConverter implements AttributeConverter<URL,String> {
+		@Override
+		public String convertToDatabaseColumn(URL attribute) {
+			convertToDatabaseColumnCalled = true;
+			return attribute == null ? null : attribute.toExternalForm();
+		}
+
+		@Override
+		public URL convertToEntityAttribute(String dbData) {
+			convertToEntityAttributeCalled = true;
+			if ( dbData == null ) {
+				return null;
+			}
+
+			try {
+				return new URL( dbData );
+			}
+			catch (MalformedURLException e) {
+				throw new IllegalArgumentException( "Could not convert incoming value to URL : " + dbData );
+			}
+		}
+	}
+
+	@Converter( autoApply = true )
+	public static class AutoUrlConverter implements AttributeConverter<URL,String> {
+		@Override
+		public String convertToDatabaseColumn(URL attribute) {
+			throw new IllegalStateException( "Should not be called" );
+		}
+
+		@Override
+		public URL convertToEntityAttribute(String dbData) {
+			throw new IllegalStateException( "Should not be called" );
+		}
+	}
+--------------------------------------------------------------------------------------------------------
+@TestForIssue(jiraKey = "HHH-10959")
+--------------------------------------------------------------------------------------------------------
+	public static class DateAttributeConverter implements AttributeConverter<DateAttribute, Date> {
+
+		@Override
+		public Date convertToDatabaseColumn(DateAttribute attribute) {
+			if ( attribute == null ) {
+				return null;
+			}
+			return new Date( attribute.field );
+		}
+
+		@Override
+		public DateAttribute convertToEntityAttribute(Date dbData) {
+			if ( dbData == null ) {
+				return null;
+			}
+			return new DateAttribute( dbData.getTime() );
+		}
+
+	}
+--------------------------------------------------------------------------------------------------------
+@Converter
+public class CryptoConverter implements AttributeConverter<String, String> {
+
+    private static final String ALGORITHM = "AES/ECB/PKCS5Padding";
+    private static final byte[] KEY = "MySuperSecretKey".getBytes();
+
+    @Override
+    public String convertToDatabaseColumn(String ccNumber) {
+      // do some encryption
+      Key key = new SecretKeySpec(KEY, "AES");
+      try {
+         Cipher c = Cipher.getInstance(ALGORITHM);
+         c.init(Cipher.ENCRYPT_MODE, key);
+         return Base64.encodeBytes(c.doFinal(ccNumber.getBytes()));
+      } catch (Exception e) {
+         throw new RuntimeException(e);
+      }
+    }
+
+    @Override
+    public String convertToEntityAttribute(String dbData) {
+      // do some decryption
+      Key key = new SecretKeySpec(KEY, "AES");
+      try {
+        Cipher c = Cipher.getInstance(ALGORITHM);
+        c.init(Cipher.DECRYPT_MODE, key);
+        return new String(c.doFinal(Base64.decode(dbData)));
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
+}
+
+@RunWith(Arquillian.class)
+public class TestCryptoConverter {
+
+    @Deployment
+    public static JavaArchive createDeployment() {
+        return ShrinkWrap
+                .create(JavaArchive.class)
+                .addClasses(CreditCard.class, CryptoConverter.class,
+                        TestCryptoConverter.class)
+                .addAsManifestResource("META-INF/persistence.xml",
+                        "persistence.xml")
+                .addAsManifestResource("META-INF/orm.xml", "orm.xml")
+                .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+    }
+--------------------------------------------------------------------------------------------------------
 @SpringJUnitConfig
 $ hostnamectl --static set-hostname dallas
 
@@ -9662,6 +9769,10 @@ import org.springframework.core.env.Environment;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+
+PSG-1770-BSU-SE
+PSG-1770-BSU-SE-TL-1Y
+PSG-1770-BSU-RE-TL-2Y
 
 @SuppressWarnings("SpringJavaAutowiredFieldsWarningInspection")
 @SpringBootApplication
@@ -43305,6 +43416,69 @@ public class SwaggerConfig {
     }
 }
 -------------------------------------------------------------------------------------------------------
+   @Bean
+    public CacheManagerCustomizer<CaffeineCacheManager> caffeineCacheManager() {
+        return cacheManager -> cacheManager
+                .setCaffeine(Caffeine.newBuilder()
+                        .expireAfterWrite(1, TimeUnit.MINUTES));
+    }
+	  @Bean
+    public Cache myCache() {
+        return new CaffeineCache(
+                "my-cache",
+                Caffeine.newBuilder()
+                        .maximumSize(10)
+                        .build());
+    }
+	
+spring.cache.type: NONE
+spring.data.redis.repositories.enabled=false
+
+---
+spring:
+  profiles: no-redis
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+	  
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
++     - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+-------------------------------------------------------------------------------------------------------
+BUILD_TYPE="commercial"
+IMPLEMENTOR="Oracle Corporation"
+JAVA_VERSION="13"
+JAVA_VERSION_DATE="2019-09-17"
+MODULES="java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.transaction.xa java.sql java.sql.rowset java.xml.crypto java.se java.smartcardio jdk.accessibility jdk.internal.vm.ci jdk.management jdk.unsupported jdk.internal.vm.compiler jdk.aot jdk.internal.jvmstat jdk.attach jdk.charsets jdk.compiler jdk.crypto.ec jdk.crypto.cryptoki jdk.crypto.mscapi jdk.dynalink jdk.internal.ed jdk.editpad jdk.hotspot.agent jdk.httpserver jdk.internal.le jdk.internal.opt jdk.internal.vm.compiler.management jdk.jartool jdk.javadoc jdk.jcmd jdk.management.agent jdk.jconsole jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jshell jdk.jsobject jdk.jstatd jdk.localedata jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.pack jdk.rmic jdk.scripting.nashorn jdk.scripting.nashorn.shell jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported.desktop jdk.xml.dom jdk.zipfs"
+OS_ARCH="x86_64"
+OS_NAME="Windows"
+SOURCE=".:hg:b322ad7c3ff6 open:hg:9c250a7600e1"
+
+-------------------------------------------------------------------------------------------------------
+mvn install -Dmaven.test.skip
+mvn clean install -DskipTests
+mvn clean package -DskipIT
+mvn clean test-compile failsafe:integration-test
+mvn clean package -Dmaven.skip.tests=true
+mvn verify -Pfailsafe
+-------------------------------------------------------------------------------------------------------
+git log --stat
+git log --summary
+git status --long
+git checkout HEAD~4
+
+git log --grep="Commit message fragment"
+git checkout b20eb8bdb8daf5fcec3ceb191c6b9b25507376ca
+
+git checkout HEAD
+
+git fetch origin
+git fetch -t
+
+
+-------------------------------------------------------------------------------------------------------
 @EnableSwagger2WebMvc
 <dependency>
             <groupId>org.springframework.plugin</groupId>
@@ -43969,7 +44143,767 @@ public class Swagger2SpringBoot {
         .validatorUrl(null)
         .build();
   }
+}
+-------------------------------------------------------------------------------------------------------
+    final Set<Integer> elements = new HashSet<>();
+    Stream.of(1, 2, 3, 1, 9, 2, 5, 3, 4, 8, 2)
+        .collect(Collectors.partitioningBy(elements::add))
+        .forEach((isUnique, list) -> System.out.format("%s: %s%n", isUnique ? "unique" : "repetitive", list));
 
+-------------------------------------------------------------------------------------------------------
+@ExtendWith(SpringExtension.class)
+@WebMvcTest(controllers = ValidateRequestBodyController.class)
+class ValidateRequestBodyControllerTest {
+
+  @Autowired
+  private MockMvc mvc;
+
+  @Autowired
+  private ObjectMapper objectMapper;
+
+  @Test
+  void whenInputIsInvalid_thenReturnsStatus400() throws Exception {
+    Input input = invalidInput();
+    String body = objectMapper.writeValueAsString(input);
+
+    mvc.perform(post("/validateBody")
+            .contentType("application/json")
+            .content(body))
+            .andExpect(status().isBadRequest());
+  }
+}
+
+@ExtendWith(SpringExtension.class)
+@DataJpaTest
+class ValidatingRepositoryTest {
+
+  @Autowired
+  private ValidatingRepository repository;
+
+  @Autowired
+  private EntityManager entityManager;
+
+  @Test
+  void whenInputIsInvalid_thenThrowsException() {
+    Input input = invalidInput();
+
+    assertThrows(ConstraintViolationException.class, () -> {
+      repository.save(input);
+      entityManager.flush();
+    });
+  }
+}
+
+@ExtendWith(SpringExtension.class)
+@SpringBootTest
+class ProgrammaticallyValidatingServiceTest {
+
+  @Autowired
+  private ProgrammaticallyValidatingService service;
+
+  @Test
+  void whenInputIsInvalid_thenThrowsException(){
+    Input input = invalidInput();
+
+    assertThrows(ConstraintViolationException.class, () -> {
+      service.validateInput(input);
+    });
+  }
+
+  @Test
+  void givenInjectedValidator_whenInputIsInvalid_thenThrowsException(){
+    Input input = invalidInput();
+
+    assertThrows(ConstraintViolationException.class, () -> {
+      service.validateInputWithInjectedValidator(input);
+    });
+  }
+}
+
+@ExtendWith(SpringExtension.class)
+@SpringBootTest
+class ValidatingServiceWithGroupsTest {
+
+  @Autowired
+  private ValidatingServiceWithGroups service;
+
+  @Test
+  void whenInputIsInvalidForCreate_thenThrowsException() {
+    InputWithGroups input = validInput();
+    input.setId(42L);
+    
+    assertThrows(ConstraintViolationException.class, () -> {
+      service.validateForCreate(input);
+    });
+  }
+
+  @Test
+  void whenInputIsInvalidForUpdate_thenThrowsException() {
+    InputWithGroups input = validInput();
+    input.setId(null);
+    
+    assertThrows(ConstraintViolationException.class, () -> {
+      service.validateForUpdate(input);
+    });
+  }
+}
+-------------------------------------------------------------------------------------------------------
+package com.paragon.microservices.distributor.service.impl;
+
+import com.google.common.base.Objects;
+import com.paragon.microservices.distributor.model.entity.LocaleEntity;
+import com.paragon.microservices.distributor.model.entity.LocaleVersionEntity;
+import com.paragon.microservices.distributor.model.entity.QLocaleVersionEntity;
+import com.paragon.microservices.distributor.model.entity.VersionEntity;
+import com.paragon.microservices.distributor.repository.LocaleVersionRepository;
+import com.paragon.microservices.distributor.service.interfaces.LocaleVersionService;
+import lombok.*;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static com.google.common.collect.Sets.newHashSet;
+import static com.paragon.mailingcontour.commons.constraint.utils.ConstraintUtils.not;
+import static com.paragon.mailingcontour.commons.exception.InvalidParameterException.throwInvalidParameter;
+import static com.paragon.mailingcontour.commons.utils.ServiceUtils.streamOf;
+import static com.paragon.microservices.distributor.system.utils.ServiceUtils.contains;
+
+/**
+ * {@link LocaleVersionService} implementation
+ */
+@Slf4j
+@Service
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
+@Getter(AccessLevel.PROTECTED)
+@RequiredArgsConstructor
+public class LocaleVersionServiceImpl extends AuditServiceImpl<LocaleVersionEntity, QLocaleVersionEntity, LocaleVersionEntity.LocaleVersionID> implements LocaleVersionService {
+    private final LocaleVersionRepository localeVersionRepository;
+
+    @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    @SuppressWarnings("unchecked")
+    public <S extends LocaleVersionEntity> Iterable<S> createLocaleVersionBindings(final VersionEntity version, final Iterable<LocaleEntity> locales) {
+        log.info("Creating locale version records by input parameters: version: {}, locales: {}", version, locales);
+        return (Iterable<S>) Optional.ofNullable(version)
+                .map(value -> streamOf(locales)
+                        .map(locale -> this.buildLocaleVersionEntity(locale, value))
+                        .collect(Collectors.toList()))
+                .map(this::saveAll)
+                .orElseThrow(() -> throwInvalidParameter(this.getMessageSource(), version, locales));
+    }
+
+    @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public LocaleVersionEntity createLocaleVersionBinding(final VersionEntity version, final LocaleEntity locale) {
+        log.info("Creating locale version record by input parameters: version: {}, locale: {}", version, locale);
+        return Optional.ofNullable(version)
+                .map(value -> this.buildLocaleVersionEntity(locale, value))
+                .map(this::save)
+                .orElseThrow(() -> throwInvalidParameter(this.getMessageSource(), version, locale));
+    }
+
+    @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    @SuppressWarnings("unchecked")
+    public <S extends LocaleVersionEntity> Iterable<S> deleteLocaleVersionBindings(final VersionEntity version, final Iterable<LocaleEntity> locales) {
+        log.info("Deleting locale version records by input parameters: version: {}, locales: {}", version, locales);
+        return (Iterable<S>) Optional.ofNullable(version)
+                .map(value -> streamOf(locales)
+                        .map(locale -> this.buildLocaleVersionEntity(locale, value))
+                        .collect(Collectors.toList()))
+                .map(this::deleteAll)
+                .orElseThrow(() -> throwInvalidParameter(this.getMessageSource(), version, locales));
+    }
+
+    @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public LocaleVersionEntity deleteLocaleVersionBinding(final VersionEntity version, final LocaleEntity locale) {
+        log.info("Deleting locale version record by input parameters: version: {}, locale: {}", version, locale);
+        return Optional.ofNullable(version)
+                .map(value -> this.buildLocaleVersionEntity(locale, value))
+                .map(this::delete)
+                .orElseThrow(() -> throwInvalidParameter(this.getMessageSource(), version, locale));
+    }
+
+    @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    @SuppressWarnings("unchecked")
+    public <S extends LocaleVersionEntity> Iterable<S> updateLocaleVersionBindings(final VersionEntity version, final Iterable<LocaleEntity> locales) {
+        log.info("Updating locale version records by input parameters: version: {}, locales: {}", version, locales);
+        return (Iterable<S>) Optional.ofNullable(version)
+                .map(entity -> {
+                            final Set<LocaleVersionEntity> localeVersions = new HashSet<>();
+                            final List<LocaleVersionEntity> l = streamOf(entity.getLocales())
+                                    .map(locale -> {
+                                        if (newHashSet(locales).contains(locale.getLocale())) {
+                                            localeVersions.add(locale);
+                                        } else {
+                                            final Set<LocaleVersionEntity> result = locale.getLocale().getVersions().stream().filter(lo -> !Objects.equal(lo, locale)).collect(Collectors.toSet());
+                                            locale.getLocale().setVersions(result);
+                                        }
+                                        return locale;
+                                    })
+                                    .filter(not(locale -> contains(locales, locale.getLocale())))
+                                    .collect(Collectors.toList());
+                            version.setLocales(localeVersions);
+                            return l;
+                        }
+                )
+                //.map(this::deleteAll)
+                .map(entity -> {
+                    streamOf(locales)
+                            .filter(locale -> version.getLocales().stream().noneMatch(l -> Objects.equal(l.getLocale(), locale)))
+                            .map(locale -> this.buildLocaleVersionEntity(locale, version))
+                            .forEach(version::addLocale);
+                    return entity;
+                })
+                .map(entity -> version.getLocales())
+                //.map(this::saveAll)
+                .orElseThrow(() -> throwInvalidParameter(this.getMessageSource(), version, locales));
+    }
+
+    private LocaleVersionEntity buildLocaleVersionEntity(final LocaleEntity locale, final VersionEntity version) {
+        final LocaleVersionEntity localeVersionEntity = new LocaleVersionEntity();
+        localeVersionEntity.setLocale(locale);
+        localeVersionEntity.setVersion(version);
+        return localeVersionEntity;
+    }
+
+    @Override
+    protected LocaleVersionRepository getRepository() {
+        return this.localeVersionRepository;
+    }
+}
+-------------------------------------------------------------------------------------------------------
+  #  - changeSet:
+  #      id: 18
+  #      author: chuprikov (generated)
+  #      objectQuotingStrategy: QUOTE_ALL_OBJECTS
+  #      preConditions:
+  #        - onFail: MARK_RAN
+  #        - not:
+  #            - tableExists:
+  #                tableName: REVCHANGES
+  #      changes:
+  #        - createTable:
+  #            columns:
+  #              - column:
+  #                  constraints:
+  #                    nullable: false
+  #                  name: REV
+  #                  type: INTEGER
+  #              - column:
+  #                  constraints:
+  #                    nullable: false
+  #                  name: ENTITYNAME
+  #                  type: VARCHAR(255)
+  #            tableName: REVCHANGES
+  #  - changeSet:
+  #      id: 19
+  #      author: chuprikov (generated)
+  #      objectQuotingStrategy: QUOTE_ALL_OBJECTS
+  #      preConditions:
+  #        - onFail: MARK_RAN
+  #        - not:
+  #            - primaryKeyExists:
+  #                primaryKeyName: REVCHANGES_pkey
+  #                tableName: REVCHANGES
+  #      changes:
+  #        - addPrimaryKey:
+  #            columnNames: REV
+  #            constraintName: REVCHANGES_pkey
+  #            tableName: REVCHANGES
+  #  - changeSet:
+  #      id: 20
+  #      author: chuprikov (generated)
+  #      objectQuotingStrategy: QUOTE_ALL_OBJECTS
+  #      preConditions:
+  #        - onFail: MARK_RAN
+  #        - not:
+  #            - foreignKeyConstraintExists:
+  #                foreignKeyName: fk_revchanges_revinfo_id
+  #      changes:
+  #        - addForeignKeyConstraint:
+  #            baseColumnNames: REV
+  #            baseTableName: REVCHANGES
+  #            constraintName: fk_revchanges_revinfo_id
+  #            deferrable: true
+  #            initiallyDeferred: true
+  #            onDelete: CASCADE
+  #            onUpdate: RESTRICT
+  #            referencedColumnNames: id
+  #            referencedTableName: REVINFO
+-------------------------------------------------------------------------------------------------------
+package com.paragon.microservices.distributor.controller.impl;
+
+import com.google.common.io.ByteStreams;
+import com.paragon.mailingcontour.commons.security.model.AuthenticatedUser;
+import com.paragon.microservices.distributor.controller.interfaces.DownloadController;
+import com.paragon.microservices.distributor.model.domain.*;
+import com.paragon.microservices.distributor.model.entity.FileEntity;
+import com.paragon.microservices.distributor.model.entity.ProductEntity;
+import com.paragon.microservices.distributor.model.enumeration.DownloadStatus;
+import com.paragon.microservices.distributor.repository.ProductRepository;
+import com.paragon.microservices.distributor.repository.VersionRepository;
+import com.paragon.microservices.distributor.service.impl.VersionServiceImpl;
+import com.paragon.microservices.distributor.service.interfaces.DownloadService;
+import com.paragon.microservices.distributor.service.interfaces.FileService;
+import com.paragon.microservices.distributor.service.interfaces.FileTransferService;
+import com.paragon.microservices.distributor.service.interfaces.SessionService;
+import com.paragon.microservices.distributor.system.constraint.FileNamePattern;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.tomcat.util.http.fileupload.IOUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+import org.springframework.web.servlet.view.RedirectView;
+
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+import static com.paragon.microservices.distributor.system.configuration.SwaggerConfiguration.ResourceEndpoint.DOWNLOAD_RESOURCE_ENDPOINT;
+import static com.paragon.microservices.distributor.system.utils.HeaderUtils.getFileDownloadHeaders;
+
+/**
+ * {@link DownloadController} implementation
+ */
+@Slf4j
+@Getter(AccessLevel.PROTECTED)
+@RestController
+@Validated
+@Transactional(rollbackFor = Exception.class, readOnly = true)
+@RequestMapping(
+        value = DOWNLOAD_RESOURCE_ENDPOINT,
+        produces = {MediaType.APPLICATION_JSON_UTF8_VALUE}
+)
+public class DownloadControllerImpl extends BaseControllerImpl implements DownloadController {
+    private final DownloadService downloadService;
+    private final FileTransferService fileTransferService;
+    private final FileService fileService;
+    private final ApplicationEventPublisher eventPublisher;
+
+    @Autowired
+    public DownloadControllerImpl(final MessageSource messageSource,
+                                  final DownloadService downloadService,
+                                  final FileTransferService fileTransferService,
+                                  final FileService fileService,
+                                  final ApplicationEventPublisher eventPublisher) {
+        super(messageSource);
+        this.downloadService = downloadService;
+        this.fileTransferService = fileTransferService;
+        this.fileService = fileService;
+        this.eventPublisher = eventPublisher;
+    }
+
+    @Override
+    @GetMapping(name = "generateDownloadLinkByIds", params = {"productId", "versionId", "binaryId"})
+    public RedirectView generateDownloadLinkByIds(final UUID productId,
+                                                  final UUID versionId,
+                                                  final UUID binaryId,
+                                                  final AuthenticatedUser authenticatedUser) {
+        return Stream.of(this.getDownloadService().generateDownloadLink(binaryId, authenticatedUser.getUserId()))
+                .map(downloadLink -> {
+                    final RedirectView redirectView = new RedirectView(downloadLink.getUrl(), true);
+                    redirectView.setStatusCode(HttpStatus.PERMANENT_REDIRECT);
+                    return redirectView;
+                })
+                .findFirst()
+                .get();
+    }
+
+    @Override
+    @GetMapping(name = "generateDownloadLinkByNames", params = {"sku", "version", "locale", "platform"})
+    public RedirectView generateDownloadLinkByNames(final String sku,
+                                                    final String version,
+                                                    final String locale,
+                                                    final String platform,
+                                                    final AuthenticatedUser authenticatedUser) {
+        return Stream.of(FileSearchParameters.of(sku, version, locale, platform, authenticatedUser.getUserId()))
+                .map(params -> this.getDownloadService().generateDownloadLink(params))
+                .map(downloadLink -> {
+                    final RedirectView redirectView = new RedirectView(downloadLink.getUrl(), true);
+                    redirectView.setStatusCode(HttpStatus.PERMANENT_REDIRECT);
+                    return redirectView;
+                })
+                .findFirst()
+                .get();
+    }
+
+    @GetMapping("/{sessionId}/{fileName}")
+    @Override
+    public ResponseEntity<StreamingResponseBody> getResourceAsStream(@PathVariable final UUID sessionId,
+                                                                     @PathVariable final String fileName) {
+        return Stream.of(this.getFileTransferService().getFileData(sessionId))
+                .map(fileData -> ResponseEntity.ok()
+                        .headers(getFileDownloadHeaders(fileData.getFileMetaData()))
+                        .body(this.toByteStreamResponseBody(fileData))
+                )
+                .findFirst()
+                .get();
+    }
+
+    @GetMapping("/2/{sessionId}/{fileName}")
+    public ResponseEntity<StreamingResponseBody> getResourceAsStream2(@PathVariable final UUID sessionId,
+                                                                      @PathVariable @FileNamePattern final String fileName) {
+        return Stream.of(this.getFileTransferService().getFileData(sessionId))
+                .map(fileData -> ResponseEntity.ok()
+                        .headers(getFileDownloadHeaders(fileData.getFileMetaData()))
+                        .body(this.toZipStreamResponseBody(fileData))
+                )
+                .findFirst()
+                .get();
+    }
+
+    @GetMapping("/3/{sessionId}/{fileName}")
+    public ResponseEntity<StreamingResponseBody> getResourceAsStream3(@PathVariable final UUID sessionId,
+                                                                      @PathVariable @FileNamePattern final String fileName) {
+        return Stream.of(this.getFileTransferService().getFileData(sessionId))
+                .map(fileData -> ResponseEntity.ok()
+                        .headers(getFileDownloadHeaders(fileData.getFileMetaData()))
+                        .body(this.toBufferedStreamResponseBody(fileData))
+                )
+                .findFirst()
+                .get();
+    }
+
+    @GetMapping("/4/{sessionId}/{fileName}")
+    public ResponseEntity<StreamingResponseBody> getResourceAsStream4(@PathVariable final UUID sessionId,
+                                                                      @PathVariable @FileNamePattern final String fileName) {
+        return Stream.of(this.getFileTransferService().getFileData(sessionId))
+                .map(fileData -> ResponseEntity.ok()
+                        .headers(getFileDownloadHeaders(fileData.getFileMetaData()))
+                        .body(this.toStreamResponseBody(fileData))
+                )
+                .findFirst()
+                .get();
+    }
+
+    @Autowired
+    private SessionService sessionService;
+    @Autowired
+    private ProductRepository productRepository;
+    @Autowired
+    private VersionServiceImpl versionService;
+    @Autowired
+    private VersionRepository versionRepository;
+
+    @GetMapping("/myusers2")
+    public ResponseEntity<FileEntity> findAllByQuerydsl2(@RequestParam(value = "sku") String sku,
+                                                         @RequestParam(value = "version", required = false) String version,
+                                                         @RequestParam(value = "locale") String locale,
+                                                         @RequestParam(value = "platform") String platform) {
+        return ResponseEntity.ok(this.getFileService().searchFileRecord(FileSearchParameters.of(sku, version, locale, platform)).get());
+    }
+
+    @GetMapping("/user")
+    public ResponseEntity<CompletableFuture<Iterable<ProductEntity>>> user() {
+        return ResponseEntity.ok().body(this.getProductRepository().findByUserIsCurrentUser());
+    }
+
+    @GetMapping("/created")
+    public ResponseEntity init() {
+        final Session session = new Session();
+        session.setId("c108cda3-8b4b-483d-a987-d65e6bfe3024");
+        session.setFilepath("C:\\git-project\\paragon.microservices.distributor");
+        session.setFilename("lombok.config");
+        session.setDownloadStatus(DownloadStatus.NEW);
+        this.getSessionService().save(session);
+        return ResponseEntity.ok().build();
+    }
+
+    private StreamingResponseBody toByteStreamResponseBody(final FileData fileData) {
+        return outputStream -> {
+            this.notifyEvent(fileData).accept(DownloadStatus.DOWNLOADING);
+            try {
+                ByteStreams.copy(fileData.getFileStream(), outputStream);
+                outputStream.flush();
+                this.notifyEvent(fileData).accept(DownloadStatus.FINISHED);
+            } catch (final IOException ex) {
+                log.error("Unable to stream file source, message: {}", ex.getMessage());
+                this.notifyEvent(fileData).accept(DownloadStatus.INTERRUPTED);
+            }
+        };
+    }
+
+    private StreamingResponseBody toZipStreamResponseBody(final FileData fileData) {
+        return outputStream -> {
+            this.notifyEvent(fileData).accept(DownloadStatus.DOWNLOADING);
+            final ZipOutputStream zipOut = new ZipOutputStream(outputStream);
+            try {
+                final ZipEntry zipEntry = new ZipEntry(fileData.getFileMetaData().getFileName());
+                zipOut.putNextEntry(zipEntry);
+
+                final byte[] bytes = new byte[1024];
+                int length;
+                while ((length = fileData.getFileStream().read(bytes)) >= 0) {
+                    zipOut.write(bytes, 0, length);
+                }
+                fileData.getFileStream().close();
+                zipOut.close();
+                this.notifyEvent(fileData).accept(DownloadStatus.FINISHED);
+            } catch (final IOException ex) {
+                log.error("Unable to stream file source, message: {}", ex.getMessage());
+                this.notifyEvent(fileData).accept(DownloadStatus.INTERRUPTED);
+            }
+        };
+    }
+
+    private StreamingResponseBody toBufferedStreamResponseBody(final FileData fileData) {
+        return outputStream -> {
+            this.notifyEvent(fileData).accept(DownloadStatus.DOWNLOADING);
+            try (final BufferedInputStream br = new BufferedInputStream(fileData.getFileStream())) {
+                byte[] contents = new byte[1024];
+                while (br.read(contents) != -1) {
+                    outputStream.write(contents);
+                    outputStream.flush();
+                    contents = new byte[1024];
+                }
+                this.notifyEvent(fileData).accept(DownloadStatus.FINISHED);
+            } catch (IOException ex) {
+                try {
+                    fileData.getFileStream().close();
+                } catch (IOException closingException) {
+                    log.warn("could not close command result, a http connection may be leaked !", closingException);
+                }
+                log.error("Unable to stream file source, message: {}", ex.getMessage());
+                this.notifyEvent(fileData).accept(DownloadStatus.INTERRUPTED);
+            }
+        };
+    }
+
+    private StreamingResponseBody toStreamResponseBody(final FileData fileData) {
+        return outputStream -> {
+            try {
+                this.notifyEvent(fileData).accept(DownloadStatus.DOWNLOADING);
+                IOUtils.copyLarge(fileData.getFileStream(), outputStream);
+                outputStream.flush();
+                this.notifyEvent(fileData).accept(DownloadStatus.FINISHED);
+            } catch (IOException ex) {
+                try {
+                    fileData.getFileStream().close();
+                } catch (IOException closingException) {
+                    log.warn("could not close command result, a http connection may be leaked!", closingException);
+                }
+                log.error("Unable to stream file source, message: {}", ex.getMessage());
+                this.notifyEvent(fileData).accept(DownloadStatus.INTERRUPTED);
+            }
+        };
+    }
+
+    private Consumer<DownloadStatus> notifyEvent(final FileData fileData) {
+        return status -> this.getEventPublisher().publishEvent(new DownloadEvent(this, MessageEntity.of(fileData.getSessionId(), status)));
+    }
+}
+
+-------------------------------------------------------------------------------------------------------
+    //    private Type pageableMixin() {
+//        return new AlternateTypeBuilder()
+//                .fullyQualifiedClassName(
+//                        String.format("%s.generated.%s",
+//                                Pageable.class.getPackage().getName(),
+//                                Pageable.class.getSimpleName()))
+//                .withProperties(Arrays.asList(
+//                        property(Integer.class, "page"),
+//                        property(Integer.class, "limit"),
+//                        property(String.class, "sort")
+//                ))
+//                .build();
+//    }
+-------------------------------------------------------------------------------------------------------
+@Configuration
+@EnableWebMvc
+public class WebConfig extends WebMvcConfigurerAdapter {
+
+
+@Override
+public void addViewControllers(ViewControllerRegistry registry) {
+
+    registry.addRedirectViewController("/v1/subscriptions/doc", "/doc?group=subscriptions");
+
+
+}
+}
+-------------------------------------------------------------------------------------------------------
+### direct log messages to stdout ###
+log4j.appender.stdout=org.apache.log4j.ConsoleAppender
+log4j.appender.stdout.Target=System.out
+log4j.appender.stdout.layout=org.apache.log4j.PatternLayout
+log4j.appender.stdout.layout.ConversionPattern=%d{ABSOLUTE} %5p %c{1}:%L - %m%n
+ 
+### direct messages to file hibernate.log ###
+#log4j.appender.file=org.apache.log4j.FileAppender
+#log4j.appender.file.File=hibernate.log
+#log4j.appender.file.layout=org.apache.log4j.PatternLayout
+#log4j.appender.file.layout.ConversionPattern=%d{ABSOLUTE} %5p %c{1}:%L - %m%n
+ 
+### set log levels - for more verbose logging change 'info' to 'debug' ###
+ 
+log4j.rootLogger=warn, stdout
+ 
+log4j.logger.javax.naming=none
+ 
+#log4j.logger.org.hibernate=info
+log4j.logger.org.hibernate=warn
+ 
+### log HQL query parser activity
+#log4j.logger.org.hibernate.hql.ast.AST=debug
+ 
+### log just the SQL
+log4j.logger.org.hibernate.SQL=debug
+ 
+### log JDBC bind parameters ###
+log4j.logger.org.hibernate.type=debug
+ 
+### log schema export/update ###
+#log4j.logger.org.hibernate.tool.hbm2ddl=debug
+ 
+### log HQL parse trees
+#log4j.logger.org.hibernate.hql=debug
+ 
+### log cache activity ###
+#log4j.logger.org.hibernate.cache=debug
+ 
+### log transaction activity
+#log4j.logger.org.hibernate.transaction=debug
+ 
+### log JDBC resource acquisition
+#log4j.logger.org.hibernate.jdbc=debug
+ 
+### enable the following line if you want to track down connection ###
+### leakages when using DriverManagerConnectionProvider ###
+#log4j.logger.org.hibernate.connection.DriverManagerConnectionProvider=trace
+-------------------------------------------------------------------------------------------------------
+@Entity
+@Where(clause = "DELETED = 0")
+public class Foo {
+    // other mappings
+ 
+    @Column(name = "DELETED")
+    private Integer deleted = 0;
+     
+    // getters and setters
+ 
+    public void setDeleted() {
+        this.deleted = 1;
+    }
+}
+-------------------------------------------------------------------------------------------------------
+    IntFunction<IntFunction<String>> function = i -> j -> String.format("%d x %2d = %2d", i, j, i * j);
+    IntFunction<IntFunction<IntFunction<String>>> repeaterX = count -> i -> j ->
+            IntStream.range(0, count)
+                    .mapToObj(delta -> function.apply(i + delta).apply(j))
+                    .collect(Collectors.joining("\t"));
+    IntFunction<IntFunction<IntFunction<IntFunction<String>>>> repeaterY = countY -> countX -> i -> j ->
+            IntStream.range(0, countY)
+                    .mapToObj(deltaY -> repeaterX.apply(countX).apply(i).apply(j + deltaY))
+                    .collect(Collectors.joining("\n"));
+    IntFunction<String> row = i -> repeaterY.apply(10).apply(4).apply(i).apply(1) + "\n";
+    IntStream.of(2, 6).mapToObj(row).forEach(System.out::println);
+
+-------------------------------------------------------------------------------------------------------
+@PostMapping("/result")
+    public String result(@Valid @ModelAttribute("employee") Employee employee, BindingResult bindingResult){
+        List<FieldError> errors = bindingResult.getFieldErrors();
+        for (FieldError error : errors ) {
+         System.out.println (error.getObjectName() + " - " +error.getDefaultMessage());
+        }
+        System.out.print(employee.getName()); 
+        empService.save(employee);
+        return "result"; 
+    }
+-------------------------------------------------------------------------------------------------------
+@XmlRootElement(name = "employee")
+@XmlAccessorType(XmlAccessType.FIELD)
+public class EmployeeVO extends ResourceSupport implements Serializable
+{
+    private Integer employeeId;
+    private String firstName;
+    private String lastName;
+    private String email;
+ 
+    public EmployeeVO(Integer id, String firstName, String lastName, String email) {
+        super();
+        this.employeeId = id;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+    }
+ 
+    public EmployeeVO() {
+    }
+     
+    //Removed setter/getter for readability
+}
+-------------------------------------------------------------------------------------------------------
+List<T> intersect = list1.stream()
+    .filter(list2::contains)
+    .collect(Collectors.toList());
+
+List<T> union = Stream.concat(list1.stream(), list2.stream())
+    .distinct()
+    .collect(Collectors.toList());
+-------------------------------------------------------------------------------------------------------
+@Test
+public void whenFilteringAndTransformingCollection_thenCorrect() {
+    Predicate<String> predicate = new Predicate<String>() {
+        @Override
+        public boolean apply(String input) {
+            return input.startsWith("A") || input.startsWith("T");
+        }
+    };
+ 
+    Function<String, Integer> func = new Function<String,Integer>(){
+        @Override
+        public Integer apply(String input) {
+            return input.length();
+        }
+    };
+ 
+    List<String> names = Lists.newArrayList("John", "Jane", "Adam", "Tom");
+    Collection<Integer> result = FluentIterable.from(names)
+                                               .filter(predicate)
+                                               .transform(func)
+                                               .toList();
+ 
+    assertEquals(2, result.size());
+    assertThat(result, containsInAnyOrder(4, 3));
+}
+-------------------------------------------------------------------------------------------------------
+@Test
+public void givenListOfCustomers_whenTransformed_thenListOfAddress() {
+    Collection<Address> addressCol = CollectionUtils.collect(list1, 
+      new Transformer<Customer, Address>() {
+        public Address transform(Customer customer) {
+            return customer.getAddress();
+        }
+    });
+     
+    List<Address> addressList = new ArrayList<>(addressCol);
+    assertTrue(addressList.size() == 3);
+    assertTrue(addressList.get(0).getLocality().equals("locality1"));
 }
 -------------------------------------------------------------------------------------------------------
 
@@ -45205,183 +46139,7 @@ abstract class ParentBuilder<T extends ParentBuilder<T>>
 
 
 final class ConcreteChild1 extends ParentBase implements Child1
-{}
---------------------------------------------------------------------------------------------------------
-import static com.google.common.collect.Lists.newArrayList;
-import static springfox.documentation.spi.schema.contexts.ModelContext.inputParam;
-
-import com.fasterxml.classmate.ResolvedType;
-import com.fasterxml.classmate.TypeResolver;
-import com.google.common.base.Function;
-import com.google.common.collect.Sets;
-import java.lang.reflect.Field;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-import lombok.SneakyThrows;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Component;
-import springfox.documentation.builders.OperationBuilder;
-import springfox.documentation.builders.ParameterBuilder;
-import springfox.documentation.schema.ModelReference;
-import springfox.documentation.schema.ResolvedTypes;
-import springfox.documentation.schema.TypeNameExtractor;
-import springfox.documentation.service.Parameter;
-import springfox.documentation.service.ResolvedMethodParameter;
-import springfox.documentation.spi.DocumentationType;
-import springfox.documentation.spi.schema.contexts.ModelContext;
-import springfox.documentation.spi.service.OperationBuilderPlugin;
-import springfox.documentation.spi.service.contexts.OperationContext;
-import springfox.documentation.spi.service.contexts.ParameterContext;
-
-@Component
-@Order(Ordered.LOWEST_PRECEDENCE)
-public class OperationPageableParameterReader implements OperationBuilderPlugin {
-    private final TypeNameExtractor nameExtractor;
-    private final ResolvedType pageableType;
-    private final TypeResolver resolver;
-
-    @Autowired
-    public OperationPageableParameterReader(TypeNameExtractor nameExtractor, TypeResolver resolver) {
-        this.nameExtractor = nameExtractor;
-        this.resolver = resolver;
-        this.pageableType = resolver.resolve(Pageable.class);
-    }
-
-    @Override
-    @SneakyThrows
-    public void apply(OperationContext context) {
-        List<ResolvedMethodParameter> methodParameters = context.getParameters();
-        List<Parameter> parameters = newArrayList();
-
-        for (ResolvedMethodParameter methodParameter : methodParameters) {
-            ResolvedType resolvedType = methodParameter.getParameterType();
-            if (!pageableType.equals(resolvedType)) {
-                continue;
-            }
-
-            ParameterContext parameterContext = new ParameterContext(methodParameter, new ParameterBuilder(),
-                    context.getDocumentationContext(), context.getGenericsNamingStrategy(), context);
-            Function<ResolvedType, ? extends ModelReference> factory = createModelRefFactory(parameterContext);
-
-            ModelReference intModel = factory.apply(resolver.resolve(Integer.TYPE));
-            ModelReference stringModel = factory.apply(resolver.resolve(List.class, String.class));
-
-            parameters.add(new ParameterBuilder().parameterType("query")
-                    .name("page")
-                    .modelRef(intModel)
-                    .description("Results page you want to retrieve (0..N)")
-                    .build());
-            parameters.add(new ParameterBuilder().parameterType("query")
-                    .name("size")
-                    .modelRef(intModel)
-                    .description("Number of records per page")
-                    .build());
-            parameters.add(new ParameterBuilder().parameterType("query")
-                    .name("sort")
-                    .modelRef(stringModel)
-                    .allowMultiple(true)
-                    .description("Sorting criteria in the format: property(,asc|desc). "
-                            + "Default sort order is ascending. " + "Multiple sort criteria are supported.")
-                    .build());
-
-            final OperationBuilder operationBuilder = context.operationBuilder();
-            operationBuilder.parameters(parameters);
-
-            Set<String> toDelete = Sets.newLinkedHashSet(Arrays
-                    .asList("offset", "pageNumber", "pageSize", "paged", "sort.sorted", "sort.unsorted", "unpaged"));
-            final Field field = operationBuilder.getClass().getDeclaredField("parameters");
-            field.setAccessible(true);
-            @SuppressWarnings("unchecked")
-            final List<Parameter> list = (List<Parameter>) field.get(operationBuilder);
-            field.set(operationBuilder,
-                    list.stream().filter(p -> !toDelete.contains(p.getName())).collect(Collectors.toList()));
-        }
-    }
-
-    private Function<ResolvedType, ? extends ModelReference> createModelRefFactory(ParameterContext context) {
-        ModelContext modelContext = inputParam(context.getGroupName(),
-                context.resolvedMethodParameter().getParameterType(),
-                context.getDocumentationType(),
-                context.getAlternateTypeProvider(),
-                context.getGenericNamingStrategy(),
-                context.getIgnorableParameterTypes());
-        return ResolvedTypes.modelRefFactory(modelContext, nameExtractor);
-    }
-
-    @Override
-    public boolean supports(DocumentationType delimiter) {
-        return true;
-    }
-}
---------------------------------------------------------------------------------------------------------
-    {
-      "name": "security.cors.allowed-paths",
-      "type": "java.lang.String",
-      "description": "Security CORS allowed paths."
-    },
-    {
-      "name": "security.cors.allowed-methods",
-      "type": "java.lang.String",
-      "description": "Security CORS allowed methods."
-    },
-    {
-      "name": "security.cors.allowed-origins",
-      "type": "java.lang.String",
-      "description": "Security CORS allowed origins."
-    },
-    {
-      "name": "security.cors.allowed-headers",
-      "type": "java.lang.String",
-      "description": "Security CORS allowed headers."
-    },
-    {
-      "name": "security.cors.exposed-headers",
-      "type": "java.lang.String",
-      "description": "Security CORS exposed headers."
-    },
-    {
-      "name": "security.cors.allow-credentials",
-      "type": "java.lang.String",
-      "description": "Security CORS allow credentials option."
-    },
-    {
-      "name": "security.cors.max-age",
-      "type": "java.lang.String",
-      "description": "Security CORS maximum age."
-    }
---------------------------------------------------------------------------------------------------------
-            <artifactId>springfox-swagger2</artifactId>
-            <version>2.8.0</version>
-            <artifactId>springfox-swagger-ui</artifactId>
-            <version>2.8.0</version>
-            <artifactId>springfox-data-rest</artifactId>
-            <version>2.8.0</version>
-            <groupId>io.springfox</groupId>
-            <artifactId>springfox-bean-validators</artifactId>
-            <version>2.8.0</version>
---------------------------------------------------------------------------------------------------------
-    @ApiOperation(value = "Find partners")
-    @ApiImplicitParams({
-        @ApiImplicitParam(name = "page", dataType = "integer", paramType = "query",
-                value = "Results page you want to retrieve (0..N)"),
-        @ApiImplicitParam(name = "size", dataType = "integer", paramType = "query",
-                value = "Number of records per page."),
-        @ApiImplicitParam(name = "sort", allowMultiple = true, dataType = "string", paramType = "query",
-                value = "Sorting criteria in the format: property(,asc|desc). " +
-                        "Default sort order is ascending. " +
-                        "Multiple sort criteria are supported.")
-    })
-    @RequestMapping(value = "/v1/partners", method = RequestMethod.GET)
-    @ResponseBody
-    @ResponseStatus(HttpStatus.OK)
-    public List<Partner> findAll(@ApiIgnore final Pageable pageable) {
-            ...
-    }
+{
 --------------------------------------------------------------------------------------------------------
 <?xml version="1.0"?>
 <config>
@@ -46176,6 +46934,1437 @@ fragment X      : [xX];
 fragment Y      : [yY];
 fragment Z      : [zZ];
 fragment SPACE  : ' ';
+--------------------------------------------------------------------------------------------------------
+@ComponentScan(basePackages = {"xxx.xxx.xxx"})
+@Configuration
+@EnableAspectJAutoProxy
+@Import({
+        SwaggerConfiguration.class
+})
+@EnableWebMvc
+public class WebConfig extends WebMvcConfigurerAdapter {
+
+    private static final Logger logger = LoggerFactory.getLogger(WebConfig.class);
+
+    private static final int CACHE_PERIOD = 3600; // one year
+
+    @Autowired
+    private RequestMappingHandlerAdapter requestMappingHandlerAdapter;
+
+
+
+    @Inject
+    private Environment env;
+
+    public WebConfig() {
+        super();
+    }
+
+    @PostConstruct
+    public void init() {
+        requestMappingHandlerAdapter.setIgnoreDefaultModelOnRedirect(true);
+    }
+
+
+    @Override
+    public void configureDefaultServletHandling(DefaultServletHandlerConfigurer configurer) {
+        if(env.getActiveProfiles().length > 0)
+            logger.info("Web application  configuration , using profile {} ", Arrays.toString(env.getActiveProfiles()));
+
+        //configurer.enable();
+    }
+
+    @Override
+    public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
+        ObjectMapper objectMapper = null;
+        for (HttpMessageConverter converter : converters) {
+            if (converter instanceof MappingJackson2HttpMessageConverter) {
+                MappingJackson2HttpMessageConverter jacksonConverter =
+                        ((MappingJackson2HttpMessageConverter) converter);
+
+                if (objectMapper == null) {
+                    objectMapper = jacksonConverter.getObjectMapper();
+                } else {
+                    jacksonConverter.setObjectMapper(objectMapper);
+                }
+            }
+        }
+    }
+
+
+
+    @Profile(ProfileConsts.GNG_DEV)
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+
+        logger.debug("Registering swagger ui path begun");
+
+        registry
+                .addResourceHandler("swagger-ui.html")
+                .addResourceLocations("classpath:/META-INF/resources/swagger-ui.html")
+                .setCachePeriod(CACHE_PERIOD)
+                .resourceChain(true)
+                .addResolver(new GzipResourceResolver())
+                .addResolver(new PathResourceResolver());
+
+        registry
+                .addResourceHandler("/webjars/** ")
+                .addResourceLocations("classpath:/META-INF/resources/webjars/")
+                .setCachePeriod(CACHE_PERIOD)
+                .resourceChain(true)
+                .addResolver(new GzipResourceResolver())
+                .addResolver(new PathResourceResolver());
+
+        logger.debug("Swagger ui path registered successfully !! ");
+
+    }
+
+    @Override
+    public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
+        super.configureMessageConverters(converters);
+    }
+
+    @Override
+    public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {
+
+        logger.debug("Registering content negotiation configurer started ...");
+
+
+        configurer.favorPathExtension(false)
+                .favorParameter(true)
+                .parameterName("mediaType")
+                .ignoreAcceptHeader(true)
+                .useJaf(false)
+                .defaultContentType(MediaType.APPLICATION_JSON)
+                .mediaType("xml", MediaType.APPLICATION_XML)
+                .mediaType("json", MediaType.APPLICATION_JSON);
+
+        logger.debug("Registering content negotiation configurer completed");
+    }
+
+    @Bean
+    public ViewResolver internalResourceViewResolver() {
+        logger.debug("Registering view resolver started ...");
+
+        InternalResourceViewResolver viewResolver = new InternalResourceViewResolver();
+        viewResolver.setViewClass(JstlView.class);
+        viewResolver.setPrefix("/WEB-INF/views/jsp/");
+        viewResolver.setSuffix(".jsp");
+
+        logger.debug("Registering view resolver completed successfully  ...");
+
+        return viewResolver;
+    }
+
+    @Bean
+    public CommonsMultipartResolver multipartResolver() {
+        logger.debug("Registering multipart resolver started ...");
+
+        CommonsMultipartResolver commonsMultipartResolver = new CommonsMultipartResolver();
+        commonsMultipartResolver.setMaxInMemorySize(1048576);
+        commonsMultipartResolver.setMaxUploadSize(52428800);
+
+        logger.debug("Registering multipart resolver completed successfully !!");
+
+        return commonsMultipartResolver;
+    }
+
+    @Override
+    public org.springframework.validation.Validator getValidator() {
+        return new LocalValidatorFactoryBean();
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        logger.debug("Registering interceptor started ...");
+
+        registry.addInterceptor(new LocaleChangeInterceptor());
+        registry.addInterceptor(interceptor()).addPathPatterns("/**");
+
+        logger.debug("Registering interceptor completed successfully !!");
+
+    }
+
+    @Bean
+    public TokenAuthInterceptor interceptor() {
+        return new TokenAuthInterceptor();
+    }
+
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+
+        logger.debug("Registration of cors started ... ");
+
+        registry
+                .addMapping("/** ")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowCredentials(false)
+                .allowedHeaders("Content-Type,X-Requested-With,accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers,token-key,username,password")
+                .maxAge(1);
+
+        logger.debug("Registration of cors completed successfully !! ");
+
+    }
+
+    @Override
+    public void configureHandlerExceptionResolvers(List<HandlerExceptionResolver> exceptionResolvers) {
+        exceptionResolvers.add(exceptionHandlerExceptionResolver());
+        exceptionResolvers.add(restExceptionResolver());
+    }
+
+    @Bean
+    public ExceptionHandlerExceptionResolver exceptionHandlerExceptionResolver() {
+
+        logger.info("Registering of rest exception handling started ...");
+
+        ExceptionHandlerExceptionResolver resolver = new ExceptionHandlerExceptionResolver();
+
+        resolver.setMessageConverters(HttpMessageConverterUtils.getDefaultHttpMessageConverters());
+
+        logger.debug("Registration of rest exception handling completed successfully !! ");
+
+        return resolver;
+    }
+
+    @Bean
+    public RestHandlerExceptionResolver restExceptionResolver() {
+        return RestHandlerExceptionResolver
+                .builder()
+                .messageSource(httpErrorMessageSource())
+                .defaultContentType(MediaType.APPLICATION_JSON)
+                .addErrorMessageHandler(EmptyResultDataAccessException.class, org.springframework.http.HttpStatus.NOT_FOUND)
+                .build();
+    }
+
+    @Bean
+    public MessageSource httpErrorMessageSource() {
+        ReloadableResourceBundleMessageSource m = new ReloadableResourceBundleMessageSource();
+        m.setBasename("classpath:/org/example/messages");
+        m.setDefaultEncoding("UTF-8");
+        return m;
+    }
+
+    @Override
+    public void addFormatters(FormatterRegistry registry) {
+
+        logger.debug("Registration of formatter started ...");
+
+        logger.info("Setting date time formatter ");
+
+        DateTimeFormatterRegistrar registrar = new DateTimeFormatterRegistrar();
+
+        registrar.setUseIsoFormat(true);
+
+        registrar.registerFormatters(registry);
+
+        logger.debug("Registration of formatter completed successfully ...");
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+@ApiImplicitParam(name = "Authorization", value = "Access Token", required = true, allowEmptyValue = false, paramType = "header", dataTypeClass = String::class, example = "Bearer access_token")
+fun addJob(jobRequest: Job): ResponseEntity<*>{}
+--------------------------------------------------------------------------------------------------------@Bean
+public Docket postsApi() {
+
+    //Adding Header
+    ParameterBuilder aParameterBuilder = new ParameterBuilder();
+    List<Parameter> aParameters = new ArrayList<Parameter>();
+
+    aParameters.clear();
+
+    aParameterBuilder.name("myHeaderParam0").modelRef(new ModelRef("string")).parameterType("header").required(false).build();
+    aParameters.add(aParameterBuilder.build());
+    aParameterBuilder.name("myHeaderParam1").modelRef(new ModelRef("string")).parameterType("header").required(false).build();
+    aParameters.add(aParameterBuilder.build());
+   ....
+   ....
+
+    return new Docket(DocumentationType.SWAGGER_2).groupName("public-api")
+            .apiInfo(apiInfo()).select().paths(postPaths()).build().ignoredParameterTypes(HeaderVo.class).globalOperationParameters(aParameters);
+
+<<<<<<< HEAD
+final class ConcreteChild1 extends ParentBase implements Child1
+{}
+--------------------------------------------------------------------------------------------------------
+import static com.google.common.collect.Lists.newArrayList;
+import static springfox.documentation.spi.schema.contexts.ModelContext.inputParam;
+
+import com.fasterxml.classmate.ResolvedType;
+import com.fasterxml.classmate.TypeResolver;
+import com.google.common.base.Function;
+import com.google.common.collect.Sets;
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import lombok.SneakyThrows;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Component;
+import springfox.documentation.builders.OperationBuilder;
+import springfox.documentation.builders.ParameterBuilder;
+import springfox.documentation.schema.ModelReference;
+import springfox.documentation.schema.ResolvedTypes;
+import springfox.documentation.schema.TypeNameExtractor;
+import springfox.documentation.service.Parameter;
+import springfox.documentation.service.ResolvedMethodParameter;
+import springfox.documentation.spi.DocumentationType;
+import springfox.documentation.spi.schema.contexts.ModelContext;
+import springfox.documentation.spi.service.OperationBuilderPlugin;
+import springfox.documentation.spi.service.contexts.OperationContext;
+import springfox.documentation.spi.service.contexts.ParameterContext;
+
+@Component
+@Order(Ordered.LOWEST_PRECEDENCE)
+public class OperationPageableParameterReader implements OperationBuilderPlugin {
+    private final TypeNameExtractor nameExtractor;
+    private final ResolvedType pageableType;
+    private final TypeResolver resolver;
+
+    @Autowired
+    public OperationPageableParameterReader(TypeNameExtractor nameExtractor, TypeResolver resolver) {
+        this.nameExtractor = nameExtractor;
+        this.resolver = resolver;
+        this.pageableType = resolver.resolve(Pageable.class);
+    }
+
+    @Override
+    @SneakyThrows
+    public void apply(OperationContext context) {
+        List<ResolvedMethodParameter> methodParameters = context.getParameters();
+        List<Parameter> parameters = newArrayList();
+
+        for (ResolvedMethodParameter methodParameter : methodParameters) {
+            ResolvedType resolvedType = methodParameter.getParameterType();
+            if (!pageableType.equals(resolvedType)) {
+                continue;
+            }
+
+            ParameterContext parameterContext = new ParameterContext(methodParameter, new ParameterBuilder(),
+                    context.getDocumentationContext(), context.getGenericsNamingStrategy(), context);
+            Function<ResolvedType, ? extends ModelReference> factory = createModelRefFactory(parameterContext);
+
+            ModelReference intModel = factory.apply(resolver.resolve(Integer.TYPE));
+            ModelReference stringModel = factory.apply(resolver.resolve(List.class, String.class));
+
+            parameters.add(new ParameterBuilder().parameterType("query")
+                    .name("page")
+                    .modelRef(intModel)
+                    .description("Results page you want to retrieve (0..N)")
+                    .build());
+            parameters.add(new ParameterBuilder().parameterType("query")
+                    .name("size")
+                    .modelRef(intModel)
+                    .description("Number of records per page")
+                    .build());
+            parameters.add(new ParameterBuilder().parameterType("query")
+                    .name("sort")
+                    .modelRef(stringModel)
+                    .allowMultiple(true)
+                    .description("Sorting criteria in the format: property(,asc|desc). "
+                            + "Default sort order is ascending. " + "Multiple sort criteria are supported.")
+                    .build());
+
+            final OperationBuilder operationBuilder = context.operationBuilder();
+            operationBuilder.parameters(parameters);
+
+            Set<String> toDelete = Sets.newLinkedHashSet(Arrays
+                    .asList("offset", "pageNumber", "pageSize", "paged", "sort.sorted", "sort.unsorted", "unpaged"));
+            final Field field = operationBuilder.getClass().getDeclaredField("parameters");
+            field.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            final List<Parameter> list = (List<Parameter>) field.get(operationBuilder);
+            field.set(operationBuilder,
+                    list.stream().filter(p -> !toDelete.contains(p.getName())).collect(Collectors.toList()));
+        }
+    }
+
+    private Function<ResolvedType, ? extends ModelReference> createModelRefFactory(ParameterContext context) {
+        ModelContext modelContext = inputParam(context.getGroupName(),
+                context.resolvedMethodParameter().getParameterType(),
+                context.getDocumentationType(),
+                context.getAlternateTypeProvider(),
+                context.getGenericNamingStrategy(),
+                context.getIgnorableParameterTypes());
+        return ResolvedTypes.modelRefFactory(modelContext, nameExtractor);
+    }
+
+    @Override
+    public boolean supports(DocumentationType delimiter) {
+        return true;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+    {
+      "name": "security.cors.allowed-paths",
+      "type": "java.lang.String",
+      "description": "Security CORS allowed paths."
+    },
+    {
+      "name": "security.cors.allowed-methods",
+      "type": "java.lang.String",
+      "description": "Security CORS allowed methods."
+    },
+    {
+      "name": "security.cors.allowed-origins",
+      "type": "java.lang.String",
+      "description": "Security CORS allowed origins."
+    },
+    {
+      "name": "security.cors.allowed-headers",
+      "type": "java.lang.String",
+      "description": "Security CORS allowed headers."
+    },
+    {
+      "name": "security.cors.exposed-headers",
+      "type": "java.lang.String",
+      "description": "Security CORS exposed headers."
+    },
+    {
+      "name": "security.cors.allow-credentials",
+      "type": "java.lang.String",
+      "description": "Security CORS allow credentials option."
+    },
+    {
+      "name": "security.cors.max-age",
+      "type": "java.lang.String",
+      "description": "Security CORS maximum age."
+    }
+--------------------------------------------------------------------------------------------------------
+            <artifactId>springfox-swagger2</artifactId>
+            <version>2.8.0</version>
+            <artifactId>springfox-swagger-ui</artifactId>
+            <version>2.8.0</version>
+            <artifactId>springfox-data-rest</artifactId>
+            <version>2.8.0</version>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-bean-validators</artifactId>
+            <version>2.8.0</version>
+--------------------------------------------------------------------------------------------------------
+    @ApiOperation(value = "Find partners")
+    @ApiImplicitParams({
+        @ApiImplicitParam(name = "page", dataType = "integer", paramType = "query",
+                value = "Results page you want to retrieve (0..N)"),
+        @ApiImplicitParam(name = "size", dataType = "integer", paramType = "query",
+                value = "Number of records per page."),
+        @ApiImplicitParam(name = "sort", allowMultiple = true, dataType = "string", paramType = "query",
+                value = "Sorting criteria in the format: property(,asc|desc). " +
+                        "Default sort order is ascending. " +
+                        "Multiple sort criteria are supported.")
+    })
+    @RequestMapping(value = "/v1/partners", method = RequestMethod.GET)
+    @ResponseBody
+    @ResponseStatus(HttpStatus.OK)
+    public List<Partner> findAll(@ApiIgnore final Pageable pageable) {
+            ...
+    }
+=======
+   }
+>>>>>>> 432fd06f3d93415f91e3a6c981fbb02f4b9687da
+--------------------------------------------------------------------------------------------------------
+    @Bean
+    public UiConfiguration uiConfig() {
+      return UiConfiguration.DEFAULT;
+    }
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
+import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
+import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
+import org.springframework.security.oauth2.provider.token.TokenStore;
+import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
+import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
+
+@Configuration
+@EnableResourceServer
+public class ApplicationSecurityConfiguration extends ResourceServerConfigurerAdapter {
+    private final TokenStore tokenStore;
+
+    @Autowired
+    public ApplicationSecurityConfiguration(TokenStore tokenStore) {
+        this.tokenStore = tokenStore;
+    }
+
+    @Override
+    public void configure(ResourceServerSecurityConfigurer resources) throws Exception {
+        // We're protecting a customers resource here.
+        resources.resourceId("af4ddbce-481c-4a70-95e0-5dfeaa98eb07").tokenStore(tokenStore);
+    }
+
+    @Override
+    public void configure(HttpSecurity http) throws Exception {
+        // Disable CSRF, we're a microservice not a website.
+        // Next configure the exception handling for authentication to return a 401 instead of a login page.
+        http.csrf().disable()
+                .exceptionHandling()
+                .authenticationEntryPoint((request, response, authException) -> response.sendError(401))
+            .and()
+                // Authorization is required for all requests
+                // Except for the OPTIONS request which requires anonymous access
+                .authorizeRequests()
+                    .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                    .antMatchers("/**").authenticated()
+            .and()
+                // Use basic authentication headers because
+                // JSON web tokens are transported in the authorization header
+                .httpBasic()
+            // Enable CORS
+            .and()
+                .cors();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+spring:
+  application:
+    name: API Gateway
+zuul:
+  routes:
+    aanvragen:
+      path: /aanvragen/**
+      url: http://altiis10.test.alfam.nl/moneyou/aanvragenservice/
+    vkm:
+      path: /vkm/**
+      url: http://altiis10.test.alfam.nl/moneyou/vkmservice/
+    tarieven:
+      path: /tarieven/**
+      url: http://altiis10.test.alfam.nl/moneyou/tarievenservice/
+--------------------------------------------------------------------------------------------------------
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.netflix.zuul.EnableZuulProxy;
+
+@EnableZuulProxy
+@SpringBootApplication
+public class ApigatewayApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(ApigatewayApplication.class, args);
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import com.github.bucket4j.Bandwidth;
+import com.github.bucket4j.Bucket;
+import com.github.bucket4j.Bucket4j;
+import com.github.bucket4j.Refill;
+import com.netflix.zuul.context.RequestContext;
+import org.springframework.stereotype.Component;
+
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Throttles requests based on a bucket/token algorithm
+ */
+@Component
+public class Throttler {
+    private final Map<String, Bucket> buckets;
+
+    /**
+     * Initializes a new instance of the throttler
+     */
+    public Throttler() {
+        buckets = new HashMap<>();
+    }
+
+    /**
+     * Throttles the current request by using the specified amount of tokens
+     *
+     * @param context Context for the request
+     * @param amount  Amount of tokens used by the request
+     * @return Returns true when the request can be executed; Otherwise false
+     */
+    public boolean throttle(RequestContext context, long amount) {
+        String identifier = clientIdentifier(context);
+
+        if (!buckets.containsKey(identifier)) {
+            buckets.put(identifier, createBucket());
+        }
+
+        return buckets.get(identifier).tryConsume(amount);
+    }
+
+    /**
+     * Generates an identifier for the client that we want to be throttled
+     *
+     * @param context Request context
+     * @return Returns the client identifier for the request
+     */
+    private String clientIdentifier(RequestContext context) {
+        String clientIpAddress = context.getRequest().getRemoteAddr();
+        String accessToken = getAccessToken(context);
+
+        if (accessToken != null && !accessToken.isEmpty()) {
+            return accessToken;
+        }
+
+        return clientIpAddress;
+    }
+
+    /**
+     * Retrieves the access token from the request
+     *
+     * @param context Request context
+     * @return Returns the access token
+     */
+    private String getAccessToken(RequestContext context) {
+        String authorizationHeader = context.getRequest().getHeader("Authorization");
+
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer")) {
+            return authorizationHeader.substring("Bearer".length() + 1);
+        }
+
+        return null;
+    }
+
+    /**
+     * Creates a new bucket for incoming requests
+     *
+     * @return Returns the bucket for the incoming requests
+     */
+    private Bucket createBucket() {
+        Refill refill = Refill.smooth(1000, Duration.ofHours(1));
+        Bandwidth limit = Bandwidth.classic(1000, refill);
+
+        return Bucket4j.builder().addLimit(limit).build();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.netflix.zuul.ZuulFilter;
+import com.netflix.zuul.context.RequestContext;
+import nl.fizzylogic.apigateway.services.Throttler;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+/**
+ * Limits the amount of requests a client can send
+ */
+@Component
+public class RateLimitingFilter extends ZuulFilter {
+    private final Throttler throttler;
+
+    /**
+     * Initializes a new instance of {@link RateLimitingFilter}
+     *
+     * @param throttler Throttler to use for the filter
+     */
+    @Autowired
+    public RateLimitingFilter(Throttler throttler) {
+        this.throttler = throttler;
+    }
+
+    /**
+     * Gets the type of filter
+     *
+     * @return
+     */
+    @Override
+    public String filterType() {
+        return "pre";
+    }
+
+    /**
+     * Gets the priority for the filter
+     *
+     * @return
+     */
+    @Override
+    public int filterOrder() {
+        return 0;
+    }
+
+    /**
+     * Checks whether the filter should be executed
+     *
+     * @return
+     */
+    @Override
+    public boolean shouldFilter() {
+        return true;
+    }
+
+    /**
+     * Executes the filter refusing requests that are over the limit
+     *
+     * @return
+     */
+    @Override
+    public Object run() {
+        RequestContext context = RequestContext.getCurrentContext();
+
+        if (!throttler.throttle(context, 1)) {
+            context.setSendZuulResponse(false);
+
+            context.setResponseStatusCode(429);
+            context.setResponseBody("{ \"message\": \"Too many requests\" }");
+            context.getResponse().setContentType("application/json");
+        }
+
+        return null;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.apache.commons.cli.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+public class Program {
+    private static final String COMMANDLINE_ARG_INPUT = "in";
+    private static final String COMMANDLINE_ARG_OUTPUT = "out";
+
+    private Logger logger = LoggerFactory.getLogger(Program.class);
+
+    // CHANGE THIS: Make sure that you enter the correct indices to be masked with hashed values.
+    private static final List<Integer> MASKED_FIELDS = Arrays.asList(1,3,4);
+
+    public static void main(String[] args) {
+        new Program().run(args);
+    }
+
+    public void run(String[] args) {
+        CommandLine commandLine = parseArguments(args);
+
+        if (commandLine == null) {
+            System.exit(1);
+            return;
+        }
+
+        HashedValueRegistry valueRegistry = new HashedValueRegistry();
+
+        Path inputFolder = Paths.get(commandLine.getOptionValue(COMMANDLINE_ARG_INPUT));
+        Path outputFolder = Paths.get(commandLine.getOptionValue(COMMANDLINE_ARG_OUTPUT));
+
+        try (DirectoryStream<Path> inputFiles = Files.newDirectoryStream(inputFolder)) {
+            for (Path inputFile : inputFiles) {
+                CsvFileProcessor processor = new CsvFileProcessor(valueRegistry, inputFile, outputFolder);
+                processor.process(MASKED_FIELDS);
+            }
+        } catch (IOException e) {
+            logger.error("Could not read from the input folder.", e);
+        }
+    }
+
+    private Options commandLineArguments() {
+        return new Options()
+                .addOption(Option.builder(COMMANDLINE_ARG_INPUT).hasArg().required().build())
+                .addOption(Option.builder(COMMANDLINE_ARG_OUTPUT).hasArg().required().build());
+    }
+
+    private CommandLine parseArguments(String[] args) {
+        CommandLineParser parser = new DefaultParser();
+
+        try {
+            return parser.parse(commandLineArguments(), args);
+        } catch (ParseException e) {
+            logger.error("Failed to parse the commandline arguments", e);
+            return null;
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+POST /.../{resource}/{resource-id}/actions/{action}
+GET /.../{resource}[?page_index={page_index}]
+/{resource}/{resource-id}/{sub-resource}/{sub-resource-id}
+--------------------------------------------------------------------------------------------------------
+bin\kafka-topic.sh --zookeeper localhost:2181 --create --replication-factor 1 --partitions 1 --topic events
+bin/zookeeper-server-start.sh config/zookeeper.properties
+bin/kafka-server-start.sh config/server.properties
+--------------------------------------------------------------------------------------------------------
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.*;
+
+public class ConsumerApp {
+    private static final Logger log = LoggerFactory.getLogger(ConsumerApp.class);
+
+    public static void main(String[] args) throws Exception {
+
+        // Required properties:
+        //  - broker host used to discover brokers in your cluster from which messages need to be fetched
+        //  - group ID to identify the application that is fetching (you can have multiple instances of a consumer)
+
+        Properties consumerProperties = new Properties();
+        consumerProperties.put("bootstrap.servers", "localhost:9092");
+        consumerProperties.put("group.id", "consumerapp");
+
+        // Set some default deserializers for the consumed messages.
+        // This is required because otherwise Kafka doesn't know what to do with the data.
+        consumerProperties.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+        consumerProperties.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+
+        // Use autocommit settings so that you don't need to commit the messages you received.
+        // This is typically done in scenarios where consistency isn't an issue.
+        consumerProperties.put("enable.auto.commit", "true");
+        consumerProperties.put("auto.commit.interval.ms", "1000");
+
+        KafkaConsumer<String, String> consumer = new KafkaConsumer<String, String>(consumerProperties);
+
+        // Always call subscribe first!
+        // Otherwise you can poll all you want, but get nothing in return.
+        consumer.subscribe(Arrays.asList("events"));
+
+        while (true) {
+            // Use a polling timeout to retrieve messages.
+            // Increase the timeout value to slow down the message flow and decrease the load on the brokers.
+            // You will get more messages each time you poll with a longer timeout setting.
+            // But it does mean you have to wait longer for the messages to come in.
+            ConsumerRecords<String, String> records = consumer.poll(100);
+
+            // Process the messages here.
+            records.forEach(msg -> log.info("Received message: {}", msg.value()));
+        }
+    }
+}
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.common.TopicPartition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
+
+public class ConsumerApp {
+    private static final Logger log = LoggerFactory.getLogger(ConsumerApp.class);
+
+    public static void main(String[] args) throws Exception {
+
+        // Required properties:
+        //  - broker host used to discover brokers in your cluster from which messages need to be fetched
+        //  - group ID to identify the application that is fetching (you can have multiple instances of a consumer)
+
+        Properties consumerProperties = new Properties();
+        consumerProperties.put("bootstrap.servers", "localhost:9092");
+        consumerProperties.put("group.id", "consumerapp");
+
+        // Set some default deserializers for the consumed messages.
+        // This is required because otherwise Kafka doesn't know what to do with the data.
+        consumerProperties.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+        consumerProperties.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+
+        KafkaConsumer<String,String> consumer = new KafkaConsumer<String, String>(consumerProperties);
+
+        // Always call subscribe first!
+        // Otherwise you can poll all you want, but get nothing in return.
+        consumer.subscribe(Arrays.asList("events"));
+
+        while(true) {
+            Map<TopicPartition, OffsetAndMetadata> committedOffsets = new HashMap<>();
+
+            // Use a polling timeout to retrieve messages.
+            // Increase the timeout value to slow down the message flow and decrease the load on the brokers.
+            // You will get more messages each time you poll with a longer timeout setting.
+            // But it does mean you have to wait longer for the messages to come in.
+            ConsumerRecords<String,String> records = consumer.poll(100);
+
+            records.forEach(msg -> {
+                log.info("Received message: {}",msg.value());
+
+                // Mark the current message as processed by putting them in the commit map.
+                // Any messages that fail to process are left out of this map.
+                committedOffsets.put(
+                        new TopicPartition(msg.topic(), msg.partition()),
+                        new OffsetAndMetadata(msg.offset()));
+            });
+
+            // Mark the processed messages as committed on the server.
+            // With Kafka you can have multiple messages that are uncomitted, just leave them
+            // out of the map and commit the rest using the commitSync or commitAsync method.
+            consumer.commitSync(committedOffsets);
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+script: mvn deploy --settings .travis-oss-settings.xml
+--------------------------------------------------------------------------------------------------------
+import scala.concurrent.Future;
+import scala.concurrent.impl.Promise.DefaultPromise;
+
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+
+public final class Scala {
+	
+    public static <T> Future<T> asFuture(ListenableFuture<T> future) {
+        final scala.concurrent.Promise<T> promise = new DefaultPromise<T>();
+        Futures.addCallback(future, new FutureCallback<T>() {
+            @Override public void onSuccess(T result) {
+                promise.success(result);
+            }
+            @Override public void onFailure(Throwable t) {
+                promise.failure(t);
+            }
+        });
+        return promise.future();
+    }
+    
+    public static <T, A> Future<Fun.Tuple2<T, A>> asFuture(ListenableFuture<T> future, A a) {
+        final scala.concurrent.Promise<Fun.Tuple2<T, A>> promise = new DefaultPromise<Fun.Tuple2<T, A>>();
+        Futures.addCallback(future, new FutureCallback<T>() {
+            @Override public void onSuccess(T result) {
+                promise.success(new Fun.Tuple2<T, A>(result, a));
+            }
+            @Override public void onFailure(Throwable t) {
+                promise.failure(t);
+            }
+        });
+        return promise.future();
+    }
+    
+    public static <T, A, B> Future<Fun.Tuple3<T, A, B>> asFuture(ListenableFuture<T> future, A a, B b) {
+        final scala.concurrent.Promise<Fun.Tuple3<T, A, B>> promise = new DefaultPromise<Fun.Tuple3<T, A, B>>();
+        Futures.addCallback(future, new FutureCallback<T>() {
+            @Override public void onSuccess(T result) {
+                promise.success(new Fun.Tuple3<T, A, B>(result, a, b));
+            }
+            @Override public void onFailure(Throwable t) {
+                promise.failure(t);
+            }
+        });
+        return promise.future();
+    }
+    
+    public static <T, A, B, C> Future<Fun.Tuple4<T, A, B, C>> asFuture(ListenableFuture<T> future, A a, B b, C c) {
+        final scala.concurrent.Promise<Fun.Tuple4<T, A, B, C>> promise = new DefaultPromise<Fun.Tuple4<T, A, B, C>>();
+        Futures.addCallback(future, new FutureCallback<T>() {
+            @Override public void onSuccess(T result) {
+                promise.success(new Fun.Tuple4<T, A, B, C>(result, a, b, c));
+            }
+            @Override public void onFailure(Throwable t) {
+                promise.failure(t);
+            }
+        });
+        return promise.future();
+    }
+    
+    public static <T, A, B, C, D> Future<Fun.Tuple5<T, A, B, C, D>> asFuture(ListenableFuture<T> future, A a, B b, C c, D d) {
+        final scala.concurrent.Promise<Fun.Tuple5<T, A, B, C, D>> promise = new DefaultPromise<Fun.Tuple5<T, A, B, C, D>>();
+        Futures.addCallback(future, new FutureCallback<T>() {
+            @Override public void onSuccess(T result) {
+                promise.success(new Fun.Tuple5<T, A, B, C, D>(result, a, b, c, d));
+            }
+            @Override public void onFailure(Throwable t) {
+                promise.failure(t);
+            }
+        });
+        return promise.future();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+https://github.com/wmeints/casser/blob/develop/src/main/java/com/noorq/casser/mapping/javatype/UUIDJavaType.java
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.SecurityProperties;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+
+import javax.sql.DataSource;
+
+@Configuration
+@Order(SecurityProperties.ACCESS_OVERRIDE_ORDER)
+public class ApplicationSecurity extends WebSecurityConfigurerAdapter {
+
+    @Autowired
+    private DataSource dataSource;
+
+    public void configure(HttpSecurity httpSecurity) throws Exception {
+        httpSecurity.csrf().disable();
+
+        httpSecurity.authorizeRequests()
+                .antMatchers("/app/**")
+                .permitAll()
+                .and()
+                .authorizeRequests()
+                .anyRequest()
+                .authenticated()
+                .and()
+                .formLogin().loginPage("/account/logon").failureUrl("/account/logon?error")
+                .permitAll()
+                .and()
+                .logout()
+                .logoutUrl("/account/logoff")
+                .permitAll();
+
+    }
+
+    public void configure(AuthenticationManagerBuilder authentication) throws Exception {
+        authentication.jdbcAuthentication().dataSource(dataSource)
+                .withUser("admin").password("admin").roles("ADMIN");
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@Entity
+@Table(name = "container")
+@Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+@Document(indexName = "container")
+public class Container implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
+    @SequenceGenerator(name = "sequenceGenerator")
+    private Long id;
+
+    @NotNull
+    @Column(name = "name", nullable = false)
+    private String name;
+
+    @ManyToMany
+    @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+    @JoinTable(name = "container_item",
+               joinColumns = @JoinColumn(name="container_id", referencedColumnName="id"),
+               inverseJoinColumns = @JoinColumn(name="items_id", referencedColumnName="id"))
+    private Set<Item> items = new HashSet<>();
+}
+
+@Entity
+@Table(name = "item")
+@Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+@Document(indexName = "item")
+public class Item implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
+    @SequenceGenerator(name = "sequenceGenerator")
+    private Long id;
+
+    @NotNull
+    @Column(name = "name", nullable = false)
+    private String name;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type", nullable = false)
+    private Type type;
+
+    @ManyToMany(mappedBy = "items")
+    @JsonIgnore
+    @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+    private Set<Container> containers = new HashSet<>();
+}
+--------------------------------------------------------------------------------------------------------
+@Entity(name="products")
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name="product_type", 
+  discriminatorType = DiscriminatorType.INTEGER)
+public class MyProduct {
+    // ...
+}
+
+@Entity
+@DiscriminatorValue("1")
+public class Book extends MyProduct {
+    // ...
+}
+
+@Entity
+@DiscriminatorValue("2")
+public class Pen extends MyProduct {
+    // ...
+}
+
+@Entity
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorFormula("case when author is not null then 1 else 2 end")
+public class MyProduct { ... }
+
+@Entity
+@Inheritance(strategy = InheritanceType.JOINED)
+public class Animal {
+    @Id
+    private long animalId;
+    private String species;
+ 
+    // constructor, getters, setters 
+}
+
+@Entity
+@PrimaryKeyJoinColumn(name = "petId")
+public class Pet extends Animal {
+    // ...
+}
+
+@Entity
+@Polymorphism(type = PolymorphismType.EXPLICIT)
+public class Bag implements Item { ...}
+--------------------------------------------------------------------------------------------------------
+import java.util.Comparator;
+
+public enum TypeAndOrdinalColumnComparator implements Comparator<CasserProperty> {
+
+	INSTANCE;
+
+	public int compare(CasserProperty thisVal, CasserProperty anotherVal) {
+
+		int c = Integer.compare(thisVal.getColumnType().ordinal(), anotherVal.getColumnType().ordinal());
+		
+		if (c == 0) {
+			c = Integer.compare(thisVal.getOrdinal(), anotherVal.getOrdinal());
+		}
+
+		return c;
+	}
+	
+}
+--------------------------------------------------------------------------------------------------------
+
+import java.lang.reflect.Method;
+import java.util.function.Function;
+
+public enum GetterMethodDetector implements Function<Method, Boolean> {
+
+	INSTANCE;
+	
+	@Override
+	public Boolean apply(Method method) {
+		
+		if (method == null) {
+			throw new IllegalArgumentException("empty parameter");
+		}
+		
+		if (method.getParameterCount() != 0 || method.getReturnType() == void.class) {
+			return false;
+		}
+		
+		return true;
+	    
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+            Properties consumerProperties = new Properties();
+            consumerProperties.put("bootstrap.servers", cmd.getOptionValue("broker"));
+            consumerProperties.put("group.id", cmd.getOptionValue("group"));
+
+            // Set some default deserializers for the consumed messages.
+            // This is required because otherwise Kafka doesn't know what to do with the data.
+            consumerProperties.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+            consumerProperties.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+
+            // Use autocommit settings so that you don't need to commit the messages you received.
+            // This is typically done in scenarios where consistency isn't an issue.
+            consumerProperties.put("enable.auto.commit", "true");
+            consumerProperties.put("auto.commit.interval.ms", "1000");
+--------------------------------------------------------------------------------------------------------
+#!/bin/bash
+
+if [ "$TRAVIS_BRANCH" == "master" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
+    echo 'Master branch: trigger QA'
+    gradle sonarqube -Dsonar.login=$SONAR_TOKEN
+elif [ "$TRAVIS_PULL_REQUEST" != "false" ] && [ -n "${GITHUB_TOKEN:-}" ]; then
+    echo 'Pull request: trigger QA and preview analysis'
+
+    gradle sonarqube -Dsonar.login=$SONAR_TOKEN \
+        -Dsonar.github.oauth=$GITHUB_TOKEN \
+        -Dsonar.github.repository=$TRAVIS_REPO_SLUG \
+        -Dsonar.github.pullRequest=$TRAVIS_PULL_REQUEST \
+        -Dsonar.login=$SONAR_TOKEN \
+        -Dsonar.analysis.mode=preview
+fi
+--------------------------------------------------------------------------------------------------------
+import com.netflix.zuul.ZuulFilter;
+import com.netflix.zuul.context.RequestContext;
+import io.jsonwebtoken.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+
+import javax.servlet.http.HttpServletRequest;
+import java.io.InputStream;
+import java.security.Key;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+
+/**
+ * Validates JSON Web tokens send by clients
+ */
+@Component
+public class AuthenticationFilter extends ZuulFilter {
+    private final Logger logger = LoggerFactory.getLogger(AuthenticationFilter.class);
+
+    /**
+     * Gets the type of filter
+     */
+    @Override
+    public String filterType() {
+        return "pre";
+    }
+
+    /**
+     * Gets the filter priority
+     */
+    @Override
+    public int filterOrder() {
+        return 0;
+    }
+
+    /**
+     * Checks whether the filter should be executed
+     */
+    @Override
+    public boolean shouldFilter() {
+        return false;
+    }
+
+    /**
+     * Executes the filter
+     */
+    @Override
+    public Object run() {
+        HttpServletRequest request = RequestContext.getCurrentContext().getRequest();
+        String authorizationHeader = request.getHeader("Authorization");
+
+        if (authorizationHeader != null && !authorizationHeader.isEmpty() && authorizationHeader.startsWith("Bearer")) {
+            String token = authorizationHeader.substring("Bearer".length() + 1);
+            logger.info("Received JWT {}", token);
+
+            try {
+                Jwts.parser().setSigningKey(loadKey()).parse(token);
+                return null;
+            } catch (ExpiredJwtException ex) {
+                logger.error("Provided token is expired");
+            } catch (MalformedJwtException ex) {
+                logger.error("Provided token is malformed", ex);
+            } catch (SignatureException ex) {
+                logger.error("Provided token has an invalid signature", ex);
+            }
+        }
+
+        sendUnauthorizedResponse();
+
+        return null;
+    }
+
+    /**
+     * Sends an unauthorized response
+     */
+    private void sendUnauthorizedResponse() {
+        RequestContext context = RequestContext.getCurrentContext();
+
+        context.setSendZuulResponse(false);
+        context.setResponseStatusCode(401);
+        context.setResponseBody("{ \"message\": \"You are not authorized\" }");
+
+        context.getResponse().setContentType("application/json");
+    }
+
+    /**
+     * Loads a public key from a resource in the JAR file
+     *
+     * @return Returns the public key for validating JSON Web Tokens
+     */
+    private Key loadKey() {
+        try {
+            InputStream certificateStream = AuthenticationFilter.class
+                    .getClassLoader()
+                    .getResourceAsStream("auth-server.cer");
+
+            CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+            Certificate certificate = certificateFactory.generateCertificate(certificateStream);
+
+            return certificate.getPublicKey();
+        } catch (CertificateException e) {
+            logger.error("Failed to create certificate factory", e);
+            return null;
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.jwt.crypto.sign.RsaVerifier;
+import org.springframework.security.oauth2.provider.token.TokenStore;
+import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
+import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
+import org.springframework.security.oauth2.provider.token.store.jwk.JwkTokenStore;
+
+@Configuration
+public class JsonWebTokenConfiguration {
+
+    @Bean
+    public TokenStore tokenStore(@Value("${authorizationserver.keyUrl}")String keyUrl) {
+        return new JwkTokenStore(keyUrl);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.ModelAndView;
+
+@Controller
+public class HomeController {
+    @RequestMapping("/")
+    public ModelAndView index() {
+        return new ModelAndView("redirect:/swagger-ui.html");
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.vertx.core.json.JsonObject;
+import lombok.*;
+
+import java.util.Map;
+
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
+@JsonIgnoreProperties(ignoreUnknown = true)
+@Getter
+@ToString
+public class Outcome {
+    private final String intent;
+    private final Map<String, JsonObject> entities;
+    private final double confidence;
+}
+--------------------------------------------------------------------------------------------------------
+@Configuration
+public class AppConfig {
+
+ @Bean
+ public FilterRegistrationBean < CustomURLFilter > filterRegistrationBean() {
+  FilterRegistrationBean < CustomURLFilter > registrationBean = new FilterRegistrationBean();
+  CustomURLFilter customURLFilter = new CustomURLFilter();
+
+  registrationBean.setFilter(customURLFilter);
+  registrationBean.addUrlPatterns("/greeting/*");
+  registrationBean.setOrder(2); //set precedence
+  return registrationBean;
+ }
+}
+
+
+public class CustomURLFilter implements Filter {
+
+ private static final Logger LOGGER = LoggerFactory.getLogger(CustomURLFilter.class);
+
+ @Override
+ public void init(FilterConfig filterConfig) throws ServletException {
+  LOGGER.info("########## Initiating CustomURLFilter filter ##########");
+ }
+
+ @Override
+ public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+
+  HttpServletRequest request = (HttpServletRequest) servletRequest;
+  HttpServletResponse response = (HttpServletResponse) servletResponse;
+
+  LOGGER.info("This Filter is only called when request is mapped for /customer resource");
+
+  //call next filter in the filter chain
+  filterChain.doFilter(request, response);
+ }
+
+ @Override
+ public void destroy() {
+
+ }
+}
+--------------------------------------------------------------------------------------------------------
+@Configuration
+@Order(Ordered.HIGHEST_PRECEDENCE)
+public class CustomFilter implements Filter {
+
+ private static final Logger LOGGER = LoggerFactory.getLogger(CustomFilter.class);
+
+ @Override
+ public void init(FilterConfig filterConfig) throws ServletException {
+  LOGGER.info("########## Initiating Custom filter ##########");
+ }
+
+ @Override
+ public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+
+  HttpServletRequest request = (HttpServletRequest) servletRequest;
+  HttpServletResponse response = (HttpServletResponse) servletResponse;
+
+  LOGGER.info("Logging Request  {} : {}", request.getMethod(), request.getRequestURI());
+
+  //call next filter in the filter chain
+  filterChain.doFilter(request, response);
+
+  LOGGER.info("Logging Response :{}", response.getContentType());
+ }
+
+ @Override
+ public void destroy() {
+  // TODO: 7/4/18
+ }
+}
+--------------------------------------------------------------------------------------------------------
+@Configuration
+@EnableSwagger2
+@Profile(ProfileConsts.GNG_DEV)
+public class SwaggerConfiguration {
+
+    private final Logger logger = LoggerFactory.getLogger(SwaggerConfiguration.class);
+
+
+    @Bean
+    public Docket api() {
+
+        logger.debug("Starting Swagger");
+        StopWatch watch = new StopWatch();
+        watch.start();
+
+        Docket docket = new Docket(DocumentationType.SWAGGER_2)
+                .select()
+                .apis(RequestHandlerSelectors.any())
+                .paths(PathSelectors.any())
+                .build()
+                .apiInfo(apiInfo());
+
+        watch.stop();
+        logger.debug("Started Swagger in {} ms", watch.getTotalTimeMillis());
+
+        return docket;
+    }
+
+    private ApiInfo apiInfo() {
+        return new ApiInfoBuilder()
+                .title("GoNoGO API")
+                .description("GoNoGo api for developers")
+                .version("2.0")
+                .termsOfServiceUrl("http://terms-of-services.url")
+                .license("LICENSE")
+                .licenseUrl("http://url-to-license.com")
+                .build();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+ @ApiParam(access="hide")
+ @ApiModelProperty(hidden = true)
 --------------------------------------------------------------------------------------------------------
 import java.math.BigDecimal;
 import java.math.RoundingMode;
