@@ -8815,6 +8815,113 @@ after_failure:
     </update>
 </changeSet>
 --------------------------------------------------------------------------------------------------------
+@ExtendWith(SpringExtension.class)
+@WebMvcTest(controllers = ValidateRequestBodyController.class)
+class ValidateRequestBodyControllerTest {
+
+  @Autowired
+  private MockMvc mvc;
+
+  @Autowired
+  private ObjectMapper objectMapper;
+
+  @Test
+  void whenInputIsInvalid_thenReturnsStatus400() throws Exception {
+    Input input = invalidInput();
+    String body = objectMapper.writeValueAsString(input);
+
+    mvc.perform(post("/validateBody")
+            .contentType("application/json")
+            .content(body))
+            .andExpect(status().isBadRequest());
+  }
+}
+@ExtendWith(SpringExtension.class)
+@WebMvcTest(controllers = ValidateParametersController.class)
+class ValidateParametersControllerTest {
+
+  @Autowired
+  private MockMvc mvc;
+
+  @Test
+  void whenPathVariableIsInvalid_thenReturnsStatus400() throws Exception {
+    mvc.perform(get("/validatePathVariable/3"))
+            .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void whenRequestParameterIsInvalid_thenReturnsStatus400() throws Exception {
+    mvc.perform(get("/validateRequestParameter")
+            .param("param", "3"))
+            .andExpect(status().isBadRequest());
+  }
+}
+@ExtendWith(SpringExtension.class)
+@SpringBootTest
+class ValidatingServiceTest {
+
+  @Autowired
+  private ValidatingService service;
+
+  @Test
+  void whenInputIsInvalid_thenThrowsException(){
+    Input input = invalidInput();
+
+    assertThrows(ConstraintViolationException.class, () -> {
+      service.validateInput(input);
+    });
+  }
+}
+@ExtendWith(SpringExtension.class)
+@DataJpaTest
+class ValidatingRepositoryTest {
+
+  @Autowired
+  private ValidatingRepository repository;
+
+  @Autowired
+  private EntityManager entityManager;
+
+  @Test
+  void whenInputIsInvalid_thenThrowsException() {
+    Input input = invalidInput();
+
+    assertThrows(ConstraintViolationException.class, () -> {
+      repository.save(input);
+      entityManager.flush();
+    });
+  }
+}
+
+class ProgrammaticallyValidatingService {
+  
+  void validateInput(Input input) {
+    ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+    Validator validator = factory.getValidator();
+    Set<ConstraintViolation<Input>> violations = validator.validate(input);
+    if (!violations.isEmpty()) {
+      throw new ConstraintViolationException(violations);
+    }
+  }
+}
+
+@Service
+class ProgrammaticallyValidatingService {
+
+  private Validator validator;
+
+  ProgrammaticallyValidatingService(Validator validator) {
+    this.validator = validator;
+  }
+
+  void validateInputWithInjectedValidator(Input input) {
+    Set<ConstraintViolation<Input>> violations = validator.validate(input);
+    if (!violations.isEmpty()) {
+      throw new ConstraintViolationException(violations);
+    }
+  }
+}
+--------------------------------------------------------------------------------------------------------
 @FieldBridge(impl = ScanResultBridge.class)
 
 spring:
@@ -8827,6 +8934,354 @@ spring:
             scripts:
               action: create
               create-target: create.sql
+--------------------------------------------------------------------------------------------------------
+package com.paragon.microservices.distributor.repository;
+
+import com.google.common.collect.Lists;
+import com.paragon.mailingcontour.commons.annotation.PostgresDataJpaTest;
+import com.paragon.microservices.distributor.AbstractTest;
+import com.paragon.microservices.distributor.model.dto.request.OffsetPageRequest;
+import com.paragon.microservices.distributor.model.entity.FileEntity;
+import com.paragon.microservices.documents.generator.server.exception.ResourceNotFoundException;
+import com.paragon.microservices.documents.generator.server.model.EmailTemplateEntity;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.FixMethodOrder;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.MethodSorters;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.MessageSource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlConfig;
+import org.springframework.test.context.jdbc.SqlGroup;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import java.util.*;
+
+import static com.paragon.mailingcontour.commons.TestUtils.containsIds;
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+@Slf4j
+@Getter(AccessLevel.PROTECTED)
+@RunWith(SpringJUnit4ClassRunner.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@AutoConfigureMockMvc
+@TestPropertySource(locations = "fileInfo:src/test/resources/application.properties")
+@SqlGroup({
+        @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = "classpath:test-distributor-db-before.sql", config = @SqlConfig(transactionMode = SqlConfig.TransactionMode.ISOLATED)),
+        @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:test-distributor-db-after.sql", config = @SqlConfig(transactionMode = SqlConfig.TransactionMode.ISOLATED))
+})
+@PostgresDataJpaTest
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
+public class FileRepositoryTest extends AbstractTest {
+
+    public static final UUID FILE_ENTITY_ID1 = UUID.fromString("21814afc-c1bc-41e6-b6e6-710bf7fd34ce");
+    public static final UUID FILE_ENTITY_ID2 = UUID.fromString("9008bc61-9851-42bd-ad41-781b94b4f1ab");
+    public static final UUID FILE_ENTITY_ID3 = UUID.fromString("840d76ab-fe30-46f7-b298-2cb459b3cba6");
+
+    @Autowired
+    private FileRepository fileRepository;
+    @Autowired
+    private MessageSource messageSource;
+
+    @Test
+    public void test_FindAll_Files() {
+        // when
+        final List<FileEntity> files = this.fileRepository.findAll();
+
+        // then
+        assertThat(files, not(empty()));
+        assertThat(files, hasSize(25));
+    }
+
+    @Test
+    public void test_FindAllBy_FileIds() {
+        // given
+        final UUID[] templateIdsToCheck = {FILE_ENTITY_ID1, FILE_ENTITY_ID2, FILE_ENTITY_ID3};
+
+        // when
+        final List<FileEntity> templates = this.fileRepository.findAllById(Arrays.asList(templateIdsToCheck));
+
+        // then
+        assertThat(templates, not(empty()));
+        assertThat(templates, hasSize(templateIdsToCheck.length));
+        assertTrue(containsIds(templates, templateIdsToCheck));
+    }
+
+    @Test
+    public void test_FindByNonExisting_ProductVersionId() {
+        // given
+        final UUID productId = PRODUCT_ID;
+        final UUID versionId = VERSION_ID;
+
+        // when
+        final List<? extends FileEntity> files = this.fileRepository.findAllByProductVersionId(productId, versionId);
+
+        // then
+        assertFalse(files.isPresent());
+    }
+
+    @Test
+    public void test_FindBy_TemplateName() {
+        // given
+        final UUID productId = PRODUCT_ID;
+        final UUID versionId = VERSION_ID;
+
+        // when
+        final Pageable pageable = OffsetPageRequest.builder().limit(2).build();
+        final Page<FileEntity> templateOptional = this.fileRepository.findAllByProductVersionId(productId, versionId, pageable);
+
+        // then
+        assertTrue(templateOptional.isPresent());
+        assertEquals(FILE_ENTITY_ID1, templateOptional.get().getId());
+        assertEquals(templateName, templateOptional.get().getName());
+    }
+
+    @Test
+    public void testFindByNonExistingTemplateNameAndLocale() {
+        // given
+        final String templateName = "test";
+        final Locale templateLocale = Locale.ITALIAN;
+
+        // when
+        final Optional<EmailTemplateEntity> templateOptional = getEmailTemplateRepository().findByNameAndLocaleOrByDefaultLocale(templateName, templateLocale, Locale.getDefault());
+
+        // then
+        assertFalse(templateOptional.isPresent());
+    }
+
+    @Test
+    public void testFindByTemplateNameAndLocale() {
+        // given
+        final String templateName = "Test 13";
+        final Locale templateLocale = Locale.ENGLISH;
+
+        // when
+        final Optional<EmailTemplateEntity> templateOptional = getEmailTemplateRepository().findByNameAndLocaleOrByDefaultLocale(templateName, templateLocale, Locale.getDefault());
+
+        // then
+        assertTrue(templateOptional.isPresent());
+        assertThat(templateOptional.get().getId(), equalTo(UUID.fromString("7f7d29b9-2c61-456e-888c-b39541850385")));
+        assertThat(templateOptional.get().getName(), equalTo(templateName));
+        assertThat(templateOptional.get().getBody(), equalTo("Test description 13"));
+        assertThat(templateOptional.get().getLocale(), equalTo(templateLocale));
+    }
+
+    @Test
+    public void testFindByTemplateNameContains() {
+        // given
+        final String templateName = "name";
+
+        // when
+        final Iterable<? extends EmailTemplateEntity> templateIterable = getResultAsync(getEmailTemplateRepository().findAllByNameContains(templateName));
+        assertThat(templateIterable, notNullValue());
+        final List<? extends EmailTemplateEntity> templates = Lists.newArrayList(templateIterable);
+
+        // then
+        assertThat(templates, not(empty()));
+        assertThat(templates, hasSize(1));
+        assertThat(templates.get(0).getId(), equalTo(UUID.fromString("5a901e0c-0441-4391-abba-3001ed044ab9")));
+        assertThat(templates.get(0).getName(), containsString(templateName));
+    }
+
+    @Test
+    public void testCreateEmailTemplate() {
+        // given
+        final EmailTemplateEntity emailTemplate = this.getEmailTemplate(UUID.randomUUID(), "new name", "new body", Locale.JAPANESE);
+
+        // when
+        final EmailTemplateEntity newEmailTemplate = getEmailTemplateRepository().save(emailTemplate);
+
+        // then
+        assertThat(newEmailTemplate.getId(), not(nullValue()));
+        assertNotEquals(emailTemplate.getId(), newEmailTemplate.getId());
+        assertEquals(emailTemplate.getName(), newEmailTemplate.getName());
+        assertEquals(emailTemplate.getBody(), newEmailTemplate.getBody());
+        assertEquals(emailTemplate.getLocale(), newEmailTemplate.getLocale());
+    }
+
+    @Test
+    public void testCreateEmailTemplates() {
+        // given
+        final UUID[] templateIdsToCheck = {UUID.randomUUID(), UUID.randomUUID()};
+        final EmailTemplateEntity emailTemplate = this.getEmailTemplate(templateIdsToCheck[0], "new name", "new body", Locale.JAPANESE);
+        final EmailTemplateEntity emailTemplate2 = this.getEmailTemplate(templateIdsToCheck[1], "new name2", "new body2", Locale.FRENCH);
+
+        // when
+        final List<EmailTemplateEntity> newEmailTemplate = getEmailTemplateRepository().saveAll(Arrays.asList(emailTemplate, emailTemplate2));
+
+        // then
+        assertThat(newEmailTemplate, not(empty()));
+        assertThat(newEmailTemplate, hasSize(2));
+        assertFalse(containsIds(newEmailTemplate, templateIdsToCheck));
+    }
+
+    @Test
+    public void testFindByTemplateId() {
+        // when
+        final Optional<EmailTemplateEntity> templateOptional = getEmailTemplateRepository().findById(FILE_ENTITY_ID1);
+
+        // then
+        assertTrue(templateOptional.isPresent());
+        assertEquals(FILE_ENTITY_ID1, templateOptional.get().getId());
+    }
+
+    @Test
+    public void testFindByInvalidTemplateId() {
+        // given
+        final UUID templateId = UUID.randomUUID();
+
+        // when
+        final Optional<EmailTemplateEntity> templateOptional = getEmailTemplateRepository().findById(templateId);
+
+        // then
+        assertFalse(templateOptional.isPresent());
+    }
+
+    @Test
+    public void testFindByIds() {
+        // given
+        final UUID[] templateIdsToCheck = {FILE_ENTITY_ID1, FILE_ENTITY_ID2};
+
+        // when
+        final List<EmailTemplateEntity> templates = getEmailTemplateRepository().findAllById(Arrays.asList(templateIdsToCheck));
+
+        // then
+        assertThat(templates, not(empty()));
+        assertThat(templates, hasSize(2));
+        assertTrue(containsIds(templates, templateIdsToCheck));
+    }
+
+    @Test
+    public void testFindByEmptyTemplateName() {
+        // given
+        final String templateName = "";
+
+        // when
+        final Optional<EmailTemplateEntity> templateOptional = getEmailTemplateRepository().findByName(templateName);
+
+        // then
+        assertFalse(templateOptional.isPresent());
+    }
+
+    @Test
+    public void testFindByTemplateNameContainsInvalidValue() {
+        // given
+        final String templateName = "testing";
+
+        // when
+        final Iterable<? extends EmailTemplateEntity> templateIterable = getResultAsync(getEmailTemplateRepository().findAllByNameContains(templateName));
+        assertThat(templateIterable, notNullValue());
+        final List<? extends EmailTemplateEntity> templates = Lists.newArrayList(templateIterable);
+
+        // then
+        assertThat(templates, is(empty()));
+    }
+
+    @Test
+    public void testUpdateEmailTemplate() {
+        // given
+        final EmailTemplateEntity emailTemplate = getEmailTemplateRepository().findById(FILE_ENTITY_ID1).orElseThrow(() -> ResourceNotFoundException.throwResourceNotFound(getMessageSource(), FILE_ENTITY_ID1));
+        final String newName = getString("test", UUID.randomUUID().toString());
+        emailTemplate.setName(newName);
+
+        // when
+        final EmailTemplateEntity newEmailTemplate = getEmailTemplateRepository().save(emailTemplate);
+
+        // then
+        assertEquals(emailTemplate.getId(), newEmailTemplate.getId());
+        assertEquals(newName, newEmailTemplate.getName());
+        assertEquals(emailTemplate.getBody(), newEmailTemplate.getBody());
+        assertEquals(emailTemplate.getLocale(), newEmailTemplate.getLocale());
+    }
+
+    @Test(expected = ResourceNotFoundException.class)
+    public void testFetchNotExistingEmailTemplate() {
+        // when
+        final UUID templateId = UUID.randomUUID();
+
+        // then
+        getEmailTemplateRepository().findById(templateId).orElseThrow(() -> ResourceNotFoundException.throwResourceNotFound(getMessageSource(), templateId));
+    }
+
+    @Test
+    public void testDeleteEmailTemplate() {
+        // given
+        final EmailTemplateEntity emailTemplate = getEmailTemplateRepository().findById(FILE_ENTITY_ID1).orElseThrow(() -> ResourceNotFoundException.throwResourceNotFound(getMessageSource(), FILE_ENTITY_ID1));
+
+        // when
+        getEmailTemplateRepository().delete(emailTemplate);
+
+        // then
+        final Optional<EmailTemplateEntity> deletedEmailTemplate = getEmailTemplateRepository().findById(FILE_ENTITY_ID1);
+        assertFalse(deletedEmailTemplate.isPresent());
+    }
+
+    @Test
+    public void testDeleteEmailTemplates() {
+        // given
+        final UUID[] idsToCheck = {FILE_ENTITY_ID1, FILE_ENTITY_ID2};
+
+        // when
+        Iterable<? extends EmailTemplateEntity> templateIterable = getEmailTemplateRepository().findAllById(Arrays.asList(idsToCheck));
+        assertThat(templateIterable, notNullValue());
+        List<? extends EmailTemplateEntity> templates = Lists.newArrayList(templateIterable);
+
+        // then
+        assertThat(templates, not(empty()));
+        assertThat(templates, hasSize(2));
+        assertTrue(containsIds(templates, idsToCheck));
+
+        // when
+        getEmailTemplateRepository().deleteAll(templates);
+        getEmailTemplateRepository().flush();
+
+        // then
+        templateIterable = getEmailTemplateRepository().findAllById(Arrays.asList(idsToCheck));
+        assertThat(templateIterable, notNullValue());
+        templates = Lists.newArrayList(templateIterable);
+        assertThat(templates, is(empty()));
+    }
+}
+--------------------------------------------------------------------------------------------------------
+        return new Docket(DocumentationType.SWAGGER_2)
+--------------------------------------------------------------------------------------------------------
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.validation.constraints.NotNull;
+
+public class Car {
+
+    public enum FuelConsumption {
+        CITY,
+        HIGHWAY
+    }
+
+    private Map<@NotNull FuelConsumption, @MaxAllowedFuelConsumption Integer> fuelConsumption = new HashMap<>();
+
+    public void setFuelConsumption(FuelConsumption consumption, int value) {
+        fuelConsumption.put( consumption, value );
+    }
+
+    //...
+
+}
 --------------------------------------------------------------------------------------------------------
   /**
    * Returns this default value if the new value is null
