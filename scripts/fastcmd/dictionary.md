@@ -47187,6 +47187,314 @@ public Docket postsApi() {
 final class ConcreteChild1 extends ParentBase implements Child1
 {}
 --------------------------------------------------------------------------------------------------------
+@Target({
+  ElementType.FIELD, 
+  ElementType.METHOD,
+  ElementType.TYPE, 
+  ElementType.PARAMETER})
+@Retention(RetentionPolicy.RUNTIME)
+@Qualifier
+public @interface CarQualifier {
+}
+--------------------------------------------------------------------------------------------------------
+@CrossOrigin(origins = "*", allowedHeaders = "*")
+--------------------------------------------------------------------------------------------------------
+@Configuration
+@EnableWebMvc
+public class CorsConfiguration extends WebMvcConfigurerAdapter
+{
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/**")
+                .allowedMethods("GET", "POST");
+    }
+}
+
+@Configuration
+public class CorsConfiguration
+{
+    @Bean
+    public WebMvcConfigurer corsConfigurer()
+    {
+        return new WebMvcConfigurerAdapter() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/**");
+            }
+        };
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@Configuration
+@ComponentScan
+@EnableTransactionManagement
+@PropertySource(value = { "classpath:application.properties" })
+public class AppConfig 
+{
+    @Autowired
+    private Environment env;
+ 
+    @Value("${init-db:false}")
+    private String initDatabase;
+     
+    @Bean
+    public static PropertySourcesPlaceholderConfigurer placeHolderConfigurer()
+    {
+        return new PropertySourcesPlaceholderConfigurer();
+    }    
+ 
+    @Bean
+    public JdbcTemplate jdbcTemplate(DataSource dataSource)
+    {
+        return new JdbcTemplate(dataSource);
+    }
+ 
+    @Bean
+    public PlatformTransactionManager transactionManager(DataSource dataSource)
+    {
+        return new DataSourceTransactionManager(dataSource);
+    }
+ 
+    @Bean
+    public DataSource dataSource()
+    {
+        BasicDataSource dataSource = new BasicDataSource();
+        dataSource.setDriverClassName(env.getProperty("jdbc.driverClassName"));
+        dataSource.setUrl(env.getProperty("jdbc.url"));
+        dataSource.setUsername(env.getProperty("jdbc.username"));
+        dataSource.setPassword(env.getProperty("jdbc.password"));
+        return dataSource;
+    }
+ 
+    @Bean
+    public DataSourceInitializer dataSourceInitializer(DataSource dataSource)
+    {
+        DataSourceInitializer dataSourceInitializer = new DataSourceInitializer();    
+        dataSourceInitializer.setDataSource(dataSource);
+        ResourceDatabasePopulator databasePopulator = new ResourceDatabasePopulator();
+        databasePopulator.addScript(new ClassPathResource("data.sql"));
+        dataSourceInitializer.setDatabasePopulator(databasePopulator);
+        dataSourceInitializer.setEnabled(Boolean.parseBoolean(initDatabase));
+        return dataSourceInitializer;
+    }
+}
+
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-jdbc</artifactId>
+</dependency>
+--------------------------------------------------------------------------------------------------------
+    org.apache.tomcat.jdbc.pool.DataSource
+    com.zaxxer.hikari.HikariDataSource
+    org.apache.commons.dbcp.BasicDataSource
+    org.apache.commons.dbcp2.BasicDataSource
+--------------------------------------------------------------------------------------------------------
+createdb -h localhost -p 5432 -U postgres springbootdb
+--------------------------------------------------------------------------------------------------------
+    spring.jpa.hibernate.naming-strategy=org.hibernate.cfg.DefaultComponentSafeNamingStrategy
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.BeanFactoryAware;
+import org.springframework.stereotype.Component;
+@Component
+public class FactoryAwareBean implements BeanFactoryAware {
+    @Override
+    public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+        System.out.println("I got the factory!");
+    }
+}
+
+import org.springframework.beans.factory.BeanNameAware;
+import org.springframework.stereotype.Component;
+@Component
+public class NameBean implements BeanNameAware {
+    @Override
+    public void setBeanName(String s) {
+        System.out.println("Hello, my bean name is -" + s);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+import net.sf.jasperreports.engine.JRException;
+import net.sf.jasperreports.engine.JasperCompileManager;
+import net.sf.jasperreports.engine.JasperFillManager;
+import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.JasperReport;
+
+@Transactional
+@Repository
+public class UserDaoImpl {
+
+ @Autowired
+ @Qualifier("jdbcTemplate")
+ private JdbcTemplate jdbcTemplate;
+
+ @Autowired
+ private ResourceLoader resourceLoader;
+
+ public JasperPrint exportPdfFile() throws SQLException, JRException, IOException {
+  Connection conn = jdbcTemplate.getDataSource().getConnection();
+
+  String path = resourceLoader.getResource("classpath:rpt_users.jrxml").getURI().getPath();
+
+  JasperReport jasperReport = JasperCompileManager.compileReport(path);
+
+  // Parameters for report
+  Map<String, Object> parameters = new HashMap<String, Object>();
+
+  JasperPrint print = JasperFillManager.fillReport(jasperReport, parameters, conn);
+
+  return print;
+ }
+}
+--------------------------------------------------------------------------------------------------------
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.jdbc.DataSourceBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+@Configuration
+public class WebConfig {
+ 
+ @Bean(name = "db")
+ @ConfigurationProperties(prefix = "spring.datasource")
+ public DataSource dataSource() {
+  return DataSourceBuilder.create().build();
+ }
+
+ @Bean(name = "jdbcTemplate")
+ public JdbcTemplate jdbcTemplate(@Qualifier("db") DataSource ds) {
+  return new JdbcTemplate(ds);
+ }
+}
+--------------------------------------------------------------------------------------------------------
+CREATE DATABASE `jack_rutorial` /*!40100 DEFAULT CHARACTER SET utf8 */;
+
+DROP TABLE IF EXISTS `jack_rutorial`.`user`;
+CREATE TABLE  `jack_rutorial`.`user` (
+  `user_id` int(11) NOT NULL auto_increment,
+  `user_name` varchar(45) NOT NULL default '',
+  `email` varchar(45) NOT NULL default '',
+  PRIMARY KEY  (`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
+--------------------------------------------------------------------------------------------------------
+# ===============================
+# DATABASE
+# ===============================
+ 
+spring.datasource.driver-class-name=net.sourceforge.jtds.jdbc.Driver
+ 
+spring.datasource.url=jdbc:jtds:sqlserver://tran-vmware-pc:1433/testdb;instance=SQLEXPRESS
+spring.datasource.username=sa
+spring.datasource.password=12345
+--------------------------------------------------------------------------------------------------------
+@RequestMapping(value = "/uploadFile", method = RequestMethod.POST)
+	@ResponseBody
+	public ModelAndView uploadFile(@ModelAttribute("uploadedFile") UploadedFile uploadedFile, BindingResult result) throws IOException, BadFileNameException {
+ModelAndView modelAndView = new ModelAndView();
+ 
+		String fileName = null;
+ 
+		MultipartFile file = uploadedFile.getFile();
+		fileValidator.validate(uploadedFile, result);
+//....
+ 
+throw new IOException("Folder not found!");
+			// throw new MyFileUploadException("Bad filename:" + fileName);
+//...
+}
+--------------------------------------------------------------------------------------------------------
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-jdbc</artifactId>
+    <exclusions>
+        <exclusion>
+        <groupId>org.apache.tomcat</groupId>
+        <artifactId>tomcat-jdbc</artifactId>
+        </exclusion>
+    </exclusions>
+</dependency>
+ 
+<dependency>
+    <groupId>com.zaxxer</groupId>
+    <artifactId>HikariCP</artifactId>
+</dependency>
+--------------------------------------------------------------------------------------------------------
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+ 
+import org.slf4j.Logger;
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.ModelAndView;
+ 
+@Component
+public class LogInterceptor implements HandlerInterceptor {
+ 
+  Logger log = org.slf4j.LoggerFactory.getLogger(this.getClass());
+ 
+  @Override
+  public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object object, Exception arg3)
+      throws Exception {
+    log.info("Request Completed!");
+  }
+ 
+  @Override
+  public void postHandle(HttpServletRequest request, HttpServletResponse response, Object object, ModelAndView model)
+      throws Exception {
+    log.info("Method executed");
+  }
+ 
+  @Override
+  public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object object) throws Exception {
+    log.info("Before process request");
+    return true;
+  }
+ 
+}
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+ 
+@Configuration
+public class AppConfig extends WebMvcConfigurerAdapter {
+  
+  @Autowired
+  LogInterceptor logInterceptor;
+  
+  @Override
+  public void addInterceptors(InterceptorRegistry registry) {
+    registry.addInterceptor(logInterceptor);
+  }
+}
+--------------------------------------------------------------------------------------------------------
+    @ManyToMany(cascade = { CascadeType.PERSIST }, fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "USER_ANSWER",
+            joinColumns = { @JoinColumn(name = "USER_ID") },
+            inverseJoinColumns = { @JoinColumn(name = "QUESTION_ANSWER_ID") }
+    )
+    Set<QuestionAnswerItem> answers = new HashSet<>();
+--------------------------------------------------------------------------------------------------------
 import static com.google.common.collect.Lists.newArrayList;
 import static springfox.documentation.spi.schema.contexts.ModelContext.inputParam;
 
