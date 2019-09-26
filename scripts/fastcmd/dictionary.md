@@ -47293,6 +47293,454 @@ createdb -h localhost -p 5432 -U postgres springbootdb
 --------------------------------------------------------------------------------------------------------
     spring.jpa.hibernate.naming-strategy=org.hibernate.cfg.DefaultComponentSafeNamingStrategy
 --------------------------------------------------------------------------------------------------------
+X-Google-Smtp-Source: APXvYqwPlyHgYMdvUmFSWEspK+Nng6oAdnZK3qX2cMlBT91hhcAdnIvgBCqP6HuHiZljycCzzUHe
+X-Received: by 2002:a05:6512:488:: with SMTP id v8mr1598877lfq.37.1569490796011;
+        Thu, 26 Sep 2019 02:39:56 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1569490796; cv=none;
+        d=google.com; s=arc-20160816;
+        b=aSSYtveUq7dO6dM/VkqAhKnE17D1kCR5q4E+4B+lZXGQaSzClFKhGJdwZPPpRArAXn
+         byk5LoiVnFyXSIdwk6p8mf5nsVJyYnNf5KFAnZfnOEhr8J130PptA06zwai2JO/quSc0
+         uO6D0zPSORRRIBbPX9I4liuacH0CwpFRTZr2nNowDIDZyp4j33WqsPsafQwrt/NjE0sB
+         AXfuIZTt3utJbKFIn8S5zLTh06Ie6kGahrCUnUUBM7Vsv/A7b+j9k0E9KQwu7Zd51uJt
+         AQS3fpxtA91bpos+C+GmC3M3AMrPnNc4T+t57UdKq7+AfoxJe5oXkx+0hcuSOBFeZ8Kl
+         NEjg==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20160816;
+        h=message-id:date:mime-version:to:envelope-from:from:dkim-signature;
+        bh=a1ST33XqUX/UOthytJtllXhSHYQ5bVvaYKMsU2KVvI4=;
+        b=ncYv1VQysywh5F5WAg9JVSt/2G5e+xsBvIQjKEBapTRT5ZQFD5vONdgd3dehEPTZb6
+         n1WzPxwrBNB/dZdTXK2Kz0jXFRdNlmsLCEZImVRynGVGtMvZNBua+njh5k+ZMvlFxpxo
+         vioR9mEfcbpdkR35wboyiKHoiObw/RPTPFn6Sci7JqonK2LPxOrjM4z1mdIVhj/b6rZP
+         tXsTBNcRxHOrqbis7FzENfFvaSzVo47FZ8Vr7Z7FsgrJ3PdA0YrqwM/YtI1wjEy3nPgq
+         xX9P2/cQYyTl0niQ5tuFmrI0WmtB52ZZj1mOjXIV2ts3uoZ2dS4OKUPrgNtm2KquZ21O
+         /Kng==
+ARC-Authentication-Results: i=1; mx.google.com;
+       dkim=pass header.i=@yandex.ru header.s=mail header.b=bl0nZDEL;
+       spf=pass (google.com: domain of alexander.rogalsky@yandex.ru designates 5.45.198.247 as permitted sender) smtp.mailfrom=alexander.rogalsky@yandex.ru;
+       dmarc=pass (p=NONE sp=NONE dis=NONE) header.from=yandex.ru
+Return-Path: <alexander.rogalsky@yandex.ru>
+Received: from forward104j.mail.yandex.net (forward104j.mail.yandex.net. [5.45.198.247])
+        by mx.google.com with ESMTPS id a12si1416939lji.80.2019.09.26.02.39.55
+        for <hr@welltory.com>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Thu, 26 Sep 2019 02:39:56 -0700 (PDT)
+Received-SPF: pass (google.com: domain of alexander.rogalsky@yandex.ru designates 5.45.198.247 as permitted sender) client-ip=5.45.198.247;
+Authentication-Results: mx.google.com;
+       dkim=pass header.i=@yandex.ru header.s=mail header.b=bl0nZDEL;
+       spf=pass (google.com: domain of alexander.rogalsky@yandex.ru designates 5.45.198.247 as permitted sender) smtp.mailfrom=alexander.rogalsky@yandex.ru;
+       dmarc=pass (p=NONE sp=NONE dis=NONE) header.from=yandex.ru
+Received: from mxback12g.mail.yandex.net (mxback12g.mail.yandex.net [IPv6:2a02:6b8:0:1472:2741:0:8b7:91])
+        by forward104j.mail.yandex.net (Yandex) with ESMTP id 821774A0A29
+        for <hr@welltory.com>; Thu, 26 Sep 2019 12:39:55 +0300 (MSK)
+Received: from localhost (localhost [::1])
+        by mxback12g.mail.yandex.net (nwsmtp/Yandex) with ESMTP id WDB5gn15Mq-dstKw86f;
+        Thu, 26 Sep 2019 12:39:54 +0300
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=yandex.ru; s=mail; t=1569490794;
+        bh=a1ST33XqUX/UOthytJtllXhSHYQ5bVvaYKMsU2KVvI4=;
+        h=Message-Id:Date:To:From;
+        b=bl0nZDELhXKESRVtjrAdgxJnln8nRGTdBQqkWe7fN1PQ1PBFx9BGtDcuZeIKJrvzq
+         WOuB1guoqazbBnZ3ctipiCc80Y30AWJVgEZnZwoUt6j72f2s5Y27GaxNU2HQpjC3IE
+         O0Lka7fnqnaDqF0B4DW496tq26uC6QTuMYor2D5I=
+Authentication-Results: mxback12g.mail.yandex.net; dkim=pass header.i=@yandex.ru
+Received: by iva8-8aca73b241e5.qloud-c.yandex.net with HTTP;
+        Thu, 26 Sep 2019 12:39:54 +0300
+From: Alexander Rogalsky <alexander.rogalsky@yandex.ru>
+Envelope-From: alexander-rogalsky@yandex.ru
+To: hr@welltory.com
+MIME-Version: 1.0
+X-Mailer: Yamail [ http://yandex.ru ] 5.0
+Date: Thu, 26 Sep 2019 12:39:54 +0300
+Message-Id: <10371569490794@iva8-8aca73b241e5.qloud-c.yandex.net>
+Content-Type: multipart/mixed;
+        boundary="----==--bound.1039.iva8-8aca73b241e5.qloud-c.yandex.net"
+
+
+------==--bound.1039.iva8-8aca73b241e5.qloud-c.yandex.net
+Content-Transfer-Encoding: base64
+Content-Type: text/html; charset=utf-8
+
+PGRpdj48ZGl2PjxkaXY+PGRpdj48ZGl2PjxkaXY+PGRpdj48ZGl2PjxkaXY+PGRpdj48ZGl2Pjxk
+aXY+PGRpdj48ZGl2PjxkaXY+PGRpdj48ZGl2PjxkaXY+PGRpdj48ZGl2PjxkaXY+PGRpdj48ZGl2
+PjxkaXY+PGRpdj48ZGl2PjxkaXY+PGRpdj48ZGl2PjxkaXY+PGRpdj48ZGl2PjxkaXY+PGRpdj48
+ZGl2PjxkaXY+PGRpdj48ZGl2PjxkaXY+PGRpdj48ZGl2PjxkaXY+PGRpdj48ZGl2PjxkaXY+PGRp
+dj48ZGl2PjxkaXY+PGRpdj48ZGl2PjxkaXY+PGRpdj48ZGl2PjxkaXY+PGRpdj48ZGl2PjxkaXY+
+PGRpdj48ZGl2PjxkaXY+PGRpdj48ZGl2PjxkaXY+PGRpdj48ZGl2PjxkaXY+PGRpdj48ZGl2Pjxk
+aXY+PGRpdj48ZGl2PjxkaXY+PGRpdj48ZGl2PjxkaXY+PGRpdj48ZGl2PjxkaXY+PGRpdj48ZGl2
+PjxkaXY+PGRpdj48ZGl2PjxkaXY+PGRpdj48ZGl2PjxkaXY+PGRpdiBzdHlsZT0iYmFja2dyb3Vu
+ZDpyZ2IoIDI1NSAsIDI1NSAsIDI1NSApO2NvbG9yOnJnYiggMCAsIDAgLCAwICk7Zm9udDoxNXB4
+ICdhcmlhbCcgLCBzYW5zLXNlcmlmO3RleHQtdHJhbnNmb3JtOm5vbmU7d2hpdGUtc3BhY2U6bm9y
+bWFsIj5EZWFyIFNpciBvciBNYWRhbSw8L2Rpdj48ZGl2IHN0eWxlPSJiYWNrZ3JvdW5kOnJnYigg
+MjU1ICwgMjU1ICwgMjU1ICk7Y29sb3I6cmdiKCAwICwgMCAsIDAgKTtmb250OjE1cHggJ2FyaWFs
+JyAsIHNhbnMtc2VyaWY7dGV4dC10cmFuc2Zvcm06bm9uZTt3aGl0ZS1zcGFjZTpub3JtYWwiPsKg
+PC9kaXY+PGRpdiBzdHlsZT0iYmFja2dyb3VuZDpyZ2IoIDI1NSAsIDI1NSAsIDI1NSApO2NvbG9y
+OnJnYiggMCAsIDAgLCAwICk7Zm9udDoxNXB4ICdhcmlhbCcgLCBzYW5zLXNlcmlmO3RleHQtdHJh
+bnNmb3JtOm5vbmU7d2hpdGUtc3BhY2U6bm9ybWFsIj5XaXRoIHJlZmVyZW5jZSB0byB0aGUgYW5u
+b3VuY2VtZW50IG9mIGFueSBwb3RlbnRpYWwgb3BlbmluZyBpbiBpbmZvcm1hdGljcy9hbmFseXRp
+Y2FsIHNlcnZpY2VzIGZpZWxkcyBJIHdvdWxkIGhlcmVieSBsaWtlIHRvIHByb3ZpZGUgeW91IHdp
+dGggdGhlIGZvbGxvd2luZyBpbmZvcm1hdGlvbiBjb25jZXJuaW5nIG15IGludGVyZXN0IGFuZCBk
+ZXNpcmUgdG8gcGFydGljaXBhdGUgaW4gdGhlIHNlbGVjdGlvbiBwcm9jZXNzIGZvciB0aGlzIHZh
+Y2FudCByb2xlLjwvZGl2PjxkaXYgc3R5bGU9ImJhY2tncm91bmQ6cmdiKCAyNTUgLCAyNTUgLCAy
+NTUgKTtjb2xvcjpyZ2IoIDAgLCAwICwgMCApO2ZvbnQ6MTVweCAnYXJpYWwnICwgc2Fucy1zZXJp
+Zjt0ZXh0LXRyYW5zZm9ybTpub25lO3doaXRlLXNwYWNlOm5vcm1hbCI+wqA8L2Rpdj48ZGl2IHN0
+eWxlPSJiYWNrZ3JvdW5kOnJnYiggMjU1ICwgMjU1ICwgMjU1ICk7Y29sb3I6cmdiKCAwICwgMCAs
+IDAgKTtmb250OjE1cHggJ2FyaWFsJyAsIHNhbnMtc2VyaWY7dGV4dC10cmFuc2Zvcm06bm9uZTt3
+aGl0ZS1zcGFjZTpub3JtYWwiPkluIDIwMDkgSSBoYXZlIGNvbXBsZXRlZCBhIGZpdmUgeWVhcuKA
+mXMgdGVybSBlZHVjYXRpb24gd2l0aCBzcGVjaWFsaXphdGlvbiBpbiBhcHBsaWVkIGluZm9ybWF0
+aWNzIGluIGVjb25vbWljcyBhdCBTYWludC1QZXRlcnNidXJnIE5hdGlvbmFsIFJlc2VhcmNoIFVu
+aXZlcnNpdHkgb2YgSW5mb3JtYXRpb24gVGVjaG5vbG9naWVzLCBNZWNoYW5pY3MgYW5kIE9wdGlj
+cyAodGhlIEZhY3VsdHkgb2YgSVQpLiBNeSBncmFkdWF0ZSB0aGVzaXMgd2FzIGluIFNvZnR3YXJl
+IGRldmVsb3BtZW50IGZvciBvcmRlciBtYW5hZ2VtZW50IGluIHBvbHlncmFwaGljIGJ1c2luZXNz
+IChjYWxlbmRhciBwbGFubmluZywgc2NoZWR1bGluZywgcHJpb3JpdGl6aW5nIGFuZCBtb25pdG9y
+aW5nOiBhZGp1c3RpbmcgdGhlIHdvcmtsb2FkIGFuZCB0aGUgdGltZWxpbmUgdG8gZ2V0IGJhY2sg
+b24gdHJhY2ssIGlkZW50aWZ5aW5nIHRoZSBzY29wZSBvZiBvcmRlcnMgYW5kIHJlcXVpcmVkIHJl
+c291cmNlcywgbWFuYWdpbmcgb3JkZXJzIGFjcm9zcyBtdWx0aXBsZSBsb2NhdGlvbnMsIGFzc2ln
+bmluZyB0YXNrcyBhbmQgY2hlY2tpbmcgcHJvZ3Jlc3MgdG8gc3RheSBmb2N1c2VkIG9uIGEgcHJv
+ZHVjdGlvbiBjaGFydCBhbmQgbWF4aW1pemluZyBvdXRwdXQgdGFyZ2V0KSBmb3Igd2hpY2ggSSB3
+YXMgd29ya2luZyBpbsKgMjAwOC0yMDA5LjwvZGl2PjxkaXYgc3R5bGU9ImJhY2tncm91bmQ6cmdi
+KCAyNTUgLCAyNTUgLCAyNTUgKTtjb2xvcjpyZ2IoIDAgLCAwICwgMCApO2ZvbnQ6MTVweCAnYXJp
+YWwnICwgc2Fucy1zZXJpZjt0ZXh0LXRyYW5zZm9ybTpub25lO3doaXRlLXNwYWNlOm5vcm1hbCI+
+wqA8L2Rpdj48ZGl2IHN0eWxlPSJiYWNrZ3JvdW5kOnJnYiggMjU1ICwgMjU1ICwgMjU1ICk7Y29s
+b3I6cmdiKCAwICwgMCAsIDAgKTtmb250OjE1cHggJ2FyaWFsJyAsIHNhbnMtc2VyaWY7dGV4dC10
+cmFuc2Zvcm06bm9uZTt3aGl0ZS1zcGFjZTpub3JtYWwiPldoZW4gSSBncmFkdWF0ZWQgZnJvbSB0
+aGUgVW5pdmVyc2l0eSBJIHdhcyBpbnRlcmVzdGVkIGluIGEgbmV3IGNoYWxsZW5nZSBhbmQgb3Bw
+b3J0dW5pdHkgdG8gdXNlIG15IHNraWxscyBhbmQgZXhwZXJpZW5jZSBpbiBhIGRpZmZlcmVudCBj
+YXBhY2l0eSB0aGFuIEkgaGFkIGluIHRoZSBwYXN0IHdvcmtpbmcgaW4gYSBzb2Z0d2FyZS1vcmll
+bnRlZCBlbnZpcm9ubWVudC4gVGhhdCdzIHdoeSBJIGNvbmNlbnRyYXRlZCBvbiBteSBza2lsbHMg
+aW4gdGhlIGFuYWx5dGljYWwgZmllbGQgd2l0aCByZXNwZWN0IHRvIElUIGJlY2F1c2UgSSByZWFs
+aXplZCBpdCB3YXMgYW4gYXJlYSB3aGVyZSBJIGNvdWxkIG5vdCBvbmx5IG1ha2Ugc2lnbmlmaWNh
+bnQgY29udHJpYnV0aW9ucyBidXQgSSBoYWQgYSBwYXNzaW9uIGZvciBtYXRoZW1hdGljcyBhbmQg
+Y29nbml0aXZlIGFwdGl0dWRlcyB0byBudW1lcmljYWwgYW5hbHlzaXMgaW
+----- Message truncated -----
+------==--bound.1039.iva8-8aca73b241e5.qloud-c.yandex.net--
+--------------------------------------------------------------------------------------------------------
+import java.util.HashMap;
+ 
+import javax.sql.DataSource;
+ 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.annotation.PropertySources;
+import org.springframework.core.env.Environment;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.transaction.PlatformTransactionManager;
+ 
+@Configuration
+// Load to Environment
+// (@see resources/datasource-cfg.properties).
+@PropertySources({ @PropertySource("classpath:datasource-cfg.properties") })
+public class DataSource1Config {
+ 
+    @Autowired
+    private Environment env; // Contains Properties Load by @PropertySources
+ 
+    @Bean
+    public DataSource ds1Datasource() {
+ 
+        DriverManagerDataSource dataSource = new DriverManagerDataSource();
+        dataSource.setDriverClassName(env.getProperty("spring.datasource.driver-class-name.1"));
+        dataSource.setUrl(env.getProperty("spring.datasource.url.1"));
+        dataSource.setUsername(env.getProperty("spring.datasource.username.1"));
+        dataSource.setPassword(env.getProperty("spring.datasource.password.1"));
+ 
+        return dataSource;
+    }
+ 
+    @Bean
+    public LocalContainerEntityManagerFactoryBean ds1EntityManager() {
+        LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
+        em.setDataSource(ds1Datasource());
+ 
+        // Scan Entities in Package:
+        em.setPackagesToScan(new String[] { Constants.PACKAGE_ENTITIES_1 });
+        em.setPersistenceUnitName(Constants.JPA_UNIT_NAME_1); // Important !!
+ 
+        //
+        HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
+ 
+        em.setJpaVendorAdapter(vendorAdapter);
+ 
+        HashMap<String, Object> properties = new HashMap<>();
+ 
+        // JPA & Hibernate
+        properties.put("hibernate.dialect", env.getProperty("spring.jpa.properties.hibernate.dialect.1"));
+        properties.put("hibernate.show-sql", env.getProperty("spring.jpa.show-sql.1"));
+ 
+        // Solved Error: PostGres createClob() is not yet implemented.
+        // PostGres Only:
+        // properties.put("hibernate.temp.use_jdbc_metadata_defaults",  false);
+ 
+        em.setJpaPropertyMap(properties);
+        em.afterPropertiesSet();
+        return em;
+    }
+ 
+    @Bean
+    public PlatformTransactionManager ds1TransactionManager() {
+ 
+        JpaTransactionManager transactionManager = new JpaTransactionManager();
+        transactionManager.setEntityManagerFactory(ds1EntityManager().getObject());
+        return transactionManager;
+    }
+ 
+}
+
+import java.util.HashMap;
+ 
+import javax.sql.DataSource;
+ 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.annotation.PropertySources;
+import org.springframework.core.env.Environment;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.transaction.PlatformTransactionManager;
+ 
+@Configuration
+// Load to Environment
+// (@see resources/datasource-cfg.properties).
+@PropertySources({ @PropertySource("classpath:datasource-cfg.properties") })
+public class DataSource2Config {
+ 
+    @Autowired
+    private Environment env; // Contains Properties Load by @PropertySources
+ 
+    @Bean
+    public DataSource ds2Datasource() {
+        DriverManagerDataSource dataSource = new DriverManagerDataSource();
+ 
+        dataSource.setDriverClassName(env.getProperty("spring.datasource.driver-class-name.2"));
+        dataSource.setUrl(env.getProperty("spring.datasource.url.2"));
+        dataSource.setUsername(env.getProperty("spring.datasource.username.2"));
+        dataSource.setPassword(env.getProperty("spring.datasource.password.2"));
+ 
+        return dataSource;
+    }
+ 
+    @Bean
+    public LocalContainerEntityManagerFactoryBean ds2EntityManager() {
+        LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
+        em.setDataSource(ds2Datasource());
+ 
+        // Scan Entities in Package:
+        em.setPackagesToScan(new String[] { Constants.PACKAGE_ENTITIES_2 });
+ 
+        em.setPersistenceUnitName(Constants.JPA_UNIT_NAME_2);
+        HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
+        em.setJpaVendorAdapter(vendorAdapter);
+ 
+        HashMap<String, Object> properties = new HashMap<>();
+        // JPA & Hibernate
+        properties.put("hibernate.dialect", env.getProperty("spring.jpa.properties.hibernate.dialect.2"));
+        properties.put("hibernate.show-sql", env.getProperty("spring.jpa.show-sql.2"));
+ 
+        // Solved Error: PostGres createClob() is not yet implemented.
+        // PostGres Only.
+        // properties.put("hibernate.temp.use_jdbc_metadata_defaults",  false);
+ 
+        em.setJpaPropertyMap(properties);
+        em.afterPropertiesSet();
+        return em;
+    }
+ 
+    @Bean
+    public PlatformTransactionManager ds2TransactionManager() {
+ 
+        JpaTransactionManager transactionManager = new JpaTransactionManager();
+        transactionManager.setEntityManagerFactory(ds2EntityManager().getObject());
+        return transactionManager;
+    }
+ 
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.List;
+ 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
+ 
+import org.o7planning.sbmultids.config.Constants;
+import org.o7planning.sbmultids.entity1.Publisher;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+ 
+@Repository
+public class PublisherDAO {
+ 
+    @Autowired
+    @PersistenceContext( unitName= Constants.JPA_UNIT_NAME_1)
+    private EntityManager entityManager;
+ 
+    public List<Publisher> listPublishers() {
+        String sql = "Select e from " + Publisher.class.getName() + " e ";
+        Query query = entityManager.createQuery(sql, Publisher.class);
+        return query.getResultList();
+    }
+ 
+    public Publisher findById(Long id) {
+        return this.entityManager.find(Publisher.class, id);
+    }
+     
+}
+
+import java.util.List;
+ 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
+ 
+import org.o7planning.sbmultids.config.Constants;
+import org.o7planning.sbmultids.entity2.Advertiser;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+ 
+@Repository
+public class AdvertiserDAO {
+  
+ 
+    @Autowired
+    @PersistenceContext(unitName = Constants.JPA_UNIT_NAME_2)
+    private EntityManager entityManager;
+ 
+    public List<Advertiser> listAdvertisers() {
+        String sql = "Select e from " + Advertiser.class.getName() + " e ";
+        Query query = entityManager.createQuery(sql, Advertiser.class);
+        return query.getResultList();
+    }
+ 
+    public Advertiser findById(Long id) {
+        return this.entityManager.find(Advertiser.class, id);
+    }
+     
+}
+--------------------------------------------------------------------------------------------------------
+@Configuration
+@EnableTransactionManagement
+@ComponentScan("ord.paulushc")
+@PropertySource("file:./database.properties")
+@EnableJpaRepositories(
+        basePackages = "org.paulushc",
+        entityManagerFactoryRef = "mainEntityManager",
+        transactionManagerRef = "mainTransactionManager")
+public class DatabaseMain {
+
+    @Value("${main.db.driver}")
+    private String driver;
+    @Value("${main.db.url}")
+    private String url;
+    @Value("${main.db.username}")
+    private String username;
+    @Value("${main.db.password}")
+    private String password;
+    @Value("${hibernate.dialect}")
+    private String dialect;
+    @Value("${hibernate.show_sql}")
+    private boolean showSQL;
+    @Value("${hibernate.format_sql}")
+    private boolean formatSQL;
+    @Value("${entitymanager.packages.to.scan}")
+    private String packageScan;
+    @Value("${connection.release_mode}")
+    private String releaseMode;
+
+    @Bean(name = "mainDataSource")
+    @Primary
+    public DataSource mainDataSource() {
+        DriverManagerDataSource dataSource = new DriverManagerDataSource();
+        dataSource.setDriverClassName(driver);
+        dataSource.setUrl(url);
+        dataSource.setUsername(username);
+        dataSource.setPassword(password);
+        return dataSource;
+    }
+
+    @Bean(name = "mainEntityManager")
+    @Primary
+    public LocalContainerEntityManagerFactoryBean mainEntityManager() {
+        LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
+        em.setDataSource(mainDataSource());
+        em.setPackagesToScan(new String[] { packageScan });
+        HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
+        em.setJpaVendorAdapter(vendorAdapter);
+        em.setJpaProperties(hibernateProperties());
+
+        return em;
+    }
+
+    @Bean(name = "mainTransactionManager")
+    @Primary
+    public PlatformTransactionManager mainTransactionManager() {
+        JpaTransactionManager transactionManager = new JpaTransactionManager();
+        transactionManager.setEntityManagerFactory(mainEntityManager().getObject());
+        return transactionManager;
+    }
+
+    @Bean(name = "mainSessionFactory")
+    @Primary
+    public LocalSessionFactoryBean mainSessionFactory() {
+        LocalSessionFactoryBean sessionFactoryBean = new LocalSessionFactoryBean();
+        sessionFactoryBean.setDataSource(mainDataSource());
+        sessionFactoryBean.setPackagesToScan(packageScan);
+        sessionFactoryBean.setHibernateProperties(hibernateProperties());
+        return sessionFactoryBean;
+    }
+
+    private Properties hibernateProperties() {
+        Properties properties = new Properties();
+        properties.put("hibernate.hbm2ddl.auto", false);
+        properties.put("hibernate.dialect", dialect);
+        properties.put("hibernate.temp.use_jdbc_metadata_defaults", "false");
+        properties.put("hibernate.show_sql",showSQL);
+        properties.put("hibernate.format_sql",formatSQL);
+        properties.put("entitymanager.packages.to.scan",packageScan);
+        properties.put("connection.release_mode",releaseMode);
+        return properties;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>aspectj-maven-plugin</artifactId>
+        <version>1.10</version>
+        <configuration>
+          <complianceLevel>1.8</complianceLevel>
+          <source>${maven.compiler.source}</source>
+          <target>${maven.compiler.target}</target>
+          <showWeaveInfo>true</showWeaveInfo>
+          <verbose>true</verbose>
+          <Xlint>ignore</Xlint>
+          <encoding>UTF-8 </encoding>
+          <weaveDirectories>
+            <weaveDirectory>${project.build.directory}/classes</weaveDirectory>
+          </weaveDirectories>
+          <forceAjcCompile>true</forceAjcCompile>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>compile</goal>
+              <!-- <goal>test-compile</goal> -->
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+--------------------------------------------------------------------------------------------------------
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
