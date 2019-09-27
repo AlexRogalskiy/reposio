@@ -8922,6 +8922,30 @@ class ProgrammaticallyValidatingService {
   }
 }
 --------------------------------------------------------------------------------------------------------
+Get an arbitrary List implementation holding the result:
+
+List<T> results = l.stream().filter(…).collect(Collectors.toList());
+Get an arbitrary Set implementation holding the result:
+
+Set<T> results = l.stream().filter(…).collect(Collectors.toSet());
+Get a specific Collection:
+
+ArrayList<T> results =
+  l.stream().filter(…).collect(Collectors.toCollection(ArrayList::new));
+Add to an existing Collection:
+
+l.stream().filter(…).forEach(existing::add);
+Create an array:
+
+String[] array=l.stream().filter(…).toArray(String[]::new);
+Use the array to create a list with a specific specific behavior (mutable, fixed size):
+
+List<String> al=Arrays.asList(l.stream().filter(…).toArray(String[]::new));
+Allow a parallel capable stream to add to temporary local lists and join them afterward:
+
+List<T> results
+  = l.stream().filter(…).collect(ArrayList::new, List::add, List::addAll);
+--------------------------------------------------------------------------------------------------------
 @FieldBridge(impl = ScanResultBridge.class)
 
 spring:
@@ -8934,6 +8958,16 @@ spring:
             scripts:
               action: create
               create-target: create.sql
+--------------------------------------------------------------------------------------------------------
+        <!-- Mailing Contour testing library dependencies -->
+        <dependency>
+            <groupId>com.paragon.mailingcontour</groupId>
+            <artifactId>paragon.mailingcontour.commons</artifactId>
+            <version>${mailingcontour.commons.version}</version>
+            <classifier>tests</classifier>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
 --------------------------------------------------------------------------------------------------------
 package com.paragon.microservices.distributor.repository;
 
