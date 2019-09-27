@@ -47680,6 +47680,1249 @@ public class CorsConfiguration
     }
 }
 --------------------------------------------------------------------------------------------------------
+chroot /Volumes/Macintosh\ HD # "Macintosh HD" is the default
+
+rm -rf /Library/Google/GoogleSoftwareUpdate/GoogleSoftwareUpdate.bundle
+
+mv var var_back # var may not exist, but this is fine
+
+ln -sh private/var var
+
+chflags -h restricted /var
+
+chflags -h hidden /var
+
+xattr -sw com.apple.rootless "" /var
+
+Подробнее: https://www.securitylab.ru/news/501385.php
+--------------------------------------------------------------------------------------------------------
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+
+import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
+
+import io.cereebro.core.Component;
+import io.cereebro.core.ComponentType;
+import io.cereebro.core.Dependency;
+import io.cereebro.core.Relationship;
+import io.cereebro.core.RelationshipDetector;
+import lombok.Getter;
+import lombok.Setter;
+
+/**
+ * Redis RelationshipDetector. Aside from a Redis sentinel master, nothing
+ * carries a name in Redis, therefore for a basic connection we can only detect
+ * a relationship to a typed Redis component with a default name.
+ * 
+ * @author michaeltecourt
+ *
+ */
+public class RedisRelationshipDetector implements RelationshipDetector {
+
+    @Getter
+    @Setter
+    private String defaultName = "default";
+
+    private final RedisProperties redisProperties;
+    private final List<RedisConnectionFactory> connectionFactories;
+
+    /**
+     * Redis RelationshipDetector.
+     * 
+     * @param redisProperties
+     *            Redis configuration properties (nullable).
+     * @param redisConnectionFactories
+     *            Available RedisConnectionFactory instances (nullable).
+     */
+    public RedisRelationshipDetector(RedisProperties redisProperties,
+            List<RedisConnectionFactory> redisConnectionFactories) {
+        this.redisProperties = redisProperties;
+        this.connectionFactories = new ArrayList<>();
+        if (!CollectionUtils.isEmpty(redisConnectionFactories)) {
+            this.connectionFactories.addAll(redisConnectionFactories);
+        }
+    }
+
+    @Override
+    public Set<Relationship> detect() {
+        if (CollectionUtils.isEmpty(connectionFactories)) {
+            return Collections.emptySet();
+        }
+        String sentinelMaster = getRedisSentinelMasterName();
+        String name = StringUtils.hasText(sentinelMaster) ? sentinelMaster : defaultName;
+        return Dependency.on(Component.of(name, ComponentType.REDIS)).asRelationshipSet();
+    }
+
+    /**
+     * Returns the name of the Redis Sentinel master, extracted from
+     * configuration properties.
+     * 
+     * @return Nullable Redis Sentinel master name.
+     */
+    private String getRedisSentinelMasterName() {
+        if (redisProperties != null && redisProperties.getSentinel() != null) {
+            return redisProperties.getSentinel().getMaster();
+        }
+        return null;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+exclude org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+and set: spring.data.redis.repositories.enabled=false
+--------------------------------------------------------------------------------------------------------
+  cache:
+    type: REDIS
+  redis:
+    host: localhost
+    port: 6379
+    jedis:
+      pool:
+        max-active: 4
+        max-idle: 51
+        max-wait: 3000
+        min-idle: 1
+		
+package com.siemens.microservices.sonarine.sensors.system.configuration;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableSet;
+import com.siemens.microservices.sonarine.sensors.system.properties.JedisProperties;
+import com.siemens.microservices.sonarine.sensors.system.properties.RedisProperties;
+import edu.emory.mathcs.backport.java.util.Collections;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CachingConfigurerSupport;
+import org.springframework.cache.interceptor.KeyGenerator;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisSentinelConfiguration;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
+import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.RedisSerializer;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
+import redis.clients.jedis.JedisPoolConfig;
+
+import javax.annotation.PreDestroy;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+/**
+ * Redis configuration
+ */
+@Configuration
+@RequiredArgsConstructor
+@Getter(AccessLevel.PROTECTED)
+@EnableRedisRepositories
+public class RedisConfiguration extends CachingConfigurerSupport {
+
+    /**
+     * Default redis properties
+     */
+    private final RedisProperties redisProperties;
+    /**
+     * Default jedis properties
+     */
+    private final JedisProperties jedisProperties;
+
+    @Bean
+    @Override
+    public KeyGenerator keyGenerator() {
+        return (target, method, params) -> {
+            final StringBuilder sb = new StringBuilder();
+            sb.append(target.getClass().getName());
+            sb.append(method.getName());
+            Arrays.stream(Optional.ofNullable(params).orElseGet(() -> new Object[0])).forEach(sb::append);
+            return sb.toString();
+        };
+    }
+
+    @Bean
+    public StringRedisTemplate stringRedisTemplate(final ObjectMapper mapper) {
+        final StringRedisTemplate template = new StringRedisTemplate(jedisConnectionFactory());
+        template.setEnableTransactionSupport(true);
+        template.setValueSerializer(this.valueSerializer(mapper));
+        template.afterPropertiesSet();
+        return template;
+    }
+
+    @Bean
+    public RedisTemplate<?, ?> redisTemplate(final ObjectMapper mapper) {
+        final RedisTemplate<String, Object> template = new RedisTemplate<>();
+        template.setEnableTransactionSupport(true);
+        template.setConnectionFactory(this.jedisConnectionFactory());
+        template.setKeySerializer(this.keySerializer());
+        template.setHashKeySerializer(this.keySerializer());
+        template.setHashValueSerializer(this.keySerializer());
+//        template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
+        template.setValueSerializer(this.valueSerializer(mapper));
+        template.afterPropertiesSet();
+        return template;
+    }
+
+    @Bean
+    public RedisSerializer<String> keySerializer() {
+        return new StringRedisSerializer();
+    }
+
+    @Bean
+    public RedisSerializer<Object> valueSerializer(final ObjectMapper mapper) {
+        final Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer<>(Object.class);
+        jackson2JsonRedisSerializer.setObjectMapper(mapper);
+        return jackson2JsonRedisSerializer;
+    }
+
+    @Bean
+    public JedisPoolConfig jedisConfig() {
+        final JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
+        jedisPoolConfig.setMaxIdle(this.getJedisProperties().getMaxIdle());
+        jedisPoolConfig.setMinIdle(this.getJedisProperties().getMinIdle());
+        jedisPoolConfig.setMaxWaitMillis(this.getJedisProperties().getMaxWaitMillis());
+        jedisPoolConfig.setMaxTotal(this.getJedisProperties().getMaxTotal());
+        jedisPoolConfig.setTestOnBorrow(this.getJedisProperties().isTestOnBorrow());
+        jedisPoolConfig.setTestOnReturn(this.getJedisProperties().isTestOnReturn());
+        jedisPoolConfig.setTestWhileIdle(this.getJedisProperties().isTestWhileIdle());
+        return jedisPoolConfig;
+    }
+
+    @Bean
+    public RedisStandaloneConfiguration redisStandaloneConfig() {
+        return new RedisStandaloneConfiguration(this.getRedisProperties().getHostName(), this.getRedisProperties().getPort());
+    }
+
+//    public RedisStandaloneConfiguration redisStandaloneConfig(final org.springframework.boot.autoconfigure.data.redis.RedisProperties redisProperties) {
+//        return new RedisStandaloneConfiguration(redisProperties.getHost(), redisProperties.getPort());
+//    }
+
+    @Bean
+    public RedisSentinelConfiguration redisSentinelConfig() {
+        final RedisSentinelConfiguration configuration = new RedisSentinelConfiguration();
+        configuration.master(this.getRedisProperties().getMaster());
+        final List<Map<String, Integer>> hosts = Optional.ofNullable(this.getRedisProperties().getHosts()).orElseGet(Collections::emptyList);
+        for (final Map<String, Integer> host : hosts) {
+            host.forEach((String h, Integer p) -> configuration.sentinel(h, p));
+        }
+        return configuration;
+    }
+
+//    public RedisSentinelConfiguration redisSentinelConfig(final org.springframework.boot.autoconfigure.data.redis.RedisProperties redisProperties) {
+//        return new RedisSentinelConfiguration(redisProperties.getSentinel().getMaster(), ImmutableSet.copyOf(redisProperties.getSentinel().getNodes()));
+//    }
+
+//    protected <K, V> RedisTemplate<K, V> getRedisTemplate() {
+//        return this.getRedisTemplate(this.lettuceConnectionFactory(this.getRedisProperties()));
+//    }
+
+    @Bean(destroyMethod = "destroy")
+    public JedisConnectionFactory jedisConnectionFactory() {
+//        return new JedisConnectionFactory(this.redisSentinelConfig(), this.jedisConfig());
+        return new JedisConnectionFactory(this.redisStandaloneConfig());
+    }
+
+    @Bean(destroyMethod = "destroy")
+    public LettuceConnectionFactory lettuceConnectionFactory() {
+        final LettuceConnectionFactory lettuceConnectionFactory = new LettuceConnectionFactory(this.redisStandaloneConfig());
+//        final LettuceConnectionFactory lettuceConnectionFactory = new LettuceConnectionFactory(this.redisSentinelConfig());
+//        lettuceConnectionFactory.getStandaloneConfiguration().setHostName(this.getRedisProperties().getHostName());
+//        lettuceConnectionFactory.getStandaloneConfiguration().setPort(this.getRedisProperties().getPort());
+        return lettuceConnectionFactory;
+    }
+
+//    @Bean(destroyMethod = "destroy")
+//    public LettuceConnectionFactory lettuceConnectionFactory(final org.springframework.boot.autoconfigure.data.redis.RedisProperties redisProperties) {
+//        if (Objects.isNull(redisProperties.getSentinel())) {
+//            return new LettuceConnectionFactory(this.redisStandaloneConfig(redisProperties));
+//        }
+//        return new LettuceConnectionFactory(this.redisSentinelConfig(redisProperties));
+//    }
+
+    protected <K, V> RedisTemplate<K, V> getRedisTemplate(final RedisConnectionFactory connectionFactory) {
+        final RedisTemplate<K, V> template = new RedisTemplate<>();
+        template.setConnectionFactory(connectionFactory);
+        template.afterPropertiesSet();
+        return template;
+    }
+
+    @PreDestroy
+    public void flushDb() {
+        this.jedisConnectionFactory().getConnection().flushDb();
+//        this.lettuceConnectionFactory().getConnection().flushDb();
+    }
+}
+
+
+        <!-- Spring Data Redis library dependencies -->
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-redis</artifactId>
+            <version>${spring-data-redis.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+            <version>${jedis.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-pool2</artifactId>
+            <version>${commons-pool2.version}</version>
+        </dependency>
+		
+		       <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+            <version>${spring-boot-starter.version}</version>
+        </dependency>
+		
+		
+		
+package com.siemens.microservices.sonarine.sensors.system.configuration;
+
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import org.hibernate.cache.ehcache.ConfigSettings;
+import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.SearchStrategy;
+import org.springframework.boot.autoconfigure.jmx.ParentAwareNamingStrategy;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernatePropertiesCustomizer;
+import org.springframework.cache.jcache.JCacheCacheManager;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.env.Environment;
+import org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories;
+import org.springframework.jmx.export.annotation.AnnotationJmxAttributeSource;
+import org.springframework.jmx.export.naming.ObjectNamingStrategy;
+import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
+import org.springframework.orm.jpa.*;
+import org.springframework.orm.jpa.persistenceunit.DefaultPersistenceUnitManager;
+import org.springframework.orm.jpa.persistenceunit.PersistenceUnitManager;
+import org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.transaction.support.TransactionTemplate;
+
+import javax.sql.DataSource;
+import java.util.Properties;
+import java.util.UUID;
+
+import static com.siemens.microservices.sonarine.sensors.utility.StringUtils.getString;
+import static org.hibernate.cfg.AvailableSettings.*;
+
+@Configuration
+@RequiredArgsConstructor
+@Getter(AccessLevel.PROTECTED)
+@EnableAsync
+@EnableJpaAuditing
+@EnableTransactionManagement
+//@EnableJdbcRepositories(
+//    basePackages = {
+//        "com.siemens.microservices.sonarine.sensors.model",
+//        "com.siemens.microservices.sonarine.sensors.repository"
+//    }
+//)
+//@EnableJpaRepositories(
+//    basePackages = {
+//        "com.siemens.microservices.sonarine.sensors.model",
+//        "com.siemens.microservices.sonarine.sensors.repository"
+//    }
+//)
+@EnableR2dbcRepositories(
+    basePackages = {
+        "com.siemens.microservices.sonarine.sensors.model",
+        "com.siemens.microservices.sonarine.sensors.repository"
+    }
+)
+@PropertySource("classpath:application.yml")
+public class DBConfiguration {
+
+    /**
+     * Default model/repository source packages
+     */
+    public static final String DEFAULT_REPOSITORY_PACKAGE = "com.siemens.microservices.sonarine.sensors.repository";
+    public static final String DEFAULT_MODEL_PACKAGE = "com.siemens.microservices.sonarine.sensors.model";
+    /**
+     * Default persistence unit name
+     */
+    public static final String DEFAULT_PERSISTENCE_UNIT_NAME = "local";
+    /**
+     * Default domain name prefix
+     */
+    public static final String DEFAULT_DOMAIN_NAME_PREFIX = "domain_";
+    /**
+     * Default hibernate property names
+     */
+    public static final String EJB_NAMING_STRATEGY = "hibernate.ejb.naming_strategy";
+    public static final String TEMP_USE_JDBC_METADATA_DEFAULTS = "hibernate.temp.use_jdbc_metadata_defaults";
+    public static final String USE_UNICODE = "hibernate.connection.useUnicode";
+    public static final String CHARSET = "hibernate.connection.charSet";
+    public static final String CHARACTER_ENCODING = "hibernate.connection.characterEncoding";
+
+    /**
+     * Default {@link Environment} instance
+     */
+    private final Environment environment;
+
+    /**
+     * Returns {@link LocalContainerEntityManagerFactoryBean} configuration
+     *
+     * @return {@link LocalContainerEntityManagerFactoryBean} configuration
+     */
+    @Bean
+    @Primary
+    @ConditionalOnMissingBean
+    public LocalContainerEntityManagerFactoryBean entityManagerFactory(final DataSource dataSource) {
+        final LocalContainerEntityManagerFactoryBean factoryBean = new LocalContainerEntityManagerFactoryBean();
+        factoryBean.setDataSource(dataSource);
+        factoryBean.setJpaVendorAdapter(this.jpaVendorAdapter());
+        factoryBean.setJpaProperties(this.jpaProperties());
+        factoryBean.setJpaDialect(this.jpaDialect());
+        factoryBean.setPackagesToScan(DEFAULT_REPOSITORY_PACKAGE, DEFAULT_MODEL_PACKAGE);
+        factoryBean.setPersistenceUnitName(DEFAULT_PERSISTENCE_UNIT_NAME);
+        return factoryBean;
+    }
+
+//    @Bean
+//    public DataSource dataSource() {
+//        EmbeddedDatabaseBuilder builder = new EmbeddedDatabaseBuilder();
+//        EmbeddedDatabase db = builder.setType(EmbeddedDatabaseType.H2).addScript("schema-expressions.sql").addScript("data-expressions.sql").build();
+//        return db;
+//    }
+
+    /**
+     * Returns spring datasource {@link Properties} properties
+     *
+     * @return spring datasource {@link Properties} properties
+     */
+    @Bean
+    public Properties dataSourceProperties() {
+        final Properties properties = new Properties();
+        return properties;
+    }
+
+    @Bean
+    public HibernatePropertiesCustomizer hibernateSecondLevelCacheCustomizer(final JCacheCacheManager cacheManager) {
+        return (properties) -> properties.put(ConfigSettings.CACHE_MANAGER, cacheManager.getCacheManager());
+    }
+
+    /**
+     * Returns default {@link DataSource} configuration
+     *
+     * @return default {@link DataSource} configuration
+     */
+    @Bean(name = "dataSource", destroyMethod = "close")
+    @ConditionalOnProperty(prefix = "spring.datasource", name = "url", havingValue = "false", matchIfMissing = true)
+    public HikariDataSource dataSource() {
+        final HikariConfig dataSourceConfig = new HikariConfig();
+        dataSourceConfig.setDriverClassName(this.getEnvironment().getRequiredProperty("spring.datasource.driver-class-name"));
+        dataSourceConfig.setJdbcUrl(this.getEnvironment().getRequiredProperty("spring.datasource.url"));
+        dataSourceConfig.setUsername(this.getEnvironment().getRequiredProperty("spring.datasource.username"));
+        dataSourceConfig.setPassword(this.getEnvironment().getRequiredProperty("spring.datasource.password"));
+        dataSourceConfig.setConnectionTestQuery(this.getEnvironment().getRequiredProperty("spring.datasource.connectionTestQuery"));
+        dataSourceConfig.setMinimumIdle(this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.hikari.minimumIdle", Integer.class));
+        dataSourceConfig.setMaximumPoolSize(this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.hikari.maximumPoolSize", Integer.class));
+        dataSourceConfig.setIdleTimeout(this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.hikari.idleTimeout", Integer.class));
+        dataSourceConfig.setIsolateInternalQueries(this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.hikari.isolateInternalQueries", Boolean.class));
+        dataSourceConfig.setDataSourceProperties(this.dataSourceProperties());
+        return new HikariDataSource(dataSourceConfig);
+    }
+
+    /**
+     * Returns {@link JpaVendorAdapter} configuration
+     *
+     * @return {@link JpaVendorAdapter} configuration
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public JpaVendorAdapter jpaVendorAdapter() {
+        final HibernateJpaVendorAdapter jpaVendorAdapter = new HibernateJpaVendorAdapter();
+        jpaVendorAdapter.setGenerateDdl(this.getEnvironment().getRequiredProperty("spring.datasource.jpa.generateDdl", Boolean.class));
+        jpaVendorAdapter.setShowSql(this.getEnvironment().getRequiredProperty("spring.datasource.jpa.showSql", Boolean.class));
+        jpaVendorAdapter.setDatabasePlatform(this.getEnvironment().getRequiredProperty("spring.datasource.databasePlatform"));
+        return jpaVendorAdapter;
+    }
+
+    @Bean
+    public JpaTransactionManager transactionManager(final LocalContainerEntityManagerFactoryBean entityManagerFactory) {
+        final JpaTransactionManager transactionManager = new JpaTransactionManager();
+        transactionManager.setEntityManagerFactory(entityManagerFactory.getObject());
+        return transactionManager;
+    }
+
+//    /**
+//     * Returns {@link HibernateTransactionManager} configuration by initial {@link SessionFactory} instance
+//     *
+//     * @param sessionFactory - initial {@link SessionFactory} instance
+//     * @return {@link HibernateTransactionManager} configuration
+//     */
+//    @Bean
+//    public HibernateTransactionManager transactionManager(final SessionFactory sessionFactory) {
+//        final HibernateTransactionManager txManager = new HibernateTransactionManager();
+//        txManager.setSessionFactory(sessionFactory);
+//        return txManager;
+//    }
+
+    @Bean
+    @Primary
+    public TransactionTemplate transactionTemplate(final PlatformTransactionManager transactionManager) {
+        return new TransactionTemplate(transactionManager);
+    }
+
+    /**
+     * Returns {@link ParentAwareNamingStrategy} configuration
+     *
+     * @return {@link ParentAwareNamingStrategy} configuration
+     */
+    @Bean
+    @ConditionalOnMissingBean(value = ObjectNamingStrategy.class, search = SearchStrategy.CURRENT)
+    public ParentAwareNamingStrategy objectNamingStrategy() {
+        final ParentAwareNamingStrategy namingStrategy = new ParentAwareNamingStrategy(new AnnotationJmxAttributeSource());
+        namingStrategy.setDefaultDomain(getString(DEFAULT_DOMAIN_NAME_PREFIX, UUID.randomUUID().toString()));
+        return namingStrategy;
+    }
+
+    /**
+     * Returns jpa {@link Properties} configuration
+     *
+     * @return jpa {@link Properties} configuration
+     */
+    @Bean
+    public Properties jpaProperties() {
+        final Properties jpaProperties = new Properties();
+        // connection properties
+        jpaProperties.put(POOL_SIZE, this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.connection.corePoolSize"));
+        jpaProperties.put(AUTOCOMMIT, this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.connection.autocommit"));
+        jpaProperties.put(USE_UNICODE, this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.connection.useUnicode"));
+        jpaProperties.put(CHARSET, this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.connection.charSet"));
+        jpaProperties.put(CHARACTER_ENCODING, this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.connection.characterEncoding"));
+        // general properties
+        jpaProperties.put(DIALECT, this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.dialect"));
+        jpaProperties.put(CURRENT_SESSION_CONTEXT_CLASS, this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.currentSessionContextClass"));
+        jpaProperties.put(HBM2DDL_AUTO, this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.hbm2ddl.auto"));
+        jpaProperties.put(DEFAULT_SCHEMA, this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.hbm2ddl.defaultSchema"));
+        //jpaProperties.put(HBM2DDL_IMPORT_FILES, this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.hbm2ddl.importFiles"));
+        jpaProperties.put(EJB_NAMING_STRATEGY, this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.ejb.namingStrategy"));
+        jpaProperties.put(SHOW_SQL, this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.showSql"));
+        jpaProperties.put(FORMAT_SQL, this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.formatSql"));
+        jpaProperties.put(USE_SQL_COMMENTS, this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.useSqlComments"));
+        jpaProperties.put(ENABLE_LAZY_LOAD_NO_TRANS, this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.enableLazyLoadNoTrans"));
+        jpaProperties.put(MAX_FETCH_DEPTH, this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.maxFetchDepth"));
+        jpaProperties.put(DEFAULT_BATCH_FETCH_SIZE, this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.defaultBatchFetchSize"));
+        jpaProperties.put(GENERATE_STATISTICS, this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.generateStatistics"));
+        jpaProperties.put(GLOBALLY_QUOTED_IDENTIFIERS, this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.globallyQuotedIdentifiers"));
+        jpaProperties.put(USE_NEW_ID_GENERATOR_MAPPINGS, this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.id.newGeneratorMappings"));
+        jpaProperties.put(FLUSH_BEFORE_COMPLETION, this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.transaction.flushBeforeCompletion"));
+        jpaProperties.put(AUTO_CLOSE_SESSION, this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.transaction.autoCloseSession"));
+        jpaProperties.put(MERGE_ENTITY_COPY_OBSERVER, this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.event.merge.entityCopyObserver"));
+        jpaProperties.put(USE_REFLECTION_OPTIMIZER, this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.bytecode.useReflectionOptimizer"));
+        jpaProperties.put(TEMP_USE_JDBC_METADATA_DEFAULTS, this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.temp.useJdbcMetadataDefaults"));
+        // jdbc properties
+        jpaProperties.put(STATEMENT_FETCH_SIZE, this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.jdbc.fetchSize"));
+        jpaProperties.put(STATEMENT_BATCH_SIZE, this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.jdbc.batchSize"));
+        jpaProperties.put(BATCH_VERSIONED_DATA, this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.jdbc.batchVersionedData"));
+        jpaProperties.put(ORDER_INSERTS, this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.orderInserts"));
+        jpaProperties.put(ORDER_UPDATES, this.getEnvironment().getRequiredProperty("spring.datasource.hibernate.orderUpdates"));
+        return jpaProperties;
+    }
+
+    /**
+     * Returns {@link JpaDialect} configuration
+     *
+     * @return {@link JpaDialect} configuration
+     */
+    @Bean
+    public JpaDialect jpaDialect() {
+        return new DefaultJpaDialect();
+    }
+
+    /**
+     * Returns {@link PersistenceExceptionTranslationPostProcessor} configuration
+     *
+     * @return {@link PersistenceExceptionTranslationPostProcessor} configuration
+     */
+    @Bean
+    public PersistenceExceptionTranslationPostProcessor exceptionTranslation() {
+        return new PersistenceExceptionTranslationPostProcessor();
+    }
+
+    /**
+     * Returns {@link PersistenceUnitManager} configuration
+     *
+     * @return {@link PersistenceUnitManager} configuration
+     */
+    @Bean
+    public PersistenceUnitManager persistenceUnitManager(final DataSource dataSource) {
+        final DefaultPersistenceUnitManager manager = new DefaultPersistenceUnitManager();
+        manager.setDefaultDataSource(dataSource);
+        manager.setDefaultPersistenceUnitName(DEFAULT_PERSISTENCE_UNIT_NAME);
+        return manager;
+    }
+
+    /**
+     * Returns {@link BeanPostProcessor} configuration
+     *
+     * @return {@link BeanPostProcessor} configuration
+     */
+    @Bean
+    public BeanPostProcessor postProcessor() {
+        final PersistenceAnnotationBeanPostProcessor postProcessor = new PersistenceAnnotationBeanPostProcessor();
+        postProcessor.setDefaultPersistenceUnitName(DEFAULT_PERSISTENCE_UNIT_NAME);
+        return postProcessor;
+    }
+
+    /**
+     * Returns {@link LocalSessionFactoryBean} configuration
+     *
+     * @return {@link LocalSessionFactoryBean} configuration
+     */
+    @Bean
+    public LocalSessionFactoryBean sessionFactory(final DataSource dataSource) {
+        final LocalSessionFactoryBean sessionFactory = new LocalSessionFactoryBean();
+        sessionFactory.setDataSource(dataSource);
+        sessionFactory.setPackagesToScan(DEFAULT_REPOSITORY_PACKAGE, DEFAULT_MODEL_PACKAGE);
+        sessionFactory.setHibernateProperties(this.jpaProperties());
+        return sessionFactory;
+    }
+}
+
+
+
+package com.siemens.microservices.sonarine.sensors.service.impl;
+
+import com.siemens.microservices.sonarine.sensors.service.interfaces.CachingService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.CacheManager;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Objects;
+
+/**
+ * Cache service implementation
+ */
+@Slf4j
+@Service(CachingService.SERVICE_ID)
+@RequiredArgsConstructor
+@Transactional(rollbackFor = Exception.class)
+public class CachingServiceImpl implements CachingService {
+
+    private final CacheManager cacheManager;
+
+    @Override
+    public void put(final String cacheName, final String key, final String value) {
+        this.cacheManager.getCache(cacheName).put(key, value);
+    }
+
+    @Override
+    public String get(final String cacheName, final String key) {
+        if (Objects.nonNull(this.cacheManager.getCache(cacheName).get(key))) {
+            return cacheManager.getCache(cacheName).get(key).get().toString();
+        }
+        return null;
+    }
+
+    @Override
+    public void evictSingleCacheValue(final String cacheName, final String cacheKey) {
+        this.cacheManager.getCache(cacheName).evict(cacheKey);
+    }
+
+    @Override
+    public void evictAll(final String cacheName) {
+        this.cacheManager.getCache(cacheName).clear();
+    }
+
+    @Override
+    public void evictAllCaches() {
+        this.cacheManager.getCacheNames()
+            .parallelStream()
+            .forEach(cacheName -> this.cacheManager.getCache(cacheName).clear());
+    }
+
+    @Scheduled(fixedRateString = "${cron.cache.period.fixedRate:50000}")
+    public void evictAllByInterval() {
+        this.evictAllCaches();
+    }
+}
+
+
+
+/**
+ * Caching service declaration
+ */
+public interface CachingService {
+
+    /**
+     * Default service ID
+     */
+    String SERVICE_ID = "cachingService";
+
+    void put(final String cacheName, final String key, final String value);
+
+    String get(final String cacheName, final String key);
+
+    void evictSingleCacheValue(final String cacheName, final String cacheKey);
+
+    void evictAll(final String cacheName);
+
+    void evictAllCaches();
+}
+
+
+import org.springframework.core.annotation.AliasFor;
+import org.springframework.stereotype.Component;
+
+import javax.persistence.Converter;
+import java.lang.annotation.*;
+
+@Documented
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Component
+@Converter
+public @interface ConverterComponent {
+
+    /**
+     * The value may indicate a suggestion for a logical component name, to be turned into
+     * a Spring bean in case of an autodetected component.
+     *
+     * @return the component name
+     */
+    @AliasFor(annotation = Component.class)
+    String value() default "";
+
+}
+
+
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.emory.mathcs.backport.java.util.Collections;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import javax.persistence.AttributeConverter;
+import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * {@link AttributeConverter} implementation for input {@link Iterable} collection
+ */
+@Slf4j
+@Getter(AccessLevel.PROTECTED)
+public class BaseListToStringConverter<T extends Iterable<?>> implements AttributeConverter<T, String> {
+
+    @Autowired
+    private ObjectMapper mapper;
+
+    /**
+     * Returns string representation by input {@link Iterable} collection of items
+     *
+     * @param attribute - initial input {@link Iterable} collection of items
+     * @return {@link Iterable} string representation
+     */
+    @Override
+    public String convertToDatabaseColumn(final T attribute) {
+        try {
+            this.getMapper().writeValueAsString(Optional.ofNullable(attribute).orElseGet(() -> (T) Collections.emptyList()));
+        } catch (JsonProcessingException e) {
+            log.error("ERROR: cannot process input products={}", StringUtils.join(attribute, "|"));
+        }
+        return null;
+    }
+
+    /**
+     * Returns {@link Iterable} collection of items by input source {@link String}
+     *
+     * @param source - initial input source {@link String}
+     * @return {@link Iterable} collection of items
+     */
+    @Override
+    public T convertToEntityAttribute(final String source) {
+        try {
+            return this.getMapper().reader().forType(new TypeReference<List<T>>() {
+            }).readValue(source);
+        } catch (IOException e) {
+            log.error("ERROR: cannot process input source={}", source);
+        }
+        return (T) Collections.emptyList();
+    }
+}
+
+
+
+import com.siemens.microservices.sonarine.sensors.annotation.ConverterComponent;
+import com.siemens.microservices.sonarine.sensors.model.dto.domain.MetricsRecordViewEntity;
+
+import java.util.List;
+
+/**
+ * {@link BaseListToStringConverter} implementation for collection of {@link MetricsRecordViewEntity}
+ */
+@ConverterComponent
+public class MetricsRecordsToStringConverter extends BaseListToStringConverter<List<MetricsRecordViewEntity>> {
+}
+
+
+@SpringBootApplication
+@EnableTransactionManagement
+@EnableCaching
+@EnableScheduling
+@EnableAsync
+public class Application {
+
+    String redisHost = "localhost";
+    int redisPort = 6379;
+
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+    @Bean
+    JedisConnectionFactory jedisConnectionFactory() {
+        JedisConnectionFactory factory = new JedisConnectionFactory();
+        factory.setHostName(redisHost);
+        factory.setPort(redisPort);
+        factory.setUsePool(true);
+        return factory;
+    }
+    @Bean
+    RedisTemplate<Object, Object> redisTemplate() {
+        RedisTemplate<Object, Object> redisTemplate = new RedisTemplate<Object, Object>();
+        redisTemplate.setConnectionFactory(jedisConnectionFactory());
+        return redisTemplate;
+    }
+    @Bean
+    public CacheManager cacheManager() {
+        RedisCacheManager cacheManager = new RedisCacheManager(redisTemplate());
+        return cacheManager;
+    }
+}
+
+
+cacheManager.setUsePrefix(true)
+
+
+/*
+ * Copyright 2017 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.spring.cache;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.Arrays;
+import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
+import javax.annotation.PostConstruct;
+
+import org.junit.Before;
+import org.junit.FixMethodOrder;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.MethodSorters;
+import org.spring.cache.CachingWithRedisIntegrationTest.CachingWithRedisConfiguration;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Profile;
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.util.Assert;
+
+/**
+ * Integration tests testing Spring's Cache Abstraction using Spring Data Redis auto-configured with Spring Boot.
+ *
+ * To run this test, first start a Redis Server on localhost listening on the default port, 6379.
+ *
+ * @author John Blum
+ * @see org.junit.Test
+ * @since 1.0.0
+ */
+@RunWith(SpringRunner.class)
+@ActiveProfiles("auto")
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@ContextConfiguration(classes = CachingWithRedisConfiguration.class)
+@SuppressWarnings("unused")
+public class CachingWithRedisIntegrationTest {
+
+  protected static final int REDIS_PORT = 6379;
+  protected static final String REDIS_HOST = "localhost";
+
+  private AtomicBoolean setup = new AtomicBoolean(false);
+
+  @Autowired
+  private MathService mathService;
+
+  @Autowired(required = false)
+  private RedisTemplate<Object, Object> redisTemplate;
+
+  @Before
+  public void setup() {
+    if (redisTemplate != null && !setup.getAndSet(true)) {
+      redisTemplate.delete(Arrays.asList(0L, 1L, 2L, 4L, 8L));
+    }
+  }
+
+  @Test
+  public void firstCacheMisses() {
+    assertThat(mathService.factorial(0L)).isEqualTo(1L);
+    assertThat(mathService.wasCacheMiss()).isTrue();
+    assertThat(mathService.factorial(1L)).isEqualTo(1L);
+    assertThat(mathService.wasCacheMiss()).isTrue();
+    assertThat(mathService.factorial(2L)).isEqualTo(2L);
+    assertThat(mathService.wasCacheMiss()).isTrue();
+    assertThat(mathService.factorial(4L)).isEqualTo(24L);
+    assertThat(mathService.wasCacheMiss()).isTrue();
+    assertThat(mathService.factorial(8L)).isEqualTo(40320L);
+    assertThat(mathService.wasCacheMiss()).isTrue();
+  }
+
+  @Test
+  public void thenCacheHits() {
+    assertThat(mathService.factorial(0L)).isEqualTo(1L);
+    assertThat(mathService.wasCacheMiss()).isFalse();
+    assertThat(mathService.factorial(1L)).isEqualTo(1L);
+    assertThat(mathService.wasCacheMiss()).isFalse();
+    assertThat(mathService.factorial(2L)).isEqualTo(2L);
+    assertThat(mathService.wasCacheMiss()).isFalse();
+    assertThat(mathService.factorial(4L)).isEqualTo(24L);
+    assertThat(mathService.wasCacheMiss()).isFalse();
+    assertThat(mathService.factorial(8L)).isEqualTo(40320L);
+    assertThat(mathService.wasCacheMiss()).isFalse();
+  }
+
+  interface MathService {
+    boolean wasCacheMiss();
+    long factorial(long number);
+  }
+
+  @EnableCaching
+  @SpringBootConfiguration
+  @Import({ AutoRedisConfiguration.class, CustomRedisConfiguration.class })
+  static class CachingWithRedisConfiguration {
+
+    @Bean
+    MathService mathService() {
+      return new MathService() {
+        private final AtomicBoolean cacheMiss = new AtomicBoolean(false);
+
+        @Override
+        public boolean wasCacheMiss() {
+          return cacheMiss.getAndSet(false);
+        }
+
+        @Override
+        @Cacheable(cacheNames = "Factorials")
+        public long factorial(long number) {
+          cacheMiss.set(true);
+
+          Assert.isTrue(number >= 0L, String.format("Number [%d] must be greater than equal to 0", number));
+
+          if (number <= 2L) {
+            return (number < 2L ? 1L : 2L);
+          }
+
+          long result = number;
+
+          while (--number > 1) {
+            result *= number;
+          }
+
+          return result;
+        }
+      };
+    }
+
+    @Bean
+    @Profile("none")
+    CacheManager cacheManager() {
+      return new ConcurrentMapCacheManager();
+    }
+  }
+
+  @Profile("auto")
+  @EnableAutoConfiguration
+  @SpringBootConfiguration
+  static class AutoRedisConfiguration {
+
+    @PostConstruct
+    public void afterPropertiesSet() {
+      System.out.println("AUTO");
+    }
+
+    @Bean
+    static PropertySourcesPlaceholderConfigurer propertyPlaceholderConfigurer() {
+      PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer =
+        new PropertySourcesPlaceholderConfigurer();
+      propertySourcesPlaceholderConfigurer.setProperties(redisProperties());
+      return propertySourcesPlaceholderConfigurer;
+    }
+
+    static Properties redisProperties() {
+      Properties redisProperties = new Properties();
+
+      redisProperties.setProperty("spring.cache.type", "redis");
+      redisProperties.setProperty("spring.redis.host", REDIS_HOST);
+      redisProperties.setProperty("spring.redis.port", String.valueOf(REDIS_PORT));
+
+      return redisProperties;
+    }
+  }
+
+  @Profile("custom")
+  @SpringBootConfiguration
+  static class CustomRedisConfiguration {
+
+    @PostConstruct
+    public void afterPropertiesSet() {
+      System.out.println("CUSTOM");
+    }
+
+    @Bean
+    JedisConnectionFactory jedisConnectionFactory() {
+      JedisConnectionFactory factory = new JedisConnectionFactory();
+      factory.setHostName(REDIS_HOST);
+      factory.setPort(REDIS_PORT);
+      factory.setUsePool(true);
+      return factory;
+    }
+
+    @Bean
+    RedisTemplate<Object, Object> redisTemplate() {
+      RedisTemplate<Object, Object> redisTemplate = new RedisTemplate<>();
+      redisTemplate.setConnectionFactory(jedisConnectionFactory());
+      return redisTemplate;
+    }
+
+    @Bean
+    CacheManager cacheManager() {
+      RedisCacheManager cacheManager = new RedisCacheManager(redisTemplate());
+      cacheManager.setUsePrefix(true); // THIS IS NEEDED!
+      return cacheManager;
+    }
+  }
+}
+
+
+
+@Bean
+  public LettuceConnectionFactory redisConnectionFactory() {
+    RedisStandaloneConfiguration configuration = new RedisStandaloneConfiguration();
+    configuration.setHostName(redisHost);
+    configuration.setPort(redisPort);
+    return new LettuceConnectionFactory(configuration,            LettuceClientConfiguration.builder().useSsl().disablePeerVerification().build());
+  }
+  
+  
+  @Configuration
+@EnableCaching
+public class CachingConfig {
+ 
+    @Bean
+    public CacheManager cacheManager() {
+        return new ConcurrentMapCacheManager("addresses");
+    }
+}
+@Component
+public class SimpleCacheCustomizer implements CacheManagerCustomizer<ConcurrentMapCacheManager> {
+ 
+    @Override
+    public void customize(ConcurrentMapCacheManager cacheManager) {
+        cacheManager.setCacheNames(asList("users", "transactions"));
+    }
+}
+
+https://www.baeldung.com/spring-cache-tutorial
+
+@Cacheable(value = "post-single", key = "#id", unless = "#result.shares < 500")
+@GetMapping("/{id}")
+public Post getPostByID(@PathVariable String id) throws PostNotFoundException {
+    log.info("get post with id {}", id);
+    return postService.getPostByID(id);
+}
+@Cacheable(value = "post-top")
+@GetMapping("/top")
+public List<Post> getTopPosts() {
+    return postService.getTopPosts();
+}
+
+#memory limit up to 128MB (up to you)
+maxmemory 128mb
+#remove the last recently used (LRU) keys first
+maxmemory-policy allkeys-lru
+#eviction precision (up to you)
+maxmemory-samples 10
+
+
+https://medium.com/@MatthewFTech/spring-boot-cache-with-redis-56026f7da83a
+
+
+#Redis specific configurations
+
+spring.redis.host=localhost
+spring.redis.port=6379
+spring.redis.password= 
+
+spring.redis.lettuce.pool.max-active=7 
+spring.redis.lettuce.pool.max-idle=7
+spring.redis.lettuce.pool.min-idle=2
+spring.redis.lettuce.pool.max-wait=-1ms
+spring.redis.lettuce.shutdown-timeout=200ms
+
+spring.cache.redis.cache-null-values=false
+spring.cache.redis.time-to-live=600000
+spring.cache.redis.use-key-prefix=true
+
+spring.cache.type=redis
+#spring.cache.cache-names=articleCache,allArticlesCache
+
+#Database specific configurations 
+
+spring.datasource.url=jdbc:mysql://localhost:3306/concretepage
+spring.datasource.username=root
+spring.datasource.password=cp
+
+spring.datasource.hikari.connection-timeout=20000
+spring.datasource.hikari.minimum-idle=5
+spring.datasource.hikari.maximum-pool-size=12
+spring.datasource.hikari.idle-timeout=300000
+spring.datasource.hikari.max-lifetime=1200000
+
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQLDialect
+spring.jpa.properties.hibernate.id.new_generator_mappings=false
+spring.jpa.properties.hibernate.format_sql=true 
+
+
+
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-data-redis</artifactId>
+</dependency>		
+<dependency>
+  <groupId>org.apache.commons</groupId>
+  <artifactId>commons-pool2</artifactId>
+</dependency> 
+https://www.8host.com/blog/nastrojka-keshirovaniya-redis-dlya-uskoreniya-wordpress/
+https://www.concretepage.com/spring-boot/spring-boot-redis-cache
+https://www.javacodegeeks.com/2013/02/caching-with-spring-data-redis.html
+https://memorynotfound.com/spring-redis-cache-manager-example/
+https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-caching.html
+https://github.com/SimpleProgramming/springboot-redis-database-and-cache
+https://www.onlinetutorialspoint.com/spring-boot/spring-boot-redis-cache-example-redis-server.html
+https://www.programcreek.com/python/example/3104/redis.Redis
+https://javabeat.net/enablecaching-spring/
+https://www.codota.com/code/java/packages/org.springframework.boot.autoconfigure.data.redis
+--------------------------------------------------------------------------------------------------------
+@Bean
+	@ConfigurationProperties(prefix = "spring.user.datasource")
+	public DataSource postgresqlDataSource() {
+		return DataSourceBuilder
+					.create()
+					.build();
+	}
+
+--------------------------------------------------------------------------------------------------------
+redis-cli info stats
+redis-cli info memory
+redis-cli --latency -h 127.0.0.1 -p 6379
+
+
+λ: docker pull redis
+λ: docker run -p 6379:6379 -d --name redis-cache       
+   \-v /usr/configs:/usr/redis_config 
+   \redis redis-server /usr/redis_config/redis.conf
+λ: docker exec -it redis-cache /bin/bash
+λ: redis-cli
+
+λ: for /l %N in (1 1 5) do
+   \curl -o /dev/null -s -w "%{time_total}\n"  
+   \localhost:8080/post/IDX001
+--------------------------------------------------------------------------------------------------------
+@Configuration
+@EnableCaching
+public class CachingConfig {
+ 
+    @Bean
+    public CacheManager cacheManager() {
+        return new ConcurrentMapCacheManager("addresses");
+    }
+}
+@Component
+public class SimpleCacheCustomizer implements CacheManagerCustomizer<ConcurrentMapCacheManager> {
+ 
+    @Override
+    public void customize(ConcurrentMapCacheManager cacheManager) {
+        cacheManager.setCacheNames(asList("users", "transactions"));
+    }
+}
+
+https://www.baeldung.com/spring-cache-tutorial
+
+@Cacheable(value = "post-single", key = "#id", unless = "#result.shares < 500")
+@GetMapping("/{id}")
+public Post getPostByID(@PathVariable String id) throws PostNotFoundException {
+    log.info("get post with id {}", id);
+    return postService.getPostByID(id);
+}
+@Cacheable(value = "post-top")
+@GetMapping("/top")
+public List<Post> getTopPosts() {
+    return postService.getTopPosts();
+}
+--------------------------------------------------------------------------------------------------------
 @Configuration
 @ComponentScan
 @EnableTransactionManagement
