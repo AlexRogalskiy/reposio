@@ -48901,6 +48901,638 @@ https://javabeat.net/enablecaching-spring/
 https://www.codota.com/code/java/packages/org.springframework.boot.autoconfigure.data.redis
 --------------------------------------------------------------------------------------------------------
 @Bean
+	@ConditionalOnMissingBean(RedisConnectionFactory.class)
+	public RedisConnectionFactory redisConnectionFactory(RedisProperties redisProperties) {
+
+		LettuceConnectionFactory connectionFactory = new LettuceConnectionFactory();
+		connectionFactory.setPort(redisProperties.getPort());
+		connectionFactory.setHostName(redisProperties.getHost());
+		connectionFactory.setPassword(redisProperties.getPassword());
+		connectionFactory.setShutdownTimeout(0);
+
+		return connectionFactory;
+	}
+--------------------------------------------------------------------------------------------------------
+
+import java.io.IOException;
+import java.util.LinkedHashMap;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.access.AccessDeniedHandlerImpl;
+import org.springframework.security.web.authentication.DelegatingAuthenticationEntryPoint;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
+import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.web.cors.CorsUtils;
+
+import io.pivotal.cla.data.User;
+import io.pivotal.cla.security.GitHubAuthenticationEntryPoint;
+
+@EnableWebSecurity
+@EnableGlobalMethodSecurity(prePostEnabled = true)
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+	@Autowired
+	ClaOAuthConfig oauthConfig;
+
+	@Override
+	protected void configure(HttpSecurity http) throws Exception {
+		AuthenticationEntryPoint entryPoint = entryPoint();
+		AdminRequestedAccessDeniedHandler accessDeniedHandler = new AdminRequestedAccessDeniedHandler(entryPoint);
+		http
+			.requiresChannel()
+				.requestMatchers(request -> request.getHeader("x-forwarded-port") != null).requiresSecure()
+				.and()
+			.exceptionHandling()
+				.authenticationEntryPoint(entryPoint)
+				.accessDeniedHandler(accessDeniedHandler)
+				.and()
+			.csrf()
+				.ignoringAntMatchers("/github/hooks/**").and()
+			.authorizeRequests()
+				.requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
+				.mvcMatchers("/login/**", "/", "/about", "/faq").permitAll()
+				.mvcMatchers("/view/**").permitAll()
+				.mvcMatchers("/webjars/**", "/assets/**").permitAll()
+				.mvcMatchers("/github/hooks/**").permitAll()
+				.mvcMatchers("/admin","/admin/cla/link/**","/admin/help/**").hasRole("ADMIN")
+				.mvcMatchers("/admin/**","/manage/**").hasRole("CLA_AUTHOR")
+				.anyRequest().authenticated()
+				.and()
+			.logout()
+				.logoutSuccessUrl("/?logout");
+	}
+
+	static class AdminRequestedAccessDeniedHandler implements AccessDeniedHandler {
+		private AuthenticationEntryPoint entryPoint;
+
+		private AccessDeniedHandler deniedHandler;
+
+		private AdminRequestedAccessDeniedHandler(AuthenticationEntryPoint entryPoint) {
+			AccessDeniedHandlerImpl deniedHandler = new AccessDeniedHandlerImpl();
+			deniedHandler.setErrorPage("/error/403");
+			this.deniedHandler = deniedHandler;
+			this.entryPoint = entryPoint;
+		}
+
+		@Override
+		public void handle(HttpServletRequest request, HttpServletResponse response,
+				AccessDeniedException accessDeniedException) throws IOException, ServletException {
+			User currentUser = getUser(SecurityContextHolder.getContext().getAuthentication());
+
+			if (currentUser == null || currentUser.isAdminAccessRequested()) {
+				deniedHandler.handle(request, response, accessDeniedException);
+				return;
+			}
+
+			new HttpSessionRequestCache().saveRequest(request, response);
+			entryPoint.commence(request, response,
+					new InsufficientAuthenticationException("Additional OAuth Scopes required", accessDeniedException));
+		}
+
+		private User getUser(Authentication authentication) {
+
+			if (authentication != null && authentication.getPrincipal() instanceof User) {
+				return (User) authentication.getPrincipal();
+			}
+
+			return null;
+		}
+	}
+
+
+	private AuthenticationEntryPoint entryPoint() {
+		LinkedHashMap<RequestMatcher, AuthenticationEntryPoint> entryPoints = new LinkedHashMap<>();
+		entryPoints.put(new AntPathRequestMatcher("/github/hooks/**"), new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED));
+		entryPoints.put(new AntPathRequestMatcher("/admin/**"), new GitHubAuthenticationEntryPoint(oauthConfig.getMain(), "user:email,repo:status,admin:repo_hook,admin:org_hook,read:org"));
+		BasicAuthenticationEntryPoint basicEntryPoint = new BasicAuthenticationEntryPoint();
+		basicEntryPoint.setRealmName("Pivotal CLA");
+		entryPoints.put(new AntPathRequestMatcher("/manage/**"), basicEntryPoint);
+		DelegatingAuthenticationEntryPoint entryPoint = new DelegatingAuthenticationEntryPoint(entryPoints);
+		entryPoint.setDefaultEntryPoint(new GitHubAuthenticationEntryPoint(oauthConfig.getMain(), "user:email"));
+		return entryPoint;
+	}
+}
+
+import java.util.List;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+
+import io.pivotal.cla.mvc.support.ImportedSignaturesSessionAttrResolver;
+
+/**
+ * @author Rob Winch
+ *
+ */
+@Configuration
+public class WebMvcConfig extends WebMvcConfigurerAdapter {
+
+	/* (non-Javadoc)
+	 * @see org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter#addArgumentResolvers(java.util.List)
+	 */
+	@Override
+	public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
+		resolvers.add(new ImportedSignaturesSessionAttrResolver());
+	}
+
+	@Override
+	public void addViewControllers(ViewControllerRegistry registry) {
+		registry.addViewController("/error/403").setViewName("error/403");
+	}
+}
+
+
+import javax.sql.DataSource;
+
+import org.springframework.cloud.Cloud;
+import org.springframework.cloud.CloudFactory;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.util.Assert;
+
+/**
+ * @author Mark Paluch
+ */
+public abstract class DatabaseConfig {
+
+	@Bean
+	public abstract DataSource dataSource();
+
+	protected void configureDataSource(org.apache.tomcat.jdbc.pool.DataSource dataSource) {
+		dataSource.setMaxActive(20);
+		dataSource.setMaxIdle(8);
+		dataSource.setMinIdle(8);
+		dataSource.setTestOnBorrow(true);
+		dataSource.setTestOnReturn(false);
+	}
+}
+
+@Configuration
+@Profile(GitHubClaProfiles.LOCAL)
+class LocalDatabaseConfig extends DatabaseConfig {
+
+	@Bean
+	public DataSource dataSource() {
+		org.apache.tomcat.jdbc.pool.DataSource dataSource = new org.apache.tomcat.jdbc.pool.DataSource();
+
+		dataSource.setDriverClassName("org.h2.Driver");
+		dataSource.setUrl("jdbc:h2:mem:pivotalcla;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE");
+		dataSource.setUsername("sa");
+		dataSource.setPassword("");
+		dataSource.setValidationQuery("SELECT 1");
+
+		configureDataSource(dataSource);
+
+		return dataSource;
+	}
+}
+
+@Configuration
+@Profile(GitHubClaProfiles.LOCAL_MYSQL)
+class LocalMysqlDatabaseConfig extends DatabaseConfig {
+
+	@Bean
+	public DataSource dataSource() {
+		org.apache.tomcat.jdbc.pool.DataSource dataSource = new org.apache.tomcat.jdbc.pool.DataSource();
+
+		dataSource.setDriverClassName("com.mysql.jdbc.Driver");
+		dataSource.setUrl("jdbc:mysql://localhost:3306/pivotalcla");
+		dataSource.setUsername("spring");
+		dataSource.setPassword("password");
+		dataSource.setValidationQuery("SELECT 1");
+
+		configureDataSource(dataSource);
+
+		return dataSource;
+	}
+}
+
+@Configuration
+@Profile(GitHubClaProfiles.CLOUDFOUNDRY)
+class CloudFoundryDatabaseConfig extends DatabaseConfig {
+
+	@Bean
+	public Cloud cloud() {
+		return new CloudFactory().getCloud();
+	}
+
+	@Bean
+	public DataSource dataSource() {
+
+		DataSource service = cloud().getSingletonServiceConnector(DataSource.class, null);
+		Assert.isInstanceOf(org.apache.tomcat.jdbc.pool.DataSource.class, service);
+		org.apache.tomcat.jdbc.pool.DataSource dataSource = (org.apache.tomcat.jdbc.pool.DataSource) service;
+
+		dataSource.setValidationQuery("/* PING */ SELECT 1");
+		configureDataSource(dataSource);
+		return dataSource;
+	}
+}
+
+
+@Entity
+@Data
+@ToString(exclude = {"individualContent","corporateContent"})
+
+@ElementCollection
+@Column(name = "email")
+@CollectionTable(name = "user_email",
+		joinColumns = @JoinColumn(name = "github_login") )
+Set<String> emails;
+	
+@Query("select s from CorporateSignature s where (s.cla.name = :claName or s.cla.name in (select distinct c.supersedingCla.name from ContributorLicenseAgreement c where c.name = :#{#claName})) and (s.gitHubOrganization in (:organizations) or s.emailDomain in (:emailDomains))")
+	List<CorporateSignature> findSignatures(Pageable pageable, @Param("claName") String claName, @Param("organizations") Collection<String> organizations, @Param("emailDomains") Collection<String> emailDomains);
+
+	@Query("select s from CorporateSignature s where (s.gitHubOrganization in (:organizations) or s.emailDomain in (:emailDomains))")
+	List<CorporateSignature> findSignaturesByOrganizationsAndEmailDomains(Pageable pageable, @Param("organizations") Collection<String> organizations, @Param("emailDomains") Collection<String> emailDomains);
+--------------------------------------------------------------------------------------------------------
+@Bean
+    public JCacheCacheManager cacheManager(CacheManager jCacheCacheManager) {
+        return new JCacheCacheManager(jCacheCacheManager);
+    }
+	@Bean
+    @ConditionalOnMissingBean
+    public CacheManager jCacheCacheManager() throws IOException {
+        CacheManager jCacheCacheManager = createCacheManager();
+        List<String> cacheNames = this.cacheProperties.getCacheNames();
+        if (!CollectionUtils.isEmpty(cacheNames)) {
+            for (String cacheName : cacheNames) {
+                jCacheCacheManager.createCache(cacheName, getDefaultCacheConfiguration());
+            }
+        }
+        customize(jCacheCacheManager);
+        return jCacheCacheManager;
+    }
+	
+private String syncUrl() throws Exception {
+		ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+		HttpServletRequest request = requestAttributes.getRequest();
+		return UrlBuilder.createSyncUrl(request, claName, repositoryId, pullRequestId);
+	}
+	
+
+	if (updatePullRequest != null) {
+			updatePullRequest.getCommitStatus().setAdmin(currentUser.isAdmin());
+			claService.savePullRequestStatus(updatePullRequest);
+		}
+
+		String repositoryOwner = repositoryParts[0];
+		String repositoryName = repositoryParts[1];
+
+		redirect.addAttribute("repositoryOwner", repositoryOwner);
+		redirect.addAttribute("repositoryName", repositoryName);
+		redirect.addAttribute("pullRequestId", claRequest.getPullRequestId());
+		return "redirect:https://github.com/{repositoryOwner}/{repositoryName}/pull/{pullRequestId}";
+--------------------------------------------------------------------------------------------------------
+import org.eclipse.egit.github.core.Repository;
+
+/**
+ * @author Mark Paluch
+ */
+public interface RepositoryAware {
+
+	Repository getRepository();
+}
+--------------------------------------------------------------------------------------------------------
+@ModelAttribute("currentUser")
+	User currentUser(@AuthenticationPrincipal User currentUser) {
+		return currentUser;
+	}
+
+	@ModelAttribute("isAdmin")
+	boolean isAdmin(@AuthenticationPrincipal User currentUser) {
+		return currentUser == null ? false : currentUser.isAdmin();
+	}
+
+	@ModelAttribute("isClaAuthor")
+	boolean isClaAuthor(@AuthenticationPrincipal User currentUser) {
+		return currentUser == null ? false : currentUser.isClaAuthor();
+	}
+	
+@SuppressWarnings("serial")
+--------------------------------------------------------------------------------------------------------
+
+import java.io.IOException;
+import java.util.UUID;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import io.pivotal.cla.config.OAuthClientCredentials;
+import io.pivotal.cla.mvc.util.UrlBuilder;
+import lombok.AllArgsConstructor;
+
+@AllArgsConstructor
+public class GitHubAuthenticationEntryPoint implements AuthenticationEntryPoint {
+	OAuthClientCredentials config;
+	String scope;
+
+	public void commence(HttpServletRequest request, HttpServletResponse response,
+			AuthenticationException authException) throws IOException, ServletException {
+
+		String secretState = statePrefix() + UUID.randomUUID().toString();
+
+		request.getSession().setAttribute("state", secretState);
+
+		String callbackUrl = UrlBuilder.fromRequest(request).callbackUrl();
+		String redirectUrl = UriComponentsBuilder.fromHttpUrl("https://github.com/login/oauth/authorize")
+			.queryParam("client_id", config.getClientId())
+			.queryParam("redirect_uri", callbackUrl)
+			.queryParam("state", secretState)
+			.queryParam("scope", scope)
+			.build()
+			.toUriString();
+
+		response.sendRedirect(redirectUrl);
+	}
+
+	public static boolean isAdmin(String secretState) {
+		return secretState != null && secretState.startsWith("ADMIN");
+	}
+
+	private String statePrefix() {
+		return scope.contains("repo:status") ? "ADMIN" : "USER";
+	}
+}
+
+private static final String HMAC_SHA1_ALGORITHM = "HmacSHA1";
+
+import java.security.InvalidKeyException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.codec.Hex;
+import org.springframework.stereotype.Component;
+
+import io.pivotal.cla.data.AccessToken;
+import io.pivotal.cla.data.repository.AccessTokenRepository;
+import lombok.SneakyThrows;
+
+/**
+ * @author Rob Winch
+ *
+ */
+@Component
+public class GitHubSignature {
+	static final String SIGNATURE_PREFIX = "sha1=";
+
+	private static final String HMAC_SHA1_ALGORITHM = "HmacSHA1";
+
+	AccessTokenRepository accessTokens;
+
+	@Autowired
+	public GitHubSignature(AccessTokenRepository accessTokens) {
+		super();
+		this.accessTokens = accessTokens;
+	}
+
+	@SneakyThrows
+	public boolean check(String gitHubSignature, String body) {
+		if(gitHubSignature == null || !gitHubSignature.startsWith(SIGNATURE_PREFIX)) {
+			return false;
+		}
+		AccessToken expectedToken = accessTokens.findOne(AccessToken.CLA_ACCESS_TOKEN_ID);
+		if(expectedToken == null) {
+			return false;
+		}
+
+		String providedHmac = gitHubSignature.substring(SIGNATURE_PREFIX.length());
+
+		byte[] providedHmacBytes = Hex.decode(providedHmac);
+
+		byte[] expectedBytes = sign(body, expectedToken.getToken());
+
+		return MessageDigest.isEqual(providedHmacBytes, expectedBytes);
+	}
+
+	@SneakyThrows
+	public String create(String body, String token) {
+		return SIGNATURE_PREFIX + new String(Hex.encode(sign(body, token)));
+	}
+
+	private byte[] sign(String body, String token)
+			throws NoSuchAlgorithmException, InvalidKeyException {
+		SecretKeySpec signingKey = new SecretKeySpec(token.getBytes(), HMAC_SHA1_ALGORITHM);
+		Mac mac = Mac.getInstance(HMAC_SHA1_ALGORITHM);
+		mac.init(signingKey);
+		byte[] expectedBytes = mac.doFinal(body.getBytes());
+		return expectedBytes;
+	}
+}
+
+public static Authentication loginAs(User user) {
+		SecurityContext context = SecurityContextHolder.createEmptyContext();
+		UserAuthentication authentication = new UserAuthentication(user);
+		context.setAuthentication(authentication);
+		SecurityContextHolder.setContext(context);
+		return authentication;
+	}
+--------------------------------------------------------------------------------------------------------
+import java.util.Collection;
+import java.util.List;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+
+import io.pivotal.cla.data.User;
+
+public class Login {
+
+	public static Authentication loginAs(User user) {
+		SecurityContext context = SecurityContextHolder.createEmptyContext();
+		UserAuthentication authentication = new UserAuthentication(user);
+		context.setAuthentication(authentication);
+		SecurityContextHolder.setContext(context);
+		return authentication;
+	}
+
+	static class UserAuthentication implements Authentication {
+		private static final List<GrantedAuthority> ADMIN_ROLES = AuthorityUtils.createAuthorityList("ROLE_USER", "ROLE_ADMIN");
+
+		private static final List<GrantedAuthority> CLA_AUTHOR_ROLES = AuthorityUtils.createAuthorityList("ROLE_USER", "ROLE_ADMIN", "ROLE_CLA_AUTHOR", "ACTUATOR");
+
+		private static final List<GrantedAuthority> USER_ROLES = AuthorityUtils.createAuthorityList("ROLE_USER");
+
+		private static final long serialVersionUID = 4717809728702726728L;
+
+		final User user;
+
+		public UserAuthentication(User user) {
+			this.user = user;
+		}
+
+		@Override
+		public String getName() {
+			return String.valueOf(user.getGitHubLogin());
+		}
+
+		@Override
+		public Collection<? extends GrantedAuthority> getAuthorities() {
+			if(user.isAdmin()) {
+				return user.isClaAuthor() ? CLA_AUTHOR_ROLES : ADMIN_ROLES;
+			}
+			return USER_ROLES;
+		}
+
+		@Override
+		public Object getCredentials() {
+			return null;
+		}
+
+		@Override
+		public Object getDetails() {
+			return null;
+		}
+
+		@Override
+		public Object getPrincipal() {
+			return user;
+		}
+
+		@Override
+		public boolean isAuthenticated() {
+			return true;
+		}
+
+		@Override
+		public void setAuthenticated(boolean isAuthenticated) throws IllegalArgumentException {
+			throw new UnsupportedOperationException();
+		}
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import com.maxplus1.demo.utils.Serializer;
+import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
+import org.springframework.data.redis.connection.RedisClusterConfiguration;
+import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
+
+/**
+ * Created by xiaolong.qiu on 2017/4/6.
+ */
+public class RedisConfUtils {
+
+    /**
+     * {@link org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration#getClusterConfiguration}
+     * @param redisProperties
+     * @return
+     */
+    public static RedisClusterConfiguration  getClusterConfiguration(RedisProperties redisProperties) {
+        if (redisProperties.getCluster() == null) {
+            return null;
+        }
+        RedisProperties.Cluster clusterProperties = redisProperties.getCluster();
+        RedisClusterConfiguration config = new RedisClusterConfiguration(
+                clusterProperties.getNodes());
+
+        if (clusterProperties.getMaxRedirects() != null) {
+            config.setMaxRedirects(clusterProperties.getMaxRedirects());
+        }
+        return config;
+    }
+
+    public static RedisTemplate buildRedisTemplate(byte[] redisProperties){
+        JedisConnectionFactory jedisConnectionFactory = new JedisConnectionFactory(
+                RedisConfUtils.getClusterConfiguration(
+                        (RedisProperties) Serializer.INSTANCE.deserialize(redisProperties)));
+        RedisTemplate<String, Long> redisTemplate = new RedisTemplate<>();
+        redisTemplate.setConnectionFactory(jedisConnectionFactory);
+        jedisConnectionFactory.afterPropertiesSet();
+
+        GenericJackson2JsonRedisSerializer genericJackson2JsonRedisSerializer = new GenericJackson2JsonRedisSerializer();
+        StringRedisSerializer stringRedisSerializer = new StringRedisSerializer();
+        redisTemplate.setKeySerializer(stringRedisSerializer);
+        redisTemplate.setValueSerializer(genericJackson2JsonRedisSerializer);
+        redisTemplate.setHashKeySerializer(stringRedisSerializer);
+        redisTemplate.setHashValueSerializer(genericJackson2JsonRedisSerializer);
+        redisTemplate.afterPropertiesSet();
+        return redisTemplate;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+security.oauth2.main.clientId=client-main-id-123
+security.oauth2.main.clientSecret=client-main-secret-abc
+security.oauth2.admin.clientId=client-admin-id-123
+security.oauth2.admin.clientSecret=client-admin-secret-abc
+security.oauth2.pivotal-cla.tokenSecret=pivotal_cla_mock_access_token
+
+logging.level.root=ERROR
+logging.level.com.gargoylesoftware.htmlunit.javascript.StrictErrorReporter=OFF
+spring.main.banner-mode=off
+--------------------------------------------------------------------------------------------------------
+spring.thymeleaf.mode=LEGACYHTML5
+spring.profiles.active=local
+spring.resources.chain.strategy.content.enabled=true
+spring.resources.chain.enabled=true
+management.context-path=/manage
+
+spring.jpa.generate-ddl=false
+spring.jpa.hibernate.ddl-auto=validate
+
+spring.session.store-type=redis
+--------------------------------------------------------------------------------------------------------
+@PackagePrivate // visible for testing
+	static final String ATTR_NAME = "importedSignatures";
+	
+@PreAuthorize("@gitHubSignature.check(#request.getHeader('X-Hub-Signature'), #body)")
+@PreAuthorize("hasRole('CLA_AUTHOR')")
+
+@RequestMapping(value = "/admin/cla/{claId}", method = RequestMethod.DELETE)
+	public String delete(@AuthenticationPrincipal User user, @PathVariable long claId) {
+		claRepo.delete(claId);
+		return "redirect:/admin/cla/?success";
+	}
+	
+
+--------------------------------------------------------------------------------------------------------
+	if (updatePullRequest != null) {
+			updatePullRequest.getCommitStatus().setAdmin(currentUser.isAdmin());
+			claService.savePullRequestStatus(updatePullRequest);
+		}
+
+		String repositoryOwner = repositoryParts[0];
+		String repositoryName = repositoryParts[1];
+
+		redirect.addAttribute("repositoryOwner", repositoryOwner);
+		redirect.addAttribute("repositoryName", repositoryName);
+		redirect.addAttribute("pullRequestId", claRequest.getPullRequestId());
+		return "redirect:https://github.com/{repositoryOwner}/{repositoryName}/pull/{pullRequestId}";
+--------------------------------------------------------------------------------------------------------
+@Bean
 	@ConfigurationProperties(prefix = "spring.user.datasource")
 	public DataSource postgresqlDataSource() {
 		return DataSourceBuilder
