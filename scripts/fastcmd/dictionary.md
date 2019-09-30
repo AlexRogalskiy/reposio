@@ -8946,6 +8946,81 @@ Allow a parallel capable stream to add to temporary local lists and join them af
 List<T> results
   = l.stream().filter(…).collect(ArrayList::new, List::add, List::addAll);
 --------------------------------------------------------------------------------------------------------
+    @Autowired
+    private SessionService sessionService;
+    @Autowired
+    private ProductRepository productRepository;
+    @Autowired
+    private VersionServiceImpl versionService;
+    @Autowired
+    private VersionRepository versionRepository;
+
+    @GetMapping("/myusers2")
+    public ResponseEntity<FileEntity> findAllByQuerydsl2(@RequestParam(value = "sku") String sku,
+                                                         @RequestParam(value = "version", required = false) String version,
+                                                         @RequestParam(value = "locale") String locale,
+                                                         @RequestParam(value = "platform") String platform) {
+        return this.getFileService().searchFileRecord(NamingFileSearchParameters.of(sku, version, locale, platform))
+                .map(entity -> ResponseEntity.ok(entity))
+                .orElseThrow(() -> throwResourceNotFound(this.getMessageSource(), ERROR_RESOURCE_BY_REQUEST_NOT_FOUND_MESSAGE_TEMPLATE, sku, version, locale, platform));
+    }
+
+    @GetMapping("/user")
+    public ResponseEntity<CompletableFuture<Iterable<ProductEntity>>> user() {
+        return ResponseEntity.ok().body(this.getProductRepository().findByUserIsCurrentUser());
+    }
+
+    @GetMapping("/created")
+    public ResponseEntity init() {
+        final Session session = new Session();
+        session.setId("c108cda3-8b4b-483d-a987-d65e6bfe3024");
+        session.setFilepath("C:\\git-project\\paragon.microservices.distributor");
+        session.setFilename("lombok.config");
+        session.setDownloadStatus(DownloadStatus.NEW);
+        this.getSessionService().save(session);
+        return ResponseEntity.ok().build();
+    }
+--------------------------------------------------------------------------------------------------------
+package com.paragon.mailingcontour.commons.cache;
+
+import org.springframework.boot.autoconfigure.cache.CacheManagerCustomizer;
+import org.springframework.cache.annotation.CachingConfigurerSupport;
+import org.springframework.cache.interceptor.KeyGenerator;
+import org.springframework.context.annotation.Bean;
+import org.springframework.data.redis.cache.RedisCacheManager;
+
+import java.util.Arrays;
+import java.util.Optional;
+
+public class CacheApiConfiguration extends CachingConfigurerSupport {
+
+//    @Bean
+//    public <K, V> CacheManager cacheManager(final RedisTemplate<K, V> redisTemplate) {
+//        final RedisCacheManager cacheManager = new RedisCacheManager(redisTemplate);
+//        cacheManager.setTransactionAware(true);
+//        //cacheManager.setUsePrefix(true); // THIS IS NEEDED!
+//        return cacheManager;
+//    }
+
+    @Bean
+    public <T extends RedisCacheManager> CacheManagerCustomizer<T> redisCacheManagerCustomizer() {
+        return cacheManager -> cacheManager.setTransactionAware(true);
+    }
+
+    @Bean
+    @Override
+    public KeyGenerator keyGenerator() {
+        return (target, method, params) -> {
+            final StringBuilder sb = new StringBuilder();
+            sb.append(target.getClass().getName());
+            sb.append(method.getName());
+            Arrays.stream(Optional.of(params).orElseGet(() -> new Object[0])).forEach(sb::append);
+            return sb.toString();
+        };
+    }
+}
+
+--------------------------------------------------------------------------------------------------------
 @FieldBridge(impl = ScanResultBridge.class)
 
 spring:
@@ -39820,6 +39895,148 @@ public class BookmarkRestControllerTest {
         return mockHttpOutputMessage.getBodyAsString();
     }
 }
+-------------------------------------------------------------------------------------------------------
+<plugin>
+    <groupId>io.github.swagger2markup</groupId>
+    <artifactId>swagger2markup-maven-plugin</artifactId>
+    <version>1.3.3</version>
+    <configuration>
+        <swaggerInput>${project.build.directory}/generated-sources/swagger.json</swaggerInput>
+        <outputDir>${project.build.directory}/generated-sources/swagger/</outputDir>
+        <config>
+            <swagger2markup.markupLanguage>ASCIIDOC</swagger2markup.markupLanguage>
+        </config>
+    </configuration>
+    <executions>
+        <execution>
+            <phase>prepare-package</phase>
+            <goals>
+                <goal>convertSwagger2markup</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+
+<plugin>
+    <groupId>org.asciidoctor</groupId>
+    <artifactId>asciidoctor-maven-plugin</artifactId>
+    <version>1.5.3</version>
+    <dependencies>
+        <dependency>
+            <groupId>org.jruby</groupId>
+            <artifactId>jruby-complete</artifactId>
+            <version>1.7.21</version>
+        </dependency>
+    </dependencies>
+    <configuration>
+        <sourceDirectory>${project.basedir}/src/main/asciidoc/</sourceDirectory>
+        <sourceDocumentName>index.adoc</sourceDocumentName>
+        <backend>html5</backend>
+        <outputDirectory>${project.build.directory}/generated-sources/swagger-html/</outputDirectory>
+        <attributes>
+            <toc>left</toc>
+            <toclevels>3</toclevels>
+            <generated>${project.build.directory}/generated-sources/swagger/</generated>
+        </attributes>
+    </configuration>
+
+    <executions>
+        <execution>
+            <id>output-html</id>
+            <phase>prepare-package</phase>
+            <goals>
+                <goal>process-asciidoc</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+-------------------------------------------------------------------------------------------------------
+@Configuration
+@EnableWebMvcSecurity
+@ComponentScan
+public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+
+    @Autowired
+    private UserDetailsServiceImpl userDetailsService;
+
+    /**
+     * Instantiates a new web security config.
+     */
+    public WebSecurityConfig() {
+
+        super();
+    }
+
+    /**
+     * {@inheritDoc}
+     * @see org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter#configure(org.springframework.security.config.annotation.web.builders.HttpSecurity)
+     */
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+
+        http.authorizeRequests()
+            .antMatchers("/login", "/logoffUser", "/sessionExpired", "/error", "/unauth", "/redirect", "*support*").permitAll()
+            .anyRequest().authenticated().and().rememberMe().and().httpBasic()
+            .and()
+            .csrf()
+            .disable().logout().deleteCookies("JSESSIONID").logoutSuccessUrl("/logoff").invalidateHttpSession(true);
+    }
+
+
+    @Autowired
+    public void configAuthentication(AuthenticationManagerBuilder auth) throws Exception {
+
+      auth.userDetailsService(userDetailsService).passwordEncoder(new BCryptPasswordEncoder());
+    }
+
+}
+-------------------------------------------------------------------------------------------------------
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import org.apache.catalina.security.SecurityConfig;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
+
+import com.something.configuration.SomethingConfig;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = { SomethingConfig.class, SecurityConfig.class }) //All your configuration classes
+@EnableAutoConfiguration
+@WebAppConfiguration // for MVC configuration
+@EnableJpaRepositories("com.something.persistence.dataaccess")  //JPA repositories
+@EntityScan("com.something.domain.entity.*")  //JPA entities
+@ComponentScan("com.something.persistence.fixture") //any component classes you have
+public class SomethingApplicationTest {
+
+@Autowired
+private WebApplicationContext ctx;
+private MockMvc mockMvc;
+
+@Before
+public void setUp() {
+    this.mockMvc = MockMvcBuilders.webAppContextSetup(ctx).build();
+}
+
+@Test
+public void loginTest() throws Exception {
+    this.mockMvc.perform(get("/something/login")).andDo(print()).andExpect(status().isOk());
+}
+-------------------------------------------------------------------------------------------------------
+@EnableDiscoveryClient
 -------------------------------------------------------------------------------------------------------
 keytool -genkey -alias bookmarks -keyalg RSA -keystore src/main/resources/tomcat.keystore
 -------------------------------------------------------------------------------------------------------
