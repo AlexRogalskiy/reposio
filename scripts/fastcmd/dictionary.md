@@ -38131,6 +38131,33 @@ public final value class NullVT {
   }
 }
 --------------------------------------------------------------------------------------------------------
+adb kill-server
+su root stop adbd
+su shell setprop ro.debuggable 0
+su shell setprop service.adb.tcp.port 0
+su root iptables -D INPUT -j adbd
+su root iptables -F adbd
+su root iptables -X adbd
+
+# Add iptables rules to block external connections to port 9999'
+su root iptables -N adbd
+su root iptables -A adbd -i lo -p tcp -m tcp --dport 9999 -j ACCEPT
+su root iptables -A adbd -p tcp -m tcp --dport 9999 -j DROP
+su root iptables -A INPUT -j adbd
+
+# Necessary in order to display authorization prompt
+su shell setprop ro.debuggable 1
+
+su shell setprop service.adb.tcp.port 9999
+
+su root start adbd
+
+adb connect 127.0.0.1:9999
+
+adb wait-for-local-device
+--------------------------------------------------------------------------------------------------------
+git clone https://git.busybox.net/busybox/
+--------------------------------------------------------------------------------------------------------
 language: android
 
 jdk: oraclejdk8
@@ -47810,6 +47837,180 @@ public class RedisRelationshipDetector implements RelationshipDetector {
 exclude org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
 and set: spring.data.redis.repositories.enabled=false
 --------------------------------------------------------------------------------------------------------
+import com.springboot.redis.domains.Insurance;
+import com.springboot.redis.repositories.InsuranceRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.annotation.Description;
+import org.springframework.stereotype.Service;
+
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import java.util.List;
+
+@Description(value = "Insurance service responsible for processing data.")
+@Service
+public class InsuranceService {
+
+    private InsuranceRepository insuranceRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+
+    /**
+     * Constructor dependency injector.
+     * @param insuranceRepository - insurance repository layer.
+     */
+    public InsuranceService(InsuranceRepository insuranceRepository) {
+        this.insuranceRepository = insuranceRepository;
+    }
+
+    /**
+     * Method for getting all insurances
+     *
+     * @param county - provided county name
+     * @return List of insurances / cacheable values
+     */
+    @Cacheable(value = "insurances", key = "#county")
+    public List<Insurance> findAllInsurancesByCounty(String county) {
+        return insuranceRepository.findByCounty(county);
+    }
+
+    /**
+     * Method for getting insurance by identifier
+     *
+     * @param id - insurance identifier
+     * @return Insurance / cacheable value
+     */
+    @Cacheable(value = "insurance", key = "#id")
+    public Insurance findOneById(Integer id) {
+        return insuranceRepository.findOne(id);
+    }
+
+    /**
+     * Method for storing new insurance and caching it in redis
+     *
+     * @param insurance - insurance payload
+     * @return stored Insurance
+     */
+    @CachePut(value = "insurance", key = "#insurance.id")
+    public Insurance store(Insurance insurance) {
+        return insuranceRepository.save(insurance);
+    }
+
+    /**
+     * Method for destroying insurance by identifier and remove it from redis
+     *
+     * @param id - insurance identifier
+     */
+    @CacheEvict(value = "insurance", key = "#id")
+    public void destroy(Integer id) {
+        insuranceRepository.delete(id);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd">
+
+    <property name="now" value="now()" dbms="mysql,h2"/>
+    <property name="now" value="current_timestamp" dbms="postgresql"/>
+    <property name="now" value="sysdate" dbms="oracle"/>
+
+    <property name="autoIncrement" value="true" dbms="mysql,h2,postgresql,oracle"/>
+
+    <property name="floatType" value="float4" dbms="postgresql, h2"/>
+    <property name="floatType" value="float" dbms="mysql, oracle"/>
+
+    <!-- Create table for example dataset -->
+    <changeSet id="00001" author="hedza06" context="dev, prod">
+        <createTable tableName="insurance">
+            <column name="id" type="int" autoIncrement="${autoIncrement}">
+                <constraints nullable="false" primaryKey="true" />
+            </column>
+            <column name="policyID" type="bigint">
+                <constraints nullable="false" />
+            </column>
+            <column name="statecode" type="char(2)">
+                <constraints nullable="false" />
+            </column>
+            <column name="county" type="varchar(64)">
+                <constraints nullable="false" />
+            </column>
+            <column name="eq_site_limit" type="double">
+                <constraints nullable="false" />
+            </column>
+            <column name="hu_site_limit" type="double">
+                <constraints nullable="false" />
+            </column>
+            <column name="fl_site_limit" type="double">
+                <constraints nullable="false" />
+            </column>
+            <column name="fr_site_limit" type="double">
+                <constraints nullable="false" />
+            </column>
+            <column name="tiv_2011" type="double">
+                <constraints nullable="false" />
+            </column>
+            <column name="tiv_2012" type="double">
+                <constraints nullable="false" />
+            </column>
+            <column name="eq_site_deductible" type="double">
+                <constraints nullable="false" />
+            </column>
+            <column name="hu_site_deductible" type="double">
+                <constraints nullable="false" />
+            </column>
+            <column name="fl_site_deductible" type="double">
+                <constraints nullable="false" />
+            </column>
+            <column name="fr_site_deductible" type="double">
+                <constraints nullable="false" />
+            </column>
+            <column name="point_latitude" type="double">
+                <constraints nullable="false" />
+            </column>
+            <column name="point_longitude" type="double">
+                <constraints nullable="false" />
+            </column>
+            <column name="line" type="varchar(64)">
+                <constraints nullable="false" />
+            </column>
+            <column name="construction" type="varchar(64)">
+                <constraints nullable="false" />
+            </column>
+            <column name="point_granularity" type="int">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+
+        <!-- Load data from CSV -->
+        <loadData encoding="UTF-8"
+                  file="../seeds/FL_insurance_sample.csv"
+                  separator=","
+                  tableName="insurance"
+                  relativeToChangelogFile="true"/>
+    </changeSet>
+</databaseChangeLog>
+
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- Migrations -->
+    <include file="migrations/dataset.xml" relativeToChangelogFile="true" />
+
+</databaseChangeLog>
+--------------------------------------------------------------------------------------------------------
   cache:
     type: REDIS
   redis:
@@ -49481,6 +49682,777 @@ public class RedisConfUtils {
         redisTemplate.setHashValueSerializer(genericJackson2JsonRedisSerializer);
         redisTemplate.afterPropertiesSet();
         return redisTemplate;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-logging</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency> <!-- 引入log4j2依赖 -->
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-log4j2</artifactId>
+        </dependency>
+        <dependency>  <!-- 加上这个才能辨认到log4j2.yml文件 -->
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
+        </dependency>
+        <!-- 引入jackson依赖 -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>
+<!--<scope.type>compile</scope.type>-->
+--------------------------------------------------------------------------------------------------------
+npm install node-mock-server --save-dev
+node node_modules/node-mock-server/init
+
+$ npm install -g mockserver
+$ mockserver -p 8080 -m test/mocks
+$ mockserver -p 8080 -m './mocks'
+https://redis.io/topics/rediscli
+GET.mock
+
+
+    for "string": get <key>
+    for "hash": hgetall <key>
+    for "list": lrange <key> 0 -1
+    for "set": smembers <key>
+    for "zset": zrange <key> 0 -1 withscores
+--------------------------------------------------------------------------------------------------------
+public void sessionDestroyed(HttpSessionEvent se) {
+    ApplicationContext ctx = WebApplicationContextUtils.getWebApplicationContext(se.getSession().getServletContext());
+    if (ctx == null) {
+        logger.warn("cannot find applicationContext");
+        return;
+    }
+    HttpSession session = se.getSession();
+    UserAuthDTO userAuthDto = this.internalUserAuthConnector.findFromSession(session);
+    String tenantId = null;
+    if (userAuthDto != null) {
+        tenantId = userAuthDto.getTenantId();
+    }
+    LogoutEvent logoutEvent = new LogoutEvent(session, null, session.getId(), tenantId);
+    ctx.publishEvent(logoutEvent);
+}
+--------------------------------------------------------------------------------------------------------
+
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+
+public class ApplicationContextUtils implements ApplicationContextAware {
+
+	private static ApplicationContext ctx;
+
+	@Override
+	public void setApplicationContext(ApplicationContext appContext)
+			throws BeansException {
+		ctx = appContext;
+
+	}
+
+	public static ApplicationContext getApplicationContext() {
+		return ctx;
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import javax.annotation.Resource;
+ 
+import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpSessionEvent;
+import javax.servlet.http.HttpSessionListener;
+ 
+import com.mossle.api.userauth.UserAuthDTO;
+ 
+import com.mossle.core.auth.LogoutEvent;
+ 
+import com.mossle.spi.userauth.InternalUserAuthConnector;
+ 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+ 
+import org.springframework.context.ApplicationContext;
+ 
+import org.springframework.web.context.support.WebApplicationContextUtils;
+ 
+public class LogoutHttpSessionListener implements HttpSessionListener {
+    private static Logger logger = LoggerFactory
+            .getLogger(LogoutHttpSessionListener.class);
+    private InternalUserAuthConnector internalUserAuthConnector;
+ 
+    public void sessionCreated(HttpSessionEvent se) {
+    }
+ 
+    public void sessionDestroyed(HttpSessionEvent se) {
+        ApplicationContext ctx = WebApplicationContextUtils
+                .getWebApplicationContext(se.getSession().getServletContext());
+ 
+        if (ctx == null) {
+            logger.warn("cannot find applicationContext");
+ 
+            return;
+        }
+ 
+        HttpSession session = se.getSession();
+        UserAuthDTO userAuthDto = this.internalUserAuthConnector
+                .findFromSession(session);
+ 
+        String tenantId = null;
+ 
+        if (userAuthDto != null) {
+            tenantId = userAuthDto.getTenantId();
+        }
+ 
+        LogoutEvent logoutEvent = new LogoutEvent(session, null,
+                session.getId(), tenantId);
+        ctx.publishEvent(logoutEvent);
+    }
+ 
+    @Resource
+    public void setInternalUserAuthConnector(
+            InternalUserAuthConnector internalUserAuthConnector) {
+        this.internalUserAuthConnector = internalUserAuthConnector;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.math.BigDecimal;
+import java.util.concurrent.*;
+
+public final class PriceHolder {
+
+    //map each entity to object which contains the current price, the hasPriceChanged boolean and a queue of countdownlatchs
+
+    private final ConcurrentHashMap<String, BigDecimal> prices = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Boolean> hasPriceChanged = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, CountDownLatchManager> entityThreadCountDownLatches = new ConcurrentHashMap<>();
+
+    public PriceHolder() { }
+
+    /** Called when a price ‘p’ is received for an entity ‘e’ */
+    public void putPrice(final String e, final BigDecimal p) {
+        prices.compute(e, (key, value) -> {
+            hasPriceChanged.put(e, true);
+            entityThreadCountDownLatches
+                    .getOrDefault(e, new CountDownLatchManager())
+                    .unblockFirstWaitingThread();
+            return p;
+        });
+    }
+
+    /** Called to get the latest price for entity ‘e’ */
+    public BigDecimal getPrice(final String e) {
+        return prices.compute(e, (k, v) -> {
+            hasPriceChanged.put(e, false);
+            return v;
+        });
+    }
+
+    /**
+     * Called to determine if the price for entity ‘e’ has
+     * changed since the last call to getPrice(e).
+     */
+    public boolean hasPriceChanged(final String e) {
+        return hasPriceChanged.getOrDefault(e, false);
+    }
+
+    /**
+     * Returns the next price for entity ‘e’. If the price has changed since the last
+     * call to getPrice() or waitForNextPrice(), it returns immediately that price.
+     * Otherwise it blocks until the next price change for entity ‘e’.
+     * If multiple threads from the same entity ‘e’ call this function they will
+     * wait in a FIFO manner and each thread will receive a new price.
+     */
+    public BigDecimal waitForNextPrice(final String e) throws InterruptedException {
+        while (!hasPriceChanged(e)) {
+            waitForPutPriceToBeCalledForEntity(e);
+        }
+        return getPrice(e);
+    }
+
+    private void waitForPutPriceToBeCalledForEntity(String e) throws InterruptedException {
+        entityThreadCountDownLatches.merge(e, new CountDownLatchManager() , (oldLatches, newLatches) -> {
+            oldLatches.addNewLatch();
+            return oldLatches;
+        }).awaitOnLastLatch();
+    }
+}
+
+import java.util.LinkedList;
+import java.util.concurrent.CountDownLatch;
+
+public class CountDownLatchManager {
+
+    private LinkedList<CountDownLatch> countDownLatches = new LinkedList<>();
+
+    /** If the list is populated, the first CountDownLatch will be counted down */
+    public void unblockFirstWaitingThread() {
+        if (countDownLatches.size() > 0) {
+            countDownLatches.removeFirst().countDown();
+        }
+    }
+
+    /** Adds a single step CountDownLatch to the back on the list */
+    public void addNewLatch() {
+        countDownLatches.addLast(new CountDownLatch(1));
+    }
+
+    /** Awaits for the last CountDownLatch to be counted down */
+    public void awaitOnLastLatch() throws InterruptedException {
+        if (countDownLatches.size() > 0) {
+            countDownLatches.getLast().await();
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+package com.memory;
+ 
+import java.util.HashMap;
+import java.util.Timer;
+import java.util.TimerTask;
+ 
+/**
+ * Timeout functionnality for the memory store
+ * @author Deisss (LGPLv3)
+ * @version 0.1
+ */
+class TimeoutMemoryStore extends TimerTask{
+    private String key;
+ 
+    /**
+     * Constructor
+     * @param key The key to use & store
+     */
+    public TimeoutMemoryStore(String key){
+        this.key = key;
+    }
+ 
+    @Override
+    public void run() {
+        if(this.key != null & this.key.length() > 0){
+            MemoryStore.delete(this.key);
+        }
+    }
+}
+ 
+/**
+ * The memory store will keep data inside the class, for a specific amout of time
+ * @author Deisss (LGPLv3)
+ * @version 0.1
+ */
+public class MemoryStore {
+    //This will store any kind of object, related to a specific key value in string
+    private static HashMap<String, Object> mem;
+ 
+    /**
+     * Add an object into the memory store
+     * @param obj The object to store
+     * @return The key stored
+     */
+    public static String add(Object obj){
+        return add(obj, 0);
+    }
+ 
+    /**
+     * Add an object into the memory store
+     * @param obj The object to store
+     * @param timeout The delay in ms
+     * @return The key store
+     */
+    public static String add(Object obj, long timeout){
+        //If the system is not functionnal
+        if(mem == null){
+            erase();
+        }
+ 
+        //Generating a unique id
+        String gen = generate(16);
+        while(mem.containsKey(gen)){
+            gen = generate(16);
+        }
+ 
+        mem.put(gen, obj);
+ 
+        //Create a delete operation after timeout
+        if(timeout > 0){
+            new Timer().schedule(new TimeoutMemoryStore(gen), timeout);
+        }
+ 
+        return gen;
+    }
+ 
+    /**
+     * Get a specific object regarding key
+     * @param key The key to search
+     * @return The object retrieve, or null if nothing found
+     */
+    public static Object get(String key){
+        if(mem.containsKey(key)){
+            return mem.get(key);
+        }else{
+            return null;
+        }
+    }
+ 
+    /**
+     * Delete an entry from the memory store
+     * @param key The key to delete
+     * @return The delete value result (true if the object has been found, false in other case)
+     */
+    public static boolean delete(String key){
+        if(mem.containsKey(key)){
+            mem.remove(key);
+            return true;
+        }
+        return false;
+    }
+ 
+    /**
+     * Empty the memory store
+     */
+    public static void erase(){
+        mem = new HashMap<String, Object>();
+    }
+ 
+    /**
+     * This generate a random string of the given size
+     * @param length The output length to retrieve
+     * @return The generated string
+     */
+    private static String generate(int length){
+        String chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+        int charLength = chars.length();
+        String pass = "";
+        for(int x=0; x<length; x++){
+            int i = (int) Math.floor(Math.random() * charLength);
+            pass += chars.charAt(i);
+        }
+        return pass;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+language: android
+jdk: oraclejdk8
+
+notifications:
+  email: false
+
+android:
+  components:
+    - tools
+    - build-tools-28.0.3
+    - android-28
+    - extra-android-support
+    - extra-android-m2repository
+  licenses:
+      - 'android-sdk-preview-license-.+'
+      - 'android-sdk-license-.+'
+      - 'google-gdk-license-.+'
+
+before_install:
+  - chmod +x gradlew
+  - yes | sdkmanager "platforms;android-27"
+
+script: ./gradlew clean assemble test
+
+after_success: ./gradlew jacocoRootReport coveralls
+--------------------------------------------------------------------------------------------------------
+<property name="hibernate.current_session_context_class">jta</property>
+
+        <property name="hibernate.transaction.factory_class">org.hibernate.engine.transaction.internal.jta.JtaTransactionFactory</property>
+
+        <property name="hibernate.transaction.jta.platform">org.hibernate.engine.transaction.jta.platform.internal.JBossAppServerJtaPlatform</property>
+		
+hibernate.allow_update_outside_transaction = true 
+--------------------------------------------------------------------------------------------------------
+PRAGMA foreign_keys = "1";
+SELECT type,name,sql,tbl_name,'0' AS temp FROM sqlite_master UNION SELECT type,name,sql,tbl_name,'1' AS temp FROM sqlite_temp_master;
+PRAGMA encoding
+
+btsnoop
+
+
+--------------------------------------------------------------------------------------------------------
+import java.math.BigDecimal;
+import java.util.concurrent.ConcurrentHashMap;
+
+public final class PriceHolder {
+
+    private final ConcurrentHashMap<String, BigDecimal> prices = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Boolean> hasPriceChanged = new ConcurrentHashMap<>();
+
+    public PriceHolder() { }
+
+    /** Called when a price ‘p’ is received for an entity ‘e’ */
+    public void putPrice(final String e, final BigDecimal p) {
+        prices.compute(e, (key, value) -> {
+            hasPriceChanged.put(e, true);
+            return p;
+        });
+    }
+
+    /** Called to get the latest price for entity ‘e’ */
+    public BigDecimal getPrice(String e) {
+        return prices.compute(e, (k, v) -> {
+            hasPriceChanged.put(e, false);
+           return v;
+        });
+    }
+
+    /**
+     * Called to determine if the price for entity ‘e’ has
+     * changed since the last call to getPrice(e).
+     */
+    public boolean hasPriceChanged(String e) {
+        return hasPriceChanged.getOrDefault(e, false);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+//package com.paragon.microservices.distributor.system.configuration;
+//
+//import com.fasterxml.jackson.databind.ObjectMapper;
+//import com.paragon.mailingcontour.commons.registry.model.RegistryApplicationData;
+//import org.springframework.cache.CacheManager;
+//import org.springframework.context.annotation.Bean;
+//import org.springframework.context.annotation.Configuration;
+//import org.springframework.data.redis.cache.RedisCacheManager;
+//import org.springframework.data.redis.connection.RedisConnectionFactory;
+//import org.springframework.data.redis.core.StringRedisTemplate;
+//import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
+//import org.springframework.data.redis.serializer.RedisSerializer;
+//import org.springframework.data.redis.serializer.StringRedisSerializer;
+//
+//@Configuration
+//public class CacheConfiguration {
+//
+//    @Bean
+//    public StringRedisTemplate registryTemplate(final ObjectMapper objectMapper, final RedisConnectionFactory redisConnectionFactory) {
+//        final StringRedisTemplate template = new StringRedisTemplate(redisConnectionFactory);
+//        template.setEnableTransactionSupport(true);
+//        template.setKeySerializer(new StringRedisSerializer());
+//        template.setValueSerializer(this.registryValueSerializer(objectMapper));
+////        template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
+//        template.afterPropertiesSet();
+//        return template;
+//    }
+//
+//    @Bean
+//    public CacheManager cacheManager(final RedisConnectionFactory redisConnectionFactory) {
+//        return RedisCacheManager.RedisCacheManagerBuilder.fromConnectionFactory(redisConnectionFactory).build();
+//    }
+//
+//    public RedisSerializer<RegistryApplicationData> registryValueSerializer(final ObjectMapper objectMapper) {
+//        final Jackson2JsonRedisSerializer<RegistryApplicationData> jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer<>(RegistryApplicationData.class);
+//        jackson2JsonRedisSerializer.setObjectMapper(objectMapper);
+//        return jackson2JsonRedisSerializer;
+//    }
+//}
+
+--------------------------------------------------------------------------------------------------------
+@SpringBootApplication
+@EnableSwagger2
+@EnableCaching
+public class Application extends SpringBootServletInitializer {
+
+  public static void main(final String[] args) throws Exception {
+    SpringApplication.run(Application.class, args);
+  }
+
+  @Primary
+  @Bean
+  public RedisCacheManager cacheManager(final RedisConnectionFactory connectionFactory) {
+    final RedisCacheWriter redisCacheWriter = RedisCacheWriter.lockingRedisCacheWriter(connectionFactory);
+    final SerializationPair<Object> valueSerializationPair = RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer());
+    final RedisCacheConfiguration cacheConfiguration = RedisCacheConfiguration.defaultCacheConfig();
+    final RedisCacheManager redisCacheManager = new RedisCacheManager(redisCacheWriter, cacheConfiguration);
+    return redisCacheManager;
+  }
+
+  @Bean(name = "pickleCacheManager")
+  public RedisCacheManager pickleCacheManager(final RedisConnectionFactory connectionFactory) {
+    final RedisCacheWriter redisCacheWriter = RedisCacheWriter.lockingRedisCacheWriter(connectionFactory);
+    final SerializationPair<Object> valueSerializationPair = RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer());
+    RedisCacheConfiguration cacheConfiguration = RedisCacheConfiguration.defaultCacheConfig();
+    cacheConfiguration = cacheConfiguration.entryTtl(Duration.ofSeconds(120));
+    final RedisCacheManager redisCacheManager = new RedisCacheManager(redisCacheWriter, cacheConfiguration);
+    return redisCacheManager;
+  }
+
+  @Bean(name = "userCacheManager")
+  public RedisCacheManager userCacheManager(final RedisConnectionFactory connectionFactory) {
+    final RedisCacheWriter redisCacheWriter = RedisCacheWriter.lockingRedisCacheWriter(connectionFactory);
+    final SerializationPair<Object> valueSerializationPair = RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer());
+    RedisCacheConfiguration cacheConfiguration = RedisCacheConfiguration.defaultCacheConfig();
+    cacheConfiguration = cacheConfiguration.entryTtl(Duration.ofSeconds(172800));
+    final RedisCacheManager redisCacheManager = new RedisCacheManager(redisCacheWriter, cacheConfiguration);
+    return redisCacheManager;
+  }
+
+}
+--------------------------------------------------------------------------------------------------------
+
+    @Id
+    @SequenceGenerator(name = "SEQ_GEN", sequenceName = "SEQ_USER", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "SEQ_GEN")
+    private Long id;
+    private String name;
+    private long followers;
+--------------------------------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `articles` (
+  `article_id` int(5) NOT NULL AUTO_INCREMENT,
+  `title` varchar(200) NOT NULL,
+  `category` varchar(100) NOT NULL,
+  PRIMARY KEY (`article_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1;
+
+INSERT INTO `articles` (`article_id`, `title`, `category`) VALUES
+	(1, 'Spring REST Security', 'Spring'),
+	(2, 'Java Concurrency', 'Java'); 
+--------------------------------------------------------------------------------------------------------
+@Repository
+public class RedisRepositoryImpl implements RedisRepository {
+    private static final String KEY = "Movie";
+    private RedisTemplate<String, Object> redisTemplate;
+    private HashOperations hashOperations;
+    @Autowired
+    public RedisRepositoryImpl(RedisTemplate<String, Object> redisTemplate){
+        this.redisTemplate = redisTemplate;
+    }
+    @PostConstruct
+    private void init(){
+        hashOperations = redisTemplate.opsForHash();
+    }
+    public void add(final Movie movie) {
+        hashOperations.put(KEY, movie.getId(), movie.getName());
+    }
+    public void delete(final String id) {
+        hashOperations.delete(KEY, id);
+    }
+    public Movie findMovie(final String id){
+        return (Movie) hashOperations.get(KEY, id);
+    }
+    public Map<Object, Object> findAllMovies(){
+        return hashOperations.entries(KEY);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.time.Duration;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.env.Environment;
+import org.springframework.data.redis.cache.RedisCacheConfiguration;
+import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.connection.RedisPassword;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+
+@Configuration
+@EnableCaching
+@PropertySource("classpath:application.properties")
+public class RedisConfig {
+   @Autowired
+   private Environment env;	
+	
+   @Bean
+   public LettuceConnectionFactory redisConnectionFactory() {
+	RedisStandaloneConfiguration redisConf = new RedisStandaloneConfiguration();
+	redisConf.setHostName(env.getProperty("spring.redis.host"));
+	redisConf.setPort(Integer.parseInt(env.getProperty("spring.redis.port")));
+	redisConf.setPassword(RedisPassword.of(env.getProperty("spring.redis.password")));	    
+        return new LettuceConnectionFactory(redisConf);
+   }
+   @Bean
+   public RedisCacheConfiguration cacheConfiguration() {
+	RedisCacheConfiguration cacheConfig = RedisCacheConfiguration.defaultCacheConfig()
+	  .entryTtl(Duration.ofSeconds(600))
+	  .disableCachingNullValues();	
+	return cacheConfig;
+   }
+   @Bean
+   public RedisCacheManager cacheManager() {
+	RedisCacheManager rcm = RedisCacheManager.builder(redisConnectionFactory())
+	  .cacheDefaults(cacheConfiguration())
+	  .transactionAware()
+	  .build();
+	return rcm;
+   }  
+} 
+--------------------------------------------------------------------------------------------------------
+@Cacheable(value = "post-single", key = "#id", unless = "#result.shares < 500")
+@GetMapping("/{id}")
+public Post getPostByID(@PathVariable String id) throws PostNotFoundException {
+    log.info("get post with id {}", id);
+    return postService.getPostByID(id);
+}
+@Cacheable(value = "post-top")
+@GetMapping("/top")
+public List<Post> getTopPosts() {
+    return postService.getTopPosts();
+}
+@CachePut(value = "post-single", key = "#post.id")
+@PutMapping("/update")
+public Post updatePostByID(@RequestBody Post post) throws PostNotFoundException {
+    log.info("update post with id {}", post.getId());
+    postService.updatePost(post);
+    return post;
+}
+@CacheEvict(value = "post-single", key = "#id")
+@DeleteMapping("/delete/{id}")
+public void deletePostByID(@PathVariable String id) throws PostNotFoundException {
+    log.info("delete post with id {}", id);
+    postService.deletePost(id);
+}
+
+@CacheEvict(value = "post-top")
+@GetMapping("/top/evict")
+public void evictTopPosts() {
+    log.info("Evict post-top");
+}
+
+--------------------------------------------------------------------------------------------------------
+import java.util.UUID;
+
+import org.springframework.boot.bind.RelaxedPropertyResolver;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.EnvironmentAware;
+import org.springframework.core.env.Environment;
+import org.springframework.util.StringUtils;
+
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
+
+@ConfigurationProperties(prefix = "cereebro", ignoreUnknownFields = true)
+@Data
+@Slf4j
+public final class CereebroProperties implements EnvironmentAware {
+
+    private ComponentRelationshipsProperties application = new ComponentRelationshipsProperties();
+    private SnitchProperties snitch = new SnitchProperties();
+
+    @Override
+    public void setEnvironment(Environment env) {
+        if (!StringUtils.hasText(application.getComponent().getName())) {
+            // set the application name from the environment,
+            // but allow the defaults to use relaxed binding
+            // (shamelessly copied from Spring Boot)
+            RelaxedPropertyResolver springPropertyResolver = new RelaxedPropertyResolver(env, "spring.application.");
+            String appName = springPropertyResolver.getProperty("name");
+            application.getComponent().setName(StringUtils.hasText(appName) ? appName : generateName());
+        }
+    }
+
+    private String generateName() {
+        LOGGER.warn("Generating random name for this application -- please set spring.application.name property !");
+        return UUID.randomUUID().toString();
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.annotation.EnableKafka;
+import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
+import org.springframework.kafka.core.ProducerFactory;
+
+import java.util.Map;
+
+/**
+ * http://docs.spring.io/spring-boot/docs/1.5.3.BUILD-SNAPSHOT/reference/htmlsingle/#boot-features-kafka
+ */
+@Configuration
+@EnableKafka
+public class KafkaConfig {
+
+
+    /**
+     * TODO: eggs hurt:Kyro Serialization needs the default constructor and 'implements Serializable'
+     * KafkaProperties and DefaultKafkaProducerFactory can not be Serialized
+     * @param properties
+     * @return
+     */
+    @Bean("kafkaPropertiesMap")
+    public Map<String, Object> kafkaPropertiesMap(KafkaProperties properties) {
+        Map<String, Object> producerProperties = properties.buildProducerProperties();
+        return producerProperties;
+    }
+
+    /**
+     * Customized ProducerFactory bean.
+     * @param properties the kafka properties.
+     * @return the bean.
+     */
+    @Bean("kafkaProducerFactory")
+    public ProducerFactory<?, ?> kafkaProducerFactory(KafkaProperties properties) {
+        Map<String, Object> producerProperties = properties.buildProducerProperties();
+        return new DefaultKafkaProducerFactory<>(producerProperties);
+    }
+
+    /**
+     * 注意：目前Spring Boot自动配置只支持单个分组group-id创建consumer，
+     * 如需要多个应该创建多个不同的DefaultKafkaConsumerFactory properties.getConsumer().setGroupId(groupId);
+     * Customized ConsumerFactory bean.
+     * @param properties the kafka properties.
+     * @return the bean.
+     */
+    @Bean("kafkaConsumerFactory")
+    public ConsumerFactory<?, ?> kafkaConsumerFactory(KafkaProperties properties) {
+        Map<String, Object> consumerProperties = properties.buildConsumerProperties();
+        return new DefaultKafkaConsumerFactory<>(consumerProperties);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+import org.apache.ibatis.session.SqlSessionFactory;
+import org.mybatis.spring.SqlSessionFactoryBean;
+import org.mybatis.spring.annotation.MapperScan;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceBuilder;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+
+import javax.sql.DataSource;
+
+@Configuration
+@MapperScan(basePackages = {"com.maxplus1.demo.dao.test2db"}, sqlSessionFactoryRef = "test2dbSqlSessionFactory")
+public class Test2dbConfig {
+
+    private final static Logger log = LoggerFactory.getLogger(Test2dbConfig.class);
+
+    @Bean(name = "test2db")
+    @ConfigurationProperties(prefix = "spring.datasource.test2db")
+    public DataSource dataSource() {
+        return DataSourceBuilder.create().build();
+    }
+
+    @Bean(name = "test2dbTransactionManager")
+    public DataSourceTransactionManager transactionManager(@Qualifier("test2db") DataSource dataSource) {
+        return new DataSourceTransactionManager(dataSource);
+    }
+
+    @Bean(name = "test2dbSqlSessionFactory")
+    public SqlSessionFactory sqlSessionFactory(@Qualifier("test2db") DataSource dataSource) throws Exception {
+        SqlSessionFactoryBean factoryBean = new SqlSessionFactoryBean();
+        factoryBean.setDataSource(dataSource);
+        factoryBean.setTypeAliasesPackage("com.maxplus1.demo.entity");
+        factoryBean.setMapperLocations(
+                new PathMatchingResourcePatternResolver().getResources("classpath:mapper/test2db/*.xml"));
+        return factoryBean.getObject();
     }
 }
 --------------------------------------------------------------------------------------------------------
@@ -58728,6 +59700,257 @@ org.springframework.boot.autoconfigure.mustache.MustacheTemplateAvailabilityProv
 org.springframework.boot.autoconfigure.groovy.template.GroovyTemplateAvailabilityProvider,\
 org.springframework.boot.autoconfigure.thymeleaf.ThymeleafTemplateAvailabilityProvider,\
 org.springframework.boot.autoconfigure.web.servlet.JspTemplateAvailabilityProvider
+--------------------------------------------------------------------------------------------------------
+package com.paragon.mailingcontour.commons.registry.service.impl;
+
+import com.paragon.mailingcontour.commons.registry.configuration.RegistryMetadataConfigurer;
+import com.paragon.mailingcontour.commons.registry.model.RegistryApplicationData;
+import com.paragon.mailingcontour.commons.registry.service.interfaces.RegistryCachingService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Objects;
+import java.util.Optional;
+
+/**
+ * {@link RegistryCachingService} service implementation
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+@Transactional(rollbackFor = Exception.class)
+public class RegistryCachingServiceImpl implements RegistryCachingService {
+    private final RegistryMetadataConfigurer registryMetadataConfigurer;
+    //private final StringRedisTemplate stringRedisTemplate;
+    //private final RegistryApplicationDataFormatter registryApplicationDataFormatter;
+    private final CacheManager cacheManager;
+
+//    @Override
+//    public Optional<RegistryApplicationData> getRegistryApplicationData(final String id) {
+//        RegistryApplicationData registryData = null;
+//        try {
+//            final String sessionKey = this.registryMetadataConfigurer.getSessionKey(id);
+//            final ValueOperations<String, String> opsForValue = this.stringRedisTemplate.opsForValue();
+//            log.debug("Fetching registry application data from REDIS >>> id: {}", id);
+//
+//            final String sourceData = opsForValue.get(sessionKey);
+//            registryData = this.registryApplicationDataFormatter.parse(sourceData, Locale.getDefault());
+//            log.debug("Registry application data is received from REDIS <<< registryData: {}", registryData);
+//        } catch (Exception e) {
+//            this.rethrowSpecificException(e);
+//        }
+//        return Optional.ofNullable(registryData);
+//    }
+//
+//    @Override
+//    public void setRegistryApplicationData(final String id, final RegistryApplicationData registryData) {
+//        final String sessionKey = this.registryMetadataConfigurer.getSessionKey(id);
+//        final ValueOperations<String, String> opsForValue = this.stringRedisTemplate.opsForValue();
+//        log.debug("Storing registry application data to REDIS >>> id: {}", id);
+//        opsForValue.set(sessionKey, this.registryApplicationDataFormatter.print(registryData, Locale.getDefault()));
+//    }
+//
+//    @Override
+//    public Boolean isApplicationDataExist(final String id) {
+//        Boolean result = null;
+//        try {
+//            final String sessionKey = this.registryMetadataConfigurer.getSessionKey(id);
+//            log.debug("Check if id exist in REDIS >>> id: {}", id);
+//            result = this.stringRedisTemplate.hasKey(sessionKey);
+//            log.debug("Id checked in REDIS <<< id: {}, result: {}", id, result);
+//        } catch (Exception e) {
+//            this.rethrowSpecificException(e);
+//        }
+//        return result;
+//    }
+//
+//    private void rethrowSpecificException(final Exception e) {
+//        rethrowRedisServiceSpecificException(e, e.getMessage(), String.format("Error is occurred when requesting Redis; message = {%s}", e.getMessage()));
+//    }
+
+    @Override
+    public boolean exist(final String key) {
+        return Objects.nonNull(this.get(key));
+    }
+
+    @Override
+    public void put(final String key, final RegistryApplicationData value) {
+        final String sessionKey = this.registryMetadataConfigurer.getSessionKey(key);
+        final String cacheName = this.registryMetadataConfigurer.getCacheName();
+        log.info("Updating cache record by key: {}, cache: {}", sessionKey, cacheName);
+        Optional.ofNullable(this.cacheManager.getCache(cacheName))
+                .ifPresent(cache -> cache.put(sessionKey, value));
+    }
+
+    @Override
+    public Optional<RegistryApplicationData> get(final String key) {
+        final String sessionKey = this.registryMetadataConfigurer.getSessionKey(key);
+        final String cacheName = this.registryMetadataConfigurer.getCacheName();
+        log.info("Fetching cache record by key: {}, cache: {}", sessionKey, cacheName);
+        return Optional.ofNullable(this.cacheManager.getCache(cacheName))
+                .map(cache -> cache.get(sessionKey))
+                .map(Cache.ValueWrapper::get)
+                .map(value -> (RegistryApplicationData) value);
+    }
+
+    @Override
+    public void evict(final String key) {
+        final String sessionKey = this.registryMetadataConfigurer.getSessionKey(key);
+        final String cacheName = this.registryMetadataConfigurer.getCacheName();
+        log.info("Evicting cache record by key: {}, cache: {}", sessionKey, cacheName);
+        Optional.ofNullable(this.cacheManager.getCache(cacheName)).ifPresent(cache -> cache.evict(sessionKey));
+    }
+
+    @Override
+    public void evictAll() {
+        final String cacheName = this.registryMetadataConfigurer.getCacheName();
+        log.info("Evicting all records in cache: {}", cacheName);
+        Optional.ofNullable(this.cacheManager.getCache(cacheName)).ifPresent(Cache::clear);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+
+/**
+ * Created by IntelliJ IDEA.
+ * Project : redis-manager
+ * User: hendisantika
+ * Email: hendisantika@gmail.com
+ * Telegram : @hendisantika34
+ * Date: 09/04/18
+ * Time: 20.34
+ * To change this template use File | Settings | File Templates.
+ */
+@Configuration
+@EnableCaching
+@ComponentScan("com.hendi.redismanager")
+@PropertySource("classpath:/redis.properties")
+public class AppConfig {
+
+    private @Value("${redis.host}")
+    String redisHost;
+
+    private @Value("${redis.port}")
+    int redisPort;
+
+    @Bean
+    public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() {
+        return new PropertySourcesPlaceholderConfigurer();
+    }
+
+    @Bean
+    JedisConnectionFactory jedisConnectionFactory() {
+        JedisConnectionFactory factory = new JedisConnectionFactory();
+        factory.setHostName(redisHost);
+        factory.setPort(redisPort);
+        factory.setUsePool(true);
+        return factory;
+    }
+
+    @Bean
+    RedisTemplate<Object, Object> redisTemplate() {
+        RedisTemplate<Object, Object> redisTemplate = new RedisTemplate<Object, Object>();
+        redisTemplate.setConnectionFactory(jedisConnectionFactory());
+        return redisTemplate;
+    }
+
+    @Bean
+    CacheManager cacheManager() {
+        return new RedisCacheManager(redisTemplate());
+    }
+}
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnBean(ObjectMapper.class)
+    @DependsOn({"redisConnectionFactory"})
+    @Description("String Redis template configuration bean")
+    public StringRedisTemplate stringRedisTemplate(final ObjectMapper objectMapper, final RedisConnectionFactory redisConnectionFactory) {
+        final StringRedisTemplate template = new StringRedisTemplate(redisConnectionFactory);
+        template.setEnableTransactionSupport(true);
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setValueSerializer(this.registryValueSerializer(objectMapper));
+//        template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
+        template.afterPropertiesSet();
+        return template;
+    }
+
+    //@Bean
+    //@ConditionalOnMissingBean
+    //@ConditionalOnBean(ObjectMapper.class)
+    public RedisSerializer<RegistryApplicationData> registryValueSerializer(final ObjectMapper objectMapper) {
+        final Jackson2JsonRedisSerializer<RegistryApplicationData> jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer<>(RegistryApplicationData.class);
+        jackson2JsonRedisSerializer.setObjectMapper(objectMapper);
+        return jackson2JsonRedisSerializer;
+    }
+
+@Cacheable(value = "messageCache", condition = "'guitar'.equals(#instrument)")
+--------------------------------------------------------------------------------------------------------
+redis-cli --raw incr mycounter
+redis-cli flushall
+
+redis-cli -h redis15.localnet.org -p 6390 ping
+
+redis-cli -x set foo < /etc/services
+
+redis-cli -r 5 incr foo
+
+$ cat /tmp/script.lua
+return redis.call('set',KEYS[1],ARGV[1])
+$ redis-cli --eval /tmp/script.lua foo , bar
+OK
+
+127.0.0.1:6379> select 2
+OK
+127.0.0.1:6379[2]> dbsize
+(integer) 1
+127.0.0.1:6379[2]> select 0
+OK
+127.0.0.1:6379> dbsize
+(integer) 503
+
+./redis-cli --lru-test 10000000
+
+--------------------------------------------------------------------------------------------------------
+//    @Bean
+//    @ConditionalOnMissingBean
+//    @ConditionalOnBean(ObjectMapper.class)
+//    @DependsOn({"redisConnectionFactory"})
+//    @Description("String Redis template configuration bean")
+//    public StringRedisTemplate stringRedisTemplate(final ObjectMapper objectMapper, final RedisConnectionFactory redisConnectionFactory) {
+//        final StringRedisTemplate template = new StringRedisTemplate(redisConnectionFactory);
+//        template.setEnableTransactionSupport(true);
+//        template.setKeySerializer(new StringRedisSerializer());
+//        template.setValueSerializer(this.registryValueSerializer(objectMapper));
+////        template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
+//        template.afterPropertiesSet();
+//        return template;
+//    }
+//
+//    //@Bean
+//    //@ConditionalOnMissingBean
+//    //@ConditionalOnBean(ObjectMapper.class)
+//    public RedisSerializer<RegistryApplicationData> registryValueSerializer(final ObjectMapper objectMapper) {
+//        final Jackson2JsonRedisSerializer<RegistryApplicationData> jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer<>(RegistryApplicationData.class);
+//        jackson2JsonRedisSerializer.setObjectMapper(objectMapper);
+//        return jackson2JsonRedisSerializer;
+//    }
+
+
 --------------------------------------------------------------------------------------------------------
 group 'org.aze.accountingprogram'
 version '1.0-SNAPSHOT'
