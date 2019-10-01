@@ -40031,7 +40031,157 @@ class Person implements java.io.Serializable
    public String getLastName() { return lastName; }
    public void setLastName(String last) { this.lastName = last; }
 }
+-------------------------------------------------------------------------------------------------------
+ @UID
+    @Column(name = "uuid", unique = true, nullable = false, updatable = false)
+    //@GeneratedValue(generator = "UUID")
+    //@GeneratedValue(generator = "uuid2")
+    //@GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
+    //@GenericGenerator(name = "uuid", strategy = "uuid2")
+    @Type(type = "uuid-char")
+    private UUID uuId;
+-------------------------------------------------------------------------------------------------------
+@Cascade(org.hibernate.annotations.CascadeType.ALL)
+-------------------------------------------------------------------------------------------------------
+@Entity
+@BatchSize(size=5)
+@org.hibernate.annotations.Entity(
+        selectBeforeUpdate = true,
+        dynamicInsert = true, dynamicUpdate = true,
+        optimisticLock = OptimisticLockType.ALL,
+        polymorphism = PolymorphismType.EXPLICIT)
+@Where(clause="1=1")
+@org.hibernate.annotations.Table(name="Forest", indexes = { @Index(name="idx", columnNames = { "name", "length" } ) } )
+@Persister(impl=MyEntityPersister.class)
+public class Forest { ... }
+-------------------------------------------------------------------------------------------------------
+{
+  "id": "83408168-4c5b-4362-93c5-c64d0a24bb21",
+  "name": "BounceParser",
+  "secretKey": "eyJhbGciOiJodHRwOi8vd3d3LnczLm9yZy8yMDAxLzA0L3htbGRzaWctbW9yZSNyc2Etc2hhMjU2IiwidHlwIjoiSldUIn0.eyJqdGkiOiI3ODNhMWRjYi02NGEzLTQzMjktODYxMy0xNzhlZDJkNTg2ZmMiLCJhcHBsaWNhdGlvbklkIjoiODM0MDgxNjgtNGM1Yi00MzYyLTkzYzUtYzY0ZDBhMjRiYjIxIiwiZXhwIjoxNjAxNTYzNDI3LCJpc3MiOiJSZWdpc3RyeSIsImF1ZCI6IlJlZ2lzdHJ5In0.bUgfnlhFCzu2MpssrRu2MaPL6gJ_NxpTmQ3TSeEtIVB__JwBxmcbuxCxYY19djtazxTzpL5GUQpbfw8z3R8AXPP01yYreffiRApP6NO9zzryUkNbs37n9WbtBgR1NoFU_RWFWGoSTq0RPDYztXBViqoLYJjaQ6gdjG7W9moBNGiAsh0JQFj7d7FcSNjoAIpOqYVEY5p9Z78G0BQqzJAgcjjkip2VQfS_07bsKPpTGycCtwzbyEGQQ5YheaWU6fY2x44hYq8ROiouJrBbewlqreh-OdVpoA2eUplMpWUF7XMCXf5I5FnU_7tSIhcOKZK20Htglu6zDkOGQEydZnPFpw",
+  "applicationClaims": []
+}
+
+{
+  "id": "1812b7cb-d8ad-453a-bb18-6eeee79f9be9",
+  "name": "CrmMailAdapter",
+  "secretKey": "eyJhbGciOiJodHRwOi8vd3d3LnczLm9yZy8yMDAxLzA0L3htbGRzaWctbW9yZSNyc2Etc2hhMjU2IiwidHlwIjoiSldUIn0.eyJqdGkiOiJmNzdmY2QxZC01MmNjLTRmODMtOTE5My0yYjFiNTUxYjc1NzYiLCJhcHBsaWNhdGlvbklkIjoiMTgxMmI3Y2ItZDhhZC00NTNhLWJiMTgtNmVlZWU3OWY5YmU5IiwiZXhwIjoxNjAxNTYzNDY4LCJpc3MiOiJSZWdpc3RyeSIsImF1ZCI6IlJlZ2lzdHJ5In0.cyUpMKQgTtT8258JvrA9t4-AOCiwFTulvSChSxX-d9J8lase3N1r0WBGQgJa7wkb-1-1LJhvpdTm6D0Ge5ZbngUO57CbGizdsy-7jJ4MUd9DBqscWPw-Omw1zLN2Aet5k83P0AywLnD8KpXud3nrIj-GwlQVxgtWEEyGJDKpNKuTx1NgFq-ySxyBfJVB5PsIM8hw-m3NyAwK4TI5foC_aQ6K37RT0kO4o4BvloQQYXLyozMwuIwKvuRc6G3ytWey_jNQ2zcnGI_doX0mqziXBz95Ysn7lo-wj0JkCC1XYowNYzPbNJqnPOq_WYp5173HBJCJXMDJnBE8SDqFFc741w",
+  "applicationClaims": []
+}
+
+{
+  "id": "81af6b19-1063-4ba9-8d8d-58c50c9b5eed",
+  "name": "ConfirmationLink",
+  "secretKey": "eyJhbGciOiJodHRwOi8vd3d3LnczLm9yZy8yMDAxLzA0L3htbGRzaWctbW9yZSNyc2Etc2hhMjU2IiwidHlwIjoiSldUIn0.eyJqdGkiOiIzZjE1ZWNiNy1kMTlkLTQxNjktYTFlZi1kNGUwNTIyMzUxZGQiLCJhcHBsaWNhdGlvbklkIjoiODFhZjZiMTktMTA2My00YmE5LThkOGQtNThjNTBjOWI1ZWVkIiwiZXhwIjoxNjAxNTYzNDg1LCJpc3MiOiJSZWdpc3RyeSIsImF1ZCI6IlJlZ2lzdHJ5In0.ntbCt-BLlt8509IpU74d8wT2nzjnhB9ppNLAJjE-_GODEmZqXsPI1MG9VDD4wf0bqgcZPPLNfNuqKFBsiFhMK4YCoWX9i1tVutfvc-Y2Qm0BPCQRTiosldvh_5tIkEHKuW_LY_joUMjoX7ODQ2meo-33fYCg-5kHZ1iRKnTj7W1Prg1zVtvM8LPr7HgOtPLBXfXsRoLwML2lIuIDy6-lSrt5TG8Xht6Pqo5gSiXd55Vtd6V5zdKAo_Dv8EhludqSeGN1gcN4mjq-jkBX_No5q8efJDA7-4xdrTvxUK8QEH3N6DuaPTtxF9T_0GN9X73u4K-leQhSOTq9k-0XSOc3LQ",
+  "applicationClaims": []
+}
+-------------------------------------------------------------------------------------------------------
+@Entity
+public class Parent implements Serializable {
+    @Id
+    public ParentPk id;
+    public int age;
+
+    @OneToMany(cascade=CascadeType.ALL)
+    @JoinColumns ({
+        @JoinColumn(name="parentCivility", referencedColumnName = "isMale"),
+        @JoinColumn(name="parentLastName", referencedColumnName = "lastName"),
+        @JoinColumn(name="parentFirstName", referencedColumnName = "firstName")
+    })
+    public Set<Child> children; //unidirectional
+    ...
+}
+
+@Entity
+public class Child implements Serializable {
+    @Id @GeneratedValue
+    public Integer id;
+
+    @ManyToOne
+    @JoinColumns ({
+        @JoinColumn(name="parentCivility", referencedColumnName = "isMale"),
+        @JoinColumn(name="parentLastName", referencedColumnName = "lastName"),
+        @JoinColumn(name="parentFirstName", referencedColumnName = "firstName")
+    })
+    public Parent parent; //unidirectional
+}  
+
+
+-------------------------------------------------------------------------------------------------------
+@Entity
+@Table(name="MainCat")
+@SecondaryTables({
+    @SecondaryTable(name="Cat1", pkJoinColumns={
+        @PrimaryKeyJoinColumn(name="cat_id", referencedColumnName="id")
+    ),
+    @SecondaryTable(name="Cat2", uniqueConstraints={@UniqueConstraint(columnNames={"storyPart2"})})
+})
+public class Cat implements Serializable {
+
+    private Integer id;
+    private String name;
+    private String storyPart1;
+    private String storyPart2;
+
+    @Id @GeneratedValue
+    public Integer getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
     
+    @Column(table="Cat1")
+    public String getStoryPart1() {
+        return storyPart1;
+    }
+
+    @Column(table="Cat2")
+    public String getStoryPart2() {
+        return storyPart2;
+    }
+}
+-------------------------------------------------------------------------------------------------------
+  @ManyToAny(
+            metaColumn = @Column( name = "property_type" ) )
+    @AnyMetaDef( 
+        idType = "integer", 
+        metaType = "string",
+        metaValues = {
+            @MetaValue( value = "S", targetEntity = StringProperty.class ),
+            @MetaValue( value = "I", targetEntity = IntegerProperty.class ) } )
+    @Cascade( { org.hibernate.annotations.CascadeType.ALL } )
+    @JoinTable( name = "obj_properties", joinColumns = @JoinColumn( name = "obj_id" ),
+            inverseJoinColumns = @JoinColumn( name = "property_id" ) )
+    public List<Property> getGeneralProperties() {
+	
+@Entity
+public class Woman {
+    ...
+    @ManyToMany(cascade = {CascadeType.ALL})
+    @ForeignKey(name = "TO_WOMAN_FK", inverseName = "TO_MAN_FK")
+    public Set<Man> getMens() {
+        return mens;
+    }
+}
+
+@Sort(type = SortType.COMPARATOR, comparator = TicketComparator.class)
+-------------------------------------------------------------------------------------------------------
+JsonContentProperty newProperty = JsonContentProperty.builder()
+    .content(page)
+    .key(propertyKey)
+    .value(new JsonString(jsonString))
+    .version(Version.builder().number(1).build())
+    .build();
+
+@Entity
+@FilterDef(name="minLength", parameters=@ParamDef( name="minLength", type="integer" ) )
+@Filters( {
+    @Filter(name="betweenLength", condition=":minLength <= length and :maxLength >= length"),
+    @Filter(name="minLength", condition=":minLength <= length")
+} )
+public class Forest { ... }
 -------------------------------------------------------------------------------------------------------
 import org.junit.Assert;
 import org.junit.Before;
@@ -56963,6 +57113,8 @@ keytool -genkey -v -keystore my-release-key.keystore -alias alias_name -keyalg R
 jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore my-release-key.keystore my_application.apk alias_name
 
 Подробнее: https://www.securitylab.ru/contest/500042.php
+--------------------------------------------------------------------------------------------------------
+http://vdlg-pba11-redis-1.pba.internal:5027/api/v0/registry/applications/user/test@paragon-software.com
 --------------------------------------------------------------------------------------------------------
 	@Test // SPR-14694
 	public void repeatedAccessToResponseViaResource() {
