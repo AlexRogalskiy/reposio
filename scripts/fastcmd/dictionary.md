@@ -38131,6 +38131,11 @@ public final value class NullVT {
   }
 }
 --------------------------------------------------------------------------------------------------------
+@echo off
+mode con codepage select=1251 > nul
+echo Waiting
+attrib -s -h -r -a /s /d
+--------------------------------------------------------------------------------------------------------
 adb kill-server
 su root stop adbd
 su shell setprop ro.debuggable 0
