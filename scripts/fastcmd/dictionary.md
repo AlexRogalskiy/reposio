@@ -38147,6 +38147,274 @@ public class DinerMenuIterator implements Iterator {
 	}
 }
 --------------------------------------------------------------------------------------------------------
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+
+public class ApacheHttpClientPost {
+
+    public static void main(String[] args) throws IOException {
+
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+
+            HttpPost request = new HttpPost("https://httpbin.org/post");
+            request.setHeader("User-Agent", "Java client");
+            request.setEntity(new StringEntity("My test data"));
+
+            HttpResponse response = client.execute(request);
+
+            BufferedReader bufReader = new BufferedReader(new InputStreamReader(
+                    response.getEntity().getContent()));
+
+            StringBuilder builder = new StringBuilder();
+
+            String line;
+
+            while ((line = bufReader.readLine()) != null) {
+                builder.append(line);
+                builder.append(System.lineSeparator());
+            }
+
+            System.out.println(builder);
+        }
+    }
+}
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+
+public class ApacheHttpClientGet {
+
+    public static void main(String[] args) throws IOException {
+
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+        
+            HttpGet request = new HttpGet("http://www.something.com");
+            HttpResponse response = client.execute(request);
+
+            BufferedReader bufReader = new BufferedReader(new InputStreamReader(
+                    response.getEntity().getContent()));
+
+            StringBuilder builder = new StringBuilder();
+
+            String line;
+
+            while ((line = bufReader.readLine()) != null) {
+                builder.append(line);
+                builder.append(System.lineSeparator());
+            }
+
+            System.out.println(builder);
+        }
+    }
+}
+<dependency>
+    <groupId>org.apache.httpcomponents</groupId>
+    <artifactId>httpclient</artifactId>
+    <version>4.5.4</version>
+</dependency>
+
+        <dependency>
+            <groupId>com.opencsv</groupId>
+            <artifactId>opencsv</artifactId>
+            <version>4.1</version>
+        </dependency>
+import com.opencsv.CSVWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+public class OpenCSVDatabaseEx {
+
+    public static void main(String[] args) {
+
+        String url = "jdbc:mysql://localhost:3306/testdb?useSsl=false";
+        String user = "testuser";
+        String password = "test623";
+
+        String fileName = "src/main/resources/cars.csv";
+        Path myPath = Paths.get(fileName);
+
+        try (Connection con = DriverManager.getConnection(url, user, password);
+                PreparedStatement pst = con.prepareStatement("SELECT * FROM Cars");
+                ResultSet rs = pst.executeQuery()) {
+
+            try (CSVWriter writer = new CSVWriter(Files.newBufferedWriter(myPath,
+                    StandardCharsets.UTF_8), CSVWriter.DEFAULT_SEPARATOR,
+                    CSVWriter.NO_QUOTE_CHARACTER, CSVWriter.NO_ESCAPE_CHARACTER,
+                    CSVWriter.DEFAULT_LINE_END)) {
+
+                writer.writeAll(rs, true);
+            }
+
+        } catch (SQLException | IOException ex) {
+            Logger.getLogger(OpenCSVDatabaseEx.class.getName()).log(
+                    Level.SEVERE, ex.getMessage(), ex);
+        }
+    }
+}
+import com.opencsv.bean.CsvBindByName;
+
+public class Car {
+    
+    @CsvBindByName
+    private int id;
+    
+    @CsvBindByName
+    private String name;
+    
+    @CsvBindByName
+    private int price;
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public int getPrice() {
+        return price;
+    }
+
+    public void setPrice(int price) {
+        this.price = price;
+    }
+
+    @Override
+    public String toString() {
+
+        StringBuilder builder = new StringBuilder();
+        builder.append("Car{id=").append(id).append(", name=")
+                .append(name).append(", price=").append(price).append("}");
+
+        return builder.toString();
+    }
+}
+import com.opencsv.bean.CsvToBean;
+import com.opencsv.bean.CsvToBeanBuilder;
+import com.opencsv.bean.HeaderColumnNameMappingStrategy;
+import com.zetcode.bean.Car;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+
+public class OpenCSVReadBeansEx {
+
+    public static void main(String[] args) throws IOException {
+
+        String fileName = "src/main/resources/cars.csv";
+        Path myPath = Paths.get(fileName);
+
+        try (BufferedReader br = Files.newBufferedReader(myPath,
+                StandardCharsets.UTF_8)) {
+
+            HeaderColumnNameMappingStrategy<Car> strategy
+                    = new HeaderColumnNameMappingStrategy<>();
+            strategy.setType(Car.class);
+
+            CsvToBean csvToBean = new CsvToBeanBuilder(br)
+                    .withType(Car.class)
+                    .withMappingStrategy(strategy)
+                    .withIgnoreLeadingWhiteSpace(true)
+                    .build();
+
+            List<Car> cars = csvToBean.parse();
+            
+            cars.forEach(System.out::println);
+        }
+    }
+}
+
+<dependency>
+    <groupId>org.eclipse.collections</groupId>
+    <artifactId>eclipse-collections-api</artifactId>
+    <version>7.1.0</version>
+</dependency>
+
+<dependency>
+    <groupId>org.eclipse.collections</groupId>
+    <artifactId>eclipse-collections</artifactId>
+    <version>7.1.0</version>
+</dependency>
+
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-core</artifactId>
+    <version>5.1.7.RELEASE</version>
+</dependency>
+
+
+--------------------------------------------------------------------------------------------------------
+mvn dependency:copy -Dartifact=io.swagger:swagger-codegen-cli:2.2.2 -DoutputDirectory=. -Dmdep.stripVersion=true
+java -jar swagger-codegen-cli.jar langs
+java -jar swagger-codegen-cli.jar config-help -l <language>
+java -jar swagger-codegen-cli.jar config-help -l scala
+java -jar swagger-codegen-cli.jar generate  \
+     -i https://apis.voicebase.com/v3/defs/v3-api.yaml \
+     -l java \
+     -c java-config.json \
+     -o v3client
+
+https://fizzylogic.nl/2018/09/26/learn-how-to-quickly-generate-rest-clients-from-swagger-files/
+https://github.com/swagger-api/swagger-codegen
+--------------------------------------------------------------------------------------------------------
+import java.io.IOException;
+import java.time.Instant;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+@WebServlet(name = "MyServlet", urlPatterns = {"/MyServlet"})
+public class MyServlet extends HttpServlet {
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        
+        response.setContentType("text/html;charset=UTF-8");
+
+        request.setAttribute("now", Instant.now());
+        
+        request.getRequestDispatcher("AnotherServlet").forward(request, response);
+    }
+}
+--------------------------------------------------------------------------------------------------------
 Markdown Presentations For Everyone on GitHub, GitLab, Bitbucket, GitBucket, Gitea, and Gogs.
 $ docker build -t="hello-world-java" .
 $ docker run -p 8080:8080 -it --rm hello-world-java
