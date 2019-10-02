@@ -50349,6 +50349,8 @@ public class RedisConfUtils {
             <artifactId>
 <!--<scope.type>compile</scope.type>-->
 --------------------------------------------------------------------------------------------------------
+@ToString(doNotUseGetters = true)
+--------------------------------------------------------------------------------------------------------
 npm install node-mock-server --save-dev
 node node_modules/node-mock-server/init
 
