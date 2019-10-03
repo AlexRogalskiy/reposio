@@ -8602,6 +8602,9 @@ PS> mvn archetype:generate `
  -D package=org.apache.beam.examples `
  -D interactiveMode=false
 ========================================================================================================================
+ gitlab.com/umranium
+ esp8266home.cirasoft.net
+ bluino.com
  
  https://www.nxp.com/products/rfid-nfc/nfc-hf/nfc-readers/tagxplorer-pc-based-nfc-tag-reader-writer-tool:TAGXPLORER
 https://www.nxp.com/design/designs/mcu-based-solution-forbrface-recognition:MCU-FACE-RECOGNITION

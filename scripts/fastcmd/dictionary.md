@@ -50351,6 +50351,170 @@ public class RedisConfUtils {
 --------------------------------------------------------------------------------------------------------
 @ToString(doNotUseGetters = true)
 --------------------------------------------------------------------------------------------------------
+import org.springframework.context.annotation.Conditional;
+
+import java.lang.annotation.*;
+
+/**
+ * Conditional annotation for disable a detector.<br>
+ * <p>
+ * application.properties:<br>
+ *
+ * <code>
+ * redis.enabled = false # Disable the redis configuration
+ * </code>
+ */
+@Documented
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+@Conditional(OnEnabledDetectorCondition.class)
+public @interface ConditionalOnEnabledConfiguration {
+
+    String value();
+
+    String prefix() default "";
+}
+
+package com.paragon.mailingcontour.commons.annotation;
+
+import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionMessage;
+import org.springframework.boot.autoconfigure.condition.ConditionOutcome;
+import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
+import org.springframework.boot.bind.RelaxedPropertyResolver;
+import org.springframework.context.annotation.ConditionContext;
+import org.springframework.core.annotation.AnnotationAttributes;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.PropertyResolver;
+import org.springframework.core.type.AnnotatedTypeMetadata;
+import org.springframework.stereotype.Component;
+
+/**
+ * Matches when a relationship detector has its {@literal enabled} property set
+ * to {@code true} (matches by default).
+ *
+ * @author lucwarrot
+ * @author michaeltecourt
+ */
+@Component
+@RequiredArgsConstructor
+public class OnEnabledDetectorCondition extends SpringBootCondition {
+    private final Environment environment;
+
+    @Override
+    public ConditionOutcome getMatchOutcome(final ConditionContext context, final AnnotatedTypeMetadata metadata) {
+        AnnotationAttributes attributes = AnnotationAttributes.fromMap(metadata.getAnnotationAttributes(ConditionalOnEnabledConfiguration.class.getName()));
+        final String name = attributes.getString("value");
+        final String prefix = attributes.getString("prefix");
+        final RelaxedPropertyResolver resolver = new PropertyResolver(context.getEnvironment(), prefix + "." + name + ".");
+        final boolean enabled = resolver.getProperty("enabled", Boolean.class, true);
+        return new ConditionOutcome(enabled, ConditionMessage.forCondition(ConditionalOnEnabledConfiguration.class, name).because(enabled ? "enabled" : "disabled"));
+    }
+
+    protected boolean isConditionSatisfied(String configPropertyName, String configPropertyValue,
+                                           String configPropertyDefaultValue) {
+        String propertyValue = this.environment.getProperty(configPropertyName);
+        if (propertyValue == null && StringUtils.isNotEmpty(configPropertyDefaultValue)) {
+            propertyValue = configPropertyDefaultValue;
+        }
+
+        return configPropertyValue.equals(propertyValue);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+   /**
+     * Filter snitch duplicates based on the Snitch URI.
+     * 
+     * @param snitches
+     *            Snitch instances to be filtered.
+     * @return a List of Snitch objects without any duplicate URI.
+     */
+    public static List<Snitch> filterDuplicateLocations(Collection<Snitch> snitches) {
+        // @formatter:off
+        return snitches.stream()
+            .collect(Collectors.groupingBy(Snitch::getUri))
+            .values()
+            .stream()
+            .flatMap(list -> Stream.of(list.get(0)))
+            .collect(Collectors.toList());
+        // @formatter:on
+    }
+--------------------------------------------------------------------------------------------------------
+import React, { useState, useEffect }
+from "react";
+
+const HelloWorld = ()
+=> {
+  const [message] = useState("Hello World!");
+
+  useEffect(() => {
+    console.log("Component has mounted!");
+  }, []);
+
+  return <h2>{message}</h2>;
+}
+
+import React, { Component } from "react";
+
+class HelloWorld extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      message: "Hello World!"
+    };
+  }
+  componentDidMount() {
+    console.log("Component has mounted!");
+  }
+  render() {
+    return <h2>{this.state.message}</h2>;
+  }
+}
+--------------------------------------------------------------------------------------------------------
+/**
+ * Delete authentication token map.
+ *
+ * @param version the version
+ * @param request the request
+ * @return the map
+ */
+@DeleteMapping(value = "/token", produces = "application/json; charset=UTF-8")
+@ApiOperation(value = "清空token")
+@ApiImplicitParams(
+  {
+    @ApiImplicitParam(name = "Authorization", required = true, paramType = "header",
+      dataType = "string", value = "authorization header", defaultValue = "Bearer ")
+  }
+)
+public Map<String, Object> deleteAuthenticationToken(
+  @ApiParam(required = true, value = "版本", defaultValue = "v1") @PathVariable("version") String version,
+  HttpServletRequest request) {
+  String tokenHeader = request.getHeader(AuthenticationTokenFilter.TOKEN_HEADER);
+  String token = tokenHeader.split(" ")[1];
+  //移除token
+  jwtTokenUtil.removeToken(token);
+  Map<String, Object> message = new HashMap<>();
+  message.put(Message.RETURN_FIELD_CODE, ReturnCode.SUCCESS);
+  return message;
+}
+
+--------------------------------------------------------------------------------------------------------
+<configuration>
+    <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%-5level %d{yyyy-MM-dd HH:mm:ss.SSS} [%logger{0}] {%thread}: %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="info">
+        <appender-ref ref="stdout"/>
+    </root>
+
+    <logger name="io.hekate" level="warn"/>
+</configuration>
+--------------------------------------------------------------------------------------------------------
 npm install node-mock-server --save-dev
 node node_modules/node-mock-server/init
 
