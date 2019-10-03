@@ -55978,6 +55978,399 @@ public class LanguageApiControllerWebMvcTest {
   }
 }
 --------------------------------------------------------------------------------------------------------
+@Test
+public final void givenUsingTempFile_whenConvertingAnInputStreamToAString_thenCorrect() 
+  throws IOException {
+    String originalString = randomAlphabetic(DEFAULT_SIZE);
+    InputStream inputStream = new ByteArrayInputStream(originalString.getBytes());
+ 
+    Path tempFile = Files.createTempDirectory("").resolve(UUID.randomUUID().toString() + ".tmp");
+    Files.copy(inputStream, tempFile, StandardCopyOption.REPLACE_EXISTING);
+    String result = new String(Files.readAllBytes(tempFile));
+ 
+    assertThat(result, equalTo(originalString));
+}
+@Test
+public final void givenUsingPlainJava_whenConvertingAnInputStreamToString_thenCorrect()
+  throws IOException {
+    String originalString = randomAlphabetic(8);
+    InputStream inputStream = new ByteArrayInputStream(originalString.getBytes());
+ 
+    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    int nRead;
+    byte[] data = new byte[1024];
+    while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
+        buffer.write(data, 0, nRead);
+    }
+ 
+    buffer.flush();
+    byte[] byteArray = buffer.toByteArray();
+         
+    String text = new String(byteArray, StandardCharsets.UTF_8);
+    assertThat(text, equalTo(originalString));
+}
+
+@Test
+public void givenUsingJava7_whenConvertingAnInputStreamToAString_thenCorrect() 
+  throws IOException {
+    String originalString = randomAlphabetic(8);
+    InputStream inputStream = new ByteArrayInputStream(originalString.getBytes());
+ 
+    String text = null;
+    try (Scanner scanner = new Scanner(inputStream, StandardCharsets.UTF_8.name())) {
+        text = scanner.useDelimiter("\\A").next();
+    }
+ 
+    assertThat(text, equalTo(originalString));
+}
+@Test
+public void givenUsingJava5_whenConvertingAnInputStreamToAString_thenCorrect() 
+  throws IOException {
+    String originalString = randomAlphabetic(DEFAULT_SIZE);
+    InputStream inputStream = new ByteArrayInputStream(originalString.getBytes());
+ 
+    StringBuilder textBuilder = new StringBuilder();
+    try (Reader reader = new BufferedReader(new InputStreamReader
+      (inputStream, Charset.forName(StandardCharsets.UTF_8.name())))) {
+        int c = 0;
+        while ((c = reader.read()) != -1) {
+            textBuilder.append((char) c);
+        }
+    }
+    assertEquals(textBuilder.toString(), originalString);
+}
+@Test
+public void givenUsingCommonsIoWithCopy_whenConvertingAnInputStreamToAString_thenCorrect() 
+  throws IOException {
+    String originalString = randomAlphabetic(8);
+    InputStream inputStream = new ByteArrayInputStream(originalString.getBytes());
+ 
+    StringWriter writer = new StringWriter();
+    String encoding = StandardCharsets.UTF_8.name();
+    IOUtils.copy(inputStream, writer, encoding);
+ 
+    assertThat(writer.toString(), equalTo(originalString));
+}
+@Test
+public void givenUsingCommonsIo_whenConvertingAnInputStreamToAString_thenCorrect() 
+  throws IOException {
+    String originalString = randomAlphabetic(8);
+    InputStream inputStream = new ByteArrayInputStream(originalString.getBytes());
+ 
+    String text = IOUtils.toString(inputStream, StandardCharsets.UTF_8.name());
+    assertThat(text, equalTo(originalString));
+}
+@Test
+public void givenUsingGuavaAndJava7_whenConvertingAnInputStreamToAString_thenCorrect() 
+  throws IOException {
+    String originalString = randomAlphabetic(8);
+    InputStream inputStream = new ByteArrayInputStream(originalString.getBytes());
+  
+    String text = null;
+    try (final Reader reader = new InputStreamReader(inputStream)) {
+        text = CharStreams.toString(reader);
+    }
+  
+    assertThat(text, equalTo(originalString));
+}
+Test
+public void givenUsingGuava_whenConvertingAnInputStreamToAString_thenCorrect() 
+  throws IOException {
+    String originalString = randomAlphabetic(8);
+    InputStream inputStream = new ByteArrayInputStream(originalString.getBytes());
+ 
+    ByteSource byteSource = new ByteSource() {
+        @Override
+        public InputStream openStream() throws IOException {
+            return inputStream;
+        }
+    };
+ 
+    String text = byteSource.asCharSource(Charsets.UTF_8).read();
+ 
+    assertThat(text, equalTo(originalString));
+}
+
+this.getClass().getClassLoader().getResourceAsStream(myfile.txt);
+--------------------------------------------------------------------------------------------------------
+package com.company.project.components;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.context.support.MessageSourceAccessor;
+import org.springframework.stereotype.Component;
+
+import javax.annotation.PostConstruct;
+import java.util.Locale;
+
+/**
+ * Helper to simplify accessing i18n messages in code.
+ * 
+ * This finds messages automatically found from src/main/resources (files named messages_*.properties)
+ * 
+ * This example uses hard-coded English locale.
+ *
+ * @author Joni Karppinen
+ * @since 2015-11-02
+ */
+@Component
+public class Messages {
+
+    @Autowired
+    private MessageSource messageSource;
+
+    private MessageSourceAccessor accessor;
+
+    @PostConstruct
+    private void init() {
+        accessor = new MessageSourceAccessor(messageSource, Locale.ENGLISH);
+    }
+
+    public String get(String code) {
+        return accessor.getMessage(code);
+    }
+
+}
+ messages_en.properties
+default.title = Title
+ SomeServiceImpl.java
+package com.company.project.services;
+
+import com.company.project.components.Messages;
+import org.springframework.beans.factory.annotation.Autowired;
+
+@Service
+public class SomeServiceImpl implements SomeService {
+
+    @Autowired
+    Messages messages;
+    
+    // ... 
+   
+    private String getDefaultTitle() {
+        return messages.get("default.title"));
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+@SupportedValidationTarget({ValidationTarget.ANNOTATED_ELEMENT, ValidationTarget.PARAMETERS})
+
+@ZipCodeCoherenceChecker(groups = Address.HighLevelCoherence.class)
+public class Address {
+@NotNull @Size(max = 50)
+private String street1;
+@NotNull @ZipCode
+private String zipcode;
+@NotNull @Size(max = 30)
+private String city;
+/**
+* check coherence on the overall object
+* Needs basic checking to be green first
+*/
+public interface HighLevelCoherence {}
+/**
+* check both basic constraints and high level ones.
+* high level constraints are not checked if basic constraints fail
+*/
+@GroupSequence({Default.class, HighLevelCoherence.class})
+public interface Complete {}
+}
+
+public class User {
+@Valid
+@ConvertGroup.List( {
+@ConvertGroup(from=Default.class, to=BasicPostal.class),
+@ConvertGroup(from=Complete.class, to=FullPostal.class)
+} )
+Set<Address> getAddresses() { [...] }
+}
+
+@Controller
+@RequestMapping("user")
+public class UserController {
+
+    @Inject
+    SmartValidator smartValidator; // (1)
+
+    // omitted
+
+    @RequestMapping(value = "create", method = RequestMethod.POST, params = "confirm")
+    public String createConfirm(/* (2) */ UserForm form, BindingResult result) {
+        // (3)
+        Class<?> validationGroup = Default.class;
+        // logic to determine validation group
+        // if (xxx) {
+        //     validationGroup = Xxx.class;
+        // }
+        smartValidator.validate(form, result, validationGroup); // (4)
+        if (result.hasErrors()) {
+            return "user/createForm";
+        }
+        return "user/createConfirm";
+    }
+}
+
+https://terasolunaorg.github.io/guideline/5.2.0.RELEASE/en/ArchitectureInDetail/WebApplicationDetail/Validation.html
+
+// omitted
+public class ConfirmValidator implements ConstraintValidator<Confirm, Object> {
+    private String field;
+
+    private String confirmField;
+
+    private String message;
+
+    public void initialize(Confirm constraintAnnotation) {
+        // omitted
+    }
+
+    public boolean isValid(Object value, ConstraintValidatorContext context) {
+        // omitted
+        if (matched) {
+            return true;
+        } else {
+            context.disableDefaultConstraintViolation();
+
+            //new ConstraintViolation to be generated for field
+            context.buildConstraintViolationWithTemplate(message)
+                    .addPropertyNode(field).addConstraintViolation();
+
+            //new ConstraintViolation to be generated for confirmField
+            context.buildConstraintViolationWithTemplate("") // (1)
+                    .addPropertyNode(confirmField).addConstraintViolation();
+
+            return false;
+        }
+    }
+
+}
+
+import java.io.Serializable;
+
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+
+import com.example.common.validation.Confirm;
+
+@Confirm(field = "password") // (1)
+public class PasswordResetForm implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    @NotNull
+    @Size(min = 8)
+    private String password;
+
+    private String confirmPassword;
+
+    // omitted getter/setter
+}
+
+<dependencies>
+    <dependency>
+        <groupId>org.terasoluna.gfw</groupId>
+        <artifactId>terasoluna-gfw-validator</artifactId>
+    </dependency>
+</dependencies>
+
+@Controller
+@RequestMapping("xxx")
+public class XxxController {
+
+    @InitBinder
+    public void initBinder(WebDataBinder binder) {
+        // bind empty strings as null
+        binder.registerCustomEditor(String.class, new StringTrimmerEditor(true));
+    }
+
+    // omitted ...
+}
+
+    @RequestMapping("addPerson2")
+
+    public List<String> addPerson(@Validated final Person person, BindingResult result) {
+
+        if(result.hasErrors()) {
+            List<ObjectError> errorList = result.getAllErrors();
+            List<String> messageList = new ArrayList<>();
+            errorList.forEach(e -> messageList.add(e.getDefaultMessage()));
+            return messageList;
+        }
+        return null;
+    }
+--------------------------------------------------------------------------------------------------------
+public class BeanValidationTest {
+ 
+ private Validator validator;
+  
+  @Before
+  public void init() {
+    // バリデータを生成する
+    ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory();
+    validator = validatorFactory.getValidator();
+  }
+  
+  @Test
+  public void BeanValidationをListに設定する() {
+    TestForm testForm = new TestForm();
+    testForm.setUserIdList(Arrays.asList(123, 1234, 12345, 123456));
+    
+    // バリデーションを実施
+    // バリデーション結果はviolationsに格納されるので、よしなに確認
+    Set<ConstraintViolation<TestForm>> violations = validator.validate(testForm);
+    assertThat(violations.size(), is(2));
+  }
+  
+  /**
+   * 試験対象フォーム
+   */
+  public class TestForm {
+    
+    public TestForm() {
+      // 何もしない
+    }
+
+    @Valid
+    private List<@DigitsTypeUse(integer = 4, fraction = 0) Integer> userIdList;
+
+    public List<Integer> getUserIdList() {
+      return userIdList;
+    }
+
+    public void setUserIdList(List<Integer> userIdList) {
+      this.userIdList = userIdList;
+    }
+  }
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.Locale;
+
+import org.springframework.context.MessageSource;
+import org.springframework.context.MessageSourceAware;
+
+public class CustomerService implements MessageSourceAware
+{
+	private MessageSource messageSource;
+	
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
+	}
+	
+	public void printMessage(){
+		String name = messageSource.getMessage("customer.name", 
+    			new Object[] { 28, "http://www.mkyong.com" }, Locale.US);
+
+    	System.out.println("Customer name (English) : " + name);
+    	
+    	String namechinese = messageSource.getMessage("customer.name", 
+    			new Object[] { 28, "http://www.mkyong.com" }, 
+                        Locale.SIMPLIFIED_CHINESE);
+
+    	System.out.println("Customer name (Chinese) : " + namechinese);
+	}
+	
+}
+
+--------------------------------------------------------------------------------------------------------
 @Controller
 @RequestMapping(value = "/api", produces = MimeTypeUtils.APPLICATION_JSON_VALUE)
 public class LanguageApiController {
@@ -57148,6 +57541,197 @@ public class IoC {
     }
 
 }
+--------------------------------------------------------------------------------------------------------
+package com.paragon.microservices.distributor.system.configuration;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.paragon.mailingcontour.commons.redis.configuration.RedisKeyspaceConfigurer;
+import com.paragon.mailingcontour.commons.redis.configuration.RedisTemplateCustomizer;
+import com.paragon.microservices.distributor.model.domain.Session;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.*;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.convert.KeyspaceConfiguration;
+import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
+import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.RedisSerializer;
+
+@Configuration
+@Description("Paragon MicroServices Distributor Redis configuration")
+@EnableRedisRepositories(basePackages = "com.paragon.microservices.distributor.repository")
+@SuppressWarnings("unchecked")
+public class RedisConfiguration {
+
+    @Bean
+    @DependsOn({"redisConnectionFactory"})
+    @Description("Redis template configuration bean")
+    public RedisTemplate<byte[], byte[]> redisTemplate(final RedisTemplateCustomizer<byte[], byte[]> redisTemplateCustomizer) {
+        final RedisTemplate<byte[], byte[]> redisTemplate = new RedisTemplate<>();
+        redisTemplateCustomizer.customize(redisTemplate);
+        redisTemplate.afterPropertiesSet();
+        return redisTemplate;
+    }
+
+    @Bean
+    @Description("Redis session json serializer bean")
+    public RedisSerializer<Session> redisSerializer(final ObjectMapper objectMapper) {
+        final Jackson2JsonRedisSerializer<Session> serializer = new Jackson2JsonRedisSerializer<>(Session.class);
+        serializer.setObjectMapper(objectMapper);
+        return serializer;
+    }
+
+    @Bean
+    @Scope(BeanDefinition.SCOPE_SINGLETON)
+    @Description("Redis session keyspace configuration bean")
+    public KeyspaceConfiguration sessionKeyspaceConfiguration(final RedisKeyspaceConfigurer<Session> keyspaceConfigurer) {
+        return keyspaceConfigurer.configure(Session.class);
+    }
+
+//    @Bean
+//    @Scope(BeanDefinition.SCOPE_SINGLETON)
+//    @Description("Redis session keyspace creator bean")
+//    public RedisKeyspaceCreator<Session> sessionKeyspaceCreator(final RedisSessionProperty redisSessionProperty) {
+//        return () -> new RedisKeyspace<>(Session.class, redisSessionProperty.getKeySpace(), redisSessionProperty.getTimeToLive());
+//    }
+}
+--------------------------------------------------------------------------------------------------------
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  io.reflectoring.security.SecurityModuleConfiguration
+  
+META-INF/spring.factories
+--------------------------------------------------------------------------------------------------------
+@ConditionalOnClass(WebSecurityConfigurerAdapter.class)
+@ConditionalOnMissingBean(WebSecurityConfigurerAdapter.class)
+@ConditionalOnWebApplication(type = Type.SERVLET)
+public class SpringBootWebSecurityConfiguration {
+
+	@Configuration
+	@Order(SecurityProperties.BASIC_AUTH_ORDER)
+	static class DefaultConfigurerAdapter extends WebSecurityConfigurerAdapter {
+
+	}
+
+}
+
+@RunWith ( SpringRunner.class )
+@SpringBootTest ( classes = A_Simple_Application.Simple_Application.class , webEnvironment = WebEnvironment.RANDOM_PORT )
+@ActiveProfiles ( "junit" )
+@DirtiesContext
+public class A_Simple_Application {
+	final static private Logger logger = LoggerFactory.getLogger( A_Simple_Application.class );
+
+	@BeforeClass
+	// @Before
+	static public void setUpBeforeClass ()
+			throws Exception {
+
+		System.out.println( "Starting logging" );
+		CsapTest.initialize( logger.getName() );
+	}
+
+	@Autowired
+	private ApplicationContext applicationContext;
+
+	/**
+	 * 
+	 * Simple test app that excludes security autoconfiguration
+	 * ManagementWebSecurityAutoConfiguration.class
+	 */
+	@SpringBootApplication ( exclude = {
+			SecurityAutoConfiguration.class
+	} )
+	public static class Simple_Application {
+
+		@RestController
+		static public class Hello {
+
+			@GetMapping ( "/hi" )
+			public String hi () {
+				return "Hello" +
+						LocalDateTime.now()
+							.format( DateTimeFormatter
+								.ofPattern( "HH:mm:ss,   MMMM d  uuuu " ) );
+			}
+
+			@Inject
+			ObjectMapper jsonMapper;
+
+		}
+
+	}
+
+	@Test
+	public void load_context () {
+		logger.info( CsapTest.TC_HEAD );
+
+		logger.info( "beans loaded: {}", applicationContext.getBeanDefinitionCount() );
+
+		assertThat( applicationContext.getBeanDefinitionCount() )
+			.as( "Spring Bean count" )
+			.isGreaterThan( 200 );
+
+		// Assert.assertFalse( true);
+
+	}
+
+	@LocalServerPort
+	private int testPort;
+
+	@Inject
+	RestTemplateBuilder restTemplateBuilder;
+
+	@Test
+	public void http_get_hi_from_simple_app ()
+			throws Exception {
+		String simpleUrl = "http://localhost:" + testPort + "/hi";
+
+		logger.info( CsapTest.TC_HEAD + "hitting url: {}", simpleUrl );
+		// mock does much validation.....
+
+		TestRestTemplate restTemplate = new TestRestTemplate( restTemplateBuilder );
+
+		ResponseEntity<String> response = restTemplate.getForEntity( simpleUrl, String.class );
+
+		logger.info( "result:\n" + response );
+
+		assertThat( response.getBody() )
+			.startsWith( "Hello" );
+	}
+}
+
+//    @Bean
+//    @Scope(BeanDefinition.SCOPE_SINGLETON)
+//    @Description("Redis session keyspace creator bean")
+//    public RedisKeyspaceCreator<Session> sessionKeyspaceCreator(final RedisSessionProperty redisSessionProperty) {
+//        return () -> new RedisKeyspace<>(Session.class, redisSessionProperty.getKeySpace(), redisSessionProperty.getTimeToLive());
+//    }
+--------------------------------------------------------------------------------------------------------
+@Configuration
+@ConditionalOnExpression(
+    "${module.enabled:true} and ${module.submodule.enabled:true}"
+)
+class SubModule {
+  ...
+}
+
+@Configuration
+@ConditionalOnResource(resources = "/logback.xml")
+class LogbackModule {
+  ...
+}
+
+@Configuration
+@ConditionalOnProperty(value="tools.consul.enabled", havingValue=true) 
+@PropertySources({
+ @PropertySource("classpath:consul-integration.properties) 
+})
+public class ToolConsulSampleConfiguration {
+
+}
+
+    @Configuration
+    @ConditionalOnExpression("'${datasource.reporter.url:true}' == 'true'")
+    protected static class AliasReporterDataSourceConfig {
 --------------------------------------------------------------------------------------------------------
 public class ProfileManager {
     @Autowired
