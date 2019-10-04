@@ -50473,6 +50473,122 @@ class HelloWorld extends Component {
   }
 }
 --------------------------------------------------------------------------------------------------------
+package com.paragon.mailingcontour.commons.constraint.validator;
+
+import com.google.common.base.Objects;
+import com.paragon.mailingcontour.commons.constraint.annotation.Conditional;
+import com.paragon.mailingcontour.commons.utils.ValidationUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.ObjectUtils;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.BeanWrapperImpl;
+
+import javax.validation.ConstraintValidator;
+import javax.validation.ConstraintValidatorContext;
+import java.util.Optional;
+import java.util.function.Predicate;
+
+import static com.paragon.mailingcontour.commons.constraint.utils.ConstraintUtils.validate;
+import static com.paragon.mailingcontour.commons.utils.ServiceUtils.streamOf;
+
+/**
+ * {@link Conditional} {@link ConstraintValidator} implementation
+ */
+public class ConditionalConstraintValidator implements ConstraintValidator<Conditional, Object> {
+
+    /**
+     * Default {@link String} message
+     */
+    private String message;
+    /**
+     * Default selected {@link String} property
+     */
+    private String selected;
+    /**
+     * Default array of required {@link String} values
+     */
+    private String[] required;
+    /**
+     * Default array of supported {@link String} values
+     */
+    private String[] values;
+
+    /**
+     * Default {@link Conditional} {@link Predicate}
+     */
+    private final Predicate<String> conditionalPredicate = value -> {
+        return Optional.of(value)
+                .map(BeanWrapperImpl::new)
+                .map(v -> v.getValue(value))
+                .map(ObjectUtils::isNotEmpty)
+                .orElse(false);
+    };
+
+    /**
+     * Initializes validator by input {@link Conditional} annotation parameters
+     *
+     * @param constraintAnnotation - initial input {@link Conditional} annotation
+     */
+    @Override
+    public void initialize(final Conditional constraintAnnotation) {
+        ValidationUtils.checkNotNull(constraintAnnotation, "Constraint annotation should not be null");
+        ValidationUtils.checkNotNull(constraintAnnotation.required(), "Required values should not be null");
+        ValidationUtils.checkNotNull(constraintAnnotation.values(), "Values should not be null");
+
+        this.selected = constraintAnnotation.selected();
+        this.required = constraintAnnotation.required();
+        this.values = constraintAnnotation.values();
+        this.message = constraintAnnotation.message();
+    }
+
+    /**
+     * Validates input {@link Conditional} value by {@link ConstraintValidatorContext}
+     *
+     * @param value   - initial input {@link Conditional} to validate
+     * @param context - initial input {@link ConstraintValidatorContext}
+     * @return true - if input {@link Conditional} is valid, false - otherwise
+     */
+    @Override
+    public boolean isValid(final Object value, final ConstraintValidatorContext context) {
+        final Object actualValue = Optional.of(value)
+                .map(BeanWrapperImpl::new)
+                .map(v -> v.getPropertyValue(this.selected))
+                .orElse(null);
+        return streamOf(this.values)
+                .filter(v -> Objects.equal(v, actualValue))
+                .flatMap(current -> streamOf(this.required)
+                        .map(v -> validate(this.conditionalPredicate, current, this.message, context)))
+                .filter(BooleanUtils::isTrue)
+                .findFirst()
+                .orElse(true);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+public static Map<String, Object> beanProperties(Object bean) {
+    try {
+        Map<String, Object> map = new HashMap<>();
+        Arrays.asList(Introspector.getBeanInfo(bean.getClass(), Object.class)
+                                  .getPropertyDescriptors())
+              .stream()
+              // filter out properties with setters only
+              .filter(pd -> Objects.nonNull(pd.getReadMethod()))
+              .forEach(pd -> { // invoke method to get value
+                  try {
+                      Object value = pd.getReadMethod().invoke(bean);
+                      if (value != null) {
+                          map.put(pd.getName(), value);
+                      }
+                  } catch (Exception e) {
+                      // add proper error handling here
+                  }
+              });
+        return map;
+    } catch (IntrospectionException e) {
+        // and here, too
+        return Collections.emptyMap();
+    }
+}
+--------------------------------------------------------------------------------------------------------
 /**
  * Delete authentication token map.
  *
