@@ -27338,6 +27338,369 @@ public class BatchConfiguration {
     }
 }
 --------------------------------------------------------------------------------------------------------
+package com.paragon.microservices.distributor.controller.impl;
+
+import com.google.common.io.ByteStreams;
+import com.paragon.mailingcontour.commons.security.model.AuthenticatedUser;
+import com.paragon.microservices.distributor.controller.interfaces.DownloadController;
+import com.paragon.microservices.distributor.model.domain.*;
+import com.paragon.microservices.distributor.model.dto.response.DownloadLinkResponse;
+import com.paragon.microservices.distributor.model.enumeration.DownloadStatus;
+import com.paragon.microservices.distributor.service.interfaces.DownloadService;
+import com.paragon.microservices.distributor.service.interfaces.FileService;
+import com.paragon.microservices.distributor.service.interfaces.FileTransferService;
+import com.paragon.microservices.distributor.system.configuration.DelegatedModelMapper;
+import lombok.AccessLevel;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.tomcat.util.http.fileupload.IOUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.MessageSource;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+import static com.paragon.mailingcontour.commons.exception.ResourceNotFoundException.throwResourceNotFound;
+import static com.paragon.microservices.distributor.controller.interfaces.BaseController.ResourceEndpoint.DOWNLOAD_RESOURCE_ENDPOINT;
+import static com.paragon.microservices.distributor.service.impl.BaseServiceImpl.ERROR_RESOURCE_NOT_FOUND;
+import static com.paragon.microservices.distributor.system.utils.HeaderUtils.getDisableCacheHeader;
+import static com.paragon.microservices.distributor.system.utils.HeaderUtils.getFileDownloadHeaders;
+
+/**
+ * {@link DownloadController} implementation
+ */
+@Slf4j
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
+@Getter(AccessLevel.PROTECTED)
+@RestController
+@Validated
+@Transactional(rollbackFor = Exception.class, readOnly = true)
+@RequestMapping(
+        value = DOWNLOAD_RESOURCE_ENDPOINT,
+        produces = {MediaType.APPLICATION_JSON_UTF8_VALUE}
+)
+public class DownloadControllerImpl extends BaseControllerImpl implements DownloadController {
+    private final DelegatedModelMapper modelMapper;
+    private final ApplicationEventPublisher eventPublisher;
+    private final DownloadService downloadService;
+    private final FileTransferService fileTransferService;
+    private final FileService fileService;
+
+    @Autowired
+    public DownloadControllerImpl(final MessageSource messageSource,
+                                  final DelegatedModelMapper modelMapper,
+                                  final ApplicationEventPublisher eventPublisher,
+                                  final DownloadService downloadService,
+                                  final FileTransferService fileTransferService,
+                                  final FileService fileService) {
+        super(messageSource);
+        this.modelMapper = modelMapper;
+        this.downloadService = downloadService;
+        this.fileTransferService = fileTransferService;
+        this.fileService = fileService;
+        this.eventPublisher = eventPublisher;
+    }
+
+    @GetMapping(params = {"binaryId"})
+    @Override
+    public ResponseEntity<DownloadLinkResponse> generateDownloadLinkByIds(final UUID productId,
+                                                                          final UUID versionId,
+                                                                          final UUID binaryId,
+                                                                          final AuthenticatedUser authenticatedUser) {
+        final IdentityFileSearchParameters searchParameters = IdentityFileSearchParameters.of(productId, versionId, binaryId, authenticatedUser.getUserId());
+        return Stream.of(searchParameters)
+                .map(params -> this.getDownloadService().generateDownloadLink(params))
+                .flatMap(this::getDownloadResponse)
+                .findFirst()
+                .orElseThrow(() -> throwResourceNotFound(this.getMessageSource(), ERROR_RESOURCE_NOT_FOUND, searchParameters));
+    }
+
+    @GetMapping(params = {"sku", "locale", "platform"})
+    @Override
+    public ResponseEntity<DownloadLinkResponse> generateDownloadLinkByNames(final String sku,
+                                                                            final String version,
+                                                                            final String locale,
+                                                                            final String platform,
+                                                                            final AuthenticatedUser authenticatedUser) {
+        final NamingFileSearchParameters searchParameters = NamingFileSearchParameters.of(sku, version, locale, platform, authenticatedUser.getUserId());
+        return Stream.of(searchParameters)
+                .map(params -> this.getDownloadService().generateDownloadLink(params))
+                .flatMap(this::getDownloadResponse)
+                .findFirst()
+                .orElseThrow(() -> throwResourceNotFound(this.getMessageSource(), ERROR_RESOURCE_NOT_FOUND, searchParameters));
+    }
+
+    private Stream<ResponseEntity<DownloadLinkResponse>> getDownloadResponse(final DownloadLink downloadLink) {
+        return Stream.of(downloadLink)
+                .map(entity -> this.getModelMapper().map(entity, DownloadLinkResponse.class))
+                .map(result -> buildBodyHeaderResponse(getDisableCacheHeader(), result));
+    }
+
+    @GetMapping("/{sessionId}/{fileName}")
+    @Override
+    public ResponseEntity<StreamingResponseBody> getResourceAsStream(@PathVariable final UUID sessionId,
+                                                                     @PathVariable final String fileName) {
+        return Stream.of(sessionId)
+                .map(id -> this.getFileTransferService().getFileData(id))
+                .map(fileData -> ResponseEntity.ok()
+                        .headers(getFileDownloadHeaders(fileData.getFileMetaData()))
+                        .body(this.toByteStreamResponseBody(fileData))
+                )
+                .findFirst()
+                .get();
+    }
+
+    private StreamingResponseBody toByteStreamResponseBody(final FileData fileData) {
+        return outputStream -> {
+            this.notifyEvent(fileData).accept(DownloadStatus.DOWNLOADING);
+            try {
+                ByteStreams.copy(fileData.getFileStream(), outputStream);
+                outputStream.flush();
+                this.notifyEvent(fileData).accept(DownloadStatus.FINISHED);
+            } catch (final IOException ex) {
+                log.error("Unable to stream file source, message: {}", ex.getMessage());
+                this.notifyEvent(fileData).accept(DownloadStatus.INTERRUPTED);
+            }
+        };
+    }
+
+    private StreamingResponseBody toZipStreamResponseBody(final FileData fileData) {
+        return outputStream -> {
+            this.notifyEvent(fileData).accept(DownloadStatus.DOWNLOADING);
+            final ZipOutputStream zipOut = new ZipOutputStream(outputStream);
+            try {
+                final ZipEntry zipEntry = new ZipEntry(fileData.getFileMetaData().getFileName());
+                zipOut.putNextEntry(zipEntry);
+
+                final byte[] bytes = new byte[1024];
+                int length;
+                while ((length = fileData.getFileStream().read(bytes)) >= 0) {
+                    zipOut.write(bytes, 0, length);
+                }
+                fileData.getFileStream().close();
+                zipOut.close();
+                this.notifyEvent(fileData).accept(DownloadStatus.FINISHED);
+            } catch (final IOException ex) {
+                log.error("Unable to stream file source, message: {}", ex.getMessage());
+                this.notifyEvent(fileData).accept(DownloadStatus.INTERRUPTED);
+            }
+        };
+    }
+
+    private StreamingResponseBody toBufferedStreamResponseBody(final FileData fileData) {
+        return outputStream -> {
+            this.notifyEvent(fileData).accept(DownloadStatus.DOWNLOADING);
+            try (final BufferedInputStream br = new BufferedInputStream(fileData.getFileStream())) {
+                byte[] contents = new byte[1024];
+                while (br.read(contents) != -1) {
+                    outputStream.write(contents);
+                    outputStream.flush();
+                    contents = new byte[1024];
+                }
+                this.notifyEvent(fileData).accept(DownloadStatus.FINISHED);
+            } catch (IOException ex) {
+                try {
+                    fileData.getFileStream().close();
+                } catch (IOException closingException) {
+                    log.warn("could not close command result, a http connection may be leaked !", closingException);
+                }
+                log.error("Unable to stream file source, message: {}", ex.getMessage());
+                this.notifyEvent(fileData).accept(DownloadStatus.INTERRUPTED);
+            }
+        };
+    }
+
+    private StreamingResponseBody toStreamResponseBody(final FileData fileData) {
+        return outputStream -> {
+            try {
+                this.notifyEvent(fileData).accept(DownloadStatus.DOWNLOADING);
+                IOUtils.copyLarge(fileData.getFileStream(), outputStream);
+                outputStream.flush();
+                this.notifyEvent(fileData).accept(DownloadStatus.FINISHED);
+            } catch (IOException ex) {
+                try {
+                    fileData.getFileStream().close();
+                } catch (IOException closingException) {
+                    log.warn("could not close command result, a http connection may be leaked!", closingException);
+                }
+                log.error("Unable to stream file source, message: {}", ex.getMessage());
+                this.notifyEvent(fileData).accept(DownloadStatus.INTERRUPTED);
+            }
+        };
+    }
+
+    private Consumer<DownloadStatus> notifyEvent(final FileData fileData) {
+        return status -> this.getEventPublisher().publishEvent(new DownloadEvent(this, MessageEntity.of(fileData.getSessionId(), status)));
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@Entity
+@Table(name="CREATION_DATE")
+public class CreationDate implements Serializable {
+
+
+    private static final long serialVersionUID = 1648102358397071136L;
+
+    @Id
+    @GeneratedValue(strategy=IDENTITY)
+    @Column(name="DATE_ID")
+    private int dateId;
+
+
+    @Column(name="PARTICULAR_DATE")
+    private Date particularDate;
+
+    @Version
+    @Column(name="VERSION")
+    private int version;
+
+    @Temporal(TemporalType.DATE)
+    @Column(name="CHILD_GO_SCHOOL_DATE")
+    private Date childGoSchoolDate;
+
+    @Temporal(TemporalType.DATE)
+    @Column(name="CHILD_ADMISSION_DATE")
+    private Date childAdmissionDate;
+
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @Cascade(org.hibernate.annotations.CascadeType.ALL)
+    @JoinTable(name="CREATIONDATE_INSTITUTION", 
+                                    joinColumns=@JoinColumn(name="DATE_ID"), 
+                    inverseJoinColumns=@JoinColumn(name="INSTITUTION_ID"))
+    private Set<Institution> institution = new HashSet<Institution>();
+
+    @OneToMany(fetch=FetchType.EAGER, orphanRemoval=true)
+    @Cascade(org.hibernate.annotations.CascadeType.ALL)
+    @JoinTable(name="SRC_DATE", joinColumns=@JoinColumn(name="DATE_ID"),
+                    inverseJoinColumns=@JoinColumn(name="SRC_ID"))
+    private List<ScheduleRotationChild> scheduleRotationChild = new ArrayList<ScheduleRotationChild>();
+
+
+        //getter and setter methods ommited
+
+
+    public String toString() {
+
+        return  dateId + " , " 
+            + particularDate + " , " 
+            + childGoSchoolDate + " , " 
+            + childAdmissionDate + "  " + scheduleRotationChild ;
+
+    }
+}
+
+@Configuration
+@EnableResourceServer
+public class ResourceServerTestConfiguration extends ResourceServerConfigurerAdapter {
+  private ResourceServerConfiguration configuration;
+
+  public ResourceServerTestConfiguration(ResourceServerConfiguration configuration) {
+    this.configuration = configuration;
+  }
+
+  @Override
+  public void configure(ResourceServerSecurityConfigurer security) throws Exception {
+    configuration.configure(security);
+    security.stateless(false);
+  }
+
+  @Override
+  public void configure(HttpSecurity http) throws Exception {
+    configuration.configure(http);
+  }
+}
+--------------------------------------------------------------------------------------------------------
+@Entity
+@SequenceGenerator(name="idgen", sequenceName="cat_id_seq", allocationSize=1)
+@AttributeOverrides({
+    @AttributeOverride(name="id", column = @Column(name="cat_id"))
+})
+@Table(name="categoria")
+public class Category extends EntityId<Integer> {
+
+    private static final long serialVersionUID = -870288485902136248L;
+
+    @Column(name="name")
+    private String name;
+
+    @Column(name="description")
+    private String description;
+
+}
+--------------------------------------------------------------------------------------------------------
+@Entity
+public class User {
+    @Id
+    @GeneratedValue(generator = "sequence-generator")
+    @GenericGenerator(
+      name = "sequence-generator",
+      strategy = "org.hibernate.id.enhanced.SequenceStyleGenerator",
+      parameters = {
+        @Parameter(name = "sequence_name", value = "user_sequence"),
+        @Parameter(name = "initial_value", value = "4"),
+        @Parameter(name = "increment_size", value = "1")
+        }
+    )
+    private long userId;
+     
+    // ...
+}
+--------------------------------------------------------------------------------------------------------
+package com.concretepage.service;
+import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.access.prepost.PostAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
+import com.concretepage.User;
+public interface IUserService {
+	@Secured("authenticated")
+	public void methodOne();
+	
+	@PreAuthorize("hasRole('ADMIN')")
+	public void methodTwo(String msg);
+	
+	@PreAuthorize ("#user.userName == authentication.name")
+	public void methodThree(User user);
+
+	@PostAuthorize ("returnObject.userName == authentication.name")
+	public User methodFour();
+} 
+--------------------------------------------------------------------------------------------------------
+@RunWith(SpringRunner.class)
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+public class SecuredControllerRestTemplateIntegrationTest {
+ 
+    @Autowired
+    private TestRestTemplate template;
+ 
+    // ... other methods
+ 
+    @Test
+    public void givenAuthRequestOnPrivateService_shouldSucceedWith200() throws Exception {
+        ResponseEntity<String> result = template.withBasicAuth("spring", "secret")
+          .getForEntity("/private/hello", String.class);
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+    }
+}
+--------------------------------------------------------------------------------------------------------
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27379,6 +27742,8 @@ CREATE TABLE `sched_config` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 --------------------------------------------------------------------------------------------------------
+MAIL_FOLDER_CACHE
+
 	@Bean
     public CacheManager cacheManager(RedisTemplate<String,String> redisTemplate) {
         RedisCacheManager rcm = new RedisCacheManager(redisTemplate);
@@ -44571,6 +44936,78 @@ public class SwaggerConfig {
                 .version(version).build();
     }
 }
+-------------------------------------------------------------------------------------------------------
+package com.paragon.microservices.crmmailadapter.system.configuration;
+
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.CaffeineSpec;
+import com.github.benmanes.caffeine.cache.RemovalCause;
+import com.github.benmanes.caffeine.cache.RemovalListener;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.cache.CacheManagerCustomizer;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.caffeine.CaffeineCache;
+import org.springframework.cache.caffeine.CaffeineCacheManager;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Description;
+
+import java.util.concurrent.TimeUnit;
+
+@Slf4j
+@Configuration
+@Description("Paragon MailingContour CRM mail adapter cache configuration")
+public class CacheConfiguration {
+
+//    @Bean
+//    public CacheManagerCustomizer<CaffeineCacheManager> caffeineCacheManager() {
+//        return cacheManager -> cacheManager.setCaffeine(Caffeine.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES));
+//    }
+
+    @Bean
+    public Cache caffeineCache() {
+        return new CaffeineCache("my-cache", Caffeine.newBuilder().maximumSize(10).build());
+    }
+
+    @Bean
+    public Cache redisCache() {
+        return new CaffeineCache("my-cache", Caffeine.newBuilder().maximumSize(10).build());
+    }
+
+    @Bean
+    public CacheManager caffeineCacheManager() {
+        final String specAsString = "initialCapacity=100,maximumSize=500,expireAfterAccess=5m,recordStats";
+        CaffeineCacheManager cacheManager = new CaffeineCacheManager("AIRCRAFTS", "SECOND_CACHE");
+        cacheManager.setAllowNullValues(false);
+//        cacheManager.setCacheSpecification(specAsString);
+        cacheManager.setCaffeineSpec(this.caffeineSpec());
+        cacheManager.setCaffeine(this.caffeineCacheBuilder());
+        return cacheManager;
+    }
+
+    public CaffeineSpec caffeineSpec() {
+        return CaffeineSpec.parse("initialCapacity=100,maximumSize=500,expireAfterAccess=5m,recordStats");
+    }
+
+    public Caffeine<Object, Object> caffeineCacheBuilder() {
+        return Caffeine.newBuilder()
+                .initialCapacity(100)
+                .maximumSize(150)
+                .expireAfterAccess(5, TimeUnit.MINUTES)
+                .weakKeys()
+                .removalListener(new CustomRemovalListener())
+                .recordStats();
+    }
+
+    private class CustomRemovalListener implements RemovalListener<Object, Object> {
+        @Override
+        public void onRemoval(Object key, Object value, RemovalCause cause) {
+            log.info("removal listerner called with key [%s], cause [%s], evicted [%S]\n", key, cause.toString(), cause.wasEvicted());
+        }
+    }
+}
+
 -------------------------------------------------------------------------------------------------------
    @Bean
     public CacheManagerCustomizer<CaffeineCacheManager> caffeineCacheManager() {
