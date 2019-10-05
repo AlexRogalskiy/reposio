@@ -50635,6 +50635,187 @@ public static Authentication loginAs(User user) {
 		return authentication;
 	}
 --------------------------------------------------------------------------------------------------------
+initialCapacity=100,maximumSize=500,expireAfterAccess=5m,recordStats
+--------------------------------------------------------------------------------------------------------
+@SpringBootApplication
+
+@EnableTransactionManagement
+
+@EnableCaching
+
+@EnableScheduling
+
+@EnableAsync
+
+public class Application {
+
+ 
+
+    String redisHost = "localhost";
+
+    int redisPort = 6379;
+
+ 
+
+    public static void main(String[] args) {
+
+        SpringApplication.run(Application.class, args);
+
+    }
+
+    @Bean
+
+    JedisConnectionFactory jedisConnectionFactory() {
+
+        JedisConnectionFactory factory = new JedisConnectionFactory();
+
+        factory.setHostName(redisHost);
+
+        factory.setPort(redisPort);
+
+        factory.setUsePool(true);
+
+        return factory;
+
+    }
+
+    @Bean
+
+    RedisTemplate<Object, Object> redisTemplate() {
+
+        RedisTemplate<Object, Object> redisTemplate = new RedisTemplate<Object, Object>();
+
+        redisTemplate.setConnectionFactory(jedisConnectionFactory());
+
+        return redisTemplate;
+
+    }
+
+    @Bean
+
+    public CacheManager cacheManager() {
+
+        RedisCacheManager cacheManager = new RedisCacheManager(redisTemplate());
+
+        return cacheManager;
+
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+package com.paragon.microservices.crmmailadapter.system.configuration;
+
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.CaffeineSpec;
+import com.github.benmanes.caffeine.cache.RemovalCause;
+import com.github.benmanes.caffeine.cache.RemovalListener;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.caffeine.CaffeineCacheManager;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Description;
+import org.springframework.context.annotation.Primary;
+import org.springframework.data.redis.cache.RedisCacheConfiguration;
+import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
+
+import static java.util.Collections.singletonMap;
+
+@Slf4j
+@Configuration
+@Description("Paragon MailingContour CRM mail adapter cache configuration")
+public class CacheConfiguration {
+    private static final String MAIL_FOLDER_CACHE = "MAIL_FOLDER_CACHE";
+    private static final String MAIL_STORE_CACHE = "MAIL_STORE_CACHE";
+
+//    @Bean
+//    public CacheManagerCustomizer<CaffeineCacheManager> caffeineCacheManager() {
+//        return cacheManager -> cacheManager.setCaffeine(Caffeine.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES));
+//    }
+
+//    @Bean
+//    public Cache caffeineCache() {
+//        return new CaffeineCache("my-cache", Caffeine.newBuilder().maximumSize(10).build());
+//    }
+//
+//    @Bean
+//    public Cache redisCache() {
+//        return new CaffeineCache("my-cache", Caffeine.newBuilder().maximumSize(10).build());
+//    }
+
+//    @Bean
+//    @DependsOn({"redisConnectionFactory"})
+//    public RedisTemplate<byte[], byte[]> redisTemplate(final RedisConnectionFactory redisConnectionFactory) {
+//        final RedisTemplate<byte[], byte[]> redisTemplate = new RedisTemplate<>();
+//        redisTemplate.setConnectionFactory(redisConnectionFactory);
+//        redisTemplate.setEnableTransactionSupport(true);
+//        redisTemplate.afterPropertiesSet();
+//        return redisTemplate;
+//    }
+
+    @Bean
+    @Primary
+    public CacheManager redisCacheManager(final RedisConnectionFactory redisConnectionFactory) {
+        final RedisCacheManager.RedisCacheManagerBuilder redisCacheManagerBuilder = RedisCacheManager.RedisCacheManagerBuilder.fromConnectionFactory(redisConnectionFactory);
+        redisCacheManagerBuilder.transactionAware().withInitialCacheConfigurations(singletonMap("registry", this.getRedisCacheConfiguration()));
+        return redisCacheManagerBuilder.build();
+    }
+
+    private RedisCacheConfiguration getRedisCacheConfiguration() {
+        final RedisCacheConfiguration redisCacheConfiguration = RedisCacheConfiguration.defaultCacheConfig();
+        redisCacheConfiguration.usePrefix();
+        redisCacheConfiguration.prefixKeysWith("Registry:");
+        redisCacheConfiguration.entryTtl(Duration.ofDays(1));
+        redisCacheConfiguration.disableCachingNullValues();
+        return redisCacheConfiguration;
+    }
+
+    @Bean
+    public CacheManager caffeineCacheManager() {
+        final CaffeineCacheManager cacheManager = new CaffeineCacheManager(MAIL_FOLDER_CACHE, MAIL_STORE_CACHE);
+        cacheManager.setAllowNullValues(false);
+        cacheManager.setCaffeineSpec(this.caffeineSpec());
+        cacheManager.setCaffeine(this.caffeineCacheBuilder());
+        return cacheManager;
+    }
+
+    private CaffeineSpec caffeineSpec() {
+        return CaffeineSpec.parse("initialCapacity=10,maximumSize=7000,expireAfterWrite=300s");
+    }
+
+    private Caffeine<Object, Object> caffeineCacheBuilder() {
+        return Caffeine.newBuilder()
+                .initialCapacity(100)
+                .maximumSize(150)
+                .expireAfterAccess(5, TimeUnit.MINUTES)
+                .weakKeys()
+                .removalListener(this.caffeineRemovalListener())
+                .recordStats();
+    }
+
+    @Bean
+    public CustomRemovalListener caffeineRemovalListener() {
+        return new CustomRemovalListener();
+    }
+
+    private class CustomRemovalListener implements RemovalListener<Object, Object> {
+        @Override
+        public void onRemoval(Object key, Object value, RemovalCause cause) {
+            log.info("Caffeine cache removal listener called with key [%s], cause [%s], evicted [%S]", key, cause.toString(), cause.wasEvicted());
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+       <dependency>
+            <groupId>javax.cache</groupId>
+            <artifactId>cache-api</artifactId>
+            <version>${cache-api.version}</version>
+        </dependency>
+--------------------------------------------------------------------------------------------------------
 import java.util.Collection;
 import java.util.List;
 
@@ -56742,6 +56923,16 @@ public class SomeServiceImpl implements SomeService {
 
 }
 --------------------------------------------------------------------------------------------------------
+@Test
+public void testOptionalUnwrappedExecutableReturnValue() throws Exception {
+    ExecutableValidator executableValidator = validator.forExecutables();
+    Method method = Foo.class.getMethod("getOptionalLong");
+    Set<ConstraintViolation<Foo>> constraintViolations = executableValidator.validateReturnValue(new Foo(), method, Optional.of(9L));
+    assertNumberOfViolations(constraintViolations, 1);
+    assertCorrectPropertyPaths(constraintViolations, "getOptionalLong.<return value>");
+    assertCorrectConstraintTypes(constraintViolations, Max.class);
+}
+--------------------------------------------------------------------------------------------------------
 @SupportedValidationTarget({ValidationTarget.ANNOTATED_ELEMENT, ValidationTarget.PARAMETERS})
 
 @ZipCodeCoherenceChecker(groups = Address.HighLevelCoherence.class)
@@ -56886,6 +57077,373 @@ public class XxxController {
         }
         return null;
     }
+--------------------------------------------------------------------------------------------------------
+/*
+ * Hibernate Validator, declare and validate application constraints
+ *
+ * License: Apache License, Version 2.0
+ * See the license.txt file in the root directory or <http://www.apache.org/licenses/LICENSE-2.0>.
+ */
+package org.hibernate.validator.test.internal.engine.valuehandling;
+ 
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import javax.validation.ConstraintViolation;
+import javax.validation.Valid;
+import javax.validation.Validator;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.executable.ExecutableValidator;
+ 
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+ 
+import org.hibernate.validator.testutil.TestForIssue;
+import org.hibernate.validator.valuehandling.UnwrapValidatedValue;
+ 
+import static org.hibernate.validator.testutil.ConstraintViolationAssert.assertCorrectConstraintTypes;
+import static org.hibernate.validator.testutil.ConstraintViolationAssert.assertCorrectPropertyPaths;
+import static org.hibernate.validator.testutil.ConstraintViolationAssert.assertNumberOfViolations;
+import static org.hibernate.validator.testutils.ValidatorUtil.getValidator;
+ 
+/**
+ * Tests for {@link org.hibernate.validator.internal.engine.valuehandling.OptionalValueUnwrapper}.
+ *
+ * @author Khalid Alqinyah
+ * @author Hardy Ferentschik
+ */
+public class OptionalValueUnwrapperTest {
+ 
+    private Validator validator;
+ 
+    @BeforeClass
+    public void setup() {
+        validator = getValidator();
+    }
+ 
+    @Test
+    public void testOptionalUnwrappedValueViolations() {
+        Set<ConstraintViolation<Foo>> constraintViolations = validator.validate( new Foo() );
+        assertNumberOfViolations( constraintViolations, 2 );
+        assertCorrectPropertyPaths(
+                constraintViolations,
+                "integerOptional",
+                "optionalLong"
+        );
+        assertCorrectConstraintTypes( constraintViolations, Min.class, Max.class );
+    }
+ 
+    @Test
+    public void testOptionalCascadedValidation() {
+        Set<ConstraintViolation<Snafu>> constraintViolations = validator.validate( new Snafu() );
+        assertNumberOfViolations( constraintViolations, 1 );
+        assertCorrectPropertyPaths(
+                constraintViolations,
+                "barOptional.number"
+        );
+        assertCorrectConstraintTypes( constraintViolations, Min.class );
+    }
+ 
+    @Test
+    public void testOptionalUnwrappedExecutableReturnValue() throws Exception {
+        ExecutableValidator executableValidator = validator.forExecutables();
+        Method method = Foo.class.getMethod( "getOptionalLong" );
+        Set<ConstraintViolation<Foo>> constraintViolations = executableValidator.validateReturnValue(
+                new Foo(),
+                method,
+                Optional.of( 9L )
+        );
+        assertNumberOfViolations( constraintViolations, 1 );
+        assertCorrectPropertyPaths( constraintViolations, "getOptionalLong.<return value>" );
+        assertCorrectConstraintTypes( constraintViolations, Max.class );
+    }
+ 
+    @Test
+    public void testOptionalUnwrappedExecutableParameter() throws Exception {
+        ExecutableValidator executableValidator = validator.forExecutables();
+        Method method = Baz.class.getMethod( "setOptionalLong", Optional.class );
+        Object[] values = { Optional.of( 2L ) };
+        Set<ConstraintViolation<Baz>> constraintViolations = executableValidator.validateParameters(
+                new Baz(),
+                method,
+                values
+        );
+        assertNumberOfViolations( constraintViolations, 1 );
+        assertCorrectPropertyPaths( constraintViolations, "setOptionalLong.arg0" );
+        assertCorrectConstraintTypes( constraintViolations, Min.class );
+    }
+ 
+    @Test
+    public void testOptionalUnwrappedCascadableExecutableReturnValue() throws Exception {
+        ExecutableValidator executableValidator = validator.forExecutables();
+        Method method = Qux.class.getMethod( "getBar" );
+        Set<ConstraintViolation<Qux>> constraintViolations = executableValidator.validateReturnValue(
+                new Qux(),
+                method,
+                Optional.of( new Bar() )
+        );
+        assertNumberOfViolations( constraintViolations, 1 );
+        assertCorrectPropertyPaths( constraintViolations, "getBar.<return value>.number" );
+        assertCorrectConstraintTypes( constraintViolations, Min.class );
+    }
+ 
+    @Test
+    public void testOptionalUnwrappedCascadableExecutableParameter() throws Exception {
+        ExecutableValidator executableValidator = validator.forExecutables();
+        Method method = Fubar.class.getMethod( "setBar", Optional.class );
+        Object[] values = { Optional.of( new Bar() ) };
+        Set<ConstraintViolation<Fubar>> constraintViolations = executableValidator.validateParameters(
+                new Fubar(),
+                method,
+                values
+        );
+        assertNumberOfViolations( constraintViolations, 1 );
+        assertCorrectPropertyPaths( constraintViolations, "setBar.arg0.number" );
+        assertCorrectConstraintTypes( constraintViolations, Min.class );
+    }
+ 
+    @Test
+    @TestForIssue(jiraKey = "HV-895")
+    public void cascaded_validation_applies_for_elements_of_list_wrapped_in_optional() {
+        Set<ConstraintViolation<Quux>> constraintViolations = validator.validate( new Quux() );
+        assertNumberOfViolations( constraintViolations, 2 );
+        assertCorrectPropertyPaths(
+                constraintViolations,
+                "bar[0].number",
+                "bar[1].number"
+        );
+        assertCorrectConstraintTypes( constraintViolations, Min.class, Min.class );
+    }
+ 
+    @SuppressWarnings("unused")
+    private class Foo {
+        @Min(value = 5)
+        Optional<Integer> integerOptional = Optional.of( 3 );
+ 
+        @Max(value = 5)
+        public Optional<Long> getOptionalLong() {
+            return Optional.of( 7L );
+        }
+    }
+ 
+    @SuppressWarnings("unused")
+    private class Snafu {
+        @Valid
+        Optional<Bar> barOptional = Optional.of( new Bar() );
+    }
+ 
+    @SuppressWarnings("unused")
+    private class Fubar {
+        public void setBar(@UnwrapValidatedValue @Valid Optional<Bar> optionalBarPara) {
+        }
+    }
+ 
+    @SuppressWarnings("unused")
+    private class Qux {
+        @Valid
+        public Optional<Bar> getBar() {
+            return Optional.empty();
+        }
+    }
+ 
+    @SuppressWarnings("unused")
+    private class Baz {
+        public void setOptionalLong(@UnwrapValidatedValue @Min(5) Optional<Long> optionalLongPara) {
+        }
+    }
+ 
+    @SuppressWarnings("unused")
+    private class Bar {
+        @Min(value = 5)
+        int number = 3;
+    }
+ 
+    @SuppressWarnings("unused")
+    private class Quux {
+        @Valid
+        public Optional<List<Bar>> getBar() {
+            return Optional.of( Arrays.asList( new Bar(), new Bar() ) );
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+public class ReservationManagement {
+ 
+    @ValidReservation
+    public Reservation getReservationsById(int id) {
+        return null;
+    }
+}
+@Constraint(validatedBy = ValidReservationValidator.class)
+@Target({ METHOD, CONSTRUCTOR })
+@Retention(RUNTIME)
+@Documented
+public @interface ValidReservation {
+    String message() default "End date must be after begin date "
+      + "and both must be in the future, room number must be bigger than 0";
+ 
+    Class<?>[] groups() default {};
+ 
+    Class<? extends Payload>[] payload() default {};
+}
+public class ValidReservationValidator
+  implements ConstraintValidator<ValidReservation, Reservation> {
+ 
+    @Override
+    public boolean isValid(
+      Reservation reservation, ConstraintValidatorContext context) {
+ 
+        if (reservation == null) {
+            return true;
+        }
+ 
+        if (!(reservation instanceof Reservation)) {
+            throw new IllegalArgumentException("Illegal method signature, "
+            + "expected parameter of type Reservation.");
+        }
+ 
+        if (reservation.getBegin() == null
+          || reservation.getEnd() == null
+          || reservation.getCustomer() == null) {
+            return false;
+        }
+ 
+        return (reservation.getBegin().isAfter(LocalDate.now())
+          && reservation.getBegin().isBefore(reservation.getEnd())
+          && reservation.getRoom() > 0);
+    }
+}
+public class Reservation {
+ 
+    @ValidReservation
+    public Reservation(
+      LocalDate begin, 
+      LocalDate end, 
+      Customer customer, 
+      int room) {
+        this.begin = begin;
+        this.end = end;
+        this.customer = customer;
+        this.room = room;
+    }
+ 
+    // properties, getters, and setters
+}
+@Configuration
+@ComponentScan({ "org.baeldung.javaxval.methodvalidation.model" })
+public class MethodValidationConfig {
+ 
+    @Bean
+    public MethodValidationPostProcessor methodValidationPostProcessor() {
+        return new MethodValidationPostProcessor();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+public class Car {
+
+    @ParameterScriptAssert(lang = "javascript", script = "arg1.size() <= arg0.size() * 2")
+    public void load(List<Person> passengers, List<PieceOfLuggage> luggage) {
+        //...
+    }
+} 
+--------------------------------------------------------------------------------------------------------
+Car object = new Car( "Morris" );
+Method method = Car.class.getMethod( "getPassengers" );
+Object returnValue = Collections.<Passenger>emptyList();
+Set<ConstraintViolation<Car>> violations = executableValidator.validateReturnValue(
+        object,
+        method,
+        returnValue
+);
+
+assertEquals( 1, violations.size() );
+Class<? extends Annotation> constraintType = violations.iterator()
+        .next()
+        .getConstraintDescriptor()
+        .getAnnotation()
+        .annotationType();
+assertEquals( Size.class, constraintType );
+
+Car object = new Car( "Morris" );
+Method method = Car.class.getMethod( "drive", int.class );
+Object[] parameterValues = { 80 };
+Set<ConstraintViolation<Car>> violations = executableValidator.validateParameters(
+        object,
+        method,
+        parameterValues
+);
+
+assertEquals( 1, violations.size() );
+Class<? extends Annotation> constraintType = violations.iterator()
+        .next()
+        .getConstraintDescriptor()
+        .getAnnotation()
+        .annotationType();
+assertEquals( Max.class, constraintType );
+
+
+--------------------------------------------------------------------------------------------------------
+public class Garage {
+
+    @ELAssert(expression = "...", validationAppliesTo = ConstraintTarget.PARAMETERS)
+    public Car buildCar(List<Part> parts) {
+        //...
+    }
+
+    @ELAssert(expression = "...", validationAppliesTo = ConstraintTarget.RETURN_VALUE)
+    public Car paintCar(int color) {
+        //...
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import static java.lang.annotation.ElementType.CONSTRUCTOR;
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+ 
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+ 
+import javax.validation.Constraint;
+import javax.validation.ConstraintValidator;
+import javax.validation.ConstraintValidatorContext;
+import javax.validation.Payload;
+import javax.validation.constraintvalidation.SupportedValidationTarget;
+import javax.validation.constraintvalidation.ValidationTarget;
+ 
+/**
+ * @author Gunnar Morling
+ */
+@Documented
+@Constraint(validatedBy = CrossParameterConstraintWithObjectValidator.Validator.class)
+@Target({ METHOD, CONSTRUCTOR, TYPE, FIELD })
+@Retention(RUNTIME)
+public @interface CrossParameterConstraintWithObjectValidator {
+    String message() default "default message";
+ 
+    Class<!--?-->[] groups() default { };
+ 
+    Class<!--? extends Payload-->[] payload() default { };
+ 
+    @SupportedValidationTarget(value = ValidationTarget.PARAMETERS)
+    public static class Validator implements ConstraintValidator<crossparameterconstraintwithobjectvalidator, object=""> {
+ 
+        @Override
+        public boolean isValid(Object parameters, ConstraintValidatorContext constraintValidatorContext) {
+            constraintValidatorContext.disableDefaultConstraintViolation();
+            constraintValidatorContext.buildConstraintViolationWithTemplate( "violation created by validator for Object" )
+                    .addConstraintViolation();
+ 
+            return false;
+        }
+    }
+}
+</crossparameterconstraintwithobjectvalidator,></http:>
 --------------------------------------------------------------------------------------------------------
 public class BeanValidationTest {
  
