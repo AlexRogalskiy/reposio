@@ -57078,6 +57078,658 @@ public class XxxController {
         return null;
     }
 --------------------------------------------------------------------------------------------------------
+@ConditionalOnExpression("${module.enabled:true} and ${module.submodule.enabled:true}")
+--------------------------------------------------------------------------------------------------------
+$ pip install -U os-urlpattern
+$ wget -qO- 'https://git.io/f4QlP' | pattern-make
+--------------------------------------------------------------------------------------------------------
+@RunWith(SpringRunner.class)
+@AutoConfigureTestDatabase(replace = Replace.NONE)
+@DataJpaTest
+@ContextConfiguration(classes = {YourBeans.class, MoreOfYourBeans.class})
+public class UserRepoTest {
+
+  @Autowired
+  private UserRepo userRepo = null;
+
+  @Autowired
+  private TestEntityManager entityManager = null;
+--------------------------------------------------------------------------------------------------------
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+org.springframework.boot.autoconfigure.admin.SpringApplicationAdminJmxAutoConfiguration,\
+... (100 lines)
+org.springframework.boot.autoconfigure.webservices.WebServicesAutoConfiguration
+--------------------------------------------------------------------------------------------------------
+java -jar my-app.jar --debug
+--------------------------------------------------------------------------------------------------------
+	/**
+	 * H2 Database Connection.
+	 */
+	H2(EmbeddedDatabaseType.H2, "org.h2.Driver", "jdbc:h2:mem:%s;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"),
+
+	/**
+	 * Derby Database Connection.
+	 */
+	DERBY(EmbeddedDatabaseType.DERBY, "org.apache.derby.jdbc.EmbeddedDriver", "jdbc:derby:memory:%s;create=true"),
+
+	/**
+	 * HSQL Database Connection.
+	 */
+	HSQL(EmbeddedDatabaseType.HSQL, "org.hsqldb.jdbcDriver", "jdbc:hsqldb:mem:%s");
+--------------------------------------------------------------------------------------------------------
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.ImportResource;
+/**
+ * Created by jt on 3/28/15.
+ */
+@SpringBootApplication
+@ImportResource("classpath*:spring/spring-config.xml")
+public class XmlApplication {
+    public static void main(String[] args) {
+        ApplicationContext ctx = SpringApplication.run(XmlApplication.class, args);
+        XmlBean bean = (XmlBean) ctx.getBean("xmlBean");
+        bean.sayHello();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.Arrays;
+ 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.web.support.SpringBootServletInitializer;
+import org.springframework.context.ApplicationContext;
+ 
+@SpringBootApplication
+public class SpringBootWebApplication extends SpringBootServletInitializer implements CommandLineRunner {
+ 
+    @Override
+    protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+        return application.sources(SpringBootWebApplication.class);
+    }
+ 
+    public static void main(String[] args) throws Exception {
+        SpringApplication.run(SpringBootWebApplication.class, args);
+    }
+     
+    @Autowired
+    private ApplicationContext appContext;
+     
+    @Override
+    public void run(String... args) throws Exception
+    {
+        String[] beans = appContext.getBeanDefinitionNames();
+        Arrays.sort(beans);
+        for (String bean : beans)
+        {
+            System.out.println(bean + " of Type :: " + appContext.getBean(bean).getClass());
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import javax.sql.DataSource;
+
+@EnableWebSecurity
+@Configuration
+public class ServerSecurityConfig extends WebSecurityConfigurerAdapter {
+
+    private DataSource dataSource;
+
+    @Autowired
+    public void setDataSource(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    @Autowired
+    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
+        auth.jdbcAuthentication().dataSource(dataSource).passwordEncoder(passwordEncoder())
+                .usersByUsernameQuery(
+                        "select username,password, is_active from custm_prefix_users where username=?")
+                .authoritiesByUsernameQuery(
+                        "select username, role from custm_prefix_user_roles where username=?");
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder(){
+        return new BCryptPasswordEncoder();
+    }
+
+    @Override
+    @Bean
+    public AuthenticationManager authenticationManagerBean()
+            throws Exception {
+        return super.authenticationManagerBean();
+    }
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.authorizeRequests()
+                .and()
+                .formLogin().permitAll();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
+import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
+import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
+import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
+import org.springframework.security.oauth2.provider.token.TokenEnhancer;
+import org.springframework.security.oauth2.provider.token.TokenStore;
+import org.springframework.security.oauth2.provider.token.store.JdbcTokenStore;
+
+import javax.sql.DataSource;
+
+@Configuration
+@EnableAuthorizationServer
+@ConfigurationProperties(prefix = "datasource")
+public class AuthorizationServerConfiguration extends AuthorizationServerConfigurerAdapter {
+
+    private DataSource dataSource;
+
+    @Autowired
+    @Qualifier("authenticationManagerBean")
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    public void setDataSource(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    @Override
+    public void configure(AuthorizationServerSecurityConfigurer oauthServer) throws Exception {
+        oauthServer
+                .tokenKeyAccess("permitAll()")
+                .checkTokenAccess("isAuthenticated()");
+    }
+
+    @Override
+    public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
+        clients.jdbc(dataSource);
+    }
+
+    @Override
+    public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+        endpoints.tokenStore(tokenStore()).tokenEnhancer(tokenEnhancer()).authenticationManager(authenticationManager);
+    }
+
+    @Bean
+    public TokenStore tokenStore() {
+        return new JdbcTokenStore(dataSource);
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+drop table if exists oauth_client_details;
+create table oauth_client_details (
+  client_id VARCHAR(255) PRIMARY KEY,
+  resource_ids VARCHAR(255),
+  client_secret VARCHAR(255),
+  scope VARCHAR(255),
+  authorized_grant_types VARCHAR(255),
+  web_server_redirect_uri VARCHAR(255),
+  authorities VARCHAR(255),
+  access_token_validity INTEGER,
+  refresh_token_validity INTEGER,
+  additional_information VARCHAR(4096),
+  autoapprove VARCHAR(255)
+);
+
+drop table if exists oauth_client_token;
+create table oauth_client_token (
+  token_id VARCHAR(255),
+  token LONG VARBINARY,
+  authentication_id VARCHAR(255) PRIMARY KEY,
+  user_name VARCHAR(255),
+  client_id VARCHAR(255)
+);
+
+drop table if exists oauth_access_token;
+create table oauth_access_token (
+  token_id VARCHAR(255),
+  token LONG VARBINARY,
+  authentication_id VARCHAR(255) PRIMARY KEY,
+  user_name VARCHAR(255),
+  client_id VARCHAR(255),
+  authentication LONG VARBINARY,
+  refresh_token VARCHAR(255)
+);
+
+drop table if exists oauth_refresh_token;
+create table oauth_refresh_token (
+  token_id VARCHAR(255),
+  token LONG VARBINARY,
+  authentication LONG VARBINARY
+);
+
+drop table if exists oauth_code;
+create table oauth_code (
+  code VARCHAR(255), authentication LONG VARBINARY
+);
+
+drop table if exists oauth_approvals;
+create table oauth_approvals (
+    userId VARCHAR(255),
+    clientId VARCHAR(255),
+    scope VARCHAR(255),
+    status VARCHAR(10),
+    expiresAt TIMESTAMP,
+    lastModifiedAt TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS custom_prefix_users
+(
+  id integer NOT NULL,
+  username character varying(100) NOT NULL,
+  password character varying(100) NOT NULL,
+  is_active smallint NOT NULL DEFAULT 1,
+  CONSTRAINT users_id_key PRIMARY KEY (id),
+  CONSTRAINT username_unique UNIQUE (username)
+);
+
+CREATE TABLE IF NOT EXISTS custom_prefix_user_roles
+(
+  id integer NOT NULL,
+  username character varying(100) NOT NULL REFERENCES custom_prefix_users (username),
+  role character varying(100) NOT NULL,
+  CONSTRAINT usroles_id_key PRIMARY KEY (id),
+  CONSTRAINT rolname_unique UNIQUE (role,username)
+);
+--------------------------------------------------------------------------------------------------------
+    private static final String[] WEBJARS_RESOURCE_LOCATIONS = {
+            "classpath:/META-INF/resources/webjars/"
+    };
+    private static final String[] SWAGGER_RESOURCE_LOCATIONS = {
+            "classpath:/META-INF/resources/",
+            "classpath:/resources/",
+            "classpath:/static/",
+            "classpath:/public/"
+    };
+--------------------------------------------------------------------------------------------------------
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+
+@Configuration
+@EnableWebMvc
+public class ResourceWebConfig extends WebMvcConfigurerAdapter {
+
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        super.addCorsMappings(registry);
+        registry.addMapping("/**")
+                .allowedMethods("GET", "PUT", "POST", "DELETE", "OPTIONS");
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+    @PreAuthorize("#oauth2.hasScope('read')")
+    @RequestMapping(method = RequestMethod.GET, value = "/beans/get/{paramId}")
+    @ResponseBody
+    public TestBean getBean(@PathVariable long paramId) {
+        try {
+            //полезная логика
+            ...
+            return testBean;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+--------------------------------------------------------------------------------------------------------
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.method.configuration.GlobalMethodSecurityConfiguration;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
+import org.springframework.security.oauth2.provider.expression.OAuth2MethodSecurityExpressionHandler;
+
+@Configuration
+@EnableResourceServer
+@EnableGlobalMethodSecurity(prePostEnabled = true)
+public class MethodSecurityConfig extends GlobalMethodSecurityConfiguration {
+
+    @Override
+    protected MethodSecurityExpressionHandler createExpressionHandler() {
+        return new OAuth2MethodSecurityExpressionHandler();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.core.env.Environment;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
+import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
+import org.springframework.security.oauth2.provider.token.RemoteTokenServices;
+
+import javax.sql.DataSource;
+
+
+@Configuration
+@EnableResourceServer
+@ConfigurationProperties(prefix = "datasource")
+public class RestApiConfig extends ResourceServerConfigurerAdapter {
+
+    private DataSource dataSource;
+
+    private Environment environment;
+
+    @Override
+    public void configure(final HttpSecurity http) throws Exception {
+        http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                .and()
+                .authorizeRequests().anyRequest().permitAll();
+    }
+
+    @Bean
+    @Primary
+    public RemoteTokenServices tokenServices() {
+        RemoteTokenServices tokenServices = new RemoteTokenServices();
+        tokenServices.setClientId("myClientId");
+        tokenServices.setClientSecret("mySecret");
+        tokenServices.setCheckTokenEndpointUrl("http://localhost:8081/oauth/check_token");
+        return tokenServices;
+    }
+
+    @Autowired
+    public void setDataSource(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    @Autowired
+    public void setEnvironment(Environment environment) {
+        this.environment = environment;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
+
+import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+
+@Component
+@Order(Ordered.HIGHEST_PRECEDENCE)
+public class CORSFilter implements Filter {
+
+    @Override
+    public void init(FilterConfig filterConfig) throws ServletException {
+    }
+
+    @Override
+    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
+
+        HttpServletResponse response = (HttpServletResponse) res;
+        HttpServletRequest request = (HttpServletRequest) req;
+        response.setHeader("Access-Control-Allow-Origin", "*");
+        response.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT,DELETE");
+        response.setHeader("Access-Control-Max-Age", "3600");
+        response.setHeader("Access-Control-Allow-Headers", "x-requested-with, authorization");
+        if (!"OPTIONS".equals(request.getMethod())) {
+            chain.doFilter(req, res);
+        }
+    }
+
+    @Override
+    public void destroy() {
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@Configuration
+public class AppConfig {
+
+	@Bean
+	public MyBean myBean() {
+		return new MyBeanImpl();
+	}
+
+	@Bean({"myOtherBean", "beanNameTwo"})
+	public MyBean myOtherBeanWithDifferentName() {
+		return new MyOtherBeanImpl();
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+ 
+import javax.servlet.Filter;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletResponse;
+import javax.servlet.ServletRequest;
+import javax.servlet.FilterChain;
+import javax.servlet.annotation.WebFilter;
+import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+ 
+@WebFilter(urlPatterns = "/api/count")
+public class ExampleFilter implements Filter{
+    private static final Logger logger = LoggerFactory.getLogger(ExampleFilter.class);
+ 
+    @Override
+    public void init(FilterConfig filterConfig) throws ServletException {
+ 
+    }
+ 
+    @Override
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+        logger.info("filter:"+ ((HttpServletRequest)servletRequest).getRequestURL());
+        filterChain.doFilter(servletRequest, servletResponse);
+    }
+ 
+    @Override
+    public void destroy() {
+ 
+    }
+}
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.web.servlet.ServletComponentScan;
+import org.springframework.boot.web.support.SpringBootServletInitializer;
+ 
+@ServletComponentScan
+@SpringBootApplication
+public class MyApplication extends SpringBootServletInitializer {
+ 
+    public static void main(String[] args) throws Exception {
+        SpringApplication.run(MyApplication.class, args);
+    }
+ 
+}
+--------------------------------------------------------------------------------------------------------
+package com.sensiblemetrics.api.common.validator.annotation.common;
+
+import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+import javax.validation.Constraint;
+import javax.validation.OverridesAttribute;
+import javax.validation.Payload;
+import javax.validation.ReportAsSingleViolation;
+
+import org.terasoluna.gfw.common.validator.constraints.Compare;
+
+@Documented
+@Constraint(validatedBy = {})
+@Target({ TYPE, ANNOTATION_TYPE }) // (1)
+@Retention(RUNTIME)
+@ReportAsSingleViolation // (2)
+@Compare(left = "", right = "", operator = Compare.Operator.EQUAL, requireBoth = true) // (3)
+public @interface Confirm {
+
+    String message() default "{com.example.sample.domain.validation.Confirm.message}"; // (4)
+
+    Class<?>[] groups() default {};
+
+    Class<? extends Payload>[] payload() default {};
+
+    @OverridesAttribute(constraint = Compare.class, name = "left") // (5)
+    String field();
+
+    @OverridesAttribute(constraint = Compare.class, name = "right") // (6)
+    String confirmField();
+
+    @Documented
+    @Target({ TYPE, ANNOTATION_TYPE })
+    @Retention(RUNTIME)
+    public @interface List {
+        Confirm[] value();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+AnnotationConfigWebApplicationContext context = new AnnotationConfigWebApplicationContext();
+context.register(ApplicationConfigurer.class); //ApplicationConfigurer imports HibernateConfigurer
+--------------------------------------------------------------------------------------------------------
+AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+ctx.getEnvironment().setActiveProfiles("dev");
+ctx.register(SomeConfig.class, StandaloneDataConfig.class, JndiDataConfig.class);
+ctx.refresh();
+--------------------------------------------------------------------------------------------------------
+@Override
+public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+    if (context.getEnvironment() != null) {
+        // Читаем атрибуты аннотации @Profile
+        MultiValueMap<String, Object> attrs = metadata.getAllAnnotationAttributes(Profile.class.getName());
+        if (attrs != null) {
+            for (Object value : attrs.get("value")) {
+                if (context.getEnvironment().acceptsProfiles(((String[]) value))) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+    return true;
+}
+--------------------------------------------------------------------------------------------------------
+@Configuration
+@ComponentScan
+public class LessonsConfiguration {
+    @Bean
+    @Scope("prototype")
+    public Object asyncCommand() {
+        return new Object();
+    }
+
+    @Bean
+    public CommandManager commandManager() {
+        // возвращаем новую анонимную реализацию CommandManager
+        // с новым объектом
+        return new CommandManager() {
+            protected Object createCommand() {
+                return asyncCommand();
+            }
+        };
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations = "classpath:whereever/context.xml")
+@TestPropertySource(properties = {"myproperty = foo"})
+public class TestWarSpringContext {
+    ...    
+}
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations = "classpath:whereever/context.xml")
+public class TestWarSpringContext {
+
+    static {
+        System.setProperty("myproperty", "foo");
+    }
+}
+
+@SpringBootTest
+public class EnvironmentVariablesTest {
+   @ClassRule
+   public final EnvironmentVariables environmentVariables = new EnvironmentVariables().set("name", "value");
+
+   @Test
+   public void test() {
+     assertEquals("value", System.getenv("name"));
+   }
+ }
+ 
+public class TestApplicationContextInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext>
+{
+    @Override
+    public void initialize(ConfigurableApplicationContext applicationContext)
+    {
+        System.setProperty("myproperty", "value");
+    }
+}
+
+@ContextConfiguration(initializers = TestApplicationContextInitializer.class, locations = "classpath:whereever/context.xml", ...)
+@RunWith(SpringJUnit4ClassRunner.class)
+public class SomeTest
+{
+...
+}
+--------------------------------------------------------------------------------------------------------
+    @Test
+    public void testLocalDateTimeCreate2() throws Exception {
+        Clock clock = Clock.system(ZoneId.of("Europe/Moscow"));
+
+        LocalDateTime ldt1 = LocalDateTime.ofInstant(clock.instant(), ZoneId.of("UTC"));
+        System.out.println(ldt1);
+
+        LocalDateTime ldt2 = LocalDateTime.now(clock);
+        System.out.println(ldt2);
+    }
+	
+    @Test
+    public void testFormat() throws Exception {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:dd z", Locale.ENGLISH);
+
+        ZonedDateTime zdt1 = ZonedDateTime.of(2005, 10, 30, 0, 0, 0, 0, ZoneId.of("Europe/Moscow"));
+
+        String text = zdt1.format(formatter);
+        System.out.println(text);
+
+        TemporalAccessor ta = formatter.parse(text); // java.time.format.Parsed
+        ZonedDateTime zdt2 = ZonedDateTime.from(ta);
+
+        Assert.assertEquals(zdt1, zdt2);
+    }
+--------------------------------------------------------------------------------------------------------
 /*
  * Hibernate Validator, declare and validate application constraints
  *

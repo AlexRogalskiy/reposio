@@ -8629,6 +8629,24 @@ github.com/homotica
 flurp.de
 https://github.com/basicairdata
 https://github.com/dermatthias
+http://brouter.de/brouter/segments4
+
+Currently, BRouter cooperates with three different
+maptools, so you need to install, and get familiar with,
+at least one of them:
+
+- "OsmAnd": See http://www.osmand.net Get It from Google-Play
+   or get it as an APK from the release-build archive:
+   http://download.osmand.net/releases/
+
+- "Locus": See http://www.locusmap.eu There's a "Pro"
+  Version which is ad-free and a free version with ads. 
+  You can get it from Google-Play, but for the free-version
+  there's also an APK-Download.
+
+- "Oruxmaps": See http://www.oruxmaps.com Oruxmaps is
+  Donation-Ware, which means it's free and you're supposed
+  to donate to the project if you want to support it.
 ========================================================================================================================
 ========================================================================================================================
 ========================================================================================================================
