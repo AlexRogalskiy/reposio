@@ -44820,6 +44820,22 @@ public class DocumentationController implements SwaggerResourcesProvider {
 -------------------------------------------------------------------------------------------------------
 .paths(regex("^(?!/error).*$")) // Ignore all '/error' handlers.
 -------------------------------------------------------------------------------------------------------
+    @Bean
+    @Scope(BeanDefinition.SCOPE_SINGLETON)
+    @Description("Redis confirmation data keyspace creator bean")
+    public RedisKeyspaceCreator<ConfirmationData> confirmationDataKeyspaceCreator(final RedisConfirmationDataProperty redisConfirmationDataProperty) {
+        return () -> new RedisKeyspace<>(ConfirmationData.class, redisConfirmationDataProperty.getKeySpace(), redisConfirmationDataProperty.getTimeToLive());
+    }
+
+    @Bean
+    @Scope(BeanDefinition.SCOPE_SINGLETON)
+    @Description("Redis CRM response data keyspace creator bean")
+    public RedisKeyspaceCreator<CrmResponseData> crmResponseDataKeyspaceCreator(final RedisCrmResponseDataProperty redisCrmResponseDataProperty) {
+        return () -> new RedisKeyspace<>(CrmResponseData.class, redisCrmResponseDataProperty.getKeySpace(), redisCrmResponseDataProperty.getTimeToLive());
+    }
+-------------------------------------------------------------------------------------------------------
+DataSourceConfiguration
+-------------------------------------------------------------------------------------------------------
 @Bean
 public Docket customImplementation() {
     return new Docket(DocumentationType.SWAGGER_2)
@@ -44830,7 +44846,211 @@ public Docket customImplementation() {
             .directModelSubstitute(org.joda.time.DateTime.class, java.util.Date.class)
             .apiInfo(apiInfo());
 }
- 
+-------------------------------------------------------------------------------------------------------
+@Transactional(propagation = Propagation.NOT_SUPPORTED)
+-------------------------------------------------------------------------------------------------------
+    @Autowired
+    private TestEntityManager entityManager;
+-------------------------------------------------------------------------------------------------------
+SET FOREIGN_KEY_CHECKS = 0
+SET FOREIGN_KEY_CHECKS = 1
+SHOW ENGINE INNODB STATUS
+-------------------------------------------------------------------------------------------------------
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import javax.sql.DataSource;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+public class TableClearer {
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
+    @Autowired
+    private DataSource dataSource;
+
+    private Connection connection;
+
+    public void clearTables() {
+        try {
+            connection = dataSource.getConnection();
+            tryToClearTables();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void tryToClearTables() throws SQLException {
+        List<string> tableNames = getTableNames();
+        clear(tableNames);
+    }
+
+    private List<string> getTableNames() throws SQLException {
+        List<string> tableNames = new ArrayList<>();
+
+        DatabaseMetaData metaData = connection.getMetaData();
+        ResultSet rs = metaData.getTables(
+                connection.getCatalog(), null, null, new String[]{"TABLE"});
+
+        while (rs.next()) {
+            tableNames.add(rs.getString("TABLE_NAME"));
+        }
+
+        return tableNames;
+    }
+
+    private void clear(List<string> tableNames) throws SQLException {
+        Statement statement = buildSqlStatement(tableNames);
+
+        logger.debug("Executing SQL");
+        statement.executeBatch();
+    }
+
+    private Statement buildSqlStatement(List<string> tableNames) throws SQLException {
+        Statement statement = connection.createStatement();
+
+        statement.addBatch(sql("SET FOREIGN_KEY_CHECKS = 0"));
+        addDeleteSatements(tableNames, statement);
+        statement.addBatch(sql("SET FOREIGN_KEY_CHECKS = 1"));
+
+        return statement;
+    }
+
+    private void addDeleteSatements(List<string> tableNames, Statement statement) {
+        tableNames.forEach(tableName -> {
+            try {
+                statement.addBatch(sql("DELETE FROM " + tableName));
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    private String sql(String sql) {
+        logger.debug("Adding SQL: {}", sql);
+        return sql;
+    }
+}
+-------------------------------------------------------------------------------------------------------
+package com.acme.severity;
+
+public class Severity {
+    public static class Info implements Payload {};
+    public static class Error implements Payload {};
+}
+
+public class Address {
+    @NotNull(message="would be nice if we had one", payload=Severity.Info.class)
+    public String getZipCode() { [...] }
+
+    @NotNull(message="the city is mandatory", payload=Severity.Error.class)
+    String getCity() { [...] }
+}
+-------------------------------------------------------------------------------------------------------
+/**
+ * Validate a zip code for a given country
+ * The only supported type is String
+ */
+@Documented
+@Constraint(validatedBy = ZipCodeValidator.class)
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
+@Retention(RUNTIME)
+@Repeatable(List.class)
+public @interface ZipCode {
+
+    String countryCode();
+
+    String message() default "{com.acme.constraint.ZipCode.message}";
+
+    Class<?>[] groups() default {};
+
+    Class<? extends Payload>[] payload() default {};
+
+    /**
+     * Defines several @ZipCode annotations on the same element
+     * @see (@link ZipCode}
+     */
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
+    @Retention(RUNTIME)
+    @Documented
+    @interface List {
+        ZipCode[] value();
+    }
+}
+
+https://stackoverflow.com/questions/41858894/completablefuture-usability-and-unit-test
+-------------------------------------------------------------------------------------------------------
+public Future<Void> runServiceOnAllNodes(Collection<Node> nodes, Object data) {
+    return nodes.parallelStream().map(node -> {
+        CompletableFuture<ResponseEntity> response = CompletableFuture
+                .supplyAsync(()-> connector.runSomeService(data));
+        return response.exceptionally(ex -> {
+            LOGGER.error("OMG...OMG!!!");
+            return null;
+        })
+        .thenAcceptAsync(res -> handleServiceResponse(res, node));
+    })
+    .reduce(CompletableFuture::allOf).orElseGet(() -> CompletableFuture.completedFuture(null));
+}
+-------------------------------------------------------------------------------------------------------
+package org.jboss.seam.captcha;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+import javax.validation.Constraint;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Target(ElementType.METHOD)
+@Constraint(validatedBy=CaptchaResponseValidator.class)
+public @interface CaptchaResponse 
+{
+   String message() default "incorrect response";
+}
+
+org.jboss.seam.captcha.CaptchaResponse.java
+-------------------------------------------------------------------------------------------------------
+@TestExecutionListeners({DependencyInjectionTestExecutionListener.class, DirtiesContextTestExecutionListener.class,
+  TransactionalTestExecutionListener.class, DbUnitTestExecutionListener.class})
+@RunWith(SpringJUnit4ClassRunner.class)
+@SpringApplicationConfiguration(classes = Application.class)
+@DatabaseSetup(ItemRepositoryIT.DATASET)
+@DatabaseTearDown(type = DatabaseOperation.DELETE_ALL, value = { ItemRepositoryIT.DATASET })
+@DirtiesContext
+public class ItemRepositoryIT {
+
+}
+
+
+<dependency>
+  <groupId>org.dbunit</groupId>
+  <artifactId>dbunit</artifactId>
+  <version>${dbunit.version}</version>
+</dependency>
+
+<dbunit.version>2.5.0</dbunit.version>
+<spring-test-dbunit.version>1.2.1</spring-test-dbunit.version>
+
+https://dimitr.im/testing-spring-data-repository
+-------------------------------------------------------------------------------------------------------
+{
+		"platform":"file-plaaetddf",
+		"fileName":"file-naamdde",
+		"filePath":"file-pdaatedh"
+}
+
+{
+	"sku": "sku-name",
+	"name": "sku-name"
+}
 -------------------------------------------------------------------------------------------------------
 Block your phone number:*#31# or #31#Phone-number + call
 
@@ -46913,6 +47133,12 @@ ReflectionUtils.setField(field, object, value);
 1
 	
 ReflectionUtils.setField(field, object, value);-
+--------------------------------------------------------------------------------------------------------
+List<String> resultList = Splitter.on(' ')
+    .trimResults()
+    .omitEmptyStrings()
+    .splitToList("lorem ipsum dolor sit amet");   
+String[] strArray = resultList.toArray(new String[0]);
 --------------------------------------------------------------------------------------------------------
 @SpringBootApplication(exclude = {        
     ElasticSearchRestHealthIndicatorAutoConfiguration.class
