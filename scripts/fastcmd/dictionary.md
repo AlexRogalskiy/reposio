@@ -57357,6 +57357,17 @@ CREATE TABLE IF NOT EXISTS custom_prefix_user_roles
   CONSTRAINT rolname_unique UNIQUE (role,username)
 );
 --------------------------------------------------------------------------------------------------------
+
+    User theUser = loggedInUser.getUser();  
+    User user = (User) em.createQuery("from User u where u.email = :email").setParameter("email", theUser.getEmail()).getSingleResult();  
+    List<Booking> bookings = user.getBookings();  
+    if (bookings == null) {  
+         bookings = new ArrayList<Booking>();  
+    }  
+    bookings.add(booking);  
+    user.setBookings(bookings);  
+    em.persist(user); 
+--------------------------------------------------------------------------------------------------------
     private static final String[] WEBJARS_RESOURCE_LOCATIONS = {
             "classpath:/META-INF/resources/webjars/"
     };
@@ -57367,6 +57378,25 @@ CREATE TABLE IF NOT EXISTS custom_prefix_user_roles
             "classpath:/public/"
     };
 --------------------------------------------------------------------------------------------------------
+psql -f demo.sql -U postgres
+psql -f demo.sql -U postgres > demo.log 2>demo.err
+psql -f demo.sql -U postgres > demo.log 2>&1 & 
+tail -f demo.log
+psql -d demo -U postgres
+
+\dt
+\d students
+\h create table
+
+explain (costs off) select * from <table>
+
+set enable_hashjoin = off;
+set enable_mergejoin = off;
+set enable_nestloop = off;
+
+
+--------------------------------------------------------------------------------------------------------
+http://www.bytestree.com/
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
