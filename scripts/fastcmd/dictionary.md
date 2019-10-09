@@ -47140,6 +47140,269 @@ public class EmployeeVO extends ResourceSupport implements Serializable
     <version>2.10</version>
 </dependency>
 -------------------------------------------------------------------------------------------------------
+    /**
+     * Returns {@link CustomEditorConfigurer}
+     *
+     * @return {@link CustomEditorConfigurer}
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnClass(CustomEditorConfigurer.class)
+    @Description("Kafka custom editor configurer bean")
+    public CustomEditorConfigurer customEditorConfigurer() {
+        final CustomEditorConfigurer configurer = new CustomEditorConfigurer();
+//        final Map<Class<?>, Class<? extends PropertyEditor>> customEditors = new HashMap<>();
+//        customEditors.put(KafkaConsumerAutoOffsetResetType.class, CustomEnumEditor.class);
+//        customEditors.put(KafkaProducerAcknowledgementType.class, CustomEnumEditor.class);
+//        customEditors.put(KafkaProducerCompressionType.class, CustomEnumEditor.class);
+//        configurer.setCustomEditors(customEditors);
+        configurer.setPropertyEditorRegistrars(
+            new PropertyEditorRegistrar[]{
+                new DatePropertyEditorRegistrar("yyyy-MM-dd"),
+                new EnumPropertyEditorRegistrar()
+            });
+        return configurer;
+    }
+-------------------------------------------------------------------------------------------------------
+    @Configuration
+    @PropertySource("classpath:app.properties")
+    public class Config {
+        @Bean
+        public ClientBean clientBean () {
+            return new ClientBean();
+        }
+
+        @Bean
+        @Qualifier("tradePrice")
+        public Double getPrice (Environment env) {
+            NumberFormat numberFormat = new DecimalFormat("##,###.00");
+            CustomNumberEditor customNumberEditor = new CustomNumberEditor(
+                                                Double.class, numberFormat, true);
+            customNumberEditor.setAsText(env.getProperty("thePrice"));
+            return (Double) customNumberEditor.getValue();
+        }
+    }
+
+https://www.logicbig.com/tutorials/spring-framework/spring-core/property-editors.html
+
+public class DefaultEditorsTest {
+    public static void main (String[] args) {
+        BeanWrapperImpl wrapper = new BeanWrapperImpl();
+
+        PropertyEditor editor = wrapper.getDefaultEditor(Currency.class);
+        editor.setAsText("MYR");
+        Currency value = (Currency) editor.getValue();
+        System.out.println(value.getDisplayName());
+
+    }
+}
+
+		Binder.get(environment).bind("spring.output.ansi.enabled", AnsiOutput.Enabled.class)
+				.ifBound(AnsiOutput::setEnabled);
+-------------------------------------------------------------------------------------------------------
+    @org.springframework.boot.test.context.TestConfiguration
+    public static class TestConfiguration {
+
+        @Autowired
+        private Environment environment;
+
+        @Bean
+        @ConfigurationProperties(prefix = "kafka.consumer", ignoreInvalidFields = true)
+        public KafkaConsumerProperty kafkaConsumerProperty() {
+            return new KafkaConsumerProperty();
+        }
+
+        @PostConstruct
+        public void test() {
+            Binder.get(this.environment).bind("kafka.consumer.auto-offset-reset", KafkaConsumerAutoOffsetResetType.class);
+        }
+    }
+-------------------------------------------------------------------------------------------------------
+public enum Element {
+ 
+    // ... enum values
+ 
+    private static final Map<String, Element> BY_LABEL = new HashMap<>();
+     
+    static {
+        for (Element e: values()) {
+            BY_LABEL.put(e.label, e);
+        }
+    }
+ 
+   // ... fields, constructor, methods
+ 
+    public static Element valueOfLabel(String label) {
+        return BY_LABEL.get(label);
+    }
+}
+
+public enum Element {
+    H("Hydrogen", 1, 1.008f),
+    HE("Helium", 2, 4.0026f),
+    // ...
+    NE("Neon", 10, 20.180f);
+ 
+    private static final Map<String, Element> BY_LABEL = new HashMap<>();
+    private static final Map<Integer, Element> BY_ATOMIC_NUMBER = new HashMap<>();
+    private static final Map<Float, Element> BY_ATOMIC_WEIGHT = new HashMap<>();
+     
+    static {
+        for (Element e : values()) {
+            BY_LABEL.put(e.label, e);
+            BY_ATOMIC_NUMBER.put(e.atomicNumber, e);
+            BY_ATOMIC_WEIGHT.put(e.atomicWeight, e);
+        }
+    }
+ 
+    public final String label;
+    public final int atomicNumber;
+    public final float atomicWeight;
+ 
+    private Element(String label, int atomicNumber, float atomicWeight) {
+        this.label = label;
+        this.atomicNumber = atomicNumber;
+        this.atomicWeight = atomicWeight;
+    }
+ 
+    public static Element valueOfLabel(String label) {
+        return BY_LABEL.get(label);
+    }
+ 
+    public static Element valueOfAtomicNumber(int number) {
+        return BY_ATOMIC_NUMBER.get(number);
+    }
+ 
+    public static Element valueOfAtomicWeight(float weight) {
+        return BY_ATOMIC_WEIGHT.get(weight);
+    }
+}
+-------------------------------------------------------------------------------------------------------
+public enum AppProperty {
+
+FOO(“app.foo”), // no default
+
+BAR(“app.soup”, “false”); // no soup for you
+
+// enum state doesn’t have to be final…but doing otherwise
+
+// is almost always a bad idea – don’t do it!
+
+private final String propertyKey;
+
+private final String defaultValue;
+
+private AppProperty(String propertyKey) {
+
+this(propertyKey, null);
+
+}
+
+private AppProperty(String propertyKey, String defaultValue) {
+
+this.propertyKey = propertyKey;
+
+this.defaultValue = defaultValue;
+
+}
+
+public String getPropertyKey() {
+
+return this.propertyKey;
+
+}
+
+public String getDefaultValue() {
+
+return this.defaultValue;
+
+}
+
+public String computeValue(Properties props) {
+
+return props.getProperty(getPropertyKey(), getDefaultValue());
+
+}
+
+}
+-------------------------------------------------------------------------------------------------------
+public class HeaderVersionArgumentResolver
+  implements HandlerMethodArgumentResolver {
+ 
+    @Override
+    public boolean supportsParameter(MethodParameter methodParameter) {
+        return methodParameter.getParameterAnnotation(Version.class) != null;
+    }
+ 
+    @Override
+    public Object resolveArgument(
+      MethodParameter methodParameter, 
+      ModelAndViewContainer modelAndViewContainer, 
+      NativeWebRequest nativeWebRequest, 
+      WebDataBinderFactory webDataBinderFactory) throws Exception {
+  
+        HttpServletRequest request 
+          = (HttpServletRequest) nativeWebRequest.getNativeRequest();
+ 
+        return request.getHeader("Version");
+    }
+}
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.PARAMETER)
+public @interface Version {
+}
+
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+ 
+    //...
+ 
+    @Override
+    public void addArgumentResolvers(
+      List<HandlerMethodArgumentResolver> argumentResolvers) {
+        argumentResolvers.add(new HeaderVersionArgumentResolver());
+    }
+}
+
+@GetMapping("/entity/{id}")
+public ResponseEntity findByVersion(
+  @PathVariable Long id, @Version String version) {
+    return ...;
+}
+-------------------------------------------------------------------------------------------------------
+public class StringToAbstractEntityConverterFactory 
+  implements ConverterFactory<String, AbstractEntity>{
+ 
+    @Override
+    public <T extends AbstractEntity> Converter<String, T> getConverter(Class<T> targetClass) {
+        return new StringToAbstractEntityConverter<>(targetClass);
+    }
+ 
+    private static class StringToAbstractEntityConverter<T extends AbstractEntity>
+      implements Converter<String, T> {
+ 
+        private Class<T> targetClass;
+ 
+        public StringToAbstractEntityConverter(Class<T> targetClass) {
+            this.targetClass = targetClass;
+        }
+ 
+        @Override
+        public T convert(String source) {
+            long id = Long.parseLong(source);
+            if(this.targetClass == Foo.class) {
+                return (T) new Foo(id);
+            }
+            else if(this.targetClass == Bar.class) {
+                return (T) new Bar(id);
+            } else {
+                return null;
+            }
+        }
+    }
+}
+-------------------------------------------------------------------------------------------------------
 @ConfigurationProperties(prefix = "conversion")
 public class PropertyConversion {
  
