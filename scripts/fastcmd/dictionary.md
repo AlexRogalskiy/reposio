@@ -47134,6 +47134,126 @@ public class EmployeeVO extends ResourceSupport implements Serializable
     //Removed setter/getter for readability
 }
 -------------------------------------------------------------------------------------------------------
+<dependency>
+    <groupId>joda-time</groupId>
+    <artifactId>joda-time</artifactId>
+    <version>2.10</version>
+</dependency>
+-------------------------------------------------------------------------------------------------------
+@ConfigurationProperties(prefix = "conversion")
+public class PropertyConversion {
+ 
+    private Duration timeInDefaultUnit;
+    private Duration timeInNano;
+    ...
+}
+
+@DurationUnit(ChronoUnit.DAYS)
+private Duration timeInDays;
+
+@Component
+@ConfigurationPropertiesBinding
+public class EmployeeConverter implements Converter<String, Employee> {
+ 
+    @Override
+    public Employee convert(String from) {
+        String[] data = from.split(",");
+        return new Employee(data[0], Double.parseDouble(data[1]));
+    }
+}
+-------------------------------------------------------------------------------------------------------
+//    @Autowired
+//    private PropertyEditorRegistrar propertyEditorRegistrar;
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnClass(CustomEditorConfigurer.class)
+    @Description("Kafka custom editor configurer bean")
+    public CustomEditorConfigurer customEditorConfigurer() {
+        final CustomEditorConfigurer configurer = new CustomEditorConfigurer();
+//        final Map<Class<?>, Class<? extends PropertyEditor>> customEditors = new HashMap<>();
+//        customEditors.put(Ticket.class, TicketTypeEditor.class);
+//        configurer.setCustomEditors(customEditors);
+        configurer.setPropertyEditorRegistrars(new PropertyEditorRegistrar[]{new CustomDateEditorRegistrar()});
+        return configurer;
+    }
+-------------------------------------------------------------------------------------------------------
+Letter  Date or Time Component  Presentation        Examples
+------  ----------------------  ------------------  -------------------------------------
+G       Era designator          Text                AD
+y       Year                    Year                1996; 96
+Y       Week year               Year                2009; 09
+M/L     Month in year           Month               July; Jul; 07
+w       Week in year            Number              27
+W       Week in month           Number              2
+D       Day in year             Number              189
+d       Day in month            Number              10
+F       Day of week in month    Number              2
+E       Day in week             Text                Tuesday; Tue
+u       Day number of week      Number              1
+a       Am/pm marker            Text                PM
+H       Hour in day (0-23)      Number              0
+k       Hour in day (1-24)      Number              24
+K       Hour in am/pm (0-11)    Number              0
+h       Hour in am/pm (1-12)    Number              12
+m       Minute in hour          Number              30
+s       Second in minute        Number              55
+S       Millisecond             Number              978
+z       Time zone               General time zone   Pacific Standard Time; PST; GMT-08:00
+Z       Time zone               RFC 822 time zone   -0800
+X       Time zone               ISO 8601 time zone  -08; -0800; -08:00
+
+String string = "January 2, 2010";
+DateFormat format = new SimpleDateFormat("MMMM d, yyyy", Locale.ENGLISH);
+Date date = format.parse(string);
+System.out.println(date); // Sat Jan 02 00:00:00 GMT 2010
+
+Input string                            Pattern
+------------------------------------    ----------------------------
+2001.07.04 AD at 12:08:56 PDT           yyyy.MM.dd G 'at' HH:mm:ss z
+Wed, Jul 4, '01                         EEE, MMM d, ''yy
+12:08 PM                                h:mm a
+12 o'clock PM, Pacific Daylight Time    hh 'o''clock' a, zzzz
+0:08 PM, PDT                            K:mm a, z
+02001.July.04 AD 12:08 PM               yyyyy.MMMM.dd GGG hh:mm aaa
+Wed, 4 Jul 2001 12:08:56 -0700          EEE, d MMM yyyy HH:mm:ss Z
+010704120856-0700                       yyMMddHHmmssZ
+2001-07-04T12:08:56.235-0700            yyyy-MM-dd'T'HH:mm:ss.SSSZ
+2001-07-04T12:08:56.235-07:00           yyyy-MM-dd'T'HH:mm:ss.SSSXXX
+2001-W27-3                              YYYY-'W'ww-u
+
+
+-------------------------------------------------------------------------------------------------------
+package com.javacodegeeks;
+ 
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+ 
+/**
+* Test class for PowerMockSpyExample
+* @author Meraj
+*/
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(PowerMockSpyExample.class)
+public class PowerMockSpyExampleTest {
+ 
+  @Test
+  public void testGetCurrentDateAsString() {
+    PowerMockSpyExample spy = PowerMockito.spy(new PowerMockSpyExample());
+ 
+    Mockito.when(spy.getCurrentDateAsString()).thenReturn("Test Date");
+    String actual = spy.getCurrentDateAsString();
+    Assert.assertEquals("Test Date", actual);
+    Mockito.verify(spy, Mockito.times(1)).getCurrentDateAsString();
+  }
+ 
+}
+-------------------------------------------------------------------------------------------------------
 List<T> intersect = list1.stream()
     .filter(list2::contains)
     .collect(Collectors.toList());
