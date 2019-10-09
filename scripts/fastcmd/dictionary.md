@@ -9370,6 +9370,240 @@ public class FileRepositoryTest extends AbstractTest {
 --------------------------------------------------------------------------------------------------------
         return new Docket(DocumentationType.SWAGGER_2)
 --------------------------------------------------------------------------------------------------------
+
+
+    /**
+     * An immutable representation of the properties of the {@link
+     * CelestialBody}. Immutability is necessary to honor the contract for
+     * enums.
+     */
+    static final class ImmutableProperties implements Properties {
+        private final double mass;
+        private final double radius;
+        private final String name;
+        private final Satellite[] satellites;
+     
+        public ImmutableProperties(String name, double mass, double radius,
+                Satellite... satellites) {
+            this.name = name;
+            this.mass = mass;
+            this.radius = radius;
+            this.satellites = satellites == null ? null : satellites.clone();
+        }
+     
+        @Override
+        public double getMass() {
+            return mass;
+        }
+     
+        @Override
+        public double getRadius() {
+            return radius;
+        }
+     
+        @Override
+        public Satellite[] getSatellites() {
+            return satellites == null ? null : satellites.clone();
+        }
+     
+        @Override
+        public String name() {
+            return name;
+        }
+     
+        public void printSummary() {
+            System.out.println("Summary for " + name() + ":");
+            System.out.printf("Surface Gravity: %1$e m/s²\n\n",
+                    Util.calcSurfaceGravity(this));
+     
+            if (satellites != null) {
+                for (Satellite satellite : getSatellites()) {
+                    satellite.getProperties().printSummary();
+                }
+            }
+        }
+    }
+--------------------------------------------------------------------------------------------------------
+
+
+    /**
+     * An immutable representation of the properties of the {@link Satellite}.
+     * Immutability is necessary to honor the contract for enums.
+     */
+    static final class ImmutableProperties implements CelestialBody
+            .Properties {
+        private final Satellite satellite;
+        private final double mass;
+        private final double radius;
+        private final double semiMajorAxis;
+        private final String name;
+        private final Satellite[] satellites;
+     
+        public ImmutableProperties(Satellite satellite, String name,
+                double mass, double radius, double semiMajorAxis,
+                Satellite... satellites) {
+            this.satellite = satellite;
+            this.name = name;
+            this.mass = mass;
+            this.radius = radius;
+            this.semiMajorAxis = semiMajorAxis;
+            this.satellites = satellites == null ? null : satellites.clone();
+        }
+     
+        @Override
+        public double getMass() {
+            return mass;
+        }
+     
+        @Override
+        public double getRadius() {
+            return radius;
+        }
+     
+        @Override
+        public Satellite[] getSatellites() {
+            return satellites == null ? null : satellites.clone();
+        }
+     
+        @Override
+        public String name() {
+            return name;
+        }
+     
+        private CelestialBody getParentBody() {
+            return satellite.getParentBody();
+        }
+     
+        /**
+         * Calculates and returns the orbital period of this {@link Satellite}
+         * which orbits the given parent body. The result is given in seconds.
+         *
+         * @param parentBody the body around which the satellite orbits
+         * @return the orbital period, in seconds
+         */
+        public double getOrbitalPeriod(CelestialBody parentBody) {
+            return 2 * Math.PI * Math.sqrt(Math.pow(semiMajorAxis, 3.0) /
+                    (GRAVITATIONAL_CONSTANT *
+                            parentBody.getProperties().getMass()));
+        }
+     
+        /**
+         * Prints a summary of the calculated orbital and physical
+         * characteristics of this {@link Satellite} and any of its own
+         * satellites.
+         */
+        @Override
+        public void printSummary() {
+            System.out.println("Summary for " + getParentage());
+     
+            CelestialBody parentBody = getParentBody();
+            long orbitalPeriod = (long) getOrbitalPeriod(parentBody);
+            System.out.printf("Orbital Period: %1$d hours/%2$d days\n",
+                    TimeUnit.SECONDS.toHours(orbitalPeriod),
+                    TimeUnit.SECONDS.toDays(orbitalPeriod));
+     
+            System.out.printf("Surface Gravity: %1$e m/s²\n\n",
+                    CelestialBody.Util.calcSurfaceGravity(this));
+     
+            if (satellites != null) {
+                for (Satellite child : satellites) {
+                    child.getProperties().printSummary();
+                }
+            }
+        }
+     
+        /**
+         * Generates and returns a String listing all the orbital parents of
+         * this satellite.
+         * <p/>
+         * For example, for the Earth's moon, it would return
+         * <pre>", satellite of EARTH, satellite of SOL"</pre>.
+         *
+         * @return a String showing orbital parentage
+         */
+        private String getParentage() {
+            List<CelestialBody> parents = new ArrayList<CelestialBody>();
+            CelestialBody parentBody = getParentBody();
+            parents.add(parentBody);
+            while (parentBody instanceof Satellite) {
+                Satellite satelliteParent = (Satellite) parentBody;
+                parentBody = satelliteParent.getParentBody();
+                parents.add(parentBody);
+            }
+     
+            StringBuilder sb = new StringBuilder(name());
+            for (CelestialBody parent : parents) {
+                sb.append(", satellite of ");
+                sb.append(parent.getProperties().name());
+            }
+            sb.append(":");
+     
+            return sb.toString();
+        }
+    }
+--------------------------------------------------------------------------------------------------------
+    package com.ociweb.sett;
+     
+    /**
+     * An enumeration of the planets in our solar system. We only show the inner
+     * planets, for simplicity.
+     */
+    public enum Planet implements Satellite {
+        MERCURY(0.3302e24, 2.4397e6, 57.91e9),
+        VENUS(4.869e24, 6.0518e6, 108.21e9),
+        EARTH(5.9742e24, 6.3781e6, 149.6e9, EarthMoon.values()),
+        MARS(0.64185e24, 3.3962e6, 227.92e9, MarsMoon.values());
+     
+        final ImmutableProperties properties;
+     
+        private Planet(double mass, double radius, double semiMajorAxis) {
+            this(mass, radius, semiMajorAxis, null);
+        }
+     
+        private Planet(double mass, double radius, double semiMajorAxis,
+                Satellite[] satellites) {
+            this.properties = new ImmutableProperties(this, name(), mass, radius,
+                    semiMajorAxis, satellites);
+        }
+     
+        public ImmutableProperties getProperties() {
+            return properties;
+        }
+     
+        @Override
+        public CelestialBody getParentBody() {
+            return Star.SOL;
+        }
+    }
+--------------------------------------------------------------------------------------------------------
+    package com.ociweb.sett;
+     
+    /**
+     * An enumeration of the stars at the center of solar systems.
+     */
+    public enum Star implements CelestialBody {
+        SOL(1.98892e30, 6.955e8, Planet.values()); // singleton
+     
+        private final Properties properties;
+     
+        private Star(double mass, double radius, Satellite[] satellites) {
+            this.properties = new ImmutableProperties(name(), mass, radius,
+                    satellites);
+        }
+     
+        public Properties getProperties() {
+            return properties;
+        }
+    }
+--------------------------------------------------------------------------------------------------------
+public static EnumMap<PizzaStatus, List<Pizza>> 
+  groupPizzaByStatus(List<Pizza> pzList) {
+    EnumMap<PizzaStatus, List<Pizza>> map = pzList.stream().collect(
+      Collectors.groupingBy(Pizza::getStatus,
+      () -> new EnumMap<>(PizzaStatus.class), Collectors.toList()));
+    return map;
+}
+--------------------------------------------------------------------------------------------------------
 import java.util.HashMap;
 import java.util.Map;
 
@@ -9407,7 +9641,6 @@ public class Car {
   }
 --------------------------------------------------------------------------------------------------------
 $ ./gradlew clean build && java -jar build/libs/gs-actuator-service-0.1.0.jar
-
 --------------------------------------------------------------------------------------------------------
 import java.util.Map;
 
@@ -26346,6 +26579,222 @@ public class TestRequestBodyMethodProcessor extends AbstractMessageConverterMeth
     }
 }
 --------------------------------------------------------------------------------------------------------
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.TreeNode;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.node.TextNode;
+import javafx.scene.paint.Color;
+import org.springframework.boot.jackson.JsonComponent;
+
+import java.io.IOException;
+
+@JsonComponent
+public class UserCombinedSerializer {
+    public static class UserJsonSerializer extends JsonSerializer<User> {
+
+        @Override
+        public void serialize(User user, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
+            jsonGenerator.writeStartObject();
+            jsonGenerator.writeStringField("favoriteColor", getColorAsWebColor(user.getFavoriteColor()));
+            jsonGenerator.writeEndObject();
+        }
+
+        private static String getColorAsWebColor(Color color) {
+            int r = (int) Math.round(color.getRed() * 255.0);
+            int g = (int) Math.round(color.getGreen() * 255.0);
+            int b = (int) Math.round(color.getBlue() * 255.0);
+            return String.format("#%02x%02x%02x", r, g, b);
+        }
+    }
+
+    public static class UserJsonDeserializer extends JsonDeserializer<User> {
+        @Override
+        public User deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+            TreeNode treeNode = jsonParser.getCodec().readTree(jsonParser);
+            TextNode favoriteColor = (TextNode) treeNode.get("favoriteColor");
+            return new User(Color.web(favoriteColor.asText()));
+        }
+    }
+}
+
+
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.TreeNode;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.node.TextNode;
+import javafx.scene.paint.Color;
+import org.springframework.boot.jackson.JsonComponent;
+
+import java.io.IOException;
+
+@JsonComponent
+public class UserJsonDeserializer extends JsonDeserializer<User> {
+    @Override
+    public User deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+        TreeNode treeNode = jsonParser.getCodec().readTree(jsonParser);
+        TextNode favoriteColor = (TextNode) treeNode.get("favoriteColor");
+        return new User(Color.web(favoriteColor.asText()));
+    }
+}
+
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import javafx.scene.paint.Color;
+import org.springframework.boot.jackson.JsonComponent;
+
+import java.io.IOException;
+
+@JsonComponent
+public class UserJsonSerializer extends JsonSerializer<User> {
+
+    @Override
+    public void serialize(User user, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
+        jsonGenerator.writeStartObject();
+        jsonGenerator.writeStringField("favoriteColor", getColorAsWebColor(user.getFavoriteColor()));
+        jsonGenerator.writeEndObject();
+    }
+
+    private static String getColorAsWebColor(Color color) {
+        int r = (int) Math.round(color.getRed() * 255.0);
+        int g = (int) Math.round(color.getGreen() * 255.0);
+        int b = (int) Math.round(color.getBlue() * 255.0);
+        return String.format("#%02x%02x%02x", r, g, b);
+    }
+}
+
+
+public enum Modes {
+
+    ALPHA, BETA;
+}
+--------------------------------------------------------------------------------------------------------
+import org.baeldung.boot.converter.StringToEmployeeConverter;
+import org.baeldung.boot.converter.StringToEnumConverterFactory;
+import org.baeldung.boot.converter.GenericBigDecimalConverter;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.format.FormatterRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+	 
+    @Override
+    public void addFormatters(FormatterRegistry registry) {
+        registry.addConverter(new StringToEmployeeConverter());
+        registry.addConverterFactory(new StringToEnumConverterFactory());
+        registry.addConverter(new GenericBigDecimalConverter());
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.Properties;
+
+import javax.persistence.EntityManagerFactory;
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.env.Environment;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+
+@Configuration
+@EnableJpaRepositories(basePackages = { "org.baeldung.boot.repository", "org.baeldung.boot.boottest", "org.baeldung.repository" })
+@PropertySource("classpath:persistence-generic-entity.properties")
+@EnableTransactionManagement
+public class H2JpaConfig {
+
+    @Autowired
+    private Environment env;
+
+    @Bean
+    public DataSource dataSource() {
+        final DriverManagerDataSource dataSource = new DriverManagerDataSource();
+        dataSource.setDriverClassName(env.getProperty("jdbc.driverClassName"));
+        dataSource.setUrl(env.getProperty("jdbc.url"));
+        dataSource.setUsername(env.getProperty("jdbc.user"));
+        dataSource.setPassword(env.getProperty("jdbc.pass"));
+
+        return dataSource;
+    }
+
+    @Bean
+    public LocalContainerEntityManagerFactoryBean entityManagerFactory() {
+        final LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
+        em.setDataSource(dataSource());
+        em.setPackagesToScan(new String[] { "org.baeldung.boot.domain", "org.baeldung.boot.model", "org.baeldung.boot.boottest", "org.baeldung.model" });
+        em.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
+        em.setJpaProperties(additionalProperties());
+        return em;
+    }
+
+    @Bean
+    JpaTransactionManager transactionManager(final EntityManagerFactory entityManagerFactory) {
+        final JpaTransactionManager transactionManager = new JpaTransactionManager();
+        transactionManager.setEntityManagerFactory(entityManagerFactory);
+        return transactionManager;
+    }
+
+    final Properties additionalProperties() {
+        final Properties hibernateProperties = new Properties();
+
+        hibernateProperties.setProperty("hibernate.hbm2ddl.auto", env.getProperty("hibernate.hbm2ddl.auto"));
+        hibernateProperties.setProperty("hibernate.dialect", env.getProperty("hibernate.dialect"));
+        hibernateProperties.setProperty("hibernate.show_sql", env.getProperty("hibernate.show_sql"));
+
+        return hibernateProperties;
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+public interface GenericConverter<I, O> extends Function<I, O> {
+
+    default O convert(final I input) {
+        O output = null;
+        if (input != null) {
+            output = this.apply(input);
+        }
+        return output;
+    }
+
+    default List<O> convert(final List<I> input) {
+        List<O> output = new ArrayList<O>();
+        if (input != null) {
+            output = input.stream().map(this::apply).collect(toList());
+        }
+        return output;
+    }
+}
+public class AccountCreateRequestConverter implements GenericConverter<AccountCreateRequest, AccountOutput> {
+
+    @Override
+    public AccountOutput apply(AccountCreateRequest input) {
+        AccountOutput output = new AccountOutput();
+
+        output.setEmail(input.getEmail());
+        output.setName(input.getName());
+        output.setLastName(input.getLastName());        
+        output.setPassword(input.getPassword());                                
+
+        return output;
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
  @Test
   public void resolveArgumentTypeVariableWithNonGenericConverter() throws Exception {
     Method method = MyParameterizedController.class.getMethod("handleDto", Identifiable.class);
@@ -30769,7 +31218,6 @@ public class StringJsonMessageConverter extends JsonMessageConverter {
 			throw new ConversionException("Failed to convert to JSON", e);
 		}
 	}
-
 }
 --------------------------------------------------------------------------------------------------------
 http://www.allitebooks.org/internet-of-things-with-python/
@@ -36329,6 +36777,21 @@ set PATH=%PATH%;%COVERITYPATH%
 goto :eof
 -------------------------------------------------------------------------------------------------------
 objdump -D -M intel file.bin | grep main.: -A20
+-------------------------------------------------------------------------------------------------------
+import React, { useState } from "react";
+
+const HelloWorld = ()
+=> {
+  const [message, setMessage] = useState("Hello World!");
+
+  return (
+    <h2
+      onClick={() => setMessage("The message has changed!")}
+    >
+      {message}
+    </h2>
+  );
+};
 -------------------------------------------------------------------------------------------------------
 package com.paragon.microservices.links.model.domain;
 
@@ -57583,6 +58046,17 @@ CREATE TABLE IF NOT EXISTS custom_prefix_user_roles
   CONSTRAINT rolname_unique UNIQUE (role,username)
 );
 --------------------------------------------------------------------------------------------------------
+
+    User theUser = loggedInUser.getUser();  
+    User user = (User) em.createQuery("from User u where u.email = :email").setParameter("email", theUser.getEmail()).getSingleResult();  
+    List<Booking> bookings = user.getBookings();  
+    if (bookings == null) {  
+         bookings = new ArrayList<Booking>();  
+    }  
+    bookings.add(booking);  
+    user.setBookings(bookings);  
+    em.persist(user); 
+--------------------------------------------------------------------------------------------------------
     private static final String[] WEBJARS_RESOURCE_LOCATIONS = {
             "classpath:/META-INF/resources/webjars/"
     };
@@ -57593,6 +58067,25 @@ CREATE TABLE IF NOT EXISTS custom_prefix_user_roles
             "classpath:/public/"
     };
 --------------------------------------------------------------------------------------------------------
+psql -f demo.sql -U postgres
+psql -f demo.sql -U postgres > demo.log 2>demo.err
+psql -f demo.sql -U postgres > demo.log 2>&1 & 
+tail -f demo.log
+psql -d demo -U postgres
+
+\dt
+\d students
+\h create table
+
+explain (costs off) select * from <table>
+
+set enable_hashjoin = off;
+set enable_mergejoin = off;
+set enable_nestloop = off;
+
+
+--------------------------------------------------------------------------------------------------------
+http://www.bytestree.com/
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
