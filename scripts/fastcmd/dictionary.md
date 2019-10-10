@@ -44670,6 +44670,126 @@ public List<Etude> search(String text, Map<String, String> allParams) {
         return (List<Etude>) fullTextQuery.getResultList();
     }
 -------------------------------------------------------------------------------------------------------
+DateTimeFormatter.ISO_INSTANT.format(Instant.now().truncatedTo(ChronoUnit.SECONDS))
+-------------------------------------------------------------------------------------------------------
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.Map;
+
+public class DisplayZoneAndOffSet2 {
+
+    public static final boolean SORT_BY_REGION = false;
+
+    public static void main(String[] args) {
+
+        LocalDateTime localDateTime = LocalDateTime.now();
+
+        long total = ZoneId.getAvailableZoneIds()
+                .stream()
+                .map(ZoneId::of)
+                .map(zoneId -> new SimpleEntry<>(zoneId.toString(), localDateTime.atZone(zoneId)
+                        .getOffset()
+                        .getId()
+                        .replaceAll("Z", "+00:00")))
+                .sorted(SORT_BY_REGION
+                        ? Map.Entry.comparingByKey()
+                        : Map.Entry.<String, String>comparingByValue().reversed())
+                .peek(e -> System.out.printf(String.format("%35s (UTC%s) %n", e.getKey(), e.getValue())))
+                .count();
+
+        System.out.println("\nTotal Zone IDs " + total);
+
+    }
+}
+
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+public class DisplayZoneAndOffSet3 {
+
+    public static final boolean SORT_BY_REGION = false;
+
+    public static void main(String[] args) {
+
+        LocalDateTime localDateTime = LocalDateTime.now();
+
+        Map<String, String> result = ZoneId.getAvailableZoneIds()
+                .stream()
+                .map(ZoneId::of)
+                .map(zoneId -> new SimpleEntry<>(zoneId.toString(), localDateTime.atZone(zoneId)
+                        .getOffset()
+                        .getId()
+                        .replaceAll("Z", "+00:00")))
+                .sorted(SORT_BY_REGION
+                        ? Map.Entry.comparingByKey()
+                        : Map.Entry.<String, String>comparingByValue().reversed())
+                .collect(Collectors.toMap(
+                        SimpleEntry::getKey,
+                        SimpleEntry::getValue,
+                        (oldValue, newValue) -> oldValue,
+                        LinkedHashMap::new));
+
+        result.forEach((k, v) -> System.out.printf(String.format("%35s (UTC%s) %n", k, v)));
+
+        System.out.println("\nTotal Zone IDs " + result.size());
+
+    }
+}
+-------------------------------------------------------------------------------------------------------
+@Pattern(regexp = "[0-9]*")
+@Size
+@Constraint(validatedBy = FrenchZipCodeValidator.class)
+@Documented
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
+@Retention(RUNTIME)
+public @interface FrenchZipCode {
+
+    String message() default "Wrong zip code";
+
+    Class<?>[] groups() default {};
+
+    Class<? extends Payload>[] payload() default {};
+
+    @OverridesAttribute(constraint = Size.class, name = "min")
+    @OverridesAttribute(constraint = Size.class, name = "max")
+    int size() default 5;
+
+    @OverridesAttribute(constraint = Size.class, name = "message")
+    String sizeMessage() default "{com.acme.constraint.FrenchZipCode.zipCode.size}";
+
+    @OverridesAttribute(constraint = Pattern.class, name = "message")
+    String numberMessage() default "{com.acme.constraint.FrenchZipCode.number.size}";
+
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
+    @Retention(RUNTIME)
+    @Documented
+    @interface List {
+
+        FrenchZipCode[] value();
+    }
+}
+-------------------------------------------------------------------------------------------------------
+public static<T> Stream<T> flatten(T[] a, T[] b)
+	{
+		Stream<T> stream = Stream.of(a, b)
+				.flatMap(Arrays::stream);
+
+		return stream;
+	}
+	1570719030
+-------------------------------------------------------------------------------------------------------
+List<Map<String, Object>> expensive = JsonPath.parse(jsonDataSourceString)
+  .read("$['book'][?(@['price'] > $['price range']['medium'])]");
+predicateUsageAssertionHelper(expensive);
+
+bject dataObject = JsonPath.parse(jsonString).read("$[?(@.id == 2)]");
+String dataString = dataObject.toString();
+-------------------------------------------------------------------------------------------------------
 npm install -g snyk
 cd ~/projects/my-project/
 snyk monitor
