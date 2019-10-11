@@ -22595,6 +22595,253 @@ after_success:
         return id;
     }
 --------------------------------------------------------------------------------------------------------
+CustomEditorConfigurer editorConfigurer = new CustomEditorConfigurer();
+Map<String, PropertyEditor> customEditors = new HashMap<String, PropertyEditor>();
+customEditors.put(Date.class.getName(), new DateEditor());
+editorConfigurer.setCustomEditors(customEditors);
+--------------------------------------------------------------------------------------------------------
+<h1>Hey, there’s an SVG image below me!</h1>
+<svg viewBox="0 0 100 100">
+   <rect x="10" y="10" width="100" height="100" />
+   <!-- and all the shapes you need! —>
+</svg>
+--------------------------------------------------------------------------------------------------------
+import org.springframework.boot.ansi.AnsiOutput;
+import org.springframework.boot.ansi.AnsiOutput.Enabled;
+import org.springframework.boot.context.event.ApplicationEnvironmentPreparedEvent;
+import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.context.ApplicationListener;
+import org.springframework.core.Ordered;
+import org.springframework.core.env.ConfigurableEnvironment;
+
+/**
+* An {@link ApplicationListener} that configures {@link AnsiOutput} depending on the
+* value of the property {@code spring.output.ansi.enabled}. See {@link Enabled} for valid
+* values.
+*
+* @author Raphael von der Grün
+* @author Madhura Bhave
+* @since 1.2.0
+*/
+public class AnsiOutputApplicationListener
+      implements ApplicationListener<ApplicationEnvironmentPreparedEvent>, Ordered {
+
+   @Override
+   public void onApplicationEvent(ApplicationEnvironmentPreparedEvent event) {
+      ConfigurableEnvironment environment = event.getEnvironment();
+      Binder.get(environment).bind("spring.output.ansi.enabled", AnsiOutput.Enabled.class)
+            .ifBound(AnsiOutput::setEnabled);
+      AnsiOutput.setConsoleAvailable(environment.getProperty("spring.output.ansi.console-available", Boolean.class));
+   }
+
+   @Override
+   public int getOrder() {
+      // Apply after ConfigFileApplicationListener has called EnvironmentPostProcessors
+      return ConfigFileApplicationListener.DEFAULT_ORDER + 1;
+   }
+
+}
+--------------------------------------------------------------------------------------------------------
+$ sdk install springboot
+$ spring --version
+Spring Boot v2.1.9.RELEASE
+
+$ sdk install springboot dev /path/to/spring-boot/spring-boot-cli/target/spring-boot-cli-2.1.9.RELEASE-bin/spring-2.1.9.RELEASE/
+$ sdk default springboot dev
+$ spring --version
+Spring CLI v2.1.9.RELEASE
+
+sdk ls springboot
+
+$ brew tap pivotal/tap
+$ brew install springboot
+
+$ sudo port install spring-boot-cli
+
+> scoop bucket add extras
+> scoop install springboot
+
+<dependency>
+	<groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-properties-migrator</artifactId>
+	<scope>runtime</scope>
+</dependency>
+
+
+mn --version
+
+--------------------------------------------------------------------------------------------------------
+package com.sensiblemetrics.api.common.actuator;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.junit4.SpringRunner;
+
+import java.util.Map;
+
+import static org.assertj.core.api.BDDAssertions.then;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@TestPropertySource(properties = {"management.server.port=0"})
+public class SpringActuatorApplicationTests {
+    @LocalServerPort
+    private int port;
+
+    @Value("${local.management.port}")
+    private int mgt;
+
+    @Autowired
+    private TestRestTemplate testRestTemplate;
+
+    @Test
+    public void shouldReturn200WhenSendingRequestToController() throws Exception {
+        @SuppressWarnings("rawtypes")
+        ResponseEntity<Map> entity = this.testRestTemplate.getForEntity("http://localhost:" + this.port + "/hello", Map.class);
+        then(entity.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    public void shouldReturn200WhenSendingRequestToManagementEndpoint() throws Exception {
+        @SuppressWarnings("rawtypes")
+        ResponseEntity<Map> entity = this.testRestTemplate
+            .getForEntity("http://localhost:" + this.mgt + "/actuator/info", Map.class);
+        System.out.println(this.mgt);
+        then(entity.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+assertThat(actual, hasItem(Matchers.<YourPojo>hasProperty("id", equalTo(1L))));
+--------------------------------------------------------------------------------------------------------
+curl -X POST \
+-H "Consumer-Key: CONSUMER_KEY" \
+-H "Consumer-Token: CONSUMER_TOKEN" \
+-H "Content-Type: application/json" \
+-H "Accept: application/json" \
+-d '{"candidate": "grails", "version": "3.0.0", "hashtag": "grailsfw"}' \
+https://vendors.sdkman.io/announce/struct
+curl -X POST \
+-H "Consumer-Key: CONSUMER_KEY" \
+-H "Consumer-Token: CONSUMER_TOKEN" \
+-H "Content-Type: application/json" \
+-H "Accept: application/json" \
+-d '{"text": "SDKMAN! 2.4.0 rolling out. Broadcast and Offline checks optimised."}' \
+https://vendors.sdkman.io/announce/freeform
+curl -X PUT \
+-H "Consumer-Key: CONSUMER_KEY" \
+-H "Consumer-Token: CONSUMER_TOKEN" \
+-H "Content-Type: application/json" \
+-H "Accept: application/json" \
+-d '{"candidate": "groovy", "version": "2.3.8"}' \
+https://vendors.sdkman.io/default
+
+--------------------------------------------------------------------------------------------------------
+
+    Execute Install-Module posh-gvm
+    Execute Import-Module posh-gvm(best add it to your profile.ps1)
+    Execute gvm help to get started!
+
+--------------------------------------------------------------------------------------------------------
+<plugin>
+	<groupId>org.apache.maven.plugins</groupId>
+	<artifactId>maven-compiler-plugin</artifactId>
+	<configuration>
+		<proc>none</proc>
+	</configuration>
+</plugin>
+--------------------------------------------------------------------------------------------------------
+java -jar myproject.jar --spring.config.name=myproject
+
+app.name=MyApp
+app.description=${app.name} is a Spring Boot application
+https://docs.spring.io/spring-boot/docs/current/reference/html/configuration-metadata.html
+--------------------------------------------------------------------------------------------------------
+{
+  "properties": [
+    {
+      "name": "kafka.consumer.auto-offset-reset",
+      "type": "com.paragon.mailingcontour.commons.databus.enumeration.KafkaConsumerAutoOffsetResetType",
+      "description": "Kafka Consumer auto-offset-reset option.",
+      "sourceType": "com.paragon.mailingcontour.commons.databus.property.KafkaConsumerProperty"
+    }
+  ]
+}
+spring-configuration-metadata.json
+    {
+      "name": "kafka.consumer.auto-offset-reset",
+      "type": "com.paragon.mailingcontour.commons.databus.enumeration.KafkaConsumerAutoOffsetResetType",
+      "description": "Kafka Consumer auto-offset-reset option.",
+      "sourceType": "com.paragon.mailingcontour.commons.databus.property.KafkaConsumerProperty"
+    }
+--------------------------------------------------------------------------------------------------------
+spring init --dependencies=web --name=config-properties-demo --package-name=com.example.demo config-properties-demo
+mvn spring-boot:run -Dspring.profiles.active=dev
+
+export SPRING_PROFILES_ACTIVE=prod
+
+# Packaging the app
+mvn clean package -Dspring.profiles.active=staging
+
+# Running the packaged jar with `spring.profiles.active` argument
+java -jar -Dspring.profiles.active=staging target/config-properties-demo-0.0.1-SNAPSHOT.jar
+
+
+# Logging pattern for the console
+logging.pattern.console=%d{yyyy-MM-dd HH:mm:ss} - %msg%n
+ 
+# Logging pattern for file
+logging.pattern.file=%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n
+
+	@DeprecatedConfigurationProperty(replacement = "app.acme.name")
+	@Deprecated
+--------------------------------------------------------------------------------------------------------
+RealFactory factory     = new RealFactory();
+RealFactory spy         = spy(factory);
+TestedClass testedClass = new TestedClass(spy);
+
+// At this point I would like to get a reference to the object created
+// and returned by the factory.
+
+
+// let's capture the return values from spy.create()
+ResultCaptor<RealThing> resultCaptor = new ResultCaptor<>();
+doAnswer(resultCaptor).when(spy).create();
+
+// do something that will trigger a call to the factory
+testedClass.doSomething();
+
+// validate the return object
+assertThat(resultCaptor.getResult())
+        .isNotNull()
+        .isInstanceOf(RealThing.class);
+--------------------------------------------------------------------------------------------------------
+    /**
+     * Returns {@link LocalContainerEntityManagerFactoryBean} configuration
+     *
+     * @return {@link LocalContainerEntityManagerFactoryBean} configuration
+     */
+    @Bean
+    @Primary
+    @ConditionalOnMissingBean
+    public LocalContainerEntityManagerFactoryBean entityManagerFactory(final DataSource dataSource) {
+        final LocalContainerEntityManagerFactoryBean factoryBean = new LocalContainerEntityManagerFactoryBean();
+        factoryBean.setDataSource(dataSource);
+        factoryBean.setJpaVendorAdapter(this.jpaVendorAdapter());
+        factoryBean.setJpaProperties(this.jpaProperties());
+        factoryBean.setJpaDialect(this.jpaDialect());
+        factoryBean.setPackagesToScan(DEFAULT_REPOSITORY_PACKAGE, DEFAULT_MODEL_PACKAGE);
+        factoryBean.setPersistenceUnitName(DEFAULT_PERSISTENCE_UNIT_NAME);
+        return factoryBean;
+    }
+--------------------------------------------------------------------------------------------------------
 https://github.com/JakubStas?tab=repositories
 https://evilinside.ru/php-2/
 
