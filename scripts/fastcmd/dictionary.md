@@ -44735,6 +44735,125 @@ public class CardController {
 
 }
 -------------------------------------------------------------------------------------------------------
+        UriComponentsBuilder bc = UriComponentsBuilder.newInstance();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setLocation(ucBuilder.path(request.getRequestURI() + "/{id}").buildAndExpand(userDto.getId()).toUri());
+        return new ResponseEntity<>(headers, HttpStatus.CREATED);
+-------------------------------------------------------------------------------------------------------
+import java.util.Objects;
+import java.util.UUID;
+
+import javax.validation.ConstraintValidator;
+import javax.validation.ConstraintValidatorContext;
+
+/**
+ *
+ * UID constraint validation implementation
+ *
+ * @author Alex
+ * @version 1.0.0
+ * @since 2017-08-08
+ */
+public class UIDConstraintValidator implements ConstraintValidator<UID, UUID> {
+
+    public static final String DEFAULT_FORMAT = "\\p{XDigit}{8}-\\p{XDigit}{4}-\\p{XDigit}{4}-\\p{XDigit}{4}-\\p{XDigit}{12}";
+
+    @Override
+    public void initialize(final UID uid) {
+    }
+
+    @Override
+    public boolean isValid(final UUID uidField, final ConstraintValidatorContext cxt) {
+        if (Objects.isNull(uidField)) {
+            return false;
+        }
+        boolean isValid = uidField.toString().matches(DEFAULT_FORMAT);
+        if (!isValid) {
+            cxt.disableDefaultConstraintViolation();
+            cxt.buildConstraintViolationWithTemplate(String.format("ERROR: incorrect uid={%s} (expected format={%s})", uidField, UIDConstraintValidator.DEFAULT_FORMAT)).addConstraintViolation();
+        }
+        return isValid;
+    }
+}
+
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+import javax.validation.Constraint;
+import javax.validation.Payload;
+import javax.validation.constraints.Pattern;
+
+/**
+ *
+ * UID constraint annotation
+ *
+ * @author Alex
+ * @version 1.0.0
+ * @since 2017-08-08
+ */
+@Documented
+@Constraint(validatedBy = UIDConstraintValidator.class)
+@Target({ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.PARAMETER})
+@Retention(RetentionPolicy.RUNTIME)
+//@Pattern(regexp = UIDConstraintValidator.DEFAULT_FORMAT, message = "Invalid UID format")
+public @interface UID {
+
+    //public String value() default "";
+    public String message() default "{Default UID format: xxxx-xxxx-xxxx-xxxx}";
+    public Class<?>[] groups() default {};
+    public Class<? extends Payload>[] payload() default {};
+}
+-------------------------------------------------------------------------------------------------------
+@ZipCodeCoherenceChecker(groups = Address.HighLevelCoherence.class)
+public class Address {
+    @NotNull @Size(max = 50)
+    private String street1;
+
+    @NotNull @ZipCode
+    private String zipCode;
+
+    @NotNull @Size(max = 30)
+    private String city;
+
+    /**
+     * check coherence on the overall object
+     * Needs basic checking to be green first
+     */
+    public interface HighLevelCoherence {}
+
+    /**
+     * check both basic constraints and high level ones.
+     * high level constraints are not checked if basic constraints fail
+     */
+    @GroupSequence({Default.class, HighLevelCoherence.class})
+    public interface Complete {}
+}
+
+@GroupSequence({Address.class, HighLevelCoherence.class})
+@ZipCodeCoherenceChecker(groups = Address.HighLevelCoherence.class)
+public class Address {
+    @NotNull @Size(max = 50)
+    private String street1;
+
+    @NotNull @ZipCode
+    private String zipCode;
+
+    @NotNull @Size(max = 30)
+    private String city;
+
+    /**
+     * check coherence on the overall object
+     * Needs basic checking to be green first
+     */
+    public interface HighLevelCoherence {}
+}
+
+alpha-0277-1c062e5
+-------------------------------------------------------------------------------------------------------
 @JsonProperty
 @Field(store = Store.YES, index = Index.UN_TOKENIZED)
 @DateBridge(resolution = Resolution.SECOND)
