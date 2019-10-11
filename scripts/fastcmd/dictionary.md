@@ -22642,6 +22642,114 @@ public class AnsiOutputApplicationListener
 
 }
 --------------------------------------------------------------------------------------------------------
+$ sdk install springboot
+$ spring --version
+Spring Boot v2.1.9.RELEASE
+
+$ sdk install springboot dev /path/to/spring-boot/spring-boot-cli/target/spring-boot-cli-2.1.9.RELEASE-bin/spring-2.1.9.RELEASE/
+$ sdk default springboot dev
+$ spring --version
+Spring CLI v2.1.9.RELEASE
+
+sdk ls springboot
+
+$ brew tap pivotal/tap
+$ brew install springboot
+
+$ sudo port install spring-boot-cli
+
+> scoop bucket add extras
+> scoop install springboot
+
+<dependency>
+	<groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-properties-migrator</artifactId>
+	<scope>runtime</scope>
+</dependency>
+
+
+mn --version
+
+--------------------------------------------------------------------------------------------------------
+package com.sensiblemetrics.api.common.actuator;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.junit4.SpringRunner;
+
+import java.util.Map;
+
+import static org.assertj.core.api.BDDAssertions.then;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@TestPropertySource(properties = {"management.server.port=0"})
+public class SpringActuatorApplicationTests {
+    @LocalServerPort
+    private int port;
+
+    @Value("${local.management.port}")
+    private int mgt;
+
+    @Autowired
+    private TestRestTemplate testRestTemplate;
+
+    @Test
+    public void shouldReturn200WhenSendingRequestToController() throws Exception {
+        @SuppressWarnings("rawtypes")
+        ResponseEntity<Map> entity = this.testRestTemplate.getForEntity("http://localhost:" + this.port + "/hello", Map.class);
+        then(entity.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    public void shouldReturn200WhenSendingRequestToManagementEndpoint() throws Exception {
+        @SuppressWarnings("rawtypes")
+        ResponseEntity<Map> entity = this.testRestTemplate
+            .getForEntity("http://localhost:" + this.mgt + "/actuator/info", Map.class);
+        System.out.println(this.mgt);
+        then(entity.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+assertThat(actual, hasItem(Matchers.<YourPojo>hasProperty("id", equalTo(1L))));
+--------------------------------------------------------------------------------------------------------
+curl -X POST \
+-H "Consumer-Key: CONSUMER_KEY" \
+-H "Consumer-Token: CONSUMER_TOKEN" \
+-H "Content-Type: application/json" \
+-H "Accept: application/json" \
+-d '{"candidate": "grails", "version": "3.0.0", "hashtag": "grailsfw"}' \
+https://vendors.sdkman.io/announce/struct
+curl -X POST \
+-H "Consumer-Key: CONSUMER_KEY" \
+-H "Consumer-Token: CONSUMER_TOKEN" \
+-H "Content-Type: application/json" \
+-H "Accept: application/json" \
+-d '{"text": "SDKMAN! 2.4.0 rolling out. Broadcast and Offline checks optimised."}' \
+https://vendors.sdkman.io/announce/freeform
+curl -X PUT \
+-H "Consumer-Key: CONSUMER_KEY" \
+-H "Consumer-Token: CONSUMER_TOKEN" \
+-H "Content-Type: application/json" \
+-H "Accept: application/json" \
+-d '{"candidate": "groovy", "version": "2.3.8"}' \
+https://vendors.sdkman.io/default
+
+--------------------------------------------------------------------------------------------------------
+
+    Execute Install-Module posh-gvm
+    Execute Import-Module posh-gvm(best add it to your profile.ps1)
+    Execute gvm help to get started!
+
+--------------------------------------------------------------------------------------------------------
 <plugin>
 	<groupId>org.apache.maven.plugins</groupId>
 	<artifactId>maven-compiler-plugin</artifactId>
