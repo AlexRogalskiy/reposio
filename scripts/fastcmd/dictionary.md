@@ -22587,6 +22587,490 @@ before_install:
 after_success:
  - ./gradlew jacocoRootReport coveralls
 --------------------------------------------------------------------------------------------------------
+dist: trusty
+language: java
+install: mvn install -DskipTests=true -Dgpg.skip=true
+
+jdk:
+  - oraclejdk8
+  - openjdk11
+
+notifications:
+  email: false
+
+# whitelist
+branches:
+  only:
+    - master
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+--------------------------------------------------------------------------------------------------------
+spring.devtools.restart.log-condition-evaluation-delta=false
+spring.devtools.restart.exclude=static/**,public/**
+spring.devtools.restart.additional-paths
+
+public static void main(String[] args) {
+	System.setProperty("spring.devtools.restart.enabled", "false");
+	SpringApplication.run(MyApp.class, args);
+}
+
+https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#boot-features-external-config-typesafe-configuration-properties
+--------------------------------------------------------------------------------------------------------
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>enforce-java</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireJavaVersion>
+                  <version>[1.8,)</version>
+                  <message>[ERROR] The currently supported version of Java is 1.8 or higher</message>
+                </requireJavaVersion>
+                <requireMavenVersion>
+                  <version>[3.0,)</version>
+                  <message>[ERROR] The currently supported version of Maven is 3.0 or higher</message>
+                </requireMavenVersion>
+                <requirePluginVersions>
+                  <banLatest>true</banLatest>
+                  <banRelease>true</banRelease>
+                  <banSnapshots>true</banSnapshots>
+                  <phases>clean,deploy,site</phases>
+                  <message>[ERROR] Best Practice is to always define plugin versions!</message>
+                </requirePluginVersions>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <!-- Inherited from oss-base. Generate PackageVersion.java.-->
+        <groupId>com.google.code.maven-replacer-plugin</groupId>
+        <artifactId>replacer</artifactId>
+        <executions>
+          <execution>
+            <id>process-packageVersion</id>
+            <phase>generate-sources</phase>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.0</version>
+        <inherited>true</inherited>
+        <configuration>
+          <source>${javac.src.version}</source>
+          <target>${javac.target.version}</target>
+          <showDeprecation>true</showDeprecation>
+          <showWarnings>true</showWarnings>
+          <optimize>true</optimize>
+          <compilerArguments>
+            <Xmaxerrs>10000</Xmaxerrs>
+            <Xmaxwarns>10000</Xmaxwarns>
+            <Xlint />
+            <Werror />
+          </compilerArguments>
+        </configuration>
+      </plugin>
+    </plugins>
+--------------------------------------------------------------------------------------------------------
+/*
+		JavaUtils.INSTANCE
+			.acceptIfNotNull(KafkaHeaders.GROUP_ID, MessageConverter.getGroupId(),
+					(key, val) -> rawHeaders.put(key, val))
+			.acceptIfNotNull(KafkaHeaders.ACKNOWLEDGMENT, acknowledgment, (key, val) -> rawHeaders.put(key, val))
+			.acceptIfNotNull(KafkaHeaders.CONSUMER, consumer, (key, val) -> rawHeaders.put(key, val));
+ */
+--------------------------------------------------------------------------------------------------------
+FloatStringConverter
+--------------------------------------------------------------------------------------------------------
+//    public static void main(String[] args) {
+//        Holder<String> issue = new Holder<>("hello");
+//        Holder<Integer> issue2 = issue.map(String::length);
+//        System.out.println(issue2.element);
+//    }
+--------------------------------------------------------------------------------------------------------
+public class CustomerValidator implements Validator {
+
+    private final Validator addressValidator;
+
+    public CustomerValidator(Validator addressValidator) {
+        if (addressValidator == null) {
+            throw new IllegalArgumentException("The supplied [Validator] is " +
+                "required and must not be null.");
+        }
+        if (!addressValidator.supports(Address.class)) {
+            throw new IllegalArgumentException("The supplied [Validator] must " +
+                "support the validation of [Address] instances.");
+        }
+        this.addressValidator = addressValidator;
+    }
+
+    /**
+     * This Validator validates Customer instances, and any subclasses of Customer too
+     */
+    public boolean supports(Class clazz) {
+        return Customer.class.isAssignableFrom(clazz);
+    }
+
+    public void validate(Object target, Errors errors) {
+        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "firstName", "field.required");
+        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "surname", "field.required");
+        Customer customer = (Customer) target;
+        try {
+            errors.pushNestedPath("address");
+            ValidationUtils.invokeValidator(this.addressValidator, customer.getAddress(), errors);
+        } finally {
+            errors.popNestedPath();
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+Scanning command syntax
+Scanning Command Syntax
+
+nmap [scan types] [options] {172.16.1.1 specification}
+
+Port Specification options
+Syntax 	Example 	Description
+-P 	nmap –p 23 172.16.1.1 	Port scanning port specific port
+-P 	nmap –p 23-100 172.16.1.1 	Port scanning port specific port range
+-p 	nmap -pU:110,T:23-25,443 172.16.1.1 	U-UDP,T-TCP different port types scan
+-p- 	nmap -p- 172.16.1.1 	Port scan for all ports
+-p 	nmap -smtp,https 172.16.1.1 	Port scan from specified protocols
+-F 	nmap –F 172.16.1.1 	Fast port scan for speed up
+-P "*" 	namp -p "*" ftp 172.16.1.1 	Port scan using name
+-r 	nmap -r 172.16.1.1 	Sequential port scan
+
+ 
+Host /172.16.1.1 discovery
+Switch/Syntax 	Example 	Description
+-sL 	nmap 172.16.1.1-5 -sL 	List 172.16.1.1 without scanning
+-sn 	nmap 172.16.1.1/8 -sn 	Disable port scanning
+-Pn 	nmap 172.16.1.1-8 -Pn 	Port scans only and no host discovery
+-PS 	nmap 172.16.1.185 -PS22-25,80 	TCP SYN discovery on specified port
+-PA 	nmap 172.16.1.185 -PA22-25,80 	TCP ACK discovery on specified port
+-PU 	nmap 172.16.1.1-8 -PU53 	UDP discovery on specified port
+-PR 	nmap 172.16.1.1-1/8 -PR 	ARP discovery within local network
+-n 	nmap 172.16.1.1 -n 	no DNS resolution
+
+ 
+Nmap Port Scan types
+Switch/Syntax 	Example 	Description
+-sS 	nmap 172.16.1.1 -sS 	TCP SYN port scan
+-sT 	nmap 172.16.1.1 -sT 	TCP connect port scan
+-sA 	nmap 172.16.1.1 -sA 	TCP ACK port scan
+-sU 	nmap 172.16.1.1 -sU 	UDP port scan
+-Sf 	nmap -Sf 172.16.1.1 	TCP FIN scan
+-sX 	nmap -SX 172.16.1.1 	XMAS scan
+-Sp 	nmap -Sp 172.16.1.1 	Ping scan
+-sU 	nmap -Su 172.16.1.1 	UDP scan
+-sA 	nmap -Sa 172.16.1.1 	TCP ACK scan
+-SL 	nmap -Sl 172.16.1.1 	list scan
+
+ 
+Nmap Port Selection
+nmap 172.16.1.1 	single IP scan
+nmap 172.16.1.1 172.16.100.1 	scan specific IPs
+nmap 172.16.1.1-254 	scan a range of IPs
+nmap xyz.org 	scan a domain
+nmap 10.1.1.0/8 	scan using CIDR notation
+nmap -iL scan.txt 	scan 172.16.1.1s from a file
+nmap --exclude 172.16.1.1 	specified IP s exclude from scan
+
+ 
+Use of NMAP scripts NSE
+nmap --script= test script 172.16.1.0/24 	execute thee listed script against target IP address
+nmap --script-update-db 	adding new scripts
+nmap -sV -sC 	use of safe default scripts for scan
+nmap --script-help="Test Script" 	get help for script
+Firewall proofing
+nmap -f [172.16.1.1] 	scan fragment packets
+nmap –mtu [MTU] [172.16.1.1] 	specify MTU
+nmap -sI [zombie] [172.16.1.1] 	scan idle zoombie
+nmap –source-port [port] [172.16.1.1] 	manual source port - specify
+nmap –data-length [size] [172.16.1.1] 	randomly append data
+nmap –randomize-hosts [172.16.1.1] 	172.16.1.1 scan order randomization
+nmap –badsum [172.16.1.1] 	bad checksum
+
+ 
+NMAP output formats
+Default/normal output 	nmap -oN scan.txt 172.16.1.1
+XML 	nmap -oX scanr.xml 172.16.1.1
+Grepable format 	snmap -oG grep.txt 172.16.1.1
+All formats 	nmap -oA 172.16.1.1
+Scan options
+Syntax 	Description
+nmap -sP 172.16.1.1 	Ping scan only
+nmap -PU 172.16.1.1 	UDP ping scan
+nmap -PE 172.16.1.1 	ICMP echo ping
+nmap -PO 172.16.1.1 	IP protocol ping
+nmap -PR 172.16.1.1 	ARP ping
+nmap -Pn 172.16.1.1 	Scan without pinging
+nmap –traceroute 172.16.1.1 	Traceroute
+NMAP Timing options
+Syntax 	Description
+nmap -T0 172.16.1.1 	Slowest scan
+nmap -T1 172.16.1.1 	Tricky scan to avoid IDS
+nmap -T2 172.16.1.1 	Timely scan
+nmap -T3 172.16.1.1 	Default scan timer
+nmap -T4 172.16.1.1 	Aggressive scan
+nmap -T5 172.16.1.1 	Very aggressive scan
+--------------------------------------------------------------------------------------------------------
+public class FooBeanInfo extends SimpleBeanInfo {
+
+    public PropertyDescriptor[] getPropertyDescriptors() {
+        try {
+            final PropertyEditor numberPE = new CustomNumberEditor(Integer.class, true);
+            PropertyDescriptor ageDescriptor = new PropertyDescriptor("age", Foo.class) {
+                public PropertyEditor createPropertyEditor(Object bean) {
+                    return numberPE;
+                };
+            };
+            return new PropertyDescriptor[] { ageDescriptor };
+        }
+        catch (IntrospectionException ex) {
+            throw new Error(ex.toString());
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+final var strategy = create(IntStream.range(0, 1_000_000).mapToObj(Integer::toString).collect(toList()));
+--------------------------------------------------------------------------------------------------------
+IncompatibleModifiers
+--------------------------------------------------------------------------------------------------------
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.TypeConverter;
+import org.springframework.core.convert.ConversionService;
+
+import java.util.Objects;
+
+@RequiredArgsConstructor
+public class Converter {
+    private final ConversionService conversionService;
+    private final TypeConverter typeConverter;
+
+    public <E> E convert(final Object value, final Class<E> targetType) {
+        if (Objects.nonNull(this.conversionService)) {
+            return this.conversionService.convert(value, targetType);
+        }
+        return this.typeConverter.convertIfNecessary(value, targetType);
+    }
+}
+
+--------------------------------------------------------------------------------------------------------
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.core.convert.converter.ConverterFactory;
+
+public class ArticleToStringConverterFactory implements ConverterFactory<Article, String>{
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public  Converter<Article, T> getConverter(Class arg0) {
+		return (Converter<Article, T>)new ArticleToStringConverter();
+	}
+
+}
+
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.core.convert.converter.ConverterFactory;
+
+public class StringToArticleConverterFactory implements ConverterFactory<String, Article>{
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public  Converter<String, T> getConverter(Class arg0) {
+		return (Converter<String, T>) new StringToArticleConverter();
+	}
+}
+
+
+		GenericConversionService conversionService = new GenericConversionService();
+
+		conversionService.addConverterFactory(new ArticleToStringConverterFactory());
+		conversionService.addConverterFactory(new StringToArticleConverterFactory());
+		
+		
+--------------------------------------------------------------------------------------------------------
+public class CustomerValidator implements Validator {
+
+    private final Validator addressValidator;
+
+    public CustomerValidator(Validator addressValidator) {
+        if (addressValidator == null) {
+            throw new IllegalArgumentException("The supplied [Validator] is " +
+                "required and must not be null.");
+        }
+        if (!addressValidator.supports(Address.class)) {
+            throw new IllegalArgumentException("The supplied [Validator] must " +
+                "support the validation of [Address] instances.");
+        }
+        this.addressValidator = addressValidator;
+    }
+
+    /**
+     * This Validator validates Customer instances, and any subclasses of Customer too
+     */
+    public boolean supports(Class clazz) {
+        return Customer.class.isAssignableFrom(clazz);
+    }
+
+    public void validate(Object target, Errors errors) {
+        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "firstName", "field.required");
+        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "surname", "field.required");
+        Customer customer = (Customer) target;
+        try {
+            errors.pushNestedPath("address");
+            ValidationUtils.invokeValidator(this.addressValidator, customer.getAddress(), errors);
+        } finally {
+            errors.popNestedPath();
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@EnableWebMvc
+@Configuration
+public class WebConfig extends WebMvcConfigurerAdapter {
+
+    @Override
+    protected void addFormatters(FormatterRegistry registry) {
+        registry.addConverter(new StringToCategory());
+        registry.addConverter(new CategoryToString());
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+@Configuration
+@ComponentScan("com.XXXX")
+@EnableBatchProcessing
+@EnableScheduling
+@PropertySource("classpath:database.properties")
+@ImportResource({ "classpath:jobs/XYZ.xml"})
+public class CommonConfig {
+    @Bean
+    BatchConfigurer configurer(@Qualifier("dataSource") DataSource dataSource) {
+        return new DefaultBatchConfigurer(dataSource);
+    }
+}
+
+@Configuration
+@EnableTransactionManagement
+@ComponentScan({ "com.XXX" })
+@EnableJpaRepositories(basePackages = {"com.XX.repository", "com.XX.custom.repository"}, 
+                        entityManagerFactoryRef = "entityManagerFactory", 
+                        transactionManagerRef = "transactionManager")
+public class DatabaseConfig {
+    @Bean
+    @Primary
+    @ConfigurationProperties("abc.datasource")
+    public DataSourceProperties dataSourceProperties() {
+        return new DataSourceProperties();
+    }
+
+    @Primary
+    @Bean(name = "dataSource")
+    @ConfigurationProperties(prefix = "abc.datasource")
+    public DataSource dataSource() {
+        return dataSourceProperties().initializeDataSourceBuilder().build();
+    }
+
+    @Primary
+    @Bean(name = "entityManagerFactory")
+    public LocalContainerEntityManagerFactoryBean entityManagerFactory(@Qualifier("dataSource") DataSource dataSource) {
+
+        LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
+        em.setDataSource(dataSource);
+        em.setPackagesToScan(new String[] { "com.XX.Entity" });
+        em.setPersistenceUnitName("devcloud");
+
+        JpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
+        em.setJpaVendorAdapter(vendorAdapter);
+        return em;
+    }
+
+    @Primary
+    @Bean(name = "transactionManager")
+    public PlatformTransactionManager transactionManager(@Qualifier("entityManagerFactory") EntityManagerFactory entityManagerFactory) {
+        return new JpaTransactionManager(entityManagerFactory);
+    }
+}
+
+public class BillingConfig implements BatchConfigurer{
+
+    private PlatformTransactionManager transactionManager;
+    private JobRepository jobRepository;
+    private JobLauncher jobLauncher;
+    private JobExplorer jobExplorer;
+
+    @Override
+    public JobRepository getJobRepository() {
+        return jobRepository;
+    }
+
+    @Override
+    public PlatformTransactionManager getTransactionManager() {
+        return transactionManager;
+    }
+
+    @Override
+    public JobLauncher getJobLauncher() throws JobExecutionAlreadyRunningException, JobRestartException, JobInstanceAlreadyCompleteException, JobParametersInvalidException {
+        return jobLauncher;
+    }
+
+    @Override
+    public JobExplorer getJobExplorer() {
+        return jobExplorer;
+    }
+
+    @PostConstruct
+    void initialize() throws Exception {
+        if (this.transactionManager == null) {
+            this.transactionManager = new ResourcelessTransactionManager();
+        }
+
+        // A FactoryBean that automates the creation of a SimpleJobRepository using non-persistent in-memory DAO implementations. 
+        MapJobRepositoryFactoryBean jobRepositoryFactory = new MapJobRepositoryFactoryBean(this.transactionManager);
+        jobRepositoryFactory.afterPropertiesSet();
+        this.jobRepository = jobRepositoryFactory.getObject();
+
+        // A FactoryBean that automates the creation of a SimpleJobRepository using non-persistent in-memory DAO implementations. 
+        MapJobExplorerFactoryBean jobExplorerFactory = new MapJobExplorerFactoryBean(jobRepositoryFactory);
+        jobExplorerFactory.afterPropertiesSet();
+        this.jobExplorer = jobExplorerFactory.getObject();
+        this.jobLauncher = createJobLauncher();
+    }
+
+    private JobLauncher createJobLauncher() throws Exception {
+        SimpleJobLauncher simpleJobLauncher = new SimpleJobLauncher();
+        simpleJobLauncher.setJobRepository(jobRepository);
+        simpleJobLauncher.afterPropertiesSet();
+        return simpleJobLauncher;
+    }
+}
+
+@Bean
+BatchConfigurer configurer(@Qualifier("dataSource") DataSource dataSource, PlatformTransactionManager transactionManager) {
+    return new DefaultBatchConfigurer(dataSource) {
+        @Override
+        protected JobRepository createJobRepository() throws Exception {
+            JobRepositoryFactoryBean factory = new JobRepositoryFactoryBean();
+            factory.setDataSource(dataSource);
+            factory.setTransactionManager(transactionManager);
+            factory.setSerializer(new XStreamExecutionContextStringSerializer());
+            factory.afterPropertiesSet();
+            return factory.getObject();
+        }
+    };
+}
+--------------------------------------------------------------------------------------------------------
    @Id
     @Column(name = "id")
     @SequenceGenerator(name = "general_seq", sequenceName = "generalSequenceGenerator")
@@ -22599,6 +23083,12 @@ CustomEditorConfigurer editorConfigurer = new CustomEditorConfigurer();
 Map<String, PropertyEditor> customEditors = new HashMap<String, PropertyEditor>();
 customEditors.put(Date.class.getName(), new DateEditor());
 editorConfigurer.setCustomEditors(customEditors);
+
+   @Bean
+    public ConversionServiceFactoryBean conversionServiceFactoryBean() {
+final ConversionServiceFactoryBean conversionServiceFactoryBean = new ConversionServiceFactoryBean();
+        conversionServiceFactoryBean.ad
+    }
 --------------------------------------------------------------------------------------------------------
 <h1>Hey, there’s an SVG image below me!</h1>
 <svg viewBox="0 0 100 100">
@@ -22719,7 +23209,324 @@ public class SpringActuatorApplicationTests {
     }
 }
 --------------------------------------------------------------------------------------------------------
+public class SportTypeEditorSupport extends PropertyEditorSupport {
+ 
+    /**
+     * Sets the property value by parsing a given String.  May raise
+     * java.lang.IllegalArgumentException if either the String is
+     * badly formatted or if this kind of property can't be expressed
+     * as text.
+     *
+     * @param text  The string to be parsed.
+     */
+    @Override
+    public void setAsText(String text) throws IllegalArgumentException {
+        try{
+            SportType sportType = SportType.getSport(Integer.parseInt(text));
+            setValue(sportType);// setValue stores the custom type Object into a instance variable in PropertyEditorSupport.
+        }
+        catch(NumberFormatException nfe){
+            throw new RuntimeException(nfe.getMessage());
+        }
+    }
+ 
+     /**
+     * Gets the property value as a string suitable for presentation
+     * to a human to edit.
+     *
+     * @return The property value as a string suitable for presentation
+     *       to a human to edit.
+     * <p>   Returns "null" is the value can't be expressed as a string.
+     * <p>   If a non-null value is returned, then the PropertyEditor should
+     *       be prepared to parse that string back in setAsText().
+     */
+    @Override
+    public String getAsText() {
+        SportType sportType = (SportType)getValue();
+        return Integer.toString(sportType.getId());
+    }
+}
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+ 
+import org.springframework.beans.PropertyEditorRegistrar;
+import org.springframework.beans.PropertyEditorRegistry;
+import org.springframework.beans.propertyeditors.CustomDateEditor;
+ 
+import com.pramati.model.SportType;
+ 
+public class CustomPropertyEditorRegistrar implements PropertyEditorRegistrar {
+    @Override
+    public void registerCustomEditors(PropertyEditorRegistry registry) {
+        registry.registerCustomEditor(Date.class, new CustomDateEditor(
+                new SimpleDateFormat("dd-MM-yyyy"), true));
+        registry.registerCustomEditor(SportType.class, new SportTypeEditorSupport());
+    }
+}
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.convert.ConversionService;
+import org.springframework.validation.Validator;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.support.WebBindingInitializer;
+import org.springframework.web.context.request.WebRequest;
+ 
+public class CustomWebBindingInitializer implements WebBindingInitializer {
+    @Autowired
+    private CustomPropertyEditorRegistrar customPropertyEditorRegistrar;
+ 
+    @Override
+    public void initBinder(WebDataBinder binder, WebRequest request) {
+        customPropertyEditorRegistrar.registerCustomEditors(binder);
+    }
+}
+
+
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.convert.ConversionService;
+import org.springframework.validation.Validator;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.support.WebBindingInitializer;
+import org.springframework.web.context.request.WebRequest;
+ 
+public class CustomWebBindingInitializer implements WebBindingInitializer {
+ 
+    @Autowired
+    private ConversionService conversionService;
+ 
+    @Override
+    public void initBinder(WebDataBinder binder, WebRequest request) {
+        binder.setConversionService(conversionService);
+    }
+ 
+}
+
+@Controller
+@RequestMapping
+@SessionAttributes("reservation")
+public class ReservationFormController {
+ 
+    private ReservationService reservationService;
+    private ReservationValidator validator;
+ 
+    @Autowired
+    public ReservationFormController(ReservationService reservationService, ReservationValidator validator){
+        this.reservationService = reservationService;
+        this.validator = validator;
+    }
+ 
+    @Autowired
+    private ConversionService conversionService;
+    @InitBinder
+    protected void initBinder(ServletRequestDataBinder binder) {
+        binder.setConversionService(conversionService);
+    }
+ 
+    /*@InitBinder
+    protected void initBinder(ServletRequestDataBinder binder) {
+        binder.registerCustomEditor(Date.class, new CustomDateEditor(new SimpleDateFormat("dd-MM-yyyy"), true));
+        binder.registerCustomEditor(SportType.class, new SportTypeEditorSupport(reservationService));
+    }*/
+ 
+    /*@Autowired
+    private PropertyEditorRegistrar propertyEditorRegistrar;
+    @InitBinder
+    protected void initBinder(ServletRequestDataBinder binder) {
+        propertyEditorRegistrar.registerCustomEditors(binder);
+    }*/
+ 
+    @ModelAttribute("sportTypes")
+    public Iterable<SportType> getSportTypes(){
+        return SportType.list();
+    }
+ 
+    @RequestMapping(value="/reservationForm/{userName}", method=RequestMethod.GET)
+    public String initForm(Model model, @PathVariable String userName){
+        Reservation reservation = new Reservation();
+        reservation.setPlayer(new Player(userName, null));
+        reservation.setSportType(SportType.TENNIS);
+        model.addAttribute("reservation", reservation);
+        return "reservationForm";
+    }
+ 
+    @RequestMapping(value="/reservationForm/{userName}",method=RequestMethod.POST)
+    public String reserve(@Valid Reservation reservation, BindingResult bindingResult, SessionStatus sessionStatus){
+        validator.validate(reservation, bindingResult);
+        if(bindingResult.hasErrors()){
+            return "/reservationForm";
+        } else{
+            reservationService.make(reservation);
+            sessionStatus.setComplete();
+            return "redirect:../reservationSuccess";
+        }
+    }
+ 
+    @RequestMapping("/reservationSuccess")
+    public void success(){
+ 
+    }
+}
+
+@Configuration
+public class ConversionServiceProvider
+{
+    @Autowired
+    private MyConverterImpl myConverter;
+
+    @Bean
+    public ConversionService getConversionService()
+    {
+        ConversionServiceFactoryBean bean = new ConversionServiceFactoryBean();
+        bean.setConverters( getConverters() );
+        bean.afterPropertiesSet();
+        ConversionService object = bean.getObject();
+        return object;
+    }
+
+    private Set<Converter<?, ?>> getConverters()
+    {
+        Set<Converter<?, ?>> converters = new HashSet<Converter<?, ?>>();
+
+        converters.add( myConverter );
+        // add here more custom converters, either as spring bean references or directly instantiated
+
+        return converters;
+    }
+}
+
+public class MyFormattingConversionServiceFactoryBean extends FormattingConversionServiceFactoryBean {
+
+    private Set<?> cachedConverters = new LinkedHashSet<>();
+
+    @Override
+    public void setConverters(Set<?> converters) {
+        super.setConverters(converters);
+        this.cachedConverters = new LinkedHashSet<>(converters);
+
+    }
+
+    @Override
+    public void afterPropertiesSet() {
+        super.afterPropertiesSet();
+        FormattingConversionService conversionService = getObject();
+        for (Object converter : cachedConverters) {
+            if (converter instanceof ConversionServiceAware) {
+                ((ConversionServiceAware) converter).setConversionService(conversionService);
+            }
+        }
+    }
+}
+
+public class CustomerConversionServiceFactoryBean extends ConversionServiceFactoryBean {
+
+    List<Converter<Object, Object>> converters = new ArrayList<>();
+
+    public CustomerConversionServiceFactoryBean() {
+        super();
+
+    DefaultConversionService conversionservice = (DefaultConversionService)  super.getObject();
+
+        for(int i=0;i<converters.size();i++){
+            conversionservice.addConverter(converters.get(i));
+        }
+    }
+}
+
+Config methods may have an arbitrary name and any number of arguments; each of those arguments will be autowired with a matching bean in the Spring container. Bean property setter methods are effectively just a special case of such a general config method. Such config methods do not have to be public.
+
+    @Configuration
+    class MyConfig {
+
+    @Autowired
+    void conversionService(GenericConversionService genericConversionService) {
+        genericConversionService.addConverter(String.class, UUID.class, UUID::fromString);
+        genericConversionService.addConverter(String.class, DateTime.class, DateTime::parse);
+        genericConversionService.addConverter(String.class, EnumState.class, EnumState::valueOf);
+    }
+}
+
+<bean id="conversionService" class="org.springframework.context.support.ConversionServiceFactoryBean">
+    <property name="converters">
+        <set merge="true">
+            <bean class="my.app.OptionConverter"/>
+        </set>
+    </property>
+</bean>
+
+  <mvc:annotation-driven conversion-service="conversionService"/>
+--------------------------------------------------------------------------------------------------------
+-Dspring.devtools.restart.enabled=false
+--------------------------------------------------------------------------------------------------------
+		defaults.addAll(JodaTimeConverters.getConvertersToRegister());
+		defaults.addAll(Jsr310Converters.getConvertersToRegister());
+		defaults.addAll(ThreeTenBackPortConverters.getConvertersToRegister());
+--------------------------------------------------------------------------------------------------------
+        final String dateTimePattern = "2014-05-02-10.45.05.993280-5:00";
+        final DateTimeFormatter dateTimeFormatter = new DateTimeFormatterBuilder().appendPattern("yyyy-MM-dd-HH.mm.ss.SSSSSSZ").parseLenient().toFormatter();
+        final OffsetDateTime expected = OffsetDateTime.parse(dateTimePattern, dateTimeFormatter);
+        final byte[] source = {};
+--------------------------------------------------------------------------------------------------------
+export MAVEN_OPTS=-Xmx1024m
+--------------------------------------------------------------------------------------------------------
+$ java -Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=8000,suspend=n \
+       -jar target/myapplication-0.0.1-SNAPSHOT.jar
+--------------------------------------------------------------------------------------------------------
 assertThat(actual, hasItem(Matchers.<YourPojo>hasProperty("id", equalTo(1L))));
+--------------------------------------------------------------------------------------------------------
+//    @Bean
+//    @ConditionalOnMissingBean
+//    @ConditionalOnBean(Converter.class)
+//    @Description("Default conversion service configuration bean")
+//    public ConversionService conversionService(final List<Converter> converters) {
+//        final DefaultConversionService conversionService = new DefaultConversionService();
+//        converters.forEach(conversionService::addConverter);
+//        return conversionService;
+//    }
+--------------------------------------------------------------------------------------------------------
+        public EntityToBytesConverter() {
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+            mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+            mapper.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL);
+            mapper.setDefaultPropertyInclusion(JsonInclude.Include.NON_EMPTY);
+
+            SimpleBeanPropertyFilter theFilter = SimpleBeanPropertyFilter.serializeAllExcept("domainObject");
+            FilterProvider filters = new SimpleFilterProvider().addFilter("myEntityFilter", theFilter);
+
+            mapper.setFilters(filters);
+
+            serializer = new GenericJackson2JsonRedisSerializer(mapper);
+        }
+--------------------------------------------------------------------------------------------------------
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.context.annotation.Bean;
+
+import java.time.Duration;
+
+@TestConfiguration
+public class TestConfig {
+
+    @Bean
+    public RestTemplateBuilder restTemplateBuilder() {
+
+        return new RestTemplateBuilder()
+                .basicAuthentication("mkyong", "password")
+                .setConnectTimeout(Duration.ofSeconds(5));
+    }
+}
+--------------------------------------------------------------------------------------------------------
+configurations {
+	developmentOnly
+	runtimeClasspath {
+		extendsFrom developmentOnly
+	}
+}
+dependencies {
+	developmentOnly("org.springframework.boot:spring-boot-devtools")
+}
 --------------------------------------------------------------------------------------------------------
 curl -X POST \
 -H "Consumer-Key: CONSUMER_KEY" \
