@@ -44873,6 +44873,878 @@ from(user).innerJoin(user.groups, group)
     }
 }
 -------------------------------------------------------------------------------------------------------
+public enum TestType {
+    UNIT, INTEGRATION, ACCEPTANCE;
+}
+@Retention(RUNTIME)
+@Target(TYPE)
+public @interface Test {
+    public TestType value();
+}
+@Retention(RUNTIME)
+@Target(TYPE)
+public @interface SlowTest {}
+-------------------------------------------------------------------------------------------------------
+public class Application {
+    public static void main(String[] args) throws Exception {
+        AnnotationProcessor processor = new AnnotationProcessor();
+        processor.registerHandler(IntegrationTest.class, a -> System.out.println("Found a class annotated with @IntegrationTest"));
+        processor.registerHandler(SlowTest.class, a -> System.out.println("Found a class annotated with @SlowTest"));
+        processor.registerHandler(Test.class, a -> System.out.println("Found a class annotated with @Test(" + a.value() + ")"));
+        processor.process(SomeIntegrationTest.class);
+    }
+}
+
+In particular, Lombok includes the following contents in its META-INF/services/javax.annotation.processing.Processor file:
+
+lombok.launch.AnnotationProcessorHider$AnnotationProcessor
+lombok.launch.AnnotationProcessorHider$ClaimingProcessor
+
+
+@SuppressWarnings("deprecation")
+public @interface SuppressWarningsDeprecation
+public enum SupressWarrningsType {
+    Deprecation // And others
+}
+@SupressWarnings(SupressWarrningsType.Deprecation)
+
+@SuppressWarnings("auxiliaryclass")
+public annotation class SuppressWarningsAuxilliaryClass
+
+@SuppressWarnings("cast")
+public annotation class SuppressWarningsCast
+
+@SuppressWarnings("classfile")
+public annotation class SuppressWarningsClassFile
+
+@SuppressWarnings("dep-ann")
+public annotation class SuppressWarningsDepAnn
+
+@SuppressWarnings("deprecation")
+public annotation class SuppressWarningsDeprecation
+
+@SuppressWarnings("divzero")
+public annotation class SuppressWarningsDivZero
+
+@SuppressWarnings("empty")
+public annotation class SuppressWarningsEmpty
+
+@SuppressWarnings("fallthrough")
+public annotation class SuppressWarningsFallthrough
+
+@SuppressWarnings("finally")
+public annotation class SuppressWarningsFinally
+
+@SuppressWarnings("options")
+public annotation class SuppressWarningsOptions
+
+@SuppressWarnings("overloads")
+public annotation class SuppressWarningsOverloads
+
+@SuppressWarnings("overrides")
+public annotation class SuppressWarningsOverrides
+
+@SuppressWarnings("path")
+public annotation class SuppressWarningsPath
+
+@SuppressWarnings("processing")
+public annotation class SuppressWarningsProcessing
+
+@SuppressWarnings("rawtypes")
+public annotation class SuppressWarningsRawTypes
+
+@SuppressWarnings("serial")
+public annotation class SuppressWarningsSerial
+
+@SuppressWarnings("static")
+public annotation class SuppressWarningsStatic
+
+@SuppressWarnings("try")
+public annotation class SuppressWarningsTry
+
+@SuppressWarnings("unchecked")
+public annotation class SuppressWarningsUnchecked
+
+@SuppressWarnings("varargs")
+public annotation class SuppressWarningsVarargs
+
+@SuppressWarningsAuxilliaryClass
+@SuppressWarningsCast
+@SuppressWarningsClassFile
+@SuppressWarningsDepAnn
+@SuppressWarningsDeprecation
+@SuppressWarningsDivZero
+@SuppressWarningsEmpty
+@SuppressWarningsFallthrough
+@SuppressWarningsFinally
+@SuppressWarningsOptions
+@SuppressWarningsOverloads
+@SuppressWarningsOverrides
+@SuppressWarningsPath
+@SuppressWarningsProcessing
+@SuppressWarningsRawTypes
+@SuppressWarningsSerial
+@SuppressWarningsStatic
+@SuppressWarningsTry
+@SuppressWarningsUnchecked
+@SuppressWarningsVarargs
+public annotation class SuppressWarningsAll
+
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>ch.frankel</groupId>
+    <artifactId>safe-annotations</artifactId>
+    <version>1.0.1-SNAPSHOT</version>
+    <developers>
+        <developer>
+            <name>Nicolas Fränkel</name>
+            <email>nicolas@frankel.ch</email>
+        </developer>
+    </developers>
+    <properties>
+        <kotlin.version>1.0.3</kotlin.version>
+    </properties>
+    <build>
+        <sourceDirectory>src/main/kotlin</sourceDirectory>
+        <testSourceDirectory>src/test/kotlin</testSourceDirectory>
+        <plugins>
+            <plugin>
+                <artifactId>kotlin-maven-plugin</artifactId>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <version>${kotlin.version}</version>
+                <executions>
+                    <execution>
+                        <id>compile</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>test-compile</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>test-compile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+    <scm>
+        <connection>scm:git:https://github.com/nfrankel/safe-annotations.git</connection>
+        <developerConnection>scm:git:git@github.com:nfrankel/safe-annotations.git</developerConnection>
+        <url>https://github.com/nfrankel/safe-annotations.git</url>
+        <tag>HEAD</tag>
+    </scm>
+    <distributionManagement>
+        <repository>
+            <id>bintray-nfrankel-maven</id>
+            <url>https://api.bintray.com/maven/nfrankel/maven/safe-annotations;publish=1</url>
+        </repository>
+    </distributionManagement>
+</project>
+-------------------------------------------------------------------------------------------------------
+
+@CrossOrigin(maxAge = 3600)
+@RestController
+@RequestMapping("/account")
+public class AccountController {
+    @CrossOrigin(origins = "http://example.com")
+    @RequestMapping("/message")
+    public Message getMessage() {
+        // ...
+    }
+    @RequestMapping("/note")
+    public Note getNote() {
+        // ...
+    }
+}
+
+@ModelAttribute("person")
+public Person getPerson() {}
+// within the same controller as above snippet
+@Controller
+@SeesionAttributes(value = "person", types = {
+    Person.class
+})
+public class PersonController {}
+
+
+@Repeat(10)
+@Test
+public void testProcessRepeatedly() {  ... }
+
+
+@Timed(millis=10000)
+public void testLongRunningProcess() {  ... }
+
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+@EnableAutoConfiguration
+@EnableJpaAuditing
+@EnableJpaRepositories(basePackages = {"com.BusinessEntityManagementSystem"})
+@EntityScan(basePackages = {"com.BusinessEntityManagementSystem"})
+@ComponentScan(basePackages = {"com.BusinessEntityManagementSystem"})
+@Configuration
+public class BusinessEntityManagementApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(BusinessEntityManagementApplication.class, args);
+    }
+}
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.BusinessEntityManagementSystem.interfaces.models.IBusinessEntityModel;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+import javax.persistence.*;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
+@Entity
+@Table(name="BEMS_BusinessEntity")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+public class BusinessEntityModel<IAddressModel extends AddressModel, IPartnerModel extends PartnerModel, IStoreModel extends StoreModel, IAffiliatedCompanyModel extends AffiliatedCompanyModel, IEconomicActivityCodeModel extends EconomicActivityCodeModel> extends AuditModel<String> implements IBusinessEntityModel, Serializable {
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @NotNull
+    @Column(name = "ID_BusinessEntity", updatable = false, nullable = false)
+    private long id;
+...
+@OverrideAutoConfiguration(enabled=true)
+
+/**
+ * Annotation that can be used to override
+ * {@link EnableAutoConfiguration @EnableAutoConfiguration}. Often used in combination
+ * with {@link ImportAutoConfiguration} to limit the auto-configuration classes that are
+ * loaded.
+ *
+ * @author Phillip Webb
+ * @since 1.4.0
+ * @see EnableAutoConfiguration#ENABLED_OVERRIDE_PROPERTY
+ */
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface OverrideAutoConfiguration {
+
+	/**
+	 * The value of the {@link EnableAutoConfiguration#ENABLED_OVERRIDE_PROPERTY enabled
+	 * override property}.
+	 * @return the override value
+	 */
+	boolean enabled();
+
+}
+
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties="spring.
+
+spring.datasource.initialize=false
+JAVA_OPTS="-Dspring.profiles.active=production"
+-------------------------------------------------------------------------------------------------------
+mport static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+import java.io.IOException;
+import java.util.List;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.web.client.RestTemplate;
+import static org.assertj.core.api.Assertions.assertThat;
+import com.mgiglione.model.Manga;
+import com.mgiglione.model.MangaResult;
+import com.mgiglione.service.MangaService;
+import com.mgiglione.utils.JsonUtils;
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class MangaServiceUnitTest {
+    @Autowired
+    private MangaService mangaService;
+    // MockBean is the annotation provided by Spring that wraps mockito one
+    // Annotation that can be used to add mocks to a Spring ApplicationContext.
+    // If any existing single bean of the same type defined in the context will be replaced by the mock, if no existing bean is defined a new one will be added.
+    @MockBean
+    private RestTemplate template;
+    @Test
+    public void testGetMangasByTitle() throws IOException {
+        // Parsing mock file
+        MangaResult mRs = JsonUtils.jsonFile2Object("ken.json", MangaResult.class);
+        // Mocking remote service
+        when(template.getForEntity(any(String.class), any(Class.class))).thenReturn(new ResponseEntity(mRs, HttpStatus.OK));
+        // I search for goku but system will use mocked response containing only ken, so I can check that mock is used.
+        List<Manga> mangasByTitle = mangaService.getMangasByTitle("goku");
+        assertThat(mangasByTitle).isNotNull()
+            .isNotEmpty()
+            .allMatch(p -> p.getTitle()
+                .toLowerCase()
+                .contains("ken"));
+    }
+}
+-------------------------------------------------------------------------------------------------------
+	public static void main(String[] args) throws Exception {
+		SpringApplication app = new SpringApplication(SampleSimpleApplication.class);
+		app.addInitializers(
+				new ApplicationContextInitializer<ConfigurableApplicationContext>() {
+
+					@Override
+					public void initialize(
+							ConfigurableApplicationContext applicationContext) {
+						applicationContext.getBeanFactory().registerSingleton(
+								"mytypefilter", new TypeExcludeFilter() {
+
+							@Override
+							public boolean match(MetadataReader metadataReader,
+									MetadataReaderFactory metadataReaderFactory)
+											throws IOException {
+								System.err.println(
+										metadataReader.getClassMetadata().getClassName());
+								return false;
+							}
+
+						});
+					}
+
+				});
+		app.run(args);
+	}
+	
+	Spring Boot
+Java
+Software Craft
+Book Reviews
+Meta
+SPRING BOOT
+Integration Tests with @SpringBootTest
+With the @SpringBootTest annotation, Spring Boot provides a convenient way to start up an application context to be used in a test. In this tutorial, we’ll discuss when to use @SpringBootTest and when to better use other tools for testing. We’ll also look into different ways to customize the application context and how to reduce test runtime.
+
+ Code Example
+This article is accompanied by working example code on GitHub.
+
+The “Testing with Spring Boot” Series
+This tutorial is part of a series:
+
+Unit Testing with Spring Boot
+Testing Spring MVC Web Controllers with @WebMvcTest
+Testing JPA Queries with @DataJpaTest
+Integration Tests with @SpringBootTest
+Dependencies
+The code examples in this article only need the dependencies to Spring Boot’s test starter and to JUnit Jupiter:
+
+dependencies {
+	testCompile('org.springframework.boot:spring-boot-starter-test')
+	testCompile('org.junit.jupiter:junit-jupiter:5.4.0')
+}
+Integration Tests vs. Unit Tests
+Before we start into integration tests with Spring Boot, let’s define what sets an integration test apart from a unit test.
+
+A unit test covers a single “unit”, where a unit commonly is a single class, but can also be a cluster of cohesive classes that is tested in combination.
+
+An integration test can be any of the following:
+
+a test that covers multiple “units”. It tests the interaction between two or more clusters of cohesive classes.
+a test that covers multiple layers. This is actually a specialization of the first case and might cover the interaction between a business service and the persistence layer, for instance.
+a test that covers the whole path through the application. In these tests, we send a request to the application and check that it responds correctly and has changed the database state according to our expectations.
+Spring Boot provides the @SpringBootTest annotation which we can use to create an application context containing all the objects we need for all of the above test types. Note, however, that overusing @SpringBootTest might lead to very long-running test suites.
+
+So, for simple tests that cover multiple units we should rather create plain tests, very similar to unit tests, in which we manually create the object graph needed for the test and mock away the rest. This way, Spring doesn’t fire up a whole application context each time the test is started.
+
+For tests that cover integration with the web layer or persistence layer, we can use @WebMvcTest or @DataJpaTest instead. For integration with other layers, have a look at Spring Boot’s other test slice annotations. Note that these test slices will also take some time to boot up, though.
+
+Finally, for tests that cover the whole Spring Boot application from incoming request to database, or tests that cover certain parts of the application that are hard to set up manually, we can and should use @SpringBootTest.
+
+Creating an ApplicationContext with @SpringBootTest
+@SpringBootTest by default starts searching in the current package of the test class and then searches upwards through the package structure, looking for a class annotated with @SpringBootConfiguration from which it then reads the configuration to create an application context. This class is usually our main application class since the @SpringBootApplication annotation includes the @SpringBootConfiguration annotation. It then creates an application context very similar to the one that would be started in a production environment.
+
+We can customize this application context in many different ways, as described in the next section.
+
+Because we have a full application context, including web controllers, Spring Data repositories, and data sources, @SpringBootTest is very convenient for integration tests that go through all layers of the application:
+
+@ExtendWith(SpringExtension.class)
+@SpringBootTest
+@AutoConfigureMockMvc
+class RegisterUseCaseIntegrationTest {
+
+  @Autowired
+  private MockMvc mockMvc;
+
+  @Autowired
+  private ObjectMapper objectMapper;
+
+  @Autowired
+  private UserRepository userRepository;
+
+  @Test
+  void registrationWorksThroughAllLayers() throws Exception {
+    UserResource user = new UserResource("Zaphod", "zaphod@galaxy.net");
+
+    mockMvc.perform(post("/forums/{forumId}/register", 42L)
+            .contentType("application/json")
+            .param("sendWelcomeMail", "true")
+            .content(objectMapper.writeValueAsString(user)))
+            .andExpect(status().isOk());
+
+    UserEntity userEntity = userRepository.findByName("Zaphod");
+    assertThat(userEntity.getEmail()).isEqualTo("zaphod@galaxy.net");
+  }
+
+}
+@ExtendWith
+The code examples in this tutorial use the @ExtendWith annotation to tell JUnit 5 to enable Spring support. As of Spring Boot 2.1, we no longer need to load the SpringExtension because it's included as a meta annotation in the Spring Boot test annotations like @DataJpaTest, @WebMvcTest, and @SpringBootTest.
+
+Here, we additionally use @AutoConfigureMockMvc to add a MockMvc instance to the application context.
+
+We use this MockMvc object to perform a POST request to our application and to verify that it responds as expected.
+
+We then use the UserRepository from the application context to verify that the request has lead to an expected change in the state of the database.
+
+Customizing the Application Context
+We can turn a lot of knobs to customize the application context created by @SpringBootTest. Let’s see which options we have.
+
+Caution when Customizing the Application Context
+Each customization of the application context is one more thing that makes it different from the "real" application context that is started up in a production setting. So, in order to make our tests as close to production as we can, we should only customize what's really necessary to get the tests running!
+
+Adding Auto-Configurations
+Above, we’ve already seen an auto-configuration in action:
+
+@SpringBootTest
+@AutoConfigureMockMvc
+class RegisterUseCaseIntegrationTest {
+  ...
+}
+There’s a lot of other auto-configurations available that each add other beans to the application context.
+
+Setting Custom Configuration Properties
+Often, in tests it’s necessary to set some configuration properties to a value that’s different from the value in a production setting:
+
+@SpringBootTest(properties = "foo=bar")
+class SpringBootPropertiesTest {
+
+  @Value("${foo}")
+  String foo;
+
+  @Test
+  void test(){
+    assertThat(foo).isEqualTo("bar");
+  }
+}
+If the property foo exists in the default setting, it will be overridden by the value bar for this test.
+
+Externalizing Properties with @ActiveProfiles
+If many of our tests need the same set of properties, we can create a configuration file application-<profile>.properties or application-<profile>.yml and load the properties from that file by activating a certain profile:
+
+# application-test.yml
+foo: bar
+@SpringBootTest
+@ActiveProfiles("test")
+class SpringBootProfileTest {
+
+  @Value("${foo}")
+  String foo;
+
+  @Test
+  void test(){
+    assertThat(foo).isEqualTo("bar");
+  }
+}
+Setting Custom Properties with @TestPropertySource
+Another way to customize a whole set of properties is with the @TestPropertySource annotation:
+
+# src/test/resources/foo.properties
+foo=bar
+@SpringBootTest
+@TestPropertySource(locations = "/foo.properties")
+class SpringBootPropertySourceTest {
+
+  @Value("${foo}")
+  String foo;
+
+  @Test
+  void test(){
+    assertThat(foo).isEqualTo("bar");
+  }
+}
+All properties from the foo.properties file are loaded into the application context. @TestPropertySource also to configure a lot more.
+
+Injecting Mocks with @MockBean
+If we only want to test a certain part of the application instead of the whole path from incoming request to database, we can replace certain beans in the application context by using @MockBean:
+
+@SpringBootTest
+class MockBeanTest {
+
+  @MockBean
+  private UserRepository userRepository;
+
+  @Autowired
+  private RegisterUseCase registerUseCase;
+
+  @Test
+  void testRegister(){
+    // given
+    User user = new User("Zaphod", "zaphod@galaxy.net");
+    boolean sendWelcomeMail = true;
+    given(userRepository.save(any(UserEntity.class))).willReturn(userEntity(1L));
+
+    // when
+    Long userId = registerUseCase.registerUser(user, sendWelcomeMail);
+
+    // then
+    assertThat(userId).isEqualTo(1L);
+  }
+  
+}
+In this case, we have replaced the UserRepository bean with a mock. Using Mockito’s when method, we have specified the expected behavior for this mock in order to test a class that uses this repository.
+
+You can read more about the @MockBean annotation in my article about mocking.
+
+Adding Beans with @Import
+If certain beans are not included in the default application context, but we need them in a test, we can import them using the @Import annotation:
+
+package other.namespace;
+
+@Component
+public class Foo {
+}
+@SpringBootTest
+@Import(other.namespace.Foo.class)
+class SpringBootImportTest {
+
+  @Autowired
+  Foo foo;
+
+  @Test
+  void test() {
+    assertThat(foo).isNotNull();
+  }
+}
+By default, a Spring Boot application includes all components it finds within its package and sub-packages, so this will usually only be needed if we want to include beans from other packages.
+
+Creating a Custom @SpringBootApplication
+We can even create a whole custom Spring Boot application to start up in tests. If this application class is in the same package as the real application class, but in the test sources rather than the production sources, @SpringBootTest will find it before the actual application class and load the application context from this application instead.
+
+Alternatively, we can tell Spring Boot which application class to use to create an application context:
+
+@SpringBootTest(classes = CustomApplication.class)
+class CustomApplicationTest {
+
+}
+When doing this, however, we’re testing an application context that may be completely different from the production environment, so this should be a last resort only when the production application cannot be started in a test environment. Usually, there are better ways, though, such as to make the real application context configurable to exclude beans that won’t start in a test environment. Let’s look at this in an example.
+
+Let’s say we use the @EnableScheduling annotation on our application class. Each time the application context is started (even in tests), all @Scheduled jobs will be started and may conflict with our tests. We usually don’t want the jobs to run in tests, so we can create a second application class without the @EnabledScheduling annotation and use this in the tests. However, the better solution would be to create a configuration class that can be toggled with a property:
+
+@Configuration
+@EnableScheduling
+@ConditionalOnProperty(
+        name = "io.reflectoring.scheduling.enabled",
+        havingValue = "true",
+        matchIfMissing = true)
+public class SchedulingConfiguration {
+}@SpringBootTest(properties = "io.reflectoring.scheduling.enabled=false")
+class SchedulingTest {
+
+  @Autowired(required = false)
+  private SchedulingConfiguration schedulingConfiguration;
+
+  @Test
+  void test() {
+    assertThat(schedulingConfiguration).isNull();
+  }
+}
+
+
+import com.fasterxml.jackson.annotation.JsonGetter;
+public class GetterDemoBean {
+    public long personId = 123L;
+    public String  personName = "James Clark";
+    @JsonGetter(value = "person-id")
+    public long getPersonId() {
+        return personId;
+    }
+    @JsonGetter(value = "person-name")
+    public String getPersonName() {
+        return personName;
+    }
+}
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import java.util.HashMap;
+import java.util.Map;
+public class AnyGetterDemoBean {
+    public long personId = 123L;
+    public String  personName = "James Clark";
+    private Map<String, String> properties = new HashMap<String, String>();
+    @JsonAnyGetter
+    public Map<String, String> getProperties() {
+        return properties;
+    }
+}
+
+
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import guru.springframework.blog.jsonannotation.domain.custom.CustomDateSerializer;
+import java.util.Date;
+public class SerializeDemoBean {
+    public long personId = 123L;
+    public String  name = "James Clark";
+    @JsonSerialize(using = CustomDateSerializer.class)
+    public Date activeDate;
+    public void setActiveDate(Date activeDate) {
+        this.activeDate = activeDate;
+    }
+}
+
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+public class CustomDateSerializer extends StdSerializer<Date>{
+    private static SimpleDateFormat simpleDateFormat =
+            new SimpleDateFormat("dd-MM-yyyy hh:mm:ss");
+    public CustomDateSerializer(){
+        this(null);
+    }
+    public CustomDateSerializer(Class<Date> t) {
+        super(t);
+    }
+    @Override
+    public void serialize(Date date, JsonGenerator jsonGenerator,
+                          SerializerProvider serializerProvider) throws IOException {
+        jsonGenerator.writeString(simpleDateFormat.format(date));
+    }
+}
+-------------------------------------------------------------------------------------------------------
+//pom.xml
+ 
+<properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
+    <junit.jupiter.version>5.5.2</junit.jupiter.version>
+    <junit.platform.version>1.5.2</junit.platform.version>
+</properties>
+<dependencies>
+    <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-engine</artifactId>
+        <version>${junit.jupiter.version}</version>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.junit.platform</groupId>
+        <artifactId>junit-platform-runner</artifactId>
+        <version>${junit.platform.version}</version>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
+ 
+//build.gradle
+ 
+testRuntime("org.junit.jupiter:junit-jupiter-engine:5.5.2")
+testRuntime("org.junit.platform:junit-platform-runner:1.5.2")
+-------------------------------------------------------------------------------------------------------
+
+public List<User> findAll(List<String> userIds) {
+    return userIds.stream()
+        .map(userRepository::findById)
+        .flatMap(Optional::stream)
+        .collect(Collectors.toList());
+}
+
+var user : User = null // does not compile, user is non-nullable
+var nullableUser : User? = null // declares and assigns null to nullableUser
+val name = nullableUser.name // does not compile. Either use  '?.' or '!!'
+var lastName = nullableUser?.lastName // returns null since  nullableUser is null
+val email = nullableUser!!email // compiles, but throws NullPointerException on runtime
+lastName = nullableUser?.lastName ?: "" // returns an empty string.
+
+@IncludePackages and @ExcludePackages to filter packages
+@IncludeClassNamePatterns and @ExcludeClassNamePatterns to filter test classes
+@IncludeTags and @ExcludeTags to filter test methods
+-------------------------------------------------------------------------------------------------------
+@XmlRootElement(name = "employee")
+@XmlAccessorType(XmlAccessType.NONE)
+public class EmployeeVO extends ResourceSupport implements Serializable
+{
+    //rest all code is same
+}
+ 
+//...
+ 
+@XmlRootElement (name="employees")
+public class EmployeeListVO extends ResourceSupport implements Serializable
+{
+    //rest all code is same
+}
+ 
+//...
+ 
+@XmlRootElement(name="employee-report")
+public class EmployeeReport extends ResourceSupport implements Serializable {
+ 
+    //rest all code is same
+}
+-------------------------------------------------------------------------------------------------------
+#!/bin/bash
+
+# mappings for Ctrl-left-arrow and Ctrl-right-arrow for word moving
+bindkey '^[^[[C' forward-word
+bindkey '^[^[[D' backward-word
+
+ZDOTDIR=$_OLD_ZDOTDIR
+
+if [ -n "$JEDITERM_USER_RCFILE" ]
+then
+  source "$JEDITERM_USER_RCFILE"
+  unset JEDITERM_USER_RCFILE
+fi
+
+if [ -n "$ZDOTDIR" ]
+then
+  DOTDIR=$ZDOTDIR
+else
+  DOTDIR=$HOME
+fi
+
+if [ -f "$DOTDIR/.zshenv" ]; then
+     source "$DOTDIR/.zshenv"
+fi
+
+if [ -n $LOGIN_SHELL ]; then
+  if [ -f "$DOTDIR/.zprofile" ]; then
+       source "$DOTDIR/.zprofile"
+  fi
+fi
+
+if [ -f "$DOTDIR/.zshrc" ]; then
+     source "$DOTDIR/.zshrc"
+fi
+
+if [ -n $LOGIN_SHELL ]; then
+  if [ -f "$DOTDIR/.zlogin" ]; then
+       source "$DOTDIR/.zlogin"
+  fi
+fi
+
+if [ -n "$JEDITERM_SOURCE" ]
+then
+  source $(echo $JEDITERM_SOURCE) $JEDITERM_SOURCE_ARGS
+  unset JEDITERM_SOURCE
+  unset JEDITERM_SOURCE_ARGS
+fi
+
+function override_jb_variables {
+  env | while IFS="=" read NAME VALUE
+  do
+    if [[ $NAME = '_INTELLIJ_FORCE_SET_'* ]]
+    then
+      NEW_NAME=${NAME:20}
+      if [ -n "$NEW_NAME" ]
+      then
+        export "$NEW_NAME"="$VALUE"
+      fi
+    fi
+  done
+}
+
+override_jb_variables
+-------------------------------------------------------------------------------------------------------
+SELECT 1 FROM pg_constraint WHERE conname = 'constraint_name'"
+-------------------------------------------------------------------------------------------------------
+package source; 
+// A Java program to demonstrate user defined annotations 
+import java.lang.annotation.Documented; 
+import java.lang.annotation.Retention; 
+import java.lang.annotation.RetentionPolicy; 
+  
+// user-defined annotation 
+@Documented
+@Retention(RetentionPolicy.RUNTIME) 
+@ interface TestAnnotation 
+{ 
+    String Developer() default "Rahul";  
+    String Expirydate(); 
+} 
+-------------------------------------------------------------------------------------------------------
+
+@Retention(RetentionPolicy.RUNTIME)
+@Repeatable(Demos.class)
+public @interface Demo {
+    String value() default "";
+}
+
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Demos {
+    Demo[] value();
+}
+
+@Repeatable(Role.List.class)
+@Target({ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Role {
+    String value();
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target({ElementType.TYPE})
+    @interface List {
+        Role[] value();
+    }
+}
+
+
+
+-------------------------------------------------------------------------------------------------------
+Something went wrong with the install.
+
+You can troubleshoot the package failures by:
+
+    1. Search for solutions using the search URL below for each package failure
+    2. Modify your selections for the affected workloads or components and then retry the installation
+    3. Remove the product from your machine and then install again
+
+If the issue has already been reported on the Developer Community, you can find solutions or workarounds there. If the issue has not been reported, we encourage you to create a new issue so that other developers will be able to find solutions or workarounds. You can create a new issue from within the Visual Studio Installer in the upper-right hand corner using the "Provide feedback" button.
+https://dotnet.microsoft.com/download/dotnet-core/2.2
+================================================================================
+https://nuget.paragon-software.com/
+https://nuget.paragon-software.com/nuget/Prerelease/
+https://proget.paragon-software.com/maven2/Maven
+
+Package 'Microsoft.VisualStudio.MinShell.Msi.Resources,version=16.0.28329.73,language=en-US' failed to install.
+    Search URL
+        https://aka.ms/VSSetupErrorReports?q=PackageId=Microsoft.VisualStudio.MinShell.Msi.Resources;PackageAction=Install;ReturnCode=1603
+    Details
+        MSI: C:\ProgramData\Microsoft\VisualStudio\Packages\Microsoft.VisualStudio.MinShell.Msi.Resources,version=16.0.28329.73,language=en-US\Microsoft.VisualStudio.MinShell.Msi.Resources.msi, Properties:  REBOOT=ReallySuppress ARPSYSTEMCOMPONENT=1  MSIFASTINSTALL="7"  VSEXTUI="1" 
+        Return code: 1603
+        Return code details: Fatal error during installation.
+    Log
+        C:\Users\rogalski\AppData\Local\Temp\dd_setup_20191014175343_001_Microsoft.VisualStudio.MinShell.Msi.Resources.log
+    Impacted workloads
+        Visual Studio core editor (Microsoft.VisualStudio.Workload.CoreEditor,version=16.0.28315.86)
+    Impacted components
+        Visual Studio core editor (Microsoft.VisualStudio.Component.CoreEditor,version=16.1.28811.260)
+
+"C:\WINDOWS\system32\vsjitdebugger.exe" -p %ld -e %ld
+"C:\WINDOWS\system32\vsjitdebugger.exe" -p %ld -e %ld
+C:\Users\rogalski\.Rider2019.2\system\log\SolutionBuilder
+
+-------------------------------------------------------------------------------------------------------
+msbuild build\paragon.build.proj /t:GenerateDocumentation
+nuget install docfx.console -o .build\docfx -x
+.build\docfx\docfx.console\tools\docfx.exe doc\default\docfx.json --intermediateFolder .build\obj\docfx\.cache
+-------------------------------------------------------------------------------------------------------
     /**
      * Returns {@link FileEntity} by input {@link FileSearchParameters} parameters
      *
