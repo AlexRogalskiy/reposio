@@ -45742,6 +45742,112 @@ public @interface OverrideAutoConfiguration {
 spring.datasource.initialize=false
 JAVA_OPTS="-Dspring.profiles.active=production"
 -------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.context.support.MessageSourceAccessor;
+import org.springframework.stereotype.Component;
+
+import javax.annotation.PostConstruct;
+import java.util.Locale;
+
+/**
+ * Helper to simplify accessing i18n messages in code.
+ * 
+ * This finds messages automatically found from src/main/resources (files named messages_*.properties)
+ * 
+ * This example uses hard-coded English locale.
+ *
+ * @author Joni Karppinen
+ * @since 2015-11-02
+ */
+@Component
+public class Messages {
+
+    @Autowired
+    private MessageSource messageSource;
+
+    private MessageSourceAccessor accessor;
+
+    @PostConstruct
+    private void init() {
+        accessor = new MessageSourceAccessor(messageSource, Locale.ENGLISH);
+    }
+
+    public String get(String code) {
+        return accessor.getMessage(code);
+    }
+
+}
+-------------------------------------------------------------------------------------------------------
+//    /**
+//     * Returns {@link BeanFactoryPostProcessor} instance
+//     *
+//     * @return {@link BeanFactoryPostProcessor} instance
+//     */
+//    @Bean
+//    @ConditionalOnMissingBean
+//    @ConditionalOnClass(EnumAutowiringBeanFactoryPostProcessor.class)
+//    @Description("Kafka enum autowiring factory bean")
+//    public BeanFactoryPostProcessor postProcessor() {
+//        return new EnumAutowiringBeanFactoryPostProcessor(
+//            KafkaConsumerAutoOffsetResetType.class,
+//            KafkaProducerAcknowledgementType.class,
+//            KafkaProducerCompressionType.class
+//        );
+//    }
+-------------------------------------------------------------------------------------------------------
+@Configuration
+public class RetryTemplateBeanPostProcessor implements BeanPostProcessor {
+    /**
+     * Default retry bean name
+     */
+    private static final String DEFAULT_RETRY_TEMPLATE_BEAN_NAME = "retryTemplate";
+
+    /**
+     * @see BeanPostProcessor
+     */
+    @Nullable
+    @Override
+    public Object postProcessAfterInitialization(@NonNull final Object bean, @NonNull final String beanName) {
+        if (equalsIgnoreCase(beanName, DEFAULT_RETRY_TEMPLATE_BEAN_NAME) && isAssignable(bean.getClass(), RetryTemplate.class)) {
+            ((RetryTemplate) bean).setThrowLastExceptionOnExhausted(true);
+        }
+        return bean;
+    }
+}
+-------------------------------------------------------------------------------------------------------
+buildscript {
+	 ext {
+		springBootVersion = '1.5.9.RELEASE'
+	 }
+	 
+    repositories {
+		mavenLocal()
+        mavenCentral()
+    }
+	
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'org.springframework.boot'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+ mavenLocal()
+    mavenCentral()
+}
+
+dependencies {
+	compile("org.springframework.boot:spring-boot-starter-web:${springBootVersion}")
+	compile('org.apache.tomcat.embed:tomcat-embed-jasper:8.5.14')
+    compile('javax.servlet:jstl:1.2')
+}
+-------------------------------------------------------------------------------------------------------
 mport static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import java.io.IOException;
