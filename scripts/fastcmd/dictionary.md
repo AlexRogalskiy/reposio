@@ -21743,6 +21743,217 @@ function setWaitingNextInput() {
 
 }
 --------------------------------------------------------------------------------------------------------
+about:about	Provides an overview of all about: pages available for your current Firefox version
+about:addons	Add-ons Manager
+about:buildconfig	Displays the configuration and platform used to build Firefox
+about:cache	Displays information about the memory, disk, and appcache
+about:checkerboard	Switches to the checkerboarding measurement page, which allows to detect checkerboarding issues
+about:config	Provides a way to inspect and change Firefox preferences and settings
+about:compat	Lists overriding site compatability fixes, linked to specific bug issues.
+about:crashes	Lists all crashes, which happened during the runtime of Firefox (in case the user enabled the crash reporter)
+about:credits	Lists all contributors to the Firefox project
+about:debugging	Switches to the Developer Tools debugging page, which allows you to debug add-ons, tabs and Service Workers
+about:devtools	Summarizes the developer tools and provides links to documentation for each tool
+about:downloads	Displays all downloads done within Firefox
+about:home	Start page of Firefox when opening a new window
+about:license	Displays licensing information
+about:logo	Firefox logo
+about:memory	Provides a way to display memory usage, save it as report and run the GC and CC
+about:mozilla	Special page showing a message from "The Book of Mozilla"
+about:networking	Displays networking information
+about:newtab	Start page when opening a new tab
+about:performance	Displays memory and performance information about Firefox subprocesses/add-ons/tabs
+about:plugins	Displays information about installed plugins
+about:policies	Lists out the Firefox for Enterprise policies
+about:preferences	Firefox settings (also available through Firefox menu > Options)
+about:privatebrowsing	Start page when opening a private window
+about:profiles	Display and manage Firefox profiles
+about:restartrequired	A page users are sent to when Firefox requires a restart due to an update
+about:reader	Indicates a web page has Firefox Reader View turned on. See Firefox Reader View for clutter-free web pages
+about:rights	Displays rights information
+about:robots	Special page showing notes about robots
+about:serviceworkers	Displays currently running Service Workers
+about:studies	Lists the Shield Studies that are installed
+about:sessionrestore	Session restoration (displayed after a Firefox crash)
+about:support	Troubleshooting information (also available through Firefox menu > ? (question mark) > Troubleshooting Information)
+about:sync-log	Displays a synchronization protocol related to the Sync feature
+about:telemetry	Displays telemetry data collected and sent to Mozilla while Firefox is running (in case the user enabled telemetry)
+about:url-classifier	Displays the status of the URL Classifier services that Firefox uses (for example for Safe Browsing)
+about:webrtc	Information about WebRTC usage
+about:welcome	Page first displayed when Firefox is installed
+about:welcomeback	Information page displayed after Firefox is reset
+--------------------------------------------------------------------------------------------------------
+/*
+@EnableWebMvc
+@Configuration
+@ComponentScan({ "com.baeldung.web" })
+public class WebConfig implements WebMvcConfigurer {
+
+    @Override
+    public void configureMessageConverters(
+      List<HttpMessageConverter<?>> converters) {
+
+        messageConverters.add(createXmlHttpMessageConverter());
+        messageConverters.add(new MappingJackson2HttpMessageConverter());
+    }
+    private HttpMessageConverter<Object> createXmlHttpMessageConverter() {
+        MarshallingHttpMessageConverter xmlConverter =
+          new MarshallingHttpMessageConverter();
+
+        XStreamMarshaller xstreamMarshaller = new XStreamMarshaller();
+        xmlConverter.setMarshaller(xstreamMarshaller);
+        xmlConverter.setUnmarshaller(xstreamMarshaller);
+
+        return xmlConverter;
+    }
+}
+ */
+--------------------------------------------------------------------------------------------------------
+/**
+ * Event model entity
+ */
+@Data
+@EqualsAndHashCode
+@ToString
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "event")
+@JsonSubTypes({
+    @JsonSubTypes.Type(value = RankEvent.class, name = "rank"),
+    @JsonSubTypes.Type(value = GenerateEvent.class, name = "generate")
+})
+public class Event {
+
+    /**
+     * Default task identifier
+     */
+    private Long id;
+    /**
+     * Task name
+     */
+    private String name;
+}
+--------------------------------------------------------------------------------------------------------
+@ConfigurationProperties("app.acme")
+public class AcmeProperties {
+
+	private String name;
+
+	public String getName() { ... }
+
+	public void setName(String name) { ... }
+
+	@DeprecatedConfigurationProperty(replacement = "app.acme.name")
+	@Deprecated
+	public String getTarget() {
+		return getName();
+	}
+
+	@Deprecated
+	public void setTarget(String target) {
+		setName(target);
+	}
+}
+
+org.apache.kafka.common.serialization.Serdes.StringSerde
+--------------------------------------------------------------------------------------------------------
+//import org.springframework.beans.factory.annotation.Autowired;
+//import org.springframework.security.authentication.AuthenticationManager;
+//import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
+//import org.springframework.stereotype.Component;
+//import org.springframework.util.StringUtils;
+//
+//import javax.servlet.FilterChain;
+//import javax.servlet.ServletException;
+//import javax.servlet.ServletRequest;
+//import javax.servlet.ServletResponse;
+//import javax.servlet.http.HttpServletRequest;
+//import java.io.IOException;
+//
+///**
+// *
+// * AutoLogin Filter implementation
+// *
+// * @author Alex
+// * @version 1.0.0
+// * @since 2017-08-08
+// */
+//@Component("commonAutoLoginFilter")
+//public class AutoLoginFilter extends AbstractPreAuthenticatedProcessingFilter {
+//
+//    private AuthenticationManager authenticationManagerBean;
+//
+//    @Autowired
+//    @Override
+//    public void setAuthenticationManager(AuthenticationManager authenticationManagerBean) {
+//        super.setAuthenticationManager(authenticationManagerBean);
+//        this.authenticationManagerBean = authenticationManagerBean;
+//    }
+//
+//    public AuthenticationManager getAuthenticationManager() {
+//        return authenticationManagerBean;
+//    }
+//
+//    @Override
+//    public void doFilter(final ServletRequest request, final ServletResponse response, final FilterChain chain) throws IOException, ServletException {
+//        chain.doFilter(request, response);
+//    }
+//
+//    @Override
+//    protected Object getPreAuthenticatedPrincipal(final HttpServletRequest request) {
+//        System.out.println("getPreAuthenticatedCredentials: " + request.getRequestURI());
+//        String user = request.getParameter("user");
+//        if (StringUtils.hasLength(user)) {
+//            return user;
+//        } else {
+//            return null;
+//        }
+//    }
+//
+//    @Override
+//    protected Object getPreAuthenticatedCredentials(final HttpServletRequest request) {
+//        String user = request.getParameter("user");
+//        if (StringUtils.hasLength(user)) {
+//            return "USER";
+//        } else {
+//            return null;
+//        }
+//    }
+//}
+--------------------------------------------------------------------------------------------------------
+//@Component
+//public class SwaggerWebFilter implements WebFilter {
+//    @Override
+//    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+//        ServerHttpRequest request = exchange.getRequest();
+//        String path = request.getPath().pathWithinApplication().value();
+//        if (path.startsWith("/api/swagger-ui.html") || path.startsWith("/api/webjars")
+//                || path.startsWith("/api/api-docs") || path.startsWith("/api/configuration")
+//                || path.startsWith("/api/swagger-resources") || path.startsWith("/api/v2"))) {
+//            exchange = exchange.mutate().request(request.mutate().path(path.substring(4)).build()).build();
+//        }
+//        return chain.filter(exchange);
+//    }
+//}
+
+--------------------------------------------------------------------------------------------------------
+//    /**
+//     * Returns {@link BeanFactoryPostProcessor} instance
+//     *
+//     * @return {@link BeanFactoryPostProcessor} instance
+//     */
+//    @Bean
+//    @ConditionalOnMissingBean
+//    @ConditionalOnClass(EnumAutowiringBeanFactoryPostProcessor.class)
+//    @Description("Kafka enum autowiring factory bean")
+//    public BeanFactoryPostProcessor postProcessor() {
+//        return new EnumAutowiringBeanFactoryPostProcessor(
+//            KafkaConsumerAutoOffsetResetType.class,
+//            KafkaProducerAcknowledgementType.class,
+//            KafkaProducerCompressionType.class
+//        );
+//    }
+
+ 
+--------------------------------------------------------------------------------------------------------
 spring.devtools.restart.trigger-file=.reloadtrigger
 import org.axonframework.extensions.kafka.eventhandling.DefaultKafkaMessageConverter;
 //import org.axonframework.extensions.kafka.eventhandling.KafkaMessageConverter;
@@ -45776,8 +45987,26 @@ public class Messages {
     public String get(String code) {
         return accessor.getMessage(code);
     }
-
 }
+-------------------------------------------------------------------------------------------------------
+EnumSet<Animal> featheredFlyingAnimals = 
+    EnumSet.copyOf( flyingAnimals ).remove( BAT );
+-------------------------------------------------------------------------------------------------------
+    public static <T extends Comparable<? super T>> int checkRange(
+        Type type,
+        T min,
+        T max) {
+
+        int comparison = min.compareTo(max);
+        if (comparison > 0) {
+            throw new IllegalArgumentException(
+                format(
+                    "bad range, %" + type.pattern + " > %" + type.pattern,
+                    min,
+                    max));
+        }
+        return comparison;
+    }
 -------------------------------------------------------------------------------------------------------
 //    /**
 //     * Returns {@link BeanFactoryPostProcessor} instance
