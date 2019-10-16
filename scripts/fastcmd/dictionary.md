@@ -45848,6 +45848,78 @@ public annotation class SuppressWarningsAll
     </distributionManagement>
 </project>
 -------------------------------------------------------------------------------------------------------
+using Newtonsoft.Json;
+using System;
+using System.CodeDom.Compiler;
+using System.Collections.ObjectModel;
+using System.ComponentModel.DataAnnotations;
+
+namespace Paragon.Microservices.Coupons.Client.Contracts
+{
+  [GeneratedCode("NJsonSchema", "9.13.28.0 (Newtonsoft.Json v11.0.0.0)")]
+  public class CouponDto
+  {
+    [JsonProperty("SerialNumber", NullValueHandling = NullValueHandling.Ignore, Required = Required.Default)]
+    public string SerialNumber { get; set; }
+
+    [JsonProperty("SKUs", NullValueHandling = NullValueHandling.Ignore, Required = Required.Default)]
+    public Collection<string> SKUs { get; set; }
+
+    [JsonProperty("CreationTime", Required = Required.Always)]
+    [Required(AllowEmptyStrings = true)]
+    public DateTime CreationTime { get; set; }
+
+    [JsonProperty("ModificationTime", Required = Required.Always)]
+    [Required(AllowEmptyStrings = true)]
+    public DateTime ModificationTime { get; set; }
+
+    [JsonProperty("ExpirationTime", Required = Required.Always)]
+    [Required(AllowEmptyStrings = true)]
+    public DateTime ExpirationTime { get; set; }
+
+    [JsonProperty("RedemptionTime", NullValueHandling = NullValueHandling.Ignore, Required = Required.Default)]
+    public DateTime? RedemptionTime { get; set; }
+
+    [JsonProperty("Type", Required = Required.Always)]
+    public int Type { get; set; }
+
+    public string ToJson()
+    {
+      return JsonConvert.SerializeObject((object) this);
+    }
+
+    public static CouponDto FromJson(string data)
+    {
+      return JsonConvert.DeserializeObject<CouponDto>(data);
+    }
+  }
+}
+-------------------------------------------------------------------------------------------------------
+List<@Email String> emails;
+
+@Email(payload = Unwrapping.Unwrap.class)
+List<String> emails;
+-------------------------------------------------------------------------------------------------------
+[...]
+@Constraint(validatedBy={
+    SizeValidatorForCollection.class,
+    SizeValidatorForSet.class,
+    SizeValidatorForSerializable.class })
+public @interface Size { [...] }
+
+public class SizeValidatorForCollection implements ConstraintValidator<Size, Collection> {
+    [...]
+}
+public class SizeValidatorForSet implements ConstraintValidator<Size, Set> {
+    [...]
+}
+public class SizeValidatorForSerializable implements ConstraintValidator<Size, Serializable> {
+    [...]
+}
+
+public interface SerializableCollection extends Serializable, Collection {
+}
+-------------------------------------------------------------------------------------------------------
 
 @CrossOrigin(maxAge = 3600)
 @RestController
