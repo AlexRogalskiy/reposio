@@ -45895,10 +45895,533 @@ namespace Paragon.Microservices.Coupons.Client.Contracts
   }
 }
 -------------------------------------------------------------------------------------------------------
+{
+  "version": 3,
+  "nodes": [
+    {
+      "modifiedLocally": true,
+      "type": "Request",
+      "method": {
+        "requestBody": true,
+        "link": "http://tools.ietf.org/html/rfc7231#section-4.3.3",
+        "name": "POST"
+      },
+      "body": {
+        "formBody": {
+          "overrideContentType": true,
+          "encoding": "application/x-www-form-urlencoded",
+          "items": []
+        },
+        "bodyType": "Text",
+        "autoSetLength": true,
+        "textBodyEditorHeight": 232,
+        "textBody": "{\n  \"callbackTopicName\": \"test-topic\",\n  \"callbackMessageType\": \"test-type\",\n  \"details\": {\"key\": \"key\", \"value\": \"value\"}\n}"
+      },
+      "headersType": "Form",
+      "uri": {
+        "query": {
+          "delimiter": "&",
+          "items": []
+        },
+        "scheme": {
+          "name": "http",
+          "version": "V11"
+        },
+        "host": "localhost:8077",
+        "path": "/api/internal/links/tickets"
+      },
+      "id": "543ca52f-253f-407e-b34a-04e075cb66ce",
+      "lastModified": "2019-08-19T19:11:42.961+03:00",
+      "name": "test",
+      "headers": [
+        {
+          "name": "x-tenant-id",
+          "value": "00000000-0000-0000-0000-000000000001"
+        },
+        {
+          "enabled": true,
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "assertions": [
+        {
+          "comparison": "Exists",
+          "subject": "ResponseBody",
+          "path": "content",
+          "value": ""
+        }
+      ],
+      "metaInfo": {
+        "IS_FROM_HISTORY": null
+      },
+      "parent": null,
+      "parentId": ""
+    }
+  ]
+}
+-------------------------------------------------------------------------------------------------------
 List<@Email String> emails;
 
 @Email(payload = Unwrapping.Unwrap.class)
 List<String> emails;
+-------------------------------------------------------------------------------------------------------
+	/**
+	 * Enumeration for sort directions.
+	 *
+	 * @author Oliver Gierke
+	 */
+	public static enum Direction {
+
+		ASC, DESC;
+
+		/**
+		 * Returns whether the direction is ascending.
+		 *
+		 * @return
+		 * @since 1.13
+		 */
+		public boolean isAscending() {
+			return this.equals(ASC);
+		}
+
+		/**
+		 * Returns whether the direction is descending.
+		 *
+		 * @return
+		 * @since 1.13
+		 */
+		public boolean isDescending() {
+			return this.equals(DESC);
+		}
+
+		/**
+		 * Returns the {@link Direction} enum for the given {@link String} value.
+		 *
+		 * @param value
+		 * @throws IllegalArgumentException in case the given value cannot be parsed into an enum value.
+		 * @return
+		 */
+		public static Direction fromString(String value) {
+
+			try {
+				return Direction.valueOf(value.toUpperCase(Locale.US));
+			} catch (Exception e) {
+				throw new IllegalArgumentException(String.format(
+						"Invalid value '%s' for orders given! Has to be either 'desc' or 'asc' (case insensitive).", value), e);
+			}
+		}
+
+		/**
+		 * Returns the {@link Direction} enum for the given {@link String} or null if it cannot be parsed into an enum
+		 * value.
+		 *
+		 * @param value
+		 * @return
+		 */
+		public static Optional<Direction> fromOptionalString(String value) {
+
+			try {
+				return Optional.of(fromString(value));
+			} catch (IllegalArgumentException e) {
+				return Optional.empty();
+			}
+		}
+	}
+-------------------------------------------------------------------------------------------------------
+import org.baeldung.caching.model.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Repository;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
+
+@Repository("userRepository")
+public interface UserRepository extends JpaRepository<User, Integer> {
+
+    int countByStatus(int status);
+
+    Optional<User> findOneByName(String name);
+
+    @Async
+    CompletableFuture<User> findOneByStatus(Integer status);
+
+    @Query("SELECT u FROM User u WHERE u.status = 1")
+    Collection<User> findAllActiveUsers();
+
+    @Query(value = "SELECT * FROM USERS u WHERE u.status = 1", nativeQuery = true)
+    Collection<User> findAllActiveUsersNative();
+
+    @Query("SELECT u FROM User u WHERE u.status = ?1")
+    User findUserByStatus(Integer status);
+
+    @Query(value = "SELECT * FROM Users u WHERE u.status = ?1", nativeQuery = true)
+    User findUserByStatusNative(Integer status);
+
+    @Query("SELECT u FROM User u WHERE u.status = ?1 and u.name = ?2")
+    User findUserByStatusAndName(Integer status, String name);
+
+    @Query("SELECT u FROM User u WHERE u.status = :status and u.name = :name")
+    User findUserByStatusAndNameNamedParams(@Param("status") Integer status, @Param("name") String name);
+
+    @Query(value = "SELECT * FROM Users u WHERE u.status = :status AND u.name = :name", nativeQuery = true)
+    User findUserByStatusAndNameNamedParamsNative(@Param("status") Integer status, @Param("name") String name);
+
+    @Query("SELECT u FROM User u WHERE u.status = :status and u.name = :name")
+    User findUserByUserStatusAndUserName(@Param("status") Integer userStatus, @Param("name") String userName);
+
+    @Query("SELECT u FROM User u WHERE u.name like ?1%")
+    User findUserByNameLike(String name);
+
+    @Query("SELECT u FROM User u WHERE u.name like :name%")
+    User findUserByNameLikeNamedParam(@Param("name") String name);
+
+    @Query(value = "SELECT * FROM users u WHERE u.name LIKE ?1%", nativeQuery = true)
+    User findUserByNameLikeNative(String name);
+
+    @Query(value = "SELECT u FROM User u")
+    List<User> findAllUsers(Sort sort);
+
+    @Query(value = "SELECT u FROM User u ORDER BY id")
+    Page<User> findAllUsersWithPagination(Pageable pageable);
+
+    @Query(value = "SELECT * FROM Users ORDER BY id \n-- #pageable\n", countQuery = "SELECT count(*) FROM Users", nativeQuery = true)
+    Page<User> findAllUsersWithPaginationNative(Pageable pageable);
+
+    @Modifying
+    @Query("update User u set u.status = :status where u.name = :name")
+    int updateUserSetStatusForName(@Param("status") Integer status, @Param("name") String name);
+
+    @Modifying
+    @Query(value = "UPDATE Users u SET u.status = ? WHERE u.name = ?", nativeQuery = true)
+    int updateUserSetStatusForNameNative(Integer status, String name);
+
+}
+-------------------------------------------------------------------------------------------------------
+{
+  "serialNumber": "FDR6K9-4BPROP-9IJVM7-OLKU9B-CGP8NJ",
+  "skUs": [
+    "test-sku"
+  ],
+  "creationTime": "2019-10-17T15:18:58.3858135Z",
+  "modificationTime": "2019-10-17T15:18:58.3858135Z",
+  "expirationTime": "0001-01-01T00:00:00Z",
+  "type": 0
+}
+-------------------------------------------------------------------------------------------------------
+        // when
+//        final JsonNode jsonNode = this.objectMapper.readTree(source);
+//        final JsonParser parser = this.objectMapper.treeAsTokens(jsonNode);
+//        final TestItem<String> actual = this.objectMapper.readValue(parser, new TypeReference<TestItem<String>>() {
+//        });
+-------------------------------------------------------------------------------------------------------
+RestTemplateBuilder restTemplateBuilder = new RestTemplateBuilder();
+restTemplateBuilder.configure(restTemplate);
+TestRestTemplate testRestTemplate = new TestRestTemplate(restTemplateBuilder);
+ResponseEntity<String> response = testRestTemplate.getForEntity(
+  FOO_RESOURCE_URL + "/1", String.class);
+  
+assertThat(response.getStatusCode(), equalTo(HttpStatus.OK));
+-------------------------------------------------------------------------------------------------------
+
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+@RunWith(SpringJUnit4ClassRunner.class)
+@SpringApplicationConfiguration(classes = IntegrationTest.TestConfig.class)
+@WebAppConfiguration
+public class RestTest {
+ 
+ 
+    private static final String APP_HEADER = "app-header";
+    private static final String CLIENT_HEADER = "client-header";
+ 
+    @Autowired
+    private RestTemplate restTemplate;
+ 
+    @Value("${eventApi.url}")
+    private String eventApi;
+ 
+    @Test
+    public void testSendEventOk() {
+ 
+        String bodyTesting = "test";
+        HttpHeaders headers = setHeaders("appTest", "clientTest");
+        HttpEntity<String> entity = new HttpEntity<String>(bodyTesting, headers);
+        ResponseEntity<String> exchange = restTemplate.exchange(eventApi, HttpMethod.POST, entity, String.class);
+        assertEquals(exchange.getStatusCode(), HttpStatus.CREATED);
+ 
+    }
+ 
+    private HttpHeaders setHeaders(String app, String clientId) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(APP_HEADER, app);
+        headers.set(CLIENT_HEADER, clientId);
+        return headers;
+    }
+ 
+    @Configuration
+    @EnableConfigurationProperties
+    @ComponentScan
+    @EnableAutoConfiguration
+    static class TestConfig {
+ 
+        @Bean
+        public RestTemplate getRestTemplate() {
+            return new TestRestTemplate();
+        }
+    }
+}
+-------------------------------------------------------------------------------------------------------
+@Mock private MyClass.FactoryHelper mockFactoryHelper; 
+@Mock private Foo mockFoo; 
+private MyClass toTest; 
+and you can use it like this
+
+toTest = new MyClass( x, y, mockFactoryHelper ); 
+when( mockFactoryHelper.makeFoo( 
+    any( A.class ), any( B.class ), any( C.class )))
+    .thenReturn( mockFoo ); 
+-------------------------------------------------------------------------------------------------------
+@Configuration
+@EnableGlobalMethodSecurity(prePostEnabled = true, proxyTargetClass = true)
+public class MethodSecurityConfig extends GlobalMethodSecurityConfiguration {
+
+    @Override
+    protected MethodSecurityExpressionHandler createExpressionHandler() {
+        return new OAuth2MethodSecurityExpressionHandler();
+    }
+
+}
+-------------------------------------------------------------------------------------------------------
+Firstly, I created a new rsa 2048 bit private key with sha256 signed algorithm, using the command below
+openssl req -x509 -newkey rsa:2048 -keyout mock-auth.key -out mock-auth.crt -days 3650 -sha256 -subj “/C=US/ST=Oregon/L=Portland/O=Company Name/OU=Org/CN=www.example.com" -nodes
+Then, I created a certificate from this private key using the command below,
+openssl req -key mock-auth.key -new -x509 -days 3650 -out mock-auth.crt -sha256 -subj “/C=US/ST=Oregon/L=Portland/O=Company Name/OU=Org/CN=www.example.com
+-------------------------------------------------------------------------------------------------------
+{"jti":"f6cafaed-449e-4d03-a1df-3fef1a4721d9","userid":"4d104eff-9127-4f5e-93b9-64df1d9a5c44","ownerid":"4d104eff-9127-4f5e-93b9-64df1d9a5c44","http://schemas.microsoft.com/ws/2008/06/identity/claims/role":"Admin","exp":1571333240,"iss":"Registry","aud":"Registry"}
+-------------------------------------------------------------------------------------------------------
+public class TokenAuthenticationService {
+
+    static final long EXPIRATIONTIME = 864_000_000; // 10 days
+    static final String SECRET = "ThisIsASecret";
+    static final String TOKEN_PREFIX = "Bearer";
+    static final String HEADER_STRING = "Authorization";
+
+    public static void addAuthentication(HttpServletResponse res, String username) {
+
+        String jwt = createToken(username);
+
+        res.addHeader(HEADER_STRING, TOKEN_PREFIX + " " + jwt);
+    }
+
+    public static Authentication getAuthentication(HttpServletRequest request) {
+        String token = request.getHeader(HEADER_STRING);
+        if (token != null) {
+            // parse the token.
+            String user = Jwts.parser()
+                    .setSigningKey(SECRET)
+                    .parseClaimsJws(token.replace(TOKEN_PREFIX, ""))
+                    .getBody()
+                    .getSubject();
+
+            return user != null ?
+                    new UsernamePasswordAuthenticationToken(user, null, Collections.emptyList()) :
+                        null;
+        }
+        return null;
+    }
+
+    public static String createToken(String username) {
+        String jwt = Jwts.builder()
+                .setSubject(username)
+                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATIONTIME))
+                .signWith(SignatureAlgorithm.HS512, SECRET)
+                .compact();
+
+        return jwt;
+    }
+}
+
+@RunWith(SpringRunner.class)
+@SpringBootTest
+@AutoConfigureMockMvc
+public class TokenAuthenticationServiceTest {
+
+    @Autowired
+    private MockMvc mvc;
+
+    @Test
+    public void shouldNotAllowAccessToUnauthenticatedUsers() throws Exception {
+        mvc.perform(MockMvcRequestBuilders.get("/test")).andExpect(status().isForbidden());
+    }
+
+    @Test
+    public void shouldGenerateAuthToken() throws Exception {
+        String token = TokenAuthenticationService.createToken("john");
+
+        assertNotNull(token);
+        mvc.perform(MockMvcRequestBuilders.get("/test").header("Authorization", token)).andExpect(status().isOk());
+    }
+
+}
+-------------------------------------------------------------------------------------------------------
+JwtClaims claims = new JwtClaims();
+claims.setIssuer("issuer");
+claims.setExpirationTimeMinutesInTheFuture(10);
+claims.setGeneratedJwtId();
+claims.setIssuedAtToNow();
+claims.setNotBeforeMinutesInThePast(2);
+claims.setSubject("subject");
+#Create a HashMap called claimsMap to set any custom claims
+#claimsMap.forEach(claims::setClaim);
+String payload = claims.toJson();
+
+JsonWebSignature jws = new JsonWebSignature();
+jws.setPayload(payload);
+jws.setKey(privateKey);
+jws.setAlgorithmHeaderValue(AlgorithmIdentifiers.RSA_USING_SHA256);SString token = jws.getCompactSerialization();
+-------------------------------------------------------------------------------------------------------
+testRestTemplate.getRestTemplate().setInterceptors(
+        Collections.singletonList((request, body, execution) -> {
+            request.getHeaders()
+                    .add("header-name", "value");
+            return execution.execute(request, body);
+        }));
+		
+ import org.apache.http.Header;
+ import org.apache.http.impl.client.CloseableHttpClient;
+ import org.apache.http.impl.client.HttpClients;
+ import org.apache.http.message.BasicHeader;
+ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+
+
+ private void setTestRestTemplateHeaders() {
+    Header header = new BasicHeader("header", "value");
+    Header header2 = new BasicHeader("header2", "value2");
+    List<Header> headers = new ArrayList<Header>();
+    headers.add(header);
+    headers.add(header2);
+    CloseableHttpClient httpClient = HttpClients.custom().setDefaultHeaders(headers).build();
+    testRestTemplate.getRestTemplate().setRequestFactory(new HttpComponentsClientHttpRequestFactory(httpClient));
+ }
+-------------------------------------------------------------------------------------------------------
+import java.net.URI;
+ 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+ 
+import com.howtodoinjava.rest.dao.EmployeeDAO;
+import com.howtodoinjava.rest.model.Employee;
+import com.howtodoinjava.rest.model.Employees;
+ 
+@RestController
+@RequestMapping(path = "/employees")
+public class EmployeeController
+{
+    @Autowired
+    private EmployeeDAO employeeDao;
+      
+    @PostMapping(path= "/", consumes = "application/json", produces = "application/json")
+    public ResponseEntity<Object> addEmployee(
+                        @RequestHeader(name = "X-COM-PERSIST", required = true) String headerPersist,
+                        @RequestHeader(name = "X-COM-LOCATION", required = false, defaultValue = "ASIA") String headerLocation,
+                        @RequestBody Employee employee)
+                 throws Exception
+    {      
+        //Generate resource id
+        Integer id = employeeDao.getAllEmployees().getEmployeeList().size() + 1;
+        employee.setId(id);
+         
+        //add resource
+        employeeDao.addEmployee(employee);
+         
+        //Create resource location
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                                    .path("/{id}")
+                                    .buildAndExpand(employee.getId())
+                                    .toUri();
+         
+        //Send location in response
+        return ResponseEntity.created(location).build();
+    }
+}
+-------------------------------------------------------------------------------------------------------
+@JsonComponent
+public class UserJsonSerializer extends JsonSerializer<User> {
+ 
+    @Override
+    public void serialize(User user, JsonGenerator jsonGenerator, 
+      SerializerProvider serializerProvider) throws IOException, 
+      JsonProcessingException {
+  
+        jsonGenerator.writeStartObject();
+        jsonGenerator.writeStringField(
+          "favoriteColor", 
+          getColorAsWebColor(user.getFavoriteColor()));
+        jsonGenerator.writeEndObject();
+    }
+ 
+    private static String getColorAsWebColor(Color color) {
+        int r = (int) Math.round(color.getRed() * 255.0);
+        int g = (int) Math.round(color.getGreen() * 255.0);
+        int b = (int) Math.round(color.getBlue() * 255.0);
+        return String.format("#%02x%02x%02x", r, g, b);
+    }
+}
 -------------------------------------------------------------------------------------------------------
 [...]
 @Constraint(validatedBy={
