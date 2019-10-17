@@ -46025,6 +46025,104 @@ public @interface OverrideAutoConfiguration {
 spring.datasource.initialize=false
 JAVA_OPTS="-Dspring.profiles.active=production"
 -------------------------------------------------------------------------------------------------------
+//    /**
+//     * Get specification {@link Specification} of user accounts to be expired
+//     * before the requested date
+//     *
+//     * @param expiredAt - requested expiration date
+//     * @return user account specification {@link Specification}
+//     * @param <T>
+//     */
+//    public static <T extends UserAccount> Specification<T> accountExpiresBefore(final Date expiredAt) {
+//
+//        return (final Root<T> root, final CriteriaQuery<?> query, final CriteriaBuilder cb) -> {
+//            Root<UserAccount> accounts = query.from(UserAccount.class);
+//            Path<Date> expiryDate = accounts.<Date>get("expiredAt");
+//            Predicate customerIsAccountOwner = cb.equal(accounts.<T>get("user"), root);
+//            Predicate accountExpiryDateBefore = cb.lessThan(expiryDate, expiredAt);
+//            return cb.and(customerIsAccountOwner, accountExpiryDateBefore);
+//        };
+//    }
+-------------------------------------------------------------------------------------------------------
+public class EnvironmentPostProcessorExample implements EnvironmentPostProcessor {
+
+    private final YamlPropertySourceLoader loader = new YamlPropertySourceLoader();
+
+    @Override
+    public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
+        Resource path = new ClassPathResource("com/example/myapp/config.yml");
+        PropertySource<?> propertySource = loadYaml(path);
+        environment.getPropertySources().addLast(propertySource);
+    }
+
+    private PropertySource<?> loadYaml(Resource path) {
+        if (!path.exists()) {
+            throw new IllegalArgumentException("Resource " + path + " does not exist");
+        }
+        try {
+            return this.loader.load("custom-resource", path).get(0);
+        }
+        catch (IOException ex) {
+            throw new IllegalStateException("Failed to load yaml configuration from " + path, ex);
+        }
+    }
+}
+-------------------------------------------------------------------------------------------------------
+new SpringApplicationBuilder()
+    .bannerMode(Banner.Mode.OFF)
+    .sources(demo.MyApp.class)
+    .run(args);
+-------------------------------------------------------------------------------------------------------
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-resources-plugin</artifactId>
+    <version>2.7</version>
+    <configuration>
+        <delimiters>
+            <delimiter>@</delimiter>
+        </delimiters>
+        <useDefaultDelimiters>false</useDefaultDelimiters>
+    </configuration>
+</plugin>
+-------------------------------------------------------------------------------------------------------
+//@Entity(name = "Order")
+//@Table(name = "orders", uniqueConstraints = {
+//    @UniqueConstraint(columnNames = "uuid", name = "uuid_unique_constraint")
+//})
+//@Inheritance(strategy = InheritanceType.JOINED)
+//@SuppressWarnings({"ValidPrimaryTableName", "UniqueEntityName"})
+//@Indexed
+//@Analyzer(impl = org.apache.lucene.analysis.standard.StandardAnalyzer.class)
+//@AnalyzerDef(name = "orderanalyzer", tokenizer = @TokenizerDef(factory = StandardTokenizerFactory.class),
+//        filters = {
+//            @TokenFilterDef(factory = LowerCaseFilterFactory.class)
+//            ,
+//            @TokenFilterDef(factory = SnowballPorterFilterFactory.class, params = {
+//        @Parameter(name = "language", value = "English"),}
+//            )
+//            ,
+//            @TokenFilterDef(factory = SynonymFilterFactory.class, params = {
+//        @Parameter(name = "ignoreCase", value = "true")
+//        ,
+//        @Parameter(name = "expand", value = "true")
+//        ,
+//        @Parameter(name = "synonyms", value = "syntest.txt")
+//    })
+//        }
+//)
+Field <uuId> is only allowed in the format of globally unique identifier
+-------------------------------------------------------------------------------------------------------
+//    @UID(message = "Field <uuId> is only allowed in the format of globally unique identifier")
+////    @Column(name = "uuid", unique = true, nullable = false, updatable = false)
+////    //@GeneratedValue(generator = "UUID")
+////    //@GeneratedValue(generator = "uuid2")
+////    @GeneratedValue(generator="hibernate-uuid.hex")
+////    @GenericGenerator(name="hibernate-uuid.hex", strategy="uuid.hex")
+////    //@GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
+////    //@GenericGenerator(name = "uuid", strategy = "uuid2")
+//    @Type(type = "uuid-char")
+//    private UUID uuId;
+-------------------------------------------------------------------------------------------------------
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.MessageSourceAccessor;
