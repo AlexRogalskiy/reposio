@@ -11990,6 +11990,23 @@ public class BookYAMLParser implements Parser<Book> {
     }
 }
 --------------------------------------------------------------------------------------------------------
+spring.main.web-application-type=none
+
+server.port=8443
+server.ssl.key-store=classpath:keystore.jks
+server.ssl.key-store-password=secret
+server.ssl.key-password=another-secret
+--------------------------------------------------------------------------------------------------------
+@Component
+public class MyTomcatWebServerCustomizer
+        implements WebServerFactoryCustomizer<TomcatServletWebServerFactory> {
+
+    @Override
+    public void customize(TomcatServletWebServerFactory factory) {
+        // customize the factory here
+    }
+}
+--------------------------------------------------------------------------------------------------------
 public class BookJSONParser implements Parser<Book> {
 
     String filename;
@@ -11999,7 +12016,7 @@ public class BookJSONParser implements Parser<Book> {
 
     @Override
     public void serialize(Book book) {
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();;
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
         try {
             FileWriter writer = new FileWriter(filename);
@@ -46107,6 +46124,721 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     int updateUserSetStatusForNameNative(Integer status, String name);
 
 }
+-------------------------------------------------------------------------------------------------------
+./toolchains/llvm/prebuilt/darwin-x86_64/bin/aarch64-linux-android29-clang -o poc ../poc.c
+adb push poc /data/local/tmp/poc
+gcc -o fix_kaslr_arm64 fix_kaslr_arm64.c
+-------------------------------------------------------------------------------------------------------
+choco install nswagstudio
+-------------------------------------------------------------------------------------------------------
+//@Configuration
+//public class JacksonConfig {
+//    @Bean
+//    public ObjectMapper jsonObjectMapper() {
+//        ArrayList<Module> modules = new ArrayList<>();
+//
+//        //CollectionType Serialization
+//        SimpleModule collectionTypeSerializerModule = new SimpleModule();
+//        collectionTypeSerializerModule.setSerializers(new CollectionTypeJsonSerializer());
+//        modules.add(collectionTypeSerializerModule);
+//
+//        return Jackson2ObjectMapperBuilder.json()
+//                .modules(modules)
+//                .build();
+//    }
+//}
+-------------------------------------------------------------------------------------------------------
+//public class CollectionTypeJsonSerializer extends SimpleSerializers {
+//
+//    @Override
+//    public JsonSerializer<?> findCollectionSerializer(SerializationConfig config,
+//                                                      CollectionType type,
+//                                                      BeanDescription beanDesc,
+//                                                      TypeSerializer elementTypeSerializer,
+//                                                      JsonSerializer<Object> elementValueSerializer) {
+//        //if the collection is of type LanguageString, then use custom collection serializer
+//        if (isLanguageStringListType(type)) {
+//            return new LanguageStringListSerializer();
+//        }
+//
+//        return findSerializer(config, type, beanDesc);
+//    }
+//
+//
+//    private boolean isLanguageStringListType(CollectionType type) {
+//        CollectionType languageStringArrayListType = TypeFactory.defaultInstance()
+//            .constructCollectionType(ArrayList.class, LanguageString.class);
+//
+//        CollectionType languageStringListType = TypeFactory.defaultInstance()
+//            .constructCollectionType(List.class, LanguageString.class);
+//
+//        return (type.equals(languageStringListType) || type.equals(languageStringArrayListType));
+//    }
+//}
+//
+///*
+//@Configuration
+//public class JacksonConfig {
+//    @Bean
+//    public ObjectMapper jsonObjectMapper() {
+//        ArrayList<Module> modules = new ArrayList<>();
+//
+//        //CollectionType Serialization
+//        SimpleModule collectionTypeSerializerModule = new SimpleModule();
+//        collectionTypeSerializerModule.setSerializers(new CollectionTypeJsonSerializer());
+//        modules.add(collectionTypeSerializerModule);
+//
+//        return Jackson2ObjectMapperBuilder.json()
+//                .modules(modules)
+//                .build();
+//    }
+//}
+// */
+-------------------------------------------------------------------------------------------------------
+public final class ClassKey
+    implements Comparable<ClassKey>,
+        java.io.Serializable // since 2.1
+{
+    private static final long serialVersionUID = 1L;
+
+    private String _className;
+
+    private Class<?> _class;
+
+    /**
+     * Let's cache hash code straight away, since we are
+     * almost certain to need it.
+     */
+    private int _hashCode;
+
+    public ClassKey() 
+    {
+        _class = null;
+        _className = null;
+        _hashCode = 0;
+    }
+
+    public ClassKey(Class<?> clz)
+    {
+        _class = clz;
+        _className = clz.getName();
+        _hashCode = _className.hashCode();
+    }
+
+    public void reset(Class<?> clz)
+    {
+        _class = clz;
+        _className = clz.getName();
+        _hashCode = _className.hashCode();
+    }
+
+    /*
+    /**********************************************************
+    /* Comparable
+    /**********************************************************
+     */
+
+    @Override
+    public int compareTo(ClassKey other)
+    {
+        // Just need to sort by name, ok to collide (unless used in TreeMap/Set!)
+        return _className.compareTo(other._className);
+    }
+
+    /*
+    /**********************************************************
+    /* Standard methods
+    /**********************************************************
+     */
+
+    @Override
+        public boolean equals(Object o)
+    {
+        if (o == this) return true;
+        if (o == null) return false;
+        if (o.getClass() != getClass()) return false;
+        ClassKey other = (ClassKey) o;
+
+        /* Is it possible to have different Class object for same name + class loader combo?
+         * Let's assume answer is no: if this is wrong, will need to uncomment following functionality
+         */
+        /*
+        return (other._className.equals(_className))
+            && (other._class.getClassLoader() == _class.getClassLoader());
+        */
+        return other._class == _class;
+    }
+
+    @Override public int hashCode() { return _hashCode; }
+
+    @Override public String toString() { return _className; }
+}
+-------------------------------------------------------------------------------------------------------
+ObjectMapper objectMapper = new ObjectMapper();
+Car car = new Car("yellow", "renault");
+objectMapper.writeValue(new File("target/car.json"), car);
+
+objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+Car car = objectMapper.readValue(jsonString, Car.class);
+ 
+JsonNode jsonNodeRoot = objectMapper.readTree(jsonString);
+JsonNode jsonNodeYear = jsonNodeRoot.get("year");
+String year = jsonNodeYear.asText();
+-------------------------------------------------------------------------------------------------------
+ObjectMapper objectMapper = new ObjectMapper();
+DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm a z");
+objectMapper.setDateFormat(df);
+String carAsString = objectMapper.writeValueAsString(request);
+// output: {"car":{"color":"yellow","type":"renault"},"datePurchased":"2016-07-03 11:43 AM CEST"}
+
+String jsonCarArray = 
+  "[{ \"color\" : \"Black\", \"type\" : \"BMW\" }, { \"color\" : \"Red\", \"type\" : \"FIAT\" }]";
+ObjectMapper objectMapper = new ObjectMapper();
+objectMapper.configure(DeserializationFeature.USE_JAVA_ARRAY_FOR_JSON_ARRAY, true);
+Car[] cars = objectMapper.readValue(jsonCarArray, Car[].class);
+// print cars
+
+String jsonCarArray = 
+  "[{ \"color\" : \"Black\", \"type\" : \"BMW\" }, { \"color\" : \"Red\", \"type\" : \"FIAT\" }]";
+ObjectMapper objectMapper = new ObjectMapper();
+List<Car> listCar = objectMapper.readValue(jsonCarArray, new TypeReference<List<Car>>(){});
+// print cars
+-------------------------------------------------------------------------------------------------------
+//package visibility, to allow passing different De/Serializers while testing
+static ObjectMapper createObjectMapper(JsonDeserializer deserializer, JsonSerializer serializer) {
+    final SimpleModule module = new SimpleModule("customerSerializationModule", new Version(1, 0, 0, "static version"));
+    module.addDeserializer(DateTime.class, deserializer);
+    module.addSerializer(DateTime.class, serializer);
+
+    final ObjectMapper objectMapper = new ObjectMapper();
+    objectMapper.registerModule(module);
+    return objectMapper;
+}
+
+//production method: no-args, as in the original version
+public static ObjectMapper createObjectMapper() {
+    return createObjectMapper(new DateTimeDeserializer(), new DateTimeSerializer());
+}
+-------------------------------------------------------------------------------------------------------
+@JsonRootName(value = "user")
+class User {
+
+    @JsonProperty(value = "id")
+    private long id;
+    @JsonProperty(value = "diets")
+    @JsonDeserialize(using = DietDeserializer.class)
+    private List<Diet> diets;
+
+    //Getter & Setters
+}
+
+class DietDeserializer extends JsonDeserializer<List<Diet>> {
+
+    @Override
+    public List<Diet> deserialize(JsonParser jsonParser, 
+            DeserializationContext deserializationContext) throws IOException {
+
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode node = mapper.readTree(jsonParser);
+        List<Diet> diets = mapper.convertValue(node.findValues("diet"), new TypeReference<List<Diet>>() {});
+        return diets;
+    }
+}
+-------------------------------------------------------------------------------------------------------
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.map.JsonMappingException;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
+
+public class JacksonExample {
+	public static void main(String[] args) {
+
+		ObjectMapper mapper = new ObjectMapper();
+		//By default all fields without explicit view definition are included, disable this
+		mapper.configure(SerializationConfig.Feature.DEFAULT_VIEW_INCLUSION, false);
+		 
+		//For testing
+		User user = createDummyUser();
+		
+		try {
+			//display name only
+			String jsonInString = mapper.writerWithView(Views.NameOnly.class).writeValueAsString(user);
+			System.out.println(jsonInString);
+			
+			//display namd ana age
+			jsonInString = mapper.writerWithView(Views.AgeAndName.class).writeValueAsString(user);
+			System.out.println(jsonInString);
+			
+			
+		} catch (JsonGenerationException e) {
+			e.printStackTrace();
+		} catch (JsonMappingException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	
+	}
+
+	private static User createDummyUser(){
+		
+		User user = new User();
+		
+		user.setName("mkyong");
+		user.setAge(33);
+
+		List<String> msg = new ArrayList<>();
+		msg.add("hello jackson 1");
+		msg.add("hello jackson 2");
+		msg.add("hello jackson 3");
+
+		user.setMessages(msg);
+		
+		return user;
+		
+	}
+}
+
+
+import java.util.List;
+import org.codehaus.jackson.map.annotate.JsonView;
+
+public class User {
+
+	@JsonView(Views.NameOnly.class)
+	private String name;
+
+	@JsonView(Views.AgeAndName.class)
+	private int age;
+	
+	private List<String> messages;
+
+	//getter and setters
+}
+
+
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+
+import java.io.IOException;
+
+public class CarSerializer extends StdSerializer<Car> {
+
+    protected CarSerializer(Class<Car> t) {
+        super(t);
+    }
+
+    public void serialize(Car car, JsonGenerator jsonGenerator,
+                          SerializerProvider serializerProvider)
+            throws IOException {
+
+        jsonGenerator.writeStartObject();
+        jsonGenerator.writeStringField("producer", car.getBrand());
+        jsonGenerator.writeNumberField("doorCount", car.getDoors());
+        jsonGenerator.writeEndObject();
+    }
+}
+-------------------------------------------------------------------------------------------------------
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.cbor.CBORFactory;
+
+import java.io.IOException;
+
+public class CborJacksonExample {
+    public static void main(String[] args) {
+        ObjectMapper objectMapper = new ObjectMapper(new CBORFactory());
+
+        Employee employee = new Employee("John Doe", "john@doe.com");
+
+        byte[] cborBytes = null;
+        try {
+            cborBytes = objectMapper.writeValueAsBytes(employee);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            // normally, rethrow exception here - or don't catch it at all.
+        }
+
+        try {
+            Employee employee2 = objectMapper.readValue(cborBytes, Employee.class);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.msgpack.jackson.dataformat.MessagePackFactory;
+
+import java.io.IOException;
+
+public class MessagePackJacksonExample {
+    public static void main(String[] args) {
+        ObjectMapper objectMapper = new ObjectMapper(new MessagePackFactory());
+
+        Employee employee = new Employee("John Doe", "john@doe.com");
+
+        byte[] messagePackBytes = null;
+        try {
+            messagePackBytes = objectMapper.writeValueAsBytes(employee);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            // normally, rethrow exception here - or don't catch it at all.
+        }
+    }
+}
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.msgpack.jackson.dataformat.MessagePackFactory;
+
+import java.io.IOException;
+
+public class MessagePackJacksonExample {
+    public static void main(String[] args) {
+        ObjectMapper objectMapper = new ObjectMapper(new MessagePackFactory());
+
+        Employee employee = new Employee("John Doe", "john@doe.com");
+
+        byte[] messagePackBytes = null;
+        try {
+            messagePackBytes = objectMapper.writeValueAsBytes(employee);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            // normally, rethrow exception here - or don't catch it at all.
+        }
+
+        try {
+            Employee employee2 = objectMapper.readValue(messagePackBytes, Employee.class);
+            System.out.println("messagePackBytes = " + messagePackBytes);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+}
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+
+import java.io.IOException;
+
+public class YamlJacksonExample {
+
+    public static void main(String[] args) {
+        ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+
+        Employee employee = new Employee("John Doe", "john@doe.com");
+
+        String yamlString = null;
+        try {
+            yamlString = objectMapper.writeValueAsString(employee);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            // normally, rethrow exception here - or don't catch it at all.
+        }
+
+    }
+}
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+
+import java.io.IOException;
+
+public class YamlJacksonExample {
+
+    public static void main(String[] args) {
+        ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+
+        Employee employee = new Employee("John Doe", "john@doe.com");
+
+        String yamlString = null;
+        try {
+            yamlString = objectMapper.writeValueAsString(employee);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            // normally, rethrow exception here - or don't catch it at all.
+        }
+
+        try {
+            Employee employee2 = objectMapper.readValue(yamlString, Employee.class);
+
+            System.out.println("Done");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+}
+
+
+
+  public static CodecRegistry registryFromMapper(final ObjectMapper mapper) {
+    Preconditions.checkNotNull(mapper, "mapper");
+    return new CodecRegistry() {
+      @Override
+      public <T> Codec<T> get(final Class<T> clazz) {
+        final JavaType javaType = TypeFactory.defaultInstance().constructType(clazz);
+        if (!mapper.canSerialize(clazz) || !mapper.canDeserialize(javaType)) {
+          throw new CodecConfigurationException(String.format("%s (javaType: %s) not supported by Jackson Mapper", clazz, javaType));
+        }
+        return new JacksonCodec<>(clazz, mapper);
+      }
+    };
+  }
+-------------------------------------------------------------------------------------------------------
+TypeFactory.defaultInstance().constructType(type)
+-------------------------------------------------------------------------------------------------------
+x = new EnumMap<Value, Integer>(Value.class);
+HashMap<String, Object> yourHashMap = new Gson().fromJson(yourJsonObject.toString(), HashMap.class)
+-------------------------------------------------------------------------------------------------------
+import com.fasterxml.jackson.core.JsonParser;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+import com.fasterxml.jackson.core.ObjectCodec;
+
+import com.fasterxml.jackson.databind.DeserializationContext;
+
+import com.fasterxml.jackson.databind.JsonDeserializer;
+
+import com.fasterxml.jackson.databind.JsonNode;
+
+import java.io.IOException;
+
+public class ProgramDeserializer extends JsonDeserializer<Program> {
+
+  @Override
+
+  public Program deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+
+    ObjectCodec oc = jp.getCodec();
+
+    JsonNode node = oc.readTree(jp);
+
+    final Long id = node.get("id").asLong();
+
+    final String name = node.get("name").asText();
+
+    final String contents = node.get("contents").asText();
+
+    final long ownerId = node.get("ownerId").asLong();
+
+    User user = new User();
+
+    user.setId(ownerId);
+
+    return new Program(id, name, contents, user);
+  }
+}
+-------------------------------------------------------------------------------------------------------
+private static final Pattern ISO8601_UTC_ZERO_OFFSET_SUFFIX_REGEX = Pattern.compile("\\+00:?(00)?$");
+-------------------------------------------------------------------------------------------------------
+  @Bean("defaultAxonObjectMapper")
+  @ConditionalOnMissingBean
+  @ConditionalOnExpression("'${axon.serializer.general}' == 'jackson' || '${axon.serializer.events}' == 'jackson' || '${axon.serializer.messages}' == 'jackson'")
+  public ObjectMapper defaultAxonObjectMapper() {
+    return new ObjectMapper().findAndRegisterModules();
+  }
+}
+-------------------------------------------------------------------------------------------------------
+    @Entity
+    @Table(name= "topics")
+    @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class,
+    property  = "id",
+    scope     = Long.class)
+    @DynamicInsert(true)
+    @DynamicUpdate(true)
+    public class Topics implements Serializable {
+
+        private static final long serialVersionUID = -1777454701749518940L;
+
+        @Id
+        @Column(name= "id")
+        private Long id = Long.parseLong(UUID.randomUUID().toString().substring(0, 8), 16);
+
+        @NotEmpty
+        @NotNull
+        @Column(name= "topic", columnDefinition = "Text", length = 50000)
+        private String topic;
+
+        @Convert(converter = LocalTimeConverter.class)
+        private LocalTime duration;
+
+        // getters and setters
+     }
+-------------------------------------------------------------------------------------------------------
+ObjectMapper objectMapper = new ObjectMapper();
+objectMapper.findAndRegisterModules();
+
+<dependency>
+    <groupId>com.fasterxml.jackson.datatype</groupId>
+    <artifactId>jackson-datatype-jsr310</artifactId>
+    <version>2.6.5</version>
+</dependency>
+
+@JsonDeserialize(using = MyCustomDeserializer.class)
+@JsonSerialize(using = MyCustomSerializer.class)
+private Instant createdDate;
+
+final ObjectReader r = objectMapper.reader(MyType.class);
+// enable one feature, disable another
+MyType value = r
+  .with(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
+  .without(DeserializationFeature.WRAP_EXCEPTIONS)
+  .readValue(source);
+-------------------------------------------------------------------------------------------------------
+    public static Map<String, Object> toMap(JSONObject jsonobj)  throws JSONException {
+        Map<String, Object> map = new HashMap<String, Object>();
+        Iterator<String> keys = jsonobj.keys();
+        while(keys.hasNext()) {
+            String key = keys.next();
+            Object value = jsonobj.get(key);
+            if (value instanceof JSONArray) {
+                value = toList((JSONArray) value);
+            } else if (value instanceof JSONObject) {
+                value = toMap((JSONObject) value);
+            }   
+            map.put(key, value);
+        }   return map;
+    }
+
+    public static List<Object> toList(JSONArray array) throws JSONException {
+        List<Object> list = new ArrayList<Object>();
+        for(int i = 0; i < array.length(); i++) {
+            Object value = array.get(i);
+            if (value instanceof JSONArray) {
+                value = toList((JSONArray) value);
+            }
+            else if (value instanceof JSONObject) {
+                value = toMap((JSONObject) value);
+            }
+            list.add(value);
+        }   return list;
+}
+-------------------------------------------------------------------------------------------------------
+ObjectMapper mapper = new ObjectMapper();
+mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+try {
+    List<Vehicle> vehicles = mapper.readValue(JSONString, mapper.getTypeFactory().constructCollectionType(
+            List.class, Vehicle.class));
+} catch (IOException e) {
+    e.printStackTrace();
+}
+
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.PROPERTY,
+        property = "type")
+@JsonSubTypes({
+        @JsonSubTypes.Type(value = Car.class, name = "Car"),
+        @JsonSubTypes.Type(value = Bus.class, name = "Bus"),
+        @JsonSubTypes.Type(value = Truck.class, name = "Truck")})
+public abstract class Vehicle{
+    private int id;
+    private String type;
+}
+-------------------------------------------------------------------------------------------------------
+DateTimeSerializer serializer = context.mock(DateTimeSerializer.class);
+DateTimeDeserializer serializer = context.mock(DateTimeDeserializer.class);
+ObjectMapper mapper = JacksonMapperFactory.createObjectMapper(deserializer, serializer);
+
+exactly(1).of(jsonDeserializer).serialize(myDateTime,
+  with(any(JsonGenerator.class),
+  with(any(SerializerProvider.class)))
+
+
+-------------------------------------------------------------------------------------------------------
+public class JsonMapperFactory {
+
+    public static ObjectMapper configureObjectMapper(final ObjectMapper mapper, final SimpleModule module) {
+        final SimpleModuleBuilder modulebuilder = new SimpleModuleBuilder();
+
+        final SimpleModule configuredModule = modulebuilder.configure(module)
+            .withSerializer(DateTime.class, new DateTimeSerializer())
+            .withDeserializer(DateTime.class, new DateTimeDeserializer())
+            .build();
+
+        final ObjectMapperBuilder objectMapperBuilder = new ObjectMapperBuilder();
+        return objectMapperBuilder.configure(mapper).withModule(configuredModule).build();
+    }
+}
+
+public class SimpleModuleBuilder {
+    SimpleModule module;
+
+    public SimpleModuleBuilder configure(final SimpleModule module) {
+        this.module = module;
+        return this;
+    }
+
+    public <X> SimpleModuleBuilder withSerializer(final Class<X> clazz, final JsonSerializer<X> serializer) {
+        this.module.addSerializer(clazz, serializer);
+        return this;
+    }
+
+    public <X> SimpleModuleBuilder withDeserializer(final Class<X> clazz, final JsonDeserializer<X> deserializer) {
+        this.module.addDeserializer(clazz, deserializer);
+        return this;
+    }
+
+    public SimpleModule build() {
+        return this.module;
+    }
+}
+
+public class ObjectMapperBuilder {
+    ObjectMapper mapper;
+
+    public ObjectMapperBuilder configure(final ObjectMapper mapper) {
+        this.mapper = mapper;
+        return this;
+    }
+
+    public ObjectMapperBuilder withModule(final Module module) {
+        this.mapper.registerModule(module);
+        return this;
+    }
+
+    public ObjectMapper build() {
+        return this.mapper;
+    }
+}
+-------------------------------------------------------------------------------------------------------
+const { ApolloServer, gql } = require('apollo-server');
+
+const listings = [
+  { id: "001", title: "Large ensuite
+condo", city: "Toronto" },
+  { id: "002", title: "Beverly Hills
+Mansion", city: "Los Angeles" },
+  { id: "003", title: "Small chic
+bedroom", city: "Dubai" }
+];
+
+const typeDefs = gql` type Listing { id: String! title: String! city: String! }  type Query { listings: [Listing!]! } `;
+
+const resolvers = {
+  Query: {
+    listings: () => listings,
+  }
+};
+
+const server = new ApolloServer({ typeDefs, resolvers });
+
+server.listen().then(({ url })
+=> {
+  console.log(`Server is running at ${url}`);
+});
 -------------------------------------------------------------------------------------------------------
 {
   "serialNumber": "FDR6K9-4BPROP-9IJVM7-OLKU9B-CGP8NJ",
