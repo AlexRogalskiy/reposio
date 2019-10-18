@@ -46312,6 +46312,477 @@ public class TokenAuthenticationServiceTest {
 
 }
 -------------------------------------------------------------------------------------------------------
+LoggingFailureAnalysisReporter   
+-------------------------------------------------------------------------------------------------------
+    @Bean
+    ModelMapper modelMapper() {
+        ModelMapper mapper = new ModelMapper();
+
+        Configuration configuration = mapper.getConfiguration();
+        configuration.setMatchingStrategy(MatchingStrategies.STRICT);
+        configuration.setFieldAccessLevel(Configuration.AccessLevel.PUBLIC);
+        configuration.setMethodAccessLevel(Configuration.AccessLevel.PUBLIC);
+        configuration.setAmbiguityIgnored(false);
+        configuration.setDestinationNamingConvention(NamingConventions.JAVABEANS_MUTATOR);
+        configuration.setSourceNamingConvention(NamingConventions.JAVABEANS_ACCESSOR);
+
+        return mapper;
+    }
+-------------------------------------------------------------------------------------------------------
+@SpringBootApplication
+public class GreetingApplication {
+
+    public static void main(String[] args) throws Exception {
+        GreetingApplication application = new GreetingApplication();
+
+        application.run(args);
+    }
+
+    public void run(String[] args) {
+        SpringApplication.run(GreetingApplication.class, args);
+    }
+
+    @Bean
+    DataSource productionDataSource() {
+        PGSimpleDataSource dataSource = new PGSimpleDataSource();
+        dataSource.setServerName("production.acme.com");
+        dataSource.setPortNumber(5432);
+        dataSource.setDatabaseName("postgres");
+        dataSource.setUser("postgres");
+        dataSource.setPassword("mysecretpassword");
+
+        return dataSource;
+    }
+
+    @Bean
+    LocalContainerEntityManagerFactoryBean entityManagerFactory(
+            EntityManagerFactoryBuilder builder, DataSource dataSource) {
+        Map<String, Object> properties = new HashMap<>();
+        properties.put(DATASOURCE, dataSource);
+
+        return builder.dataSource(dataSource)
+                .persistenceUnit("example.greeter")
+                .properties(properties)
+                .build();
+    }
+
+    @Bean
+    ModelMapper modelMapper() {
+        ModelMapper mapper = new ModelMapper();
+
+        Configuration configuration = mapper.getConfiguration();
+        configuration.setMatchingStrategy(MatchingStrategies.STRICT);
+        configuration.setFieldAccessLevel(Configuration.AccessLevel.PUBLIC);
+        configuration.setMethodAccessLevel(Configuration.AccessLevel.PUBLIC);
+        configuration.setAmbiguityIgnored(false);
+        configuration.setDestinationNamingConvention(NamingConventions.JAVABEANS_MUTATOR);
+        configuration.setSourceNamingConvention(NamingConventions.JAVABEANS_ACCESSOR);
+
+        return mapper;
+    }
+}
+-------------------------------------------------------------------------------------------------------
+//final Resource resource = new ClassPathResource("ludwig.json", this.getClass());
+-------------------------------------------------------------------------------------------------------
+public class LocatorService {
+
+	public Point generatePointWithinDistance(Point point, int distance) {
+		return new Point(point.getX() + Utils.randomDistance(distance), 
+			point.getY() + Utils.randomDistance(distance));
+	}
+}
+-------------------------------------------------------------------------------------------------------
+<dependency>
+	<groupId>org.powermock</groupId>
+	<artifactId>powermock-module-junit4</artifactId>
+	<version>1.6.5</version>
+	<scope>test</scope>
+</dependency>
+<dependency>
+	<groupId>org.powermock</groupId>
+	<artifactId>powermock-api-mockito</artifactId>
+	<version>1.6.5</version>
+	<scope>test</scope>
+</dependency>
+-------------------------------------------------------------------------------------------------------
+package com.journaldev.mockito.staticmethod;
+
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
+
+import static org.mockito.Mockito.*;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.testng.PowerMockTestCase;
+import org.testng.annotations.Test;
+
+@PrepareForTest(Utils.class)
+public class TestNGPowerMockitoStaticTest extends PowerMockTestCase{
+
+	@Test
+	public void test_static_mock_methods() {
+		PowerMockito.mockStatic(Utils.class);
+		when(Utils.print("Hello")).thenReturn(true);
+		when(Utils.print("Wrong Message")).thenReturn(false);
+		
+		assertTrue(Utils.print("Hello"));
+		assertFalse(Utils.print("Wrong Message"));
+		
+		PowerMockito.verifyStatic(Utils.class);
+		Utils.print("Hello");
+		PowerMockito.verifyStatic(Utils.class, times(2));
+		Utils.print(anyString());
+	}
+}
+
+package com.journaldev.mockito.staticmethod;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.when;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(Utils.class)
+public class JUnit4PowerMockitoStaticTest{
+
+	@Test
+	public void test_static_mock_methods() {
+		PowerMockito.mockStatic(Utils.class);
+		when(Utils.print("Hello")).thenReturn(true);
+		when(Utils.print("Wrong Message")).thenReturn(false);
+		
+		assertTrue(Utils.print("Hello"));
+		assertFalse(Utils.print("Wrong Message"));
+		
+		PowerMockito.verifyStatic(Utils.class, atLeast(2));
+		Utils.print(anyString());
+	}
+}
+-------------------------------------------------------------------------------------------------------
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.journaldev.powermock</groupId>
+	<artifactId>PowerMock-Examples</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+
+	<properties>
+		<testng.version>6.14.3</testng.version>
+		<junit4.version>4.12</junit4.version>
+		<mockito-core.version>2.19.0</mockito-core.version>
+		<powermock.version>2.0.0-beta.5</powermock.version>
+		<java.version>10</java.version>
+	</properties>
+
+	<dependencies>
+		<!-- TestNG -->
+		<dependency>
+			<groupId>org.testng</groupId>
+			<artifactId>testng</artifactId>
+			<version>${testng.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<!-- JUnit 4 -->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>${junit4.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<!-- Mockito 2 -->
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<version>${mockito-core.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<!-- PowerMock TestNG Module -->
+		<dependency>
+			<groupId>org.powermock</groupId>
+			<artifactId>powermock-module-testng</artifactId>
+			<version>${powermock.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<!-- PowerMock JUnit 4.4+ Module -->
+		<dependency>
+			<groupId>org.powermock</groupId>
+			<artifactId>powermock-module-junit4</artifactId>
+			<version>${powermock.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<!-- PowerMock Mockito2 API -->
+		<dependency>
+			<groupId>org.powermock</groupId>
+			<artifactId>powermock-api-mockito2</artifactId>
+			<version>${powermock.version}</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.7.0</version>
+				<configuration>
+					<source>${java.version}</source>
+					<target>${java.version}</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.22.0</version>
+				<dependencies>
+					<dependency>
+						<groupId>org.apache.maven.surefire</groupId>
+						<artifactId>surefire-junit47</artifactId>
+						<version>2.22.0</version>
+					</dependency>
+					<dependency>
+						<groupId>org.apache.maven.surefire</groupId>
+						<artifactId>surefire-testng</artifactId>
+						<version>2.22.0</version>
+					</dependency>
+				</dependencies>
+				<configuration>
+					<additionalClasspathElements>
+						<additionalClasspathElement>src/test/java/</additionalClasspathElement>
+					</additionalClasspathElements>
+					<!-- TestNG Test Fails when executed from command line with message
+						"Cannot use a threadCount parameter less than 1" 
+						Works when threadCount is explicitly specified 
+						https://gist.github.com/juherr/6eb3e93e2db33979b7e90b63ddadc888-->
+					<threadCount>5</threadCount>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>
+-------------------------------------------------------------------------------------------------------
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
+public class MainController implements Controller {
+    @Override
+    public ModelAndView handleRequest(HttpServletRequest request,
+            HttpServletResponse response) throws Exception {
+        System.out.println("Welcome main");
+        return new ModelAndView("main");
+    }
+}
+-------------------------------------------------------------------------------------------------------
+create unique index ux_test on my_table (case when amount != 0 then fk_xyz end);
+-------------------------------------------------------------------------------------------------------
+JAVA_TOOL_OPTIONS: -javaagent:/usr/share/java/jayatanaag.jar 
+-------------------------------------------------------------------------------------------------------
+<dependency>
+    <groupId>com.xebialabs.restito</groupId>
+    <artifactId>restito</artifactId>
+    <version>0.9.3</version>
+</dependency>
+
+gradle clean build
+-------------------------------------------------------------------------------------------------------
+<dependency>
+    <groupId>org.apache.tomcat.embed</groupId>
+    <artifactId>tomcat-embed-jasper</artifactId>
+    <scope>provided</scope>
+</dependency>
+<dependency>
+    <groupId>javax.servlet</groupId>
+    <artifactId>jstl</artifactId>
+</dependency>
+-------------------------------------------------------------------------------------------------------
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import javax.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.multipart.MultipartFile;
+ 
+import com.adminportal.domain.Book;
+import com.adminportal.service.BookService;
+ 
+@Controller
+@RequestMapping("/book")
+public class BookController {
+ 
+    @Autowired
+    private BookService bookService;
+ 
+    @RequestMapping(value = "/add", method = RequestMethod.GET)
+    public String addBook(Model model) {
+        Book book = new Book();
+        model.addAttribute("book", book);
+        return "addBook";
+    }
+ 
+    @RequestMapping(value = "/add", method = RequestMethod.POST)
+    public String addBookPost(@ModelAttribute("book") Book book, HttpServletRequest request) {
+        bookService.save(book);
+ 
+        MultipartFile bookImage = book.getBookImage();
+ 
+        try {
+            byte[] bytes = bookImage.getBytes();
+            String name = book.getId() + ".png";
+            BufferedOutputStream stream = new BufferedOutputStream(
+                    new FileOutputStream(new File("src/main/resources/static/image/book/" + name)));
+            stream.write(bytes);
+            stream.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+ 
+        return "redirect: /bookList";
+    }
+     
+     
+ 
+}
+-------------------------------------------------------------------------------------------------------
+@SpringBootTest
+@RunWith(SpringRunner.class)
+@AutoConfigureMockMvc
+public class UserResourceTests {
+ 
+    @Autowired
+    private MockMvc mockMvc;
+ 
+    @SpyBean
+    private MongoTemplate mongoTemplate;
+ 
+    @Test
+    public void should_create_a_user() throws Exception {
+        String json = "{\"username\":\"shekhargulati\",\"name\":\"Shekhar Gulati\"}";
+        doReturn(null)
+                .when(mongoTemplate).findOne(Mockito.any(Query.class), Mockito.eq(User.class));
+        doNothing().when(mongoTemplate).save(Mockito.any(User.class));
+        this.mockMvc
+                .perform(post("/api/users").contentType(MediaType.APPLICATION_JSON).content(json))
+                .andDo(print())
+                .andExpect(status().isCreated());
+        verify(mongoTemplate).save(Mockito.any(User.class));
+    }
+}
+-------------------------------------------------------------------------------------------------------
+public class ToBeTested{
+
+    public void myMethodToTest(){
+         ...
+         String s = makeStaticWrappedCall();
+         ...
+    }
+
+    String makeStaticWrappedCall(){
+        return Util.staticMethodCall();
+    }
+}
+public class ToBeTestedTest{
+
+    @Spy
+    ToBeTested tbTestedSpy = new ToBeTested();
+
+    @Before
+    public void init(){
+        MockitoAnnotations.initMocks(this);
+    }
+
+    @Test
+    public void myMethodToTestTest() throws Exception{
+       // Arrange
+       doReturn("Expected String").when(tbTestedSpy).makeStaticWrappedCall();
+
+       // Act
+       tbTestedSpy.myMethodToTest();
+    }
+}
+-------------------------------------------------------------------------------------------------------
+StepVerifier.withVirtualTime(() -> Mono.delay(Duration.ofHours(3)))
+            .expectSubscription()
+            .expectNoEvent(Duration.ofHours(2))
+            .thenAwait(Duration.ofHours(1))
+            .expectNextCount(1)
+            .expectComplete()
+            .verify();
+-------------------------------------------------------------------------------------------------------
+//generic imports to help with simpler IDEs (ie tech.io)
+import java.util.*;
+import java.util.function.*;
+import java.time.*;
+import reactor.test.StepVerifier;
+
+import io.pivotal.literx.domain.User;
+import reactor.core.publisher.Flux;
+
+import static org.assertj.core.api.Assertions.*;
+
+/**
+ * Learn how to use StepVerifier to test Mono, Flux or any other kind of Reactive Streams Publisher.
+ *
+ * @author Sebastien Deleuze
+ * @see <a href="https://projectreactor.io/docs/test/release/api/reactor/test/StepVerifier.html">StepVerifier Javadoc</a>
+ */
+public class Part03StepVerifier {
+
+//========================================================================================
+
+	// TODO Use StepVerifier to check that the flux parameter emits "foo" and "bar" elements then completes successfully.
+	void expectFooBarComplete(Flux<String> flux) {
+		fail();
+	}
+
+//========================================================================================
+
+	// TODO Use StepVerifier to check that the flux parameter emits "foo" and "bar" elements then a RuntimeException error.
+	void expectFooBarError(Flux<String> flux) {
+		fail();
+	}
+
+//========================================================================================
+
+	// TODO Use StepVerifier to check that the flux parameter emits a User with "swhite"username
+	// and another one with "jpinkman" then completes successfully.
+	void expectSkylerJesseComplete(Flux<User> flux) {
+		fail();
+	}
+
+//========================================================================================
+
+	// TODO Expect 10 elements then complete and notice how long the test takes.
+	void expect10Elements(Flux<Long> flux) {
+		fail();
+	}
+
+//========================================================================================
+
+	// TODO Expect 3600 elements at intervals of 1 second, and verify quicker than 3600s
+	// by manipulating virtual time thanks to StepVerifier#withVirtualTime, notice how long the test takes
+	void expect3600Elements(Supplier<Flux<Long>> supplier) {
+		fail();
+	}
+
+	private void fail() {
+		throw new AssertionError("workshop not implemented");
+	}
+
+}
+-------------------------------------------------------------------------------------------------------
 JwtClaims claims = new JwtClaims();
 claims.setIssuer("issuer");
 claims.setExpirationTimeMinutesInTheFuture(10);
