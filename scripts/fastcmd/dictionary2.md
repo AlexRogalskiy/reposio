@@ -1,0 +1,3241 @@
+--------------------------------------------------------------------------------------------------------
+String pricePayload = JacksonJsonHelper.serialize(request.getCurrent_price());
+--------------------------------------------------------------------------------------------------------
+import java.io.IOException;
+import java.io.InterruptedIOException;
+import java.net.UnknownHostException;
+import java.util.Map;
+
+import javax.annotation.PostConstruct;
+import javax.net.ssl.SSLException;
+
+import org.apache.commons.httpclient.ConnectTimeoutException;
+import org.apache.curator.utils.CloseableUtils;
+import org.apache.http.Header;
+import org.apache.http.HttpEntityEnclosingRequest;
+import org.apache.http.HttpRequest;
+import org.apache.http.StatusLine;
+import org.apache.http.client.HttpRequestRetryHandler;
+import org.apache.http.client.ResponseHandler;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.conn.HttpHostConnectException;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.protocol.HttpContext;
+import org.apache.http.util.EntityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+@Component
+public class HttpClientManager {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientManager.class);
+
+    @Value("${httpconfig.maxHttpConnections}")
+    private transient Integer maxHttpConnections;
+
+    @Value("${httpconfig.maxHttpConnectionsPerRoute}")
+    private transient Integer maxHttpConnectionsPerRoute;
+
+    @Value("${httpconfig.connectionTimeout}")
+    private transient Integer connectionTimeout;
+
+    @Value("${httpconfig.connectionRequestTimeout}")
+    private transient Integer connectionRequestTimeout;
+
+    @Value("${httpconfig.socketTimeout}")
+    private transient Integer socketTimeout;
+
+    @Value("${httpconfig.maxHttpRetries}")
+    private transient Integer maxHttpRetries;
+
+    CloseableHttpClient client = null;
+
+    @PostConstruct
+    public void init() {
+
+        final PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
+        connectionManager.setMaxTotal(maxHttpConnections);
+        connectionManager.setDefaultMaxPerRoute(maxHttpConnectionsPerRoute);
+
+        final RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(connectionTimeout * 1000)
+                .setConnectionRequestTimeout(connectionRequestTimeout * 1000).setSocketTimeout(socketTimeout * 1000)
+                .build();
+
+        client = HttpClients.custom().setRetryHandler(retryHandler).setDefaultRequestConfig(requestConfig)
+                .setConnectionManager(connectionManager).build();
+    }
+
+    public String doHttpGet(final String url, final ResponseHandler<? extends Object> handler,
+            final Map<String, String> headers) throws IOException {
+
+        final HttpClientContext context = HttpClientContext.create();
+        final HttpGet httpGet = new HttpGet(url);
+
+        LOGGER.debug("Executing request {}", httpGet.getRequestLine());
+        if (headers != null && headers.size() > 0) {
+            for (final String key : headers.keySet()) {
+                httpGet.addHeader(key, headers.get(key));
+            }
+        }
+        if (client == null) {
+            LOGGER.info("Re-initializing the http-client");
+            client = httpClient(true);
+        }
+
+        final String responseBody = (String) client.execute(httpGet, handler, context);
+        LOGGER.debug("Server Response: {}", responseBody);
+        return responseBody;
+    }
+
+    public String doHttpDelete(final String url) throws IOException {
+
+        CloseableHttpResponse httpResponse = null;
+
+        try {
+            final HttpClientContext context = HttpClientContext.create();
+            final HttpDelete httpDelete = new HttpDelete(url);
+            LOGGER.debug("Executing Delete request {}", httpDelete.getRequestLine());
+
+            if (client == null) {
+                LOGGER.info("Re-initializing the http-client");
+                client = httpClient(true);
+            }
+            httpResponse = client.execute(httpDelete, context);
+            final String content = EntityUtils.toString(httpResponse.getEntity());
+
+            final StatusLine statusLine = httpResponse.getStatusLine();
+
+            LOGGER.debug("Server Response for delete: {}", statusLine, content);
+
+            final String response = String.valueOf(statusLine.getStatusCode());
+
+            return response;
+        } finally {
+            CloseableUtils.closeQuietly(httpResponse);
+        }
+    }
+
+    public CloseableHttpResponse doHttpGet(final String uri, final Header[] headers) throws Exception {
+        CloseableHttpResponse closeableresponse = null;
+        final HttpGet httpget = new HttpGet(uri);
+        httpget.setHeaders(headers);
+        if (client == null) {
+            LOGGER.info("Re-initializing the http-client");
+            client = httpClient(true);
+        }
+        closeableresponse = client.execute(httpget);
+        LOGGER.debug("Response Status line :" + closeableresponse.toString());
+        LOGGER.debug("HTTP status " + closeableresponse.getStatusLine().getStatusCode());
+        if (closeableresponse.getStatusLine().getStatusCode() == 202
+                || closeableresponse.getStatusLine().getStatusCode() == 200) {
+
+            return closeableresponse;
+        } else {
+            throw new Exception("cannot get records using anchor id and query. status code: "
+                    + closeableresponse.getStatusLine().getStatusCode());
+        }
+    }
+
+    public String doHttpPost(final String url, final String payload, final Header[] headers,
+            final ResponseHandler<String> handler) throws IOException {
+
+        final HttpClientContext context = HttpClientContext.create();
+        final HttpPost post = new HttpPost(url);
+        post.setEntity(new StringEntity(payload));
+        post.setHeaders(headers);
+        LOGGER.debug("Executing request {} with payload {}", post.getRequestLine(), payload);
+
+        if (client == null) {
+            LOGGER.info("Re-initializing the http-client");
+            client = httpClient(true);
+        }
+        final String responseBody = client.execute(post, handler, context);
+        LOGGER.debug("Server Response: {}", responseBody);
+
+        return responseBody;
+    }
+
+    public String doHttpPut(final String url, final String payload, final Header[] headers,
+            final ResponseHandler<String> handler) throws IOException {
+
+        final HttpClientContext context = HttpClientContext.create();
+        final HttpPut post = new HttpPut(url);
+        post.setEntity(new StringEntity(payload));
+        post.setHeaders(headers);
+        LOGGER.debug("Executing request {} with payload {}", post.getRequestLine(), payload);
+        if (client == null) {
+            LOGGER.info("Re-initializing the http-client");
+            client = httpClient(true);
+        }
+        final String responseBody = client.execute(post, handler, context);
+        LOGGER.debug("Server Response: {}", responseBody);
+
+        return responseBody;
+    }
+
+    public String doHttpPut(final String url, final String payload, final Map<String, String> headers,
+            final ResponseHandler<String> handler) throws IOException {
+
+        final HttpClientContext context = HttpClientContext.create();
+        final HttpPut put = new HttpPut(url);
+        put.setEntity(new StringEntity(payload));
+
+        if (headers != null && headers.size() > 0) {
+            for (final String key : headers.keySet()) {
+                put.addHeader(key, headers.get(key));
+            }
+        }
+
+        LOGGER.debug("Executing request {} with payload {}", put.getRequestLine(), payload);
+        if (client == null) {
+            LOGGER.info("Re-initializing the http-client");
+            client = httpClient(true);
+        }
+        final String responseBody = client.execute(put, handler, context);
+        LOGGER.debug("Server Response: {}", responseBody);
+
+        return responseBody;
+    }
+
+    public String doHttpPost(final String url, final String payload, final Map<String, String> headers,
+            final ResponseHandler<String> handler) throws IOException {
+
+        final HttpClientContext context = HttpClientContext.create();
+        final HttpPost post = new HttpPost(url);
+        post.setEntity(new StringEntity(payload));
+
+        if (headers != null && headers.size() > 0) {
+            for (final String key : headers.keySet()) {
+                post.addHeader(key, headers.get(key));
+            }
+        }
+
+        LOGGER.debug("Executing request {} with payload {}", post.getRequestLine(), payload);
+
+        if (client == null) {
+            LOGGER.info("Re-initializing the http-client");
+            client = httpClient(true);
+        }
+        final String responseBody = client.execute(post, handler, context);
+        LOGGER.debug("Server Response: {}", responseBody);
+
+        return responseBody;
+    }
+
+    public String doHttpPut(final String url, final byte[] payload, final Map<String, String> headers,
+            final ResponseHandler<String> handler) throws IOException {
+
+        final HttpClientContext context = HttpClientContext.create();
+        final HttpPut put = new HttpPut(url);
+        put.setEntity(new ByteArrayEntity(payload));
+
+        if (headers != null && headers.size() > 0) {
+            for (final String key : headers.keySet()) {
+                put.addHeader(key, headers.get(key));
+            }
+        }
+
+        LOGGER.debug("Executing request {}", put.getRequestLine());
+        if (client == null) {
+            LOGGER.info("Re-initializing the http-client");
+            client = httpClient(true);
+        }
+        final String responseBody = client.execute(put, handler, context);
+        LOGGER.debug("Server Response: {}", responseBody);
+
+        return responseBody;
+    }
+
+    private CloseableHttpClient httpClient(final boolean useRetryHandler) {
+
+        HttpClientBuilder builder = HttpClientBuilder.create();
+
+        final PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
+        connectionManager.setMaxTotal(maxHttpConnections);
+        connectionManager.setDefaultMaxPerRoute(maxHttpConnectionsPerRoute);
+
+        if (useRetryHandler) {
+            builder = builder.setRetryHandler(retryHandler);
+        }
+        final RequestConfig config = RequestConfig.custom().setConnectTimeout(connectionTimeout * 1000)
+                .setConnectionRequestTimeout(connectionRequestTimeout * 1000).setSocketTimeout(socketTimeout * 1000)
+                .build();
+        final CloseableHttpClient httpClient = builder.setDefaultRequestConfig(config)
+                .setConnectionManager(connectionManager).build();
+
+        return httpClient;
+    }
+
+    private final HttpRequestRetryHandler retryHandler = new HttpRequestRetryHandler() {
+
+        @Override
+        public boolean retryRequest(final IOException exception, final int executionCount, final HttpContext context) {
+            LOGGER.warn(
+                    "Exception occoured while performing REST operation. Retrying the operation {} times for every 5 seconds and execution count is {}/{}  ",
+                    maxHttpRetries, executionCount, maxHttpRetries);
+            try {
+                Thread.sleep(5000);
+            } catch (final Exception e) {
+                LOGGER.error("Thread interrupted occured while waiting for next iteration ", e);
+            }
+
+            // Do not retry if over max retry count
+            if (executionCount >= maxHttpRetries) { return false; }
+
+            // Timeout
+            if (exception instanceof InterruptedIOException || exception instanceof UnknownHostException
+                    || exception instanceof ConnectTimeoutException || exception instanceof HttpHostConnectException
+                    || exception instanceof SSLException) {
+
+            return false; }
+
+            final HttpClientContext clientContext = HttpClientContext.adapt(context);
+            final HttpRequest request = clientContext.getRequest();
+            final boolean idempotent = !(request instanceof HttpEntityEnclosingRequest);
+            LOGGER.info("idempotent {}", idempotent);
+            // Retry if the request is considered idempotent
+            if (idempotent) { return true; }
+            return false;
+        }
+
+    };
+
+    public void shutdown() {
+        LOGGER.info("Shutting down http connection manager.");
+        CloseableUtils.closeQuietly(client);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import com.redsky.client.exception.ResourceValidationException;
+import com.redsky.client.pojo.RequestPayload;
+
+@Component
+public class InputRequestValidator implements RequestValidator<RequestPayload> {
+
+    @Autowired
+    private BeanValidator validator;
+
+    @Autowired
+    private NameValidator nameValidator;
+
+    @Override
+    public boolean validate(final RequestPayload bean) throws ResourceValidationException {
+        boolean result = false;
+        if (bean != null) {
+            result = validator.validate(bean);
+        }
+        if (result) {
+            result = nameValidator.isValidName(bean.getProduct().getName());
+        }
+
+        return result;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+tring jsonCarArray = 
+  "[{ \"color\" : \"Black\", \"type\" : \"BMW\" }, { \"color\" : \"Red\", \"type\" : \"FIAT\" }]";
+ObjectMapper objectMapper = new ObjectMapper();
+objectMapper.configure(DeserializationFeature.USE_JAVA_ARRAY_FOR_JSON_ARRAY, true);
+Car[] cars = objectMapper.readValue(jsonCarArray, Car[].class);
+// print cars
+--------------------------------------------------------------------------------------------------------
+String jsonCarArray = 
+  "[{ \"color\" : \"Black\", \"type\" : \"BMW\" }, { \"color\" : \"Red\", \"type\" : \"FIAT\" }]";
+ObjectMapper objectMapper = new ObjectMapper();
+List<Car> listCar = objectMapper.readValue(jsonCarArray, new TypeReference<List<Car>>(){});
+// print cars
+--------------------------------------------------------------------------------------------------------
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.springframework.stereotype.Component;
+
+@Component
+public class NameValidator {
+
+    private static final String NAME_PATTERN = "^[a-zA-Z0-9\\._\\s\\-]+$";
+
+    public boolean isValidName(final String name) {
+        final Pattern pattern = Pattern.compile(NAME_PATTERN);
+        final Matcher matcher = pattern.matcher(name);
+        return matcher.matches();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+-- create a keyspace
+create keyspace if not exists target with replication = {'class':'SimpleStrategy','replication_factor':1};
+
+-- use keyspace
+use target;
+
+-- create table
+create table product(productid bigint primary key, price double);
+
+-- insert products
+insert into product(productid, price) values(22222111, 243.87);
+insert into product(productid, price) values(1234567, 243.87);
+--------------------------------------------------------------------------------------------------------
+from flask import Flask, request, Response
+import json
+
+""""
+Product name webservice to get and post product name
+endpoints:
+    GET   /products/<id> gives product json with id and name if product exists in dictionary
+    POST  /products  adds a product id and its corresponding name to the dictionary
+"""
+app = Flask(__name__)
+products = dict()
+
+
+@app.route("/products/<id>")
+def get_product(id):
+    """
+    api method to get a product details by its id from products dictionary
+    :param id: product id
+    :type id: int
+    :return: json
+    :returns : product id and name if product exists / 404 not found if id is empty /
+               id and None if product is not found
+    """
+    if not products.get(id, None):
+        return Response(status=404)
+    _product = dict()
+    _product["id"] = id
+    _product["name"] = products.get(id, None)
+    return json.dumps(_product)
+
+
+@app.route("/products", methods=['POST'])
+def add_product():
+    """
+    api method to add a product and its name to products dictionary
+    :return: Response object
+    :returns Response 200 on success / Response 400 for missing or invalid data
+    """
+    if not request.data:
+        return Response(status=400)
+    id = None
+    name = ""
+    data = json.loads(request.data)
+    for key, val in data.items():
+        if key == "id":
+            id = val
+        if key == "name":
+            name = val
+    if not name or not id:
+        return Response(status=400)
+    products[id] = name
+    print("adding product {0} {1}".format(id, name))
+    return Response(status=201)
+
+
+if __name__ == "__main__":
+    app.run(port=8100)
+	
+Flask==0.12.2
+Jinja2==2.10
+MarkupSafe==1.0
+Werkzeug==0.12.2
+click==6.7
+itsdangerous==0.24
+wsgiref==0.1.2
+
+cassandra.contactpoints=localhost
+cassandra.port=9042
+cassandra.keyspace=target
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.env.Environment;
+import org.springframework.data.cassandra.config.CassandraClusterFactoryBean;
+import org.springframework.data.cassandra.config.java.AbstractCassandraConfiguration;
+import org.springframework.data.cassandra.mapping.BasicCassandraMappingContext;
+import org.springframework.data.cassandra.mapping.CassandraMappingContext;
+import org.springframework.data.cassandra.repository.config.EnableCassandraRepositories;
+
+/**
+ * Created by pranith macha on 12/3/17.
+ */
+@Configuration
+@PropertySource(value = {"classpath:cassandra.properties"})
+@EnableCassandraRepositories(basePackages = {"com.boot.docker.SpringBootDocker"})
+public class CassandraConfig extends AbstractCassandraConfiguration {
+
+    @Autowired
+    private Environment environment;
+
+    @Bean
+    public CassandraClusterFactoryBean cluster() {
+        CassandraClusterFactoryBean cluster = new CassandraClusterFactoryBean();
+        cluster.setContactPoints(environment.getProperty("cassandra.contactpoints"));
+        cluster.setPort(Integer.parseInt(environment.getProperty("cassandra.port")));
+        return cluster;
+    }
+
+    @Override
+    protected String getKeyspaceName() {
+        return environment.getProperty("cassandra.keyspace");
+    }
+
+    @Bean
+    public CassandraMappingContext cassandraMapping() throws ClassNotFoundException {
+        return new BasicCassandraMappingContext();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+import com.retail.target.data.ProductDAO;
+import org.springframework.data.cassandra.repository.CassandraRepository;
+import org.springframework.stereotype.Repository;
+
+/**
+ * Created by pranith macha on 12/3/17.
+ */
+
+@Repository
+public interface ProductRepository extends CassandraRepository<ProductDAO> {
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.cassandra.core.Ordering;
+import org.springframework.cassandra.core.PrimaryKeyType;
+import org.springframework.data.cassandra.mapping.Column;
+import org.springframework.data.cassandra.mapping.PrimaryKeyColumn;
+import org.springframework.data.cassandra.mapping.Table;
+
+/**
+ * Created by pranith macha on 11/30/17.
+ */
+
+@Table(value = "product")
+public class ProductDAO {
+
+
+    @PrimaryKeyColumn(name = "productid", type = PrimaryKeyType.PARTITIONED, ordering = Ordering.DESCENDING)
+    private long productid;
+
+    @Column(value = "price")
+    private double price;
+
+    public long getProductid() {
+        return productid;
+    }
+
+    public void setProductid(long productid) {
+        this.productid = productid;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public void setPrice(double price) {
+        this.price = price;
+    }
+}
+
+
+--------------------------------------------------------------------------------------------------------
+	String fileName = "C:/Users/eo903e/contentModerator-master/ContentModeratorAPI/src/main/resources/objectionable_content.txt";
+		Path path = Paths.get(fileName);
+		byte[] bytes = Files.readAllBytes(path);
+		List<String> langList = Files.readAllLines(path, StandardCharsets.UTF_8);
+		return langList;
+--------------------------------------------------------------------------------------------------------
+version: "3"
+services:
+  mysql:
+    build: mysql
+    ports:
+      - "3306:3306"
+    environment:
+        MYSQL_ROOT_PASSWORD: password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+--------------------------------------------------------------------------------------------------------
+FROM mysql:5.6
+
+# 確認用
+# ENV TZ=Asia/Tokyo
+# RUN echo $TZ | tee /etc/timezone && dpkg-reconfigure --frontend noninteractive tzdata
+
+ADD my.cnf /etc/mysql/conf.d/my.cnf
+ADD dbinit.sql /docker-entrypoint-initdb.d/
+
+RUN chmod 644 /etc/mysql/conf.d/my.cnf /docker-entrypoint-initdb.d/*
+--------------------------------------------------------------------------------------------------------
+CREATE DATABASE IF NOT EXISTS workdb;
+CREATE DATABASE IF NOT EXISTS tododb;
+CREATE USER 'user'@'%' IDENTIFIED BY 'password';
+GRANT ALL PRIVILEGES ON *.* TO 'user'@'%' WITH GRANT OPTION;
+--------------------------------------------------------------------------------------------------------
+[mysqld]
+character_set_server=utf8mb4
+collation_server=utf8mb4_general_ci
+autocommit=0
+transaction-isolation=READ-COMMITTED
+--------------------------------------------------------------------------------------------------------
+spring.data.rest.base-path=/api
+--------------------------------------------------------------------------------------------------------
+    @RequestMapping(value="/login", method=RequestMethod.POST)
+    public AuthenticationToken login(
+
+            @RequestBody AuthenticationRequest authenticationRequest, HttpSession session ) {
+        String username = authenticationRequest.getUsername();
+        String password = authenticationRequest.getPassword();
+        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(username, password);
+        Authentication authentication = authenticationManager.authenticate(token);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, SecurityContextHolder.getContext());
+        UserDetails user = customUserDetailsService.loadUserByUsername(username);  // 예제에선 유저 객체에서 직접 이름과 authorities와 id를 가져왔는데 details에서 가져오면 상관없지않을까?
+
+        return new AuthenticationToken(user.getUsername(), user.getAuthorities(), session.getId());
+    }
+--------------------------------------------------------------------------------------------------------
+    @PostMapping("")
+    public String create(Member member) {
+        MemberRole role = new MemberRole();
+        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+        member.setUpw(passwordEncoder.encode(member.getUpw()));
+        role.setRoleName("BASIC");
+        member.setRoles(Arrays.asList(role));
+        memberRepository.save(member);
+        return "redirect:/";
+    }
+--------------------------------------------------------------------------------------------------------
+import com.example.demo.service.CustomUserDetailsService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+@EnableWebSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter{
+
+    @Autowired
+    CustomUserDetailsService customUserDetailsService;
+
+    //스프링 시큐리티에서 로그인 처리를 구현하려면 SecurityConfig에서
+    // AuthenticationManagerBuilder를 주입해서 인증에 대한 처리를 해야 한다.
+
+    @Autowired
+    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
+        //method 를 autowired할때는 그 return 값을 객체로 빈에 저장하는것이 아니었나?
+        auth.userDetailsService(customUserDetailsService)
+                .passwordEncoder(passwordEncoder());
+    }
+
+    @Bean  // . authenticationManagerBean 메소드의 경우에는 SpringSecurity에서 사용되는 인증객체를 Bean으로 등록할 때 사용합니다.
+    @Override
+    public AuthenticationManager authenticationManagerBean() throws Exception {
+        return super.authenticationManagerBean(); }
+
+
+    @Override
+    public void configure(WebSecurity web) throws Exception
+    {
+        web.ignoring().antMatchers("/css/**", "/script/**", "image/**", "/fonts/**", "lib/**");
+    }
+    @Override
+    protected void configure(HttpSecurity http) throws Exception
+    {
+        http.csrf().disable()
+                .authorizeRequests()
+                .antMatchers("/user/login")
+                .permitAll() .antMatchers("/user")
+                .hasAuthority("USER") .antMatchers("/admin")
+                .hasAuthority("ADMIN")
+                .anyRequest().authenticated()
+                .and().logout();
+
+    }
+
+
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Properties;
+import java.util.Set;
+
+import org.apache.log4j.Logger;
+
+public class RegionCountryMap {
+	
+	private static RegionCountryMap instance = new RegionCountryMap();
+	private Logger logger = Logger.getLogger(RegionCountryMap.class);
+	
+	private Properties prop;
+	
+	private RegionCountryMap(){
+		
+		InputStream  input = null;
+		 
+		try { 
+			URL url = RegionCountryMap.class.getClassLoader().getResource("region_to_country.dat");
+			String file = url.getPath();
+			prop = new Properties();
+			input = new FileInputStream(file);
+			prop.load(input);
+	 
+		} catch (IOException ex) {
+			logger.error(ex);
+		} finally {
+			if (input != null) {
+				try {
+					input.close();
+				} catch (IOException e) {
+					logger.error(e);
+				}
+			}
+		}
+		
+	}
+	
+	public static RegionCountryMap getInstance(){
+		return instance;
+	}
+	
+	public String getCountry(String region){
+		return prop.getProperty(region);
+	}
+	
+	public boolean hasCountry(String region){
+		if(prop.getProperty(region) != null){
+			return true;
+		}
+		return false;
+	}
+
+	public Set<Object> getKeys() {
+		return prop.keySet();
+	}
+	
+
+}
+--------------------------------------------------------------------------------------------------------
+public enum States {
+	// US states
+	AL("Alabama"), AK("Alaska"), AZ("Arizona"), AR("Arkansas"), CA("California"), CO("Colorado"),
+	CT("Connecticut"), DE("Delaware"), FL("Florida"), GA("Georgia"), HI("Hawaii"), ID("Idaho"), 
+	IL("Illinois"), IN("Indiana"), IA("Iowa"), KS("Kansas"), KY("Kentucky"), LA("Louisiana"),
+	ME("Maine"), MD("Maryland"), MA("Massachusetts"), MI("Michigan"), MN("Minnesota"), MS("Mississippi"), 
+	MO("Missouri"), MT("Montana"), NE("Nebraska"), NV("Nevada"), NH("New Hampshire"), NJ("New Jersey"),
+	NM("New Mexico"), NY("New York"), NC("North Carolina"), ND("North Dakota"), OH("Ohio"), OK("Oklahoma"),
+	OR("Oregon"), PA("Pennsylvania"), RI("Rhode Island"), SC("South Carolina"), SD("South Dakota"), 
+	TN("Tennessee"), TX("Texas"), UT("Utah"), VT("Vermont"), VA("Virginia"), WA("Washington"), 
+	WV("West Virginia"), WI("Wisconsin"), WY("Wyoming"), DC("District of Columbia"), AS("American Samoa"), 
+	GU("Guam"), MP("Northern Mariana Islands"), PR("Puerto Rico"), VI("U.S. Virgin Islands"),
+	// Canada states
+	NB("New Brunswick"), NU("Nunavut"), NL("Newfoundland and Labrador"), MB("Manitoba"), YT("Yukon"),
+	BC("British Columbia"), PE("Prince Edward Island"), NT("Northwest Territories"), QC("Quebec"), 
+	NS("Nova Scotia"), AB("Alberta"), SK("Saskatchewan"), ON("Ontario");
+	
+	private String keyword;
+	
+	private States(String k) {
+		this.keyword = k;
+	}
+	
+	public static States getEnum(String state) {
+		for (States c : States.values()) {
+			if (c.name().equalsIgnoreCase(state)) {
+				return c;
+			}
+		}
+		return null;
+	}
+	
+	public String getKeyword(){
+		return keyword;
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+public enum Platform {
+	ANDROID("android"),IOS("ios"),WINDOWS("windows");
+	
+	private String keyword;
+	
+	private Platform(String key) {
+		this.keyword = key;
+	}
+	
+	public static Platform matchText(String text){
+		text = text.toLowerCase();
+		for(Platform a:Platform.values()){
+			if(text.contains(a.keyword)){
+				return a;
+			}
+		}
+		return null;
+	}
+
+	public static Platform getEnum(String val){
+		for(Platform key: Platform.values()){
+			if(key.keyword.equalsIgnoreCase(val)){
+				return key;
+			}
+		}
+		return null;
+	}
+}
+--------------------------------------------------------------------------------------------------------
+
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
+import org.apache.hadoop.hbase.util.Bytes;
+
+
+//written by Robin Li for HBase key optimization
+
+public class HBaseUtil {
+	
+	public static byte[] constructKey (int token_i, String udid_s){
+		byte[] udid = udid_s.getBytes();
+		MessageDigest md;
+		try {
+			md = MessageDigest.getInstance("MD5");
+			udid = md.digest(udid); 
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		}
+		int salt = ((int) udid[0])<<29 | (token_i);
+
+		byte[] key = Bytes.add(Bytes.toBytes(salt), udid);
+		return key;
+	}
+	
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+import org.apache.hadoop.hbase.client.Result;
+import org.apache.log4j.Logger;
+
+public class HBaseThreadPool {
+	
+	private ExecutorService service = Executors.newFixedThreadPool(10);
+	
+	private static HBaseThreadPool instance = new HBaseThreadPool();
+	private static Logger logger = Logger.getLogger(HBaseThreadPool.class);
+	
+	private HBaseThreadPool(){
+		
+	}
+	
+	public static HBaseThreadPool getInstance(){
+		return instance;
+	}
+	
+	public List<Future<Result>> submitHBaseTaskList(List<HBaseTask> tasks){
+		try {
+			List<Future<Result>> results = service.invokeAll(tasks);
+			return results;
+		} catch (InterruptedException e) {
+			logger.error(e);
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.ZooKeeperConnectionException;
+import org.apache.hadoop.hbase.client.HConnection;
+import org.apache.hadoop.hbase.client.HConnectionManager;
+import org.apache.log4j.Logger;
+
+public class HBaseDataSource {
+	
+	private Configuration config;
+	private Logger logger = Logger.getLogger(HBaseDataSource.class);
+	
+	private static HBaseDataSource instance = new HBaseDataSource();
+	
+	private HBaseDataSource() {
+		config = HBaseConfiguration.create(); 
+	}
+	
+	public static HBaseDataSource getInstance(){
+		return instance;
+	}
+	
+	public HConnection getConnection(){
+		try {
+			return HConnectionManager.createConnection(config);
+		} catch (ZooKeeperConnectionException e) {
+			logger.error(e);
+			e.printStackTrace();
+		}
+		return null;
+	}
+}
+--------------------------------------------------------------------------------------------------------
+#
+# This file configures the New Relic Agent.  New Relic monitors
+# Java applications with deep visibility and low overhead.  For more
+# information, visit www.newrelic.com.
+#
+# This configuration file is custom generated for Tapjoy
+#
+# This section is for settings common to all environments.
+# Do not add anything above this next line.
+common: &default_settings
+  #
+  # ============================== LICENSE KEY ===============================
+
+  # You must specify the license key associated with your New Relic
+  # account.  This key binds your Agent's data to your account in the
+  # New Relic service.
+  license_key: 'bb8353602ba48d962a5db59ac4e1468d2da7fb8d'
+  
+  # Agent Enabled
+  # Use this setting to force the agent to run or not run.
+  # Default is true.
+  # agent_enabled: true
+  
+  # Set to true to enable support for auto app naming.
+  # The name of each web app is detected automatically
+  # and the agent reports data separately for each one.
+  # This provides a finer-grained performance breakdown for
+  # web apps in New Relic.
+  # Default is false.
+  enable_auto_app_naming: false
+  
+  # Set to true to enable component-based transaction naming.
+  # Set to false to use the URI of a web request as the name of the transaction.
+  # Default is true.
+  enable_auto_transaction_naming: true
+ 
+  # Set the name of your application as you'd like it show up in New Relic.
+  # if enable_auto_app_naming is false, the agent reports all data to this application.
+  # Otherwise, the agent reports only background tasks (transactions for non-web applications) to this application.
+  # To report data to more than one application, separate the application names with ";".
+  # For example, to report data to"My Application" and "My Application 2" use this:
+  # app_name: My Application;My Application 2
+  # This setting is required.
+  app_name: Reach Service
+
+  # The agent uses its own log file to keep its logging
+  # separate from that of your application.  Specify the log level here.
+  # This setting is dynamic, so changes do not require restarting your application.
+  # The levels in increasing order of verboseness are: off, severe, warning, info, fine, finer, finest
+  # Default is info.
+  log_level: info
+  
+  # Log all data to and from New Relic in plain text.
+  # This setting is dynamic, so changes do not require restarting your application.
+  # Default is false.
+  #audit_mode: true
+  
+  # The number of log files to use.
+  # Default is 1.
+  #log_file_count: 1
+  
+  # The maximum number of bytes to write to any one log file.
+  # Default is 0 (no limit).
+  #log_limit_in_kbytes: 0
+
+  # The name of the log file.
+  # Default is newrelic_agent.log.
+  #log_file_name: newrelic_agent.log
+  
+  # The log file directory.
+  # Default is the logs directory in the newrelic.jar parent directory.
+  #log_file_path:
+  
+  # The agent communicates with New Relic via https by
+  # default.  If you want to communicate with newrelic via http,
+  # then turn off SSL by setting this value to false.
+  # This work is done asynchronously to the threads that process your
+  # application code, so response times will not be directly affected
+  # by this change.
+  # Default is true.
+  ssl: true
+  
+  # Proxy settings for connecting to the New Relic server.
+  #
+  # If a proxy is used, the host setting is required.  Other settings
+  # are optional.  Default port is 8080.  The username and password
+  # settings will be used to authenticate to Basic Auth challenges
+  # from a proxy server.
+  #
+  # proxy_host: hostname
+  # proxy_port: 8080
+  # proxy_user: username
+  # proxy_password: password
+
+  # Tells transaction tracer and error collector (when enabled)
+  # whether or not to capture HTTP params.  When true, frameworks can
+  # exclude HTTP parameters from being captured.
+  # Default is false.
+  capture_params: false
+  
+  # Tells transaction tracer and error collector to not to collect
+  # specific http request parameters. 
+  # ignored_params: credit_card, ssn, password
+
+  # Transaction tracer captures deep information about slow
+  # transactions and sends this to the New Relic service once a
+  # minute. Included in the transaction is the exact call sequence of
+  # the transactions including any SQL statements issued.
+  transaction_tracer:
+  
+    # Transaction tracer is enabled by default. Set this to false to
+    # turn it off. This feature is only available at the higher product levels.
+    # Default is true.
+    enabled: true
+    
+    # Threshold in seconds for when to collect a transaction
+    # trace. When the response time of a controller action exceeds
+    # this threshold, a transaction trace will be recorded and sent to
+    # New Relic. Valid values are any float value, or (default) "apdex_f",
+    # which will use the threshold for the "Frustrated" Apdex level
+    # (greater than four times the apdex_t value).
+    # Default is apdex_f.
+    transaction_threshold: apdex_f
+ 
+    # When transaction tracer is on, SQL statements can optionally be
+    # recorded. The recorder has three modes, "off" which sends no
+    # SQL, "raw" which sends the SQL statement in its original form,
+    # and "obfuscated", which strips out numeric and string literals.
+    # Default is obfuscated.
+    record_sql: obfuscated
+    
+    # Obfuscate only occurrences of specific SQL fields names.
+    # This setting only applies if "record_sql" is set to "raw".
+    #obfuscated_sql_fields: credit_card, ssn, password
+
+    # Set this to true to log SQL statements instead of recording them.
+    # SQL is logged using the record_sql mode.
+    # Default is false.
+    log_sql: false
+
+    # Threshold in seconds for when to collect stack trace for a SQL
+    # call. In other words, when SQL statements exceed this threshold,
+    # then capture and send to New Relic the current stack trace. This is
+    # helpful for pinpointing where long SQL calls originate from.
+    # Default is 0.5 seconds.
+    stack_trace_threshold: 0.5
+
+    # Determines whether the agent will capture query plans for slow
+    # SQL queries. Only supported for MySQL and PostgreSQL.
+    # Default is true.
+    explain_enabled: true
+
+    # Threshold for query execution time below which query plans will not 
+    # not be captured.  Relevant only when `explain_enabled` is true.
+    # Default is 0.5 seconds.
+    explain_threshold: 0.5
+    
+    # Use this setting to control the variety of transaction traces.
+    # The higher the setting, the greater the variety.
+    # Set this to 0 to always report the slowest transaction trace.
+    # Default is 20.
+    top_n: 20
+    
+  
+  # Error collector captures information about uncaught exceptions and
+  # sends them to New Relic for viewing
+  error_collector:
+    
+    # Error collector is enabled by default. Set this to false to turn
+    # it off. This feature is only available at the higher product levels.
+    # Default is true.
+    enabled: true
+        
+    # To stop specific exceptions from reporting to New Relic, set this property
+    # to a comma separated list of full class names.
+    #
+    # ignore_errors:
+
+    # To stop specific http status codes from being reporting to New Relic as errors, 
+    # set this property to a comma separated list of status codes to ignore.
+    # When this property is commented out it defaults to ignoring 404s.
+    #
+    # ignore_status_codes: 404
+
+  # Cross Application Tracing adds request and response headers to
+  # external calls using the Apache HttpClient libraries to provided better
+  # performance data when calling applications monitored by other New Relic Agents.
+  #
+  cross_application_tracer:
+    # Set to true to enable cross application tracing.
+    # Default is true.
+    enabled: true
+
+  # Thread profiler measures wall clock time, CPU time, and method call counts
+  # in your application's threads as they run.
+  thread_profiler:
+
+    # Set to false to disable the thread profiler.
+    # Default is true.
+    enabled: true
+  
+  #============================== Browser Monitoring ===============================
+  # New Relic Real User Monitoring gives you insight into the performance real users are
+  # experiencing with your website. This is accomplished by measuring the time it takes for
+  # your users' browsers to download and render your web pages by injecting a small amount
+  # of JavaScript code into the header and footer of each page. 
+  browser_monitoring:
+    # By default the agent automatically inserts API calls in compiled JSPs to
+    # inject the monitoring JavaScript into web pages.
+    # Set this attribute to false to turn off this behavior.
+    auto_instrument: true
+    # Set this attribute to false to prevent injection of the monitoring JavaScript.
+    # Default is true.
+    enabled: true
+    
+# Application Environments
+# ------------------------------------------
+# Environment specific settings are in this section.
+# You can use the environment to override the default settings.
+# For example, to change the app_name setting.
+# Use -Dnewrelic.environment=<environment> on the Java command line
+# to set the environment.
+# The default environment is production.
+
+# NOTE if your application has other named environments, you should
+# provide configuration settings for these environments here.
+
+development:
+  <<: *default_settings
+  app_name: My Application (Development)
+
+test:
+  <<: *default_settings
+  app_name: My Application (Test)
+
+production:
+  <<: *default_settings
+
+staging:
+  <<: *default_settings
+  app_name: My Application (Staging)
+--------------------------------------------------------------------------------------------------------
+#!/bin/bash
+
+# Set up classpath and invoke 'java' with it ...
+
+
+cp=".:./../resources:./../dist/ReachService.jar"
+
+cp=$cp:$(echo ./../lib/*.jar | tr ' ' :)
+echo "classpath are: $cp"
+
+ja="-javaagent:./../newrelic/newrelic.jar"
+#ja="-javaagent:/home/tjopt/GIT_opt/tapjoyoptimization/opt_server/newrelic/newrelic.jar"
+#echo "Javaagent: $ja"
+
+exec java "$ja" -cp $cp com.tapjoy.reach.service.ReachService 
+echo $! > pid
+--------------------------------------------------------------------------------------------------------
+@Configuration
+@ComponentScan("com.concretepage")
+@EnableWebMvc
+public class AppConfig implements WebMvcConfigurer {
+    @Override
+    public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
+        Jackson2ObjectMapperBuilder builder = new Jackson2ObjectMapperBuilder();
+        builder.indentOutput(true);
+        converters.add(new MappingJackson2HttpMessageConverter(builder.build()));
+    }
+} 
+
+--------------------------------------------------------------------------------------------------------
+//    @Bean
+//    public FilterRegistrationBean httpsOnlyFilter() {
+//        FilterRegistrationBean registration = new FilterRegistrationBean();
+//        registration.setFilter(new HttpsOnlyFilter());
+//        registration.addUrlPatterns("/*");
+//        return registration;
+//    }
+--------------------------------------------------------------------------------------------------------
+//import org.springframework.context.annotation.Configuration;
+//import org.springframework.data.mongodb.core.convert.DefaultMongoTypeMapper;
+//
+///**
+// *
+// * Custom Mongo Type Mapper
+// *
+// * @author Alex
+// * @version 1.0.0
+// * @since 2017-08-08
+// */
+//@Configuration("publicationAppConfiguration")
+//public class AppConfiguration2 extends DefaultMongoTypeMapper {
+//    //implement custom type mapping here
+//}
+
+--------------------------------------------------------------------------------------------------------
+    @Bean
+    public HazelcasetInstance getInstance() {
+        return HazelcasetClient.newHazelCastClient();
+    }
+--------------------------------------------------------------------------------------------------------
+private class SwaggerInterceptor implements HandlerInterceptor {
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        if (!authHeaderValid(request.getHeader("Authorization"))) {
+            response.addHeader("Access-Control-Allow-Origin", "null");
+            response.addHeader("WWW-Authenticate", "Basic realm=\"\"");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().println("HTTP Status " + HttpServletResponse.SC_UNAUTHORIZED);
+
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception { }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception { }
+
+    private boolean authHeaderValid(String authorization) {
+        if (authorization != null && authorization.startsWith("Basic ")) {
+            final String[] values = new String(Base64.getDecoder().decode(authorization.substring("Basic ".length()))).split(":");
+
+            return values[0].equals("username") && values[1].equals("password");
+        }
+
+        return false;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+//public static class CustomizedViewResolver extends UrlBasedViewResolver {
+//    @Override
+//    protected AbstractUrlBasedView buildView(final String viewName) throws Exception {
+//        String newViewName;
+//        if (viewName.equals("index.html")) {
+//            newViewName = "swagger-ui.html";
+//        } else {
+//            newViewName = viewName;
+//        }
+//        return super.buildView(newViewName);
+//    }
+//
+//    @Nullable
+//    protected Class<?> getViewClass() {
+//        return InternalResourceView.class;
+//    }
+//}
+
+/*
+ @Controller
+ public class HomeController {
+
+ @RequestMapping(value = "/", method = RequestMethod.GET)
+ public ModelAndView home(Locale locale, Model model) {
+ // (...)
+
+ return new ModelAndView("/someurl/resources/home.html"); // NOTE here there is /someurl/resources
+ }
+
+ }
+
+ */
+
+/*
+@Configuration
+@EnableWebMvc
+public class WebConfig extends WebMvcConfigurerAdapter {
+  @Autowired
+  @Qualifier("jstlViewResolver")
+  private ViewResolver jstlViewResolver;
+
+  @Override
+  public void addResourceHandlers(ResourceHandlerRegistry registry) {
+    registry.addResourceHandler("/someurl/resources/**").addResourceLocations("/resources/");
+
+  }
+
+  @Bean
+  @DependsOn({ "jstlViewResolver" })
+  public ViewResolver viewResolver() {
+    return jstlViewResolver;
+  }
+
+  @Bean(name = "jstlViewResolver")
+  public ViewResolver jstlViewResolver() {
+    UrlBasedViewResolver resolver = new UrlBasedViewResolver();
+    resolver.setPrefix(""); // NOTE: no preffix here
+    resolver.setViewClass(JstlView.class);
+    resolver.setSuffix(""); // NOTE: no suffix here
+    return resolver;
+  }
+
+// NOTE: you can use InternalResourceViewResolver it does not matter
+//  @Bean(name = "internalResolver")
+//  public ViewResolver internalViewResolver() {
+//    InternalResourceViewResolver resolver = new InternalResourceViewResolver();
+//    resolver.setPrefix("");
+//    resolver.setSuffix("");
+//    return resolver;
+//  }
+}
+--------------------------------------------------------------------------------------------------------
+////    @Bean
+////    public SSLContextParameters sslContextParameters(@Value("${horweb.javamail.keystore.location}") final String location,
+////                                                     @Value("${horweb.javamail.keystore.password}") final String password) {
+////        final KeyStoreParameters store = new KeyStoreParameters();
+////        store.setResource(location);
+////        store.setPassword(password);
+////
+////        final TrustManagersParameters trust = new TrustManagersParameters();
+////        trust.setKeyStore(store);
+////
+////        final SSLContextParameters parameters = new SSLContextParameters();
+////        parameters.setTrustManagers(trust);
+////        return parameters;
+////    }
+--------------------------------------------------------------------------------------------------------
+@Configuration
+@ConditionalOnClass({ DispatcherHandler.class, HttpHandler.class })
+@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
+@ConditionalOnMissingBean(HttpHandler.class)
+@AutoConfigureAfter({ WebFluxAutoConfiguration.class })
+@AutoConfigureOrder(Ordered.HIGHEST_PRECEDENCE + 10)
+--------------------------------------------------------------------------------------------------------
+@Configuration
+public class HandlerConfiguration {
+
+    /*
+     * Create required HandlerMapping, to avoid several default HandlerMapping instances being created
+     */
+    @Bean
+    public HandlerMapping handlerMapping() {
+        return new RequestMappingHandlerMapping();
+    }
+
+    /*
+     * Create required HandlerAdapter, to avoid several default HandlerAdapter instances being created
+     */
+    @Bean
+    public HandlerAdapter handlerAdapter() {
+        return new RequestMappingHandlerAdapter();
+    }
+
+    /*
+     * optimization - avoids creating default exception resolvers; not required as the serverless container handles
+     * all exceptions
+     *
+     * By default, an ExceptionHandlerExceptionResolver is created which creates many dependent object, including
+     * an expensive ObjectMapper instance.
+     */
+    @Bean
+    public HandlerExceptionResolver handlerExceptionResolver() {
+        return (request, response, handler, ex) -> null;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+//import org.springframework.context.annotation.Configuration;
+//import org.springframework.context.annotation.Profile;
+//import org.springframework.hateoas.config.EnableHypermediaSupport;
+//import org.springframework.hateoas.config.EnableHypermediaSupport.HypermediaType;
+//
+///**
+// * Separate configuration class to enable Spring Hateoas functionality if the {@code hateoas} profile is activated.
+// *
+// */
+//@Configuration
+//@Profile("hateoas")
+//@EnableHypermediaSupport(type = HypermediaType.HAL)
+//public class HyperMediaConfiguration {
+//}
+--------------------------------------------------------------------------------------------------------
+//import com.mongodb.MongoClient;
+//import com.mongodb.MongoClientOptions;
+//
+//import com.wildbeeslabs.api.rest.common.service.interfaces.IPropertiesConfiguration;
+//import java.util.HashSet;
+//import java.util.Properties;
+//import java.util.Set;
+//
+//import org.springframework.beans.factory.annotation.Autowired;
+//import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+//import org.springframework.context.annotation.Bean;
+//import org.springframework.context.annotation.Configuration;
+//import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+//import org.springframework.data.mongodb.MongoDbFactory;
+//import org.springframework.data.mongodb.config.AbstractMongoConfiguration;
+//import org.springframework.data.mongodb.config.EnableMongoAuditing;
+//import org.springframework.data.mongodb.core.MongoTemplate;
+//import org.springframework.data.mongodb.core.SimpleMongoDbFactory;
+//import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
+//import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
+//import org.springframework.scheduling.annotation.EnableAsync;
+//import org.springframework.transaction.annotation.EnableTransactionManagement;
+//import org.springframework.data.mongodb.core.convert.DefaultMongoTypeMapper;
+//import org.springframework.data.mongodb.core.convert.MongoTypeMapper;
+//import org.springframework.data.mongodb.core.mapping.event.LoggingEventListener;
+//import org.springframework.data.mongodb.gridfs.GridFsTemplate;
+//
+///**
+// *
+// * Mongo DB Configuration
+// *
+// * @author Alex
+// * @version 1.0.0
+// * @since 2017-08-08
+// */
+//@Configuration("publicationMongoConfiguration")
+//@EnableAutoConfiguration
+//@EnableAsync
+//@EnableMongoAuditing
+//@EnableTransactionManagement
+//@EnableMongoRepositories(basePackages = "com.wildbeeslabs.api.rest.publication.repository")
+////@ComponentScan(basePackages = {"com.wildbeeslabs.api.rest.publication.*"})
+//class MongoConfiguration extends AbstractMongoConfiguration {
+//
+//    @Autowired
+//    private IPropertiesConfiguration propertyConfig;
+//
+////    @Value("${datasource.publicationapp.mongodb.url}")
+////    private String mongodbUrl;
+////
+////    @Value("${datasource.publicationapp.mongodb.db}")
+////    private String defaultDb;
+//    @Bean
+//    public GridFsTemplate gridFsTemplate() throws Exception {
+//        return new GridFsTemplate(mongoDbFactory(), mappingMongoConverter());
+//    }
+//
+//    @Override
+//    protected String getDatabaseName() {
+//        return propertyConfig.getProperty("datasource.publicationapp.mongodb.db");
+//    }
+//
+////    @Override
+////    public String getMappingBasePackage() {
+////        return "com.wildbeeslabs.api.rest.publication.model";
+//////        return propertyConfig.getProperty("datasource.publicationapp.mongodb.basePackage");
+////    }
+//
+//    @Bean
+//    @Override
+//    public MongoClient mongo() throws Exception {
+//        MongoClientOptions mongoOptions = new MongoClientOptions.Builder().maxWaitTime(propertyConfig.getProperty("datasource.publicationapp.mongodb.timeout", Integer.class)).build();
+//        MongoClient mongo = new MongoClient(propertyConfig.getProperty("datasource.publicationapp.mongodb.url"), mongoOptions);
+//        return mongo;
+//    }
+//
+//    @Bean
+//    @Override
+//    public MongoDbFactory mongoDbFactory() throws Exception {
+//        MongoDbFactory mongoDbFactory = new SimpleMongoDbFactory(mongo(), propertyConfig.getProperty("datasource.publicationapp.mongodb.db"));//new MongoClient()
+//        return mongoDbFactory;
+//    }
+//
+//    @Bean
+//    @Override
+//    public MappingMongoConverter mappingMongoConverter() throws Exception {
+//        MappingMongoConverter converter = super.mappingMongoConverter();
+//        converter.setTypeMapper(customTypeMapper());
+//        return converter;
+//    }
+//
+//    @Bean
+//    public MongoTypeMapper customTypeMapper() {
+//        return new DefaultMongoTypeMapper(null);
+//    }
+//
+//    @Bean
+//    @Override
+//    public MongoTemplate mongoTemplate() throws Exception {
+//        return new MongoTemplate(mongoDbFactory());
+//    }
+//
+////    @Bean
+////    public MongoTemplate mongoTemplate(MongoDbFactory mongoDbFactory, MongoMappingContext context) {
+////        MappingMongoConverter converter = new MappingMongoConverter(new DefaultDbRefResolver(mongoDbFactory), context);
+////        converter.setTypeMapper(new DefaultMongoTypeMapper(null));
+////        MongoTemplate mongoTemplate = new MongoTemplate(mongoDbFactory, converter);
+////        return mongoTemplate;
+////    }
+//    @Bean
+//    public static PropertySourcesPlaceholderConfigurer propertyConfigInDev() {
+//        return new PropertySourcesPlaceholderConfigurer();
+//    }
+//
+//    @Bean
+//    public LoggingEventListener mappingEventsListener() {
+//        return new LoggingEventListener();
+//    }
+//
+//    /**
+//     * Get Mongo properties configuration
+//     *
+//     * @return Mongo properties configuration
+//     */
+//    private Properties mongoProperties() {
+//        final Properties properties = new Properties();
+//        properties.put("mongo.url", propertyConfig.getMandatoryProperty("datasource.publicationapp.mongodb.url"));
+//        properties.put("mongo.db", propertyConfig.getProperty("datasource.publicationapp.mongodb.db"));
+//        properties.put("mongo.port", propertyConfig.getProperty("datasource.publicationapp.mongodb.port"));
+//        properties.put("mongo.timeout", propertyConfig.getProperty("datasource.publicationapp.mongodb.timeout"));
+//        return properties;
+//    }
+//}
+
+//import org.springframework.context.annotation.Bean;
+//import org.springframework.context.annotation.Configuration;
+//import org.springframework.data.mongodb.core.mapping.event.ValidatingMongoEventListener;
+//import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
+//
+//@Configuration
+//public class MongoValidationConfig {
+//
+//    @Bean
+//    public ValidatingMongoEventListener validatingMongoEventListener() {
+//        return new ValidatingMongoEventListener(validator());
+//    }
+//
+//    @Bean
+//    public LocalValidatorFactoryBean validator() {
+//        return new LocalValidatorFactoryBean();
+//    }
+//}
+--------------------------------------------------------------------------------------------------------
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+
+/**
+ * Utility class which provides utility methods for managing json content from a
+ * path.
+ *
+ * @author giuliana.bezerra
+ *
+ */
+public class JSONPathUtil {
+
+	private JSONPathUtil() {
+		// DO NOTHING.
+	}
+
+	public static String getJSONFromPath(String jsonPath) {
+		try {
+			return handleJsonPath(jsonPath);
+		} catch (Exception e) {
+			throw new RestRuntimeException(e.getMessage());
+		}
+	}
+
+	private static String handleJsonPath(String jsonPath) throws RestException {
+		try {
+			if (isPathNotEmpty(jsonPath))
+				return getJSONFileContent(jsonPath);
+			else
+				return null;
+		} catch (Exception e) {
+			throw new RestException(e);
+		}
+	}
+
+	private static boolean isPathNotEmpty(String jsonPath) {
+		return jsonPath != null && !jsonPath.trim().isEmpty();
+	}
+
+	private static String getJSONFileContent(String jsonPath) throws RestException {
+		FileReader fileReader = null;
+		BufferedReader bufferedReader = null;
+
+		try {
+			fileReader = new FileReader(jsonPath);
+			bufferedReader = new BufferedReader(fileReader);
+			String line;
+			StringBuilder json = new StringBuilder();
+			while ((line = bufferedReader.readLine()) != null) {
+				json.append(line);
+			}
+			return json.toString();
+		} catch (Exception e) {
+			throw new RestException(e);
+		} finally {
+			closeResources(fileReader, bufferedReader);
+		}
+	}
+
+	private static void closeResources(FileReader fileReader, BufferedReader bufferedReader) {
+		try {
+			if (fileReader != null)
+				fileReader.close();
+			if (bufferedReader != null)
+				bufferedReader.close();
+		} catch (IOException e) {
+			// DO NOTHING.
+		}
+	}
+}
+--------------------------------------------------------------------------------------------------------
+//@SpringBootApplication(exclude={com.github.torlight.sbex.User.class})
+public class MyTypeExcludeFilter extends TypeExcludeFilter {
+
+    @Override
+    public boolean match(final MetadataReader metadataReader, final MetadataReaderFactory metadataReaderFactory) throws IOException {
+        return StringUtils.equalsAnyIgnoreCase("com.github.torlight.sbex.User", metadataReader.getClassMetadata().getClassName());
+    }
+}
+--------------------------------------------------------------------------------------------------------
+//@Configuration
+//@EnableWebMvc
+//@EnableSpringDataWebSupport
+//public class PaginationConfig extends SpringDataWebConfiguration {
+//
+//    @Override
+//    public void addArgumentResolvers(List<HandlerMethodArgumentResolver> argumentResolvers) {
+//        PageableHandlerMethodArgumentResolver resolver = new PageableHandlerMethodArgumentResolver(sortResolver());
+//        resolver.setFallbackPageable(new PageRequest(0, 50));
+//        resolver.setSizeParameterName("p");
+//        resolver.setPageParameterName("s");
+//        argumentResolvers.add(resolver);
+//        super.addArgumentResolvers(argumentResolvers);
+//    }
+//}
+--------------------------------------------------------------------------------------------------------
+import retrofit.Call;
+import retrofit.Retrofit;
+import retrofit.http.Body;
+import retrofit.http.GET;
+import retrofit.http.POST;
+import retrofit.http.Query;
+
+public interface Apiservice {
+
+    @GET("curators.json")
+    Call<Freemusicpojo> getDataset(@Query("api_key")  String api_key);
+
+}
+--------------------------------------------------------------------------------------------------------
+
+import java.lang.Math;
+import java.util.Queue;
+import java.util.ArrayDeque;
+import java.util.Map;
+import java.util.HashMap;
+
+public class ChessKnight {
+    private static int[] row = { 2, 2, -2, -2, 1, 1, -1, -1 };
+    private static int[] column = { -1, 1, 1, -1, 2, -2, 2, -2 };
+
+    public static int getYCoordinate(String position) {
+        for (int i = position.length() - 1; i >= 0; i--) {
+            if (Character.isLetter(position.charAt(i))) {
+                return Integer.valueOf(position.substring(i + 1)) - 1;
+            }
+        }
+
+        return -1;
+    }
+
+    public static int getXCoordinate(String position) {
+        int result = 0, stop = 0;
+
+        for (int i = 0; i < position.length(); i++) {
+            if (Character.isDigit(position.charAt(i))) {
+                stop = i - 1;
+                break;
+            }
+        }
+
+        for (int i = 0, j = stop; i <= stop; i++, j--) {
+            result += ((int) Character.toLowerCase(position.charAt(i)) - 96) * Math.pow(26.0, j);
+        }
+
+        return result - 1;
+    }
+
+    public static int count(int x1, int y1, int x2, int y2, int width, int height) {
+        return bfs(new Node(x1, y1), new Node(x2, y2), width, height);
+    }
+
+    public static boolean valid(int x, int y, int width, int height) {
+        if (x < 0 || y < 0 || x >= width || y >= height)
+            return false;
+
+        return true;
+    }
+
+    public static int bfs(Node start, Node end, int width, int height) {
+        Map<Node, Boolean> visited = new HashMap<>();
+        Queue<Node> q = new ArrayDeque<>();
+
+        q.add(start);
+
+        while (!q.isEmpty()) {
+            Node node = q.poll();
+
+            int x = node.x;
+            int y = node.y;
+            int distance = node.distance;
+
+            if (x == end.x && y == end.y)
+                return distance;
+
+            if (visited.get(node) == null) {
+                visited.put(node, true);
+
+                for (int i = 0; i < 8; i++) {
+                    int x1 = x + row[i];
+                    int y1 = y + column[i];
+
+                    if (valid(x1, y1, width, height))
+                        q.add(new Node(x1, y1, distance + 1));
+                }
+            }
+        }
+
+        return -1;
+    }
+}
+
+public class Node {
+    int x, y, distance;
+
+    public Node(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    public Node(int x, int y, int distance) {
+        this.x = x;
+        this.y = y;
+        this.distance = distance;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Node node = (Node) o;
+
+        if (x != node.x) return false;
+        if (y != node.y) return false;
+        return distance == node.distance;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = x;
+        result = 31 * result + y;
+        result = 31 * result + distance;
+        return result;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.io.PrintStream;
+
+import org.kohsuke.args4j.Argument;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
+
+import com.netiq.websockify.PortUnificationHandler;
+import com.netiq.websockify.WebsockifyServer;
+import com.netiq.websockify.WebsockifyServer.SSLSetting;
+import com.netiq.websockify.WebsockifySslContext;
+
+
+
+public class ExternalVNCRepeater
+{   
+   @Option(name="--help",usage="show this help message and quit")
+   private boolean showHelp = false;
+   
+   @Option( name = "--enable-ssl", usage = "enable SSL" )
+   private boolean       enableSSL  = false;
+
+   @Option( name = "--ssl-only", usage = "disallow non-encrypted connections" )
+   private boolean       requireSSL = false;
+   
+   @Option(name="--keystore",usage="path to a java keystore file. Required for SSL.")
+   private String keystore = null;
+   
+   @Option(name="--keystore-password",usage="password to the java keystore file. Required for SSL.")
+   private String keystorePassword = null;
+   
+   @Option(name="--keystore-key-password",usage="password to the private key in the java keystore file. If not specified the keystore-password value will be used.")
+   private String keystoreKeyPassword = null;
+   
+   @Option(name="--direct-proxy-timeout",usage="connection timeout before a direct proxy connection is established in milliseconds. Default is 5000 (5 seconds). With the VNC protocol the server sends the first message. This means that a client that wants a direct proxy connection will connect and not send a message. The external VNC repeater will wait the specified number of milliseconds for an incoming connection to send a message. If no message is recieved it initiates a direct proxy connection. Setting this value too low will cause connection attempts that aren't direct proxy connections to fail. Set this to 0 to disable direct proxy connections.")
+   private int directProxyTimeout = 5000;
+
+   @Argument( index = 0, metaVar = "source_port", usage = "(required) local port the external repeater will listen on", required = true )
+   private int           sourcePort;
+
+   @Argument( index = 1, metaVar = "cmas_base_url", usage = "(required) the base URL of the CMAS server.  For example http://ncmdev.netiq.com:8182", required = true )
+   private String        cmasBaseUrl;
+
+   private CmdLineParser parser;
+
+
+   public ExternalVNCRepeater()
+   {
+      parser = new CmdLineParser ( this );
+   }
+
+
+   public void printUsage( PrintStream out )
+   {
+      out.println ( "Usage:" );
+      out.println ( " java -jar external-vnc-repeater.jar [options] source_port cmas_base_url" );
+      out.println ( );
+      out.println ( "Options:" );
+      parser.printUsage ( out );
+      out.println ( );
+      out.println ( "Example:" );
+      out.println ( " java -jar external-vnc-repeater.jar 5900 https://cloud.acmecloud.demo" );
+   }
+   
+   public static void main(String[] args) throws Exception {
+     new ExternalVNCRepeater().doMain(args);
+   }
+   
+   public void doMain(String[] args) throws Exception
+   {
+      parser.setUsageWidth ( 80 );
+
+      // parse the command line arguments
+      try
+      {
+         parser.parseArgument ( args );
+      }
+      // if there's a problem show the error and command line usage help
+      catch ( CmdLineException e )
+      {
+         System.err.println ( e.getMessage ( ) );
+         printUsage ( System.err );
+         return;
+      }
+
+      // if we were asked for help show it and exit
+      if ( showHelp )
+      {
+         printUsage ( System.out );
+         return;
+      }
+      
+      // set the SSL setting based on the command line params
+      SSLSetting sslSetting = SSLSetting.OFF;
+      if ( requireSSL ) sslSetting = SSLSetting.REQUIRED;
+      else if ( enableSSL ) sslSetting = SSLSetting.ON;
+
+      // if we are doing SSL
+      if ( sslSetting != SSLSetting.OFF ) {
+         // make sure there is a keystore path specified
+          if (keystore == null || keystore.isEmpty()) {
+              System.err.println("No keystore specified.");
+          printUsage(System.err);
+              System.exit(1);
+          }
+
+          // and make sure there is a keystore password specified
+          if (keystorePassword == null || keystorePassword.isEmpty()) {
+              System.err.println("No keystore password specified.");
+          printUsage(System.err);
+              System.exit(1);
+          }
+          
+          // if there's no keystore key password, use the keystore password
+          if (keystoreKeyPassword == null || keystoreKeyPassword.isEmpty()) {
+             keystoreKeyPassword = keystorePassword;
+          }
+          
+          // and validate the keystore settings - this actually starts up an SSL
+          // context and lets us know if there were exceptions starting it
+          // this doesn't happen in the current thread when the server is started
+          // so we only know about it in worker threads and put it out to the logger
+          try
+          {
+             WebsockifySslContext.validateKeystore(keystore, keystorePassword, keystoreKeyPassword);
+          }
+          catch ( Exception e )
+          {
+             System.err.println("Error validating keystore: " + e.getMessage() );
+             printUsage(System.err);
+             System.exit(2);
+          }
+      }
+
+      System.out.println ( "Proxying *:" + sourcePort + " to workloads defined by CMAS at " + cmasBaseUrl + " ..." );
+      if(sslSetting != SSLSetting.OFF) System.out.println("SSL is " + (sslSetting == SSLSetting.REQUIRED ? "required." : "enabled."));
+      
+      PortUnificationHandler.setConnectionToFirstMessageTimeout(directProxyTimeout);
+
+      WebsockifyServer ws = new WebsockifyServer ( );
+      ws.connect ( sourcePort, new CMASRestResolver ( cmasBaseUrl ), sslSetting, keystore, keystorePassword, keystoreKeyPassword, null );
+
+   }
+}
+
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
+import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.config.ClientConfig;
+import com.sun.jersey.api.client.config.DefaultClientConfig;
+import com.sun.jersey.client.urlconnection.HTTPSProperties;
+
+public class ClientHelper {
+	
+	public static ClientConfig configureClient() {
+		TrustManager[ ] certs = new TrustManager[ ] {
+	            new X509TrustManager() {
+					public X509Certificate[] getAcceptedIssuers() {
+						return null;
+					}
+					public void checkServerTrusted(X509Certificate[] chain, String authType)
+							throws CertificateException {
+					}
+					public void checkClientTrusted(X509Certificate[] chain, String authType)
+							throws CertificateException {
+					}
+				}
+	    };
+	    SSLContext ctx = null;
+	    try {
+	        ctx = SSLContext.getInstance("TLS");
+	        ctx.init(null, certs, new SecureRandom());
+	    } catch (java.security.GeneralSecurityException ex) {
+	    }
+	    HttpsURLConnection.setDefaultSSLSocketFactory(ctx.getSocketFactory());
+	    
+	    ClientConfig config = new DefaultClientConfig();
+	    try {
+		    config.getProperties().put(HTTPSProperties.PROPERTY_HTTPS_PROPERTIES, new HTTPSProperties(
+		        new HostnameVerifier() {
+					public boolean verify(String hostname, SSLSession session) {
+						return true;
+					}
+		        }, 
+		        ctx
+		    ));
+	    } catch(Exception e) {
+	    }
+	    return config;
+	}
+	
+	public static Client createClient() {
+	    return Client.create(ClientHelper.configureClient());
+	}
+}
+--------------------------------------------------------------------------------------------------------
+   @Bean
+    public CommandLineRunner commandLineRunner(ApplicationContext ctx) {
+        return args -> {
+            System.out.println("Let's inspect the beans provided by Spring Boot:");
+            String[] beanNames = ctx.getBeanDefinitionNames();
+            Arrays.sort(beanNames);
+            for (String beanName : beanNames) {
+                System.out.println(beanName);
+            }
+        };
+    }
+--------------------------------------------------------------------------------------------------------
+import com.justynsoft.simplerecon.core.worker.CSVFileReconWorker;
+import com.justynsoft.simplerecon.core.worker.DatabaseReconWorker;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+@Configuration
+public class TradeConfig {
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @Bean
+    public DatabaseReconWorker TradeAllocationDatabaseReconWorker(){
+        DatabaseReconWorker databaseWorker = new DatabaseReconWorker();
+        databaseWorker.setSQL("SELECT * FROM allocation");
+        databaseWorker.setJdbcTemplate(this.jdbcTemplate);
+        databaseWorker.setClazz(TradeAllocation.class);
+        return databaseWorker;
+    }
+
+    @Bean
+    public CSVFileReconWorker TradeAllocationCSVReconWorker(){
+        CSVFileReconWorker csvFileReconWorker = new CSVFileReconWorker();
+        csvFileReconWorker.setClazz(TradeAllocation.class);
+        csvFileReconWorker.setFileName("/com/justynsoft/simplerecon/traderecon/data.csv");
+        return csvFileReconWorker;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+   @Bean
+    public JdbcTemplate getJdbcTemplate(){
+        return new JdbcTemplate(dataSource);
+    }
+--------------------------------------------------------------------------------------------------------
+// Comment to get more information during initialization
+logLevel := Level.Warn
+
+// The Typesafe repository
+resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"
+
+// Use the Play sbt plugin for Play projects
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.2.3")
+--------------------------------------------------------------------------------------------------------
+<resources>
+    <!--
+    TODO: Before you run your application, you need a Google Maps API key.
+    To get one, follow this link, follow the directions and press "Create" at the end:
+    https://console.developers.google.com/flows/enableapi?apiid=maps_android_backend&keyType=CLIENT_SIDE_ANDROID&r=B6:CA:08:B3:82:8C:4D:7D:81:2F:E4:E6:99:5E:7B:04:E2:BA:F2:8A%3Bbreathe.inventerous.com.breathe
+    You can also add your credentials to an existing key, using these values:
+    Package name:
+    B6:CA:08:B3:82:8C:4D:7D:81:2F:E4:E6:99:5E:7B:04:E2:BA:F2:8A
+    SHA-1 certificate fingerprint:
+    B6:CA:08:B3:82:8C:4D:7D:81:2F:E4:E6:99:5E:7B:04:E2:BA:F2:8A
+    Alternatively, follow the directions here:
+    https://developers.google.com/maps/documentation/android/start#get-key
+    Once you have your key (it starts with "AIza"), replace the "google_maps_key"
+    string in this file.
+    -->
+    <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">AIzaSyABDlQcs7xlKmsvbp_XIktPtGQVSWl8wAw</string>
+</resources>
+--------------------------------------------------------------------------------------------------------
+import android.content.Context;
+import android.support.test.InstrumentationRegistry;
+import android.support.test.runner.AndroidJUnit4;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import static org.junit.Assert.*;
+
+/**
+ * Instrumented test, which will execute on an Android device.
+ *
+ * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
+ */
+@RunWith(AndroidJUnit4.class)
+public class ExampleInstrumentedTest {
+    @Test
+    public void useAppContext() {
+        // Context of the app under test.
+        Context appContext = InstrumentationRegistry.getTargetContext();
+
+        assertEquals("breathe.inventerous.com.breathe", appContext.getPackageName());
+    }
+}
+--------------------------------------------------------------------------------------------------------
+spring.datasource.initialization-mode=always
+--------------------------------------------------------------------------------------------------------
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.JpaVendorAdapter;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.Database;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
+import javax.persistence.EntityManagerFactory;
+import javax.sql.DataSource;
+
+@SpringBootApplication//(exclude = { SecurityAutoConfiguration.class })
+@EnableJpaRepositories(basePackages = {"com.exercise.dao", "com.exercise.conf"} )
+public class Application {
+
+    public static void main(String... args) {
+        SpringApplication.run(Application.class, args);
+    }
+
+    @Bean
+    public DataSource dataSource() {
+        return new EmbeddedDatabaseBuilder().setType(EmbeddedDatabaseType.H2).build();
+    }
+
+    @Bean
+    public JpaVendorAdapter jpaVendorAdapter() {
+        HibernateJpaVendorAdapter bean = new HibernateJpaVendorAdapter();
+        bean.setDatabase(Database.H2);
+        bean.setGenerateDdl(true);
+        bean.setShowSql(true);
+        return bean;
+    }
+
+    @Bean
+    public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource,
+                                                                       JpaVendorAdapter jpaVendorAdapter) {
+        LocalContainerEntityManagerFactoryBean bean = new LocalContainerEntityManagerFactoryBean();
+        bean.setDataSource(dataSource);
+        bean.setJpaVendorAdapter(jpaVendorAdapter);
+        bean.setPackagesToScan("com.exercise.domain");
+        return bean;
+
+    }
+
+    @Bean
+    public JpaTransactionManager transactionManager(EntityManagerFactory emf) {
+        return new JpaTransactionManager(emf);
+    }
+
+    @Bean
+    BCryptPasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+//import javax.sql.DataSource;
+//
+//import org.springframework.context.annotation.Bean;
+//import org.springframework.context.annotation.Configuration;
+//import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
+//import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
+//import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+//
+//@Configuration
+//public class PersistenceConfig {
+//
+//    @Bean
+//    public DataSource dataSource() {
+//        EmbeddedDatabaseBuilder builder = new EmbeddedDatabaseBuilder();
+//        EmbeddedDatabase db = builder.setType(EmbeddedDatabaseType.H2).addScript("mySchema.sql").addScript("myData.sql").build();
+//        return db;
+//    }
+//
+//}
+--------------------------------------------------------------------------------------------------------
+//	@Override
+//	public void addCorsMappings(CorsRegistry registry) {
+//		registry.addMapping("/**").maxAge(3600).allowedHeaders("Content-type", "Authorization").allowedMethods("*")
+//				.allowCredentials(true).allowedOrigins(origin);
+//	}
+
+//    @Override
+//    protected void addArgumentResolvers(List<HandlerMethodArgumentResolver> argumentResolvers) {
+//        argumentResolvers.add(
+//            new ServletWebArgumentResolverAdapter(new PageableArgumentResolver()));
+//    }
+--------------------------------------------------------------------------------------------------------
+//package de.pearl.pem.common.system;
+//
+//public class SpringSprungConfig extends DelegatingWebMvcConfiguration {
+//
+//    // Delegate resource requests to default servlet
+//    @Bean
+//    protected DefaultServletHttpRequestHandler defaultServletHttpRequestHandler() {
+//        DefaultServletHttpRequestHandler dsrh = new DefaultServletHttpRequestHandler();
+//        return dsrh;
+//    }
+//
+//    //map static resources by extension
+//    @Bean
+//    public SimpleUrlHandlerMapping resourceServletMapping() {
+//        SimpleUrlHandlerMapping mapping = new SimpleUrlHandlerMapping();
+//
+//        //make sure static resources are mapped first since we are using
+//        //a slightly different approach
+//        mapping.setOrder(0);
+//        Properties urlProperties = new Properties();
+//        urlProperties.put("/**/*.css", "defaultServletHttpRequestHandler");
+//        urlProperties.put("/**/*.js", "defaultServletHttpRequestHandler");
+//        urlProperties.put("/**/*.png", "defaultServletHttpRequestHandler");
+//        urlProperties.put("/**/*.html", "defaultServletHttpRequestHandler");
+//        urlProperties.put("/**/*.woff", "defaultServletHttpRequestHandler");
+//        urlProperties.put("/**/*.ico", "defaultServletHttpRequestHandler");
+//        mapping.setMappings(urlProperties);
+//        return mapping;
+//    }
+//
+//    @Override
+//    @Bean
+//    public RequestMappingHandlerMapping requestMappingHandlerMapping() {
+//        RequestMappingHandlerMapping handlerMapping = super.requestMappingHandlerMapping();
+//
+//        //controller mappings must be evaluated after the static resource requests
+//        handlerMapping.setOrder(1);
+//        handlerMapping.setInterceptors(this.getInterceptors());
+//        handlerMapping.setPathMatcher(this.getPathMatchConfigurer().getPathMatcher());
+//        handlerMapping.setRemoveSemicolonContent(false);
+//        handlerMapping.setUseSuffixPatternMatch(false);
+//        //set other options here
+//        return handlerMapping;
+//    }
+//}
+
+
+/*
+    @Override
+    public void addViewControllers(final ViewControllerRegistry registry) {
+        registry.addRedirectViewController("/swagger", "/swagger-ui.html");
+    }
+
+    @Override
+    public void configurePathMatch(final PathMatchConfigurer configurer) {
+        configurer.setUseTrailingSlashMatch(true);
+    }
+
+//    @Override
+//    public void addInterceptors(final InterceptorRegistry registry) {
+//        registry.addInterceptor(new SwaggerInterceptor()).addPathPatterns("/swagger");
+//    }
+//
+//    private class SwaggerInterceptor extends HandlerInterceptorAdapter {
+//
+//        @Override
+//        public void afterCompletion(final HttpServletRequest request, final HttpServletResponse response, final Object handler, @Nullable final Exception ex) throws IOException {
+//            response.sendRedirect("/swagger-ui.html");
+//        }
+//    }
+
+//    @Bean
+//    public Docket newsApi(final ServletContext servletContext) {
+//        return new Docket(DocumentationType.SWAGGER_2)
+//                .select()
+//                .apis(RequestHandlerSelectors.basePackage("com.paragon.microservices.crmadapter.controller"))
+//                .paths(PathSelectors.any())
+//                .build()
+//                .enable(true)
+//                .pathProvider(new RelativePathProvider(servletContext) {
+//                    @Override
+//                    public String getApplicationBasePath() {
+//                        return join("/swagger", super.getApplicationBasePath());
+//                    }
+//                }).host("newhost:8095");
+//    }
+ */
+
+--------------------------------------------------------------------------------------------------------//package de.pearl.pem.common.system.property;
+//
+//import javax.inject.Inject;
+//
+//import org.springframework.context.annotation.Bean;
+//import org.springframework.context.annotation.Configuration;
+//
+//import com.mangofactory.swagger.configuration.SpringSwaggerConfig;
+//import com.mangofactory.swagger.models.dto.ApiInfo;
+//import com.mangofactory.swagger.models.dto.builder.ApiInfoBuilder;
+//import com.mangofactory.swagger.plugin.EnableSwagger;
+//import com.mangofactory.swagger.plugin.SwaggerSpringMvcPlugin;
+//
+//@Configuration
+//@EnableSwagger
+//public class SwaggerConfiguration {
+//
+//    @Inject
+//    private SpringSwaggerConfig springSwaggerConfig;
+//
+//    private ApiInfo getApiInfo() {
+//
+//        ApiInfo apiInfo = new ApiInfoBuilder()
+//                .title("QuickPoll REST API")
+//                .description("QuickPoll Api for creating and managing polls")
+//                .termsOfServiceUrl("http://example.com/terms-of-service")
+//                .contact("info@example.com")
+//                .license("MIT License")
+//                .licenseUrl("http://opensource.org/licenses/MIT")
+//                .build();
+//
+//        return apiInfo;
+//    }
+//
+//    @Bean
+//    public SwaggerSpringMvcPlugin v1APIConfiguration() {
+//        SwaggerSpringMvcPlugin swaggerSpringMvcPlugin = new SwaggerSpringMvcPlugin(this.springSwaggerConfig);
+//        swaggerSpringMvcPlugin
+//                .apiInfo(getApiInfo()).apiVersion("1.0")
+//                .includePatterns("/v1/*.*").swaggerGroup("v1");
+//        swaggerSpringMvcPlugin.useDefaultResponseMessages(false);
+//        return swaggerSpringMvcPlugin;
+//    }
+//
+//    @Bean
+//    public SwaggerSpringMvcPlugin v2APIConfiguration(){
+//        SwaggerSpringMvcPlugin swaggerSpringMvcPlugin = new SwaggerSpringMvcPlugin(this.springSwaggerConfig);
+//        swaggerSpringMvcPlugin
+//                .apiInfo(getApiInfo()).apiVersion("2.0")
+//                .includePatterns("/v2/*.*").swaggerGroup("v2");
+//        swaggerSpringMvcPlugin.useDefaultResponseMessages(false);
+//        return swaggerSpringMvcPlugin;
+//    }
+//
+//    @Bean
+//    public SwaggerSpringMvcPlugin v3APIConfiguration(){
+//        SwaggerSpringMvcPlugin swaggerSpringMvcPlugin = new SwaggerSpringMvcPlugin(this.springSwaggerConfig);
+//        swaggerSpringMvcPlugin
+//                .apiInfo(getApiInfo()).apiVersion("3.0")
+//                .includePatterns("/v3/*.*").swaggerGroup("v3");
+//        swaggerSpringMvcPlugin.useDefaultResponseMessages(false);
+//        return swaggerSpringMvcPlugin;
+//    }
+//}
+import com.kodedu.controller.ApplicationController;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.socket.config.annotation.EnableWebSocket;
+import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
+
+import java.util.Base64;
+
+@Configuration
+@EnableWebSocket
+@ComponentScan(basePackages = "com.kodedu.**")
+@EnableAutoConfiguration
+public class SpringAppConfig extends SpringBootServletInitializer implements WebSocketConfigurer {
+
+    @Autowired
+    private ApplicationController applicationController;
+
+    @Override
+    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+        registry.addHandler(applicationController, "/ws", "/ws**", "/ws/**").withSockJS();
+    }
+
+    @Override
+    protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+        return application.sources(SpringAppConfig.class);
+    }
+
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
+
+    @Bean
+    public Base64.Encoder base64Encoder() {
+        return Base64.getEncoder();
+    }
+}
+
+--------------------------------------------------------------------------------------------------------
+//import org.springframework.context.annotation.Bean;
+//import org.springframework.context.annotation.ComponentScan;
+//import org.springframework.context.annotation.Configuration;
+//import org.springframework.context.annotation.PropertySource;
+//import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+//import org.springframework.scheduling.annotation.EnableScheduling;
+//import org.springframework.scheduling.annotation.SchedulingConfigurer;
+//import org.springframework.scheduling.config.ScheduledTaskRegistrar;
+//
+//import java.util.concurrent.Executor;
+//import java.util.concurrent.Executors;
+//
+//import static com.sportics.principal.hor.horweb.configs.SchedulerConfig.DEFAULT_SCHEDULER_PACKAGE;
+//
+//@Configuration
+//@EnableScheduling
+//@ComponentScan(DEFAULT_SCHEDULER_PACKAGE)
+//@PropertySource("classpath:cron")
+//public class SchedulerConfiguration implements SchedulingConfigurer {
+//
+//    /**
+//     * Default scheduler packages
+//     */
+//    public static final String DEFAULT_SCHEDULER_PACKAGE = "com.sportics.principal.hor.horweb.scheduler";
+//
+//    // Default scheduling pool size
+//    private static final int DEFAULT_SCHEDULER_POOL_SIZE = 10;
+//
+//    @Bean
+//    public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() {
+//        return new PropertySourcesPlaceholderConfigurer();
+//    }
+//
+//    @Override
+//    public void configureTasks(ScheduledTaskRegistrar scheduledTaskRegistrar) {
+//        scheduledTaskRegistrar.setScheduler(taskExecutor());
+//    }
+//
+//    @Bean(destroyMethod = "shutdown")
+//    public Executor taskExecutor() {
+//        return Executors.newScheduledThreadPool(DEFAULT_SCHEDULER_POOL_SIZE);
+//    }
+//}
+--------------------------------------------------------------------------------------------------------
+//SET DATABASE UNIQUE NAME HSQLDB4D3A66AE30
+//    SET DATABASE GC 0
+//    SET DATABASE DEFAULT RESULT MEMORY ROWS 0
+//    SET DATABASE EVENT LOG LEVEL 0
+//    SET DATABASE TRANSACTION CONTROL LOCKS
+//    SET DATABASE DEFAULT ISOLATION LEVEL READ COMMITTED
+//    SET DATABASE TRANSACTION ROLLBACK ON CONFLICT TRUE
+//    SET DATABASE TEXT TABLE DEFAULTS ''
+//    SET DATABASE SQL NAMES FALSE
+//    SET DATABASE SQL REFERENCES FALSE
+//    SET DATABASE SQL SIZE TRUE
+//    SET DATABASE SQL TYPES FALSE
+//    SET DATABASE SQL TDC DELETE TRUE
+//    SET DATABASE SQL TDC UPDATE TRUE
+//    SET DATABASE SQL TRANSLATE TTI TYPES TRUE
+//    SET DATABASE SQL CONCAT NULLS TRUE
+//    SET DATABASE SQL UNIQUE NULLS TRUE
+//    SET DATABASE SQL CONVERT TRUNCATE TRUE
+//    SET DATABASE SQL AVG SCALE 0
+//    SET DATABASE SQL DOUBLE NAN TRUE
+//    SET FILES WRITE DELAY 500 MILLIS
+//    SET FILES BACKUP INCREMENT TRUE
+//    SET FILES CACHE SIZE 10000
+//    SET FILES CACHE ROWS 50000
+//    SET FILES SCALE 32
+//    SET FILES LOB SCALE 32
+//    SET FILES DEFRAG 0
+//    SET FILES NIO TRUE
+//    SET FILES NIO SIZE 256
+//    SET FILES LOG TRUE
+//    SET FILES LOG SIZE 50
+//    CREATE USER SA PASSWORD DIGEST 'c12e01f2a13ff5587e1e9e4aedb8242d'
+//    ALTER USER SA SET LOCAL TRUE
+//    CREATE SCHEMA PUBLIC AUTHORIZATION DBA
+//    ALTER SEQUENCE SYSTEM_LOBS.LOB_ID RESTART WITH 1
+//    SET DATABASE DEFAULT INITIAL SCHEMA PUBLIC
+//    GRANT USAGE ON DOMAIN INFORMATION_SCHEMA.SQL_IDENTIFIER TO PUBLIC
+//    GRANT USAGE ON DOMAIN INFORMATION_SCHEMA.YES_OR_NO TO PUBLIC
+//    GRANT USAGE ON DOMAIN INFORMATION_SCHEMA.TIME_STAMP TO PUBLIC
+//    GRANT USAGE ON DOMAIN INFORMATION_SCHEMA.CARDINAL_NUMBER TO PUBLIC
+//    GRANT USAGE ON DOMAIN INFORMATION_SCHEMA.CHARACTER_DATA TO PUBLIC
+//    GRANT DBA TO SA
+//    SET SCHEMA SYSTEM_LOBS
+//    INSERT INTO BLOCKS VALUES(0,2147483647,0)
+--------------------------------------------------------------------------------------------------------
+import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.core.env.MutablePropertySources;
+import org.springframework.core.env.PropertySource;
+import org.springframework.env.redis.RedisPropertySource;
+import org.springframework.web.context.ConfigurableWebApplicationContext;
+
+public class XmlConfigPropertySourceInitializer implements ApplicationContextInitializer<ConfigurableWebApplicationContext> {
+    @Override
+    public void initialize(ConfigurableWebApplicationContext applicationContext) {
+        MutablePropertySources propertySources = applicationContext.getEnvironment().getPropertySources();
+        propertySources.addFirst(getPropertySource());
+    }
+
+    private PropertySource getPropertySource() {
+        ClassPathXmlApplicationContext propertySourceContext =
+                new ClassPathXmlApplicationContext("classpath:/META-INF/spring/property-source-context.xml");
+
+        return propertySourceContext.getBean(RedisPropertySource.class);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+JacksonAutoConfiguration
+--------------------------------------------------------------------------------------------------------
+import java.util.TreeMap;
+
+public class RomanNumberUtils {
+    private final static TreeMap<Long, String> map = new TreeMap<Long, String>();
+
+    static {
+        map.put(1000L, "M");
+        map.put(900L, "CM");
+        map.put(500L, "D");
+        map.put(400L, "CD");
+        map.put(100L, "C");
+        map.put(90L, "XC");
+        map.put(50L, "L");
+        map.put(40L, "XL");
+        map.put(10L, "X");
+        map.put(9L, "IX");
+        map.put(5L, "V");
+        map.put(4L, "IV");
+        map.put(1L, "I");
+    }
+
+    public final static String toRoman(Long number) {
+        Long l =  map.floorKey(number);
+        if ( number == l ) {
+            return map.get(number);
+        }
+        return map.get(l) + toRoman(number-l);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+import com.exercise.domain.enumeration.Permission;
+import com.exercise.service.ConverterService;
+import com.exercise.service.utils.DecimalNumberUtils;
+import com.exercise.service.utils.RomanNumberUtils;
+import com.exercise.web.response.ConverterResponse;
+import org.springframework.stereotype.Component;
+
+import com.exercise.exception.NumberConvertException;
+
+@Component
+public class ConverterServiceImpl implements ConverterService {
+
+	@Override
+	public ConverterResponse hexaToBinario(String number) throws NumberConvertException {
+		Long value = DecimalNumberUtils.hexaToDecimal(number);
+		String result = toBinario(value);
+		return new ConverterResponse(number, result, Permission.BINARIO);
+	}
+
+	@Override
+	public ConverterResponse hexaToHexa(String number) throws NumberConvertException {
+		Long value = DecimalNumberUtils.hexaToDecimal(number);
+		String result = toHexa(value);
+		return new ConverterResponse(number, result, Permission.HEXADECIMAL);
+	}
+
+	@Override
+	public ConverterResponse hexaToRomano(String number) throws NumberConvertException {
+		Long value = DecimalNumberUtils.hexaToDecimal(number);
+		String result = toRomano(value);
+		return new ConverterResponse(number, result, Permission.ROMANO);
+	}
+
+	@Override
+	public ConverterResponse hexaToDecimal(String number) throws NumberConvertException {
+		Long value = DecimalNumberUtils.hexaToDecimal(number);
+		String result = toDecimal(value);
+		return new ConverterResponse(number, result, Permission.DECIMAL);
+	}
+
+	@Override
+	public ConverterResponse binarioToBinario(String number) throws NumberConvertException {
+		Long value = DecimalNumberUtils.binaryToDecimal(number);
+		String result = toBinario(value);
+		return new ConverterResponse(number, result, Permission.BINARIO);
+	}
+
+	@Override
+	public ConverterResponse binarioToHexa(String number) throws NumberConvertException {
+		Long value = DecimalNumberUtils.binaryToDecimal(number);
+		String result = toHexa(value);
+		return new ConverterResponse(number, result, Permission.HEXADECIMAL);
+	}
+
+	@Override
+	public ConverterResponse binarioToRomano(String number) throws NumberConvertException {
+		Long value = DecimalNumberUtils.binaryToDecimal(number);
+		String result = toRomano(value);
+		return new ConverterResponse(number, result, Permission.ROMANO);
+	}
+
+	@Override
+	public ConverterResponse binarioToDecimal(String number) throws NumberConvertException {
+		Long value = DecimalNumberUtils.binaryToDecimal(number);
+		String result = toDecimal(value);
+		return new ConverterResponse(number, result, Permission.DECIMAL);
+	}
+
+	@Override
+	public ConverterResponse decimalToBinario(String number) throws NumberConvertException {
+		Long value = DecimalNumberUtils.stringToDecimal(number);
+		String result = toBinario(value);
+		return new ConverterResponse(number, result, Permission.BINARIO);
+	}
+
+	@Override
+	public ConverterResponse decimalToHexa(String number) throws NumberConvertException {
+		Long value = DecimalNumberUtils.stringToDecimal(number);
+		String result = toHexa(value);
+		return new ConverterResponse(number, result, Permission.HEXADECIMAL);
+	}
+
+	@Override
+	public ConverterResponse decimalToRomano(String number) throws NumberConvertException {
+		Long value = DecimalNumberUtils.stringToDecimal(number);
+		String result = toRomano(value);
+		return new ConverterResponse(number, result, Permission.ROMANO);
+	}
+
+	@Override
+	public ConverterResponse decimalToDecimal(String number) throws NumberConvertException {
+		Long value = DecimalNumberUtils.stringToDecimal(number);
+		String result = toDecimal(value);
+		return new ConverterResponse(number, result, Permission.DECIMAL);
+	}
+
+	private String toBinario(Long value) throws NumberConvertException {
+		if (value != null) {
+			return Long.toBinaryString(value);
+		}
+
+		throw new NumberConvertException("cant convert");
+	}
+
+	private String toHexa(Long value) throws NumberConvertException {
+		if (value != null) {
+			return Long.toHexString(value).toUpperCase();
+		}
+
+		throw new NumberConvertException("cant convert");
+	}
+
+	private String toRomano(Long value) throws NumberConvertException {
+		if (value != null) {
+			return RomanNumberUtils.toRoman(value);
+		}
+
+		throw new NumberConvertException("cant convert");
+	}
+
+	private String toDecimal(Long value) throws NumberConvertException {
+		if (value != null) {
+			return String.valueOf(value);
+		}
+
+		throw new NumberConvertException("cant convert");
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import com.exercise.security.user.DummyUser;
+import com.exercise.service.UserService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.Collections;
+
+public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
+
+    private AuthenticationManager authManager;
+    private UserService userService;
+
+    /**
+     * Listen for auth path on url
+     * @param authManager
+     */
+    public AuthenticationFilter(AuthenticationManager authManager,
+                                UserService userService) {
+        this.authManager = authManager;
+        this.userService = userService;
+    }
+
+    @Override
+    protected boolean requiresAuthentication(HttpServletRequest request, HttpServletResponse response) {
+        return true;
+    }
+
+    /**
+     *  Get credentials from request
+     *  Create auth object (contains credentials) which will be used by auth manager
+     *  Authentication manager authenticate the user, and use UserDetialsServiceImpl::loadUserByUsername() method to load the user
+     * @param request
+     * @param response
+     * @return
+     * @throws AuthenticationException
+     */
+
+    @Override
+    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) {
+        DummyUser creds = readBasicAuthorization(request);
+        String username = creds.getUsername();
+        String password = creds.getPassword();
+        Authentication authToken = new UsernamePasswordAuthenticationToken(username, password, Collections.EMPTY_LIST);
+        try {
+            return authManager.authenticate(authToken);
+        } catch (AuthenticationException ex) {
+            throw ex;
+        }
+    }
+
+    /**
+     * Generate token if success auth
+     * @param request
+     * @param response
+     * @param chain
+     * @param auth
+     */
+    @Override
+    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response,
+                                            FilterChain chain, Authentication auth)
+            throws IOException, ServletException {
+        SecurityContextHolder.getContext().setAuthentication(auth);
+        chain.doFilter(request, response);
+    }
+
+    private DummyUser readBasicAuthorization(HttpServletRequest request) {
+        final String authorization = request.getHeader(HttpHeaders.AUTHORIZATION);
+        DummyUser creds = new DummyUser();
+
+        if (authorization != null && authorization.toLowerCase().startsWith("basic")) {
+            // Authorization: Basic base64credentials
+            String base64Credentials = authorization.substring("Basic".length()).trim();
+            byte[] credDecoded = Base64.getDecoder().decode(base64Credentials);
+            String credentials = new String(credDecoded, StandardCharsets.UTF_8);
+            // credentials = username:password
+            final String[] values = credentials.split(":", 2);
+            if (values.length > 1) {
+                creds.setUsername(values[0]);
+                creds.setPassword(values[1]);
+            }
+        }
+
+        return creds;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@Test(expected = UnsupportedOperationException.class)
+public void encodableMimeTypesIsImmutable() {
+  MimeType textJavascript = new MimeType("text", "javascript", StandardCharsets.UTF_8);
+  Jackson2JsonEncoder encoder = new Jackson2JsonEncoder(new ObjectMapper(), textJavascript);
+  encoder.getMimeTypes().add(new MimeType("text", "ecmascript"));
+}
+--------------------------------------------------------------------------------------------------------
+import com.exercise.exception.NumberConvertException;
+
+import javax.persistence.Entity;
+import java.util.Arrays;
+
+/**
+ * The Permission enumeration.
+ */
+public enum Permission {
+    BINARIO("BINARIO"),
+    HEXADECIMAL("HEXADECIMAL"),
+    DECIMAL("DECIMAL"),
+    ROMANO("ROMANO"),
+    MASTER("MASTER");
+
+    private String code;
+
+    Permission(String code) {
+        this.code = code;
+    }
+
+    @Override
+    public String toString() {
+        return name().toUpperCase();
+    }
+
+    public static Permission byCode(String code) throws NumberConvertException {
+        return Arrays.stream(Permission.values())
+                .filter(e -> e.code.equalsIgnoreCase(code))
+                .findFirst()
+                .orElseThrow(() -> new NumberConvertException(String.format("Unsupported type %s.", code)));
+    }
+}
+--------------------------------------------------------------------------------------------------------
+User-agent: *
+Allow: /*.js
+Allow: /*.css
+Disallow: /bitrix/
+Disallow: /bitrix/tools/
+Disallow: /_exploits/
+Disallow: /_download/
+Disallow: /blog/search.php
+Disallow: /bitrix/exturl.php
+Disallow: /begun/
+Disallow: /admin/
+Disallow: /software/download/
+Disallow: /tools/_services/download/
+Disallow: /bitrix/tools/
+Disallow: /search/
+Disallow: /forum/view_profile.php
+Disallow: /forum/search/
+Disallow: /forum/topic/new/
+Disallow: /forum/topic/add/
+Disallow: /forum/subscr_list.php
+Disallow: /forum/send_message.php 
+Disallow: /forum/search.php
+Disallow: /forum/search/
+Disallow: /forum/new_topic.php 
+Disallow: /forum/move.php
+Disallow: /forum/active.php
+Disallow: /forum/forum_auth.php
+Disallow: /forum/forum_posts.asp
+Disallow: /blog/video/
+Disallow: /blog/company/search.php
+Disallow: /blog/personal/search.php
+Disallow: /bitrix/tools
+
+User-agent: yandex
+Disallow: /bitrix/
+Disallow: /bitrix/tools/
+Disallow: /_exploits/
+Disallow: /_download/
+Disallow: /blog/search.php
+Disallow: /bitrix/exturl.php
+Disallow: /begun/
+Disallow: /admin/
+Disallow: /software/download/
+Disallow: /tools/_services/download/
+Disallow: /bitrix/tools/
+Disallow: /search/
+Disallow: /forum/view_profile.php
+Disallow: /forum/search/
+Disallow: /forum/topic/new/
+Disallow: /forum/topic/add/
+Disallow: /forum/subscr_list.php
+Disallow: /forum/send_message.php 
+Disallow: /forum/search.php
+Disallow: /forum/search/
+Disallow: /forum/new_topic.php 
+Disallow: /forum/move.php
+Disallow: /forum/active.php
+Disallow: /forum/forum_auth.php
+Disallow: /forum/forum_posts.asp
+Disallow: /blog/video/
+Disallow: /blog/company/search.php
+Disallow: /blog/personal/search.php
+Disallow: /bitrix/tools
+Clean-param: rules
+Clean-param: user_list
+Clean-param: register
+Clean-param: auth 
+Clean-param: backurl 
+Clean-param: order 
+Clean-param: set_filter 
+Clean-param: arrFilter 
+Clean-param: ACTION
+Clean-param: el_id
+Clean-param: back_url
+Clean-param: sec_id
+Clean-param: utm_source
+Clean-param: utm_medium
+Clean-param: post
+Clean-param: x
+Clean-param: MARK
+Clean-param: rate
+Clean-param: y
+Clean-param: r2
+Clean-param: r1
+Clean-param: TB_iframe
+Clean-param: goto
+Clean-param: cof
+Clean-param: cx
+Clean-param: height
+Clean-param: width
+Clean-param: year
+Clean-param: month
+Clean-param: R2
+Clean-param: R1
+Clean-param: category
+Clean-param: country
+Clean-param: login
+Clean-param: delete_trackback_id
+Clean-param: sessid
+Clean-param: auth_service_id
+Clean-param: auth_service_error
+
+Host: https://www.securitylab.ru
+
+User-agent: Mozilla/4.0 (compatible; Netcraft Web Server Survey)  
+Disallow: /
+
+User-agent: Exabot
+Disallow: /
+
+User-agent: NetCraft
+Disallow: /
+
+User-agent: Aport
+Disallow: /
+
+User-agent: Flexum
+Disallow: /
+
+User-agent: OmniExplorer_Bot
+Disallow: /
+
+User-agent: FreeFind
+Disallow: /
+
+User-agent: BecomeBot
+Disallow: /
+
+User-agent: Nutch
+Disallow: /
+
+User-agent: Jetbot/1.0
+Disallow: /
+
+User-agent: Jetbot
+Disallow: /
+
+User-agent: WebVac
+Disallow: /
+
+User-agent: Stanford
+Disallow: /
+
+User-agent: naver
+Disallow: /
+
+User-agent: dumbot
+Disallow: /
+
+User-agent: Hatena Antenna
+Disallow: /
+
+User-agent: grub-client
+Disallow: /
+
+User-agent: grub
+Disallow: /
+
+User-agent: looksmart
+Disallow: /
+
+User-agent: WebZip
+Disallow: /
+
+User-agent: larbin
+Disallow: /
+
+User-agent: b2w/0.1
+Disallow: /
+
+User-agent: Copernic
+Disallow: /
+
+User-agent: psbot
+Disallow: /
+
+User-agent: Python-urllib
+Disallow: /
+
+User-agent: NetMechanic
+Disallow: /
+
+User-agent: URL_Spider_Pro
+Disallow: /
+
+User-agent: CherryPicker
+Disallow: /
+
+User-agent: EmailCollector
+Disallow: /
+
+User-agent: EmailSiphon
+Disallow: /
+
+User-agent: WebBandit
+Disallow: /
+
+User-agent: EmailWolf
+Disallow: /
+
+User-agent: ExtractorPro
+Disallow: /
+
+User-agent: CopyRightCheck
+Disallow: /
+
+User-agent: Crescent
+Disallow: /
+
+User-agent: SiteSnagger
+Disallow: /
+
+User-agent: ProWebWalker
+Disallow: /
+
+User-agent: CheeseBot
+Disallow: /
+
+User-agent: LNSpiderguy
+Disallow: /
+
+User-agent: ia_archiver
+Disallow: /
+
+User-agent: ia_archiver/1.6
+Disallow: /
+
+User-agent: Gigabot
+Disallow: /
+
+User-agent: Gigbase
+Disallow: /
+
+User-agent: Yanga
+Disallow: /
+  
+User-agent: Indy Library
+Disallow: /
+
+User-agent: WebCopier	
+Disallow: /
+
+User-agent: Netcraft
+Disallow: /
+
+User-agent: dotbot
+Disallow: /
+
+Sitemap: http://www.securitylab.ru/sitemap_index.xml
+
+User-agent: ProCogSEOBot
+Disallow: /
+
+User-agent: MeMoNewsBot
+Disallow: /
+
+User-agent: TweetedTimes Bot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: PaperLiBot
+Disallow: /
+
+User-agent: rogerbot
+Disallow: /
+
+User-agent: TweetmemeBot
+Disallow: /
+
+User-agent: Socialradarbot
+Disallow: /
+
+User-agent: BazQuxBot
+Disallow: /
+
+User-agent: CompSpyBot
+Disallow: /
+
+User-agent: imrbot
+Disallow: /
+
+User-agent: Diffbot
+Disallow: /
+
+User-agent: msnbot  
+Crawl-delay: 5 
+ 
+User-agent: bingbot 
+Crawl-delay: 5
+
+User-agent: AhrefsBot
+Disallow: /
+--------------------------------------------------------------------------------------------------------
+
+
+server.tomcat.basedir=my-tomcat
+server.tomcat.accesslog.enabled=true
+server.tomcat.accesslog.pattern=%t %a "%r" %s (%D ms)
+
+server.tomcat.remote-ip-header=x-your-remote-ip-header
+server.tomcat.protocol-header=x-your-protocol-header
+--------------------------------------------------------------------------------------------------------
+@Bean
+public ServletWebServerFactory servletContainer() {
+    TomcatServletWebServerFactory tomcat = new TomcatServletWebServerFactory();
+    tomcat.addAdditionalTomcatConnectors(createSslConnector());
+    return tomcat;
+}
+
+private Connector createSslConnector() {
+    Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
+    Http11NioProtocol protocol = (Http11NioProtocol) connector.getProtocolHandler();
+    try {
+        File keystore = new ClassPathResource("keystore").getFile();
+        File truststore = new ClassPathResource("keystore").getFile();
+        connector.setScheme("https");
+        connector.setSecure(true);
+        connector.setPort(8443);
+        protocol.setSSLEnabled(true);
+        protocol.setKeystoreFile(keystore.getAbsolutePath());
+        protocol.setKeystorePass("changeit");
+        protocol.setTruststoreFile(truststore.getAbsolutePath());
+        protocol.setTruststorePass("changeit");
+        protocol.setKeyAlias("apitester");
+        return connector;
+    }
+    catch (IOException ex) {
+        throw new IllegalStateException("can't access keystore: [" + "keystore"
+                + "] or truststore: [" + "keystore" + "]", ex);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+
+server.tomcat.mbeanregistry.enabled=true
+
+
+--------------------------------------------------------------------------------------------------------
+@Bean
+public UndertowServletWebServerFactory servletWebServerFactory() {
+    UndertowServletWebServerFactory factory = new UndertowServletWebServerFactory();
+    factory.addBuilderCustomizers(new UndertowBuilderCustomizer() {
+
+        @Override
+        public void customize(Builder builder) {
+            builder.addHttpListener(8080, "0.0.0.0");
+        }
+
+    });
+    return factory;
+}
+
+@Bean
+public ServerEndpointExporter serverEndpointExporter() {
+    return new ServerEndpointExporter();
+}
+--------------------------------------------------------------------------------------------------------
+@Component
+public class JerseyConfig extends ResourceConfig {
+
+    public JerseyConfig() {
+        register(Endpoint.class);
+        setProperties(Collections.singletonMap("jersey.config.server.response.setStatusOverSendError", true));
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+static class ProxyCustomizer implements RestTemplateCustomizer {
+
+    @Override
+    public void customize(RestTemplate restTemplate) {
+        HttpHost proxy = new HttpHost("proxy.example.com");
+        HttpClient httpClient = HttpClientBuilder.create().setRoutePlanner(new DefaultProxyRoutePlanner(proxy) {
+
+            @Override
+            public HttpHost determineProxy(HttpHost target, HttpRequest request, HttpContext context)
+                    throws HttpException {
+                if (target.getHostName().equals("192.168.0.5")) {
+                    return null;
+                }
+                return super.determineProxy(target, request, context);
+            }
+
+        }).build();
+        restTemplate.setRequestFactory(new HttpComponentsClientHttpRequestFactory(httpClient));
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------

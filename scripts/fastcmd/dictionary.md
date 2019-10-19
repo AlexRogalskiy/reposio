@@ -12007,6 +12007,1049 @@ public class MyTomcatWebServerCustomizer
     }
 }
 --------------------------------------------------------------------------------------------------------
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+
+import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.update.UpdateRequest;
+import org.elasticsearch.action.update.UpdateResponse;
+import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.transport.TransportAddress;
+import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.transport.client.PreBuiltTransportClient;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import com.example.demo.vo.InputObject;
+import com.example.demo.vo.ResponseObject;
+
+@Configuration
+public class ElasticSearchDao {
+	private static TransportClient client;
+
+	@Bean
+	public ElasticSearchDao elasticBean() {
+		return new ElasticSearchDao();
+	}
+
+	public static TransportClient getElasticClient() throws UnknownHostException {
+		System.setProperty("es.path.home", "D:\\target\\elasticsearch-6.1.2\\elasticsearch-6.1.2\\bin");
+		if (client == null) {
+			// node client
+			/*
+			 * Node node =
+			 * nodeBuilder().clusterName("elasticsearch").client(true).node();
+			 * client = node.client(); return client;
+			 */
+			// transport client
+			client = new PreBuiltTransportClient(Settings.EMPTY)
+					.addTransportAddress(new TransportAddress(InetAddress.getByName("localhost"), 9300))
+					.addTransportAddress(new TransportAddress(InetAddress.getByName("localhost"), 9300));
+
+			return client;
+		} else
+			return client;
+	}
+
+	public Object AddDocument(String input) throws UnknownHostException {
+		ResponseObject responseObject = new ResponseObject();
+		InputObject obj = processInput(input);
+		if (!obj.isMalformed()) {
+			TransportClient client = getElasticClient();
+			IndexResponse response = null;
+			try {
+				response = client.prepareIndex(obj.getIndex(), obj.getIndex(), obj.getId())
+						.setSource(obj.getData(), XContentType.JSON).get();
+				responseObject.setSuccessMessage(response.getResult().name());
+				responseObject.setId(response.getId());
+				responseObject.setData(obj.getData());
+
+			} catch (Exception ex) {
+				System.out.println(ex.getMessage());
+				responseObject.setErrorMessage("Exception In creation of Entity");
+				return responseObject;
+			}
+			return responseObject;
+		} else {
+			responseObject.setErrorMessage("Malformed input json");
+		}
+		return responseObject;
+	}
+
+	public Object getSingalDocument(String index, String id) {
+		ResponseObject responseObject = new ResponseObject();
+		TransportClient client = null;
+		GetResponse response = null;
+		String docType = index;
+		try {
+			client = getElasticClient();
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			responseObject.setErrorMessage("Exception In getting Elastic Transport Client");
+			return responseObject;
+		}
+		// client.admin().indices().prepareRefresh().execute().actionGet();
+		try {
+			response = client.prepareGet(index, docType, id).get();
+			if(response.getSourceAsString()==null ||response.getSourceAsString()=="")
+			responseObject.setSuccessMessage("Not Found");
+			else
+				responseObject.setSuccessMessage("Fetched");
+			responseObject.setId(response.getId());
+			responseObject.setData(response.getSourceAsString());
+		} catch (Exception ex) {
+			responseObject.setErrorMessage("Exception In getting Elastic Data");
+			return responseObject;
+		}
+		return responseObject;
+	}
+
+	public Object getAllDocments(String index) {
+		ResponseObject responseObject = new ResponseObject();
+		TransportClient client = null;
+		SearchResponse response = null;
+		List<Map<String, Map<String, Object>>> esData;
+		Object obj = null;
+		try {
+			client = getElasticClient();
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			responseObject.setErrorMessage("Exception In getting Elastic Transport Client");
+			return responseObject;
+		}
+		// client.admin().indices().prepareRefresh().execute().actionGet();
+		try {
+			/*
+			 * response = client.prepareSearch(index).get(); obj=response.ge;
+			 */
+			int scrollSize = 1000;
+			esData = new ArrayList<Map<String, Map<String, Object>>>();
+			int i = 0;
+			while (response == null || response.getHits().getHits().length != 0) {
+				response = client.prepareSearch(index).setTypes(index).setQuery(QueryBuilders.matchAllQuery())
+						.setSize(scrollSize).setFrom(i * scrollSize).execute().actionGet();
+				for (SearchHit hit : response.getHits()) {
+					Map<String, Map<String, Object>> temp = new HashMap<String, Map<String, Object>>();
+					temp.put(hit.getId(), hit.getSourceAsMap());
+					esData.add(temp);
+				}
+				i++;
+			}
+			return esData;
+		} catch (Exception ex) {
+			responseObject.setErrorMessage("Exception In getting Elastic Data");
+			return responseObject;
+		}
+
+	}
+
+	public Object deleteDocument(String index, String id) {
+		TransportClient client = null;
+		ResponseObject responseObject = new ResponseObject();
+		try {
+			client = getElasticClient();
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+			responseObject.setErrorMessage("Exception In getting Elastic Transport Client");
+			return responseObject;
+		}
+		try {
+			DeleteResponse response = client.prepareDelete(index, index, id).get();
+			responseObject.setSuccessMessage(response.getResult().name());
+			return responseObject;
+		} catch (Exception ex) {
+			responseObject.setErrorMessage("Exception In getting Elastic Data");
+			return responseObject;
+		}
+
+	}
+
+	public Object updateDocment(String input) {
+		ResponseObject responseObject = new ResponseObject();
+		InputObject inputObject = processInput(input);
+		TransportClient client = null;
+		Object obj = null;
+		UpdateResponse response = null;
+		if (!inputObject.isMalformed()) {
+			try {
+				client = getElasticClient();
+			} catch (UnknownHostException e) {
+				e.printStackTrace();
+				responseObject.setErrorMessage("Exception In getting Elastic Transport Client");
+				return responseObject;
+			}
+			IndexRequest indexRequest = new IndexRequest(inputObject.getIndex(), inputObject.getIndex(),
+					inputObject.getId()).source(inputObject.getData(), XContentType.JSON);
+			UpdateRequest updateRequest = new UpdateRequest(inputObject.getIndex(), inputObject.getIndex(),
+					inputObject.getId()).doc(inputObject.getData(), XContentType.JSON).upsert(indexRequest);
+
+			try {
+				response = client.update(updateRequest).get();
+				responseObject.setSuccessMessage(response.getResult().name());
+				responseObject.setId(response.getId());
+			} catch (InterruptedException | ExecutionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				responseObject.setErrorMessage("Exception In updating Elastic data.");
+				return responseObject;
+			}
+			return responseObject;
+		} else {
+			responseObject.setErrorMessage("Malformed input json");
+		}
+		return responseObject;
+	}
+
+	public static InputObject processInput(String input) {
+		input = input.replaceAll("\\s", "");
+		InputObject obj = null;
+		JSONObject jsonObject = null;
+		try {
+			JSONParser parser = new JSONParser();
+			jsonObject = (JSONObject) parser.parse(input);
+		} catch (Exception e1) {
+			// TODO Auto-generated catch block
+			obj = new InputObject("", "", "", true);
+			e1.printStackTrace();
+
+		}
+		/*
+		 * System.out.println(input); String index=input.substring(10);
+		 * index=index.substring(0, index.indexOf('"')); String
+		 * id=input.substring(input.indexOf("id")+5);
+		 * id=id.substring(0,id.indexOf('"')); String
+		 * data=input.substring(input.indexOf("data")+6,input.lastIndexOf('}'));
+		 */
+
+		try {
+			/*
+			 * System.out.println(jsonObject.get("index"));
+			 * System.out.println(jsonObject.get("id"));
+			 * System.out.println(jsonObject.get("data"));
+			 */
+			obj = new InputObject(jsonObject.get("index").toString(), jsonObject.get("id").toString(),
+					jsonObject.get("data").toString(), false);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			obj = new InputObject("", "", "", true);
+			e.printStackTrace();
+		}
+		;
+		return obj;
+	}
+
+}
+
+public class Book {
+ private String title;
+ private String Author;
+ private String ISBN;
+ private int count;
+ 
+ public Book(String ISBN,String Authour,String title,int count){
+	 this.ISBN=ISBN;
+	 this.title=title;
+	 this.count=count;
+	 this.Author=Authour;
+ }
+ public String getTitle() {
+	return title;
+}
+public void setTitle(String title) {
+	this.title = title;
+}
+public String getAuthor() {
+	return Author;
+}
+public void setAuthor(String author) {
+	Author = author;
+}
+public String getISBN() {
+	return ISBN;
+}
+public void setISBN(String iSBN) {
+	ISBN = iSBN;
+}
+
+public int getCount() {
+	return count;
+}
+public void setCount(int count) {
+	this.count = count;
+}
+}
+--------------------------------------------------------------------------------------------------------
+    public enum Strategy {
+        NONE {
+            @Override
+            public String toString() {
+                return "drop-and-create";
+            }
+        },
+        CREATE {
+            @Override
+            public String toString() {
+                return "create";
+            }
+        },
+        DROP_AND_CREATE {
+            @Override
+            public String toString() {
+                return "drop-and-create";
+            }
+        }
+    };
+	
+	public static Platform matchText(String text){
+		text = text.toLowerCase();
+		for(Platform a:Platform.values()){
+			if(text.contains(a.keyword)){
+				return a;
+			}
+		}
+		return null;
+	}
+	
+	public enum Language {
+	English("EN"), Spanish("ES"), French("FR"), German("DE"), Dutch("NL"), Japanese(
+			"JA"), Korean("KO"), Chinese("ZH"), Simplified_Chinese("zh-Hans") {
+		@Override
+		public String toString() {
+			return "Simplified Chinese";
+		}
+	},
+	Traditional_Chinese("zh-Hant") {
+		@Override
+		public String toString() {
+			return "Traditional Chinese";
+		}
+	},
+	Russian("RU");
+
+	private String keyword;
+
+	private Language(String code) {
+		this.keyword = code;
+	}
+	
+	public static Language getEnum(String val){
+		for(Language key: Language.values()){
+			if(key.keyword.equalsIgnoreCase(val)){
+				return key;
+			}
+		}
+		return null;
+	}
+	
+	public String getKeyword(){
+		return this.keyword;
+	}
+}
+
+public enum KeyEnum {
+	//device_size("device size"),
+	source("sources"),
+	language("language"),
+	apple_product_line("apple_product_line"),
+	platform("platform"),
+	device_os_version("device_os_version"),
+	device_manufacturer("device_manufacturer"),	
+	device_type("device_type"),
+	device_size("device_size"),
+	geoip_continent("geoip_continent"),
+	geoip_country("geoip_country"),
+	geoip_region("regions"),
+	//Always put personas in the end
+	persona_name("personas");
+	
+	private final String keyword;
+	
+	private KeyEnum(String key){
+		this.keyword = key;
+	}
+	
+	public static KeyEnum getEnum(String val){
+		for(KeyEnum key: KeyEnum.values()){
+			if(key.keyword.equalsIgnoreCase(val)){
+				return key;
+			}
+		}
+		return null;
+	}
+	
+	public static String getValue(KeyEnum key){
+		return key.keyword;
+	}
+}
+
+public enum Countries {
+	// RW - rest of world
+	AR("Argentina"), AU("Australia"), BR("Brazil"), CA("Canada"), CL("Chile"), CN("China"), 
+	CO("Colombia"), DE("Germany"), ES("Spain"), FR("France"), GB("United Kingdom"), GR("Greece"), 
+	HK("Hong Kong"), ID("Indonesia"), IL("Israel"), IN("India"), IT("Italy"), JP("Japan"), KR("Korea"),
+	KW("Kuwait"), MX("Mexico"), MY("Malaysia"), NL("Netherlands"), RU("Russia"), SA("Saudi Arabia"), 
+	SE("Sweden"), SG("Singapore"), TH("Thailand"), TR("Turkey"), TW("Taiwan"), US("United States");
+
+	private String keyword;
+	
+	private Countries(String k) {
+		this.keyword = k;
+	}
+	
+	public static Countries getEnum (String country) {
+		for (Countries c : Countries.values()) {
+			if (c.name().equalsIgnoreCase(country)) {
+				return c;
+			}
+		}
+		return null;
+	}
+	
+	public String getKeyword(){
+		return keyword;
+	}
+}
+
+public enum Continents {
+	SA("South America"), AS("Asia"), AF("Africa"), EU("Europe"), OC("Oceania"), NA("North America");
+	
+	private String keyword;
+	
+	private Continents(String k) {
+		this.keyword = k;
+	}
+
+	public static Continents getEnum(String continent) {
+		for (Continents c : Continents.values()) {
+			if (c.name().equalsIgnoreCase(continent)) {
+				return c;
+			}
+		}
+		return null;
+	}
+	
+	public String getKeyword(){
+		return keyword;
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+server.port = 8082
+server.ssl.key-store = classpath:keystore.p12
+server.ssl.key-store-password = mypassword
+server.ssl.key-store-type = PKCS12
+server.ssl.key-alias = tomcat
+--------------------------------------------------------------------------------------------------------
+import javax.sql.DataSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
+import org.springframework.core.env.Environment;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
+import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
+import org.springframework.security.oauth2.provider.token.DefaultTokenServices;
+import org.springframework.security.oauth2.provider.token.TokenStore;
+import org.springframework.security.oauth2.provider.token.store.JdbcTokenStore;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
+
+
+/**
+ * Configure OAuth2 so that:
+ *   . Token checking is done by comparing with key that retrieved from
+ *     jdbc database
+ *   . Any request need be authroized via access token key provided
+ */
+@Configuration
+@PropertySource({"classpath:oauth2jdbc.properties"})
+@EnableResourceServer
+public class OAuth2ResourceServerConfig extends ResourceServerConfigurerAdapter {
+  @Autowired
+  private Environment env;
+
+  @Override
+  public void configure(final HttpSecurity http) throws Exception {
+    http.sessionManagement()
+    .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+    .and()
+    .authorizeRequests().anyRequest().permitAll();
+  }
+
+  @Override
+  public void configure(final ResourceServerSecurityConfigurer config) {
+    config.tokenServices(tokenServices());
+  }
+
+  @Bean
+  @Primary
+  public DefaultTokenServices tokenServices() {
+    final DefaultTokenServices defaultTokenServices = new DefaultTokenServices();
+    defaultTokenServices.setTokenStore(tokenStore());
+    return defaultTokenServices;
+  }
+
+  private DataSource getJDBCdataSource() {
+    final DriverManagerDataSource dataSource = new DriverManagerDataSource();
+    dataSource.setDriverClassName(env.getProperty("jdbc.driverClassName"));
+    dataSource.setUrl(env.getProperty("jdbc.url"));
+    dataSource.setUsername(env.getProperty("jdbc.user"));
+    dataSource.setPassword(env.getProperty("jdbc.pass"));
+    return dataSource;
+  }
+
+  @Bean
+  public TokenStore tokenStore() {
+    return new JdbcTokenStore(getJDBCdataSource());
+  }
+}
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.method.configuration.GlobalMethodSecurityConfiguration;
+import org.springframework.security.oauth2.provider.expression.OAuth2MethodSecurityExpressionHandler;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
+
+
+/**
+ * Enable security check with @PreAuthorize annotation to enforce
+ * authorization on Rest Controller on method of class controller
+ */
+@Configuration
+@EnableResourceServer
+@EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled= true)
+public class MethodSecurityConfig extends GlobalMethodSecurityConfiguration {
+  @Override
+  protected MethodSecurityExpressionHandler createExpressionHandler() {
+    return new OAuth2MethodSecurityExpressionHandler();
+  }
+}
+
+--------------------------------------------------------------------------------------------------------
+@Pattern(regexp="[\\p{IsAlphabetic}\\s]*")
+--------------------------------------------------------------------------------------------------------
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.ext.ExceptionMapper;
+import javax.ws.rs.ext.Provider;
+
+import com.target.model.ErrorMessage;
+
+
+@Provider
+public class UpdateExceptionMapper implements ExceptionMapper<UpdateException> {
+
+	@Override
+	public Response toResponse(UpdateException exception) {
+		return Response.status(Status.NOT_MODIFIED)
+				.entity(new ErrorMessage("array index out of bound exception", 400, "wwwelham"))
+				.build();
+	}
+}
+--------------------------------------------------------------------------------------------------------
+		@DurationUnit(ChronoUnit.SECONDS)
+		private Duration backgroundProcessorDelay = Duration.ofSeconds(10);
+--------------------------------------------------------------------------------------------------------
+		private String internalProxies = "10\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|" // 10/8
+				+ "192\\.168\\.\\d{1,3}\\.\\d{1,3}|" // 192.168/16
+				+ "169\\.254\\.\\d{1,3}\\.\\d{1,3}|" // 169.254/16
+				+ "127\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|" // 127/8
+				+ "172\\.1[6-9]{1}\\.\\d{1,3}\\.\\d{1,3}|" // 172.16/12
+				+ "172\\.2[0-9]{1}\\.\\d{1,3}\\.\\d{1,3}|" + "172\\.3[0-1]{1}\\.\\d{1,3}\\.\\d{1,3}|" //
+				+ "0:0:0:0:0:0:0:1|::1";
+--------------------------------------------------------------------------------------------------------
+//@Configuration
+//public class JsonPathConfig {
+//    static {
+//        // disable JsonPath cache to avoid
+//        // to use first parsed value always when "concat(...)"
+//        CacheProvider.setCache(new NOOPCache());
+//    }
+//
+//    public com.jayway.jsonpath.Configuration getConfig() {
+//        return com.jayway.jsonpath.Configuration.defaultConfiguration()
+//                        .addOptions(Option.SUPPRESS_EXCEPTIONS);
+//    }
+//}
+--------------------------------------------------------------------------------------------------------
+    @Bean
+    @Description("Ticket message kafka transaction manager bean")
+    public KafkaTransactionManager<String, TicketMessage> ticketMessageTransactionManager() {
+        return new KafkaTransactionManager<>(this.ticketMessageProducerFactory());
+    }
+--------------------------------------------------------------------------------------------------------
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.springframework.stereotype.Component;
+
+@Component
+public class NameValidator {
+
+    private static final String NAME_PATTERN = "^[a-zA-Z0-9\\._\\s\\-]+$";
+
+    public boolean isValidName(final String name) {
+        final Pattern pattern = Pattern.compile(NAME_PATTERN);
+        final Matcher matcher = pattern.matcher(name);
+        return matcher.matches();
+    }
+
+}
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import com.redsky.client.exception.ResourceValidationException;
+import com.redsky.client.pojo.RequestPayload;
+
+@Component
+public class InputRequestValidator implements RequestValidator<RequestPayload> {
+
+    @Autowired
+    private BeanValidator validator;
+
+    @Autowired
+    private NameValidator nameValidator;
+
+    @Override
+    public boolean validate(final RequestPayload bean) throws ResourceValidationException {
+        boolean result = false;
+        if (bean != null) {
+            result = validator.validate(bean);
+        }
+        if (result) {
+            result = nameValidator.isValidName(bean.getProduct().getName());
+        }
+
+        return result;
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+@Bean
+public FilterRegistrationBean registration(MyFilter filter) {
+    FilterRegistrationBean registration = new FilterRegistrationBean(filter);
+    registration.setEnabled(false);
+    return registration;
+}
+--------------------------------------------------------------------------------------------------------
+package com.paragon.microservices.confirmationlink.callback.deserializer;
+
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.StringValue;
+import com.paragon.microservices.confirmationlink.callback.exception.AuthorityRedisDataException;
+import com.paragon.microservices.confirmationlink.callback.system.deserializer.AuthorityRedisValueDeserializer;
+import org.apache.commons.lang3.StringUtils;
+import org.hamcrest.core.IsEqual;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+import static com.paragon.microservices.confirmationlink.callback.TestUtils.checkThrows;
+import static org.hamcrest.CoreMatchers.startsWith;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.nullValue;
+
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(StringValue.class)
+public class AuthorityRedisValueDeserializerTest {
+
+    private AuthorityRedisValueDeserializer serializer;
+
+    @Before
+    public void setUp() {
+        this.serializer = new AuthorityRedisValueDeserializer();
+    }
+
+    @Test
+    public void test_serialize() {
+        // given
+        final String errorMessage = "Serialize operation isn't supported!";
+
+        // when
+        final UnsupportedOperationException thrown = checkThrows(UnsupportedOperationException.class, () -> this.serializer.serialize("test data"));
+        // then
+        assertThat(thrown.getMessage(), IsEqual.equalTo(errorMessage));
+    }
+
+    @Test
+    public void test_deserialize_whenPassed_NullableContent() {
+        // given
+        final byte[] content = null;
+
+        // when
+        final String actual = this.serializer.deserialize(content);
+
+        // then
+        assertThat(actual, is(nullValue()));
+    }
+
+    @Test
+    public void test_deserialize_whenPassed_EmptyContent() {
+        // given
+        final String content = StringUtils.EMPTY;
+
+        // when
+        final String actual = this.serializer.deserialize(content.getBytes());
+
+        // then
+        assertThat(actual, is(content));
+    }
+
+    @Test
+    public void test_deserialize_whenPassed_InvalidContent() {
+        // given
+        final String errorMessage = "ERROR: cannot parse authority redis data";
+        final String content = "{\n" +
+                "  \"reportId\": \"123\",\n" +
+                "  \"locale\": \"de_DE\",\n" +
+                "  \"kind\": \"PRODUCTS_BATCH\",\n" +
+                "  \"mode\": \"DRY_RUN\"\n" +
+                "}";
+
+        // when
+        final AuthorityRedisDataException thrown = checkThrows(AuthorityRedisDataException.class, () -> this.serializer.deserialize(content.getBytes()));
+        // then
+        assertThat(thrown.getMessage(), startsWith(errorMessage));
+    }
+
+    @Test
+    public void test_deserialize_whenPassed_ValidContent() throws InvalidProtocolBufferException {
+        // given
+        final String content = "/xa1/xs2{\"reportId\": \"123\"}";
+        final String deserializeResult = "{\"reportId\": \"123\"}";
+
+        PowerMockito.mockStatic(StringValue.class);
+
+        final StringValue stringValue = PowerMockito.mock(StringValue.class);
+        PowerMockito.when(StringValue.parseFrom(ArgumentMatchers.eq(content.getBytes()))).thenReturn(stringValue);
+        PowerMockito.when(stringValue.getValue()).thenReturn(deserializeResult);
+
+        // when
+        final String actual = this.serializer.deserialize(content.getBytes());
+
+        // then
+        assertThat(deserializeResult, IsEqual.equalTo(actual));
+    }
+
+    @Test
+    public void test_deserialize_whenPassed_BadContent() {
+        // given
+        final String errorMessage = "ERROR: cannot parse authority redis data";
+        final String content = "{}";
+
+        // when
+        final AuthorityRedisDataException thrown = checkThrows(AuthorityRedisDataException.class, () -> this.serializer.deserialize(content.getBytes()));
+        // then
+        assertThat(thrown.getMessage(), startsWith(errorMessage));
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+import javax.annotation.PostConstruct;
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.ValidationException;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
+
+import org.springframework.stereotype.Component;
+
+import com.redsky.client.exception.ResourceValidationException;
+
+@Component
+public class BeanValidator {
+
+    private ValidatorFactory factory;
+    private Validator validator;
+
+    @PostConstruct
+    public void init() throws ResourceValidationException {
+        try {
+            factory = Validation.buildDefaultValidatorFactory();
+        } catch (final ValidationException e) {
+            throw new ResourceValidationException("Couldn't build ValidatorFactory ", e);
+        }
+        validator = factory.getValidator();
+    }
+
+    public boolean validate(final Object bean) throws ResourceValidationException {
+
+        final Set<String> messages = new LinkedHashSet<>();
+
+        if (bean == null) {
+            messages.add("Bean is null, can't validate bean");
+        } else {
+            final Set<ConstraintViolation<Object>> violations = validator.validate(bean);
+            if (violations != null) {
+                for (final ConstraintViolation<Object> violation : violations) {
+                    messages.add(violation.getMessage());
+                }
+            }
+        }
+        if (!messages.isEmpty()) { throw new ResourceValidationException("Validation error", messages); }
+
+        return true;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+spring:
+  profiles: default
+  application:
+    name: redsky-client-service
+    
+server:
+  port: 8082
+  servlet:
+    context-path: /rcs
+
+    
+httpconfig:
+  maxHttpConnections: 50
+  maxHttpConnectionsPerRoute: 30
+  connectionTimeout: 8000
+  connectionRequestTimeout: 8000 
+  socketTimeout: 20000
+  maxHttpRetries: 4
+  
+redsky:
+  producturl: http://redsky.com/product
+  priceurl: http://redsky.com/price
+--------------------------------------------------------------------------------------------------------
+
+import java.util.List;
+
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.repository.query.Param;
+import org.springframework.data.rest.core.annotation.RepositoryRestResource;
+
+import com.example.entity.Pricing;
+import com.example.entity.CurrentPricing;
+
+@RepositoryRestResource(collectionResourceRel = "pricing", path = "pricing")
+public interface PricingRepo extends MongoRepository<Pricing, String> {
+
+	Pricing findByProductID(@Param("ProductID") long ProductID);
+	
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+// NOT THREADSAFE
+public class BankAccountUnsynchronized {
+
+  private double balance;
+  private Lock lock = new ReentrantLock();
+
+  public BankAccountUnsynchronized() {
+    balance = 0;
+  }
+
+  public void deposit(double amount) {
+      //Second solution:
+      lock.lock();
+      try {
+          balance += amount;
+      } finally {
+          lock.unlock();
+      }
+   }
+
+  public void withdraw(double amount) {
+      //Second solution.
+      lock.lock();
+      try {
+          balance -= amount;
+      } finally {
+          lock.unlock();
+      }
+   }
+
+  public double getBalance() {
+    return balance;
+  }
+}
+--------------------------------------------------------------------------------------------------------
+//import com.wildbeeslabs.api.rest.security.service.interfaces.IEncryptionService;
+//import org.jasypt.util.password.StrongPasswordEncryptor;
+//import org.springframework.beans.factory.annotation.Autowired;
+//import org.springframework.stereotype.Service;
+//
+///**
+// *
+// * Encryption REST Application Service implementation
+// *
+// * @author Alex
+// * @version 1.0.0
+// * @since 2017-08-08
+// */
+//@Service("userAccountService")
+//public class EncryptionServiceImpl implements IEncryptionService {
+//
+//    @Autowired
+//    private StrongPasswordEncryptor strongEncryptor;
+//
+//    @Override
+//    public String encrypt(final String input) {
+//        return strongEncryptor.encryptPassword(input);
+//    }
+//
+//    @Override
+//    public boolean check(final String plainInput, final String encryptedInput) {
+//        return strongEncryptor.checkPassword(plainInput, encryptedInput);
+//    }
+//}
+--------------------------------------------------------------------------------------------------------
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+public class Tester {
+
+  static final int NUMBER_OF_TURNSTILES = 40;
+  static Turnstile[] turnStiles = new Turnstile[NUMBER_OF_TURNSTILES];
+
+  public static void main(String[] args) throws InterruptedException {
+    //This is the shared Counter used by all turnstilles
+    TurnstileCounter sharedCounter = new TurnstileCounter();
+
+    for (int i = 0; i < NUMBER_OF_TURNSTILES; i++) {
+      turnStiles[i] = new Turnstile(sharedCounter);
+    }
+
+    //This example uses a ThreadPool to handle threads
+    ExecutorService es = Executors.newCachedThreadPool();
+
+    for (int i = 0; i < NUMBER_OF_TURNSTILES; i++) {
+      es.execute(turnStiles[i]);
+    }
+
+    es.shutdown();
+    es.awaitTermination(10, TimeUnit.SECONDS);
+
+    System.out.println("All turnstiles are done");
+    //Print the updated value
+    System.out.println(sharedCounter.getValue());
+  }
+}
+
+--------------------------------------------------------------------------------------------------------
+## SETUP file for Travis
+## Make sure to rename the database name in the CREATE DATABASE script below to the SAME name as used for your local tests
+---
+
+dist: bionic
+
+language: java
+
+cache:
+  directories:  
+    - $HOME/.m2
+
+script:
+  - mvn test
+  - mvn -Dremote.user=$REMOTE_USER -Dremote.password=$REMOTE_PW tomcat7:undeploy
+  - mvn -Dremote.user=$REMOTE_USER -Dremote.password=$REMOTE_PW tomcat7:deploy
+
+services:
+   - mysql
+
+before_script:
+
+# TODO Add variable to make it simple to be reusable for all semester projects
+#- export DEBIAN_FRONTEND="noninteractive";
+#- PW="ax2"
+#- USER_NAME="dev"
+
+#- sudo apt-get clean
+#- sudo rm -r /var/lib/apt/lists/*
+
+- sudo apt-get update
+- sudo apt-get install -y debconf-utils
+- sudo debconf-set-selections <<< 'mysql-apt-config mysql-apt-config/select-server select mysql-8.0'
+- wget https://dev.mysql.com/get/mysql-apt-config_0.8.13-1_all.deb
+- sudo -E dpkg -i mysql-apt-config_0.8.13-1_all.deb
+- sudo apt-get update
+
+- echo "Installing MySQL 8..."
+- sudo -E apt-get -y install mysql-server
+
+- sudo mysql -u root -e "CREATE User 'dev'@'localhost' IDENTIFIED BY 'ax2'; GRANT ALL PRIVILEGES ON *.* TO 'dev'@'localhost' WITH GRANT OPTION;"
+# - sudo mysql -u root -e "CREATE DATABASE startcodev2-test;"
+- sudo mysql -u dev -pax2 -e "CREATE DATABASE startcode;"
+
+- echo "Change  port to 3307, to mirror the local development setup"
+- sudo systemctl stop mysql
+- sudo sh -c 'echo "port=3307" >> /etc/mysql/mysql.conf.d/mysqld.cnf'
+- echo "Restarting MySQL..."
+- sudo systemctl start mysql
+- mysql --version
+- echo "before_script Complete"
+--------------------------------------------------------------------------------------------------------
+		<dependency>
+   			 <groupId>org.elasticsearch</groupId>
+    		<artifactId>elasticsearch</artifactId>
+   			 <version>6.1.0</version>
+		</dependency> 
+		<dependency>
+    		<groupId>org.elasticsearch.client</groupId>
+    		<artifactId>transport</artifactId>
+    		<version>6.1.2</version>
+		</dependency>
+				<dependency>
+    <groupId>org.elasticsearch.plugin</groupId>
+    <artifactId>transport-netty4-client</artifactId>
+    <version>6.1.2</version>
+	</dependency>
+	<dependency>
+    <groupId>org.elasticsearch.plugin</groupId>
+    <artifactId>reindex-client</artifactId>
+    <version>6.1.2</version>
+</dependency>
+<dependency>
+    <groupId>org.elasticsearch.plugin</groupId>
+    <artifactId>lang-mustache-client</artifactId>
+    <version>6.1.2</version>
+</dependency>
+<dependency>
+    <groupId>org.elasticsearch.plugin</groupId>
+    <artifactId>percolator-client</artifactId>
+    <version>6.1.2</version>
+</dependency>
+<dependency>
+    <groupId>org.elasticsearch.plugin</groupId>
+    <artifactId>parent-join-client</artifactId>
+    <version>6.1.2</version>
+</dependency>
+--------------------------------------------------------------------------------------------------------
 public class BookJSONParser implements Parser<Book> {
 
     String filename;
