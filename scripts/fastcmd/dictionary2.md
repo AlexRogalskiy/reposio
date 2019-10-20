@@ -3172,6 +3172,1810 @@ static class ProxyCustomizer implements RestTemplateCustomizer {
 
 }
 --------------------------------------------------------------------------------------------------------
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml" />
+    <property name="LOG_FILE" value="${LOG_FILE:-${LOG_PATH:-${LOG_TEMP:-${java.io.tmpdir:-/tmp}}/}spring.log}"/>
+    <include resource="org/springframework/boot/logging/logback/file-appender.xml" />
+    <root level="INFO">
+        <appender-ref ref="FILE" />
+    </root>
+</configuration>
+--------------------------------------------------------------------------------------------------------
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter</artifactId>
+    <exclusions>
+        <exclusion>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-logging</artifactId>
+        </exclusion>
+    </exclusions>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-log4j2</artifactId>
+</dependency>
+--------------------------------------------------------------------------------------------------------
+dependencies {
+    compile 'org.springframework.boot:spring-boot-starter-web'
+    compile 'org.springframework.boot:spring-boot-starter-log4j2'
+}
+
+configurations {
+    all {
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@Bean
+@ConfigurationProperties("app.datasource")
+public DataSource dataSource() {
+    return DataSourceBuilder.create().build();
+}
+
+
+
+app.datasource.jdbc-url=jdbc:mysql://localhost/test
+app.datasource.username=dbuser
+app.datasource.password=dbpass
+app.datasource.maximum-pool-size=30
+
+@Bean
+@ConfigurationProperties("app.datasource")
+public HikariDataSource dataSource() {
+    return DataSourceBuilder.create().type(HikariDataSource.class).build();
+}
+
+@Bean
+@Primary
+@ConfigurationProperties("app.datasource")
+public DataSourceProperties dataSourceProperties() {
+    return new DataSourceProperties();
+}
+
+@Bean
+@ConfigurationProperties("app.datasource.configuration")
+public HikariDataSource dataSource(DataSourceProperties properties) {
+    return properties.initializeDataSourceBuilder().type(HikariDataSource.class).build();
+}
+--------------------------------------------------------------------------------------------------------
+@Bean
+@Primary
+@ConfigurationProperties("app.datasource.first")
+public DataSourceProperties firstDataSourceProperties() {
+    return new DataSourceProperties();
+}
+
+@Bean
+@Primary
+@ConfigurationProperties("app.datasource.first.configuration")
+public HikariDataSource firstDataSource() {
+    return firstDataSourceProperties().initializeDataSourceBuilder().type(HikariDataSource.class).build();
+}
+
+@Bean
+@ConfigurationProperties("app.datasource.second")
+public BasicDataSource secondDataSource() {
+    return DataSourceBuilder.create().type(BasicDataSource.class).build();
+}
+--------------------------------------------------------------------------------------------------------
+public class HibernateAwareObjectMapper extends ObjectMapper {
+    public HibernateAwareObjectMapper() {
+        // This for Hibernate 5; change 5 to 4 or 3 if you need to support
+        // Hibernate 4 or Hibernate 3 instead
+        registerModule(new Hibernate5Module());
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@Entity
+@Table(name = "ta_trainee", uniqueConstraints = {@UniqueConstraint(columnNames = {"id"})})
+@JsonIdentityInfo(generator=ObjectIdGenerators.IntSequenceGenerator.class, property="@traineeId")
+public class Trainee extends BusinessObject {
+
+@Entity
+@Table(name = "ta_bodystat", uniqueConstraints = {@UniqueConstraint(columnNames = {"id"})})
+@JsonIdentityInfo(generator=ObjectIdGenerators.IntSequenceGenerator.class, property="@bodyStatId")
+public class BodyStat extends BusinessObject {
+--------------------------------------------------------------------------------------------------------
+@ManyToOne
+@JoinColumn(name="Key")
+@JsonBackReference
+private LgcyIsp Key;
+
+
+@OneToMany(mappedBy="LgcyIsp ")
+@JsonManagedReference
+private List<Safety> safety;
+--------------------------------------------------------------------------------------------------------
+@Bean
+public LocalContainerEntityManagerFactoryBean customerEntityManagerFactory(
+        EntityManagerFactoryBuilder builder) {
+    return builder
+            .dataSource(customerDataSource())
+            .packages(Customer.class)
+            .persistenceUnit("customers")
+            .build();
+}
+--------------------------------------------------------------------------------------------------------
+@Configuration(proxyBeanMethods = false)
+public class HibernateSecondLevelCacheExample {
+
+    @Bean
+    public HibernatePropertiesCustomizer hibernateSecondLevelCacheCustomizer(JCacheCacheManager cacheManager) {
+        return (properties) -> properties.put(ConfigSettings.CACHE_MANAGER, cacheManager.getCacheManager());
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@Bean
+@Primary
+@ConfigurationProperties("app.datasource.first")
+public DataSourceProperties firstDataSourceProperties() {
+    return new DataSourceProperties();
+}
+
+@Bean
+@Primary
+@ConfigurationProperties("app.datasource.first.configuration")
+public HikariDataSource firstDataSource() {
+    return firstDataSourceProperties().initializeDataSourceBuilder().type(HikariDataSource.class).build();
+}
+
+@Bean
+@ConfigurationProperties("app.datasource.second")
+public DataSourceProperties secondDataSourceProperties() {
+    return new DataSourceProperties();
+}
+
+@Bean
+@ConfigurationProperties("app.datasource.second.configuration")
+public BasicDataSource secondDataSource() {
+    return secondDataSourceProperties().initializeDataSourceBuilder().type(BasicDataSource.class).build();
+}
+
+
+
+app.datasource.first.url=jdbc:mysql://localhost/first
+app.datasource.first.username=dbuser
+app.datasource.first.password=dbpass
+app.datasource.first.configuration.maximum-pool-size=30
+
+app.datasource.second.url=jdbc:mysql://localhost/second
+app.datasource.second.username=dbuser
+app.datasource.second.password=dbpass
+app.datasource.second.max-total=30
+
+@Configuration(proxyBeanMethods = false)
+@EnableAutoConfiguration
+@EntityScan(basePackageClasses=City.class)
+public class Application {
+    //...
+}
+--------------------------------------------------------------------------------------------------------
+//package de.pearl.pem.common.system.configuration;
+//
+//@SpringBootApplication
+//@EnableAutoConfiguration(exclude = {ResourceServerTokenServicesConfiguration.class},
+//        excludeName = {"org.springframework.boot.autoconfigure.security.oauth2.resource.ResourceServerTokenServicesConfiguration$JwtTokenServicesConfiguration"})
+//@EnableGlobalMethodSecurity(securedEnabled = true, prePostEnabled = true, proxyTargetClass = true)
+//public class Elephant
+//{
+//    public static void main(String[] args) {
+//        SpringApplication.run(Elephant.class, args);
+//    }
+//
+//    @Configuration
+//    @EnableResourceServer
+//    protected static class SecurityConfiguration extends ResourceServerConfigurerAdapter
+//    {
+//
+//        @Autowired
+//        @Qualifier("customJwtTokenEnhancer")
+//        JwtAccessTokenConverter customJwtTokenEnhancer;
+//
+//        @Autowired
+//        @Qualifier("customJwtTokenStore")
+//        TokenStore customJwtTokenStore;
+//
+//        @Autowired
+//        @Qualifier("customJwtTokenServices")
+//        ResourceServerTokenServices customJwtTokenServices;
+//
+//        @Override
+//        public void configure(ResourceServerSecurityConfigurer resources) throws Exception
+//        {
+//            resources.tokenServices(customJwtTokenServices);
+//        }
+//
+//        @Bean
+//        public ResourceServerTokenServices customJwtTokenServices() {
+//            DefaultTokenServices services = new DefaultTokenServices();
+//            services.setTokenStore(customJwtTokenStore);
+//            return services;
+//        }
+//
+//        @Bean
+//        public TokenStore customJwtTokenStore() {
+//            return new JwtTokenStore(customJwtTokenEnhancer);
+//        }
+//
+//        @Bean
+//        @Autowired
+//        public JwtAccessTokenConverter customJwtTokenEnhancer(
+//                @Value("${security.oauth2.resource.jwt.keyValue}") String keyValue) {
+//            JwtAccessTokenConverter converter = new JwtAccessTokenConverter(){
+//                @Override
+//                public OAuth2Authentication extractAuthentication(Map<String, ?> map)
+//                {
+//                    OAuth2Authentication authentication = super.extractAuthentication(map);
+//                    Map<String, String> details = new HashMap<>();
+//                    details.put("account_id", (String) map.get("account_id"));
+//                    authentication.setDetails(details);
+//                    return authentication;
+//                }
+//            };
+//            if (keyValue != null) {
+//                converter.setVerifierKey(keyValue);
+//            }
+//            return converter;
+//        }
+//    }
+//}
+//
+//
+///*
+//server.port = 8081
+//
+//logging.level.org.springframework.security=DEBUG
+//security.sessions=stateless
+//security.oauth2.resource.jwt.keyValue=-----BEGIN PUBLIC KEY-----[[MY KEY]]-----END PUBLIC KEY-----
+// */
+--------------------------------------------------------------------------------------------------------
+//    @Bean
+//    public FilterRegistrationBean<RequestResponseLoggingFilter> loggingFilter(){
+//        final FilterRegistrationBean<RequestResponseLoggingFilter> registrationBean = new FilterRegistrationBean<>();
+//        registrationBean.setFilter(new RequestResponseLoggingFilter());
+//        registrationBean.addUrlPatterns("/users/*");
+//        return registrationBean;
+//    }
+
+    @Bean
+    public FilterRegistrationBean encodingFilter() {
+        CharacterEncodingFilter encodingFilter = new CharacterEncodingFilter("UTF-8", true);
+        FilterRegistrationBean filterRegBean = new FilterRegistrationBean();
+        filterRegBean.setUrlPatterns(getRootPathUrls());
+        filterRegBean.setFilter(encodingFilter);
+        filterRegBean.setOrder(1);
+        return filterRegBean;
+    }
+	
+////    @Bean
+////    public FilterRegistrationBean getFilterRegistrationBean() {
+////        FilterRegistrationBean filterRegistrationBean = new FilterRegistrationBean();
+////        filterRegistrationBean.setFilter(new CharacterEncodingFilter());
+////        return filterRegistrationBean;
+////    }
+
+
+    OutputStream output = new OutputStream()
+    {
+        private StringBuilder string = new StringBuilder();
+        @Override
+        public void write(int b) throws IOException {
+            this.string.append((char) b );
+        }
+
+        //Netbeans IDE automatically overrides this toString()
+        public String toString(){
+            return this.string.toString();
+        }
+    };
+--------------------------------------------------------------------------------------------------------
+/**
+ * The type of event received by the listener.
+ *
+ * @author Greg Luck
+ * @since 1.0
+ */
+public enum EventType {
+
+  /**
+   * An event type indicating that the cache entry was created.
+   */
+  CREATED,
+
+  /**
+   * An event type indicating that the cache entry was updated. i.e. a previous
+   * mapping existed
+   */
+  UPDATED,
+
+
+  /**
+   * An event type indicating that the cache entry was removed.
+   */
+  REMOVED,
+
+
+  /**
+   * An event type indicating that the cache entry has expired.
+   */
+  EXPIRED
+
+}
+--------------------------------------------------------------------------------------------------------
+spring.datasource.continue-on-error
+spring.batch.initialize-schema=always
+--------------------------------------------------------------------------------------------------------
+@Configuration(proxyBeanMethods = false)
+public class SslWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapter {
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        // Customize the application security
+        http.requiresChannel().anyRequest().requiresSecure();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+            <version>2.2.0.RELEASE</version>
+            <executions>
+                <execution>
+                    <goals>
+                        <goal>build-info</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
+    </plugins>
+</build>
+--------------------------------------------------------------------------------------------------------
+    /**
+     * Returns generated identifier {@link String}
+     *
+     * @param length - initial input identifier length
+     * @return generated identifier {@link String}
+     */
+    public static String generateId(final int length) {
+        assert length > 0 : "Length should be positive number";
+        final StringBuilder buffer = new StringBuilder();
+        for (int i = 0; i < length; i++) {
+            char next = (char) ('a' + (int) Math.floor(Math.random() * 26));
+            if (Math.random() < 0.5) {
+                next = Character.toUpperCase(next);
+            }
+            buffer.append(next);
+        }
+        return buffer.toString();
+    }
+--------------------------------------------------------------------------------------------------------
+package de.pearl.pem.common.config;
+
+import java.util.List;
+ 
+import javax.sql.DataSource;
+ 
+import static org.junit.Assert.*;
+ 
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestName;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+ 
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration
+@Sql({ "drop_schema.sql", "schema.sql", "data.sql" })
+public class DBConfigTest {
+     
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+     
+    @Rule
+    public TestName testName = new TestName();
+     
+    @Before
+    public void printTestName() {
+        System.out.println(testName.getMethodName());
+    }
+ ERROR: cannot serialize input date: Sat May 05 11:50:55 MSK 2018 by format: yyyy-MM-dp, locale: en_US, message: Illegal pattern character 'p'
+    @Test
+    public void printRows() {
+        List empNames = jdbcTemplate.queryForList("select name from employee",
+                String.class);
+        assertEquals(2, empNames.size());
+        System.out.println(empNames);
+    }
+     
+    @Configuration
+    static class Config {
+ 
+        @Bean
+        public DataSource dataSource() {
+            return new EmbeddedDatabaseBuilder()//
+            .setName("empty-sql-scripts-without-tx-mgr-test-db")//
+            .build();
+        }
+         
+        @Bean
+        public JdbcTemplate jdbcTemplate() {
+            return new JdbcTemplate(dataSource());
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+    <plugins>
+        <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+            <configuration>
+                <requiresUnpack>
+                    <dependency>
+                        <groupId>org.jruby</groupId>
+                        <artifactId>jruby-complete</artifactId>
+                    </dependency>
+                </requiresUnpack>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+--------------------------------------------------------------------------------------------------------
+@RunWith(SpringJUnit4ClassRunner.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK, classes = ToggleApplication.class)
+@AutoConfigureMockMvc
+--------------------------------------------------------------------------------------------------------
+import java.net.InetAddress;
+import java.util.List;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.ConstructorBinding;
+import org.springframework.boot.context.properties.DefaultValue;
+
+@ConstructorBinding
+@ConfigurationProperties("acme")
+public class AcmeProperties {
+
+    private final boolean enabled;
+
+    private final InetAddress remoteAddress;
+
+    private final Security security;
+
+    public AcmeProperties(boolean enabled, InetAddress remoteAddress, Security security) {
+        this.enabled = enabled;
+        this.remoteAddress = remoteAddress;
+        this.security = security;
+    }
+
+    public boolean isEnabled() { ... }
+
+    public InetAddress getRemoteAddress() { ... }
+
+    public Security getSecurity() { ... }
+
+    public static class Security {
+
+        private final String username;
+
+        private final String password;
+
+        private final List<String> roles;
+
+        public Security(String username, String password,
+                @DefaultValue("USER") List<String> roles) {
+            this.username = username;
+            this.password = password;
+            this.roles = roles;
+        }
+
+        public String getUsername() { ... }
+
+        public String getPassword() { ... }
+
+        public List<String> getRoles() { ... }
+
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@ConfigurationProperties("app.system")
+public class AppSystemProperties {
+
+    @DurationUnit(ChronoUnit.SECONDS)
+    private Duration sessionTimeout = Duration.ofSeconds(30);
+
+    private Duration readTimeout = Duration.ofMillis(1000);
+
+    public Duration getSessionTimeout() {
+        return this.sessionTimeout;
+    }
+
+    public void setSessionTimeout(Duration sessionTimeout) {
+        this.sessionTimeout = sessionTimeout;
+    }
+
+    public Duration getReadTimeout() {
+        return this.readTimeout;
+    }
+
+    public void setReadTimeout(Duration readTimeout) {
+        this.readTimeout = readTimeout;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@ConfigurationProperties("app.io")
+public class AppIoProperties {
+
+    @DataSizeUnit(DataUnit.MEGABYTES)
+    private DataSize bufferSize = DataSize.ofMegabytes(2);
+
+    private DataSize sizeThreshold = DataSize.ofBytes(512);
+
+    public DataSize getBufferSize() {
+        return this.bufferSize;
+    }
+
+    public void setBufferSize(DataSize bufferSize) {
+        this.bufferSize = bufferSize;
+    }
+
+    public DataSize getSizeThreshold() {
+        return this.sizeThreshold;
+    }
+
+    public void setSizeThreshold(DataSize sizeThreshold) {
+        this.sizeThreshold = sizeThreshold;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+#spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.web.ErrorMvcAutoConfiguration
+#spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration
+--------------------------------------------------------------------------------------------------------
+kill $(cat ./bin/shutdown.pid)
+
+--------------------------------------------------------------------------------------------------------
+type Post {
+    id: ID!
+    title: String!
+    text: String!
+    category: String
+    author: Author
+}
+
+type Author {
+    id: ID!
+    name: String!
+    thumbnail: String
+    posts: [Post]!
+}
+
+# The Root Query for the application
+type Query {
+    recentPosts(count: Int, offset: Int): [Post]!
+}
+
+# The Root Mutation for the application
+type Mutation {
+    writePost(title: String!, text: String!, category: String, author: String!) : Post!
+}
+--------------------------------------------------------------------------------------------------------import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import javax.annotation.processing.*;
+import javax.lang.model.SourceVersion;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.ExecutableType;
+import javax.tools.Diagnostic;
+import javax.tools.JavaFileObject;
+
+import com.google.auto.service.AutoService;
+
+@SupportedAnnotationTypes("com.baeldung.annotation.processor.BuilderProperty")
+@SupportedSourceVersion(SourceVersion.RELEASE_8)
+@AutoService(Processor.class)
+public class BuilderProcessor extends AbstractProcessor {
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        for (TypeElement annotation : annotations) {
+
+            Set<? extends Element> annotatedElements = roundEnv.getElementsAnnotatedWith(annotation);
+
+            Map<Boolean, List<Element>> annotatedMethods = annotatedElements.stream().collect(Collectors.partitioningBy(element -> ((ExecutableType) element.asType()).getParameterTypes().size() == 1 && element.getSimpleName().toString().startsWith("set")));
+
+            List<Element> setters = annotatedMethods.get(true);
+            List<Element> otherMethods = annotatedMethods.get(false);
+
+            otherMethods.forEach(element -> processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "@BuilderProperty must be applied to a setXxx method with a single argument", element));
+
+            if (setters.isEmpty()) {
+                continue;
+            }
+
+            String className = ((TypeElement) setters.get(0).getEnclosingElement()).getQualifiedName().toString();
+
+            Map<String, String> setterMap = setters.stream().collect(Collectors.toMap(setter -> setter.getSimpleName().toString(), setter -> ((ExecutableType) setter.asType()).getParameterTypes().get(0).toString()));
+
+            try {
+                writeBuilderFile(className, setterMap);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+        return true;
+    }
+
+    private void writeBuilderFile(String className, Map<String, String> setterMap) throws IOException {
+
+        String packageName = null;
+        int lastDot = className.lastIndexOf('.');
+        if (lastDot > 0) {
+            packageName = className.substring(0, lastDot);
+        }
+
+        String simpleClassName = className.substring(lastDot + 1);
+        String builderClassName = className + "Builder";
+        String builderSimpleClassName = builderClassName.substring(lastDot + 1);
+
+        JavaFileObject builderFile = processingEnv.getFiler().createSourceFile(builderClassName);
+        try (PrintWriter out = new PrintWriter(builderFile.openWriter())) {
+
+            if (packageName != null) {
+                out.print("package ");
+                out.print(packageName);
+                out.println(";");
+                out.println();
+            }
+
+            out.print("public class ");
+            out.print(builderSimpleClassName);
+            out.println(" {");
+            out.println();
+
+            out.print("    private ");
+            out.print(simpleClassName);
+            out.print(" object = new ");
+            out.print(simpleClassName);
+            out.println("();");
+            out.println();
+
+            out.print("    public ");
+            out.print(simpleClassName);
+            out.println(" build() {");
+            out.println("        return object;");
+            out.println("    }");
+            out.println();
+
+            setterMap.entrySet().forEach(setter -> {
+                String methodName = setter.getKey();
+                String argumentType = setter.getValue();
+
+                out.print("    public ");
+                out.print(builderSimpleClassName);
+                out.print(" ");
+                out.print(methodName);
+
+                out.print("(");
+
+                out.print(argumentType);
+                out.println(" value) {");
+                out.print("        object.");
+                out.print(methodName);
+                out.println("(value);");
+                out.println("        return this;");
+                out.println("    }");
+                out.println();
+            });
+
+            out.println("}");
+
+        }
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+
+import java.math.BigInteger;
+import java.util.concurrent.TimeUnit;
+
+public class FibonacciSequence {
+
+    private static LoadingCache<Integer, BigInteger> memo = CacheBuilder.newBuilder()
+            .maximumSize(100)
+            .build(CacheLoader.from(FibonacciSequence::getFibonacciNumber));
+
+    public static BigInteger getFibonacciNumber(int n) {
+        if (n == 0) {
+            return BigInteger.ZERO;
+        } else if (n == 1) {
+            return BigInteger.ONE;
+        } else {
+            return memo.getUnchecked(n - 1).add(memo.getUnchecked(n - 2));
+        }
+    }
+
+}
+
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+
+import java.math.BigInteger;
+
+public class Factorial {
+
+    private static LoadingCache<Integer, BigInteger> memo = CacheBuilder.newBuilder()
+            .build(CacheLoader.from(Factorial::getFactorial));
+
+    public static BigInteger getFactorial(int n) {
+        if (n == 0) {
+            return BigInteger.ONE;
+        } else {
+            return BigInteger.valueOf(n).multiply(memo.getUnchecked(n - 1));
+        }
+    }
+
+}
+
+--------------------------------------------------------------------------------------------------------
+import org.immutables.value.Value;
+
+@Value.Immutable(prehash = true)
+public abstract class Person {
+    abstract String getName();
+    abstract Integer getAge();
+}
+
+--------------------------------------------------------------------------------------------------------
+@JsonTypeName("itemIdRemovedFromUser")
+@JsonTypeInfo(use = JsonTypeInfo.Id.MINIMAL_CLASS, include = JsonTypeInfo.As.PROPERTY, property = "eventType")
+@JsonTypeName("itemIdAddedToUser")
+@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd@HH:mm:ss.SSSZ", locale = "en_GB")
+--------------------------------------------------------------------------------------------------------
+import com.baeldung.jackson.serialization.DistanceSerializer;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+/**
+ * Use  @JsonFormat to handle representation of Enum as JSON (available since Jackson 2.1.2)
+ * Use @JsonSerialize to configure a custom Jackson serializer
+ */
+// @JsonFormat(shape = JsonFormat.Shape.OBJECT)
+@JsonSerialize(using = DistanceSerializer.class)
+public enum Distance {
+    KILOMETER("km", 1000), MILE("miles", 1609.34), METER("meters", 1), INCH("inches", 0.0254), CENTIMETER("cm", 0.01), MILLIMETER("mm", 0.001);
+
+    private String unit;
+    private final double meters;
+
+    private Distance(String unit, double meters) {
+        this.unit = unit;
+        this.meters = meters;
+    }
+
+    /**
+     * Use @JsonValue to control marshalling output for an enum
+     */
+    // @JsonValue
+    public double getMeters() {
+        return meters;
+    }
+
+    public String getUnit() {
+        return unit;
+    }
+
+    public void setUnit(String unit) {
+        this.unit = unit;
+    }
+
+    /**
+     * Usage example: Distance.MILE.convertFromMeters(1205.5);
+     */
+    public double convertFromMeters(double distanceInMeters) {
+        return distanceInMeters / meters;
+
+    }
+
+    /**
+     * Usage example: Distance.MILE.convertToMeters(0.5);
+     */
+    public double convertToMeters(double distanceInMeters) {
+        return distanceInMeters * meters;
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+   @JacksonInject
+    private UUID id;
+	@JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+--------------------------------------------------------------------------------------------------------
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+
+@JsonDeserialize(builder = Person.Builder.class)
+public class Person {
+
+    private final String name;
+    private final Integer age;
+
+    private Person(String name, Integer age) {
+        this.name = name;
+        this.age = age;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public Integer getAge() {
+        return age;
+    }
+
+    @JsonPOJOBuilder
+    static class Builder {
+        String name;
+        Integer age;
+
+        Builder withName(String name) {
+            this.name = name;
+            return this;
+        }
+
+        Builder withAge(Integer age) {
+            this.age = age;
+            return this;
+        }
+
+        Person build() {
+            return new Person(name, age);
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+import java.time.DayOfWeek;
+import java.time.temporal.ChronoField;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.Temporal;
+import java.time.temporal.TemporalAdjuster;
+
+public class CustomTemporalAdjuster implements TemporalAdjuster {
+
+    @Override
+    public Temporal adjustInto(Temporal temporal) {
+        switch (DayOfWeek.of(temporal.get(ChronoField.DAY_OF_WEEK))) {
+        case FRIDAY:
+            return temporal.plus(3, ChronoUnit.DAYS);
+        case SATURDAY:
+            return temporal.plus(2, ChronoUnit.DAYS);
+        default:
+            return temporal.plus(1, ChronoUnit.DAYS);
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+public class TimeApi {
+
+    public static List<Date> getDatesBetweenUsingJava7(Date startDate, Date endDate) {
+        List<Date> datesInRange = new ArrayList<Date>();
+        Calendar calendar = new GregorianCalendar();
+        calendar.setTime(startDate);
+
+        Calendar endCalendar = new GregorianCalendar();
+        endCalendar.setTime(endDate);
+
+        while (calendar.before(endCalendar)) {
+            Date result = calendar.getTime();
+            datesInRange.add(result);
+            calendar.add(Calendar.DATE, 1);
+        }
+        return datesInRange;
+    }
+
+    public static List<LocalDate> getDatesBetweenUsingJava8(LocalDate startDate, LocalDate endDate) {
+        long numOfDaysBetween = ChronoUnit.DAYS.between(startDate, endDate);
+        return IntStream.iterate(0, i -> i + 1)
+                 .limit(numOfDaysBetween)
+                 .mapToObj(i -> startDate.plusDays(i))
+                 .collect(Collectors.toList());
+    }
+
+    public static List<LocalDate> getDatesBetweenUsingJava9(LocalDate startDate, LocalDate endDate) {
+        return startDate.datesUntil(endDate).collect(Collectors.toList());
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.runner.RunnerException;
+
+public class Benchmarking {
+    public static void main(String[] args) throws RunnerException, IOException {
+        org.openjdk.jmh.Main.main(args);
+    }
+
+    @State(Scope.Thread)
+    public static class ExecutionPlan {
+        public int number = Integer.MAX_VALUE;
+        public int length = 0;
+        public NumberOfDigits numberOfDigits= new NumberOfDigits();
+    }
+    
+    @Benchmark 
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public void stringBasedSolution(ExecutionPlan plan) {
+        plan.length = plan.numberOfDigits.stringBasedSolution(plan.number);
+    }
+    
+    @Benchmark 
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public void logarithmicApproach(ExecutionPlan plan) {
+        plan.length = plan.numberOfDigits.logarithmicApproach(plan.number);
+    }
+    
+    @Benchmark 
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public void repeatedMultiplication(ExecutionPlan plan) {
+        plan.length = plan.numberOfDigits.repeatedMultiplication(plan.number);
+    }
+    
+    @Benchmark 
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public void shiftOperators(ExecutionPlan plan) {
+        plan.length = plan.numberOfDigits.shiftOperators(plan.number);
+    }
+    
+    @Benchmark 
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public void dividingWithPowersOf2(ExecutionPlan plan) {
+        plan.length = plan.numberOfDigits.dividingWithPowersOf2(plan.number);
+    }
+    
+    @Benchmark 
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public void divideAndConquer(ExecutionPlan plan) {
+        plan.length = plan.numberOfDigits.divideAndConquer(plan.number);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+    public int dividingWithPowersOf2(int number) {
+        int length = 1;
+        if (number >= 100000000) {
+            length += 8;
+            number /= 100000000;
+        }
+        if (number >= 10000) {
+            length += 4;
+            number /= 10000;
+        }
+        if (number >= 100) {
+            length += 2;
+            number /= 100;
+        }
+        if (number >= 10) {
+            length += 1;
+        }
+        return length;
+    }
+--------------------------------------------------------------------------------------------------------
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+public class PrimeGenerator {
+    public static List<Integer> sieveOfEratosthenes(int n) {
+        final boolean prime[] = new boolean[n + 1];
+        Arrays.fill(prime, true);
+
+        for (int p = 2; p * p <= n; p++) {
+            if (prime[p]) {
+                for (int i = p * 2; i <= n; i += p)
+                    prime[i] = false;
+            }
+        }
+
+        final List<Integer> primes = new LinkedList<>();
+        for (int i = 2; i <= n; i++) {
+            if (prime[i])
+                primes.add(i);
+        }
+        return primes;
+    }
+
+    public static List<Integer> primeNumbersBruteForce(int max) {
+        final List<Integer> primeNumbers = new LinkedList<Integer>();
+        for (int i = 2; i <= max; i++) {
+            if (isPrimeBruteForce(i)) {
+                primeNumbers.add(i);
+            }
+        }
+        return primeNumbers;
+    }
+
+    private static boolean isPrimeBruteForce(int x) {
+        for (int i = 2; i < x; i++) {
+            if (x % i == 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static List<Integer> primeNumbersTill(int max) {
+        return IntStream.rangeClosed(2, max)
+            .filter(x -> isPrime(x))
+            .boxed()
+            .collect(Collectors.toList());
+    }
+
+    private static boolean isPrime(int x) {
+        return IntStream.rangeClosed(2, (int) (Math.sqrt(x)))
+            .allMatch(n -> x % n != 0);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+public class PrimeFactorizationAlgorithm {
+
+    public static Map<Integer, Integer> getPrimeFactors(int number) {
+        int absNumber = Math.abs(number);
+        Map<Integer, Integer> primeFactorsMap = new HashMap<Integer, Integer>();
+        for (int factor = 2; factor <= absNumber; factor++) {
+            while (absNumber % factor == 0) {
+                Integer power = primeFactorsMap.get(factor);
+                if (power == null) {
+                    power = 0;
+                }
+                primeFactorsMap.put(factor, power + 1);
+                absNumber /= factor;
+            }
+        }
+        return primeFactorsMap;
+    }
+
+    public static int lcm(int number1, int number2) {
+        if (number1 == 0 || number2 == 0) {
+            return 0;
+        }
+        Map<Integer, Integer> primeFactorsForNum1 = getPrimeFactors(number1);
+        Map<Integer, Integer> primeFactorsForNum2 = getPrimeFactors(number2);
+        Set<Integer> primeFactorsUnionSet = new HashSet<Integer>(primeFactorsForNum1.keySet());
+        primeFactorsUnionSet.addAll(primeFactorsForNum2.keySet());
+        int lcm = 1;
+        for (Integer primeFactor : primeFactorsUnionSet) {
+            lcm *= Math.pow(primeFactor, Math.max(primeFactorsForNum1.getOrDefault(primeFactor, 0),
+                    primeFactorsForNum2.getOrDefault(primeFactor, 0)));
+        }
+        return lcm;
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+
+import java.util.Arrays;
+
+public class EuclideanAlgorithm {
+
+    public static int gcd(int number1, int number2) {
+        if (number1 == 0 || number2 == 0) {
+            return number1 + number2;
+        } else {
+            int absNumber1 = Math.abs(number1);
+            int absNumber2 = Math.abs(number2);
+            int biggerValue = Math.max(absNumber1, absNumber2);
+            int smallerValue = Math.min(absNumber1, absNumber2);
+            return gcd(biggerValue % smallerValue, smallerValue);
+        }
+    }
+
+    public static int lcm(int number1, int number2) {
+        if (number1 == 0 || number2 == 0)
+            return 0;
+        else {
+            int gcd = gcd(number1, number2);
+            return Math.abs(number1 * number2) / gcd;
+        }
+    }
+
+    public static int lcmForArray(int[] numbers) {
+        int lcm = numbers[0];
+        for (int i = 1; i <= numbers.length - 1; i++) {
+            lcm = lcm(lcm, numbers[i]);
+        }
+        return lcm;
+    }
+
+    public static int lcmByLambda(int... numbers) {
+        return Arrays.stream(numbers).reduce(1, (lcmSoFar, currentNumber) -> Math.abs(lcmSoFar * currentNumber) / gcd(lcmSoFar, currentNumber));
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+
+public class BinaryNumbers {
+
+    /**
+     * This method takes a decimal number and convert it into a binary number.
+     * example:- input:10, output:1010
+     *
+     * @param decimalNumber
+     * @return binary number
+     */
+    public Integer convertDecimalToBinary(Integer decimalNumber) {
+
+        if (decimalNumber == 0) {
+            return decimalNumber;
+        }
+
+        StringBuilder binaryNumber = new StringBuilder();
+        Integer quotient = decimalNumber;
+
+        while (quotient > 0) {
+
+            int remainder = quotient % 2;
+            binaryNumber.append(remainder);
+            quotient /= 2;
+        }
+
+        binaryNumber = binaryNumber.reverse();
+        return Integer.valueOf(binaryNumber.toString());
+    }
+
+    /**
+     * This method takes a binary number and convert it into a decimal number.
+     * example:- input:101, output:5
+     *
+     * @param binary number
+     * @return decimal Number
+     */
+    public Integer convertBinaryToDecimal(Integer binaryNumber) {
+
+        Integer decimalNumber = 0;
+        Integer base = 1;
+
+        while (binaryNumber > 0) {
+
+            int lastDigit = binaryNumber % 10;
+            binaryNumber = binaryNumber / 10;
+
+            decimalNumber += lastDigit * base;
+            base = base * 2;
+        }
+        return decimalNumber;
+    }
+
+    /**
+     * This method accepts two binary numbers and returns sum of input numbers.
+     * Example:- firstNum: 101, secondNum: 100, output: 1001
+     *
+     * @param firstNum
+     * @param secondNum
+     * @return addition of input numbers
+     */
+    public Integer addBinaryNumber(Integer firstNum, Integer secondNum) {
+
+        StringBuilder output = new StringBuilder();
+
+        int carry = 0;
+        int temp;
+
+        while (firstNum != 0 || secondNum != 0) {
+
+            temp = (firstNum % 10 + secondNum % 10 + carry) % 2;
+            output.append(temp);
+
+            carry = (firstNum % 10 + secondNum % 10 + carry) / 2;
+
+            firstNum = firstNum / 10;
+            secondNum = secondNum / 10;
+        }
+
+        if (carry != 0) {
+            output.append(carry);
+        }
+
+        return Integer.valueOf(output.reverse()
+            .toString());
+    }
+
+    /**
+    * This method takes two binary number as input and subtract second number from the first number.
+    * example:- firstNum: 1000, secondNum: 11, output: 101
+    * @param firstNum
+    * @param secondNum
+    * @return Result of subtraction of secondNum from first
+    */
+    public Integer substractBinaryNumber(Integer firstNum, Integer secondNum) {
+
+        int onesComplement = Integer.valueOf(getOnesComplement(secondNum));
+        StringBuilder output = new StringBuilder();
+        int carry = 0;
+        int temp;
+
+        while (firstNum != 0 || onesComplement != 0) {
+
+            temp = (firstNum % 10 + onesComplement % 10 + carry) % 2;
+            output.append(temp);
+
+            carry = (firstNum % 10 + onesComplement % 10 + carry) / 2;
+
+            firstNum = firstNum / 10;
+            onesComplement = onesComplement / 10;
+        }
+
+        String additionOfFirstNumAndOnesComplement = output.reverse()
+            .toString();
+
+        if (carry == 1) {
+            return addBinaryNumber(Integer.valueOf(additionOfFirstNumAndOnesComplement), carry);
+        } else {
+            return getOnesComplement(Integer.valueOf(additionOfFirstNumAndOnesComplement));
+        }
+    }
+
+    public Integer getOnesComplement(Integer num) {
+
+        StringBuilder onesComplement = new StringBuilder();
+        while (num > 0) {
+            int lastDigit = num % 10;
+            if (lastDigit == 0) {
+                onesComplement.append(1);
+            } else {
+                onesComplement.append(0);
+            }
+            num = num / 10;
+        }
+        return Integer.valueOf(onesComplement.reverse()
+            .toString());
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.Spliterator;
+import java.util.function.BiConsumer;
+import java.util.stream.Stream;
+
+public class CustomForEach {
+
+    public static class Breaker {
+        private boolean shouldBreak = false;
+
+        public void stop() {
+            shouldBreak = true;
+        }
+
+        boolean get() {
+            return shouldBreak;
+        }
+    }
+
+    public static <T> void forEach(Stream<T> stream, BiConsumer<T, Breaker> consumer) {
+        Spliterator<T> spliterator = stream.spliterator();
+        boolean hadNext = true;
+        Breaker breaker = new Breaker();
+
+        while (hadNext && !breaker.get()) {
+            hadNext = spliterator.tryAdvance(elem -> {
+                consumer.accept(elem, breaker);
+            });
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+
+import org.apache.commons.lang3.StringUtils;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
+import org.openjdk.jmh.annotations.State;
+
+/**
+ * Based on https://github.com/tedyoung/indexof-contains-benchmark
+ */
+@Fork(5)
+@State(Scope.Benchmark)
+@BenchmarkMode(Mode.AverageTime)
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
+public class SubstringSearchPerformanceComparison {
+
+    private String message;
+
+    private Pattern pattern;
+
+    public static void main(String[] args) throws Exception {
+        org.openjdk.jmh.Main.main(args);
+    }
+
+    @Setup
+    public void setup() {
+        message = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum";
+        pattern = Pattern.compile("(?<!\\S)" + "eiusmod" + "(?!\\S)");
+    }
+
+    @Benchmark
+    public int indexOf() {
+        return message.indexOf("eiusmod");
+    }
+
+    @Benchmark
+    public boolean contains() {
+        return message.contains("eiusmod");
+    }
+
+    @Benchmark
+    public boolean containsStringUtilsIgnoreCase() {
+        return StringUtils.containsIgnoreCase(message, "eiusmod");
+    }
+
+    @Benchmark
+    public boolean searchWithPattern() {
+        return pattern.matcher(message).find();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.StringTokenizer;
+
+public class WordCounter {
+    static final int WORD = 0;
+    static final int SEPARATOR = 1;
+
+    public static int countWordsUsingRegex(String arg) {
+        if (arg == null) {
+            return 0;
+        }
+        final String[] words = arg.split("[\\pP\\s&&[^']]+");
+        return words.length;
+    }
+
+    public static int countWordsUsingTokenizer(String arg) {
+        if (arg == null) {
+            return 0;
+        }
+        final StringTokenizer stringTokenizer = new StringTokenizer(arg);
+        return stringTokenizer.countTokens();
+    }
+
+    public static int countWordsManually(String arg) {
+        if (arg == null) {
+            return 0;
+        }
+        int flag = SEPARATOR;
+        int count = 0;
+        int stringLength = arg.length();
+        int characterCounter = 0;
+
+        while (characterCounter < stringLength) {
+            if (isAllowedInWord(arg.charAt(characterCounter)) && flag == SEPARATOR) {
+                flag = WORD;
+                count++;
+            } else if (!isAllowedInWord(arg.charAt(characterCounter))) {
+                flag = SEPARATOR;
+            }
+            characterCounter++;
+        }
+        return count;
+    }
+
+    private static boolean isAllowedInWord(char charAt) {
+        return charAt == '\'' || Character.isLetter(charAt);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@BenchmarkMode(Mode.SingleShotTime)
+@OutputTimeUnit(TimeUnit.MILLISECONDS)
+@Measurement(batchSize = 100000, iterations = 10)
+@Warmup(batchSize = 100000, iterations = 10)
+@State(Scope.Thread)
+public class StringPerformance {}
+--------------------------------------------------------------------------------------------------------
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class WordIndexer {
+
+    public List<Integer> findWord(String textString, String word) {
+        int index = 0;
+        List<Integer> indexes = new ArrayList<Integer>();
+        String lowerCaseTextString = textString.toLowerCase();
+        String lowerCaseWord = word.toLowerCase();
+
+        while(index != -1) {
+            index = lowerCaseTextString.indexOf(lowerCaseWord, index);
+            if (index == -1) {
+                break;
+            }
+
+            indexes.add(index);
+            index++;
+        }
+        return indexes;
+    }
+
+
+
+    public List<Integer> findWordUpgrade(String textString, String word) {
+        int index = 0;
+        List<Integer> indexes = new ArrayList<Integer>();
+        StringBuilder output = new StringBuilder();
+        String lowerCaseTextString = textString.toLowerCase();
+        String lowerCaseWord = word.toLowerCase();
+        int wordLength = 0;
+
+        while(index != -1){
+            index = lowerCaseTextString.indexOf(lowerCaseWord, index + wordLength);  // Slight improvement
+            if (index != -1) {
+                indexes.add(index);
+            }
+            wordLength = word.length();
+        }
+        return indexes;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwsHeader;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.SigningKeyResolver;
+import io.jsonwebtoken.SigningKeyResolverAdapter;
+import io.jsonwebtoken.impl.TextCodec;
+import io.jsonwebtoken.impl.crypto.MacProvider;
+import io.jsonwebtoken.lang.Assert;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.PostConstruct;
+import javax.crypto.SecretKey;
+import java.util.HashMap;
+import java.util.Map;
+
+@Service
+public class SecretService {
+
+    private Map<String, String> secrets = new HashMap<>();
+
+    private SigningKeyResolver signingKeyResolver = new SigningKeyResolverAdapter() {
+        @Override
+        public byte[] resolveSigningKeyBytes(JwsHeader header, Claims claims) {
+            return TextCodec.BASE64.decode(secrets.get(header.getAlgorithm()));
+        }
+    };
+
+    @PostConstruct
+    public void setup() {
+        refreshSecrets();
+    }
+
+    public SigningKeyResolver getSigningKeyResolver() {
+        return signingKeyResolver;
+    }
+
+    public Map<String, String> getSecrets() {
+        return secrets;
+    }
+
+    public void setSecrets(Map<String, String> secrets) {
+        Assert.notNull(secrets);
+        Assert.hasText(secrets.get(SignatureAlgorithm.HS256.getValue()));
+        Assert.hasText(secrets.get(SignatureAlgorithm.HS384.getValue()));
+        Assert.hasText(secrets.get(SignatureAlgorithm.HS512.getValue()));
+
+        this.secrets = secrets;
+    }
+
+    public byte[] getHS256SecretBytes() {
+        return TextCodec.BASE64.decode(secrets.get(SignatureAlgorithm.HS256.getValue()));
+    }
+
+    public byte[] getHS384SecretBytes() {
+        return TextCodec.BASE64.decode(secrets.get(SignatureAlgorithm.HS384.getValue()));
+    }
+
+    public byte[] getHS512SecretBytes() {
+        return TextCodec.BASE64.decode(secrets.get(SignatureAlgorithm.HS512.getValue()));
+    }
+
+    public Map<String, String> refreshSecrets() {
+        SecretKey key = MacProvider.generateKey(SignatureAlgorithm.HS256);
+        secrets.put(SignatureAlgorithm.HS256.getValue(), TextCodec.BASE64.encode(key.getEncoded()));
+        key = MacProvider.generateKey(SignatureAlgorithm.HS384);
+        secrets.put(SignatureAlgorithm.HS384.getValue(), TextCodec.BASE64.encode(key.getEncoded()));
+        key = MacProvider.generateKey(SignatureAlgorithm.HS512);
+        secrets.put(SignatureAlgorithm.HS512.getValue(), TextCodec.BASE64.encode(key.getEncoded()));
+        return secrets;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.jjwtfun.model.JwtResponse;
+import io.jsonwebtoken.jjwtfun.service.SecretService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.io.UnsupportedEncodingException;
+import java.time.Instant;
+import java.util.Date;
+
+import static org.springframework.web.bind.annotation.RequestMethod.GET;
+
+@RestController
+public class StaticJWTController extends BaseController {
+
+    @Autowired
+    SecretService secretService;
+
+    @RequestMapping(value = "/static-builder", method = GET)
+    public JwtResponse fixedBuilder() throws UnsupportedEncodingException {
+        String jws = Jwts.builder()
+            .setIssuer("Stormpath")
+            .setSubject("msilverman")
+            .claim("name", "Micah Silverman")
+            .claim("scope", "admins")
+            .setIssuedAt(Date.from(Instant.ofEpochSecond(1466796822L))) // Fri Jun 24 2016 15:33:42 GMT-0400 (EDT)
+            .setExpiration(Date.from(Instant.ofEpochSecond(4622470422L))) // Sat Jun 24 2116 15:33:42 GMT-0400 (EDT)
+            .signWith(SignatureAlgorithm.HS256, secretService.getHS256SecretBytes())
+            .compact();
+
+        return new JwtResponse(jws);
+    }
+
+    @RequestMapping(value = "/parser", method = GET)
+    public JwtResponse parser(@RequestParam String jwt) throws UnsupportedEncodingException {
+
+        Jws<Claims> jws = Jwts.parser()
+            .setSigningKeyResolver(secretService.getSigningKeyResolver())
+            .parseClaimsJws(jwt);
+
+        return new JwtResponse(jws);
+    }
+
+    @RequestMapping(value = "/parser-enforce", method = GET)
+    public JwtResponse parserEnforce(@RequestParam String jwt) throws UnsupportedEncodingException {
+        Jws<Claims> jws = Jwts.parser()
+            .requireIssuer("Stormpath")
+            .require("hasMotorcycle", true)
+            .setSigningKeyResolver(secretService.getSigningKeyResolver())
+            .parseClaimsJws(jwt);
+
+        return new JwtResponse(jws);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.security.web.csrf.DefaultCsrfToken;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.util.Date;
+import java.util.UUID;
+
+public class JWTCsrfTokenRepository implements CsrfTokenRepository {
+
+    private static final String DEFAULT_CSRF_TOKEN_ATTR_NAME = CSRFConfig.class.getName()
+        .concat(".CSRF_TOKEN");
+
+    private static final Logger log = LoggerFactory.getLogger(JWTCsrfTokenRepository.class);
+    private byte[] secret;
+
+    public JWTCsrfTokenRepository(byte[] secret) {
+        this.secret = secret;
+    }
+
+    @Override
+    public CsrfToken generateToken(HttpServletRequest request) {
+        String id = UUID.randomUUID()
+            .toString()
+            .replace("-", "");
+
+        Date now = new Date();
+        Date exp = new Date(System.currentTimeMillis() + (1000 * 30)); // 30 seconds
+
+        String token = Jwts.builder()
+            .setId(id)
+            .setIssuedAt(now)
+            .setNotBefore(now)
+            .setExpiration(exp)
+            .signWith(SignatureAlgorithm.HS256, secret)
+            .compact();
+
+        return new DefaultCsrfToken("X-CSRF-TOKEN", "_csrf", token);
+    }
+
+    @Override
+    public void saveToken(CsrfToken token, HttpServletRequest request, HttpServletResponse response) {
+        if (token == null) {
+            HttpSession session = request.getSession(false);
+            if (session != null) {
+                session.removeAttribute(DEFAULT_CSRF_TOKEN_ATTR_NAME);
+            }
+        } else {
+            HttpSession session = request.getSession();
+            session.setAttribute(DEFAULT_CSRF_TOKEN_ATTR_NAME, token);
+        }
+    }
+
+    @Override
+    public CsrfToken loadToken(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session == null || "GET".equals(request.getMethod())) {
+            return null;
+        }
+        return (CsrfToken) session.getAttribute(DEFAULT_CSRF_TOKEN_ATTR_NAME);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+   private int id;
+    @JsonbProperty("person-name")
+    private String name;
+    @JsonbProperty(nillable = true)
+    private String email;
+    @JsonbTransient
+    private int age;
+    @JsonbDateFormat("dd-MM-yyyy")
+    private LocalDate registeredDate;
+    private BigDecimal salary;
+--------------------------------------------------------------------------------------------------------
+    @RequestMapping(value = "/dynamic-builder-general", method = POST)
+    public JwtResponse dynamicBuilderGeneric(@RequestBody Map<String, Object> claims) throws UnsupportedEncodingException {
+        String jws = Jwts.builder()
+            .setClaims(claims)
+            .signWith(SignatureAlgorithm.HS256, secretService.getHS256SecretBytes())
+            .compact();
+        return new JwtResponse(jws);
+    }
+
+    @RequestMapping(value = "/dynamic-builder-compress", method = POST)
+    public JwtResponse dynamicBuildercompress(@RequestBody Map<String, Object> claims) throws UnsupportedEncodingException {
+        String jws = Jwts.builder()
+            .setClaims(claims)
+            .compressWith(CompressionCodecs.DEFLATE)
+            .signWith(SignatureAlgorithm.HS256, secretService.getHS256SecretBytes())
+            .compact();
+        return new JwtResponse(jws);
+    }
+--------------------------------------------------------------------------------------------------------
+
+import java.util.List;
+import java.util.Locale;
+import java.util.ResourceBundle;
+
+public class Localization {
+
+    public static String getLabel(Locale locale) {
+        final ResourceBundle bundle = ResourceBundle.getBundle("messages", locale);
+        return bundle.getString("label");
+    }
+
+    public static void run(List<Locale> locales) {
+        locales.forEach(locale -> System.out.println(getLabel(locale)));
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+
+import java.util.function.Predicate;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
+public class CustomTakeWhile {
+
+    public static <T> Stream<T> takeWhile(Stream<T> stream, Predicate<T> predicate) {
+        CustomSpliterator<T> customSpliterator = new CustomSpliterator<>(stream.spliterator(), predicate);
+        return StreamSupport.stream(customSpliterator, false);
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+import java.io.IOException;
+
+import com.baeldung.jackson.enums.Distance;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+
+public class DistanceSerializer extends StdSerializer<Distance> {
+
+    private static final long serialVersionUID = 1376504304439963619L;
+
+    public DistanceSerializer() {
+        super(Distance.class);
+    }
+
+    public DistanceSerializer(Class<Distance> t) {
+        super(t);
+    }
+
+    public void serialize(Distance distance, JsonGenerator generator, SerializerProvider provider) throws IOException, JsonProcessingException {
+        generator.writeStartObject();
+        generator.writeFieldName("name");
+        generator.writeString(distance.name());
+        generator.writeFieldName("unit");
+        generator.writeString(distance.getUnit());
+        generator.writeFieldName("meters");
+        generator.writeNumber(distance.getMeters());
+        generator.writeEndObject();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
