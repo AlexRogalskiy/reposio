@@ -1973,6 +1973,149 @@ public class ClientHelper {
 	}
 }
 --------------------------------------------------------------------------------------------------------
+# See http://docs.spring.io/spring-boot/docs/current/reference/html/common-application-properties.html
+spring.thymeleaf.cache=false
+spring.main.show-banner=false
+logging.level.jdbc=OFF
+logging.level.jdbc.sqltiming=DEBUG
+logging.level.jdbc.resultsettable=DEBUG
+--------------------------------------------------------------------------------------------------------
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+        </plugin>
+        <plugin>
+            <artifactId>maven-jar-plugin</artifactId>
+            <executions>
+                <execution>
+                    <id>lib</id>
+                    <phase>package</phase>
+                    <goals>
+                        <goal>jar</goal>
+                    </goals>
+                    <configuration>
+                        <classifier>lib</classifier>
+                        <excludes>
+                            <exclude>application.yml</exclude>
+                        </excludes>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+    </plugins>
+</build>
+--------------------------------------------------------------------------------------------------------
+package com.paragon.microservices.crmmailadapter.system.property;
+
+import com.paragon.mailingcontour.commons.databus.model.NameValueEntry;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
+import org.springframework.stereotype.Component;
+import org.springframework.validation.annotation.Validated;
+
+import javax.validation.Valid;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+
+@Data
+@Validated
+@Component
+@ConfigurationProperties(prefix = "rest.registry", ignoreInvalidFields = true)
+public class RestRegistryProperty {
+    @NotBlank(message = "{property.rest.registry.base-path.notBlank}")
+    private String basePath;
+
+    /**
+     * Get user path {@link Paths}
+     */
+    @Valid
+    @NestedConfigurationProperty
+    @NotNull(message = "{property.rest.registry.get-user-path.notNull}")
+    private ParamsPaths getUserPath;
+
+    /**
+     * Create user path {@link Paths}
+     */
+    @Valid
+    @NestedConfigurationProperty
+    @NotNull(message = "{property.rest.registry.create-user-path.notNull}")
+    private Paths createUserPath;
+
+    @Data
+    @Validated
+    public static class Paths {
+        @NotBlank(message = "{property.rest.registry.user-path.notBlank}")
+        private String userPath;
+    }
+
+    @Data
+    @Validated
+    @EqualsAndHashCode(callSuper = true)
+    @ToString(callSuper = true)
+    public static class ParamsPaths extends Paths {
+        @Valid
+        @NestedConfigurationProperty
+        @NotNull(message = "{property.rest.registry.params.notNull}")
+        private Params params;
+    }
+
+    @Data
+    @Validated
+    public static class Params {
+        @NestedConfigurationProperty
+        @NotNull(message = "{property.rest.registry.params.email.notNull}")
+        private NameValueEntry email;
+    }
+}
+
+--------------------------------------------------------------------------------------------------------
+        <dependency>
+            <groupId>com.jayway.restassured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <version>${rest.assured.version}</version>
+        </dependency>
+		
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.springframework</groupId>
+                        <artifactId>springloaded</artifactId>
+                        <version>${spring-loaded.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+--------------------------------------------------------------------------------------------------------
+@Configuration
+public class AppConfig {
+    @Autowired
+    DataSourceProperties dataSourceProperties;
+
+    @Bean
+    @ConfigurationProperties(prefix = DataSourceProperties.PREFIX)
+    DataSource realDataSource() {
+        DataSource dataSource = DataSourceBuilder
+                .create(this.dataSourceProperties.getClassLoader())
+                .url(this.dataSourceProperties.getUrl())
+                .username(this.dataSourceProperties.getUsername())
+                .password(this.dataSourceProperties.getPassword())
+                .build();
+        return dataSource;
+    }
+
+    @Bean
+    @Primary
+    DataSource dataSource() {
+        return new DataSourceSpy(realDataSource());
+    }
+}
+--------------------------------------------------------------------------------------------------------
    @Bean
     public CommandLineRunner commandLineRunner(ApplicationContext ctx) {
         return args -> {
@@ -4970,16 +5113,786 @@ public class DistanceSerializer extends StdSerializer<Distance> {
     }
 }
 --------------------------------------------------------------------------------------------------------
+
+
+spring.messages.basename=messages,config.i18n.messages
+spring.messages.fallback-to-system-locale=false
+
+
+--------------------------------------------------------------------------------------------------------
+
+
+spring.resources.chain.strategy.content.enabled=true
+spring.resources.chain.strategy.content.paths=/**
+spring.resources.chain.strategy.fixed.enabled=true
+spring.resources.chain.strategy.fixed.paths=/js/lib/
+spring.resources.chain.strategy.fixed.version=v12
+
+
+
+spring.mvc.contentnegotiation.favor-parameter=true
+
+# We can change the parameter name, which is "format" by default:
+# spring.mvc.contentnegotiation.parameter-name=myparam
+
+# We can also register additional file extensions/media types with:
+spring.mvc.contentnegotiation.media-types.markdown=text/markdown
+
+
+
+spring.mvc.contentnegotiation.favor-parameter=true
+
+# We can change the parameter name, which is "format" by default:
+# spring.mvc.contentnegotiation.parameter-name=myparam
+
+# We can also register additional file extensions/media types with:
+spring.mvc.contentnegotiation.media-types.markdown=text/markdown
+
+
+
+spring.mvc.contentnegotiation.favor-path-extension=true
+spring.mvc.pathmatch.use-registered-suffix-pattern=true
+
+# You can also register additional file extensions/media types with:
+# spring.mvc.contentnegotiation.media-types.adoc=text/asciidoc
+
+
+--------------------------------------------------------------------------------------------------------
+src/
+ +- main/
+     +- java/
+     |   + <source code>
+     +- resources/
+         +- public/
+             +- error/
+             |   +- 404.html
+             +- <other public assets>
+--------------------------------------------------------------------------------------------------------
+src/
+ +- main/
+     +- java/
+     |   + <source code>
+     +- resources/
+         +- templates/
+             +- error/
+             |   +- 5xx.ftlh
+             +- <other templates>
+--------------------------------------------------------------------------------------------------------
+
+
+spring.webflux.static-path-pattern=/resources/**
+
+
+--------------------------------------------------------------------------------------------------------
+@Bean
+public ErrorPageRegistrar errorPageRegistrar(){
+    return new MyErrorPageRegistrar();
+}
+
+// ...
+
+private static class MyErrorPageRegistrar implements ErrorPageRegistrar {
+
+    @Override
+    public void registerErrorPages(ErrorPageRegistry registry) {
+        registry.addErrorPages(new ErrorPage(HttpStatus.BAD_REQUEST, "/400"));
+    }
+}
+
+@Bean
+public FilterRegistrationBean myFilter() {
+    FilterRegistrationBean registration = new FilterRegistrationBean();
+    registration.setFilter(new MyFilter());
+    ...
+    registration.setDispatcherTypes(EnumSet.allOf(DispatcherType.class));
+    return registration;
+}
+--------------------------------------------------------------------------------------------------------
+public class CustomErrorWebExceptionHandler extends AbstractErrorWebExceptionHandler {
+
+    // Define constructor here
+
+    @Override
+    protected RouterFunction<ServerResponse> getRoutingFunction(ErrorAttributes errorAttributes) {
+
+        return RouterFunctions
+                .route(aPredicate, aHandler)
+                .andRoute(anotherPredicate, anotherHandler);
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.boot.web.server.WebServerFactoryCustomizer;
+import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
+import org.springframework.stereotype.Component;
+
+@Component
+public class CustomizationBean implements WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> {
+
+    @Override
+    public void customize(ConfigurableServletWebServerFactory server) {
+        server.setPort(9000);
+    }
+
+}
+@Bean
+public ConfigurableServletWebServerFactory webServerFactory() {
+    TomcatServletWebServerFactory factory = new TomcatServletWebServerFactory();
+    factory.setPort(9000);
+    factory.setSessionTimeout(10, TimeUnit.MINUTES);
+    factory.addErrorPages(new ErrorPage(HttpStatus.NOT_FOUND, "/notfound.html"));
+    return factory;
+}
+--------------------------------------------------------------------------------------------------------
+
+
+spring.rsocket.server.mapping-path=/rsocket # a mapping path is defined
+spring.rsocket.server.transport=websocket # websocket is chosen as a transport
+#spring.rsocket.server.port= # no port is defined
+
+
+
+spring.security.saml2.relyingparty.registration.my-relying-party1.signing.credentials[0].private-key-location=path-to-private-key
+spring.security.saml2.relyingparty.registration.my-relying-party1.signing.credentials[0].certificate-location=path-to-certificate
+spring.security.saml2.relyingparty.registration.my-relying-party1.identityprovider.verification.credentials[0].certificate-location=path-to-verification-cert
+spring.security.saml2.relyingparty.registration.my-relying-party1.identityprovider.entity-id=remote-idp-entity-id1
+spring.security.saml2.relyingparty.registration.my-relying-party1.identityprovider.sso-url=https://remoteidp1.sso.url
+
+spring.security.saml2.relyingparty.registration.my-relying-party2.signing.credentials[0].private-key-location=path-to-private-key
+spring.security.saml2.relyingparty.registration.my-relying-party2.signing.credentials[0].certificate-location=path-to-certificate
+spring.security.saml2.relyingparty.registration.my-relying-party2.identityprovider.verification.credentials[0].certificate-location=path-to-other-verification-cert
+spring.security.saml2.relyingparty.registration.my-relying-party2.identityprovider.entity-id=remote-idp-entity-id2
+spring.security.saml2.relyingparty.registration.my-relying-party2.identityprovider.sso-url=https://remoteidp2.sso.url
+
+
+
+
+# Number of ms to wait before throwing an exception if no connection is available.
+spring.datasource.tomcat.max-wait=10000
+
+# Maximum number of active connections that can be allocated from this pool at the same time.
+spring.datasource.tomcat.max-active=50
+
+# Validate the connection before borrowing it from the pool.
+spring.datasource.tomcat.test-on-borrow=true
+
+
+
+spring.data.mongodb.uri=mongodb://user:secret@mongo1.example.com:12345,mongo2.example.com:23456/test
+
+
+
+spring.data.mongodb.host=mongoserver
+spring.data.mongodb.port=27017
+
+
+
+spring.data.neo4j.uri=bolt://my-server:7687
+spring.data.neo4j.username=neo4j
+spring.data.neo4j.password=secret
+
+
+
+spring.data.neo4j.use-native-types=true
+
+
+
+spring.data.neo4j.open-in-view=false
+
+package com.example.myapp.domain;
+
+import java.util.Optional;
+
+import org.springframework.data.neo4j.repository.*;
+
+public interface CityRepository extends Neo4jRepository<City, Long> {
+
+    Optional<City> findOneByNameAndState(String name, String state);
+
+}
+
+spring.data.cassandra.keyspace-name=mykeyspace
+spring.data.cassandra.contact-points=cassandrahost1,cassandrahost2
+
+
+
+spring.couchbase.bootstrap-hosts=my-host-1,192.168.1.123
+spring.couchbase.bucket.name=my-bucket
+spring.couchbase.bucket.password=secret
+
+
+
+spring.couchbase.env.timeouts.connect=3000
+spring.couchbase.env.ssl.key-store=/location/of/keystore.jks
+spring.couchbase.env.ssl.key-store-password=secret
+
+@Configuration(proxyBeanMethods = false)
+public class SomeConfiguration {
+
+    @Bean(BeanNames.COUCHBASE_CUSTOM_CONVERSIONS)
+    public CustomConversions myCustomConversions() {
+        return new CustomConversions(...);
+    }
+
+    // ...
+
+}
+spring.ldap.embedded.base-dn:
+  - dc=spring,dc=io
+  - dc=pivotal,dc=io
+--------------------------------------------------------------------------------------------------------
+
+
+spring.influx.url=https://172.0.0.1:8086
+
+https://cbor.io/
+https://github.com/cbor/cbor.github.io/issues/new
+https://rsocket.io/
+https://github.com/rsocket
+--------------------------------------------------------------------------------------------------------
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
+
+public enum WeatherStats {
+
+    STATS_RAINY("Going to Rain, Take Umbrella"), STATS_HUMID("Going to be very humid, Take Water");
+
+    private final String message;
+
+    private static final List<WeatherStats> VALUES = Collections.unmodifiableList(Arrays.asList(values()));
+
+    private static final int SIZE = VALUES.size();
+
+    private static final Random RANDOM = new Random();
+
+    WeatherStats(String msg) {
+        this.message = msg;
+    }
+
+    public static WeatherStats forToday() {
+        return VALUES.get(RANDOM.nextInt(SIZE));
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+}
+
+addSbtPlugin("com.lightbend.lagom" % "lagom-sbt-plugin" % "1.3.1")
+addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "3.0.0")
+--------------------------------------------------------------------------------------------------------
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.monitor.FileAlterationListener;
+import org.apache.commons.io.monitor.FileAlterationListenerAdaptor;
+import org.apache.commons.io.monitor.FileAlterationMonitor;
+import org.apache.commons.io.monitor.FileAlterationObserver;
+
+import java.io.File;
+
+public class FileMonitor {
+
+    public static void main(String[] args) throws Exception {
+        File folder = FileUtils.getTempDirectory();
+        startFileMonitor(folder);
+    }
+
+    /**
+     * @param folder
+     * @throws Exception
+     */
+    public static void startFileMonitor(File folder) throws Exception {
+        FileAlterationObserver observer = new FileAlterationObserver(folder);
+        FileAlterationMonitor monitor = new FileAlterationMonitor(5000);
+
+        FileAlterationListener fal = new FileAlterationListenerAdaptor() {
+
+            @Override
+            public void onFileCreate(File file) {
+                // on create action
+            }
+
+            @Override
+            public void onFileDelete(File file) {
+                // on delete action
+            }
+        };
+
+        observer.addListener(fal);
+        monitor.addObserver(observer);
+        monitor.start();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+#!/bin/bash
+
+find . -maxdepth 1 -mindepth 1 -type d -printf '%f\n'
+
+find . -maxdepth 1 -mindepth 1 -type d | while read dir; do
+  echo "$dir"
+done
+
+find . -maxdepth 1 -type d -exec echo {} \;
+
+#!/bin/bash
+
+for dir in */; do
+    echo "$dir"
+done
+
+for file in *; do
+    if [ -d "$file" ]; then
+        echo "$file"
+    fi
+done
+
+#!/bin/bash
+
+my_var="Hola Mundo"
+echo ${my_var}
+
+my_filename="interesting-text-file.txt"
+echo ${my_filename:0:21}
+
+echo ${my_filename%.*}
+
+complicated_filename="hello-world.tar.gz"
+echo ${complicated_filename%%.*}
+
+echo ${my_filename/.*/}
+
+echo 'interesting-text-file.txt' | sed 's/.txt*//'
+
+echo 'interesting-text-file.txt' | cut -f1 -d"."
+echo ${complicated_filename} | cut -f1 -d"."
+--------------------------------------------------------------------------------------------------------
+@Getter(lazy = true)
+
+
+import lombok.Builder;
+
+class ClientBuilder {
+
+    @Builder(builderMethodName = "builder")
+    public static ImmutableClient newClient(int id, String name) {
+        return new ImmutableClient(id, name);
+    }
+}
+
+@Builder(toBuilder = true)
+
+import java.util.List;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Singular;
+
+@Getter
+@Builder
+public class Sea {
+
+    @Singular private final List<String> grasses;
+    @Singular("oneFish") private final List<String> fish;
+}
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
+module com.baeldung.dip.services {
+    requires com.baeldung.dip.entities;
+    requires com.baeldung.dip.daos;
+    uses com.baeldung.dip.daos.CustomerDao;
+    exports com.baeldung.dip.services;
+}
 --------------------------------------------------------------------------------------------------------
+
+    public static User getSingletonInstance(String name, String email, String country) {
+        if (instance == null) {
+            synchronized (User.class) {
+                if (instance == null) {
+                    instance = new User(name, email, country);
+                }
+            }
+        }
+        return instance;
+
+    }
 --------------------------------------------------------------------------------------------------------
+
+public enum Operator {
+
+    ADD {
+        @Override
+        public int apply(int a, int b) {
+            return a + b;
+        }
+    },
+
+    MULTIPLY {
+        @Override
+        public int apply(int a, int b) {
+            return a * b;
+        }
+    },
+
+    SUBTRACT {
+        @Override
+        public int apply(int a, int b) {
+            return a - b;
+        }
+    },
+
+    DIVIDE {
+        @Override
+        public int apply(int a, int b) {
+            return a / b;
+        }
+    },
+
+    MODULO {
+        @Override
+        public int apply(int a, int b) {
+            return a % b;
+        }
+    };
+
+    public abstract int apply(int a, int b);
+}
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+public class RuleEngine {
+
+    private static List<Rule> rules = new ArrayList<>();
+
+    static {
+        rules.add(new AddRule());
+    }
+
+    public Result process(Expression expression) {
+
+        Rule rule = rules.stream()
+            .filter(r -> r.evaluate(expression))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Expression does not matches any Rule"));
+        return rule.getResult();
+    }
+}
 --------------------------------------------------------------------------------------------------------
+import io.github.resilience4j.retry.IntervalFunction;
+import io.github.resilience4j.retry.Retry;
+import io.github.resilience4j.retry.RetryConfig;
+import org.junit.Before;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.function.Function;
+
+import static com.baeldung.backoff.jitter.BackoffWithJitterTest.RetryProperties.*;
+import static io.github.resilience4j.retry.IntervalFunction.ofExponentialBackoff;
+import static io.github.resilience4j.retry.IntervalFunction.ofExponentialRandomBackoff;
+import static java.util.Collections.nCopies;
+import static java.util.concurrent.Executors.newFixedThreadPool;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
+
+public class BackoffWithJitterTest {
+
+    static Logger log = LoggerFactory.getLogger(BackoffWithJitterTest.class);
+
+    interface PingPongService {
+
+        String call(String ping) throws PingPongServiceException;
+    }
+
+    class PingPongServiceException extends RuntimeException {
+
+        public PingPongServiceException(String reason) {
+            super(reason);
+        }
+    }
+
+    private PingPongService service;
+    private static final int NUM_CONCURRENT_CLIENTS = 8;
+
+    @Before
+    public void setUp() {
+        service = mock(PingPongService.class);
+    }
+
+    @Test
+    public void whenRetryExponentialBackoff_thenRetriedConfiguredNoOfTimes() {
+        IntervalFunction intervalFn = ofExponentialBackoff(INITIAL_INTERVAL, MULTIPLIER);
+        Function<String, String> pingPongFn = getRetryablePingPongFn(intervalFn);
+
+        when(service.call(anyString())).thenThrow(PingPongServiceException.class);
+        try {
+            pingPongFn.apply("Hello");
+        } catch (PingPongServiceException e) {
+            verify(service, times(MAX_RETRIES)).call(anyString());
+        }
+    }
+
+    @Test
+    public void whenRetryExponentialBackoffWithoutJitter_thenThunderingHerdProblemOccurs() throws InterruptedException {
+        IntervalFunction intervalFn = ofExponentialBackoff(INITIAL_INTERVAL, MULTIPLIER);
+        test(intervalFn);
+    }
+
+    @Test
+    public void whenRetryExponentialBackoffWithJitter_thenRetriesAreSpread() throws InterruptedException {
+        IntervalFunction intervalFn = ofExponentialRandomBackoff(INITIAL_INTERVAL, MULTIPLIER, RANDOMIZATION_FACTOR);
+        test(intervalFn);
+    }
+
+    private void test(IntervalFunction intervalFn) throws InterruptedException {
+        Function<String, String> pingPongFn = getRetryablePingPongFn(intervalFn);
+        ExecutorService executors = newFixedThreadPool(NUM_CONCURRENT_CLIENTS);
+        List<Callable<String>> tasks = nCopies(NUM_CONCURRENT_CLIENTS, () -> pingPongFn.apply("Hello"));
+
+        when(service.call(anyString())).thenThrow(PingPongServiceException.class);
+
+        executors.invokeAll(tasks);
+    }
+
+    private Function<String, String> getRetryablePingPongFn(IntervalFunction intervalFn) {
+        RetryConfig retryConfig = RetryConfig.custom()
+                .maxAttempts(MAX_RETRIES)
+                .intervalFunction(intervalFn)
+                .retryExceptions(PingPongServiceException.class)
+                .build();
+        Retry retry = Retry.of("pingpong", retryConfig);
+        return Retry.decorateFunction(retry, ping -> {
+            log.info("Invoked at {}", LocalDateTime.now());
+            return service.call(ping);
+        });
+    }
+
+    static class RetryProperties {
+        static final Long INITIAL_INTERVAL = 1000L;
+        static final Double MULTIPLIER = 2.0D;
+        static final Double RANDOMIZATION_FACTOR = 0.6D;
+        static final Integer MAX_RETRIES = 4;
+    }
+}
 --------------------------------------------------------------------------------------------------------
+import com.baeldung.Constants;
+import java.util.Date;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter;
+
+@Controller
+public class ResponseBodyEmitterController {
+    private ExecutorService nonBlockingService = Executors.newCachedThreadPool();
+
+    @GetMapping(Constants.API_RBE)
+    public ResponseEntity<ResponseBodyEmitter> handleRbe() {
+        ResponseBodyEmitter emitter = new ResponseBodyEmitter();
+
+            nonBlockingService.execute(() -> {
+                try {
+                    emitter.send(Constants.API_RBE_MSG + " @ " + new Date(), MediaType.TEXT_PLAIN);
+                    emitter.complete();
+                } catch (Exception ex) {
+                      System.out.println(Constants.GENERIC_EXCEPTION);
+                      emitter.completeWithError(ex);
+                }
+            });
+
+            return new ResponseEntity(emitter, HttpStatus.OK);
+        }
+}
 --------------------------------------------------------------------------------------------------------
+language: java
+sudo: false
+install: true
+
+addons:
+  sonarcloud:
+    organization: "kakawait-github"
+    branches:
+      - master
+      - develop
+      - /^release\/.*$/
+    token:
+      secure: "yghqOuzw0Hov/i82t2CF7MlS8ifAQI1St3Bx3ZQ2yCer2sx5gBSZuJ12sWBJPsfnECxh2XLCHklud1maR1NOJPcogYSzF0Mm+/ymowGDXzwBmeO6ulEIXHWNyG9QSdZCvZtyvYEdXqErntsN4MnGWiGm0526n0qAv2sQE77MDBVTupbXGkqmwYe3vcDXuoRLUWVat4gop5A1tkdlu5LWXqn5tzylCJzDZ7VXD2eR+Cf7n0k/KMYA2MSFDUMBZWZzzj9O1lwhSkZystqlPo7ZL8UPUL/CpqsObdSWfeZVJG0VxfAbJxlSoHNi+KbffjyStPmIRGjgDIr8aWUANcwxmW2G2VDn898ZhvD+C7n1BiDqbKgbJRrhM8aG4klW3odE0gMcLEO3mOuqzT7p8h4IeeZCIFdr9wwsInXNnAfwDISCDiPTacUmM/DKwVDSBZTNxvi+tS1mwwoqphn1xc6ePnTx4RF/pvxNjLbGBEzToVmAAX7ViiU4MS/RDGPbxA/b0qVsgZWF0v9pD4uSb0O++fNtTAPObAnGOB9RUs5FEBtzIxBtw51oV0eyS7CffMLF+dkcxLzo0hj7UCnUpzotee/ydVMIc/K83NJZGlxy02NgdDEi5pxGJOyJyxV0s5F2DINCl4kuliqgxxjlyVvEgQAJ8gObGQkhQdA8Ax5qoqM="
+
+jdk:
+  - oraclejdk8
+
+script:
+  - mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar
+
+cache:
+  directories:
+    - '$HOME/.m2/repository'
+    - '$HOME/.sonar/cache'
 --------------------------------------------------------------------------------------------------------
+@Command(name = "checksum", mixinStandardHelpOptions = true, version = "checksum 4.0",
+         description = "Prints the checksum (MD5 by default) of a file to STDOUT.")
+class CheckSum implements Callable<Integer> {
+
+    @Parameters(index = "0", description = "The file whose checksum to calculate.")
+    private File file;
+
+    @Option(names = {"-a", "--algorithm"}, description = "MD5, SHA-1, SHA-256, ...")
+    private String algorithm = "MD5";
+
+    // this example implements Callable, so parsing, error handling and handling user
+    // requests for usage help or version help can be done with one line of code.
+    public static void main(String... args) {
+        int exitCode = new CommandLine(new CheckSum()).execute(args);
+        System.exit(exitCode);
+    }
+
+    @Override
+    public Integer call() throws Exception { // your business logic goes here...
+        byte[] fileContents = Files.readAllBytes(file.toPath());
+        byte[] digest = MessageDigest.getInstance(algorithm).digest(fileContents);
+        System.out.printf("%0" + (digest.length*2) + "x%n", new BigInteger(1, digest));
+        return 0;
+    }
+}
 --------------------------------------------------------------------------------------------------------
+class Login implements Callable<Integer> {
+    @Option(names = {"-u", "--user"}, description = "User name")
+    String user;
+
+    @Option(names = {"-p", "--password"}, description = "Passphrase", interactive = true)
+    char[] password;
+
+    public Integer call() throws Exception {
+        byte[] bytes = new byte[password.length];
+        for (int i = 0; i < bytes.length; i++) { bytes[i] = (byte) password[i]; }
+
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
+        md.update(bytes);
+
+        System.out.printf("Hi %s, your password is hashed to %s.%n", user, base64(md.digest()));
+
+        // null out the arrays when done
+        Arrays.fill(bytes, (byte) 0);
+        Arrays.fill(password, ' ');
+
+        return 0;
+    }
+
+    private String base64(byte[] arr) { /* ... */ }
+}
+new CommandLine(new Login()).execute("-u", "user123", "-p");
 --------------------------------------------------------------------------------------------------------
+@AllArgsConstructor(access = AccessLevel.PACKAGE)
+@FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
+--------------------------------------------------------------------------------------------------------
+    public static short[] ByteArrayToShortArray(byte[] input)
+    {
+        int short_index, byte_index;
+        int iterations = input.length;
+
+        short[] output = new short[input.length / 2];
+        short_index = byte_index = 0;
+
+        for(int i=0; i < input.length /2 ; i++)
+        {
+            output[i] = (short) (((short)input[i*2] & 0xFF) + (((short)input[i*2+1] & 0xFF) << 8));
+        }
+        return output;
+    }
+--------------------------------------------------------------------------------------------------------
+/**
+	 * Reads text from a file
+	 * @param file the file to read from
+	 * @return the text within the {@link File}
+	 */
+	static String readTextFrom(File file) {
+		assertValidFile(file);
+		try {
+			return new String(Files.readAllBytes(file.toPath()));
+		} catch (IOException e) {
+			throw new IllegalArgumentException("Could not read " + file, e);
+		}
+	}
+
+	/**
+	 * Writes text to a file overriding any existing text
+	 * @param text the text to write to the {@link File}
+	 * @param file the {@link File} to write to
+	 */
+	static void writeTextTo(String text, File file) {
+		if (text == null) {
+			throw new IllegalArgumentException("text cannot be null");
+		}
+		assertValidFile(file);
+		try (Writer writer = new OutputStreamWriter(new FileOutputStream(file))) {
+			writer.write(text);
+		} catch (IOException e) {
+			throw new IllegalArgumentException("Could not write to " + file, e);
+		}
+	}
+
+	private static void assertValidFile(File file) {
+		if (file == null) {
+			throw new IllegalArgumentException("file cannot be null");
+		}
+	}
+--------------------------------------------------------------------------------------------------------
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationContext;
+import org.springframework.test.context.junit4.SpringRunner;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest
+class AsgardBpmClientApplicationIT {
+
+    @Autowired
+    ApplicationContext ctx;
+
+    @Test
+    public void testRun() {
+        CommandLineRunner runner = ctx.getBean(CommandLineRunner.class);
+        runner.run ( "-k", "arg1", "-i", "arg2");
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ConfigurableApplicationContext;
+
+import com.sample.myApp.model.MyBean;
+
+@SpringBootApplication
+public class Application {
+
+ public static void main(String args[]) {
+
+  ConfigurableApplicationContext configurableApplicationContext = SpringApplication.run(Application.class, args);
+
+  MyBean myBean = configurableApplicationContext.getBean(MyBean.class);
+  
+  configurableApplicationContext.close();
+ }
+}
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
