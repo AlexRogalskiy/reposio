@@ -3915,6 +3915,268 @@ public class Application {
     //...
 }
 --------------------------------------------------------------------------------------------------------
+    /**
+     * Specifies what kind of numbers to return. <br>
+     * <p>
+     * To specify the return type of decimal numbers parsed from the json, use the following:
+     * <ul>
+     * <li>FLOAT_AND_DOUBLE</li> <li>BIG_DECIMAL</li> <li>DOUBLE</li>
+     * </ul>
+     * To specify the return type of non-decimal numbers in the json, use the following:
+     * <ul>
+     * <li>BIG_INTEGER</li>
+     * </ul>
+     */
+    public enum NumberReturnType {
+        /**
+         * Convert all non-integer numbers to floats and doubles (depending on the size of the number)
+         */
+        FLOAT_AND_DOUBLE,
+        /**
+         * Convert all non-integer numbers to BigDecimal
+         */
+        BIG_DECIMAL,
+        /**
+         * Convert all non-integer numbers to doubles
+         */
+        DOUBLE,
+        /**
+         * Converts all non-decimal numbers to BigInteger
+         */
+        BIG_INTEGER;
+
+        /**
+         * Returns a boolean indicating whether this type is included in those that deal with floats
+         * or doubles exclusive of BigDecimal.
+         *
+         * @return <code>true</code> if value is {@link #FLOAT_AND_DOUBLE} or {@link #DOUBLE}, <code>false</code> otherwise.
+         */
+        public final boolean isFloatOrDouble() {
+            return this.equals(FLOAT_AND_DOUBLE)
+                    || this.equals(DOUBLE);
+        }
+    }
+--------------------------------------------------------------------------------------------------------
+20:09:28.575: [paragon.microservices.distributor] git -c core.quotepath=false -c log.showSignature=false add --ignore-errors -A -f -- service/src/test/java/com/paragon/microservices/distributor/repository/VersionRepositoryTest.java service/src/test/java/com/paragon/microservices/distributor/repository/SessionRepositoryTest.java service/src/main/java/com/paragon/microservices/distributor/model/entity/FileEntity.java service/src/main/java/com/paragon/microservices/distributor/model/entity/LocaleEntity.java service/src/main/java/com/paragon/microservices/distributor/model/entity/VersionEntity.java service/src/test/java/com/paragon/microservices/distributor/repository/FileRepositoryTest.java service/src/main/java/com/paragon/microservices/distributor/model/entity/PlatformEntity.java service/src/test/java/com/paragon/microservices/distributor/repository/LocaleRepositoryTest.java service/src/test/java/com/paragon/microservices/distributor/repository/ProductRepositoryTest.java service/src/main/java/com/paragon/microservices/distributor/model/entity/ProductEntity.java service/src/test/java/com/paragon/microservices/distributor/repository/PlatformRepositoryTest.java service/src/main/java/com/paragon/microservices/distributor/model/entity/FileInfoEntity.java
+20:09:28.972: [paragon.microservices.distributor] git -c core.quotepath=false -c log.showSignature=false commit -F C:\Users\rogalski\AppData\Local\Temp\git-commit-msg-.txt --
+git -c core.quotepath=false -c log.showSignature=false fetch origin --progress --prune
+--------------------------------------------------------------------------------------------------------
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
+
+public class Main {
+  public static void main(String[] argv) throws Exception {
+    try {
+    } catch (Exception e) {
+      e.printStackTrace(getErrorLoggerPrintStream());
+    }
+  }
+
+  public static PrintStream getErrorLoggerPrintStream() {
+    try {
+      PrintStream s = new PrintStream(new FileOutputStream(new File("c:\\log.txt"), true));
+      return s;
+    } catch (FileNotFoundException e) {
+      e.printStackTrace();
+    }
+    return null;
+  }
+}
+--------------------------------------------------------------------------------------------------------
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
+
+import org.slf4j.Logger;
+
+public class LoggingOutputStream extends OutputStream {
+    
+	public static void redirectSysOutAndSysErr(Logger logger) {
+		System.setOut(new PrintStream(new LoggingOutputStream(logger, LogLevel.INFO)));
+		System.setErr(new PrintStream(new LoggingOutputStream(logger, LogLevel.ERROR)));
+	}
+
+	private final ByteArrayOutputStream baos = new ByteArrayOutputStream(1000);
+	private final Logger logger;
+	private final LogLevel level;
+
+	public enum LogLevel {
+		TRACE, DEBUG, INFO, WARN, ERROR,
+	}
+
+	public LoggingOutputStream(Logger logger, LogLevel level) {
+		this.logger = logger;
+		this.level = level;
+	}
+
+	@Override
+	public void write(int b) {
+		if (b == '\n') {
+			String line = baos.toString();
+			baos.reset();
+
+			switch (level) {
+			case TRACE:
+				logger.trace(line);
+				break;
+			case DEBUG:
+				logger.debug(line);
+				break;
+			case ERROR:
+				logger.error(line);
+				break;
+			case INFO:
+				logger.info(line);
+				break;
+			case WARN:
+				logger.warn(line);
+				break;
+			}
+		} else {
+			baos.write(b);
+		}
+	}
+}
+
+/*
+ * Jacareto Copyright (c) 2002-2005
+ * Applied Computer Science Research Group, Darmstadt University of
+ * Technology, Institute of Mathematics & Computer Science,
+ * Ludwigsburg University of Education, and Computer Based
+ * Learning Research Group, Aachen University. All rights reserved.
+ *
+ * Jacareto is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
+ *
+ * Jacareto is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public
+ * License along with Jacareto; if not, write to the Free
+ * Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+ */
+
+package jacareto.toolkit.log4j;
+
+
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+
+import java.io.OutputStream;
+
+/**
+ * This class logs all bytes written to it as output stream with a specified logging level.
+ *
+ * @author <a href="mailto:cspannagel@web.de">Christian Spannagel</a>
+ * @version 1.0
+ */
+public class LogOutputStream extends OutputStream {
+    /** The logger where to log the written bytes. */
+    private Logger logger;
+
+    /** The level. */
+    private Level level;
+
+    /** The internal memory for the written bytes. */
+    private String mem;
+
+    /**
+     * Creates a new log output stream which logs bytes to the specified logger with the specified
+     * level.
+     *
+     * @param logger the logger where to log the written bytes
+     * @param level the level
+     */
+    public LogOutputStream (Logger logger, Level level) {
+        setLogger (logger);
+        setLevel (level);
+        mem = "";
+    }
+
+    /**
+     * Sets the logger where to log the bytes.
+     *
+     * @param logger the logger
+     */
+    public void setLogger (Logger logger) {
+        this.logger = logger;
+    }
+
+    /**
+     * Returns the logger.
+     *
+     * @return DOCUMENT ME!
+     */
+    public Logger getLogger () {
+        return logger;
+    }
+
+    /**
+     * Sets the logging level.
+     *
+     * @param level DOCUMENT ME!
+     */
+    public void setLevel (Level level) {
+        this.level = level;
+    }
+
+    /**
+     * Returns the logging level.
+     *
+     * @return DOCUMENT ME!
+     */
+    public Level getLevel () {
+        return level;
+    }
+
+    /**
+     * Writes a byte to the output stream. This method flushes automatically at the end of a line.
+     *
+     * @param b DOCUMENT ME!
+     */
+    public void write (int b) {
+        byte[] bytes = new byte[1];
+        bytes[0] = (byte) (b & 0xff);
+        mem = mem + new String(bytes);
+
+        if (mem.endsWith ("\n")) {
+            mem = mem.substring (0, mem.length () - 1);
+            flush ();
+        }
+    }
+
+    /**
+     * Flushes the output stream.
+     */
+    public void flush () {
+        logger.log (level, mem);
+        mem = "";
+    }
+}
+--------------------------------------------------------------------------------------------------------
+    <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <!-- <version>3.0.0</version> -->
+            <configuration>
+                <!-- Silence error javax.interceptor.InterceptorBinding not found -->
+                <additionalDependencies>
+                    <additionalDependency>
+                        <groupId>javax.interceptor</groupId>
+                        <artifactId>javax.interceptor-api</artifactId>
+                        <version>1.2</version>
+                    </additionalDependency>
+                </additionalDependencies>
+            </configuration>
+        </plugin>
+--------------------------------------------------------------------------------------------------------
 //package de.pearl.pem.common.system.configuration;
 //
 //@SpringBootApplication
