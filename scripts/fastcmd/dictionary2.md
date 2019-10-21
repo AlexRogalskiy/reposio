@@ -2092,6 +2092,370 @@ public class RestRegistryProperty {
                 </dependencies>
             </plugin>
 --------------------------------------------------------------------------------------------------------
+/**
+ * Syntax highlighting styles
+ */
+.highlight {
+    background: #fff;
+    @extend %vertical-rhythm;
+
+    .c     { color: #998; font-style: italic } // Comment
+    .err   { color: #a61717; background-color: #e3d2d2 } // Error
+    .k     { font-weight: bold } // Keyword
+    .o     { font-weight: bold } // Operator
+    .cm    { color: #998; font-style: italic } // Comment.Multiline
+    .cp    { color: #999; font-weight: bold } // Comment.Preproc
+    .c1    { color: #998; font-style: italic } // Comment.Single
+    .cs    { color: #999; font-weight: bold; font-style: italic } // Comment.Special
+    .gd    { color: #000; background-color: #fdd } // Generic.Deleted
+    .gd .x { color: #000; background-color: #faa } // Generic.Deleted.Specific
+    .ge    { font-style: italic } // Generic.Emph
+    .gr    { color: #a00 } // Generic.Error
+    .gh    { color: #999 } // Generic.Heading
+    .gi    { color: #000; background-color: #dfd } // Generic.Inserted
+    .gi .x { color: #000; background-color: #afa } // Generic.Inserted.Specific
+    .go    { color: #888 } // Generic.Output
+    .gp    { color: #555 } // Generic.Prompt
+    .gs    { font-weight: bold } // Generic.Strong
+    .gu    { color: #aaa } // Generic.Subheading
+    .gt    { color: #a00 } // Generic.Traceback
+    .kc    { font-weight: bold } // Keyword.Constant
+    .kd    { font-weight: bold } // Keyword.Declaration
+    .kp    { font-weight: bold } // Keyword.Pseudo
+    .kr    { font-weight: bold } // Keyword.Reserved
+    .kt    { color: #458; font-weight: bold } // Keyword.Type
+    .m     { color: #099 } // Literal.Number
+    .s     { color: #d14 } // Literal.String
+    .na    { color: #008080 } // Name.Attribute
+    .nb    { color: #0086B3 } // Name.Builtin
+    .nc    { color: #458; font-weight: bold } // Name.Class
+    .no    { color: #008080 } // Name.Constant
+    .ni    { color: #800080 } // Name.Entity
+    .ne    { color: #900; font-weight: bold } // Name.Exception
+    .nf    { color: #900; font-weight: bold } // Name.Function
+    .nn    { color: #555 } // Name.Namespace
+    .nt    { color: #000080 } // Name.Tag
+    .nv    { color: #008080 } // Name.Variable
+    .ow    { font-weight: bold } // Operator.Word
+    .w     { color: #bbb } // Text.Whitespace
+    .mf    { color: #099 } // Literal.Number.Float
+    .mh    { color: #099 } // Literal.Number.Hex
+    .mi    { color: #099 } // Literal.Number.Integer
+    .mo    { color: #099 } // Literal.Number.Oct
+    .sb    { color: #d14 } // Literal.String.Backtick
+    .sc    { color: #d14 } // Literal.String.Char
+    .sd    { color: #d14 } // Literal.String.Doc
+    .s2    { color: #d14 } // Literal.String.Double
+    .se    { color: #d14 } // Literal.String.Escape
+    .sh    { color: #d14 } // Literal.String.Heredoc
+    .si    { color: #d14 } // Literal.String.Interpol
+    .sx    { color: #d14 } // Literal.String.Other
+    .sr    { color: #009926 } // Literal.String.Regex
+    .s1    { color: #d14 } // Literal.String.Single
+    .ss    { color: #990073 } // Literal.String.Symbol
+    .bp    { color: #999 } // Name.Builtin.Pseudo
+    .vc    { color: #008080 } // Name.Variable.Class
+    .vg    { color: #008080 } // Name.Variable.Global
+    .vi    { color: #008080 } // Name.Variable.Instance
+    .il    { color: #099 } // Literal.Number.Integer.Long
+}
+--------------------------------------------------------------------------------------------------------
+version: 2
+jobs:
+
+  build-caches:
+    machine: true
+    steps:
+      # restore_cache.keys does not work, so multiple restore_cache.key is used
+      - restore_cache:
+          key: m2-cache
+      - checkout
+      - run:
+          name: skip_ci creation
+          command: |
+            mkdir -p .ci-temp
+            echo -n ".github|appveyor.yml|.travis.yml|\.ci/" >> .ci-temp/skip_ci_files
+            echo -n "|distelli-manifest.yml|fast-forward-merge.sh" >> .ci-temp/skip_ci_files
+            echo -n "|LICENSE|LICENSE.apache20|README.md|release.sh" >> .ci-temp/skip_ci_files
+            echo -n "|RIGHTS.antlr|shippable.yml|codeship" >> .ci-temp/skip_ci_files
+            echo -n "|shippable.sh|wercker.yml|wercker.sh" >> .ci-temp/skip_ci_files
+            echo -n "|intellij-idea-inspections.xml" >> .ci-temp/skip_ci_files
+            echo -n "|org.eclipse.jdt.core.prefs" >> .ci-temp/skip_ci_files
+            echo -n "|Jenkinsfile" >> .ci-temp/skip_ci_files
+            SKIP_CI=false;
+            if [ $(git diff --name-only HEAD HEAD~1 \
+                   | grep -vE $(cat .ci-temp/skip_ci_files) | wc -c) -gt 0 ] ; then
+                SKIP_CI=false;
+              else
+                SKIP_CI=true;
+            fi
+            echo $SKIP_CI > .ci-temp/skip_ci
+      - run:
+          name: download all maven dependencies and groovy
+          command: |
+            SKIP_CI=`cat .ci-temp/skip_ci`
+            echo "SKIP_CI="$SKIP_CI
+            if [[ $SKIP_CI == 'false' ]]; then
+              pwd
+              ls -la
+              java -version
+              mvn --version
+              mvn -Ppitest-metrics dependency:go-offline
+            else
+              echo "build is skipped ..."
+            fi
+      - persist_to_workspace:
+          root: /home/circleci/
+          paths:
+            - .m2
+            - project
+            - contribution
+
+  pitest1:
+    machine: true
+    parallelism: 4
+    steps:
+      - attach_workspace:
+          at: /home/circleci/
+      - run:
+          command: |
+            SKIP_CI=`cat .ci-temp/skip_ci`
+            echo "SKIP_CI="$SKIP_CI
+            if [[ $SKIP_CI == 'false' ]]; then
+              echo "./.ci/pitest.sh pitest-coding"  >> commands.txt
+              echo "./.ci/pitest.sh pitest-common"  >> commands.txt
+              echo "./.ci/pitest.sh pitest-imports" >> commands.txt
+              echo "./.ci/pitest.sh pitest-ant"     >> commands.txt
+              CMD="$(circleci tests split commands.txt)"
+              echo "Command: $CMD"
+              eval $CMD
+            else
+              echo "build is skipped ..."
+            fi
+  pitest2:
+    machine: true
+    parallelism: 4
+    steps:
+      - attach_workspace:
+          at: /home/circleci/
+      - run:
+          command: |
+            SKIP_CI=`cat .ci-temp/skip_ci`
+            echo "SKIP_CI="$SKIP_CI
+            if [[ $SKIP_CI == 'false' ]]; then
+              echo "./.ci/pitest.sh pitest-main"        >> commands.txt
+              echo "./.ci/pitest.sh pitest-javadoc"     >> commands.txt
+              echo "./.ci/pitest.sh pitest-indentation" >> commands.txt
+              echo "./.ci/pitest.sh pitest-xpath"       >> commands.txt
+              CMD="$(circleci tests split commands.txt)"
+              echo "Command: $CMD"
+              eval $CMD
+            else
+              echo "build is skipped ..."
+            fi
+  pitest3:
+    machine: true
+    parallelism: 4
+    steps:
+      - attach_workspace:
+          at: /home/circleci/
+      - run:
+          command: |
+            SKIP_CI=`cat .ci-temp/skip_ci`
+            echo "SKIP_CI="$SKIP_CI
+            if [[ $SKIP_CI == 'false' ]]; then
+              echo "./.ci/pitest.sh pitest-misc"    >> commands.txt
+              echo "./.ci/pitest.sh pitest-design"  >> commands.txt
+              echo "./.ci/pitest.sh pitest-api"     >> commands.txt
+              echo "./.ci/pitest.sh pitest-utils"   >> commands.txt
+              CMD="$(circleci tests split commands.txt)"
+              echo "Command: $CMD"
+              eval $CMD
+            else
+              echo "build is skipped ..."
+            fi
+  pitest4:
+    machine: true
+    parallelism: 4
+    steps:
+      - attach_workspace:
+          at: /home/circleci/
+      - run:
+          command: |
+            SKIP_CI=`cat .ci-temp/skip_ci`
+            echo "SKIP_CI="$SKIP_CI
+            if [[ $SKIP_CI == 'false' ]]; then
+              echo "./.ci/pitest.sh pitest-whitespace" >> commands.txt
+              echo "./.ci/pitest.sh pitest-filters"    >> commands.txt
+              echo "./.ci/pitest.sh pitest-header"     >> commands.txt
+              echo "./.ci/pitest.sh pitest-annotation" >> commands.txt
+              CMD="$(circleci tests split commands.txt)"
+              echo "Command: $CMD"
+              eval $CMD
+            else
+              echo "build is skipped ..."
+            fi
+  pitest5:
+    machine: true
+    parallelism: 4
+    steps:
+      - attach_workspace:
+          at: /home/circleci/
+      - run:
+          command: |
+            SKIP_CI=`cat .ci-temp/skip_ci`
+            echo "SKIP_CI="$SKIP_CI
+            if [[ $SKIP_CI == 'false' ]]; then
+              echo "./.ci/pitest.sh pitest-packagenamesloader" >> commands.txt
+              echo "./.ci/pitest.sh pitest-tree-walker"        >> commands.txt
+              echo "./.ci/pitest.sh pitest-naming"             >> commands.txt
+              echo "./.ci/pitest.sh pitest-metrics"            >> commands.txt
+              CMD="$(circleci tests split commands.txt)"
+              echo "Command: $CMD"
+              eval $CMD
+            else
+              echo "build is skipped ..."
+            fi
+  pitest6:
+    machine: true
+    parallelism: 4
+    steps:
+      - attach_workspace:
+          at: /home/circleci/
+      - run:
+          command: |
+            SKIP_CI=`cat .ci-temp/skip_ci`
+            echo "SKIP_CI="$SKIP_CI
+            if [[ $SKIP_CI == 'false' ]]; then
+              echo "./.ci/pitest.sh pitest-blocks"   >> commands.txt
+              echo "./.ci/pitest.sh pitest-sizes"    >> commands.txt
+              echo "./.ci/pitest.sh pitest-modifier" >> commands.txt
+              echo "./.ci/pitest.sh pitest-regexp"   >> commands.txt
+              CMD="$(circleci tests split commands.txt)"
+              echo "Command: $CMD"
+              eval $CMD
+            else
+              echo "build is skipped ..."
+            fi
+  pitest7:
+    machine: true
+    parallelism: 4
+    steps:
+      - attach_workspace:
+          at: /home/circleci/
+      - run:
+          command: |
+            SKIP_CI=`cat .ci-temp/skip_ci`
+            echo "SKIP_CI="$SKIP_CI
+            if [[ $SKIP_CI == 'false' ]]; then
+              echo "./.ci/pitest.sh pitest-gui"   >> commands.txt
+              CMD="$(circleci tests split commands.txt)"
+              echo "Command: $CMD"
+              eval $CMD
+            else
+              echo "build is skipped ..."
+            fi
+workflows:
+  version: 2
+  pitest-testing:
+    jobs:
+      - build-caches
+      - pitest1:
+          requires:
+            - build-caches
+      - pitest2:
+          requires:
+            - build-caches
+      - pitest3:
+          requires:
+            - build-caches
+      - pitest4:
+          requires:
+            - build-caches
+      - pitest5:
+          requires:
+            - build-caches
+      - pitest6:
+          requires:
+            - build-caches
+      # we do not do thorough testing of gui part
+      # - pitest7:
+      #     requires:
+      #       - build-caches
+--------------------------------------------------------------------------------------------------------
+language: java
+
+matrix:
+    include:
+        - os: linux
+          sudo: false
+          jdk: oraclejdk8
+          before_install:
+            # codecov.io
+            - pip install --user codecov
+          script: >
+            if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then
+            ./gradlew build jacocoTestReport javadoc versionEyeSecurityAndLicenseCheck artifactoryPublish codacyUpload
+            -PbuildInfo.build.number=$TRAVIS_BUILD_NUMBER
+            -PbuildInfo.buildUrl=https://travis-ci.org/${TRAVIS_REPO_SLUG}/builds/${TRAVIS_JOB_ID}
+            -PbuildInfo.principal=$USER
+            --continue --stacktrace --no-daemon --profile --scan ;
+            fi
+          after_success:
+            - ./publish-docs-to-github.sh
+            # codecov.io
+            - if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then codecov ; fi
+            - cat ./cov-int/build-log*.txt
+          addons:
+            coverity_scan:
+              project:
+                name: ddimtirov/nuggets
+                version: 0.3.0-SNAPSHOT
+                description: nuggets is (yet another) utility library for Java Edit
+              notification_email: dimitar.dimitrov@gmail.com
+              build_command_prepend: rm -rf ./build
+              build_command: ./gradlew --no-daemon --info jar
+              branch_pattern: coverity_scan
+        - os: osx
+          osx_image: xcode8.2
+          script: ./gradlew build javadoc --continue --stacktrace --no-daemon --profile --scan
+        - os: linux
+          sudo: required
+          jdk: oraclejdk9
+          dist: trusty
+          script:
+             - export GRADLE_OPTS=--add-opens java.base/java.lang=ALL-UNNAMED
+             - ./gradlew build javadoc --continue --stacktrace --no-daemon --profile --scan
+    allow_failures:
+        - jdk: oraclejdk9
+
+
+env:
+  global:
+    # GH_TOKEN for ddimtirov/nuggets
+    - secure: u0YEKxdx3cEbtJAZU9xeh7X+8ix3MZNirUor+i/u5WPflXmqAe32BO7Oh92lfM46h7b2e/AVSeA4UQUsRcz2HMWDLy3jVjIxpS4bIc4Lfpf06UH9ZSxmN3qfAVp6W8sN/YII0h9WfAaNLX5VxY91LmloTdtvS3zgRFoaBL+W0nVicu/O4yPBn8o5DGyf8q83gmx2jNI3RTMyvMrliQbS+jtzgCPDrW/KqKPHmiaEl7yuXShZnRlxrjDa65fkDPnCRbexklmbnaF2ssjVB3sKofvmzFQKIp+44Jvgpm93eXqFYOfcrma8+8J2g9u/WL9uOIy7lE7bCf098QmoOthyvL3lUGgRPIbuiPygrFPEUpb74zyLZB6BpIXG8VjTlqZtoVddQNyglU5Kiyh/2ZNK1nQPssxo/y868gl2QWn9ZB0N9EU2MLJf1kVsJMHVEeDMyKzoHQW1fjeLvPJkDBFJtOuLltB0kfWkOzGcdJHtznNWGZoLAEa6Yr8A0OZAEqrxG81sttDL/dYQJDhJdGn1U/Q6adk2MTa6HXjJgQbuACDw8TpmFp8Lv13d907ZmJFojjzUJS9TxTKIXQKzCZoCGFhWxajZdDI9jOq3Ypt4rZ/zXea9YlIDx4Op3immdbcW8mNiS2bJg1kw53a2CiCHYS7rKHyMKAXY/SkR6D81jZI=
+    # VERSIONEYE_API_KEY
+    - secure: seO01Lxrkxn09Mbf/4Io6VMpwGFhpaRVZfCL25/xEqiKhDgQLaKzI/SLVT3Kv4D30KABngWPLcPiAGOxleSjKMEPdOA5XO2yQanO54Q4yXinbJO9WBZn6ok7OvWNLZIS1vR1SJhP51pHEde+dcYvHd+Om1Uio4yMIZrhv2XJjUHZvkyi+ZGc8XErElLrIc5UWC/2bRnddZKdP/sE8Euqc4MvES8G1DjoWLbgAPy3+Jj7XMBTDxqpGEDdafgxzWC1GpiwKhefqvqSPeHO1CH5rXVzS4IXALugYgCoO7G0YVeEw1YLmhMqLnjpkXrUKDeEuuL0uJvYdpDDqCVynPvW3aDH7nTznXb3OoaIQjoQfN9OaS/DNAZ4DmuBt8orDYYZZ9O5Z/5M50QPBks46UucSNcUfoet/p1PrqQWwxtIPgjcWnnz7vWMT7g9IntuAwXwUrtzvhAgd0aF+/5Ivptq8Aq2tOfuULH0Wbk+htiW2/FTQ7g7UED9iPCas0JVDPNT2B09Gx1wWKpt8XIC4k6U8iTCcMGphI/2lyiDA21do9AuRGGrm72fGHGPQyUG0VGTudF9xvV06ChmvGQxcGRNZ09AlhLEPaQdlLZlKhZM7ufBz6y9qg83y1zIzS/+KYOFhmYxuj5OyKmNlvoFJKrh6ACcgg+3rA8r+NYMnbklNu0=
+    # BINTRAY_USER & BINTRAY_KEY
+    - secure: HF19auHUTRaUgbPykpnsloFCreDFQ8Cr09kZaEZKgXuQnQU9AWNlvCzh3bBBIhnbCMaa2EB0BOWWpmtZ/cbs1qWuCejri0wgLcGIJfW+I9OisY/cMxac7qR/8oXY9Ng702QSyxWHzMCa24KiQdvLSfPgcdcJs4468YGk0w8j5IpclOBoc2pphEv6M7GlEyu8b6iWo9e+1W5LV8TuF8Twe0MNfPrJpU3pSb8/Df6YKnF7h+Fm++LHuKAw+m1IvuSxla2klcySjXzC2HdlaIXcfRgHCFA96y5gqSSn704kRDIF2TVARVbJH0MvkjHQTuusZemyV8kZ7NCDSG9eS6FxgwteAV9hQa4gTHOBrTO2LP/KVLJgUgGKfyZIKCpr5FCRReYnOtkkxwW6X1tgXcNO03VtOkmyVcMfAp6CZ1KTOWs1nefRIqZnfEr7V9amI8xBojt8wVnTdhDtFlDG69za2OH1yoNxY6O5bmaNCZ0sMXW/KjrePZWh9pfPSeBaH8d5Q9rxxUd+m0h6TMuJ7uOAiU2tjfvlkS2U8KdWUKzzF8h8Bn/ukBnlsVEA1/wFOZiWsQOwDxfsC9VVn49cjejVn8uoPokvsse5lHxnPEktrWfUuVSBF3VNsH+EGT8su5tyN4KARQ61O/jaWPtW4swrU1QGmd/3h7PGJuya1tnO30c=
+    - secure: TuOf/FL4ISdG6FRMHVxA9UPxHDqJGvZRKu13H/8z1gxLGFGFNUsWlr1LekjUfBxGjjTKa9xpTBR1af3CRyotd5Yn6gspQnqr9vVrfPdboRwu1xLYtVD8amrPEBM7BKZ8HxxVR5RRaxkMMHeOPKYIF05P9V381pjRPgOBUolEVUyBfmSipzVX+eid6hdn2ePWZYL2FM+Ge23aIPkvwedafmiRItWX42cqYeLou3fsYXFukGVFGRvjj7PaM9mSLcu4hHru5WvxrELb/DxGdxphPNhHCkK4bWaN3H8HTpf6rKNpqplMYxClfN+n8Ciw68BFSS7eH/ns7H0pr/vYNQ/xjvteCDaoy9XJfdyTYH3BcrECll278W2r07X6kdkLQLqIqNsrUEC1ck75sRCVxwzQpZJ4FJZcfR5rw4CxdouHJXxWvCACkJ6tX48mtVX8JDUNkMPywgmdrAMjr7FYcKqf3RQtp1LPW/GYQmZbyLpOGhNOv6CTCH6D8Y/T+EeWmCvUvEWqLjBBdu6uEnuboYs/wCQWueqaKfZohb94KQ7c4UUG0yHxDgdWUC7bukA6txnE/xonWOVv7xbG2mRsG4Jt6ynwnBhfEhjG1LH5xhkkHpqdEfRwZNy/O2npbCaanBhvKIk85b0J8vp6uRNHMXZsy1ouLX5iknxi7wSmranO2wg=
+    # Codacy
+    - secure: od/L5mnmQZ0DDbcleQbq8ZiRxPvc3AsCW+6IiMlIt7dMd4Hg4OkNQ2mIXOKYZRF1IwYG2e1rW7TcNyOZiAP7S0ih7XzlzSpW7U3P//j3u1MVLWbWLcI9bhNNiJaO54nydytUFKI5N4H3sR2BRnuIx2MI4WsZFsyxs2x2RIOz6uPvnCMkrq4GKYHkgFAbW0g0zo5Bmgs6fIFGLo5N6l4HJemGVCRVdGM6VApFzagPMbjQCuC+TyV8Agi6X3jq932qeHz69kVNT28TN5xTUA8i2X1EpI7vXudJ3v60ZJZxyBs4G5pE0A/faPMhvpDzxsVYPDR5IfMQMjjhYrjUf14/r3Ubj2uEAM82NjnkAz9Mn+N++HJ1/1HqvnyURmpeEnydrAWl8wIIgPIKHJybg5lJvcgUjvPctrySZagRrgvwRMZZng8C7WsWtbTbdNwjCU4bfuesine0shN2encXMcXL1eD1A81FoJSQshcpghYpBU/SNr0wsnApHHSDrm0AnJx7952YvBbK0J4NruXp1IVvmAgu1tRDkj8mlIutr4QRrEFU080JzaVhpAEkD17aR8ifuMTRfpR47Uzb6hwB0wp8NBU2Dto5bm9dXwLBJA/6WDyF6HiId+mWEJLg4boHXfSddQniyqK2P/jaHGuH4EawmoT01b+wmV62Yp1gbQiUJ9E=
+    # COVERITY_SCAN_TOKEN
+    - secure: MOCopiLQt8tiR3S7iJyLxj5eg7Akcs9pVBH81dpyeUzTErzq3NNP8lpZ9xZsR7epAE3PcxauoSIgEXPbe57rijH15mm8Cy5UXBbg+q5htjElwrZsaFfySBDi4WSCDm4jYcDF26JH9Cj3JAnlVMpgIthyxRfjnaCROFYIc42blsw+5FehcE0Wuj1PVYOFhgxOY5qLBfwcG+A+3Yr4jkiQ3S8SHC2tn2hv/Dpwq/jizRsQc0lLIoQRujBDrGiBN5dREcL6A0QTFIZolHQC/lhRc5nTDP2zxeUiGnOZ1njFzX8qniZVtqUx1KGnBdv1Rm72nlf8/JvedJP24TPVaGV8Xgorz6tL49vwjjJ0l64CZgU5TqiJ7ugwU2HcczLZN0vVRVDadN0letGJBfT+f/YQMSXFtQcE3gc3eORzy9V0WXY9RFXfQU8d708okLCP0UK7zxQyUUBV6Np04STSYTyeUJa4Mm6XOqEz8cNuM8lx9i5vFRaVrZ75FxHcU7kT0QaFcoQSR/tsE0MJ0kAvGRIwRNPKnAShD0eiNP2bqeV2lo96FIC4FwPlEtBi14i7wneyZ+pEyKSxc29nW17X0PRhzlgLdPxbKlvXblKKY7jJa6Fwl/mzPCpUiRX1BWLP4TrXxMDms2ptlqfO1vtclYcCnDsr/Fs1qkNUSl0tRq1s3qs=
+
+# see https://docs.travis-ci.com/user/languages/java/#Projects-Using-Gradle
+before_cache:
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+  - rm -f  $HOME/.cache/pip/log/debug.log
+
+cache:
+  directories:
+    - $HOME/.gradle/caches/
+    - $HOME/.gradle/wrapper/
+    - $HOME/.cache/pip
+--------------------------------------------------------------------------------------------------------
 @Configuration
 public class AppConfig {
     @Autowired
@@ -2115,6 +2479,58 @@ public class AppConfig {
         return new DataSourceSpy(realDataSource());
     }
 }
+--------------------------------------------------------------------------------------------------------
+//    @Option(names = {"-h", "--help"}, help = true, description = "Shows help message and exits")
+//    private boolean helpRequested;
+
+init-test-suite run --single-test --config=config --log
+--------------------------------------------------------------------------------------------------------
+           <!--<exclusions>-->
+                <!--<exclusion>-->
+                    <!--<groupId>org.springframework.boot</groupId>-->
+                    <!--<artifactId>spring-boot-starter-data-redis</artifactId>-->
+                <!--</exclusion>-->
+                <!--<exclusion>-->
+                    <!--<groupId>org.springframework.data</groupId>-->
+                    <!--<artifactId>spring-data-redis</artifactId>-->
+                <!--</exclusion>-->
+                <!--<exclusion>-->
+                    <!--<groupId>org.springframework.boot</groupId>-->
+                    <!--<artifactId>spring-boot-starter-data-jpa</artifactId>-->
+                <!--</exclusion>-->
+            <!--</exclusions>-->
+--------------------------------------------------------------------------------------------------------
+    public static <T> @Nullable T defaultValue(@NotNull Class<T> c) {
+        try {
+            Constructor<?> constructor = c.getConstructor();
+            if (constructor !=null) return c.cast(constructor.newInstance());
+        } catch (Exception ignored) { }
+
+        if (c.isPrimitive()) {
+            @SuppressWarnings("unchecked")
+            Class<T> boxedEquivalent = (Class<T>) boxClass(c);
+            c = boxedEquivalent;
+        }
+
+        if (c.isArray())                            return c.cast(Array.newInstance(c.getComponentType(), 0));
+        if (BigDecimal.class.isAssignableFrom(c))   return c.cast(BigDecimal.ZERO);
+        if (BigInteger.class.isAssignableFrom(c))   return c.cast(BigInteger.ZERO);
+        if (Boolean.class.equals(c))                return c.cast(Boolean.FALSE);
+        if (Byte.class.equals(c))                   return c.cast((byte) 0);
+        if (Character.class.equals(c))              return c.cast('\0');
+        if (Double.class.equals(c))                 return c.cast(0d);
+        if (Float.class.equals(c))                  return c.cast(0f);
+        if (Integer.class.equals(c))                return c.cast(0);
+        if (Long.class.equals(c))                   return c.cast(0L);
+        if (Short.class.equals(c))                  return c.cast((short) 0);
+
+        if (Map.class.isAssignableFrom(c))          return c.cast(new LinkedHashMap<>());
+        if (Set.class.isAssignableFrom(c))          return c.cast(new LinkedHashSet<>());
+        if (List.class.isAssignableFrom(c))         return c.cast(new ArrayList<>());
+        if (Collection.class.isAssignableFrom(c))   return c.cast(new ArrayList<>());
+
+        return null; // void, classes without default constructor, etc.
+    }
 --------------------------------------------------------------------------------------------------------
    @Bean
     public CommandLineRunner commandLineRunner(ApplicationContext ctx) {
@@ -5894,8 +6310,345 @@ public class Application {
  }
 }
 --------------------------------------------------------------------------------------------------------
+java -jar swagger-codegen-cli-2.2.1.jar generate -i spec.yaml -l python
 --------------------------------------------------------------------------------------------------------
+<plugin>
+    <groupId>io.swagger</groupId>
+    <artifactId>swagger-codegen-maven-plugin</artifactId>
+    <version>${swagger-codegen-maven-plugin-version}</version>
+    <executions>
+        <execution>
+            <goals>
+                <goal>generate</goal>
+            </goals>
+            <configuration>
+                <inputSpec>${project.basedir}/src/main/resources/yaml/yamlfilename.yaml</inputSpec>
+                <!-- language file, like e.g. JavaJaxRSCodegen shipped with swagger -->
+                <language>com.my.package.for.GeneratorLanguage</language>
+                <templateDirectory>myTemplateDir</templateDirectory>
+
+                <output>${project.build.directory}/generated-sources</output>
+                <apiPackage>${default.package}.handler</apiPackage>
+                <modelPackage>${default.package}.model</modelPackage>
+                <invokerPackage>${default.package}.handler</invokerPackage>
+            </configuration>
+        </execution>
+    </executions>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.my.generator</groupId>
+            <artifactId>customgenerator</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+    </dependencies>
+</plugin>
 --------------------------------------------------------------------------------------------------------
+2019-10-17T15:34:31.038324Z
+2019-10-21T05:07:41.644+03:00
+--------------------------------------------------------------------------------------------------------
+curl -X POST -H "content-type:application/json" \
+-d '{"swaggerUrl":"http://petstore.swagger.io/v2/swagger.json"}' \
+http://generator.swagger.io/api/gen/clients/java
+--------------------------------------------------------------------------------------------------------
+import java.util.concurrent.atomic.*;
+
+/**
+ * Created by shiqifeng on 2017/5/5.
+ * Mail byhieg@gmail.com
+ */
+public class AtomFactory {
+
+    private static final AtomFactory atomFactory = new AtomFactory();
+
+    private AtomFactory(){
+
+    }
+
+    public static AtomFactory getInstance(){
+        return atomFactory;
+    }
+
+    public AtomicInteger createAtomInt(int a){
+        return new AtomicInteger(a);
+    }
+
+    public AtomicIntegerArray createAtomArray(int[] a) {
+        return new AtomicIntegerArray(a);
+    }
+
+    public AtomicReference<MyObject> createAtomReference(MyObject object){
+        return new AtomicReference<>();
+    }
+
+    public AtomicIntegerFieldUpdater<MyObject> createAtomIntegerUpdate(String fieldName) {
+        return  AtomicIntegerFieldUpdater.newUpdater(MyObject.class, fieldName);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.concurrent.BlockingQueue;
+
+/**
+ * Created by byhieg on 17/5/3.
+ * Mail to byhieg@gmail.com
+ */
+public class Producer extends Thread {
+
+    private BlockingQueue<String> blockingQueue;
+    @Override
+    public void run() {
+        super.run();
+        for (int i = 0 ; i < 5;i++) {
+            try {
+                blockingQueue.put(i + "");
+                System.out.println(getName() + " 生产数据");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public Producer(ArrayBlock arrayBlock){
+        this.setName("Producer");
+        blockingQueue = arrayBlock.getBlockingQueue();
+    }
+}
+import java.util.concurrent.BlockingQueue;
+
+/**
+ * Created by byhieg on 17/5/3.
+ * Mail to byhieg@gmail.com
+ */
+public class Costumer extends Thread{
+
+    private BlockingQueue<String> blockingQueue;
+
+    public Costumer(ArrayBlock arrayBlock) {
+        blockingQueue = arrayBlock.getBlockingQueue();
+        this.setName("Costumer");
+    }
+
+    @Override
+    public void run() {
+        super.run();
+        while (true) {
+            try {
+                Thread.sleep(5000);
+                String str = blockingQueue.take();
+                System.out.println(getName() + " 取出数据 " + str);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+/**
+ * Current version of the project. Generated from a template at build time.
+ * @author Georgy Vlasov (wlasowegor@gmail.com)
+ * @version $Id$
+ * @since 0.23
+ */
+public enum Version {
+    /**
+     * Current version.
+     */
+    CURRENT("${project.version}", "${buildNumber}");
+
+    /**
+     * Project version.
+     */
+    private final String version;
+
+    /**
+     * Build number.
+     */
+    private final String build;
+
+    /**
+     * Public ctor.
+     * @param ver Maven's project.version property
+     * @param buildnum Maven's buildNumber property created with
+     *  buildnumber-maven-plugin
+     */
+    Version(final String ver, final String buildnum) {
+        this.version = ver;
+        this.build = buildnum;
+    }
+
+    /**
+     * Returns project version number.
+     * @return Project version number
+     */
+    public String projectVersion() {
+        return this.version;
+    }
+
+    /**
+     * Returns project build number.
+     * @return Build number
+     */
+    public String buildNumber() {
+        return this.build;
+    }
+}s
+--------------------------------------------------------------------------------------------------------
+RequestSpecification requestSpec = new RequestSpecBuilder()
+    .setBaseUri("http://localhost")
+    .setPort(8080)
+    .setAccept(ContentType.JSON)
+    .setContentType(ContentType.ANY)
+...
+    .log(LogDetail.ALL)
+    .build();
+
+// можно задать одну спецификацию для всех запросов:
+RestAssured.requestSpecification = requestSpec;
+
+// или для отдельного:
+given().spec(requestSpec)...when().get(someEndpoint);
+
+ResponseSpecification responseSpec = new ResponseSpecBuilder()
+    .expectStatusCode(200)
+    .expectBody(containsString("success"))
+    .build();
+
+// можно задать одну спецификацию для всех ответов:
+RestAssured.responseSpecification = responseSpec;
+
+// или для отдельного:
+given()...when().get(someEndpoint).then().spec(responseSpec)...;
+
+// то же самое работает и в обратную сторону:
+SomePojo pojo = given().
+    .when().get(EndPoints.get)
+    .then().extract().body().as(SomePojo.class);
+--------------------------------------------------------------------------------------------------------
+@Test
+public void whenMeasureResponseTime_thenOK() {
+    Response response = RestAssured.get("/users/eugenp");
+    long timeInMS = response.time();
+    long timeInS = response.timeIn(TimeUnit.SECONDS);
+     
+    assertEquals(timeInS, timeInMS/1000);
+}
+@Test
+public void whenLogResponseIfErrorOccurred_thenSuccess() {
+  
+    when().get("/users/eugenp")
+      .then().log().ifError();
+    when().get("/users/eugenp")
+      .then().log().ifStatusCodeIsEqualTo(500);
+    when().get("/users/eugenp")
+      .then().log().ifStatusCodeMatches(greaterThan(200));
+}
+--------------------------------------------------------------------------------------------------------
+@Test
+public void whenLogResponseIfErrorOccurred_thenSuccess() {
+  
+    when().get("/users/eugenp")
+      .then().log().ifError();
+    when().get("/users/eugenp")
+      .then().log().ifStatusCodeIsEqualTo(500);
+    when().get("/users/eugenp")
+      .then().log().ifStatusCodeMatches(greaterThan(200));
+}
+--------------------------------------------------------------------------------------------------------
+
+// методы find, findAll применяются к коллекции для поиска первого и всех вхождений, метод collect для  создания новой коллекции из найденных результатов. 
+
+// переменная it создается неявно и указывает на текущий элемент коллекции
+Map<String, ?> map = get(EndPoints.anyendpoint).path("rootelement.find { it.title =~ 'anythingRegExp'}");
+
+// можете явно задать название переменной, указывающей на текущий элемент
+Map<String, ?> map = get(EndPoints.anyendpoint).path("rootelement.findAll { element -> element.title.length() > 4 }");
+
+// вы можете использовать методы sum, max, min для суммирования всех значений коллекции, а также поиска максимального и минимально значения
+
+String expensiveCar = get(EndPoints.cars).path("cars.find { it.title == 'Toyota Motor Corporation'}.models.max { it.averagePrice }.title");
+
+--------------------------------------------------------------------------------------------------------
+language: java
+sudo: false
+cache:
+  directories:
+    - $HOME/.m2
+script:
+  - set -e
+  - mvn clean install -Pqulice --errors --batch-mode
+  - mvn clean
+  - pdd --source=$(pwd) --file=/dev/null
+  - est --dir=est --file=/dev/null
+before_install:
+  - rvm install 2.6.0
+  - rvm use 2.6.0
+install:
+  - gem install pdd -v 0.20.5
+  - gem install est -v 0.3.4
+env:
+  global:
+    - MAVEN_OPTS="-Xmx256m"
+    - JAVA_OPTS="-Xmx256m"
+jdk:
+  - oraclejdk8
+  - openjdk7
+--------------------------------------------------------------------------------------------------------
+    public String getRightestOne(int n){
+        int res = n & (~n + 1);
+        return Integer.toBinaryString(res);
+    }
+--------------------------------------------------------------------------------------------------------
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+
+/**
+ * Created by shiqifeng on 2017/2/23.
+ * Mail byhieg@gmail.com
+ */
+public class BufferedReaderExample {
+
+    public void readFromFile() throws Exception{
+        try(BufferedReader reader = new BufferedReader(new FileReader("D:" + File.separator + "read_file.txt"))){
+            String str;
+            while ((str = reader.readLine()) != null) {
+                System.out.println(str);
+            }
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+<plugin>
+    <groupId>io.swagger</groupId>
+    <artifactId>swagger-codegen-maven-plugin</artifactId>
+    <version>2.3.1</version>
+    <executions>
+        <execution>
+            <id>contract-service</id>
+            <goals>
+                <goal>generate</goal>
+            </goals>
+            <configuration>
+                <inputSpec>${basedir}/src/main/resources/swagger/rest-data-exchange-format.yaml</inputSpec>
+                <artifactId>contract-service</artifactId>
+                <output>${basedir}/target/generated-sources</output>
+                <language>spring</language>
+                <modelPackage>ru.payhub.rest.v1.model</modelPackage>
+                <apiPackage>ru.payhub.rest.v1.api</apiPackage>
+                <!-- <invokerPackage>ru.payhub.rest.v1.handler</invokerPackage> -->
+                <generateSupportingFiles>false</generateSupportingFiles>
+                <configOptions>
+                    <sourceFolder>src/main/java</sourceFolder>
+                    <interfaceOnly>true</interfaceOnly>
+                    <library>spring-boot</library>
+                    <dateLibrary>${generator.datelibrary}</dateLibrary>
+                    <configPackage>ru.payhub.config</configPackage>
+                    <singleContentTypes>true</singleContentTypes>
+                </configOptions>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------

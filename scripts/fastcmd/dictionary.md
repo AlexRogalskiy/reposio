@@ -6658,6 +6658,41 @@ public class ExampleClient {
   }
 }
 --------------------------------------------------------------------------------------------------------
+
+@Mock
+DataService dataService;
+
+MockitoSession session;
+
+@BeforeMethod
+public void beforeMethod() {
+    session = Mockito.mockitoSession()
+            .initMocks(this)
+            .startMocking();
+}
+
+@Test
+public void testMethod() {
+    // some code using the dataService field
+}
+
+@AfterMethod
+public void afterMethod() {
+    session.finishMocking();
+}
+--------------------------------------------------------------------------------------------------------
+@Test public void
+lotto_resource_returns_200_with_expected_id_and_winners() {
+
+    when().
+            get("/lotto/{id}", 5).
+    then().
+            statusCode(200).
+            body("lotto.lottoId", equalTo(5),
+                 "lotto.winners.winnerId", hasItems(23, 54));
+
+}
+--------------------------------------------------------------------------------------------------------
 QBean<Parent> parentProjection = Projections.fields(Parent.class, QParent.parent.id);
 QBean<Child> childProjection = Projections.fields(Child.class, QChild.child.id);
 EnumPath<Hobby> hobbies = Expressions.enumPath(Hobby.class, "hobbies");
@@ -6670,6 +6705,12 @@ result.forEach((parent, groups) -> {
     parent.setChildren(groups.getList(childProjection));
     // How to get the hobbies of the parent children?
 });
+--------------------------------------------------------------------------------------------------------
+wget http://central.maven.org/maven2/io/swagger/swagger-codegen-cli/2.4.9/swagger-codegen-cli-2.4.9.jar -O swagger-codegen-cli.jar
+
+java -jar swagger-codegen-cli.jar help
+--------------------------------------------------------------------------------------------------------
+swagger-codegen generate -i http://petstore.swagger.io/v2/swagger.json -l ruby -o /tmp/test/
 --------------------------------------------------------------------------------------------------------
 package com.paragon.microservices.distributor.controller.impl;
 
@@ -6716,9 +6757,8 @@ public class BaseErrorController implements ErrorController {
     }
 }
 --------------------------------------------------------------------------------------------------------
-   ReflectionTestUtils.setField(tokenProvider, "secretKey", "test secret");
+ReflectionTestUtils.setField(tokenProvider, "secretKey", "test secret");
 --------------------------------------------------------------------------------------------------------
-
 import com.springio.store.security.AuthoritiesConstants;
 import io.github.jhipster.config.JHipsterProperties;
 import org.junit.Before;
