@@ -6658,6 +6658,41 @@ public class ExampleClient {
   }
 }
 --------------------------------------------------------------------------------------------------------
+
+@Mock
+DataService dataService;
+
+MockitoSession session;
+
+@BeforeMethod
+public void beforeMethod() {
+    session = Mockito.mockitoSession()
+            .initMocks(this)
+            .startMocking();
+}
+
+@Test
+public void testMethod() {
+    // some code using the dataService field
+}
+
+@AfterMethod
+public void afterMethod() {
+    session.finishMocking();
+}
+--------------------------------------------------------------------------------------------------------
+@Test public void
+lotto_resource_returns_200_with_expected_id_and_winners() {
+
+    when().
+            get("/lotto/{id}", 5).
+    then().
+            statusCode(200).
+            body("lotto.lottoId", equalTo(5),
+                 "lotto.winners.winnerId", hasItems(23, 54));
+
+}
+--------------------------------------------------------------------------------------------------------
 QBean<Parent> parentProjection = Projections.fields(Parent.class, QParent.parent.id);
 QBean<Child> childProjection = Projections.fields(Child.class, QChild.child.id);
 EnumPath<Hobby> hobbies = Expressions.enumPath(Hobby.class, "hobbies");
@@ -6670,6 +6705,12 @@ result.forEach((parent, groups) -> {
     parent.setChildren(groups.getList(childProjection));
     // How to get the hobbies of the parent children?
 });
+--------------------------------------------------------------------------------------------------------
+wget http://central.maven.org/maven2/io/swagger/swagger-codegen-cli/2.4.9/swagger-codegen-cli-2.4.9.jar -O swagger-codegen-cli.jar
+
+java -jar swagger-codegen-cli.jar help
+--------------------------------------------------------------------------------------------------------
+swagger-codegen generate -i http://petstore.swagger.io/v2/swagger.json -l ruby -o /tmp/test/
 --------------------------------------------------------------------------------------------------------
 package com.paragon.microservices.distributor.controller.impl;
 
@@ -6716,9 +6757,8 @@ public class BaseErrorController implements ErrorController {
     }
 }
 --------------------------------------------------------------------------------------------------------
-   ReflectionTestUtils.setField(tokenProvider, "secretKey", "test secret");
+ReflectionTestUtils.setField(tokenProvider, "secretKey", "test secret");
 --------------------------------------------------------------------------------------------------------
-
 import com.springio.store.security.AuthoritiesConstants;
 import io.github.jhipster.config.JHipsterProperties;
 import org.junit.Before;
@@ -11990,6 +12030,1066 @@ public class BookYAMLParser implements Parser<Book> {
     }
 }
 --------------------------------------------------------------------------------------------------------
+spring.main.web-application-type=none
+
+server.port=8443
+server.ssl.key-store=classpath:keystore.jks
+server.ssl.key-store-password=secret
+server.ssl.key-password=another-secret
+--------------------------------------------------------------------------------------------------------
+@Component
+public class MyTomcatWebServerCustomizer
+        implements WebServerFactoryCustomizer<TomcatServletWebServerFactory> {
+
+    @Override
+    public void customize(TomcatServletWebServerFactory factory) {
+        // customize the factory here
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+
+import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.update.UpdateRequest;
+import org.elasticsearch.action.update.UpdateResponse;
+import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.transport.TransportAddress;
+import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.transport.client.PreBuiltTransportClient;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import com.example.demo.vo.InputObject;
+import com.example.demo.vo.ResponseObject;
+
+@Configuration
+public class ElasticSearchDao {
+	private static TransportClient client;
+
+	@Bean
+	public ElasticSearchDao elasticBean() {
+		return new ElasticSearchDao();
+	}
+
+	public static TransportClient getElasticClient() throws UnknownHostException {
+		System.setProperty("es.path.home", "D:\\target\\elasticsearch-6.1.2\\elasticsearch-6.1.2\\bin");
+		if (client == null) {
+			// node client
+			/*
+			 * Node node =
+			 * nodeBuilder().clusterName("elasticsearch").client(true).node();
+			 * client = node.client(); return client;
+			 */
+			// transport client
+			client = new PreBuiltTransportClient(Settings.EMPTY)
+					.addTransportAddress(new TransportAddress(InetAddress.getByName("localhost"), 9300))
+					.addTransportAddress(new TransportAddress(InetAddress.getByName("localhost"), 9300));
+
+			return client;
+		} else
+			return client;
+	}
+
+	public Object AddDocument(String input) throws UnknownHostException {
+		ResponseObject responseObject = new ResponseObject();
+		InputObject obj = processInput(input);
+		if (!obj.isMalformed()) {
+			TransportClient client = getElasticClient();
+			IndexResponse response = null;
+			try {
+				response = client.prepareIndex(obj.getIndex(), obj.getIndex(), obj.getId())
+						.setSource(obj.getData(), XContentType.JSON).get();
+				responseObject.setSuccessMessage(response.getResult().name());
+				responseObject.setId(response.getId());
+				responseObject.setData(obj.getData());
+
+			} catch (Exception ex) {
+				System.out.println(ex.getMessage());
+				responseObject.setErrorMessage("Exception In creation of Entity");
+				return responseObject;
+			}
+			return responseObject;
+		} else {
+			responseObject.setErrorMessage("Malformed input json");
+		}
+		return responseObject;
+	}
+
+	public Object getSingalDocument(String index, String id) {
+		ResponseObject responseObject = new ResponseObject();
+		TransportClient client = null;
+		GetResponse response = null;
+		String docType = index;
+		try {
+			client = getElasticClient();
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			responseObject.setErrorMessage("Exception In getting Elastic Transport Client");
+			return responseObject;
+		}
+		// client.admin().indices().prepareRefresh().execute().actionGet();
+		try {
+			response = client.prepareGet(index, docType, id).get();
+			if(response.getSourceAsString()==null ||response.getSourceAsString()=="")
+			responseObject.setSuccessMessage("Not Found");
+			else
+				responseObject.setSuccessMessage("Fetched");
+			responseObject.setId(response.getId());
+			responseObject.setData(response.getSourceAsString());
+		} catch (Exception ex) {
+			responseObject.setErrorMessage("Exception In getting Elastic Data");
+			return responseObject;
+		}
+		return responseObject;
+	}
+
+	public Object getAllDocments(String index) {
+		ResponseObject responseObject = new ResponseObject();
+		TransportClient client = null;
+		SearchResponse response = null;
+		List<Map<String, Map<String, Object>>> esData;
+		Object obj = null;
+		try {
+			client = getElasticClient();
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			responseObject.setErrorMessage("Exception In getting Elastic Transport Client");
+			return responseObject;
+		}
+		// client.admin().indices().prepareRefresh().execute().actionGet();
+		try {
+			/*
+			 * response = client.prepareSearch(index).get(); obj=response.ge;
+			 */
+			int scrollSize = 1000;
+			esData = new ArrayList<Map<String, Map<String, Object>>>();
+			int i = 0;
+			while (response == null || response.getHits().getHits().length != 0) {
+				response = client.prepareSearch(index).setTypes(index).setQuery(QueryBuilders.matchAllQuery())
+						.setSize(scrollSize).setFrom(i * scrollSize).execute().actionGet();
+				for (SearchHit hit : response.getHits()) {
+					Map<String, Map<String, Object>> temp = new HashMap<String, Map<String, Object>>();
+					temp.put(hit.getId(), hit.getSourceAsMap());
+					esData.add(temp);
+				}
+				i++;
+			}
+			return esData;
+		} catch (Exception ex) {
+			responseObject.setErrorMessage("Exception In getting Elastic Data");
+			return responseObject;
+		}
+
+	}
+
+	public Object deleteDocument(String index, String id) {
+		TransportClient client = null;
+		ResponseObject responseObject = new ResponseObject();
+		try {
+			client = getElasticClient();
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+			responseObject.setErrorMessage("Exception In getting Elastic Transport Client");
+			return responseObject;
+		}
+		try {
+			DeleteResponse response = client.prepareDelete(index, index, id).get();
+			responseObject.setSuccessMessage(response.getResult().name());
+			return responseObject;
+		} catch (Exception ex) {
+			responseObject.setErrorMessage("Exception In getting Elastic Data");
+			return responseObject;
+		}
+
+	}
+
+	public Object updateDocment(String input) {
+		ResponseObject responseObject = new ResponseObject();
+		InputObject inputObject = processInput(input);
+		TransportClient client = null;
+		Object obj = null;
+		UpdateResponse response = null;
+		if (!inputObject.isMalformed()) {
+			try {
+				client = getElasticClient();
+			} catch (UnknownHostException e) {
+				e.printStackTrace();
+				responseObject.setErrorMessage("Exception In getting Elastic Transport Client");
+				return responseObject;
+			}
+			IndexRequest indexRequest = new IndexRequest(inputObject.getIndex(), inputObject.getIndex(),
+					inputObject.getId()).source(inputObject.getData(), XContentType.JSON);
+			UpdateRequest updateRequest = new UpdateRequest(inputObject.getIndex(), inputObject.getIndex(),
+					inputObject.getId()).doc(inputObject.getData(), XContentType.JSON).upsert(indexRequest);
+
+			try {
+				response = client.update(updateRequest).get();
+				responseObject.setSuccessMessage(response.getResult().name());
+				responseObject.setId(response.getId());
+			} catch (InterruptedException | ExecutionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				responseObject.setErrorMessage("Exception In updating Elastic data.");
+				return responseObject;
+			}
+			return responseObject;
+		} else {
+			responseObject.setErrorMessage("Malformed input json");
+		}
+		return responseObject;
+	}
+
+	public static InputObject processInput(String input) {
+		input = input.replaceAll("\\s", "");
+		InputObject obj = null;
+		JSONObject jsonObject = null;
+		try {
+			JSONParser parser = new JSONParser();
+			jsonObject = (JSONObject) parser.parse(input);
+		} catch (Exception e1) {
+			// TODO Auto-generated catch block
+			obj = new InputObject("", "", "", true);
+			e1.printStackTrace();
+
+		}
+		/*
+		 * System.out.println(input); String index=input.substring(10);
+		 * index=index.substring(0, index.indexOf('"')); String
+		 * id=input.substring(input.indexOf("id")+5);
+		 * id=id.substring(0,id.indexOf('"')); String
+		 * data=input.substring(input.indexOf("data")+6,input.lastIndexOf('}'));
+		 */
+
+		try {
+			/*
+			 * System.out.println(jsonObject.get("index"));
+			 * System.out.println(jsonObject.get("id"));
+			 * System.out.println(jsonObject.get("data"));
+			 */
+			obj = new InputObject(jsonObject.get("index").toString(), jsonObject.get("id").toString(),
+					jsonObject.get("data").toString(), false);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			obj = new InputObject("", "", "", true);
+			e.printStackTrace();
+		}
+		;
+		return obj;
+	}
+
+}
+
+public class Book {
+ private String title;
+ private String Author;
+ private String ISBN;
+ private int count;
+ 
+ public Book(String ISBN,String Authour,String title,int count){
+	 this.ISBN=ISBN;
+	 this.title=title;
+	 this.count=count;
+	 this.Author=Authour;
+ }
+ public String getTitle() {
+	return title;
+}
+public void setTitle(String title) {
+	this.title = title;
+}
+public String getAuthor() {
+	return Author;
+}
+public void setAuthor(String author) {
+	Author = author;
+}
+public String getISBN() {
+	return ISBN;
+}
+public void setISBN(String iSBN) {
+	ISBN = iSBN;
+}
+
+public int getCount() {
+	return count;
+}
+public void setCount(int count) {
+	this.count = count;
+}
+}
+--------------------------------------------------------------------------------------------------------
+    public enum Strategy {
+        NONE {
+            @Override
+            public String toString() {
+                return "drop-and-create";
+            }
+        },
+        CREATE {
+            @Override
+            public String toString() {
+                return "create";
+            }
+        },
+        DROP_AND_CREATE {
+            @Override
+            public String toString() {
+                return "drop-and-create";
+            }
+        }
+    };
+	
+	public static Platform matchText(String text){
+		text = text.toLowerCase();
+		for(Platform a:Platform.values()){
+			if(text.contains(a.keyword)){
+				return a;
+			}
+		}
+		return null;
+	}
+	
+	public enum Language {
+	English("EN"), Spanish("ES"), French("FR"), German("DE"), Dutch("NL"), Japanese(
+			"JA"), Korean("KO"), Chinese("ZH"), Simplified_Chinese("zh-Hans") {
+		@Override
+		public String toString() {
+			return "Simplified Chinese";
+		}
+	},
+	Traditional_Chinese("zh-Hant") {
+		@Override
+		public String toString() {
+			return "Traditional Chinese";
+		}
+	},
+	Russian("RU");
+
+	private String keyword;
+
+	private Language(String code) {
+		this.keyword = code;
+	}
+	
+	public static Language getEnum(String val){
+		for(Language key: Language.values()){
+			if(key.keyword.equalsIgnoreCase(val)){
+				return key;
+			}
+		}
+		return null;
+	}
+	
+	public String getKeyword(){
+		return this.keyword;
+	}
+}
+
+public enum KeyEnum {
+	//device_size("device size"),
+	source("sources"),
+	language("language"),
+	apple_product_line("apple_product_line"),
+	platform("platform"),
+	device_os_version("device_os_version"),
+	device_manufacturer("device_manufacturer"),	
+	device_type("device_type"),
+	device_size("device_size"),
+	geoip_continent("geoip_continent"),
+	geoip_country("geoip_country"),
+	geoip_region("regions"),
+	//Always put personas in the end
+	persona_name("personas");
+	
+	private final String keyword;
+	
+	private KeyEnum(String key){
+		this.keyword = key;
+	}
+	
+	public static KeyEnum getEnum(String val){
+		for(KeyEnum key: KeyEnum.values()){
+			if(key.keyword.equalsIgnoreCase(val)){
+				return key;
+			}
+		}
+		return null;
+	}
+	
+	public static String getValue(KeyEnum key){
+		return key.keyword;
+	}
+}
+
+public enum Countries {
+	// RW - rest of world
+	AR("Argentina"), AU("Australia"), BR("Brazil"), CA("Canada"), CL("Chile"), CN("China"), 
+	CO("Colombia"), DE("Germany"), ES("Spain"), FR("France"), GB("United Kingdom"), GR("Greece"), 
+	HK("Hong Kong"), ID("Indonesia"), IL("Israel"), IN("India"), IT("Italy"), JP("Japan"), KR("Korea"),
+	KW("Kuwait"), MX("Mexico"), MY("Malaysia"), NL("Netherlands"), RU("Russia"), SA("Saudi Arabia"), 
+	SE("Sweden"), SG("Singapore"), TH("Thailand"), TR("Turkey"), TW("Taiwan"), US("United States");
+
+	private String keyword;
+	
+	private Countries(String k) {
+		this.keyword = k;
+	}
+	
+	public static Countries getEnum (String country) {
+		for (Countries c : Countries.values()) {
+			if (c.name().equalsIgnoreCase(country)) {
+				return c;
+			}
+		}
+		return null;
+	}
+	
+	public String getKeyword(){
+		return keyword;
+	}
+}
+
+public enum Continents {
+	SA("South America"), AS("Asia"), AF("Africa"), EU("Europe"), OC("Oceania"), NA("North America");
+	
+	private String keyword;
+	
+	private Continents(String k) {
+		this.keyword = k;
+	}
+
+	public static Continents getEnum(String continent) {
+		for (Continents c : Continents.values()) {
+			if (c.name().equalsIgnoreCase(continent)) {
+				return c;
+			}
+		}
+		return null;
+	}
+	
+	public String getKeyword(){
+		return keyword;
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+server.port = 8082
+server.ssl.key-store = classpath:keystore.p12
+server.ssl.key-store-password = mypassword
+server.ssl.key-store-type = PKCS12
+server.ssl.key-alias = tomcat
+--------------------------------------------------------------------------------------------------------
+import javax.sql.DataSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
+import org.springframework.core.env.Environment;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
+import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
+import org.springframework.security.oauth2.provider.token.DefaultTokenServices;
+import org.springframework.security.oauth2.provider.token.TokenStore;
+import org.springframework.security.oauth2.provider.token.store.JdbcTokenStore;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
+
+
+/**
+ * Configure OAuth2 so that:
+ *   . Token checking is done by comparing with key that retrieved from
+ *     jdbc database
+ *   . Any request need be authroized via access token key provided
+ */
+@Configuration
+@PropertySource({"classpath:oauth2jdbc.properties"})
+@EnableResourceServer
+public class OAuth2ResourceServerConfig extends ResourceServerConfigurerAdapter {
+  @Autowired
+  private Environment env;
+
+  @Override
+  public void configure(final HttpSecurity http) throws Exception {
+    http.sessionManagement()
+    .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+    .and()
+    .authorizeRequests().anyRequest().permitAll();
+  }
+
+  @Override
+  public void configure(final ResourceServerSecurityConfigurer config) {
+    config.tokenServices(tokenServices());
+  }
+
+  @Bean
+  @Primary
+  public DefaultTokenServices tokenServices() {
+    final DefaultTokenServices defaultTokenServices = new DefaultTokenServices();
+    defaultTokenServices.setTokenStore(tokenStore());
+    return defaultTokenServices;
+  }
+
+  private DataSource getJDBCdataSource() {
+    final DriverManagerDataSource dataSource = new DriverManagerDataSource();
+    dataSource.setDriverClassName(env.getProperty("jdbc.driverClassName"));
+    dataSource.setUrl(env.getProperty("jdbc.url"));
+    dataSource.setUsername(env.getProperty("jdbc.user"));
+    dataSource.setPassword(env.getProperty("jdbc.pass"));
+    return dataSource;
+  }
+
+  @Bean
+  public TokenStore tokenStore() {
+    return new JdbcTokenStore(getJDBCdataSource());
+  }
+}
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.method.configuration.GlobalMethodSecurityConfiguration;
+import org.springframework.security.oauth2.provider.expression.OAuth2MethodSecurityExpressionHandler;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
+
+
+/**
+ * Enable security check with @PreAuthorize annotation to enforce
+ * authorization on Rest Controller on method of class controller
+ */
+@Configuration
+@EnableResourceServer
+@EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled= true)
+public class MethodSecurityConfig extends GlobalMethodSecurityConfiguration {
+  @Override
+  protected MethodSecurityExpressionHandler createExpressionHandler() {
+    return new OAuth2MethodSecurityExpressionHandler();
+  }
+}
+
+--------------------------------------------------------------------------------------------------------
+@Pattern(regexp="[\\p{IsAlphabetic}\\s]*")
+--------------------------------------------------------------------------------------------------------
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.ext.ExceptionMapper;
+import javax.ws.rs.ext.Provider;
+
+import com.target.model.ErrorMessage;
+
+
+@Provider
+public class UpdateExceptionMapper implements ExceptionMapper<UpdateException> {
+
+	@Override
+	public Response toResponse(UpdateException exception) {
+		return Response.status(Status.NOT_MODIFIED)
+				.entity(new ErrorMessage("array index out of bound exception", 400, "wwwelham"))
+				.build();
+	}
+}
+--------------------------------------------------------------------------------------------------------
+		@DurationUnit(ChronoUnit.SECONDS)
+		private Duration backgroundProcessorDelay = Duration.ofSeconds(10);
+--------------------------------------------------------------------------------------------------------
+		private String internalProxies = "10\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|" // 10/8
+				+ "192\\.168\\.\\d{1,3}\\.\\d{1,3}|" // 192.168/16
+				+ "169\\.254\\.\\d{1,3}\\.\\d{1,3}|" // 169.254/16
+				+ "127\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|" // 127/8
+				+ "172\\.1[6-9]{1}\\.\\d{1,3}\\.\\d{1,3}|" // 172.16/12
+				+ "172\\.2[0-9]{1}\\.\\d{1,3}\\.\\d{1,3}|" + "172\\.3[0-1]{1}\\.\\d{1,3}\\.\\d{1,3}|" //
+				+ "0:0:0:0:0:0:0:1|::1";
+--------------------------------------------------------------------------------------------------------
+//@Configuration
+//public class JsonPathConfig {
+//    static {
+//        // disable JsonPath cache to avoid
+//        // to use first parsed value always when "concat(...)"
+//        CacheProvider.setCache(new NOOPCache());
+//    }
+//
+//    public com.jayway.jsonpath.Configuration getConfig() {
+//        return com.jayway.jsonpath.Configuration.defaultConfiguration()
+//                        .addOptions(Option.SUPPRESS_EXCEPTIONS);
+//    }
+//}
+--------------------------------------------------------------------------------------------------------
+    @Bean
+    @Description("Ticket message kafka transaction manager bean")
+    public KafkaTransactionManager<String, TicketMessage> ticketMessageTransactionManager() {
+        return new KafkaTransactionManager<>(this.ticketMessageProducerFactory());
+    }
+--------------------------------------------------------------------------------------------------------
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.springframework.stereotype.Component;
+
+@Component
+public class NameValidator {
+
+    private static final String NAME_PATTERN = "^[a-zA-Z0-9\\._\\s\\-]+$";
+
+    public boolean isValidName(final String name) {
+        final Pattern pattern = Pattern.compile(NAME_PATTERN);
+        final Matcher matcher = pattern.matcher(name);
+        return matcher.matches();
+    }
+
+}
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import com.redsky.client.exception.ResourceValidationException;
+import com.redsky.client.pojo.RequestPayload;
+
+@Component
+public class InputRequestValidator implements RequestValidator<RequestPayload> {
+
+    @Autowired
+    private BeanValidator validator;
+
+    @Autowired
+    private NameValidator nameValidator;
+
+    @Override
+    public boolean validate(final RequestPayload bean) throws ResourceValidationException {
+        boolean result = false;
+        if (bean != null) {
+            result = validator.validate(bean);
+        }
+        if (result) {
+            result = nameValidator.isValidName(bean.getProduct().getName());
+        }
+
+        return result;
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+@Bean
+public FilterRegistrationBean registration(MyFilter filter) {
+    FilterRegistrationBean registration = new FilterRegistrationBean(filter);
+    registration.setEnabled(false);
+    return registration;
+}
+--------------------------------------------------------------------------------------------------------
+package com.paragon.microservices.confirmationlink.callback.deserializer;
+
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.StringValue;
+import com.paragon.microservices.confirmationlink.callback.exception.AuthorityRedisDataException;
+import com.paragon.microservices.confirmationlink.callback.system.deserializer.AuthorityRedisValueDeserializer;
+import org.apache.commons.lang3.StringUtils;
+import org.hamcrest.core.IsEqual;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+import static com.paragon.microservices.confirmationlink.callback.TestUtils.checkThrows;
+import static org.hamcrest.CoreMatchers.startsWith;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.nullValue;
+
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(StringValue.class)
+public class AuthorityRedisValueDeserializerTest {
+
+    private AuthorityRedisValueDeserializer serializer;
+
+    @Before
+    public void setUp() {
+        this.serializer = new AuthorityRedisValueDeserializer();
+    }
+
+    @Test
+    public void test_serialize() {
+        // given
+        final String errorMessage = "Serialize operation isn't supported!";
+
+        // when
+        final UnsupportedOperationException thrown = checkThrows(UnsupportedOperationException.class, () -> this.serializer.serialize("test data"));
+        // then
+        assertThat(thrown.getMessage(), IsEqual.equalTo(errorMessage));
+    }
+
+    @Test
+    public void test_deserialize_whenPassed_NullableContent() {
+        // given
+        final byte[] content = null;
+
+        // when
+        final String actual = this.serializer.deserialize(content);
+
+        // then
+        assertThat(actual, is(nullValue()));
+    }
+
+    @Test
+    public void test_deserialize_whenPassed_EmptyContent() {
+        // given
+        final String content = StringUtils.EMPTY;
+
+        // when
+        final String actual = this.serializer.deserialize(content.getBytes());
+
+        // then
+        assertThat(actual, is(content));
+    }
+
+    @Test
+    public void test_deserialize_whenPassed_InvalidContent() {
+        // given
+        final String errorMessage = "ERROR: cannot parse authority redis data";
+        final String content = "{\n" +
+                "  \"reportId\": \"123\",\n" +
+                "  \"locale\": \"de_DE\",\n" +
+                "  \"kind\": \"PRODUCTS_BATCH\",\n" +
+                "  \"mode\": \"DRY_RUN\"\n" +
+                "}";
+
+        // when
+        final AuthorityRedisDataException thrown = checkThrows(AuthorityRedisDataException.class, () -> this.serializer.deserialize(content.getBytes()));
+        // then
+        assertThat(thrown.getMessage(), startsWith(errorMessage));
+    }
+
+    @Test
+    public void test_deserialize_whenPassed_ValidContent() throws InvalidProtocolBufferException {
+        // given
+        final String content = "/xa1/xs2{\"reportId\": \"123\"}";
+        final String deserializeResult = "{\"reportId\": \"123\"}";
+
+        PowerMockito.mockStatic(StringValue.class);
+
+        final StringValue stringValue = PowerMockito.mock(StringValue.class);
+        PowerMockito.when(StringValue.parseFrom(ArgumentMatchers.eq(content.getBytes()))).thenReturn(stringValue);
+        PowerMockito.when(stringValue.getValue()).thenReturn(deserializeResult);
+
+        // when
+        final String actual = this.serializer.deserialize(content.getBytes());
+
+        // then
+        assertThat(deserializeResult, IsEqual.equalTo(actual));
+    }
+
+    @Test
+    public void test_deserialize_whenPassed_BadContent() {
+        // given
+        final String errorMessage = "ERROR: cannot parse authority redis data";
+        final String content = "{}";
+
+        // when
+        final AuthorityRedisDataException thrown = checkThrows(AuthorityRedisDataException.class, () -> this.serializer.deserialize(content.getBytes()));
+        // then
+        assertThat(thrown.getMessage(), startsWith(errorMessage));
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+import javax.annotation.PostConstruct;
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.ValidationException;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
+
+import org.springframework.stereotype.Component;
+
+import com.redsky.client.exception.ResourceValidationException;
+
+@Component
+public class BeanValidator {
+
+    private ValidatorFactory factory;
+    private Validator validator;
+
+    @PostConstruct
+    public void init() throws ResourceValidationException {
+        try {
+            factory = Validation.buildDefaultValidatorFactory();
+        } catch (final ValidationException e) {
+            throw new ResourceValidationException("Couldn't build ValidatorFactory ", e);
+        }
+        validator = factory.getValidator();
+    }
+
+    public boolean validate(final Object bean) throws ResourceValidationException {
+
+        final Set<String> messages = new LinkedHashSet<>();
+
+        if (bean == null) {
+            messages.add("Bean is null, can't validate bean");
+        } else {
+            final Set<ConstraintViolation<Object>> violations = validator.validate(bean);
+            if (violations != null) {
+                for (final ConstraintViolation<Object> violation : violations) {
+                    messages.add(violation.getMessage());
+                }
+            }
+        }
+        if (!messages.isEmpty()) { throw new ResourceValidationException("Validation error", messages); }
+
+        return true;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+spring:
+  profiles: default
+  application:
+    name: redsky-client-service
+    
+server:
+  port: 8082
+  servlet:
+    context-path: /rcs
+
+    
+httpconfig:
+  maxHttpConnections: 50
+  maxHttpConnectionsPerRoute: 30
+  connectionTimeout: 8000
+  connectionRequestTimeout: 8000 
+  socketTimeout: 20000
+  maxHttpRetries: 4
+  
+redsky:
+  producturl: http://redsky.com/product
+  priceurl: http://redsky.com/price
+--------------------------------------------------------------------------------------------------------
+
+import java.util.List;
+
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.repository.query.Param;
+import org.springframework.data.rest.core.annotation.RepositoryRestResource;
+
+import com.example.entity.Pricing;
+import com.example.entity.CurrentPricing;
+
+@RepositoryRestResource(collectionResourceRel = "pricing", path = "pricing")
+public interface PricingRepo extends MongoRepository<Pricing, String> {
+
+	Pricing findByProductID(@Param("ProductID") long ProductID);
+	
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+// NOT THREADSAFE
+public class BankAccountUnsynchronized {
+
+  private double balance;
+  private Lock lock = new ReentrantLock();
+
+  public BankAccountUnsynchronized() {
+    balance = 0;
+  }
+
+  public void deposit(double amount) {
+      //Second solution:
+      lock.lock();
+      try {
+          balance += amount;
+      } finally {
+          lock.unlock();
+      }
+   }
+
+  public void withdraw(double amount) {
+      //Second solution.
+      lock.lock();
+      try {
+          balance -= amount;
+      } finally {
+          lock.unlock();
+      }
+   }
+
+  public double getBalance() {
+    return balance;
+  }
+}
+--------------------------------------------------------------------------------------------------------
+//import com.wildbeeslabs.api.rest.security.service.interfaces.IEncryptionService;
+//import org.jasypt.util.password.StrongPasswordEncryptor;
+//import org.springframework.beans.factory.annotation.Autowired;
+//import org.springframework.stereotype.Service;
+//
+///**
+// *
+// * Encryption REST Application Service implementation
+// *
+// * @author Alex
+// * @version 1.0.0
+// * @since 2017-08-08
+// */
+//@Service("userAccountService")
+//public class EncryptionServiceImpl implements IEncryptionService {
+//
+//    @Autowired
+//    private StrongPasswordEncryptor strongEncryptor;
+//
+//    @Override
+//    public String encrypt(final String input) {
+//        return strongEncryptor.encryptPassword(input);
+//    }
+//
+//    @Override
+//    public boolean check(final String plainInput, final String encryptedInput) {
+//        return strongEncryptor.checkPassword(plainInput, encryptedInput);
+//    }
+//}
+--------------------------------------------------------------------------------------------------------
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+public class Tester {
+
+  static final int NUMBER_OF_TURNSTILES = 40;
+  static Turnstile[] turnStiles = new Turnstile[NUMBER_OF_TURNSTILES];
+
+  public static void main(String[] args) throws InterruptedException {
+    //This is the shared Counter used by all turnstilles
+    TurnstileCounter sharedCounter = new TurnstileCounter();
+
+    for (int i = 0; i < NUMBER_OF_TURNSTILES; i++) {
+      turnStiles[i] = new Turnstile(sharedCounter);
+    }
+
+    //This example uses a ThreadPool to handle threads
+    ExecutorService es = Executors.newCachedThreadPool();
+
+    for (int i = 0; i < NUMBER_OF_TURNSTILES; i++) {
+      es.execute(turnStiles[i]);
+    }
+
+    es.shutdown();
+    es.awaitTermination(10, TimeUnit.SECONDS);
+
+    System.out.println("All turnstiles are done");
+    //Print the updated value
+    System.out.println(sharedCounter.getValue());
+  }
+}
+
+--------------------------------------------------------------------------------------------------------
+## SETUP file for Travis
+## Make sure to rename the database name in the CREATE DATABASE script below to the SAME name as used for your local tests
+---
+
+dist: bionic
+
+language: java
+
+cache:
+  directories:  
+    - $HOME/.m2
+
+script:
+  - mvn test
+  - mvn -Dremote.user=$REMOTE_USER -Dremote.password=$REMOTE_PW tomcat7:undeploy
+  - mvn -Dremote.user=$REMOTE_USER -Dremote.password=$REMOTE_PW tomcat7:deploy
+
+services:
+   - mysql
+
+before_script:
+
+# TODO Add variable to make it simple to be reusable for all semester projects
+#- export DEBIAN_FRONTEND="noninteractive";
+#- PW="ax2"
+#- USER_NAME="dev"
+
+#- sudo apt-get clean
+#- sudo rm -r /var/lib/apt/lists/*
+
+- sudo apt-get update
+- sudo apt-get install -y debconf-utils
+- sudo debconf-set-selections <<< 'mysql-apt-config mysql-apt-config/select-server select mysql-8.0'
+- wget https://dev.mysql.com/get/mysql-apt-config_0.8.13-1_all.deb
+- sudo -E dpkg -i mysql-apt-config_0.8.13-1_all.deb
+- sudo apt-get update
+
+- echo "Installing MySQL 8..."
+- sudo -E apt-get -y install mysql-server
+
+- sudo mysql -u root -e "CREATE User 'dev'@'localhost' IDENTIFIED BY 'ax2'; GRANT ALL PRIVILEGES ON *.* TO 'dev'@'localhost' WITH GRANT OPTION;"
+# - sudo mysql -u root -e "CREATE DATABASE startcodev2-test;"
+- sudo mysql -u dev -pax2 -e "CREATE DATABASE startcode;"
+
+- echo "Change  port to 3307, to mirror the local development setup"
+- sudo systemctl stop mysql
+- sudo sh -c 'echo "port=3307" >> /etc/mysql/mysql.conf.d/mysqld.cnf'
+- echo "Restarting MySQL..."
+- sudo systemctl start mysql
+- mysql --version
+- echo "before_script Complete"
+--------------------------------------------------------------------------------------------------------
+		<dependency>
+   			 <groupId>org.elasticsearch</groupId>
+    		<artifactId>elasticsearch</artifactId>
+   			 <version>6.1.0</version>
+		</dependency> 
+		<dependency>
+    		<groupId>org.elasticsearch.client</groupId>
+    		<artifactId>transport</artifactId>
+    		<version>6.1.2</version>
+		</dependency>
+				<dependency>
+    <groupId>org.elasticsearch.plugin</groupId>
+    <artifactId>transport-netty4-client</artifactId>
+    <version>6.1.2</version>
+	</dependency>
+	<dependency>
+    <groupId>org.elasticsearch.plugin</groupId>
+    <artifactId>reindex-client</artifactId>
+    <version>6.1.2</version>
+</dependency>
+<dependency>
+    <groupId>org.elasticsearch.plugin</groupId>
+    <artifactId>lang-mustache-client</artifactId>
+    <version>6.1.2</version>
+</dependency>
+<dependency>
+    <groupId>org.elasticsearch.plugin</groupId>
+    <artifactId>percolator-client</artifactId>
+    <version>6.1.2</version>
+</dependency>
+<dependency>
+    <groupId>org.elasticsearch.plugin</groupId>
+    <artifactId>parent-join-client</artifactId>
+    <version>6.1.2</version>
+</dependency>
+--------------------------------------------------------------------------------------------------------
 public class BookJSONParser implements Parser<Book> {
 
     String filename;
@@ -11999,7 +13099,7 @@ public class BookJSONParser implements Parser<Book> {
 
     @Override
     public void serialize(Book book) {
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();;
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
         try {
             FileWriter writer = new FileWriter(filename);
@@ -13118,6 +14218,24 @@ public class So38961697Application {
             });
         }
 
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+@SpringBootApplication
+public class Application extends SpringBootServletInitializer {
+
+    @Override
+    protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
+        return configureApplication(builder);
+    }
+
+    public static void main(String[] args) {
+        configureApplication(new SpringApplicationBuilder()).run(args);
+    }
+
+    private static SpringApplicationBuilder configureApplication(SpringApplicationBuilder builder) {
+        return builder.sources(Application.class).bannerMode(Banner.Mode.OFF);
     }
 
 }
@@ -46107,6 +47225,721 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     int updateUserSetStatusForNameNative(Integer status, String name);
 
 }
+-------------------------------------------------------------------------------------------------------
+./toolchains/llvm/prebuilt/darwin-x86_64/bin/aarch64-linux-android29-clang -o poc ../poc.c
+adb push poc /data/local/tmp/poc
+gcc -o fix_kaslr_arm64 fix_kaslr_arm64.c
+-------------------------------------------------------------------------------------------------------
+choco install nswagstudio
+-------------------------------------------------------------------------------------------------------
+//@Configuration
+//public class JacksonConfig {
+//    @Bean
+//    public ObjectMapper jsonObjectMapper() {
+//        ArrayList<Module> modules = new ArrayList<>();
+//
+//        //CollectionType Serialization
+//        SimpleModule collectionTypeSerializerModule = new SimpleModule();
+//        collectionTypeSerializerModule.setSerializers(new CollectionTypeJsonSerializer());
+//        modules.add(collectionTypeSerializerModule);
+//
+//        return Jackson2ObjectMapperBuilder.json()
+//                .modules(modules)
+//                .build();
+//    }
+//}
+-------------------------------------------------------------------------------------------------------
+//public class CollectionTypeJsonSerializer extends SimpleSerializers {
+//
+//    @Override
+//    public JsonSerializer<?> findCollectionSerializer(SerializationConfig config,
+//                                                      CollectionType type,
+//                                                      BeanDescription beanDesc,
+//                                                      TypeSerializer elementTypeSerializer,
+//                                                      JsonSerializer<Object> elementValueSerializer) {
+//        //if the collection is of type LanguageString, then use custom collection serializer
+//        if (isLanguageStringListType(type)) {
+//            return new LanguageStringListSerializer();
+//        }
+//
+//        return findSerializer(config, type, beanDesc);
+//    }
+//
+//
+//    private boolean isLanguageStringListType(CollectionType type) {
+//        CollectionType languageStringArrayListType = TypeFactory.defaultInstance()
+//            .constructCollectionType(ArrayList.class, LanguageString.class);
+//
+//        CollectionType languageStringListType = TypeFactory.defaultInstance()
+//            .constructCollectionType(List.class, LanguageString.class);
+//
+//        return (type.equals(languageStringListType) || type.equals(languageStringArrayListType));
+//    }
+//}
+//
+///*
+//@Configuration
+//public class JacksonConfig {
+//    @Bean
+//    public ObjectMapper jsonObjectMapper() {
+//        ArrayList<Module> modules = new ArrayList<>();
+//
+//        //CollectionType Serialization
+//        SimpleModule collectionTypeSerializerModule = new SimpleModule();
+//        collectionTypeSerializerModule.setSerializers(new CollectionTypeJsonSerializer());
+//        modules.add(collectionTypeSerializerModule);
+//
+//        return Jackson2ObjectMapperBuilder.json()
+//                .modules(modules)
+//                .build();
+//    }
+//}
+// */
+-------------------------------------------------------------------------------------------------------
+public final class ClassKey
+    implements Comparable<ClassKey>,
+        java.io.Serializable // since 2.1
+{
+    private static final long serialVersionUID = 1L;
+
+    private String _className;
+
+    private Class<?> _class;
+
+    /**
+     * Let's cache hash code straight away, since we are
+     * almost certain to need it.
+     */
+    private int _hashCode;
+
+    public ClassKey() 
+    {
+        _class = null;
+        _className = null;
+        _hashCode = 0;
+    }
+
+    public ClassKey(Class<?> clz)
+    {
+        _class = clz;
+        _className = clz.getName();
+        _hashCode = _className.hashCode();
+    }
+
+    public void reset(Class<?> clz)
+    {
+        _class = clz;
+        _className = clz.getName();
+        _hashCode = _className.hashCode();
+    }
+
+    /*
+    /**********************************************************
+    /* Comparable
+    /**********************************************************
+     */
+
+    @Override
+    public int compareTo(ClassKey other)
+    {
+        // Just need to sort by name, ok to collide (unless used in TreeMap/Set!)
+        return _className.compareTo(other._className);
+    }
+
+    /*
+    /**********************************************************
+    /* Standard methods
+    /**********************************************************
+     */
+
+    @Override
+        public boolean equals(Object o)
+    {
+        if (o == this) return true;
+        if (o == null) return false;
+        if (o.getClass() != getClass()) return false;
+        ClassKey other = (ClassKey) o;
+
+        /* Is it possible to have different Class object for same name + class loader combo?
+         * Let's assume answer is no: if this is wrong, will need to uncomment following functionality
+         */
+        /*
+        return (other._className.equals(_className))
+            && (other._class.getClassLoader() == _class.getClassLoader());
+        */
+        return other._class == _class;
+    }
+
+    @Override public int hashCode() { return _hashCode; }
+
+    @Override public String toString() { return _className; }
+}
+-------------------------------------------------------------------------------------------------------
+ObjectMapper objectMapper = new ObjectMapper();
+Car car = new Car("yellow", "renault");
+objectMapper.writeValue(new File("target/car.json"), car);
+
+objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+Car car = objectMapper.readValue(jsonString, Car.class);
+ 
+JsonNode jsonNodeRoot = objectMapper.readTree(jsonString);
+JsonNode jsonNodeYear = jsonNodeRoot.get("year");
+String year = jsonNodeYear.asText();
+-------------------------------------------------------------------------------------------------------
+ObjectMapper objectMapper = new ObjectMapper();
+DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm a z");
+objectMapper.setDateFormat(df);
+String carAsString = objectMapper.writeValueAsString(request);
+// output: {"car":{"color":"yellow","type":"renault"},"datePurchased":"2016-07-03 11:43 AM CEST"}
+
+String jsonCarArray = 
+  "[{ \"color\" : \"Black\", \"type\" : \"BMW\" }, { \"color\" : \"Red\", \"type\" : \"FIAT\" }]";
+ObjectMapper objectMapper = new ObjectMapper();
+objectMapper.configure(DeserializationFeature.USE_JAVA_ARRAY_FOR_JSON_ARRAY, true);
+Car[] cars = objectMapper.readValue(jsonCarArray, Car[].class);
+// print cars
+
+String jsonCarArray = 
+  "[{ \"color\" : \"Black\", \"type\" : \"BMW\" }, { \"color\" : \"Red\", \"type\" : \"FIAT\" }]";
+ObjectMapper objectMapper = new ObjectMapper();
+List<Car> listCar = objectMapper.readValue(jsonCarArray, new TypeReference<List<Car>>(){});
+// print cars
+-------------------------------------------------------------------------------------------------------
+//package visibility, to allow passing different De/Serializers while testing
+static ObjectMapper createObjectMapper(JsonDeserializer deserializer, JsonSerializer serializer) {
+    final SimpleModule module = new SimpleModule("customerSerializationModule", new Version(1, 0, 0, "static version"));
+    module.addDeserializer(DateTime.class, deserializer);
+    module.addSerializer(DateTime.class, serializer);
+
+    final ObjectMapper objectMapper = new ObjectMapper();
+    objectMapper.registerModule(module);
+    return objectMapper;
+}
+
+//production method: no-args, as in the original version
+public static ObjectMapper createObjectMapper() {
+    return createObjectMapper(new DateTimeDeserializer(), new DateTimeSerializer());
+}
+-------------------------------------------------------------------------------------------------------
+@JsonRootName(value = "user")
+class User {
+
+    @JsonProperty(value = "id")
+    private long id;
+    @JsonProperty(value = "diets")
+    @JsonDeserialize(using = DietDeserializer.class)
+    private List<Diet> diets;
+
+    //Getter & Setters
+}
+
+class DietDeserializer extends JsonDeserializer<List<Diet>> {
+
+    @Override
+    public List<Diet> deserialize(JsonParser jsonParser, 
+            DeserializationContext deserializationContext) throws IOException {
+
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode node = mapper.readTree(jsonParser);
+        List<Diet> diets = mapper.convertValue(node.findValues("diet"), new TypeReference<List<Diet>>() {});
+        return diets;
+    }
+}
+-------------------------------------------------------------------------------------------------------
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.map.JsonMappingException;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
+
+public class JacksonExample {
+	public static void main(String[] args) {
+
+		ObjectMapper mapper = new ObjectMapper();
+		//By default all fields without explicit view definition are included, disable this
+		mapper.configure(SerializationConfig.Feature.DEFAULT_VIEW_INCLUSION, false);
+		 
+		//For testing
+		User user = createDummyUser();
+		
+		try {
+			//display name only
+			String jsonInString = mapper.writerWithView(Views.NameOnly.class).writeValueAsString(user);
+			System.out.println(jsonInString);
+			
+			//display namd ana age
+			jsonInString = mapper.writerWithView(Views.AgeAndName.class).writeValueAsString(user);
+			System.out.println(jsonInString);
+			
+			
+		} catch (JsonGenerationException e) {
+			e.printStackTrace();
+		} catch (JsonMappingException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	
+	}
+
+	private static User createDummyUser(){
+		
+		User user = new User();
+		
+		user.setName("mkyong");
+		user.setAge(33);
+
+		List<String> msg = new ArrayList<>();
+		msg.add("hello jackson 1");
+		msg.add("hello jackson 2");
+		msg.add("hello jackson 3");
+
+		user.setMessages(msg);
+		
+		return user;
+		
+	}
+}
+
+
+import java.util.List;
+import org.codehaus.jackson.map.annotate.JsonView;
+
+public class User {
+
+	@JsonView(Views.NameOnly.class)
+	private String name;
+
+	@JsonView(Views.AgeAndName.class)
+	private int age;
+	
+	private List<String> messages;
+
+	//getter and setters
+}
+
+
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+
+import java.io.IOException;
+
+public class CarSerializer extends StdSerializer<Car> {
+
+    protected CarSerializer(Class<Car> t) {
+        super(t);
+    }
+
+    public void serialize(Car car, JsonGenerator jsonGenerator,
+                          SerializerProvider serializerProvider)
+            throws IOException {
+
+        jsonGenerator.writeStartObject();
+        jsonGenerator.writeStringField("producer", car.getBrand());
+        jsonGenerator.writeNumberField("doorCount", car.getDoors());
+        jsonGenerator.writeEndObject();
+    }
+}
+-------------------------------------------------------------------------------------------------------
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.cbor.CBORFactory;
+
+import java.io.IOException;
+
+public class CborJacksonExample {
+    public static void main(String[] args) {
+        ObjectMapper objectMapper = new ObjectMapper(new CBORFactory());
+
+        Employee employee = new Employee("John Doe", "john@doe.com");
+
+        byte[] cborBytes = null;
+        try {
+            cborBytes = objectMapper.writeValueAsBytes(employee);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            // normally, rethrow exception here - or don't catch it at all.
+        }
+
+        try {
+            Employee employee2 = objectMapper.readValue(cborBytes, Employee.class);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.msgpack.jackson.dataformat.MessagePackFactory;
+
+import java.io.IOException;
+
+public class MessagePackJacksonExample {
+    public static void main(String[] args) {
+        ObjectMapper objectMapper = new ObjectMapper(new MessagePackFactory());
+
+        Employee employee = new Employee("John Doe", "john@doe.com");
+
+        byte[] messagePackBytes = null;
+        try {
+            messagePackBytes = objectMapper.writeValueAsBytes(employee);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            // normally, rethrow exception here - or don't catch it at all.
+        }
+    }
+}
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.msgpack.jackson.dataformat.MessagePackFactory;
+
+import java.io.IOException;
+
+public class MessagePackJacksonExample {
+    public static void main(String[] args) {
+        ObjectMapper objectMapper = new ObjectMapper(new MessagePackFactory());
+
+        Employee employee = new Employee("John Doe", "john@doe.com");
+
+        byte[] messagePackBytes = null;
+        try {
+            messagePackBytes = objectMapper.writeValueAsBytes(employee);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            // normally, rethrow exception here - or don't catch it at all.
+        }
+
+        try {
+            Employee employee2 = objectMapper.readValue(messagePackBytes, Employee.class);
+            System.out.println("messagePackBytes = " + messagePackBytes);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+}
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+
+import java.io.IOException;
+
+public class YamlJacksonExample {
+
+    public static void main(String[] args) {
+        ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+
+        Employee employee = new Employee("John Doe", "john@doe.com");
+
+        String yamlString = null;
+        try {
+            yamlString = objectMapper.writeValueAsString(employee);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            // normally, rethrow exception here - or don't catch it at all.
+        }
+
+    }
+}
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+
+import java.io.IOException;
+
+public class YamlJacksonExample {
+
+    public static void main(String[] args) {
+        ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+
+        Employee employee = new Employee("John Doe", "john@doe.com");
+
+        String yamlString = null;
+        try {
+            yamlString = objectMapper.writeValueAsString(employee);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            // normally, rethrow exception here - or don't catch it at all.
+        }
+
+        try {
+            Employee employee2 = objectMapper.readValue(yamlString, Employee.class);
+
+            System.out.println("Done");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+}
+
+
+
+  public static CodecRegistry registryFromMapper(final ObjectMapper mapper) {
+    Preconditions.checkNotNull(mapper, "mapper");
+    return new CodecRegistry() {
+      @Override
+      public <T> Codec<T> get(final Class<T> clazz) {
+        final JavaType javaType = TypeFactory.defaultInstance().constructType(clazz);
+        if (!mapper.canSerialize(clazz) || !mapper.canDeserialize(javaType)) {
+          throw new CodecConfigurationException(String.format("%s (javaType: %s) not supported by Jackson Mapper", clazz, javaType));
+        }
+        return new JacksonCodec<>(clazz, mapper);
+      }
+    };
+  }
+-------------------------------------------------------------------------------------------------------
+TypeFactory.defaultInstance().constructType(type)
+-------------------------------------------------------------------------------------------------------
+x = new EnumMap<Value, Integer>(Value.class);
+HashMap<String, Object> yourHashMap = new Gson().fromJson(yourJsonObject.toString(), HashMap.class)
+-------------------------------------------------------------------------------------------------------
+import com.fasterxml.jackson.core.JsonParser;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+import com.fasterxml.jackson.core.ObjectCodec;
+
+import com.fasterxml.jackson.databind.DeserializationContext;
+
+import com.fasterxml.jackson.databind.JsonDeserializer;
+
+import com.fasterxml.jackson.databind.JsonNode;
+
+import java.io.IOException;
+
+public class ProgramDeserializer extends JsonDeserializer<Program> {
+
+  @Override
+
+  public Program deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+
+    ObjectCodec oc = jp.getCodec();
+
+    JsonNode node = oc.readTree(jp);
+
+    final Long id = node.get("id").asLong();
+
+    final String name = node.get("name").asText();
+
+    final String contents = node.get("contents").asText();
+
+    final long ownerId = node.get("ownerId").asLong();
+
+    User user = new User();
+
+    user.setId(ownerId);
+
+    return new Program(id, name, contents, user);
+  }
+}
+-------------------------------------------------------------------------------------------------------
+private static final Pattern ISO8601_UTC_ZERO_OFFSET_SUFFIX_REGEX = Pattern.compile("\\+00:?(00)?$");
+-------------------------------------------------------------------------------------------------------
+  @Bean("defaultAxonObjectMapper")
+  @ConditionalOnMissingBean
+  @ConditionalOnExpression("'${axon.serializer.general}' == 'jackson' || '${axon.serializer.events}' == 'jackson' || '${axon.serializer.messages}' == 'jackson'")
+  public ObjectMapper defaultAxonObjectMapper() {
+    return new ObjectMapper().findAndRegisterModules();
+  }
+}
+-------------------------------------------------------------------------------------------------------
+    @Entity
+    @Table(name= "topics")
+    @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class,
+    property  = "id",
+    scope     = Long.class)
+    @DynamicInsert(true)
+    @DynamicUpdate(true)
+    public class Topics implements Serializable {
+
+        private static final long serialVersionUID = -1777454701749518940L;
+
+        @Id
+        @Column(name= "id")
+        private Long id = Long.parseLong(UUID.randomUUID().toString().substring(0, 8), 16);
+
+        @NotEmpty
+        @NotNull
+        @Column(name= "topic", columnDefinition = "Text", length = 50000)
+        private String topic;
+
+        @Convert(converter = LocalTimeConverter.class)
+        private LocalTime duration;
+
+        // getters and setters
+     }
+-------------------------------------------------------------------------------------------------------
+ObjectMapper objectMapper = new ObjectMapper();
+objectMapper.findAndRegisterModules();
+
+<dependency>
+    <groupId>com.fasterxml.jackson.datatype</groupId>
+    <artifactId>jackson-datatype-jsr310</artifactId>
+    <version>2.6.5</version>
+</dependency>
+
+@JsonDeserialize(using = MyCustomDeserializer.class)
+@JsonSerialize(using = MyCustomSerializer.class)
+private Instant createdDate;
+
+final ObjectReader r = objectMapper.reader(MyType.class);
+// enable one feature, disable another
+MyType value = r
+  .with(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
+  .without(DeserializationFeature.WRAP_EXCEPTIONS)
+  .readValue(source);
+-------------------------------------------------------------------------------------------------------
+    public static Map<String, Object> toMap(JSONObject jsonobj)  throws JSONException {
+        Map<String, Object> map = new HashMap<String, Object>();
+        Iterator<String> keys = jsonobj.keys();
+        while(keys.hasNext()) {
+            String key = keys.next();
+            Object value = jsonobj.get(key);
+            if (value instanceof JSONArray) {
+                value = toList((JSONArray) value);
+            } else if (value instanceof JSONObject) {
+                value = toMap((JSONObject) value);
+            }   
+            map.put(key, value);
+        }   return map;
+    }
+
+    public static List<Object> toList(JSONArray array) throws JSONException {
+        List<Object> list = new ArrayList<Object>();
+        for(int i = 0; i < array.length(); i++) {
+            Object value = array.get(i);
+            if (value instanceof JSONArray) {
+                value = toList((JSONArray) value);
+            }
+            else if (value instanceof JSONObject) {
+                value = toMap((JSONObject) value);
+            }
+            list.add(value);
+        }   return list;
+}
+-------------------------------------------------------------------------------------------------------
+ObjectMapper mapper = new ObjectMapper();
+mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+try {
+    List<Vehicle> vehicles = mapper.readValue(JSONString, mapper.getTypeFactory().constructCollectionType(
+            List.class, Vehicle.class));
+} catch (IOException e) {
+    e.printStackTrace();
+}
+
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.PROPERTY,
+        property = "type")
+@JsonSubTypes({
+        @JsonSubTypes.Type(value = Car.class, name = "Car"),
+        @JsonSubTypes.Type(value = Bus.class, name = "Bus"),
+        @JsonSubTypes.Type(value = Truck.class, name = "Truck")})
+public abstract class Vehicle{
+    private int id;
+    private String type;
+}
+-------------------------------------------------------------------------------------------------------
+DateTimeSerializer serializer = context.mock(DateTimeSerializer.class);
+DateTimeDeserializer serializer = context.mock(DateTimeDeserializer.class);
+ObjectMapper mapper = JacksonMapperFactory.createObjectMapper(deserializer, serializer);
+
+exactly(1).of(jsonDeserializer).serialize(myDateTime,
+  with(any(JsonGenerator.class),
+  with(any(SerializerProvider.class)))
+
+
+-------------------------------------------------------------------------------------------------------
+public class JsonMapperFactory {
+
+    public static ObjectMapper configureObjectMapper(final ObjectMapper mapper, final SimpleModule module) {
+        final SimpleModuleBuilder modulebuilder = new SimpleModuleBuilder();
+
+        final SimpleModule configuredModule = modulebuilder.configure(module)
+            .withSerializer(DateTime.class, new DateTimeSerializer())
+            .withDeserializer(DateTime.class, new DateTimeDeserializer())
+            .build();
+
+        final ObjectMapperBuilder objectMapperBuilder = new ObjectMapperBuilder();
+        return objectMapperBuilder.configure(mapper).withModule(configuredModule).build();
+    }
+}
+
+public class SimpleModuleBuilder {
+    SimpleModule module;
+
+    public SimpleModuleBuilder configure(final SimpleModule module) {
+        this.module = module;
+        return this;
+    }
+
+    public <X> SimpleModuleBuilder withSerializer(final Class<X> clazz, final JsonSerializer<X> serializer) {
+        this.module.addSerializer(clazz, serializer);
+        return this;
+    }
+
+    public <X> SimpleModuleBuilder withDeserializer(final Class<X> clazz, final JsonDeserializer<X> deserializer) {
+        this.module.addDeserializer(clazz, deserializer);
+        return this;
+    }
+
+    public SimpleModule build() {
+        return this.module;
+    }
+}
+
+public class ObjectMapperBuilder {
+    ObjectMapper mapper;
+
+    public ObjectMapperBuilder configure(final ObjectMapper mapper) {
+        this.mapper = mapper;
+        return this;
+    }
+
+    public ObjectMapperBuilder withModule(final Module module) {
+        this.mapper.registerModule(module);
+        return this;
+    }
+
+    public ObjectMapper build() {
+        return this.mapper;
+    }
+}
+-------------------------------------------------------------------------------------------------------
+const { ApolloServer, gql } = require('apollo-server');
+
+const listings = [
+  { id: "001", title: "Large ensuite
+condo", city: "Toronto" },
+  { id: "002", title: "Beverly Hills
+Mansion", city: "Los Angeles" },
+  { id: "003", title: "Small chic
+bedroom", city: "Dubai" }
+];
+
+const typeDefs = gql` type Listing { id: String! title: String! city: String! }  type Query { listings: [Listing!]! } `;
+
+const resolvers = {
+  Query: {
+    listings: () => listings,
+  }
+};
+
+const server = new ApolloServer({ typeDefs, resolvers });
+
+server.listen().then(({ url })
+=> {
+  console.log(`Server is running at ${url}`);
+});
 -------------------------------------------------------------------------------------------------------
 {
   "serialNumber": "FDR6K9-4BPROP-9IJVM7-OLKU9B-CGP8NJ",
