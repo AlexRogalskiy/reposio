@@ -6524,6 +6524,85 @@ SomePojo pojo = given().
     .when().get(EndPoints.get)
     .then().extract().body().as(SomePojo.class);
 --------------------------------------------------------------------------------------------------------
+-Xjsr305={strict|warn|ignore}
+--------------------------------------------------------------------------------------------------------
+@TestExecutionListeners(MockitoTestExecutionListener.class)
+private Duration loginTimeout = Duration.ofSeconds(3);
+
+assertThat(json.write(message))
+    .extractingJsonPathNumberValue("@.test.numberValue")
+    .satisfies((number) -> assertThat(number.floatValue()).isCloseTo(0.15f, within(0.01f)));
+--------------------------------------------------------------------------------------------------------
+@ExtendWith(OutputCaptureExtension.class)
+class OutputCaptureTests {
+
+    @Test
+    void testName(CapturedOutput output) {
+        System.out.println("Hello World!");
+        assertThat(output).contains("World");
+    }
+
+}
+
+
+spring.webservices.wsdl-locations=classpath:/wsdl
+
+
+
+@Bean
+public WebServiceTemplate webServiceTemplate(WebServiceTemplateBuilder builder) {
+    return builder.messageSenders(new HttpWebServiceMessageSenderBuilder()
+            .setConnectTimeout(5000).setReadTimeout(2000).build()).build();
+}
+--------------------------------------------------------------------------------------------------------
+@Configuration(proxyBeanMethods = false)
+@EnableKafkaStreams
+public static class KafkaStreamsExampleConfiguration {
+
+    @Bean
+    public KStream<Integer, String> kStream(StreamsBuilder streamsBuilder) {
+        KStream<Integer, String> stream = streamsBuilder.stream("ks1In");
+        stream.map((k, v) -> new KeyValue<>(k, v.toUpperCase())).to("ks1Out",
+                Produced.with(Serdes.Integer(), new JsonSerde<>()));
+        return stream;
+    }
+
+}
+
+
+spring.kafka.consumer.value-deserializer=org.springframework.kafka.support.serializer.JsonDeserializer
+spring.kafka.consumer.properties.spring.json.value.default.type=com.example.Invoice
+spring.kafka.consumer.properties.spring.json.trusted.packages=com.example,org.acme
+
+
+
+
+spring.kafka.producer.value-serializer=org.springframework.kafka.support.serializer.JsonSerializer
+spring.kafka.producer.properties.spring.json.add.type.headers=false
+
+spring.jta.log-dir
+spring.jta.atomikos.properties
+
+
+spring.session.jdbc.table-name=SESSIONS
+
+
+
+
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-test</artifactId>
+    <scope>test</scope>
+    <exclusions>
+        <exclusion>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+        </exclusion>
+    </exclusions>
+</dependency>
+
+
+--------------------------------------------------------------------------------------------------------
 @Test
 public void whenMeasureResponseTime_thenOK() {
     Response response = RestAssured.get("/users/eugenp");
