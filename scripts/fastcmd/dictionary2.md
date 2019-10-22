@@ -2728,6 +2728,17 @@ public class Application {
 //            new ServletWebArgumentResolverAdapter(new PageableArgumentResolver()));
 //    }
 --------------------------------------------------------------------------------------------------------
+  /**
+   * Convert the given object to string with each line indented by 4 spaces
+   * (except the first line).
+   */
+  private String toIndentedString(java.lang.Object o) {
+    if (o == null) {
+      return "null";
+    }
+    return o.toString().replace("\n", "\n    ");
+  }
+--------------------------------------------------------------------------------------------------------
 //package de.pearl.pem.common.system;
 //
 //public class SpringSprungConfig extends DelegatingWebMvcConfiguration {
