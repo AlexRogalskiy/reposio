@@ -6502,6 +6502,624 @@ new CommandLine(new Login()).execute("-u", "user123", "-p");
         return output;
     }
 --------------------------------------------------------------------------------------------------------
+org.springframework.boot.env.EnvironmentPostProcessor=org.springframework.boot.env.MockWebServerEnvironmentPostProcessor
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.env.EnvironmentPostProcessor;
+import org.springframework.core.env.ConfigurableEnvironment;
+
+/**
+ * @author Rob Winch
+ */
+public class MockWebServerEnvironmentPostProcessor implements EnvironmentPostProcessor, DisposableBean {
+
+    private final MockWebServerPropertySource propertySource = new MockWebServerPropertySource();
+
+    @Override
+    public void postProcessEnvironment(final ConfigurableEnvironment environment, final SpringApplication application) {
+        environment.getPropertySources().addFirst(this.propertySource);
+    }
+
+    @Override
+    public void destroy() throws Exception {
+        this.propertySource.destroy();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+language: java
+dist: trusty
+git:
+  depth: false
+  quiet: true
+  submodules: false
+  lfs_skip_smudge: true
+sudo: false
+branches:
+  only:
+    - master
+    - stable
+jdk:
+  - oraclejdk8
+  - openjdk8
+addons:
+  sonarcloud:
+    organization: "alexrogalskiy-github"
+    token:
+      secure:
+      ##"EFloHmTj8WE5g+NJ0OPbXFYF5+YZ+az4K5seJgCjY+dxw8CbwyNCZPc0rxRbzxevf00hg/OywEfWQM1x9g6JuPvVeoR51kkqF1Ved7gTl4Xi5s7hLYltq2U/4e+iDPyRBJehelw1sclSSgQPQ66YDWlRq9zAT/9NJcz4Nbp89mTwZ9jrOPepy8U0iXwVg167OJhUWowGdv+g3Ffn0ZsuEXJ92XMgd3c7ypb39/c3W72rmL2iNNa/FdtIVRAmOS89371CFdh8vUx8qTGgUyofXfkJTnh1Ha8gf1taZTZsdnfgy9cL3S6wq/rpbbyxMnC6A8JpKRxPgXPCjVGPFgZWzQol8UpiNftnoR/7y4+q6cQJ1Nlo/NEdx+liXK6+WC96tzApf/8Wrsx7pYxSLEExSzeAb8gnSVY/qh9K5Ix8jcyPQPYWNrv8Lo59sbg5f0Lzg5qMAvk6FBJwvB/QCSD+ZUSCEvjhLBhugv9xi+UVVEzcMJMm7yFVeskBoInngD1rjIeZvA8asppJALHw7a9sluJvLQlntd0QYZlYipSwj9ayJYYXdn1sxxeUA2Ldlq9JhUHYo1oAIfD+varTYEksf7XJsCkc3HnlBW1rPdnUG5NHvFcwn2Y0lPcH7AZsL8duIiriq3OGEa9m/4OybkLlxvbKo/RVfp11vUSpJJZpdqk="
+  apt:
+    update: true
+    packages:
+      - oracle-java8-installer
+before_install: echo "MAVEN_OPTS='-Xmx2048m -XX:MaxPermSize=512m'" > ~/.mavenrc
+install: true
+before_script:
+  - pip install --user codecov
+  - curl http://www.jpm4j.org/install/script | sh
+script:
+  - mvn -U -B -V test --fail-at-end -Dsource.skip=true -Dmaven.javadoc.skip=true
+  - mvn cobertura:cobertura
+  - mvn sonar:sonar -Dsonar.projectKey=AlexRogalskiy_AnsiFancy -Dsonar.organization=alexrogalskiy-github -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=$SONAR_TOKEN
+after_success:
+  - mvn clean test jacoco:report
+  - codecov --build "$TRAVIS_JOB_NUMBER-jdk8"
+  - bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN
+notifications:
+  email:
+    on_success: change
+    on_failure: always
+env:
+  global:
+    - secure: "YNE9GjEV52M9LawKTHLTgNcc8n7LG6884Xq2VGNstdz4xtqphunCZKWpVAPIDKrMdJDjZvji7PT1uZz7aleypSI3sXLjYjvXaGQ3bZ2G9zqCfMfHFTbAb1oW0zhy27gFsQ0+8/EvEd5xNrEuniBbo5ZRMz1WuHLSQvNiiR6QntCziTn0lgvrbnpsX1tFlWIONxvnaMcDFYyV7gDEODDn45ese05wAcqEl2tQBUfMu5BJZ1cw40qvuhfEK+M4Kui6/bcZZbCIRe0We0m4RlFx04G6xZ1GstQJCVDFIi7lZXY55EqAm+7d/XMQoCmmElEWV81GajyH1LOWZL9gq4ZED1TKSZUQcuWVIfANHpNxCzTNZ9fqD4g/MTa0rG2xfBJYcPd58eXuo2xWzZ/Wbkx5kFWr0xegG+6ctiySV7f4uy85n5V1loLTVOFLegJu00uGl4j6o0hHfE8Qc9+DupDB3WgPkKOW9ZMJGgT6v47uYr1qGnze9FhBMboFUPlbDEbbYdCrch4op9v/w1fzegX6QMWcDVa1nqTJ8uG7pbATkIk2AvAbDbofBtDcWq3neXr8zp2hdb/RIa6jeReGhIHiQ8eckhRoOW+eC3omOlqkX2+6rxoH3JtU4eSBovzXkOiq50xsm/vmzhCcLFlLEhyTV1GUQN8SzLzizanTtcAw6y0="
+cache:
+  directories:
+    - "$HOME/.m2/repository"
+    - "$HOME/.sonar/cache"
+--------------------------------------------------------------------------------------------------------
+import de.pearl.pem.common.validation.model.OffsetPageRequest;
+import de.pearl.pem.common.validation.validator.OffsetPageRequestValidator;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Component;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.Errors;
+import org.springframework.validation.Validator;
+import org.springframework.web.reactive.function.server.ServerRequest;
+import org.springframework.web.reactive.function.server.ServerResponse;
+import org.springframework.web.server.ResponseStatusException;
+import reactor.core.publisher.Mono;
+
+import java.util.Objects;
+
+@Component
+public class OffsetPageHandler {
+
+    public Mono<ServerResponse> handleRequest(final ServerRequest request) {
+        final Validator validator = new OffsetPageRequestValidator();
+        final Mono<String> responseBody = request.bodyToMono(OffsetPageRequest.class)
+            .map(body -> {
+                final Errors errors = new BeanPropertyBindingResult(body, OffsetPageRequest.class.getName());
+                validator.validate(body, errors);
+
+                if (Objects.isNull(errors) || errors.getAllErrors().isEmpty()) {
+                    return String.format("{%s}: offset: [%s], page number: [%s], page size: [%s], sort: [%s]", getClass().getCanonicalName(), body.getOffset(), body.getPageNumber(), body.getPageSize(), body.getSort());
+                }
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, errors.getAllErrors().toString());
+            });
+        return ServerResponse
+            .ok()
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(responseBody, String.class);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.context.annotation.Configuration;
+import org.springframework.hateoas.config.EnableHypermediaSupport;
+import org.springframework.hateoas.config.EnableHypermediaSupport.HypermediaType;
+
+/**
+ * Separate configuration class to enable Spring Hateoas functionality if the {@code hateoas} profile is activated.
+ */
+@Configuration
+//@Profile("hateoas")
+@EnableHypermediaSupport(type = HypermediaType.HAL)
+public class MediaConfiguration {
+}
+--------------------------------------------------------------------------------------------------------
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+
+import java.util.Locale;
+
+/**
+ * Application configuration
+ */
+@Configuration
+public class AppConfig {
+
+//    @Bean
+//    public ModelMapper modelMapper() {
+//        return new ModelMapper();
+//    }
+
+    @Bean
+    public ObjectMapper jsonObjectMapper() {
+        final ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.setDefaultMergeable(Boolean.TRUE);
+        objectMapper.setLocale(Locale.getDefault());
+        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        objectMapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
+
+        objectMapper.enable(JsonParser.Feature.ALLOW_COMMENTS);
+        objectMapper.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
+        objectMapper.enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES);
+        objectMapper.enable(JsonGenerator.Feature.ESCAPE_NON_ASCII);
+
+        objectMapper.disable(SerializationFeature.INDENT_OUTPUT);
+        objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        objectMapper.disable(DeserializationFeature.UNWRAP_ROOT_VALUE);
+        objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+
+        objectMapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
+        objectMapper.enable(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT);
+        //objectMapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
+        return objectMapper;
+    }
+
+    @Bean
+    public ObjectMapper jacksonObjectMapper() {
+        final Jackson2ObjectMapperBuilder builder = new Jackson2ObjectMapperBuilder();
+        builder.indentOutput(true);
+        builder.autoDetectFields(true);
+        return builder.build();
+    }
+
+    //    @Bean
+//    public ServletListenerRegistrationBean<HttpSessionListener> httpSessionCreatedListener() {
+//        ServletListenerRegistrationBean<HttpSessionListener> listenerRegistrationBean = new ServletListenerRegistrationBean<>();
+//        listenerRegistrationBean.setListener(new HttpSessionCreatedListener());
+//        return listenerRegistrationBean;
+//    }
+//    @Bean
+//    public FilterRegistrationBean noHttpSessionFilter() {
+//        FilterRegistrationBean registration = new FilterRegistrationBean();
+//        registration.setFilter(new NoHttpSessionFilter());
+//        registration.addUrlPatterns("/*");
+//        return registration;
+//    }
+//    @Bean
+//    @Autowired
+//    public CookieSecurityContextRepository securityContextRepository(final String sessionEncryptionKeyBase64) {
+//        return new CookieSecurityContextRepository(new JwtEncryption(""));
+//    }
+//
+//    @Bean
+//    public CookieRequestCache cookieRequestCache() {
+//        return new CookieRequestCache();
+//    }
+//
+//    @Bean
+//    public FilterRegistrationBean httpsOnlyFilter() {
+//        FilterRegistrationBean registration = new FilterRegistrationBean();
+//        registration.setFilter(new HttpsOnlyFilter());
+//        registration.addUrlPatterns("/*");
+//        return registration;
+//    }
+}
+--------------------------------------------------------------------------------------------------------
+@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = DEFAULT_DATE_FORMAT_PATTERN_EXT, locale = DEFAULT_DATE_FORMAT_LOCALE)
+--------------------------------------------------------------------------------------------------------
+import java.sql.SQLException;
+
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
+
+public interface MyService {
+
+    @Retryable
+    void retryService();
+
+    @Retryable(value = { SQLException.class }, maxAttempts = 2, backoff = @Backoff(delay = 5000))
+    void retryServiceWithRecovery(String sql) throws SQLException;
+
+    @Recover
+    void recover(SQLException e, String sql);
+
+    void templateRetryService();
+}
+--------------------------------------------------------------------------------------------------------
+
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.boot.context.properties.ConfigurationPropertiesBinding;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.convert.converter.Converter;
+
+import java.util.Objects;
+
+/**
+ * Redis data converter implementation
+ */
+@Configuration
+public class RedisDataConverter {
+
+    @Bean
+    @ConfigurationPropertiesBinding
+    public Str2Host strToHost() {
+        return new Str2Host();
+    }
+
+    @Bean
+    @ConfigurationPropertiesBinding
+    public Int2Port intToPort() {
+        return new Int2Port();
+    }
+
+    /**
+     * Custom string to host redis converter {@link Converter}
+     */
+    public class Str2Host implements Converter<String, RedisData.RedisHost> {
+        @Override
+        public RedisData.RedisHost convert(final String source) {
+            if (StringUtils.isNotBlank(source)) {
+                return RedisData.RedisHost.of(source);
+            }
+            return null;
+        }
+    }
+
+    /**
+     * Custom integer to port redis converter {@link Converter}
+     */
+    public class Int2Port implements Converter<Integer, RedisData.RedisPort> {
+        @Override
+        public RedisData.RedisPort convert(final Integer source) {
+            if (Objects.nonNull(source)) {
+                return RedisData.RedisPort.of(source);
+            }
+            return null;
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@Aspect
+@Component
+public class FeaturesAspect {
+
+    private static final Logger LOG = LogManager.getLogger(FeaturesAspect.class);
+
+    @Around(value = "@within(featureAssociation) || @annotation(featureAssociation)")
+    public Object checkAspect(ProceedingJoinPoint joinPoint, FeatureAssociation featureAssociation) throws Throwable {
+        if (featureAssociation.value().isActive()) {
+            return joinPoint.proceed();
+        } else {
+            LOG.info("Feature " + featureAssociation.value().name() + " is not enabled!");
+            return null;
+        }
+    }
+
+}
+
+import java.lang.annotation.*;
+
+/**
+ * Api ignore constraint
+ */
+@Documented
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.METHOD, ElementType.TYPE, ElementType.PARAMETER})
+public @interface ApiIgnore {
+
+    /**
+     * A brief description of why this parameter/operation is ignored
+     *
+     * @return the description of why it is ignored
+     */
+    String message() default "{ApiIgnore.message}";
+}
+--------------------------------------------------------------------------------------------------------
+import com.sensiblemetrics.api.sqoola.common.exception.InvalidTokenFormatException;
+import org.apache.commons.lang3.StringUtils;
+
+public class KeycloakTokenValidator {
+    private static final String BEARER_PREFIX = "Bearer ";
+
+    public static void validate(final String keycloakToken) throws InvalidTokenFormatException {
+        if (!isValid(keycloakToken)) {
+            throw new InvalidTokenFormatException("Keycloak token must have 'Bearer ' prefix");
+        }
+    }
+
+    private static boolean isValid(final String keycloakToken) {
+        return (StringUtils.isNotBlank(keycloakToken) && keycloakToken.startsWith(BEARER_PREFIX));
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.Collections;
+
+public class KeycloakRestTemplate extends RestTemplate {
+
+    public KeycloakRestTemplate(final String keycloakToken) {
+        if (StringUtils.isNotBlank(keycloakToken)) {
+            this.setInterceptors(Collections.singletonList(new KeycloakInterceptor(keycloakToken)));
+        }
+    }
+}
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpRequest;
+import org.springframework.http.client.ClientHttpRequestExecution;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
+import org.springframework.http.client.ClientHttpResponse;
+
+import java.io.IOException;
+
+public class KeycloakInterceptor implements ClientHttpRequestInterceptor {
+    private static final Logger LOG = LoggerFactory.getLogger(KeycloakInterceptor.class);
+
+    private static final String AUTHORIZATION_HEADER = "Authorization";
+    private static final String REQUEST_ID_HEADER = "X-Request-Id";
+    private static final String REQUEST_ID_MDC_KEY = "req_id";
+    private static final String BEARER_PREFIX = "Bearer ";
+    private String keycloakToken;
+
+    public KeycloakInterceptor(String keycloakToken) {
+        this.keycloakToken = keycloakToken.startsWith(BEARER_PREFIX) ? keycloakToken : BEARER_PREFIX + keycloakToken;
+    }
+
+    @Override
+    public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution)
+        throws IOException {
+        HttpHeaders headers = request.getHeaders();
+        headers.add(AUTHORIZATION_HEADER, keycloakToken);
+        headers.add(REQUEST_ID_HEADER, getRequestId());
+        return execution.execute(request, body);
+    }
+
+    private String getRequestId() {
+        String requestId = MDC.get(REQUEST_ID_MDC_KEY);
+        LOG.debug("'X-Request-Id' sent {}", requestId);
+        return requestId;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import lombok.extern.slf4j.Slf4j;
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.annotation.After;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
+import org.springframework.stereotype.Component;
+
+@Slf4j
+@Aspect
+@Component(SubscriptionOperationServiceAspect.COMPONENT_ID)
+public class SubscriptionOperationServiceAspect {
+
+    /**
+     * Default component ID
+     */
+    public static final String COMPONENT_ID = "subscriptionOperationServiceAspect";
+
+    @Before(value = "execution(* com.sensiblemetrics.api.sqoola.common.service.dao.impl.subscription.period.SubscriptionOperationPeriodServiceImpl.*(..))")
+    public void subscriptionOperationPeriodBeforeAdvice(final JoinPoint joinPoint) {
+        log.info(String.format("SubscriptionOperationServiceAspect: processing model={%s} by method={%s} with args={%s}", joinPoint.getTarget(), joinPoint.getSignature(), joinPoint.getArgs()));
+    }
+
+    @After(value = "execution(* com.sensiblemetrics.api.sqoola.common.service.dao.impl.subscription.period.SubscriptionOperationPeriodServiceImpl.*(..))")
+    public void subscriptionOperationPeriodAfterAdvice(final JoinPoint joinPoint) {
+        log.info(String.format("SubscriptionOperationServiceAspect: model={%s} has been processed", joinPoint.getTarget()));
+    }
+
+    @Before(value = "execution(* com.sensiblemetrics.api.sqoola.common.service.dao.impl.subscription.SubscriptionOperationServiceImpl.*(..))")
+    public void subscriptionOperationBeforeAdvice(final JoinPoint joinPoint) {
+        log.info(String.format("SubscriptionOperationServiceAspect: processing model={%s} by method={%s} with args={%s}", joinPoint.getTarget(), joinPoint.getSignature(), joinPoint.getArgs()));
+    }
+
+    @After(value = "execution(* com.sensiblemetrics.api.sqoola.common.service.dao.impl.subscription.SubscriptionOperationServiceImpl.*(..))")
+    public void subscriptionOperationAfterAdvice(final JoinPoint joinPoint) {
+        log.info(String.format("SubscriptionOperationServiceAspect: model={%s} has been processed", joinPoint.getTarget()));
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.sensiblemetrics.api.sqoola.common.model.dao.listeners.event.LoadEventListenerImp;
+import com.sensiblemetrics.api.sqoola.common.model.dao.listeners.event.RefreshEventListenerImp;
+import com.sensiblemetrics.api.sqoola.common.model.dao.listeners.event.SaveUpdateEventListenerImp;
+import org.hibernate.boot.Metadata;
+import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.event.service.spi.EventListenerRegistry;
+import org.hibernate.event.spi.EventType;
+import org.hibernate.integrator.spi.Integrator;
+import org.hibernate.service.spi.SessionFactoryServiceRegistry;
+
+public class EventListenerIntegrator implements Integrator {
+
+    @Override
+    public void integrate(Metadata metadata, SessionFactoryImplementor sessionFactory, SessionFactoryServiceRegistry serviceRegistry) {
+
+        final EventListenerRegistry eventListenerRegistry = serviceRegistry.getService(EventListenerRegistry.class);
+        eventListenerRegistry.getEventListenerGroup(EventType.SAVE).appendListener(new SaveUpdateEventListenerImp());
+        eventListenerRegistry.getEventListenerGroup(EventType.LOAD).appendListener(new LoadEventListenerImp());
+        eventListenerRegistry.getEventListenerGroup(EventType.REFRESH).appendListener(new RefreshEventListenerImp());
+    }
+
+    @Override
+    public void disintegrate(SessionFactoryImplementor sessionFactory, SessionFactoryServiceRegistry serviceRegistry) {
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.amqp.core.AcknowledgeMode;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.listener.MessageListenerContainer;
+import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+@Component
+public class MessageListenerContainerFactory {
+
+    @Autowired
+    private ConnectionFactory connectionFactory;
+
+    public MessageListenerContainer createMessageListenerContainer(final String queueName) {
+        final SimpleMessageListenerContainer mlc = new SimpleMessageListenerContainer(this.connectionFactory);
+        mlc.addQueueNames(queueName);
+        mlc.setAcknowledgeMode(AcknowledgeMode.AUTO);
+        return mlc;
+    }
+}
+ @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME, pattern = DEFAULT_DATE_FORMAT_PATTERN_EXT)
+--------------------------------------------------------------------------------------------------------
+    @Bean
+    public MultipartResolver multipartResolver() {
+        final CommonsMultipartResolver multipartResolver = new CommonsMultipartResolver();
+        multipartResolver.setMaxUploadSize(env.getRequiredProperty("sqoola.config.maxUploadSize", Integer.class));
+        multipartResolver.setMaxUploadSizePerFile(env.getRequiredProperty("sqoola.config.maxUploadSizePerFile", Integer.class));
+        multipartResolver.setResolveLazily(true);
+        multipartResolver.setPreserveFilename(false);
+        multipartResolver.setDefaultEncoding(StandardCharsets.UTF_8.name());
+        return multipartResolver;
+    }
+--------------------------------------------------------------------------------------------------------
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        final ThemeChangeInterceptor themeChangeInterceptor = new ThemeChangeInterceptor();
+        themeChangeInterceptor.setParamName("theme");
+        registry.addInterceptor(themeChangeInterceptor);
+
+        final LocaleChangeInterceptor localeChangeInterceptor = new LocaleChangeInterceptor();
+        localeChangeInterceptor.setParamName("lang");
+        registry.addInterceptor(localeChangeInterceptor);
+
+        // Register guest interceptor with single path pattern
+        registry.addInterceptor(new GuestInterceptor()).addPathPatterns("/guest");
+
+        // Register admin interceptor with multiple path patterns
+        registry.addInterceptor(new AdminInterceptor()).addPathPatterns(new String[]{"/admin", "/admin/*"});
+    }
+--------------------------------------------------------------------------------------------------------
+
+@ConfigurationProperties(prefix = "myapp.mail")
+@Validated
+//@EnableConfigurationProperties(MailProperties.class)
+public class MailConfigProperties {
+
+    @Email
+    private String to;
+    @NotBlank
+    private String host;
+    private int port;
+    private String[] cc;
+    private List<String> bcc;
+
+    @Valid
+    private Credential credential = new Credential();
+
+    //Setter and Getter methods
+
+    public class Credential {
+        @NotBlank
+        private String userName;
+        @Size(max = 15, min = 6)
+        private String password;
+
+        //Setter and Getter methods
+
+    }
+}
+//myapp:
+//    mail:
+//    to: sunil@example.com
+//    host: mail.example.com
+//        port: 250
+//        cc:
+//        - mike@example.com
+//      - david@example.com
+//    bcc:
+//        - sumit@example.com
+//      - admin@example.com
+//    credential:
+//        user-name: sunil1234
+//        password: xyz@1234
+--------------------------------------------------------------------------------------------------------
+
+import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
+import org.hibernate.dialect.*;
+import org.javers.common.exception.JaversException;
+import org.javers.common.exception.JaversExceptionCode;
+import org.javers.repository.sql.DialectName;
+
+/**
+ * Dialect utilities implementation
+ */
+@Slf4j
+@UtilityClass
+public class DialectMapper {
+
+    public DialectName map(final Dialect hibernateDialect) {
+
+        if (hibernateDialect instanceof SQLServerDialect) {
+            return DialectName.MSSQL;
+        }
+        if (hibernateDialect instanceof H2Dialect) {
+            return DialectName.H2;
+        }
+        if (hibernateDialect instanceof Oracle8iDialect) {
+            return DialectName.ORACLE;
+        }
+        if (hibernateDialect instanceof PostgreSQL81Dialect) {
+            return DialectName.POSTGRES;
+        }
+        if (hibernateDialect instanceof MySQLDialect) {
+            return DialectName.MYSQL;
+        }
+        throw new JaversException(JaversExceptionCode.UNSUPPORTED_SQL_DIALECT, hibernateDialect.getClass().getSimpleName());
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+
+/**
+ * @author Josh Cummings
+ */
+@EnableWebSecurity
+public class OAuth2ResourceServerSecurityConfiguration extends WebSecurityConfigurerAdapter {
+
+	@Override
+	protected void configure(HttpSecurity http) throws Exception {
+		// @formatter:off
+		http
+			.authorizeRequests()
+				.antMatchers("/message/**").hasAuthority("SCOPE_message:read")
+				.anyRequest().authenticated()
+				.and()
+			.oauth2ResourceServer()
+				.jwt();
+		// @formatter:on
+	}
+}
+--------------------------------------------------------------------------------------------------------
 /**
 	 * Reads text from a file
 	 * @param file the file to read from
@@ -6538,6 +7156,13 @@ new CommandLine(new Login()).execute("-u", "user123", "-p");
 			throw new IllegalArgumentException("file cannot be null");
 		}
 	}
+--------------------------------------------------------------------------------------------------------
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${mockwebserver.url}/.well-known/jwks.json
 --------------------------------------------------------------------------------------------------------
 
 import org.junit.Test;

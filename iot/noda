@@ -8647,13 +8647,53 @@ github.com/QuadFlask
 github.com/code_troopers
 github.com/jayway
 github.com/Nabilphysics/esp32_IoT
+https://excellgroupplc.zendesk.com/hc/en-gb/articles/203686992-Dot11-Connecting-your-devices-to-Dot11-Wi-Fi-
+{
+
+  "packageName":{
+
+    "opt":"packageName",
+
+    "description":"python package name (convention: snake_case).",
+
+    "type":"string",
+
+    "default":"swagger_client"
+
+  },
+
+  "packageVersion":{
+
+    "opt":"packageVersion",
+
+    "description":"python package version.",
+
+    "type":"string",
+
+    "default":"1.0.0"
+
+  },
+
+  "sortParamsByRequiredFlag":{
+
+    "opt":"sortParamsByRequiredFlag",
+
+    "description":"Sort method arguments to place required parameters before optional parameters.",
+
+    "type":"boolean",
+
+    "default":"true"
+
+  }
+
+}
 
 https://github.com/dermatthias
 http://brouter.de/brouter/segments4
 github.com/vuejs/vue-devtools
 bit.ly/Mining-the-Social-Web-3E
 code.google.com/p/re-switch/
-
+pdacontrollen.com
 
 Currently, BRouter cooperates with three different
 maptools, so you need to install, and get familiar with,
