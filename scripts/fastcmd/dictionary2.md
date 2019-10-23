@@ -2728,6 +2728,12 @@ public class Application {
 //            new ServletWebArgumentResolverAdapter(new PageableArgumentResolver()));
 //    }
 --------------------------------------------------------------------------------------------------------
+	static {
+		// Eagerly load the NestedExceptionUtils class to avoid classloader deadlock
+		// issues on OSGi when calling getMessage(). Reported by Don Brown; SPR-5607.
+		NestedExceptionUtils.class.getName();
+	}
+--------------------------------------------------------------------------------------------------------
   /**
    * Convert the given object to string with each line indented by 4 spaces
    * (except the first line).
@@ -2738,6 +2744,139 @@ public class Application {
     }
     return o.toString().replace("\n", "\n    ");
   }
+--------------------------------------------------------------------------------------------------------
+@Bean(name = “userCacheManager”)
+public RedisCacheManager userCacheManager(RedisConnectionFactory connectionFactory, UserService userService) {
+RedisCacheConfiguration redisCacheConfiguration = RedisCacheConfiguration.defaultCacheConfig();
+DefaultFormattingConversionService conversionService = (DefaultFormattingConversionService) redisCacheConfiguration.getConversionService();
+conversionService.addConverter(UserCacheKey.class, String.class, new UserCacheKeyConverter(userService));
+redisCacheConfiguration
+.entryTtl(Duration.ofSeconds(1800)).withConversionService(conversionService)
+.disableCachingNullValues();
+return RedisCacheManager.builder(connectionFactory)
+.cacheDefaults(redisCacheConfiguration)
+.withInitialCacheConfigurations(Collections.singletonMap(“user-cache”, redisCacheConfiguration))
+.build();
+}
+--------------------------------------------------------------------------------------------------------
+@WritingConverter
+public class AddressToMapConverter implements Converter<Address, Map<String,byte[]>> {
+
+  @Override
+  public Map<String,byte[]> convert(Address source) {
+    return singletonMap("ciudad", source.getCity().getBytes());
+  }
+}
+
+@ReadingConverter
+public class MapToAddressConverter implements Converter<Address, Map<String, byte[]>> {
+
+  @Override
+  public Address convert(Map<String,byte[]> source) {
+    return new Address(new String(source.get("ciudad")));
+  }
+}
+--------------------------------------------------------------------------------------------------------
+http://localhost:8089/api/v0/distributor/download/c108cda3-8b4b-483d-a987-d65e6bfe3024/lombok.config
+
+    @Autowired
+    private SessionService sessionService;
+
+    @GetMapping("/created")
+    public ResponseEntity init() {
+        final Session session = new Session();
+        session.setId("c108cda3-8b4b-483d-a987-d65e6bfe3024");
+        session.setFilepath("C:\\git-project\\paragon.microservices.distributor");
+        session.setFilename("lombok.config");
+        session.setDownloadStatus(DownloadStatus.NEW);
+        this.sessionService.save(session);
+
+        final Session session2 = new Session();
+        session2.setId("c108cda3-8b4b-483d-a987-d65e6bfe3025");
+        session2.setFilepath("C:\\git-project\\paragon.microservices.distributor");
+        session2.setFilename("lombok.config2");
+        session2.setDownloadStatus(DownloadStatus.NEW);
+        this.sessionService.save(session2);
+        return ResponseEntity.ok().build();
+    }
+--------------------------------------------------------------------------------------------------------
+    @Bean
+    public MappingRedisConverter redisConverter(final RedisMappingContext mappingContext,
+                                                final List<RedisConverter> customConversions,
+                                                final ReferenceResolver referenceResolver
+    ) {
+        final MappingRedisConverter mappingRedisConverter = new MappingRedisConverter(mappingContext, null, referenceResolver);
+        mappingRedisConverter.setCustomConversions(new RedisCustomConversions(customConversions));
+        return mappingRedisConverter;
+    }
+--------------------------------------------------------------------------------------------------------
+    @Bean
+    public MappingRedisConverter redisConverter(final RedisMappingContext mappingContext, final RedisCustomConversions customConversions, final ReferenceResolver referenceResolver) {
+        final MappingRedisConverter mappingRedisConverter = new MappingRedisConverter(mappingContext, null, referenceResolver, customTypeMapper());
+        mappingRedisConverter.setCustomConversions(customConversions);
+        mappingRedisConverter.afterPropertiesSet();
+        return mappingRedisConverter;
+    }
+
+    @Bean
+    public RedisTypeMapper customTypeMapper() {
+        return new DefaultRedisTypeMapper("data");
+    }
+--------------------------------------------------------------------------------------------------------
+@Configuration
+class SampleRedisConfiguration {
+
+  @Bean
+  public MappingRedisConverter redisConverter(RedisMappingContext mappingContext,
+        RedisCustomConversions customConversions, ReferenceResolver referenceResolver) {
+
+    MappingRedisConverter mappingRedisConverter = new MappingRedisConverter(mappingContext, null, referenceResolver,
+            customTypeMapper());
+
+    mappingRedisConverter.setCustomConversions(customConversions);
+
+    return mappingRedisConverter;
+  }
+
+  @Bean
+  public RedisTypeMapper customTypeMapper() {
+    return new CustomRedisTypeMapper();
+  }
+}
+--------------------------------------------------------------------------------------------------------
+@WritingConverter
+public class AddressToBytesConverter implements Converter<Address, byte[]> {
+
+  private final Jackson2JsonRedisSerializer<Address> serializer;
+
+  public AddressToBytesConverter() {
+
+    serializer = new Jackson2JsonRedisSerializer<Address>(Address.class);
+    serializer.setObjectMapper(new ObjectMapper());
+  }
+
+  @Override
+  public byte[] convert(Address value) {
+    return serializer.serialize(value);
+  }
+}
+
+@ReadingConverter
+public class BytesToAddressConverter implements Converter<byte[], Address> {
+
+  private final Jackson2JsonRedisSerializer<Address> serializer;
+
+  public BytesToAddressConverter() {
+
+    serializer = new Jackson2JsonRedisSerializer<Address>(Address.class);
+    serializer.setObjectMapper(new ObjectMapper());
+  }
+
+  @Override
+  public Address convert(byte[] value) {
+    return serializer.deserialize(value);
+  }
+}
 --------------------------------------------------------------------------------------------------------
 //package de.pearl.pem.common.system;
 //
