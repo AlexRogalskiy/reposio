@@ -6784,6 +6784,151 @@ public class RedisDataConverter {
     }
 }
 --------------------------------------------------------------------------------------------------------
+@Aspect
+@Component
+public class FeaturesAspect {
+
+    private static final Logger LOG = LogManager.getLogger(FeaturesAspect.class);
+
+    @Around(value = "@within(featureAssociation) || @annotation(featureAssociation)")
+    public Object checkAspect(ProceedingJoinPoint joinPoint, FeatureAssociation featureAssociation) throws Throwable {
+        if (featureAssociation.value().isActive()) {
+            return joinPoint.proceed();
+        } else {
+            LOG.info("Feature " + featureAssociation.value().name() + " is not enabled!");
+            return null;
+        }
+    }
+
+}
+
+import java.lang.annotation.*;
+
+/**
+ * Api ignore constraint
+ */
+@Documented
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.METHOD, ElementType.TYPE, ElementType.PARAMETER})
+public @interface ApiIgnore {
+
+    /**
+     * A brief description of why this parameter/operation is ignored
+     *
+     * @return the description of why it is ignored
+     */
+    String message() default "{ApiIgnore.message}";
+}
+--------------------------------------------------------------------------------------------------------
+import com.sensiblemetrics.api.sqoola.common.exception.InvalidTokenFormatException;
+import org.apache.commons.lang3.StringUtils;
+
+public class KeycloakTokenValidator {
+    private static final String BEARER_PREFIX = "Bearer ";
+
+    public static void validate(final String keycloakToken) throws InvalidTokenFormatException {
+        if (!isValid(keycloakToken)) {
+            throw new InvalidTokenFormatException("Keycloak token must have 'Bearer ' prefix");
+        }
+    }
+
+    private static boolean isValid(final String keycloakToken) {
+        return (StringUtils.isNotBlank(keycloakToken) && keycloakToken.startsWith(BEARER_PREFIX));
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.Collections;
+
+public class KeycloakRestTemplate extends RestTemplate {
+
+    public KeycloakRestTemplate(final String keycloakToken) {
+        if (StringUtils.isNotBlank(keycloakToken)) {
+            this.setInterceptors(Collections.singletonList(new KeycloakInterceptor(keycloakToken)));
+        }
+    }
+}
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpRequest;
+import org.springframework.http.client.ClientHttpRequestExecution;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
+import org.springframework.http.client.ClientHttpResponse;
+
+import java.io.IOException;
+
+public class KeycloakInterceptor implements ClientHttpRequestInterceptor {
+    private static final Logger LOG = LoggerFactory.getLogger(KeycloakInterceptor.class);
+
+    private static final String AUTHORIZATION_HEADER = "Authorization";
+    private static final String REQUEST_ID_HEADER = "X-Request-Id";
+    private static final String REQUEST_ID_MDC_KEY = "req_id";
+    private static final String BEARER_PREFIX = "Bearer ";
+    private String keycloakToken;
+
+    public KeycloakInterceptor(String keycloakToken) {
+        this.keycloakToken = keycloakToken.startsWith(BEARER_PREFIX) ? keycloakToken : BEARER_PREFIX + keycloakToken;
+    }
+
+    @Override
+    public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution)
+        throws IOException {
+        HttpHeaders headers = request.getHeaders();
+        headers.add(AUTHORIZATION_HEADER, keycloakToken);
+        headers.add(REQUEST_ID_HEADER, getRequestId());
+        return execution.execute(request, body);
+    }
+
+    private String getRequestId() {
+        String requestId = MDC.get(REQUEST_ID_MDC_KEY);
+        LOG.debug("'X-Request-Id' sent {}", requestId);
+        return requestId;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import lombok.extern.slf4j.Slf4j;
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.annotation.After;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
+import org.springframework.stereotype.Component;
+
+@Slf4j
+@Aspect
+@Component(SubscriptionOperationServiceAspect.COMPONENT_ID)
+public class SubscriptionOperationServiceAspect {
+
+    /**
+     * Default component ID
+     */
+    public static final String COMPONENT_ID = "subscriptionOperationServiceAspect";
+
+    @Before(value = "execution(* com.sensiblemetrics.api.sqoola.common.service.dao.impl.subscription.period.SubscriptionOperationPeriodServiceImpl.*(..))")
+    public void subscriptionOperationPeriodBeforeAdvice(final JoinPoint joinPoint) {
+        log.info(String.format("SubscriptionOperationServiceAspect: processing model={%s} by method={%s} with args={%s}", joinPoint.getTarget(), joinPoint.getSignature(), joinPoint.getArgs()));
+    }
+
+    @After(value = "execution(* com.sensiblemetrics.api.sqoola.common.service.dao.impl.subscription.period.SubscriptionOperationPeriodServiceImpl.*(..))")
+    public void subscriptionOperationPeriodAfterAdvice(final JoinPoint joinPoint) {
+        log.info(String.format("SubscriptionOperationServiceAspect: model={%s} has been processed", joinPoint.getTarget()));
+    }
+
+    @Before(value = "execution(* com.sensiblemetrics.api.sqoola.common.service.dao.impl.subscription.SubscriptionOperationServiceImpl.*(..))")
+    public void subscriptionOperationBeforeAdvice(final JoinPoint joinPoint) {
+        log.info(String.format("SubscriptionOperationServiceAspect: processing model={%s} by method={%s} with args={%s}", joinPoint.getTarget(), joinPoint.getSignature(), joinPoint.getArgs()));
+    }
+
+    @After(value = "execution(* com.sensiblemetrics.api.sqoola.common.service.dao.impl.subscription.SubscriptionOperationServiceImpl.*(..))")
+    public void subscriptionOperationAfterAdvice(final JoinPoint joinPoint) {
+        log.info(String.format("SubscriptionOperationServiceAspect: model={%s} has been processed", joinPoint.getTarget()));
+    }
+}
+--------------------------------------------------------------------------------------------------------
 import com.sensiblemetrics.api.sqoola.common.model.dao.listeners.event.LoadEventListenerImp;
 import com.sensiblemetrics.api.sqoola.common.model.dao.listeners.event.RefreshEventListenerImp;
 import com.sensiblemetrics.api.sqoola.common.model.dao.listeners.event.SaveUpdateEventListenerImp;
