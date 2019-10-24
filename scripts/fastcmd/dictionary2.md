@@ -6880,6 +6880,11 @@ public interface MyService {
     void templateRetryService();
 }
 --------------------------------------------------------------------------------------------------------
+@Qualifier@Retention(RUNTIME)@Target({ TYPE, METHOD, FIELD, PARAMETER })@Documentedpublic @interface SomeQualifierOne {    public static final class Literalextends AnnotationLiteral<SomeQualifierOne>implements SomeQualifierOne {Chapter 3  IdentIfyIng Beans
+71private static final long serialVersionUID = 1L;public static final Literal INSTANCE = new Literal();   }}
+
+@Qualifier@Retention(RUNTIME)@Target({ TYPE, METHOD, FIELD, PARAMETER })@Documentedpublic @interface SomeQualifierOne {    TimeUnit value() default DAYS;    public static final class Literalextends AnnotationLiteral<SomeQualifierOne>implements SomeQualifierOne {private static final long serialVersionUID = 1L;public static final Literal INSTANCE = of(DAYS);private final TimeUnit value;public static Literal of(TimeUnit value) {return new Literal(value);}private Literal(TimeUnit value) {this.value = value;}public TimeUnit value() {return value;}    }}
+--------------------------------------------------------------------------------------------------------
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.context.properties.ConfigurationPropertiesBinding;
