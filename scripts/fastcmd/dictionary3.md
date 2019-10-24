@@ -307,7 +307,20 @@ public class IncludeExtensionsInRequestParamPostProcessor implements BeanPostPro
     public Object postProcessAfterInitialization(Object bean, String beanName) { return bean; }
 }
 -----------------------------------------------------------------------------------------
+//    @Bean
+//    public CommandLineRunner run(final RestTemplate restTemplate) throws Exception {
+//        return args -> {
+//            final QuoteEntity quoteEntity = restTemplate.getForObject("http://gturnquist-quoters.cfapps.io/api/random", QuoteEntity.class);
+//            log.info(quoteEntity.toString());
+//        };
+//    }
 -----------------------------------------------------------------------------------------
+   @Bean
+    public View jsonTemplate() {
+        MappingJackson2JsonView view = new MappingJackson2JsonView();
+        view.setPrettyPrint(true);
+        return view;
+    }
 -----------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------
@@ -416,3 +429,351 @@ public class IncludeExtensionsInRequestParamPostProcessor implements BeanPostPro
 -----------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------
+//    //    @Test
+////    public void testForbiddenAccess() {
+////        given().when().get(getServiceURI() + "/api/users").then().statusCode(401);
+////    }
+////
+////    @Test
+////    public void testAuthorizationAccess() {
+////        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123").when().get(getServiceURI() + "/api/users").then().statusCode(200);
+////    }
+////
+////    @Test
+////    public void testNotFound() {
+////        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123").when().get(getServiceURI() + "/api/userss").then().statusCode(404);
+////    }
+////    @Test
+////    public void testVerifyUser2() {
+////        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123").when().get(getServiceURI() + "/api/user/2").then()
+////                .body("login", equalTo("user2@gmail.com"))
+////                .body("name", equalTo("user2"))
+////                .body("createdBy", equalTo("user2@gmail.com"))
+////                .body("age", equalTo(26))
+////                .body("phone", equalTo("+79211234567"))
+////                //.body("gender", equalTo(User.UserGenderType.MALE.toString()))
+////                .body("id", equalTo(2))
+////                .body("createdAt", equalTo("2017-04-30 00:00:00+0300"))
+////                .body("modifiedAt", nullValue())
+////                .body("rating", equalTo(1.0f))
+////                .body("registeredAt", equalTo("2017-04-30 00:00:00+0300"))
+////                .body("status", equalTo(UserAccountStatusInfo.StatusType.ACTIVE.toString()))
+////                .statusCode(200);
+//
+//    //        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123")
+////                .body(getObjectAsString(user))
+////                .when().post(getServiceURI() + "/api/user").then()
+////                .statusCode(201);
+////        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123").when().get(getServiceURI() + "/api/users").then()
+////                .body("login", hasItem("user18@gmail.com"))
+////                .statusCode(200);
+//
+//    //        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123")
+////                .body(user1)
+////                .when().put(getServiceURI() + "/api/user/{id}", user1.getId()).then()
+////                .body("status", equalTo(UserAccountStatusInfo.StatusType.ACTIVE.toString()))
+////                .statusCode(200);
+//
+//    //        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123").when().get(getServiceURI() + "/api/user/4").then()
+////                .body("login", equalTo("user18@gmail.com"))
+////                .statusCode(200);
+////        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123")
+////                .when().delete(getServiceURI() + "/api/user/4").then()
+////                .statusCode(403);
+//////        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("dba", "dba123")
+//////                .when().delete(getServiceURI() + "/api/user/4").then()
+//////                .statusCode(200);
+//
+//    @Override
+//    public GetCouponResponse getCoupon(final GetCouponRequest couponRequest) {
+//        return given()
+//                .log().all()
+//                .contentType(ContentType.JSON)
+//                .accept(ContentType.JSON)
+//                .auth().basic("user", "user123")
+//                .when()
+//                .get(this.buildFullPath(couponRequest))
+//                .then()
+//                .log().all()
+//                .body("name", equalTo("subscription3"))
+//                .statusCode(200)
+//                .extract()
+//                .as(GetCouponResponse.class);
+//    }
+//
+//    private URI buildFullPath(final GetCouponRequest request) {
+//        final EndpointProperty.RouteInfo routeInfo = this.endpointProperty.getRoutes().get("coupons-api");
+//        return UriComponentsBuilder
+//                .fromUriString(routeInfo.getBasePath())
+//                .path(routeInfo.getSegmentPath())
+//                .path("/")
+//                .path(request.getSerialNumber())
+//                .build()
+//                .toUri();
+//    }
+//
+//    private RequestSpecification buildRequestSpecification() {
+//        return new RequestSpecBuilder()
+//                .setBaseUri("http://localhost")
+//                .setPort(8080)
+//                .setAccept(ContentType.JSON)
+//                .setContentType(ContentType.ANY)
+//                .log(LogDetail.ALL)
+//                .build();
+//    }
+////
+////    private Optional<GetCouponResponse> getEmptyIfNotFoundOrRethrow(final HttpStatusCodeException e) {
+////        final HttpStatus statusCode = e.getStatusCode();
+////        if (!statusCode.equals(HttpStatus.NOT_FOUND)) {
+////            rethrowSpecificException(e);
+////        }
+////        return Optional.empty();
+////    }
+////
+////    private void rethrowSpecificException(final Exception e) {
+////        rethrowRestServiceSpecificException(e, "Authority service is not available!", "Error is occurred when calling Authority service");
+////    }
+//}
+//
+//
+////    RequestSpecification requestSpec = new RequestSpecBuilder()
+////            .setBaseUri("http://localhost")
+////            .setPort(8080)
+////            .setAccept(ContentType.JSON)
+////            .setContentType(ContentType.ANY)
+////...
+////        .log(LogDetail.ALL)
+////        .build();
+////
+////// можно задать одну спецификацию для всех запросов:
+////        RestAssured.requestSpecification = requestSpec;
+////
+////// или для отдельного:
+////        given().spec(requestSpec)...when().get(someEndpoint);
+////
+////        ResponseSpecification responseSpec = new ResponseSpecBuilder()
+////        .expectStatusCode(200)
+////        .expectBody(containsString("success"))
+////        .build();
+////
+////// можно задать одну спецификацию для всех ответов:
+////        RestAssured.responseSpecification = responseSpec;
+////
+////// или для отдельного:
+////        given()...when().get(someEndpoint).then().spec(responseSpec)...;
+//
+////// то же самое работает и в обратную сторону:
+////SomePojo pojo = given().
+////    .when().get(EndPoints.get)
+////            .then().extract().body().as(SomePojo.class);
+//
+////    @Test
+////    public void whenLogOnlyIfValidationFailed_thenSuccess() {
+////        when().get("/users/eugenp")
+////                .then().log().ifValidationFails().statusCode(200);
+////
+////        given().log().ifValidationFails()
+////                .when().get("/users/eugenp")
+////                .then().statusCode(200);
+////    }
+////
+////    @Test
+////    public void whenLogResponseIfErrorOccurred_thenSuccess() {
+////
+////        when().get("/users/eugenp")
+////                .then().log().ifError();
+////        when().get("/users/eugenp")
+////                .then().log().ifStatusCodeIsEqualTo(500);
+////        when().get("/users/eugenp")
+////                .then().log().ifStatusCodeMatches(greaterThan(200));
+////    }
+//
+////    @Test
+////    public void whenUpdatePerson_thenStatus200() {
+////        long id = createTestPerson("Nick").getId();
+////        Person person = new Person("Michail");
+////        given().pathParam("id", id).log()
+////                .body().contentType("application/json").body(person)
+////
+////                .when().put("/persons/{id}")
+////
+////                .then().log().body().statusCode(HttpStatus.OK.value())
+////                .and().body("name", equalTo("Michail"));
+////    }
+////
+////    @Test
+////    public void givenNoPerson_whenGetPerson_thenStatus500() {
+////        given().pathParam("id", 1)
+////                .when().get("/persons/{id}")
+////
+////                .then().log().body()
+////                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+////    }
+
+public interface ITaskSubscriptionRepository<E extends TaskSubscriptionEntity, D extends TaskSubscriptionDTO> extends ICoreBaseRepository<E, D>, PagingAndSortingRepository<E, Long> {
+    @Query(value="select v.* from Option o, Vote v where o.POLL_ID = ?1 and v.OPTION_ID = o.OPTION_ID", nativeQuery = true)
+    public Iterable<E> findByPoll(final Long id);
+
+    @Query(value="select v.* from Option o, Vote v where o.POLL_ID = ?1 and v.OPTION_ID = o.OPTION_ID", nativeQuery = true)
+    public Iterable<E> findByPoll(Long pollId);
+}
+-----------------------------------------------------------------------------------------
+    @Test
+    public void testAddUserSubscription() {
+        final UserDTO user1 = given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123").when().get(getServiceURI() + "/api/user/1").as(UserDTO.class);
+        final SubscriptionDTO subscription3 = given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123").when().get(getServiceURI() + "/api/subscription/3").as(SubscriptionDTO.class);
+
+        assertTrue(Objects.equals("user1@gmail.com", user1.getLogin()));
+        //assertTrue(Objects.equals(User.UserStatusType.UNVERIFIED, user1.getStatus()));
+        assertTrue(Objects.equals("subscription3", subscription3.getTitle()));
+        assertTrue(Objects.equals(SubscriptionStatusInfo.StatusType.STANDARD, subscription3.getStatus()));
+
+        final UserSubOrderDTO userSubOrder = new UserSubOrderDTO();
+        userSubOrder.setUser(user1);
+        userSubOrder.setSubscription(subscription3);
+        userSubOrder.setCreatedBy(user1.getLogin());
+        userSubOrder.setStartedAt(DateUtils.strToDate("2017-05-28 00:00:00+0300"));
+        //userSubOrder.setStartedAt("2017-05-28 00:00:00");
+
+        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123")
+                .body(userSubOrder)
+                .when().post(getServiceURI() + "/api/user/{id}/subscription", user1.getId()).then()
+                .statusCode(201);
+        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123").when().get(getServiceURI() + "/api/user/{id}/subscriptions", user1.getId()).then()
+                .body("name", hasItem("subscription3"))
+                .statusCode(200);
+    }
+	
+	    @Test
+    public void testForbiddenAccess() {
+        given().when().get(getServiceURI() + "/api/users").then().statusCode(401);
+    }
+
+    @Test
+    public void testAuthorizationAccess() {
+        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123").when().get(getServiceURI() + "/api/users").then().statusCode(200);
+    }
+
+    @Test
+    public void testNotFound() {
+        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123").when().get(getServiceURI() + "/api/userss").then().statusCode(404);
+    }
+
+    @Test
+    public void testVerifyUser2() {
+        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123").when().get(getServiceURI() + "/api/user/2").then()
+                .body("login", equalTo("user2@gmail.com"))
+                .body("name", equalTo("user2"))
+                .body("createdBy", equalTo("user2@gmail.com"))
+                .body("age", equalTo(26))
+                .body("phone", equalTo("+79211234567"))
+                //.body("gender", equalTo(User.UserGenderType.MALE.toString()))
+                .body("id", equalTo(2))
+                .body("createdAt", equalTo("2017-04-30 00:00:00+0300"))
+                .body("modifiedAt", nullValue())
+                .body("rating", equalTo(1.0f))
+                .body("registeredAt", equalTo("2017-04-30 00:00:00+0300"))
+                .body("status", equalTo(UserAccountStatusInfo.StatusType.ACTIVE.toString()))
+                .statusCode(200);
+    }
+	
+	
+	    @Test
+    public void testUpdateUser() {
+        final UserDTO user1 = given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123").when().get(getServiceURI() + "/api/user/1").as(UserDTO.class);
+
+        assertTrue(Objects.nonNull(user1));
+        assertTrue(Objects.equals("user1@gmail.com", user1.getLogin()));
+        assertTrue(Objects.equals(UserAccountStatusInfo.StatusType.UNVERIFIED, user1.getStatus()));
+
+        UserActivityStatusInfoDTO status = new UserActivityStatusInfoDTO();
+        status.setStatusType(UserActivityStatusInfo.StatusType.CHALLENGING);
+        user1.setStatus(status);
+
+        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123")
+                .body(user1)
+                .when().put(getServiceURI() + "/api/user/{id}", user1.getId()).then()
+                .body("status", equalTo(UserAccountStatusInfo.StatusType.ACTIVE.toString()))
+                .statusCode(200);
+    }
+	
+  @Test
+    public void testForbiddenAccess() {
+        given().when().get(getServiceURI() + "/api/subscriptions").then().statusCode(401);
+    }
+
+    @Test
+    public void testAuthorizationAccess() {
+        //.auth().digest( ADMIN_USERNAME, ADMIN_PASSWORD )
+        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123").when().get(getServiceURI() + "/api/subscriptions").then().statusCode(200);
+    }
+
+    @Test
+    public void testNotFound() {
+        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123").when().get(getServiceURI() + "/api/subscriptionss").then().statusCode(404);
+    }
+
+    @Test
+    public void testVerifySubscription1() {
+        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123").when().get(getServiceURI() + "/api/subscription/1").then()
+                .body("name", equalTo("subscription1"))
+                .body("createdBy", equalTo("admin"))
+                .body("expiredAt", equalTo(1544562000000L))
+                .body("expiredAt", equalTo("2018-12-12 00:00:00+0300"))
+                .body("id", equalTo(1))
+                .body("createdAt", equalTo("2018-12-12 00:00:00+0300"))
+                .body("modifiedAt", nullValue())
+                .body("type", equalTo(SubscriptionStatusInfo.StatusType.PREMIUM.toString()))
+                .statusCode(200);
+    }
+
+    @Test
+    public void testAddSubscription() {
+        final SubscriptionDTO subscription = new SubscriptionDTO();
+        subscription.setExpiredAt(DateUtils.strToDate("2018-08-28 00:00:00+0300"));
+        //subscription.setExpireAt("2018-08-28 00:00:00");
+        subscription.setCreatedBy("admin");
+        subscription.setTitle("Guest Group");
+        //subscription.setPrefix('standard');
+        subscription.setStatusType(SubscriptionStatusInfo.StatusType.STANDARD);
+
+        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123")
+                .body(getObjectAsString(subscription))
+                .when().post(getServiceURI() + "/api/subscription").then()
+                .statusCode(201);
+        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123").when().get(getServiceURI() + "/api/subscriptions").then()
+                .body("name", hasItem("Guest Group"))
+                .statusCode(200);
+    }
+
+    @Test
+    public void testUpdateSubscription() {
+        final SubscriptionDTO subscription1 = given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123").when().get(getServiceURI() + "/api/subscription/1").as(SubscriptionDTO.class);
+
+        assertTrue(Objects.nonNull(subscription1));
+        assertTrue(Objects.equals("subscription1", subscription1.getTitle()));
+        assertTrue(Objects.equals(SubscriptionStatusInfo.StatusType.PREMIUM, subscription1.getStatus()));
+
+        subscription1.setExpiredAt(DateUtils.strToDate("2019-04-18 00:00:00+0300"));
+        //subscription1.setExpireAt("2019-04-18 00:00:00");
+
+        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123")
+                .body(subscription1)
+                .when().put(getServiceURI() + "/api/subscription/{id}", subscription1.getId()).then()
+                //                .body("expireAt", equalTo(1555534800000L))
+                .body("expireAt", equalTo("2019-04-18 00:00:00"))
+                .statusCode(200);
+    }
+
+    @Test
+    public void testDeleteSubscription() {
+        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123").when().get(getServiceURI() + "/api/subscription/4").then()
+                .body("name", equalTo("Guest Group"))
+                .statusCode(200);
+        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123")
+                .when().delete(getServiceURI() + "/api/subscription/4").then()
+                .statusCode(403);
+//        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("dba", "dba123")
+//                .when().delete(getServiceURI() + "/api/subscription/4").then()
+//                .statusCode(200);
+    }
