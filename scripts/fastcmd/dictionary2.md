@@ -6880,6 +6880,442 @@ public interface MyService {
     void templateRetryService();
 }
 --------------------------------------------------------------------------------------------------------
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
+import org.springframework.stereotype.Component;
+
+import javax.servlet.http.HttpSessionEvent;
+import javax.servlet.http.HttpSessionListener;
+import java.util.concurrent.atomic.AtomicInteger;
+
+@Component
+@EqualsAndHashCode
+@ToString
+public class SessionCountListener implements HttpSessionListener {
+
+    private final AtomicInteger sessionCount = new AtomicInteger();
+
+    @Override
+    public void sessionCreated(final HttpSessionEvent se) {
+        this.sessionCount.incrementAndGet();
+        setActiveSessionCount(se);
+    }
+
+    @Override
+    public void sessionDestroyed(final HttpSessionEvent se) {
+        this.sessionCount.decrementAndGet();
+        setActiveSessionCount(se);
+    }
+
+    private void setActiveSessionCount(final HttpSessionEvent se) {
+        se.getSession().getServletContext().setAttribute("activeSessions", this.sessionCount.get());
+        System.out.println("Total Active Session: " + this.sessionCount.get());
+    }
+}
+--------------------------------------------------------------------------------------------------------
+package jcg.zheng.demo.web.service;
+ 
+import java.util.List;
+ 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+ 
+import jcg.zheng.demo.web.api.UserResource;
+import jcg.zheng.demo.web.data.User;
+ 
+@Component
+public class UserResourceImpl implements UserResource {
+ 
+    @Autowired
+    private UserService userSrv;
+ 
+    @Override
+    // @RequiresPermissions(type = "role", value = "10")
+    public User createUser(User user) {
+        return userSrv.saveUser(user);
+    }
+ 
+    @Override
+//  @RequiresPermissions(type = "role", value = "1")
+    public List<User> getUsers() {
+        return userSrv.getUsers();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+package jcg.zheng.demo.customannotation;
+ 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+ 
+//Retained at runtime (so we can use them with Reflection).
+//Applied to a method
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD )
+public @interface RequiresPermissions {
+ String type() default "";
+ 
+ String value() default "";
+}
+
+
+package jcg.zheng.demo.web.security;
+ 
+import java.io.IOException;
+import java.util.List;
+ 
+import javax.ws.rs.NotAuthorizedException;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ContainerRequestFilter;
+import javax.ws.rs.container.ResourceInfo;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MultivaluedMap;
+ 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.util.CollectionUtils;
+ 
+import jcg.zheng.demo.customannotation.RequiresPermissions;
+import jcg.zheng.demo.web.data.User;
+import jcg.zheng.demo.web.service.UserService;
+ 
+public class RequiresPermissionsFilter implements ContainerRequestFilter {
+ 
+    private static final String SUPER_USER = "MZheng";
+ 
+    @Context
+    private ApplicationContext applicationContext;
+ 
+    @Context
+    private ResourceInfo resourceInfo;
+ 
+    @Autowired
+    private UserService userSrv;
+ 
+    @Override
+    public void filter(ContainerRequestContext requestContext) throws IOException {
+        RequiresPermissions annotation = AnnotationUtils.findAnnotation(resourceInfo.getResourceMethod(),
+                RequiresPermissions.class);
+        if (annotation != null) {
+            MultivaluedMap<String, String> headers = requestContext.getHeaders();
+            processPermission(headers, annotation);
+        }
+ 
+    }
+ 
+    private void processPermission(MultivaluedMap<String, String> headers, RequiresPermissions permission) {
+        String permissionValue = permission.value();
+        String permissionType = permission.type();
+        if ("role".equalsIgnoreCase(permissionType)) {
+            // need to check the header user id's role match to the permission role
+            List<String> requestUserId = headers.get("requestUserId");
+            if (CollectionUtils.isEmpty(requestUserId)) {
+                throw new NotAuthorizedException("Missing security header");
+            }
+ 
+            if (!requestUserId.get(0).equalsIgnoreCase(SUPER_USER)) {
+                Integer requestUserNum = Integer.valueOf(requestUserId.get(0));
+                User requestUser = userSrv.getUser(requestUserNum);
+                if (requestUser == null) {
+                    throw new NotAuthorizedException("Invalid requestUserId");
+                }
+                Integer userRoleInt = Integer.valueOf(requestUser.getRole());
+                Integer permissionRoleInt = Integer.valueOf(permissionValue);
+                if (userRoleInt < permissionRoleInt) {
+                    throw new NotAuthorizedException(
+                            "Not Authorized for the method, request user must have a role=" + permissionValue);
+                }
+            }
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>org.demo</groupId>
+	<artifactId>demo</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+
+    <packaging>war</packaging>
+	<description>Demo project</description>
+
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>1.0.0.BUILD-SNAPSHOT</version>
+	</parent>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-tomcat</artifactId>
+                </exclusion>
+            </exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<properties>
+        <start-class>demo.Application</start-class>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <java.version>1.7</java.version>
+	</properties>
+	<repositories>
+		<repository>
+			<id>spring-snapshots</id>
+			<name>Spring Snapshots</name>
+			<url>http://repo.spring.io/snapshot</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>spring-milestones</id>
+			<name>Spring Milestones</name>
+			<url>http://repo.spring.io/milestone</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
+	<pluginRepositories>
+		<pluginRepository>
+			<id>spring-snapshots</id>
+			<name>Spring Snapshots</name>
+			<url>http://repo.spring.io/snapshot</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</pluginRepository>
+		<pluginRepository>
+			<id>spring-milestones</id>
+			<name>Spring Milestones</name>
+			<url>http://repo.spring.io/milestone</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</pluginRepository>
+	</pluginRepositories>
+</project>
+--------------------------------------------------------------------------------------------------------
+List<Class<?>> getAllClassesInPackageContaining(Class<?> clazz) 
+    throws IOException 
+{
+    String clazzPackageName = clazz
+            .getPackage()
+            .getName();
+
+    String clazzPath = clazz
+            .getResource(".")
+            .getPath();
+
+    Path packagePath = Paths.get(clazzPath)
+            .getParent();
+
+    final List<Class<?>> packageClasses = new ArrayList<>();
+
+    Files.walkFileTree(packagePath, new SimpleFileVisitor<Path>() {
+        @Override
+        public FileVisitResult visitFile(
+                Path file, BasicFileAttributes attrs) 
+                throws IOException 
+        {
+            String filename = 
+                file.getName(file.getNameCount()-1).toString();
+
+            if (filename.endsWith(".class")) {
+                String className = filename.replace(".class", "");
+
+                try {
+                    Class<?> loadedClazz = Class.forName(
+                        clazzPackageName + "." + className);
+                        
+                    packageClasses.add(loadedClazz);
+                }
+                catch(ClassNotFoundException e) {
+                    System.err.println(
+                        "class not found: " + e.getMessage());
+                }
+            }
+
+            return super.visitFile(file, attrs);
+        }
+    });
+
+    return packageClasses;
+}
+--------------------------------------------------------------------------------------------------------
+language: java
+
+matrix:
+  include:
+    - jdk: openjdk8
+    - jdk: openjdk10
+    - jdk: openjdk11
+    - jdk: openjdk-ea
+  allow_failures:
+    # ErrorProne/javac is not yet working on JDK 11 nor 12 (current -ea)
+    - jdk: openjdk11
+    - jdk: openjdk-ea
+
+before_install:
+  - unset _JAVA_OPTIONS
+
+after_success:
+  - .buildscript/deploy_snapshot.sh
+
+env:
+  global:
+    - secure: "nkVNCk8H2orIZOmow0t+Qub1lFQCYpJgNZf17zYI5x0JVqQNCqkcTYYDHqzwkvkmixXFCrfYZQuXy7x2qg9zjCX+vmhlmiMWwe8dNa34OLTseuuR2irS0C8nRGRYxKM7EGenRZSqbFVUksKRm2iWnHKxtmCzeDaS7MoMit2wdUo="
+    - secure: "j8+hPaZnyM+UlOBYOEA96fPbVWbN6bMQ28SGQnFMwxo2axHi9ww9Au1N7002HzHnxX8iyesdWFBigArnEL8zKEoXH9Bmur0sn3Ys4bu72C3ozscP4cjXfYSHj8aVLp1EIMdQPDF7MkCccx9l7ONdsW0ltmdiVUtDxzqkH+63WLU="
+
+branches:
+  except:
+    - gh-pages
+
+notifications:
+  email: false
+
+cache:
+  directories:
+    - $HOME/.m2
+--------------------------------------------------------------------------------------------------------
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.reactive.function.server.RouterFunction;
+import org.springframework.web.reactive.function.server.RouterFunctions;
+import org.springframework.web.reactive.function.server.ServerResponse;
+
+import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
+
+@Configuration
+public class PlayerRouter {
+
+    @Bean
+    public RouterFunction<ServerResponse> route(PlayerHandler playerHandler) {
+        return RouterFunctions
+                .route(GET("/players/{name}"), playerHandler::getName)
+                .filter(new ExampleHandlerFilterFunction());
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.web.reactive.function.server.HandlerFilterFunction;
+import org.springframework.web.reactive.function.server.HandlerFunction;
+import org.springframework.web.reactive.function.server.ServerRequest;
+import org.springframework.web.reactive.function.server.ServerResponse;
+import reactor.core.publisher.Mono;
+
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+
+public class ExampleHandlerFilterFunction implements HandlerFilterFunction<ServerResponse, ServerResponse> {
+
+    @Override
+    public Mono<ServerResponse> filter(ServerRequest serverRequest, HandlerFunction<ServerResponse> handlerFunction) {
+        if (serverRequest.pathVariable("name").equalsIgnoreCase("test")) {
+            return ServerResponse.status(FORBIDDEN).build();
+        }
+        return handlerFunction.handle(serverRequest);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
+
+public class AdminInterceptor extends HandlerInterceptorAdapter {
+
+   @Override
+   public void postHandle(HttpServletRequest req, HttpServletResponse res,
+         Object handler, ModelAndView model)  throws Exception {
+
+      System.out.println("Called after handler method request completion,"
+            + " before rendering the view");
+
+      LocalTime time = LocalTime.now();
+      int hrs = time.getHour();
+      if (hrs >= 0 && hrs <= 12) {
+         model.addObject("greeting", "Good morning!");
+      } else if (hrs > 12 && hrs <= 17) {
+         model.addObject("greeting", "Good afternoon!");
+      } else {
+         model.addObject("greeting", "Good evening!");
+      }
+   }
+}
+--------------------------------------------------------------------------------------------------------
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.ModelAndView;
+
+public class GuestInterceptor implements HandlerInterceptor {
+
+   // Called before handler method invocation
+   @Override
+   public boolean preHandle(HttpServletRequest req, HttpServletResponse res,
+         Object handler) throws Exception {
+      System.out.println("Called before handler method");
+      req.setAttribute("fname", "Elizabeth");
+      return true;
+   }
+
+   // Called after handler method request completion, before rendering the view
+   @Override
+   public void postHandle(HttpServletRequest req, HttpServletResponse res, 
+         Object handler, ModelAndView model)  throws Exception {
+      System.out.println("Called after handler method request completion,"
+            + " before rendering the view");
+
+      model.addObject("lname", "Brown");
+   }
+
+   // Called after rendering the view
+   @Override
+   public void afterCompletion(HttpServletRequest req, HttpServletResponse res,
+         Object handler, Exception ex)  throws Exception {
+      System.out.println("Called after rendering the view");
+   }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.stereotype.Component;
+import org.springframework.web.socket.TextMessage;
+import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.socket.handler.TextWebSocketHandler;
+
+@Component
+public class MyWebSocketHandler extends TextWebSocketHandler {
+
+    @Override
+    protected void handleTextMessage(final WebSocketSession session, final TextMessage message) throws Exception {
+
+        String clientMessage = message.getPayload();
+
+        if (clientMessage.startsWith("Hello") || clientMessage.startsWith("Hi")) {
+            session.sendMessage(new TextMessage("Hello! What can i do for you?"));
+        } else {
+            session.sendMessage(
+                new TextMessage("This is a simple hello world example of using Spring WebSocket."));
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
 @Qualifier@Retention(RUNTIME)@Target({ TYPE, METHOD, FIELD, PARAMETER })@Documentedpublic @interface SomeQualifierOne {    public static final class Literalextends AnnotationLiteral<SomeQualifierOne>implements SomeQualifierOne {Chapter 3  IdentIfyIng Beans
 71private static final long serialVersionUID = 1L;public static final Literal INSTANCE = new Literal();   }}
 
