@@ -618,6 +618,216 @@ public interface ITaskSubscriptionRepository<E extends TaskSubscriptionEntity, D
     public Iterable<E> findByPoll(Long pollId);
 }
 -----------------------------------------------------------------------------------------
+//package com.paragon.microservices.autotests.common.client.coupons.service;
+//
+//import com.jayway.restassured.builder.RequestSpecBuilder;
+//import com.jayway.restassured.filter.log.LogDetail;
+//import com.jayway.restassured.http.ContentType;
+//import com.jayway.restassured.specification.RequestSpecification;
+//import com.paragon.microservices.autotests.common.client.coupons.model.GetCouponRequest;
+//import com.paragon.microservices.autotests.common.client.coupons.model.GetCouponResponse;
+//import com.paragon.microservices.autotests.system.property.EndpointProperty;
+//import lombok.RequiredArgsConstructor;
+//import lombok.extern.slf4j.Slf4j;
+//import org.springframework.stereotype.Service;
+//import org.springframework.validation.annotation.Validated;
+//import org.springframework.web.util.UriComponentsBuilder;
+//
+//import javax.transaction.Transactional;
+//import java.net.URI;
+//
+//import static com.jayway.restassured.RestAssured.given;
+//import static org.hamcrest.CoreMatchers.equalTo;
+//
+//@Slf4j
+//@Service
+//@Validated
+//@Transactional(rollbackOn = Exception.class)
+//@RequiredArgsConstructor
+//public class CouponClientImpl implements CouponClient {
+//    private final EndpointProperty endpointProperty;
+//
+//    //    @Test
+////    public void testForbiddenAccess() {
+////        given().when().get(getServiceURI() + "/api/users").then().statusCode(401);
+////    }
+////
+////    @Test
+////    public void testAuthorizationAccess() {
+////        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123").when().get(getServiceURI() + "/api/users").then().statusCode(200);
+////    }
+////
+////    @Test
+////    public void testNotFound() {
+////        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123").when().get(getServiceURI() + "/api/userss").then().statusCode(404);
+////    }
+////    @Test
+////    public void testVerifyUser2() {
+////        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123").when().get(getServiceURI() + "/api/user/2").then()
+////                .body("login", equalTo("user2@gmail.com"))
+////                .body("name", equalTo("user2"))
+////                .body("createdBy", equalTo("user2@gmail.com"))
+////                .body("age", equalTo(26))
+////                .body("phone", equalTo("+79211234567"))
+////                //.body("gender", equalTo(User.UserGenderType.MALE.toString()))
+////                .body("id", equalTo(2))
+////                .body("createdAt", equalTo("2017-04-30 00:00:00+0300"))
+////                .body("modifiedAt", nullValue())
+////                .body("rating", equalTo(1.0f))
+////                .body("registeredAt", equalTo("2017-04-30 00:00:00+0300"))
+////                .body("status", equalTo(UserAccountStatusInfo.StatusType.ACTIVE.toString()))
+////                .statusCode(200);
+//
+//    //        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123")
+////                .body(getObjectAsString(user))
+////                .when().post(getServiceURI() + "/api/user").then()
+////                .statusCode(201);
+////        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123").when().get(getServiceURI() + "/api/users").then()
+////                .body("login", hasItem("user18@gmail.com"))
+////                .statusCode(200);
+//
+//    //        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123")
+////                .body(user1)
+////                .when().put(getServiceURI() + "/api/user/{id}", user1.getId()).then()
+////                .body("status", equalTo(UserAccountStatusInfo.StatusType.ACTIVE.toString()))
+////                .statusCode(200);
+//
+//    //        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123").when().get(getServiceURI() + "/api/user/4").then()
+////                .body("login", equalTo("user18@gmail.com"))
+////                .statusCode(200);
+////        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123")
+////                .when().delete(getServiceURI() + "/api/user/4").then()
+////                .statusCode(403);
+//////        given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("dba", "dba123")
+//////                .when().delete(getServiceURI() + "/api/user/4").then()
+//////                .statusCode(200);
+//
+//    @Override
+//    public GetCouponResponse getCoupon(final GetCouponRequest couponRequest) {
+//        return given()
+//                .log().all()
+//                .contentType(ContentType.JSON)
+//                .accept(ContentType.JSON)
+//                .auth().basic("user", "user123")
+//                .when()
+//                .get(this.buildFullPath(couponRequest))
+//                .then()
+//                .log().all()
+//                .body("name", equalTo("subscription3"))
+//                .statusCode(200)
+//                .extract()
+//                .as(GetCouponResponse.class);
+//    }
+//
+//    private URI buildFullPath(final GetCouponRequest request) {
+//        final EndpointProperty.RouteInfo routeInfo = this.endpointProperty.getRoutes().get("coupons-api");
+//        return UriComponentsBuilder
+//                .fromUriString(routeInfo.getBasePath())
+//                .path(routeInfo.getSegmentPath())
+//                .path("/")
+//                .path(request.getSerialNumber())
+//                .build()
+//                .toUri();
+//    }
+//
+//    private RequestSpecification buildRequestSpecification() {
+//        return new RequestSpecBuilder()
+//                .setBaseUri("http://localhost")
+//                .setPort(8080)
+//                .setAccept(ContentType.JSON)
+//                .setContentType(ContentType.ANY)
+//                .log(LogDetail.ALL)
+//                .build();
+//    }
+////
+////    private Optional<GetCouponResponse> getEmptyIfNotFoundOrRethrow(final HttpStatusCodeException e) {
+////        final HttpStatus statusCode = e.getStatusCode();
+////        if (!statusCode.equals(HttpStatus.NOT_FOUND)) {
+////            rethrowSpecificException(e);
+////        }
+////        return Optional.empty();
+////    }
+////
+////    private void rethrowSpecificException(final Exception e) {
+////        rethrowRestServiceSpecificException(e, "Authority service is not available!", "Error is occurred when calling Authority service");
+////    }
+//}
+//
+//
+////    RequestSpecification requestSpec = new RequestSpecBuilder()
+////            .setBaseUri("http://localhost")
+////            .setPort(8080)
+////            .setAccept(ContentType.JSON)
+////            .setContentType(ContentType.ANY)
+////...
+////        .log(LogDetail.ALL)
+////        .build();
+////
+////// можно задать одну спецификацию для всех запросов:
+////        RestAssured.requestSpecification = requestSpec;
+////
+////// или для отдельного:
+////        given().spec(requestSpec)...when().get(someEndpoint);
+////
+////        ResponseSpecification responseSpec = new ResponseSpecBuilder()
+////        .expectStatusCode(200)
+////        .expectBody(containsString("success"))
+////        .build();
+////
+////// можно задать одну спецификацию для всех ответов:
+////        RestAssured.responseSpecification = responseSpec;
+////
+////// или для отдельного:
+////        given()...when().get(someEndpoint).then().spec(responseSpec)...;
+//
+////// то же самое работает и в обратную сторону:
+////SomePojo pojo = given().
+////    .when().get(EndPoints.get)
+////            .then().extract().body().as(SomePojo.class);
+//
+////    @Test
+////    public void whenLogOnlyIfValidationFailed_thenSuccess() {
+////        when().get("/users/eugenp")
+////                .then().log().ifValidationFails().statusCode(200);
+////
+////        given().log().ifValidationFails()
+////                .when().get("/users/eugenp")
+////                .then().statusCode(200);
+////    }
+////
+////    @Test
+////    public void whenLogResponseIfErrorOccurred_thenSuccess() {
+////
+////        when().get("/users/eugenp")
+////                .then().log().ifError();
+////        when().get("/users/eugenp")
+////                .then().log().ifStatusCodeIsEqualTo(500);
+////        when().get("/users/eugenp")
+////                .then().log().ifStatusCodeMatches(greaterThan(200));
+////    }
+//
+////    @Test
+////    public void whenUpdatePerson_thenStatus200() {
+////        long id = createTestPerson("Nick").getId();
+////        Person person = new Person("Michail");
+////        given().pathParam("id", id).log()
+////                .body().contentType("application/json").body(person)
+////
+////                .when().put("/persons/{id}")
+////
+////                .then().log().body().statusCode(HttpStatus.OK.value())
+////                .and().body("name", equalTo("Michail"));
+////    }
+////
+////    @Test
+////    public void givenNoPerson_whenGetPerson_thenStatus500() {
+////        given().pathParam("id", 1)
+////                .when().get("/persons/{id}")
+////
+////                .then().log().body()
+////                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+////    }
+-----------------------------------------------------------------------------------------
     @Test
     public void testAddUserSubscription() {
         final UserDTO user1 = given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123").when().get(getServiceURI() + "/api/user/1").as(UserDTO.class);

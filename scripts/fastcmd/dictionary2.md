@@ -2777,6 +2777,66 @@ public class MapToAddressConverter implements Converter<Address, Map<String, byt
   }
 }
 --------------------------------------------------------------------------------------------------------
+/*
+@RunWith(SpringRunner.class)
+@SpringBootTestConfiguration(
+        activeClasses = {
+                FileToUploadRequestConverter.class
+        })
+@EnableAutoConfiguration(
+        exclude = {
+                TaskExecutionAutoConfiguration.class,
+                IntegrationAutoConfiguration.class,
+                KafkaAutoConfiguration.class,
+                MetricsAutoConfiguration.class,
+                WebMvcMetricsAutoConfiguration.class,
+                RestTemplateAutoConfiguration.class
+        }
+)
+public class FileToUploadRequestConverterTest extends AbstractBaseTest {
+    private static final String FILE_TYPE = "pdf";
+    private static final String FILE_NAME = "test";
+    private static final long FILE_SIZE = 20L;
+
+    @Autowired
+    private ConversionService conversionService;
+
+    @Test
+    public void test_valid_File_to_UploadFileRequest_ByConverter() {
+        // given
+        final File file = this.getFile(new byte[]{0, 1, 3}, FILE_NAME, FILE_SIZE, FILE_TYPE);
+
+        // when
+        final UploadFileRequest request = this.conversionService.convert(file, UploadFileRequest.class);
+
+        // then
+        assertThat(request, is(not(nullValue())));
+        assertThat(request.getContent(), equalTo(file.getContent()));
+        assertThat(request.getMediaType(), equalTo(file.getType()));
+        assertThat(request.getName(), equalTo(file.getDispositionName()));
+        assertThat(request.getSize(), equalTo(file.getSize()));
+        assertThat(request.getLastModified(), equalTo(0L));
+    }
+
+    @Test
+    public void test_invalid_File_to_UploadFileRequest_ByConverter() {
+        // given
+        final File file = this.getFile(null, EMPTY, 0L, FILE_TYPE);
+
+        // when
+        final UploadFileRequest request = this.conversionService.convert(file, UploadFileRequest.class);
+
+        // then
+        assertThat(request, is(not(nullValue())));
+        assertThat(request.getContent(), equalTo(file.getContent()));
+        assertThat(request.getMediaType(), equalTo(file.getType()));
+        assertThat(request.getName(), equalTo(file.getDispositionName()));
+        assertThat(request.getSize(), equalTo(file.getSize()));
+        assertThat(request.getLastModified(), equalTo(0L));
+    }
+}
+ */
+--------------------------------------------------------------------------------------------------------
 http://localhost:8089/api/v0/distributor/download/c108cda3-8b4b-483d-a987-d65e6bfe3024/lombok.config
 
     @Autowired
@@ -8206,6 +8266,28 @@ public class BufferedReaderExample {
         </execution>
     </executions>
 </plugin>
+--------------------------------------------------------------------------------------------------------
+del /f /q /a "C:\git-project\paragon.microservices.distributor\.build\bin"
+--------------------------------------------------------------------------------------------------------
+List<Enum> enumValues = Arrays.asList(Enum.values());
+or
+
+List<Enum> enumValues = new ArrayList<Enum>(EnumSet.allOf(Enum.class));
+Using Java 8 features, you can map each constant to its name:
+
+List<String> enumNames = Stream.of(Enum.values())
+                               .map(Enum::name)
+                               .collect(Collectors.toList());
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
