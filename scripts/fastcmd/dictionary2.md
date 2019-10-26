@@ -7092,6 +7092,63 @@ public class RequiresPermissionsFilter implements ContainerRequestFilter {
     }
 }
 --------------------------------------------------------------------------------------------------------
+/* parse each line */CSVParserparser=CSVParser.parse(line,CSVFormat.RFC4180);for(CSVRecordcr:parser){intid=cr.get(1);// columns start at 1 not 0 !!!intyear=cr.get(2);Stringcity=cr.get(3);}
+
+JSONParserparser=newJSONParser();try{JSONObjectjObj=(JSONObject)parser.parse(newFileReader("data.json"));// TODO do something with jObj}catch(IOException|ParseExceptione){System.err.println(e.getMessage());}
+
+JSONParserparser=newJSONParser();try{JSONArrayjArr=(JSONArray)parser.parse(newFileReader("data.json"));// TODO do something with jObj}catch(IOException|ParseExceptione){System.err.println(e.getMessage());}
+--------------------------------------------------------------------------------------------------------
+/**
+ * uses hashing trick to store terms in large hashmap to avoid collisions
+ * @author Michael Brzustowicz
+ */
+public class HashingDictionary implements Dictionary {
+    private int numTerms; // 2^n is optimal
+
+    public HashingDictionary() {
+        // 2^20 = 1048576
+        this(new Double(Math.pow(2,20)).intValue());
+    }
+
+    public HashingDictionary(int numTerms) {
+        this.numTerms = numTerms;
+    }
+    
+    @Override
+    public Integer getTermIndex(String term) {
+        return Math.floorMod(term.hashCode(), numTerms);
+    }
+
+    @Override
+    public int getNumTerms() {
+        return numTerms;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+BufferedImageimg=null;try{img=ImageIO.read(newFile("Image.png"));intheight=img.getHeight();intwidth=img.getWidth();int[][]data=newint[height][width];for(inti=0;i<height;i++){for(intj=0;j<width;j++){intrgb=img.getRGB(i,j);// negative integersdata[i][j]=rgb;}}}catch(IOExceptione){// handle exception}
+
+intblue=0x0000ff&rgb;intgreen=0x0000ff&(rgb>>8);intred=0x0000ff&(rgb>>16);intalpha=0x0000ff&(rgb>>24);
+
+byte[]pixels=((DataBufferByte)img.getRaster().getDataBuffer()).getData();for(inti=0;i<pixels.length/3;i++){intblue=Byte.toUnsignedInt(pixels[3*i]);intgreen=Byte.toUnsignedInt(pixels[3*i+1]);intred=Byte.toUnsignedInt(pixels[3*i+2]);}
+
+//convert rgb to grayscale (0 to 1) where colors are on a scale of 0 to 255doublegray=(0.2126*red+0.7152*green+0.0722*blue)/255.0
+--------------------------------------------------------------------------------------------------------
+source <filename>
+order by rand() limit 1000
+DROPTABLEIFEXISTSdata;CREATETABLEIFNOTEXISTSdata(idINTEGERPRIMARYKEY,yrINTEGER,cityVARCHAR(80));INSERTINTOdata(id,yr,city)VALUES(1,2015,"San Francisco"),(2,2014,"New York"),(3,2012,"Los Angeles")
+--------------------------------------------------------------------------------------------------------
+intsize=3;RealVectorvector=newArrayRealVector(size);
+
+introwDimension=10;intcolDimension=20;RealMatrixmatrix=newArray2DRowRealMatrix(rowDimension,colDimension);
+
+double[][]data=;RealMatrixblockMatrix=newBlockRealMatrix(data);
+intdim=10000;RealVectorsparseVector=newOpenMapRealVector(dim);
+--------------------------------------------------------------------------------------------------------
+publicclassBasicScatterChartextendsApplication{publicstaticvoidmain(String[]args){launch(args);}@Overridepublicvoidstart(Stagestage)throwsException{int[]xData={1,2,3,4,5};double[]yData={1.3,2.1,3.3,4.0,4.8};/* add Data to a Series */Seriesseries=newSeries();for(inti=0;i<xData.length;i++){series.getData().add(newData(xData[i],yData[i]));}/* define the axes */NumberAxisxAxis=newNumberAxis();xAxis.setLabel("x");NumberAxisyAxis=newNumberAxis();yAxis.setLabel("y");/* create the scatter chart */ScatterChart<Number,Number>scatterChart=newScatterChart<>(xAxis,yAxis);scatterChart.getData().add(series);/* create a scene using the chart */Scenescene=newScene(scatterChart,800,600);/* tell the stage what scene to use and render it! */stage.setScene(scene);stage.show();}}
+--------------------------------------------------------------------------------------------------------
+scatterChart.setAnimated(false);.../* render the image */stage.show();.../* save the chart to a file AFTER the stage is rendered */WritableImageimage=scatterChart.snapshot(newSnapshotParameters(),null);Filefile=newFile("chart.png");ImageIO.write(SwingFXUtils.fromFXImage(image,null),"png",file);
+
+--------------------------------------------------------------------------------------------------------
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
