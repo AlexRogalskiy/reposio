@@ -7125,6 +7125,178 @@ public class HashingDictionary implements Dictionary {
     }
 }
 --------------------------------------------------------------------------------------------------------
+java --module-path com.jdojo.policy\build\classes;com.jdojo.claim\build\classes --module com.jdojo.claim/com.jdojo.claim.Main
+
+FOR /F "tokens=1 delims=" %%A in ('dir com.jdojo.policy\src\*.java /S /B') do javac -d com.jdojo.policy\build\classes %%A
+
+FOR /F "tokens=1 delims=" %%A in ('dir com.jdojo.intro\src\*.java /S /B') do javac --module-path com.jdojo.intro\build\classes -d com.jdojo.intro\build\classes %%A
+
+FOR /F "tokens=1 delims=" %%A in ('dir com.jdojo.claim\src\*.java /S /B') do javac --module-path com.jdojo.policy\build\classes -d com.jdojo.claim\build\classes %%A
+
+FOR /F "tokens=1 delims=" %%A in ('dir src\*.java /S /B') do javac -d build\classes %%A
+--------------------------------------------------------------------------------------------------------
+import jdk.incubator.http.HttpHeaders;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalLong;
+import java.util.Set;
+import java.util.TreeMap;
+
+/**
+ * Implementation of HttpHeaders.
+ */
+public class HttpHeadersImpl implements HttpHeaders {
+
+    private final TreeMap<String,List<String>> headers;
+
+    public HttpHeadersImpl() {
+        headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    }
+
+    @Override
+    public Optional<String> firstValue(String name) {
+        List<String> l = headers.get(name);
+        return Optional.ofNullable(l == null ? null : l.get(0));
+    }
+
+    @Override
+    public List<String> allValues(String name) {
+        return headers.get(name);
+    }
+
+    @Override
+    public Map<String, List<String>> map() {
+        return Collections.unmodifiableMap(headers);
+    }
+
+    public Map<String, List<String>> directMap() {
+        return headers;
+    }
+
+    // package private mutators
+
+    public HttpHeadersImpl deepCopy() {
+        HttpHeadersImpl h1 = new HttpHeadersImpl();
+        TreeMap<String,List<String>> headers1 = h1.headers;
+        Set<String> keys = headers.keySet();
+        for (String key : keys) {
+            List<String> vals = headers.get(key);
+            List<String> vals1 = new ArrayList<>(vals);
+            headers1.put(key, vals1);
+        }
+        return h1;
+    }
+
+    public void addHeader(String name, String value) {
+        headers.computeIfAbsent(name, k -> new ArrayList<>(1))
+               .add(value);
+    }
+
+    public void setHeader(String name, String value) {
+        List<String> values = new ArrayList<>(1); // most headers has one value
+        values.add(value);
+        headers.put(name, values);
+    }
+
+    @Override
+    public OptionalLong firstValueAsLong(String name) {
+        List<String> l = headers.get(name);
+        if (l == null) {
+            return OptionalLong.empty();
+        } else {
+            String v = l.get(0);
+            return OptionalLong.of(Long.parseLong(v));
+        }
+    }
+
+    public void clear() {
+        headers.clear();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+javadoc -html5 <other-options>
+M/dd/yyyy HH:mm zzzz
+M/dd/yyyy HH:mm vvvv
+--------------------------------------------------------------------------------------------------------
+java -Djdk.serialFilter=maxarray=100;maxdepth=3;com.jdojo.** --module-path com.jdojo.misc\build\classes --module com.jdojo.misc/com.jdojo.misc.ObjectFilterTest
+
+Chapter 20 ■ Other Changes in JDK 9509public class Item implements Serializable {    private int id;        private String name;    private int[] points;    public Item(int id, String name, int[] points) {        this.id = id;        this.name = name;        this.points = points;    }    /* Add getters and setters here */    @Override    public String toString() {        return "[id=" + id + ", name=" + name + ", points=" + Arrays.toString(points) + "]";    }}
+
+import java.io.File;import java.io.FileInputStream;import java.io.FileOutputStream;import java.io.ObjectInputFilter;import java.io.ObjectInputFilter.Config;import java.io.ObjectInputStream;import java.io.ObjectOutputStream;public class ObjectFilterTest {    public static void main(String[] args)  {                 // Relative path of the output/input file        File file = new File("serialized", "item.ser");        // Make sure directories exist        ensureParentDirExists(file);        // Create an Item used in serialization and deserialization        Item item = new Item(100, "Pen", new int[]{1,2,3,4});        // Serialize the item        serialize(file, item);
+        // Print the global filter        ObjectInputFilter globalFilter = Config.getSerialFilter();        System.out.println("Global filter: " + globalFilter);        // Deserialize the item        Item item2 = deserialize(file);        System.out.println("Deserialized using global filter: " + item2);        // Use a filter to reject array size > 2        String maxArrayFilterPattern = "maxarray=2";        ObjectInputFilter maxArrayFilter = Config.createFilter(maxArrayFilterPattern);                 Item item3 = deserialize(file, maxArrayFilter);        System.out.println("Deserialized with a maxarray=2 filter: " + item3);        // Create a custom filterArrayLengthObjectFilter customFilter = new ArrayLengthObjectFilter(5);                        Item item4 = deserialize(file, customFilter);        System.out.println("Deserialized with a custom filter (maxarray=5): " + item4);    }    private static void serialize(File file, Item item) {                try (ObjectOutputStream out =  new ObjectOutputStream(new FileOutputStream(file))) {                        out.writeObject(item);            System.out.println("Serialized Item: " + item);        } catch (Exception e) {            e.printStackTrace();        }    }    private static Item deserialize(File file) {try  (ObjectInputStream  in  =   new  ObjectInputStream(new  FileInputStream(file)))  {                                    Item item = (Item)in.readObject();            return item;        } catch (Exception e) {            System.out.println("Could not deserialize item. Error: " + e.getMessage());        }        return null;    }    private static Item deserialize(File file, ObjectInputFilter filter) {        try (ObjectInputStream in =  new ObjectInputStream(new FileInputStream(file))) {                        // Set the object input filter passed in            in.setObjectInputFilter(filter);            Item item = (Item)in.readObject();            return item;        } catch (Exception e) {            System.out.println("Could not deserialize item. Error: " + e.getMessage());                    }        return null;    }
+    private static void ensureParentDirExists(File file) {        File parent = file.getParentFile();        if(!parent.exists()) {            parent.mkdirs();        }        System.out.println("Input/output file is " + file.getAbsolutePath());    }}
+--------------------------------------------------------------------------------------------------------
+ObjectInputFilter.Config class:// Create a filterString pattern = "maxarray=100;maxdepth=3;com.jdojo.**";ObjectInputFilter globalFilter = ObjectInputFilter.Config.createFilter(pattern);// Set a global filterObjectInputFilter.Config.setSerialFilter(lobalFilter);
+
+import java.io.ObjectInputFilter;public class ArrayLengthObjectFilter implements ObjectInputFilter {    private long maxLenth = -1;    public ArrayLengthObjectFilter(int maxLength) {        this.maxLenth = maxLength;    }    @Override    public Status checkInput(FilterInfo info) {        long arrayLength = info.arrayLength();        if (arrayLength >= 0 && arrayLength > this.maxLenth) {            return Status.REJECTED;        }        return Status.ALLOWED;    }}
+
+import java.io.ObjectInputFilter;public class ArrayLengthObjectFilter implements ObjectInputFilter {    private long maxLenth = -1;    public ArrayLengthObjectFilter(int maxLength) {        this.maxLenth = maxLength;    }    @Override    public Status checkInput(FilterInfo info) {        long arrayLength = info.arrayLength();        if (arrayLength >= 0 && arrayLength > this.maxLenth) {            return Status.REJECTED;        }        return Status.ALLOWED;    }}
+--------------------------------------------------------------------------------------------------------
+java -p lib -m claim/pkg3.Main
+ava -Xdiag:resolver -p lib -m claim/pkg3.Main
+java --module-path C:\applib;C:\lib other-args-go-here
+java -p C:\applib;C:\extlib other-args-go-here
+java --module-path=C:\applib;C:\lib other-args-go-here
+java --list-modules
+java --module-path lib --list-modules
+java --list-modules java.sql
+javac -d mods --module-source-path src $(find src -name "*.java"
+avac -d mods\com.jdojo.intro  --module-version 1.0  src\com.jdojo.intro\module-info.java      src\com.jdojo.intro\com\jdojo\intro\Welcome.java
+FOR /F "tokens=1 delims=" %A in ('dir src\*.java /S /B') do javac -d mods --module-source-path src %A
+javac -d mods --module-source-path src $(find src -name "*.java")
+ar --create --file lib/com.jdojo.intro-1.0.jar --main-class com.jdojo.intro.Welcome --module-version 1.0 -C mods/com.jdojo.intro .
+java --module-path <module-path> --module <module>/<main-class>
+jar --describe-module --file lib\cglib-2.2.2.jar-plugin
+
+
+
+
+
+
+
+
+
+
+
+
+
+javap -verbose jar:file:lib/com.jdojo.intro-1.0.jar!/module-info.class
+javap --module-path lib --module com.jdojo.intro com.jdojo.intro.Welcome
+javap jrt:/java.sql/module-info.class
+--------------------------------------------------------------------------------------------------------
+/env -class-path C:\Java9Revealed\com.jdojo.jshell\build\classes
+import java.io.*
+import java.math.*
+import java.net.*
+import java.nio.file.*
+import java.util.*
+import java.util.concurrent.*
+import java.util.function.*
+import java.util.prefs.*
+import java.util.regex.*
+import java.util.stream.*
+import java.time.*;
+import com.jdojo.jshell.*;
+void printf(String format, Object... args) { System.out.printf(format, args); }
+--------------------------------------------------------------------------------------------------------
+Map<String, Integer> mapNameAge = people.stream()
+      .collect(Collectors.toMap(
+          Person::getName,
+          Person::getAge,
+          (u,v) -> { throw new IllegalStateException(String.format("Duplicate key %s", u)); },
+          LinkedHashMap::new
+          ));
+--------------------------------------------------------------------------------------------------------
+# itertools.permutations() generates permutations 
+# for an iterable. Time to brute-force those passwords ;-)
+
+>>> import itertools
+>>> for p in itertools.permutations('ABCD'):
+...     print(p)
+--------------------------------------------------------------------------------------------------------
 BufferedImageimg=null;try{img=ImageIO.read(newFile("Image.png"));intheight=img.getHeight();intwidth=img.getWidth();int[][]data=newint[height][width];for(inti=0;i<height;i++){for(intj=0;j<width;j++){intrgb=img.getRGB(i,j);// negative integersdata[i][j]=rgb;}}}catch(IOExceptione){// handle exception}
 
 intblue=0x0000ff&rgb;intgreen=0x0000ff&(rgb>>8);intred=0x0000ff&(rgb>>16);intalpha=0x0000ff&(rgb>>24);
