@@ -7239,6 +7239,1488 @@ jshell> /set mode silent|  /set mode silent -quiet|  /set prompt silent "-> " ">
 
 • /set start [-retain] <file>• /set start [-retain] -default• /set start [-retain] -none
 --------------------------------------------------------------------------------------------------------
+public enum TradingSignal {
+	LONG, SHORT, NONE;
+
+	public TradingSignal flip() {
+		switch (this) {
+		case LONG:
+			return SHORT;
+		case SHORT:
+			return LONG;
+		default:
+			return this;
+		}
+	}
+}
+
+import org.joda.time.DateTime;
+
+import com.precioustech.fxtrading.instrument.TradeableInstrument;
+
+public class Price<T> {
+	private final TradeableInstrument<T> instrument;
+	private final double bidPrice, askPrice;
+	private final DateTime pricePoint;
+
+	public TradeableInstrument<T> getInstrument() {
+		return instrument;
+	}
+
+	public double getBidPrice() {
+		return bidPrice;
+	}
+
+	public double getAskPrice() {
+		return askPrice;
+	}
+
+	public DateTime getPricePoint() {
+		return pricePoint;
+	}
+
+	public Price(TradeableInstrument<T> instrument, double bidPrice, double askPrice, DateTime pricePoint) {
+		this.instrument = instrument;
+		this.bidPrice = bidPrice;
+		this.askPrice = askPrice;
+		this.pricePoint = pricePoint;
+	}
+}
+
+import org.joda.time.DateTime;
+
+import com.google.common.eventbus.EventBus;
+import com.precioustech.fxtrading.instrument.TradeableInstrument;
+
+/**
+ * A callback handler for a market data event. The separate streaming event
+ * handler upstream, is responsible for handling and parsing the incoming event
+ * from the market data source and invoke the onMarketEvent of this handler,
+ * which in turn can disseminate the event if required, further downstream.
+ * Ideally, the implementer of this interface, would drop the event on a queue
+ * for asynchronous processing or use an event bus for synchronous processing.
+ * 
+ * @author Shekhar Varshney
+ *
+ * @param <T>
+ *            The type of instrumentId in class TradeableInstrument
+ * @see TradeableInstrument
+ * @see EventBus
+ */
+public interface MarketEventCallback<T> {
+	/**
+	 * A method, invoked by the upstream handler of streaming market data
+	 * events. This invocation of this method is synchronous, therefore the
+	 * method should return asap, to make sure that the upstream events do not
+	 * queue up.
+	 * 
+	 * @param instrument
+	 * @param bid
+	 * @param ask
+	 * @param eventDate
+	 */
+	void onMarketEvent(TradeableInstrument<T> instrument, double bid, double ask, DateTime eventDate);
+}
+
+import org.joda.time.DateTime;
+
+import com.google.common.eventbus.EventBus;
+import com.precioustech.fxtrading.instrument.TradeableInstrument;
+
+public class MarketEventHandlerImpl<T> implements MarketEventCallback<T> {
+
+	private final EventBus eventBus;
+
+	public MarketEventHandlerImpl(EventBus eventBus) {
+		this.eventBus = eventBus;
+	}
+
+	@Override
+	public void onMarketEvent(TradeableInstrument<T> instrument, double bid, double ask, DateTime eventDate) {
+		MarketDataPayLoad<T> payload = new MarketDataPayLoad<T>(instrument, bid, ask, eventDate);
+		eventBus.post(payload);
+
+	}
+}
+
+
+public enum CandleStickGranularity {
+
+	S5(5, "5 seconds"), // 5s
+	S10(10, "10 seconds"), // 10s
+	S15(15, "15 seconds"), // 15s
+	S30(30, "30 seconds"), // 30s
+	M1(60 * 1, "1 minute"), // 1min
+	M2(60 * 2, "2 minutes"), // 2mins
+	M3(60 * 3, "3 minutes"), // 3mins
+	M5(60 * 5, "5 minutes"), // 5mins
+	M10(60 * 10, "10 minutes"), // 10mins
+	M15(60 * 15, "15 minutes"), // 15mins
+	M30(60 * 30, "30 minutes"), // 30mins
+	H1(60 * 60, "1 hour"), // 1hr
+	H2(60 * 60 * 2, "2 hours"), // 2hr
+	H3(60 * 60 * 3, "3 hours"), // 3hr
+	H4(60 * 60 * 4, "4 hours"), // 4hr
+	H6(60 * 60 * 6, "6 hours"), // 6hr
+	H8(60 * 60 * 8, "8 hours"), // 8hr
+	H12(60 * 60 * 12, "12 hours"), // 12hr
+	D(60 * 60 * 24, "1 day"), // 1day
+	W(60 * 60 * 24 * 7, "1 week"), // 1wk
+	M(60 * 60 * 24 * 30, "1 month");// 1mth
+
+	private final long granularityInSeconds;
+	private final String label;
+
+	private CandleStickGranularity(long granularityInSeconds, String label) {
+		this.granularityInSeconds = granularityInSeconds;
+		this.label = label;
+	}
+
+	public long getGranularityInSeconds() {
+		return granularityInSeconds;
+	}
+
+	public String getLabel() {
+		return label;
+	}
+
+	public String getName() {
+		return name();
+	}
+}
+--------------------------------------------------------------------------------------------------------
+public class ConcurrentObjectAccumulator implements        BiConsumer<List<Product>, Path> {    private String word;    public ConcurrentObjectAccumulator(String word) {        this.word = word;    }
+
+@Override    public void accept(List<Product> list, Path path) {        Product product=ProductLoader.load(path);        if (product.getTitle().toLowerCase().contains           (word.toLowerCase())) {            list.add(product);        }    }}
+--------------------------------------------------------------------------------------------------------
+import org.junit.Test;
+import org.openqa.selenium.By;
+
+import static com.codeborne.selenide.Selenide.*;
+import static org.hamcrest.CoreMatchers.startsWith;
+import static org.junit.Assert.assertThat;
+
+public class SelenideTest {
+    @Test
+    public void wikipediaSearchFeature() throws InterruptedException {
+        // Opening Wikipedia page
+        open("http://en.wikipedia.org/wiki/Main_Page");
+
+        // Searching TDD
+        $(By.name("search")).setValue("Test-driven development");
+
+        // Clicking search button
+        $(By.name("go")).click();
+
+        // Checks
+        assertThat(title(), startsWith("Test-driven development"));
+    }
+}
+
+
+import org.junit.Test;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.firefox.FirefoxDriver;
+
+import static org.hamcrest.CoreMatchers.startsWith;
+import static org.junit.Assert.assertThat;
+
+public class SeleniumTest {
+    @Test
+    public void wikipediaSearchFeature() throws InterruptedException {
+        // Declaring the web driver used for web browsing
+        WebDriver driver = new FirefoxDriver();
+
+        // Opening Wikipedia page
+        driver.get("http://en.wikipedia.org/wiki/Main_Page");
+
+        // Searching TDD
+        WebElement query = driver.findElement(By.name("search"));
+        query.sendKeys("Test-driven development");
+
+        // Clicking search button
+        WebElement goButton = driver.findElement(By.name("go"));
+        goButton.click();
+
+        // Checks
+        assertThat(driver.getTitle(), startsWith("Test-driven development"));
+
+        driver.quit();
+    }
+}
+
+
+import cucumber.api.java.en.Given;
+import cucumber.api.java.en.Then;
+import cucumber.api.java.en.When;
+import org.openqa.selenium.By;
+
+import static com.codeborne.selenide.Selenide.*;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.junit.Assert.assertThat;
+
+public class WebSteps {
+    @Given("^I go to Wikipedia homepage$")
+    @org.jbehave.core.annotations.Given("I go to Wikipedia homepage")
+    public void goToWikiPage() {
+        open("http://en.wikipedia.org/wiki/Main_Page");
+    }
+
+    @When("^I enter the value (.*) on a field named (.*)$")
+    @org.jbehave.core.annotations.When("I enter the value $value on a field named $fieldName")
+    public void enterValueOnFieldByName(String value, String fieldName){
+        $(By.name(fieldName)).setValue(value);
+    }
+
+    @When("^I click the button (.*)$")
+    @org.jbehave.core.annotations.When("I click the button $buttonName")
+    public void clickButonByName(String buttonName){
+        $(By.name(buttonName)).click();
+    }
+
+    @Then("^the page title contains (.*)$")
+    @org.jbehave.core.annotations.Then("the page title contains $title")
+    public void pageTitleIs(String title) {
+        assertThat(title(), containsString(title));
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
+import org.togglz.console.TogglzConsoleServlet;
+import org.togglz.core.Feature;
+import org.togglz.core.activation.ActivationStrategyProvider;
+import org.togglz.core.activation.DefaultActivationStrategyProvider;
+import org.togglz.core.manager.CompositeFeatureProvider;
+import org.togglz.core.manager.EnumBasedFeatureProvider;
+import org.togglz.core.manager.FeatureManager;
+import org.togglz.core.manager.FeatureManagerBuilder;
+import org.togglz.core.manager.PropertyFeatureProvider;
+import org.togglz.core.repository.StateRepository;
+import org.togglz.core.repository.cache.CachingStateRepository;
+import org.togglz.core.repository.composite.CompositeStateRepository;
+import org.togglz.core.repository.file.FileBasedStateRepository;
+import org.togglz.core.repository.mem.InMemoryStateRepository;
+import org.togglz.core.spi.ActivationStrategy;
+import org.togglz.core.spi.FeatureProvider;
+import org.togglz.core.user.NoOpUserProvider;
+import org.togglz.core.user.UserProvider;
+import org.togglz.spring.boot.autoconfigure.TogglzProperties.FeatureSpec;
+import org.togglz.spring.listener.TogglzApplicationContextBinderApplicationListener;
+import org.togglz.spring.listener.TogglzApplicationContextBinderApplicationListener.ContextRefreshedEventFilter;
+import org.togglz.spring.security.SpringSecurityUserProvider;
+import org.togglz.spring.web.FeatureInterceptor;
+
+import com.github.heneke.thymeleaf.togglz.TogglzDialect;
+
+/**
+ * {@link EnableAutoConfiguration Auto-configuration} for Togglz.
+ *
+ * @author Marcel Overdijk
+ */
+@Configuration
+@ConditionalOnProperty(prefix = "togglz", name = "enabled", matchIfMissing = true)
+@EnableConfigurationProperties(TogglzProperties.class)
+public class TogglzAutoConfiguration {
+
+    @Bean
+    public TogglzApplicationContextBinderApplicationListener togglzApplicationContextBinderApplicationListener(
+        ObjectProvider<ContextRefreshedEventFilter> contextRefreshedEventFilter) {
+        return new TogglzApplicationContextBinderApplicationListener(contextRefreshedEventFilter.getIfAvailable());
+    }
+
+    @Configuration
+    @ConditionalOnMissingBean(FeatureProvider.class)
+    protected static class FeatureProviderConfiguration {
+
+        @Autowired
+        private TogglzProperties properties;
+
+        @Bean
+        public FeatureProvider featureProvider() {
+            PropertyFeatureProvider provider = new PropertyFeatureProvider(properties.getFeatureProperties());
+            Class<? extends Feature>[] featureEnums = properties.getFeatureEnums();
+            if (featureEnums != null && featureEnums.length > 0) {
+                return new CompositeFeatureProvider(new EnumBasedFeatureProvider(featureEnums), provider);
+            } else {
+                return provider;
+            }
+        }
+    }
+
+    @Configuration
+    @ConditionalOnMissingBean(FeatureManager.class)
+    protected static class FeatureManagerConfiguration {
+
+        @Autowired
+        private TogglzProperties properties;
+
+        @Bean
+        public FeatureManager featureManager(FeatureProvider featureProvider, List<StateRepository> stateRepositories,
+                UserProvider userProvider, ActivationStrategyProvider activationStrategyProvider) {
+            StateRepository stateRepository = null;
+            if (stateRepositories.size() == 1) {
+                stateRepository = stateRepositories.get(0);
+            } else if (stateRepositories.size() > 1) {
+                stateRepository = new CompositeStateRepository(
+                        stateRepositories.toArray(new StateRepository[stateRepositories.size()]));
+            }
+            // If caching is enabled wrap state repository in caching state
+            // repository.
+            // Note that we explicitly check if the state repository is not
+            // already a caching state repository,
+            // as the auto configuration of the state repository already creates
+            // a caching state repository if needed.
+            // The below wrapping only occurs if the user provided the state
+            // repository manually and caching is enabled.
+            if (properties.getCache().isEnabled() && !(stateRepository instanceof CachingStateRepository)) {
+                stateRepository = new CachingStateRepository(stateRepository, properties.getCache().getTimeToLive(),
+                        properties.getCache().getTimeUnit());
+            }
+            FeatureManagerBuilder featureManagerBuilder = new FeatureManagerBuilder();
+            String name = properties.getFeatureManagerName();
+            if (name != null && name.length() > 0) {
+                featureManagerBuilder.name(name);
+            }
+            featureManagerBuilder.featureProvider(featureProvider).stateRepository(stateRepository)
+                    .userProvider(userProvider).activationStrategyProvider(activationStrategyProvider).build();
+            FeatureManager manager = featureManagerBuilder.build();
+            return manager;
+        }
+    }
+
+    @Configuration
+    @ConditionalOnMissingBean(ActivationStrategyProvider.class)
+    protected static class ActivationStrategyProviderConfiguration {
+
+        @Autowired(required = false)
+        private List<ActivationStrategy> activationStrategies;
+
+        @Bean
+        public ActivationStrategyProvider activationStrategyProvider() {
+            DefaultActivationStrategyProvider provider = new DefaultActivationStrategyProvider();
+            if (activationStrategies != null && activationStrategies.size() > 0) {
+                provider.addActivationStrategies(activationStrategies);
+            }
+            return provider;
+        }
+    }
+
+    @Configuration
+    @ConditionalOnMissingBean(StateRepository.class)
+    protected static class StateRepositoryConfiguration {
+
+        @Autowired
+        private ResourceLoader resourceLoader = new DefaultResourceLoader();
+
+        @Autowired
+        private TogglzProperties properties;
+
+        @Bean
+        public StateRepository stateRepository() throws IOException {
+            StateRepository stateRepository;
+            String featuresFile = properties.getFeaturesFile();
+            if (featuresFile != null) {
+                Resource resource = this.resourceLoader.getResource(featuresFile);
+                Integer minCheckInterval = properties.getFeaturesFileMinCheckInterval();
+                if (minCheckInterval != null) {
+                    stateRepository = new FileBasedStateRepository(resource.getFile(), minCheckInterval);
+                } else {
+                    stateRepository = new FileBasedStateRepository(resource.getFile());
+                }
+            } else {
+                Map<String, FeatureSpec> features = properties.getFeatures();
+                stateRepository = new InMemoryStateRepository();
+                for (String name : features.keySet()) {
+                    stateRepository.setFeatureState(features.get(name).state(name));
+                }
+            }
+            // If caching is enabled wrap state repository in caching state
+            // repository.
+            if (properties.getCache().isEnabled()) {
+                stateRepository = new CachingStateRepository(stateRepository, properties.getCache().getTimeToLive(),
+                        properties.getCache().getTimeUnit());
+            }
+            return stateRepository;
+        }
+    }
+
+    @Configuration
+    @ConditionalOnMissingClass("org.springframework.security.config.annotation.web.configuration.EnableWebSecurity")
+    @ConditionalOnMissingBean(UserProvider.class)
+    protected static class UserProviderConfiguration {
+        @Bean
+        public UserProvider userProvider() {
+            return new NoOpUserProvider();
+        }
+    }
+
+    @Configuration
+    @ConditionalOnClass({ EnableWebSecurity.class, AuthenticationEntryPoint.class, SpringSecurityUserProvider.class })
+    @ConditionalOnMissingBean(UserProvider.class)
+    protected static class SpringSecurityUserProviderConfiguration {
+
+        @Autowired
+        private TogglzProperties properties;
+
+        @Bean
+        public UserProvider userProvider() {
+            return new SpringSecurityUserProvider(properties.getConsole().getFeatureAdminAuthority());
+        }
+    }
+
+    @Configuration
+    @ConditionalOnWebApplication
+    @ConditionalOnClass(TogglzConsoleServlet.class)
+    @Conditional(TogglzConsoleBaseConfiguration.OnConsoleAndNotUseManagementPort.class)
+    protected static class TogglzConsoleConfiguration extends TogglzConsoleBaseConfiguration {
+
+        public TogglzConsoleConfiguration(TogglzProperties properties) {
+            super(properties);
+        }
+    }
+
+    @Configuration
+    @ConditionalOnWebApplication
+    @ConditionalOnClass(HandlerInterceptorAdapter.class)
+    @ConditionalOnProperty(prefix = "togglz.web", name = "register-feature-interceptor", havingValue = "true")
+    protected static class TogglzFeatureInterceptorConfiguration extends WebMvcConfigurerAdapter {
+        @Override
+        public void addInterceptors(InterceptorRegistry registry) {
+            registry.addInterceptor(new FeatureInterceptor());
+        }
+    }
+
+    @Configuration
+    @ConditionalOnClass(TogglzDialect.class)
+    protected static class ThymeleafTogglzDialectConfiguration {
+
+        @Bean
+        @ConditionalOnMissingBean
+        public TogglzDialect togglzDialect() {
+            return new TogglzDialect();
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.AllNestedConditions;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.web.servlet.ServletRegistrationBean;
+import org.springframework.context.annotation.Bean;
+import org.togglz.console.TogglzConsoleServlet;
+
+/**
+ * Base {@link EnableAutoConfiguration Auto-configuration} class for Togglz Console.
+ *
+ * <p>Provides a common ground implementation for console on management port or on the
+ * application port, as well as for Spring Boot 1.5 and Spring Boot 2.
+ *
+ * @author Marcel Overdijk
+ * @author Rui Figueira
+ */
+public abstract class TogglzConsoleBaseConfiguration {
+
+    private final TogglzProperties properties;
+
+    protected TogglzConsoleBaseConfiguration(TogglzProperties properties) {
+        this.properties = properties;
+    }
+
+    @Bean
+    public ServletRegistrationBean togglzConsole() {
+        String path = getContextPath() + properties.getConsole().getPath();
+        String urlMapping = (path.endsWith("/") ? path + "*" : path + "/*");
+        TogglzConsoleServlet servlet = new TogglzConsoleServlet();
+        servlet.setSecured(properties.getConsole().isSecured());
+        return new ServletRegistrationBean(servlet, urlMapping);
+    }
+
+    protected String getContextPath() {
+        return "";
+    }
+
+    public static class OnConsoleAndUseManagementPort extends AllNestedConditions {
+
+        OnConsoleAndUseManagementPort() {
+            super(ConfigurationPhase.PARSE_CONFIGURATION);
+        }
+
+        @ConditionalOnProperty(prefix = "togglz.console", name = "enabled", matchIfMissing = true)
+        static class OnConsole {
+        }
+        
+        @ConditionalOnProperty(prefix = "togglz.console", name = "use-management-port", havingValue = "true", matchIfMissing = true)
+        static class OnUseManagementPort {
+        }
+
+    }
+
+    public static class OnConsoleAndNotUseManagementPort extends AllNestedConditions {
+
+        OnConsoleAndNotUseManagementPort() {
+            super(ConfigurationPhase.PARSE_CONFIGURATION);
+        }
+
+        @ConditionalOnProperty(prefix = "togglz.console", name = "enabled", matchIfMissing = true)
+        static class OnConsole {
+        }
+
+        @ConditionalOnProperty(prefix = "togglz.console", name = "use-management-port", havingValue = "false")
+        static class OnNotUseManagementPort {
+        }
+
+    }
+}
+--------------------------------------------------------------------------------------------------------
+ * public boolean isActive() {
+ *     return FeatureContext.getFeatureManager().isActive(this);
+ * }
+--------------------------------------------------------------------------------------------------------
+@Bean
+public FeatureProvider featureProvider() {
+    return new EnumBasedFeatureProvider(MyFeatures.class);
+}
+--------------------------------------------------------------------------------------------------------
+<servers>
+  <server>
+    <id>sonatype-nexus-snapshots</id>
+    <username>sonatypeuser</username>
+    <password>sonatypepassword</password>
+  </server>
+  <server>
+    <id>sonatype-nexus-staging</id>
+    <username>sonatypeuser</username>
+    <password>sonatypepassword</password>
+  </server>
+</servers>
+
+mvn dependency:resolve -Dclassifier=sources
+mvn versions:display-dependency-updates versions:display-plugin-updates -Pall
+mvn validate license:format -Pall
+mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent test sonar:sonar
+
+mvn versions:set -DnewVersion=X.Z-SNAPSHOT -Pall
+mvn versions:commit -Pall
+--------------------------------------------------------------------------------------------------------
+language: java
+jdk:
+  - oraclejdk8
+branches:
+  only:
+    - master
+script: mvn -f chapter-8/build/pom.xml verify
+before_script:
+  - "export DISPLAY=:99.0"
+  - "sh -e /etc/init.d/xvfb start"
+  - sleep 3 # give xvfb some time to start
+after_success:
+  - mvn -f chapter-8/build/pom.xml test jacoco:report coveralls:report
+--------------------------------------------------------------------------------------------------------
+after_success:  - mvn -f sample.application/build/pom.xml test \    jacoco:report coveralls:report
+sudo service network-manager restar
+sudo ufw disable
+sudo ufw app list
+sudo ufw allow 'Apache Full'
+
+sudo ufw status
+sudo service apache2 force-reload
+
+sudo systemctl disable apache2
+sudo systemctl enable apache2
+
+vim: syntax=apache ts=4 sw=4 sts=4 sr noet
+
+sudo a2ensite example1.conf
+sudo service apache2 force-reload
+
+Listen 8080Listen 8181# 1st vhost<VirtualHost *:8080>ServerAdmin webmaster@localhostDocumentRoot /var/www/htmlDirectoryIndex index3.htmlErrorLog ${APACHE_LOG_DIR}/error.logCustomLog ${APACHE_LOG_DIR}/access.log combined</VirtualHost># 2nd vhost<VirtualHost *:8181>ServerAdmin webmaster@localhostDocumentRoot /var/www/htmlDirectoryIndex index4.htmlErrorLog ${APACHE_LOG_DIR}/error.logCustomLog ${APACHE_LOG_DIR}/access.log combined</VirtualHost>
+
+sudo apachectl -S
+
+export APACHE_LOG_DIR=/var/log/apache2$SUFFI
+grep APACHE_LOG_DIR /etc/apache2/envvars
+tail –fn 1 access.log
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--------------------------------------------------------------------------------------------------------
+
+import static book.twju.timeline.util.Exceptions.guard;
+import static java.lang.String.format;
+import static org.eclipse.jgit.api.Git.open;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.Callable;
+
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.errors.RepositoryNotFoundException;
+
+class GitOperator {
+  
+  static final String DIRECTORY_CONTAINS_NO_GIT_REPOSITORY = "Directory <%s> contains no git repository.";
+  
+  private final File repositoryLocation;
+  
+  @FunctionalInterface
+  interface GitOperation<T> {
+    T execute( Git git ) throws Exception;
+  }
+
+  GitOperator( File repositoryLocation ) {
+    this.repositoryLocation = repositoryLocation;
+    openRepository().close();
+  }
+  
+  <T> T execute( GitOperation<T> gitOperation ) {
+     Git git = openRepository();
+     try {
+       return guarded( () -> gitOperation.execute( git ) );
+     } finally {
+       git.close();
+     }
+  }
+
+  static <T> T guarded( Callable<T> callable ) {
+    return guard( callable ).with( IllegalStateException.class );
+  }
+
+  private Git openRepository() {
+    return guarded( () -> openRepository( repositoryLocation ) );
+  }
+
+  private static Git openRepository( File repositoryDir ) throws IOException {
+    try {
+      return open( repositoryDir ); 
+    } catch ( RepositoryNotFoundException rnfe ) {
+      throw new IllegalArgumentException( format( DIRECTORY_CONTAINS_NO_GIT_REPOSITORY, repositoryDir ), rnfe );
+    }
+  }
+}
+--------------------------------------------------------------------------------------------------------
+// в группе все ассерты исполняются независимо,
+// успех - когда прошли успешно все ассерты
+assertAll("habr",
+    () -> assertThat("https://habrahabr.ru", startsWith("https")),
+    () -> assertThat("https://habrahabr.ru", endsWith(".ru"))
+);
+
+assertIterableEquals(asList(1, 2, 3), asList(1, 2, 3));
+
+Assertions.assertLinesMatch(
+    asList("можно сравнивать строки", "а можно по regex: \\d{2}\\.\\d{2}\\.\\d{4}"),
+    asList("можно сравнивать строки", "а можно по regex: 12.09.2017")
+);
+
+// JUnit 4
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.METHOD})
+public @interface Test {
+    Class<? extends Throwable> expected() default Test.None.class;
+
+    long timeout() default 0L;
+
+    public static class None extends Throwable {
+        private static final long serialVersionUID = 1L;
+
+        private None() {
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
+class StandardTests {
+
+    // вместо @BeforeClass
+    @BeforeAll
+    static void initAll() {
+    }
+
+    // вместо @Before
+    @BeforeEach
+    void init() {
+    }
+
+    @Test
+    void succeedingTest() {
+    }
+
+    @Test
+    void failingTest() {
+        fail("a failing test");
+    }
+
+    // Вместо @Ignore
+    @Test
+    @Disabled("for demonstration purposes")
+    void skippedTest() {
+        // not executed
+    }
+
+    // Новая аннотация для улучшения читаемости при выводе результатов тестов.
+    @DisplayName("╯°□°）╯")
+    void testWithDisplayNameContainingSpecialCharacters() {}
+
+    // вместо @After
+    @AfterEach
+    void tearDown() {
+    }
+
+    // вместо @AfterClass
+    @AfterAll
+    static void tearDownAll() {
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.EmptyStackException;
+import java.util.Stack;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+@DisplayName("A stack")
+class TestingAStackDemo {
+
+    Stack<Object> stack;
+
+    @Test
+    @DisplayName("is instantiated with new Stack()")
+    void isInstantiatedWithNew() {
+        new Stack<>();
+    }
+
+    @Nested
+    @DisplayName("when new")
+    class WhenNew {
+
+        @BeforeEach
+        void createNewStack() {
+            stack = new Stack<>();
+        }
+
+        @Test
+        @DisplayName("is empty")
+        void isEmpty() {
+            assertTrue(stack.isEmpty());
+        }
+
+        @Test
+        @DisplayName("throws EmptyStackException when popped")
+        void throwsExceptionWhenPopped() {
+            assertThrows(EmptyStackException.class, () -> stack.pop());
+        }
+
+        @Test
+        @DisplayName("throws EmptyStackException when peeked")
+        void throwsExceptionWhenPeeked() {
+            assertThrows(EmptyStackException.class, () -> stack.peek());
+        }
+
+        @Nested
+        @DisplayName("after pushing an element")
+        class AfterPushing {
+
+            String anElement = "an element";
+
+            @BeforeEach
+            void pushAnElement() {
+                stack.push(anElement);
+            }
+
+            @Test
+            @DisplayName("it is no longer empty")
+            void isNotEmpty() {
+                assertFalse(stack.isEmpty());
+            }
+
+            @Test
+            @DisplayName("returns the element when popped and is empty")
+            void returnElementWhenPopped() {
+                assertEquals(anElement, stack.pop());
+                assertTrue(stack.isEmpty());
+            }
+
+            @Test
+            @DisplayName("returns the element when peeked but remains not empty")
+            void returnElementWhenPeeked() {
+                assertEquals(anElement, stack.peek());
+                assertFalse(stack.isEmpty());
+            }
+        }
+    }
+}
+
+@RepeatedTest(5)
+void repeatedTest() {
+    System.out.println("Этот тест будет запущен пять раз. ");
+}
+
+@ParameterizedTest
+@EnumSource(value = TimeUnit.class, names = { "DAYS", "HOURS" })
+void testWithEnumSourceInclude(TimeUnit timeUnit) {
+    assertTrue(EnumSet.of(TimeUnit.DAYS, TimeUnit.HOURS).contains(timeUnit));
+}
+
+
+https://habr.com/ru/post/337700/
+
+@ParameterizedTest
+@ArgumentsSource(MyArgumentsProvider.class)
+void testWithArgumentsSource(String argument) {
+    assertNotNull(argument);
+}
+
+static class MyArgumentsProvider implements ArgumentsProvider {
+    @Override
+    public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
+        return Stream.of("foo", "bar").map(Arguments::of);
+    }
+}
+
+Если вы укажите над классом @TestInstance(Lifecycle.PER_CLASS) то вы можете не делать @BeforeAll/@AfterAll статическими. Это же работает и для Котлина.
+--------------------------------------------------------------------------------------------------------
+cobertura-report -–format html --datafile cobertura.ser     --destination reports src
+--------------------------------------------------------------------------------------------------------
+buildscript {    ext {springBootVersion = '2.1.0.RELEASE'    }    repositories {mavenCentral()    }    dependencies {classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")    }}apply plugin: 'java'apply plugin: 'org.springframework.boot'apply plugin: 'io.spring.dependency-management'dependencies {    compile 'org.springframework.boot:spring-boot-starter'}repositories {    mavenCentral()}
+--------------------------------------------------------------------------------------------------------
+mvn install:install-file -Dfile=junit-4.6/junit-4.6.jar -DgroupId=junit -DartifactId=junit -Dversion=4.6 -Dpackaging=jar 
+
+--------------------------------------------------------------------------------------------------------
+import java.util.Map;public class CustomizedErrorAttributes extends DefaultErrorAttributes {@Overridepublic Map<String, Object> getErrorAttributes(WebRequest webRequest, boolean includeStackTrace) {Map<String, Object> errorAttributes =super.getErrorAttributes(webRequest, includeStackTrace);errorAttributes.put("parameters", webRequest.getParameterMap());return errorAttributes;}}
+--------------------------------------------------------------------------------------------------------
+mvn install -s settings.xml
+
+mvn release:prepare -Preporting,distribution
+mvn release:perform -Preporting,distribution
+--------------------------------------------------------------------------------------------------------
+import org.springframework.boot.ApplicationRunner;import org.springframework.boot.SpringApplication;import org.springframework.boot.autoconfigure.SpringBootApplication;import org.springframework.context.annotation.Bean;@SpringBootApplicationpublic class CalculatorApplication {public static void main(String[] args) {SpringApplication.run(CalculatorApplication.class, args);  }  @Beanpublic ApplicationRunner calculationRunner(Calculator calculator) {return args -> {calculator.calculate(137, 21, '+');calculator.calculate(137, 21, '*');calculator.calculate(137, 21, '-');};  }}
+--------------------------------------------------------------------------------------------------------
+@RunWith(SpringRunner.class)@SpringBootTest(classes = CalculatorApplication.class)public class CalculatorApplicationTests {  @Rulepublic OutputCapture capture = new OutputCapture();  @Autowiredprivate Calculator calculator;  @Testpublic void doingMultiplicationShouldSucceed() {    calculator.calculate(12,13, '*');    capture.expect(Matchers.containsString("12 * 13 = 156"));  }  @Test(expected = IllegalArgumentException.class)public void doingDivisionShouldFail() {    calculator.calculate(12,13, '/');  }}
+--------------------------------------------------------------------------------------------------------
+spring.http.encoding.charset
+spring.mvc.formcontent.filter.enabled
+spring.mvc.hiddenmethod.filter.enabled
+
+--------------------------------------------------------------------------------------------------------
+import java.net.URL;
+import java.net.HttpURLConnection;
+import java.io.InputStream;
+import java.io.IOException;
+
+/**
+ * A sample web-client class that opens an HTTP connection to a web-server and reads the response from it.
+ * 
+ * @version $Id$
+ */
+public class WebClient
+{
+    public String getContent( URL url )
+    {
+        StringBuffer content = new StringBuffer();
+        try
+        {
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setDoInput( true );
+            InputStream is = connection.getInputStream();
+            byte[] buffer = new byte[2048];
+            int count;
+            while ( -1 != ( count = is.read( buffer ) ) )
+            {
+                content.append( new String( buffer, 0, count ) );
+            }
+        }
+        catch ( IOException e )
+        {
+            return null;
+        }
+        return content.toString();
+    }
+}
+
+--------------------------------------------------------------------------------------------------------
+import java.util.Arrays;
+import java.util.Collection;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
+
+/**
+ * A sample test-case that demonstrates the parameterized feature of JUnit.
+ * 
+ * @version $Id$
+ */
+@RunWith( value = Parameterized.class )
+public class TestCalculator
+{
+
+    private int expected;
+
+    private int actual;
+
+    @Parameters
+    public static Collection<Integer[]> data()
+    {
+        return Arrays.asList( new Integer[][] { { 1, 1 }, { 2, 4 }, { 3, 9 }, { 4, 16 }, { 5, 25 }, } );
+    }
+
+    public TestCalculator( int expected, int actual )
+    {
+        this.expected = expected;
+        this.actual = actual;
+    }
+
+    @Test
+    public void squareRoot()
+    {
+        Calculator calculator = new Calculator();
+        assertEquals( expected, calculator.squareRoot( actual ) );
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Default implementation of the controller.
+ * 
+ * @version $Id: DefaultController.java 553 2010-03-06 12:29:58Z paranoid12 $
+ */
+public class DefaultController implements Controller {
+	private Map<String, RequestHandler> requestHandlers = new HashMap<String, RequestHandler>();
+
+	protected RequestHandler getHandler(Request request) {
+		if (!this.requestHandlers.containsKey(request.getName())) {
+			String message = "Cannot find handler for request name " + "["
+					+ request.getName() + "]";
+			throw new RuntimeException(message);
+		}
+		return this.requestHandlers.get(request.getName());
+	}
+
+	public Response processRequest(Request request) {
+		Response response;
+		try {
+			response = getHandler(request).process(request);
+		} catch (Exception exception) {
+			response = new ErrorResponse(request, exception);
+		}
+		return response;
+	}
+
+	public void addHandler(Request request, RequestHandler requestHandler) {
+		if (this.requestHandlers.containsKey(request.getName())) {
+			throw new RuntimeException("A request handler has "
+					+ "already been registered for request name " + "["
+					+ request.getName() + "]");
+		} else {
+			this.requestHandlers.put(request.getName(), requestHandler);
+		}
+	}
+}
+
+--------------------------------------------------------------------------------------------------------
+import java.util.Arrays;
+import java.util.Collection;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
+
+/**
+ * A sample parameterized test-case.
+ * 
+ * @version $Id: ParameterizedTest.java 551 2010-03-06 11:37:34Z paranoid12 $
+ */
+@RunWith(value=Parameterized.class)
+public class ParameterizedTest {
+
+    private double expected; 
+    private double valueOne; 
+    private double valueTwo; 
+
+    @Parameters 
+    public static Collection<Integer[]> getTestParameters() {
+       return Arrays.asList(new Integer[][] {
+          {2, 1, 1},  //expected, valueOne, valueTwo   
+          {3, 2, 1},  //expected, valueOne, valueTwo   
+          {4, 3, 1},  //expected, valueOne, valueTwo   
+       });
+    }
+
+    public ParameterizedTest(double expected, 
+       double valueOne, double valueTwo) {
+       this.expected = expected;
+       this.valueOne = valueOne;
+       this.valueTwo = valueTwo;
+    }
+
+    @Test
+    public void sum() {
+       Calculator calc = new Calculator();
+       assertEquals(expected, calc.add(valueOne, valueTwo), 0);
+    } 
+}
+--------------------------------------------------------------------------------------------------------
+  @RunWith(DataProviderRunner.class)
+  public class MathUtilsTest {
+
+    private MathUtils mathUtils;
+
+    @Before
+    public void setup(){
+        mathUtils = new MathUtils();
+    }
+
+    @Test
+    @UseDataProvider(value = "testAddData", location = MathUtilsDataProviders.class)
+    public void add(int inputData[], int expectedOutput) throws Exception {
+        assertTrue(mathUtils.add(inputData[0], inputData[1]) == expectedOutput);
+    }
+
+    @Test
+    @UseDataProvider(value = "testSubtractData", location = MathUtilsDataProviders.class)
+    public void subtract(int inputData[], int expectedOutput) throws Exception {
+        assertTrue(mathUtils.subtract(inputData[0], inputData[1]) == expectedOutput);
+    }
+
+    @Test
+    @UseDataProvider(value = "testMultiplyData", location = MathUtilsDataProviders.class)
+    public void multiply(int inputData[], int expectedOutput) throws Exception {
+        assertTrue(mathUtils.multiply(inputData[0], inputData[1]) == expectedOutput);
+    }
+
+    @Test
+    @UseDataProvider(value = "testDivideData", location = MathUtilsDataProviders.class)
+    public void divide(int inputData[], int expectedOutput) throws Exception {
+        assertTrue(mathUtils.divide(inputData[0], inputData[1]) == expectedOutput);
+    }
+
+  }
+--------------------------------------------------------------------------------------------------------
+import static book.twju.timeline.util.Assertion.checkArgument;
+import book.twju.timeline.model.Item;
+import book.twju.timeline.model.Timeline;
+
+public enum FetchOperation {
+  
+  NEW {
+    @Override
+    public <T extends Item> void fetch( Timeline<T> timeline ) {
+      checkArgument( timeline != null, TIMELINE_MUST_NOT_BE_NULL );
+      
+      timeline.fetchNew();
+    }
+  },
+  
+  MORE {
+    @Override
+    public <T extends Item> void fetch( Timeline<T> timeline ) {
+      checkArgument( timeline != null, TIMELINE_MUST_NOT_BE_NULL );
+
+      timeline.fetchItems();
+    }
+  };
+  
+  static final String TIMELINE_MUST_NOT_BE_NULL = "Argument 'timeline' must not be null.";
+
+  public abstract <T extends Item> void fetch( Timeline<T> timeline );
+}
+--------------------------------------------------------------------------------------------------------
+
+	public static class OddFilter<T> implements Transformer<T, T> {
+
+		@Override
+		public Observable<T> call(Observable<T> observable) {
+			return observable
+					.lift(new Indexed<T>(1L))
+					.filter(pair -> pair.getLeft() % 2 == 1)
+					.map(pair -> pair.getRight());
+		}
+		
+	}
+--------------------------------------------------------------------------------------------------------
+ArgumentCaptor<Memento> captor = forClass( Memento.class );verify( sessionStorage ).store( captor.capture() );assertTrue( !captor.getValue().getItems().isEmpty() 
+--------------------------------------------------------------------------------------------------------
+public class Indexed<T> implements Operator<Pair<Long, T>, T> {  private final long initialIndex;  public Indexed() {    this(0L);  }  public Indexed(long initial) {    this. initialIndex = initial;  }  @Overridepublic Subscriber<? super T> call(Subscriber<? super Pair<Long, T>>   s) {    return new Subscriber<T>(s) {      private long index = initialIndex;      @Override      public void onCompleted() {        s.onCompleted();      }      @Override      public void onError(Throwable e) {        s.onError(e);      }      @Override      public void onNext(T t) {        s.onNext(new Pair<Long, T>(index++, t));      }    };  }}
+--------------------------------------------------------------------------------------------------------
+public class ConditionalIgnoreTest {  @Rule  public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();  @Test  @ConditionalIgnore( condition = NotRunningOnWindows.class )  public void focus() {    // ...  }}class NotRunningOnWindows implements IgnoreCondition {  public boolean isSatisfied() {    return      !System.getProperty( "os.name" ).startsWith( "Windows" );  }}
+
+public class ProvideSystemInputExample {  private static final String INPUT = "input";  @Rule  public final TextFromStandardInputStream systemInRule    = TextFromStandardInputStream.emptyStandardInputStream();  @Test  public void stubInput() {    systemInRule.provideLines( INPUT );    assertEquals( INPUT, readLine( System.in ) );  }  private String readLine( InputStream inputstream ) {    return new Scanner( inputstream ).nextLine();  }}
+
+public class CaptureSystemOutputExample {  private static final String OUTPUT = "output";  @Rule  public final SystemOutRule systemOutRule    = new SystemOutRule().enableLog().muteForSuccessfulTests();  @Test  public void captureSystemOutput() {    System.out.print( OUTPUT );    assertEquals( OUTPUT, systemOutRule.getLog() );  }}
+
+public class ProvideSystemPropertyExample {
+private static final String JAVA_IO_TMPDIR = "java.io.tmpdir";  private static final String MY_TMPDIR = "/path/to/my/tmpdir";  @Rule  public final ProvideSystemProperty provideCustomTempDirRule    = new ProvideSystemProperty( JAVA_IO_TMPDIR, MY_TMPDIR );  @Test  public void checkTempDir() {    assertEquals( MY_TMPDIR,                  System.getProperty( JAVA_IO_TMPDIR ) );  }}
+
+public class ClearPropertiesExample {  private static final String JAVA_IO_TMPDIR = "java.io.tmpdir";  @Rule  public final ClearSystemProperties clearTempDirRule    = new ClearSystemProperties( JAVA_IO_TMPDIR );  @Test  public void checkTempDir() {    assertNull( System.getProperty( JAVA_IO_TMPDIR ) );  }}
+
+@RunWith( ClasspathSuite.class )@ClassnameFilters( { ".*ServerTest" } )public class ServerIntegrationTestSuite {  @ClassRule  public static TestRule chain = RuleChain    .outerRule( new ServerRule( 4711 ) )    .around( new MyRule() );}
+
+public class ServerRule extends ExternalResource {  private final int port;  public ServerRule( int port ) {    this.port = port;  }  @Override  protected void before() throws Throwable {    System.out.println( "start server on port: " + port );  }  @Override  protected void after() {    System.out.println( "stop server on port: " + port );  }}
+--------------------------------------------------------------------------------------------------------
+public class MementoAssert  extends AbstractAssert<MementoAssert, Memento>{  private static final String ITEM_PATTERN    = "\nExpected items to be\n  <%s>,\nbut were\n  <%s>.";  private static final String TOP_ITEM_PATTERN    = "\nExpected top item to be\n  <%s>,\nbut was\n  <%s>.";  public static MementoAssert assertThat( Memento actual ) {    return new MementoAssert( actual );  }  public MementoAssert( Memento actual ) {    super( actual, MementoAssert.class );  }  @Override  public MementoAssert isEqualTo( Object expected ) {    hasEqualItems( ( Memento )expected );    hasEqualTopItem( ( Memento )expected );    return this;  }  public MementoAssert hasEqualItems( Memento expected ) {    isNotNull();    if( !actual.getItems().equals( expected.getItems() ) ) {      failWithMessage( ITEM_PATTERN,                       expected.getItems(),                       actual.getItems() );
+
+}    return this;  }  public MementoAssert hasEqualTopItem( Memento expected ) {    isNotNull();    if( !actual.getTopItem().equals( expected.getTopItem() ) ) {      failWithMessage( TOP_ITEM_PATTERN,                       expected.getTopItem(),                       actual.getTopItem() );    }    return this;  }}
+
+assertThat( actual )  .describedAs( description )  .hasMessage( EXPECTED_ERROR_MESSAGE )  .isInstanceOf( NullPointerException.class );
+--------------------------------------------------------------------------------------------------------
+yum install jenkins
+sudo service jenkins start/stop/restart
+
+wget -q -O - http://pkg.jenkins-ci.org/debian/jenkins-ci.org.key | sudo apt-key add -
+
+svnserve -dsvn mkdir svn://localhost/$PATH_REPO/packt-app --username svnpackt
+
+mvn archetype:generate \  -DarchetypeGroupId=org.apache.maven.archetypes \  -DgroupId=com.packt.app \  -DartifactId=packt-app
+
+svnadmin create $PATH_REPO
+sudo apt-get install doxygen
+--------------------------------------------------------------------------------------------------------
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import org.springframework.boot.actuate.endpoint.AbstractEndpoint;
+import org.springframework.boot.actuate.endpoint.Endpoint;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.util.Assert;
+import org.togglz.core.Feature;
+import org.togglz.core.manager.FeatureManager;
+import org.togglz.core.repository.FeatureState;
+import org.togglz.spring.boot.autoconfigure.TogglzFeature;
+
+/**
+ * {@link Endpoint} to expose Togglz info.
+ *
+ * @author Marcel Overdijk
+ */
+@ConfigurationProperties(prefix = "togglz.endpoint", ignoreUnknownFields = true)
+public class TogglzEndpoint extends AbstractEndpoint<List<TogglzFeature>> {
+
+    private final FeatureManager featureManager;
+
+    public TogglzEndpoint(FeatureManager featureManager) {
+        super("togglz");
+        Assert.notNull(featureManager, "FeatureManager must not be null");
+        this.featureManager = featureManager;
+    }
+
+    @Override
+    public List<TogglzFeature> invoke() {
+        List<TogglzFeature> features = new ArrayList<>();
+        for (Feature feature : this.featureManager.getFeatures()) {
+            FeatureState featureState = this.featureManager.getFeatureState(feature);
+            features.add(new TogglzFeature(feature, featureState));
+        }
+        Collections.sort(features);
+        return features;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+public enum MyFeatures implements Feature {
+
+    @EnabledByDefault
+    @Label("First Feature")
+    FEATURE_ONE,
+
+    @Label("Second Feature")
+    FEATURE_TWO;
+}
+
+@Bean
+public FeatureProvider featureProvider() {
+    return new EnumBasedFeatureProvider(MyFeatures.class);
+}
+
+@Controller
+public class MyClass {
+  private FeatureManager manager;
+
+  public MyClass(FeatureManager manager) {
+      this.manager = manager;
+  }
+
+  @RequestMapping("/")
+  public ResponseEntity<?> index() {
+      if (manager.isActive(HELLO_WORLD)) {
+           ...
+      }
+  }
+}
+--------------------------------------------------------------------------------------------------------
+/**
+	 * The configured features in a format that can be consumed by a
+	 * PropertyFeatureProvider.
+	 *
+	 * @return features in the right format.
+	 */
+	public Properties getFeatureProperties() {
+		Properties properties = new Properties();
+		for (String name : features.keySet()) {
+			properties.setProperty(name, features.get(name).spec());
+		}
+		return properties;
+	}
+--------------------------------------------------------------------------------------------------------
+public class TicTacToeSpec {    @Rule    public ExpectedException exception =      ExpectedException.none();    private TicTacToe ticTacToe;    @Before    public final void before() {        ticTacToe = new TicTacToe();    }    @Test    public void whenXOutsideBoardThenRuntimeException()    {        exception.expect(RuntimeException.class);        ticTacToe.validatePosition(5, 2);    }    @Test    public void whenYOutsideBoardThenRuntimeException()    {        exception.expect(RuntimeException.class);        ticTacToe.validatePosition(2, 5);    }}
+--------------------------------------------------------------------------------------------------------
+@Service("fibonacci")public class FibonacciService {    public static final int LIMIT = 30;    public int getNthNumber(int n) {        if (isOutOfLimits(n) {        throw new IllegalArgumentException(        "Requested number must be a positive " +           number no bigger than " + LIMIT);        if (n == 0) return 0;        if (n == 1 || n == 2) return 1;        int first, second = 1, result = 1;        do {            first = second;            second = result;            result = first + second;            --n;        } while (n > 2);        return result;    }    private boolean isOutOfLimits(int number) {        return number > LIMIT || number < 0;    }}
+--------------------------------------------------------------------------------------------------------
+apply plugin: 'java'apply plugin: 'application'sourceCompatibility = 1.8version = '1.0'mainClassName = "com.packtpublishing.tddjava.ch09.Application"repositories {    mavenLocal()    mavenCentral()}dependencies {    compile group: 'org.springframework.boot',            name: 'spring-boot-starter-thymeleaf',            version: '1.2.4.RELEASE'    testCompile group: 'junit',    name: 'junit',    version: '4.12'}
+--------------------------------------------------------------------------------------------------------
+mvn clean jetty:run
+--------------------------------------------------------------------------------------------------------
+import java.util.ArrayList;
+import java.util.List;
+
+public class Location {
+
+    private static final int FORWARD = 1;
+    private static final int BACKWARD = -1;
+
+    public int getX() {
+        return point.getX();
+    }
+
+    public int getY() {
+        return point.getY();
+    }
+
+    private Point point;
+    public Point getPoint() {
+        return point;
+    }
+
+    private Direction direction;
+    public Direction getDirection() {
+        return this.direction;
+    }
+    public void setDirection(Direction direction) {
+        this.direction = direction;
+    }
+
+    public Location(Point point, Direction direction) {
+        this.point = point;
+        this.direction = direction;
+    }
+
+    public boolean forward() {
+        return move(FORWARD, new Point(100, 100), new ArrayList<>());
+    }
+    public boolean forward(Point max) {
+        return move(FORWARD, max, new ArrayList<>());
+    }
+    public boolean forward(Point max, List<Point> obstacles) {
+        return move(FORWARD, max, obstacles);
+    }
+
+    public boolean backward() {
+        return move(BACKWARD, new Point(100, 100), new ArrayList<>());
+    }
+    public boolean backward(Point max) {
+        return move(BACKWARD, max, new ArrayList<>());
+    }
+    public boolean backward(Point max, List<Point> obstacles) {
+        return move(BACKWARD, max, obstacles);
+    }
+
+    private boolean move(int fw, Point max, List<Point> obstacles) {
+        int x = point.getX();
+        int y = point.getY();
+        switch(getDirection()) {
+            case NORTH:
+                y = wrap(getY() - fw, max.getY());
+                break;
+            case SOUTH:
+                y = wrap(getY() + fw, max.getY());
+                break;
+            case EAST:
+                x = wrap(getX() + fw, max.getX());
+                break;
+            case WEST:
+                x = wrap(getX() - fw, max.getX());
+                break;
+        }
+        if (isObstacle(new Point(x, y), obstacles)) {
+            return false;
+        } else {
+            point = new Point(x, y);
+            return true;
+        }
+    }
+
+    private boolean isObstacle(Point point, List<Point> obstacles) {
+        for (Point obstacle : obstacles) {
+            if (obstacle.getX() == point.getX() && obstacle.getY() == point.getY()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private int wrap(int point, int maxPoint) {
+        if (maxPoint > 0) {
+            if (point > maxPoint) {
+                return 1;
+            } else if (point == 0) {
+                return maxPoint;
+            }
+        }
+        return point;
+    }
+
+    public void turnLeft() {
+        this.direction = direction.turnLeft();
+    }
+
+    public void turnRight() {
+        this.direction = direction.turnRight();
+    }
+
+    public Location copy() {
+        return new Location(new Point(point.getX(), point.getY()), direction);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Location location = (Location) o;
+        if (getX() != location.getX()) return false;
+        if (getY() != location.getY()) return false;
+        if (direction != location.direction) return false;
+        return true;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.stereotype.Component;
+
+import javax.ws.rs.core.Response;
+import javax.ws.rs.ext.ExceptionMapper;
+import javax.ws.rs.ext.Provider;
+
+@Provider
+public class CustomExceptionMapper implements ExceptionMapper<IllegalArgumentException> {
+
+    @Override
+    public Response toResponse(IllegalArgumentException exception) {
+        return Response.ok("Illegal Argument Exception Caught").build();
+    }
+}
+
+--------------------------------------------------------------------------------------------------------
+import java.lang.reflect.Method;
+
+import org.apache.log4j.Logger;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.BeanPostProcessor;
+
+import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
+
+public class FindEventBusSubscribers implements BeanPostProcessor {
+
+	@Autowired
+	private EventBus eventBus;
+	private static final Logger LOG = Logger.getLogger(FindEventBusSubscribers.class);
+
+	@Override
+	public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+		return bean;
+	}
+
+	@Override
+	public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+		Method[] beanMethods = bean.getClass().getMethods();
+		for (Method beanMethod : beanMethods) {
+			if (beanMethod.isAnnotationPresent(Subscribe.class)) {
+				eventBus.register(bean);
+				LOG.info(String.format("Found event bus subscriber class %s. Subscriber method name=%s", bean
+						.getClass().getSimpleName(), beanMethod.getName()));
+				break;
+			}
+		}
+		return bean;
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+<Connector port="8080" protocol="HTTP/1.1"               connectionTimeout="20000"               redirectPort="8443" />
+
+<role rolename="manager-gui"/>  <user username="admin" password="admin" roles="manager-gui"/>
+
+insert into user (host, user, password, select_priv, insert_priv, update_priv)           values ('%', 'user1', password('usper1_pass'),'Y','Y','Y');
+
+<%@ page language="java" contentType="text/html; charset=UTF-8"    pageEncoding="UTF-8"%>
+
+wsimport -keep -p packt.jee.eclipse.ws.soap.client http://localhost:8080/CourseMgmtWSProject/courseService?wsdl
+
+
+-- MySQL Script generated by MySQL Workbench-- Sun Mar  8 18:17:07 2015-- Model: New Model    Version: 1.0-- MySQL Workbench Forward EngineeringSET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='TRADITIONAL,ALLOW_INVALID_DATES';-- ------------------------------------------------------- Schema course_management-- -----------------------------------------------------DROP SCHEMA IF EXISTS `course_management` ;-- ------------------------------------------------------- Schema course_management-- -----------------------------------------------------CREATE SCHEMA IF NOT EXISTS `course_management` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci ;USE `course_management` ;-- ------------------------------------------------------- Table `course_management`.`Teacher`-- -----------------------------------------------------DROP TABLE IF EXISTS `course_management`.`Teacher` ;CREATE TABLE IF NOT EXISTS `course_management`.`Teacher` (  `id` INT NOT NULL AUTO_INCREMENT,  `first_name` VARCHAR(45) NOT NULL,  `last_name` VARCHAR(45) NULL,  `designation` VARCHAR(45) NOT NULL,  PRIMARY KEY (`id`))ENGINE = InnoDB;-- ------------------------------------------------------- Table `course_management`.`Course`
+
+SET SQL_MODE=@OLD_SQL_MODE;SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+
+
+--------------------------------------------------------------------------------------------------------
 LocalDate.of(2017, 1, 31)                         .datesUntil(LocalDate.of(2018, 1, 1), Period.ofMonths(1))         .map(ld -> ld.format(DateTimeFormatter.ofPattern("EEE MMM dd, yyyy")))         .forEach(System.out::println)
 long sundaysIn2017 = LocalDate.of(2017, 1, 1)                              .datesUntil(LocalDate.of(2018, 1, 1))                              .filter(ld -> ld.getDayOfWeek() == DayOfWeek.SUNDAY)                              .count(); 
 
@@ -7549,6 +9031,8 @@ public class ExampleHandlerFilterFunction implements HandlerFilterFunction<Serve
         return handlerFunction.handle(serverRequest);
     }
 }
+--------------------------------------------------------------------------------------------------------
+@Testpublic void fetchItemWithExceptionOnStoreTop()  throws IOException{  IOException cause = new IOException();  doThrow( cause ).when( storage ).storeTop( any( Item.class ) );  Throwable actual = thrownBy( () -> timeline.fetchItems() );  assertNotNull( actual );  assertTrue( actual instanceof IllegalStateException );  assertSame( cause, actual.getCause() );  assertEquals( Timeline.ERROR_STORE_TOP, actual.getMessage() );}
 --------------------------------------------------------------------------------------------------------
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
