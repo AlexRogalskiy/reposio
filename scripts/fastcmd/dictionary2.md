@@ -7217,6 +7217,35 @@ public class HttpHeadersImpl implements HttpHeaders {
     }
 }
 --------------------------------------------------------------------------------------------------------
+public static void startProcess(ProcessBuilder.Redirect outputDest) {                try {            ProcessBuilder pb = new ProcessBuilder()                    .command("java", "-version")                                        .redirectOutput(outputDest)                    .redirectError(outputDest);            Process process = pb.start();            process.waitFor();        } catch (IOException | InterruptedException e) {            e.printStackTrace();        }    }
+
+-Xlint:unchecked
+java -Xlog:gc*=debug,exit*=off --module-path com.jdojo.intro\dist--module com.jdojo.intro/com.jdojo.intro.Welcome
+java -Xlog:gc=trace:stdout:level,time,tags--module-path com.jdojo.intro\dist--module com.jdojo.intro/com.jdojo.intro.Welcome
+
+public static void testFlatMapping(){        Map<String,Set<List<String>>> langByDept = Employee.employees()                .stream()                .collect(groupingBy(Employee::getDepartment,                                mapping(Employee::getSpokenLanguages, toSet())));                        System.out.println("Languages spoken by department using mapping():");        System.out.println(langByDept);        Map<String,Set<String>> langByDept2 = Employee.employees()                .stream()                .collect(groupingBy(Employee::getDepartment,                                flatMapping(e -> e.getSpokenLanguages().stream(), toSet())));          System.out.println("\nLanguages spoken by department using flapMapping():");        System.out.println(langByDept2) ;           }
+et<String> nonNullvalues = map.entrySet()           .stream()                      .flatMap(e ->  e.getValue() == null ? Stream.empty() : Stream.of(e.getValue()))           .collect(toSet());
+
+javac -Xlint:deprecation -d ..\build\classes com\jdojo\deprecation\ImportDeprecationWarning.java
+jdeprscan --list --release 8
+
+public static void main(String[] args) {        // Create an array of snippets to evaluate/execute        // them sequentially        String[] snippets = { "int x = 100;",                              "double x = 190.89;",                              "long multiply(int value) {return value * multiplier;}",                              "int multiplier = 2;",                              "multiply(200)",                              "mul(99)"                            };        try (JShell shell = JShell.create()) {            // Register a snippet event handler            shell.onSnippetEvent(JShellApiTest::snippetEventHandler);            // Evaluate all snippets            for(String snippet : snippets) {                shell.eval(snippet);                System.out.println("------------------------");            }        }    }
+
+try (JShell shell = JShell.create()) {    // Create a snippet    String snippet = "int x = 100;";    shell.eval(snippet)         .forEach((SnippetEvent se) -> {              Snippet s = se.snippet();              System.out.printf("Snippet: %s%n", s.source());              System.out.printf("Kind: %s%n", s.kind());              System.out.printf("Sub-Kind: %s%n", s.subKind());              System.out.printf("Previous Status: %s%n", se.previousStatus());              System.out.printf("Current Status: %s%n", se.status());              System.out.printf("Value: %s%n", se.value());        });}
+--------------------------------------------------------------------------------------------------------
+jshell> /set mode silent|  /set mode silent -quiet|  /set prompt silent "-> " ">> "|  /set format silent display ""|  /set format silent err "%6$s"|  /set format silent errorline "    {err}%n
+
+|  /set format silent errorpost "%n"|  /set format silent errorpre "|  "|  /set format silent errors "%5$s"|  /set format silent name "%1$s"|  /set format silent post "%n"|  /set format silent pre "|  "|  /set format silent type "%2$s"|  /set format silent unresolved "%4$s"|  /set format silent value "%3$s"|  /set truncation silent 80|  /set truncation silent 1000 expression,varvalue
+
+• /set start [-retain] <file>• /set start [-retain] -default• /set start [-retain] -none
+--------------------------------------------------------------------------------------------------------
+LocalDate.of(2017, 1, 31)                         .datesUntil(LocalDate.of(2018, 1, 1), Period.ofMonths(1))         .map(ld -> ld.format(DateTimeFormatter.ofPattern("EEE MMM dd, yyyy")))         .forEach(System.out::println)
+long sundaysIn2017 = LocalDate.of(2017, 1, 1)                              .datesUntil(LocalDate.of(2018, 1, 1))                              .filter(ld -> ld.getDayOfWeek() == DayOfWeek.SUNDAY)                              .count(); 
+
+Date dt = new Date();LocalDate ld= dt.toInstant()                 .atZone(ZoneId.systemDefault())                 .toLocalDate();System.out.println("Current Local Date: " + ld);
+
+package com.jdojo.misc;public class SpinWaitTest implements Runnable {    private volatile boolean dataReady = false;    @Override    public void run() {        // Wait while data is ready        while (!dataReady) {            // Hint a spin-wait            Thread.onSpinWait();        }        processData();    }    private void processData() {        // Data processing logic goes here    }    public void setDataReady(boolean dataReady) {        this.dataReady = dataReady;    }}
+--------------------------------------------------------------------------------------------------------
 javadoc -html5 <other-options>
 M/dd/yyyy HH:mm zzzz
 M/dd/yyyy HH:mm vvvv
