@@ -10773,6 +10773,60 @@ List<String> enumNames = Stream.of(Enum.values())
                                .map(Enum::name)
                                .collect(Collectors.toList());
 --------------------------------------------------------------------------------------------------------
+enum Primitive<X> {
+    INT<Integer>(Integer.class, 0) {
+        int mod(int x, int y) { return x % y; }
+        int add(int x, int y) { return x + y; }
+    },
+    FLOAT<Float>(Float.class, 0f)  {
+        long add(long x, long y) { return x + y; }
+    }, ... ;
+
+    final Class<X> boxClass;
+    final X defaultValue;
+
+    Primitive(Class<X> boxClass, X defaultValue) {
+        this.boxClass = boxClass;
+        this.defaultValue = defaultValue;
+    }
+}
+
+// class name is awful for this example, but it will make more sense if you
+//  read further
+public interface MetaDataKey<T extends Serializable> extends Serializable
+{
+    T getValue();
+}
+
+public final class TypeSafeKeys
+{
+    static enum StringKeys implements MetaDataKey<String>
+    {
+        A1("key1");
+
+        private final String value;
+
+        StringKeys(String value) { this.value = value; }
+
+        @Override
+        public String getValue() { return value; }
+    }
+
+    static enum IntegerKeys implements MetaDataKey<Integer>
+    {
+        A2(0);
+
+        private final Integer value;
+
+        IntegerKeys (Integer value) { this.value = value; }
+
+        @Override
+        public Integer getValue() { return value; }
+    }
+
+    public static final MetaDataKey<String> A1 = StringKeys.A1;
+    public static final MetaDataKey<Integer> A2 = IntegerKeys.A2;
+}
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
