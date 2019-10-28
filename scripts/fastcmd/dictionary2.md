@@ -8141,10 +8141,674 @@ mvn install:install-file -Dfile=junit-4.6/junit-4.6.jar -DgroupId=junit -Dartifa
 --------------------------------------------------------------------------------------------------------
 import java.util.Map;public class CustomizedErrorAttributes extends DefaultErrorAttributes {@Overridepublic Map<String, Object> getErrorAttributes(WebRequest webRequest, boolean includeStackTrace) {Map<String, Object> errorAttributes =super.getErrorAttributes(webRequest, includeStackTrace);errorAttributes.put("parameters", webRequest.getParameterMap());return errorAttributes;}}
 --------------------------------------------------------------------------------------------------------
+@Beanpublic LocaleResolver localeResolver () {return new AcceptHeaderLocaleResolver();}
+
+@Beanpublic LocaleResolver localeResolver () {    SessionLocaleResolver localeResolver = new SessionLocaleResolver();    localeResolver.setDefaultLocale(new Locale("en"));return localeResolver;}
+
+@Beanpublic LocaleResolver localeResolver() {    CookieLocaleResolver cookieLocaleResolver = new CookieLocaleResolver();    cookieLocaleResolver.setCookieName("language");    cookieLocaleResolver.setCookieMaxAge(3600);    cookieLocaleResolver.setDefaultLocale(new Locale("en"));return cookieLocaleResolver;}
+
+@Beanpublic LocaleResolver localeResolver() {    FixedLocaleResolver cookieLocaleResolver = new FixedLocaleResolver();    cookieLocaleResolver.setDefaultLocale(new Locale("en"));return cookieLocaleResolver;}
+--------------------------------------------------------------------------------------------------------
+keytool -genkey -keyalg RSA -alias sb2-recipes -keystore sb2-recipes.pfx -storepass password -validity 3600 -keysize 4096 -storetype pkcs1
+
+server.ssl.key-store=classpath:sb2-recipes.pfxserver.ssl.key-store-type=pkcs12server.ssl.key-store-password=passwordserver.ssl.key-password=passwordserver.ssl.key-alias=sb2-recipes
+
+@Beanpublic TomcatServletWebServerFactory tomcatServletWebServerFactory() {  var factory = new TomcatServletWebServerFactory();  factory.addAdditionalTomcatConnectors(httpConnector());return factory;}
+
+private Connector httpConnector() {   var connector = new Connector(TomcatServletWebServerFactory.DEFAULT_PROTOCOL);  connector.setScheme("http");  connector.setPort(8080);  connector.setSecure(false);return connector;}
+
+@Beanpublic TomcatServletWebServerFactory tomcatServletWebServerFactory() {  var factory = new TomcatServletWebServerFactory();  factory.addAdditionalTomcatConnectors(httpConnector());  factory.addContextCustomizers(securityCustomizer());return factory;}private Connector httpConnector() {   var connector = new Connector(TomcatServletWebServerFactory.DEFAULT_PROTOCOL);  connector.setScheme("http");  connector.setPort(8080);  connector.setSecure(false);  connector.setRedirectPort(8443);return connector;}private TomcatContextCustomizer securityCustomizer() {return context -> {    var securityConstraint = new SecurityConstraint();    securityConstraint.setUserConstraint("CONFIDENTIAL");    var collection = new SecurityCollection();    collection.addPattern("/*");    securityConstraint.addCollection(collection);    context.addConstraint(securityConstraint);  };}
+
+@Beanpublic BeanPostProcessor addHttpConnectorProcessor() {return new BeanPostProcessor() {    @Overridepublic Object postProcessBeforeInitialization(Object bean, String beanName)throws BeansException {if (bean instanceof TomcatServletWebServerFactory) {var factory = (TomcatServletWebServerFactory) bean;factory.addAdditionalTomcatConnectors(httpConnector());}return bean;    }  };}
+
+package com.apress.springbootrecipes.library;import org.springframework.web.bind.annotation.GetMapping;import org.springframework.web.bind.annotation.RestController;import java.util.concurrent.Callable;import java.util.concurrent.ThreadLocalRandom;@RestControllerpublic class HelloWorldController {@GetMappingpublic Callable<String> hello() {return () -> {Thread.sleep(ThreadLocalRandom.current().nextInt(5000));return "Hello World, from Spring Boot 2!";};}}
+
+@RestControllerpublic class HelloWorldController {private final TaskExecutor taskExecutor;public HelloWorldController(TaskExecutor taskExecutor) {this.taskExecutor = taskExecutor;  }  @GetMappingpublic CompletableFuture<String> hello() {return CompletableFuture.supplyAsync(() -> {randomDelay();return "Hello World, from Spring Boot 2!";    }, taskExecutor);  }private void randomDelay() {try {Thread.sleep(ThreadLocalRandom.current().nextInt(5000));    } catch (InterruptedException e) {Thread.currentThread().interrupt();    }  }}
+
+double amount = ThreadLocalRandom.current().nextDouble(1000.00d)
+
+@GetMapping("/orders")public SseEmitter orders() {SseEmitter emitter = new SseEmitter();ExecutorService executor = Executors.newSingleThreadExecutor();executor.execute(() -> {var orders = orderService.findAll();try {for (var order : orders) {randomDelay();emitter.send(order);}emitter.complete();} catch (IOException e) {emitter.completeWithError(e);}});executor.shutdown();return emitter;}
+
+User user = Reflection.constructor().in(User.class).newInstance();
+
+
+--------------------------------------------------------------------------------------------------------
+database.driverClassName=org.hsqldb.jdbcDriver               database.url=jdbc:hsqldb:mem:my-project-test;shutdown=true  database.dialect=hsqldb                                     database.schemaNames=PUBLIC                                 unitils.modules=database,jpa,dbunit 
+--------------------------------------------------------------------------------------------------------
+import org.junit.Test;import org.unitils.UnitilsJUnit4;import org.unitils.database.annotations.TestDataSource;import org.unitils.dbunit.annotation.DataSet;import org.unitils.dbunit.annotation.ExpectedDataSet;import com.manning.junitbook.ch19.model.User;publicclass UserDaoJpaImplTest extends UnitilsJUnit4 {  @JpaEntityManagerFactory(persistenceUnit="chapter-19")          @PersistenceContext                                         EntityManager em;private final UserDaoJpaImpl dao = new UserDaoJpaImpl();  @Beforepublic void prepareDao() {                        dao.setEntityManager(em);  }  @Test  @DataSet("user.xml")public void testGetUserById() throws Exception {       long id = 1;    User user = dao.getUserById(id);    assertUser(user);  }[...]}
+
+@TestDataSourcevoid setDataSource(DataSource ds) throws SQLException {         Connection connection = ds.getConnection();    dao.setConnection(connection);    dao.createTables();  }
+
+@Test  @DataSets(setUpDataSet="/user-with-telephone.xml")public void testGetUserByIdWithTelephone() throws Exception {    beginTransaction();long id = ELFunctionMapperImpl.getId(User.class);    User user = dao.getUserById(id);    commitTransaction();    assertUserWithTelephone(user);  }  @Test  @DataSets(assertDataSet="/user-with-telephone.xml")public void testAddUserWithTelephone() throws Exception {    beginTransaction();    User user = newUserWithTelephone();    dao.addUser(user);    commitTransaction();long id = user.getId();    assertTrue(id>0);  }
+
+import org.hibernate.event.PostInsertEvent;import org.hibernate.event.PostInsertEventListener;public class ELPostInsertEventListener implements PostInsertEventListener {public void onPostInsert(PostInsertEvent event) {    String className = event.getEntity().getClass().getSimpleName();        Long id = (Long) event.getId();    ELFunctionMapperImpl.setId(className, id);   }}
+
+hibernate.ejb.event.post-insert=  ➥org.hibernate.ejb.event.EJB3PostInsertEventListener,➥com.manning.jia.chapter18.hibernate.ELPostInsertEventListener
+
+@Retention(RetentionPolicy.RUNTIME)@Target(ElementType.METHOD)public @interface DataSets {  String setUpDataSet() default "/empty.xml";        String assertDataSet() default "";                      }
+
+public class UserDaoJdbcImplAnnotationTest extends  AbstractDbUnitTemplateTestCase {  @Test  @DataSets(setUpDataSet="/user-token.xml")public void testGetUserById() throws Exception {    User user = dao.getUserById(id);    assertUser(user);  }    @Test  @DataSets(assertDataSet="/user-token.xml")public void testAddUser() throws Exception {    User user = newUser();    id = dao.addUser(user);    assertTrue(id>0);  }}
+--------------------------------------------------------------------------------------------------------
+access("hasAuthority('ADMIN') " +"or @accessChecker.hasLocalAccess(authentication)"
+
+Stream.of(names).filter(name -> name.toLowerCase().contains("jms")).sorted(Comparator.naturalOrder()).forEach(name -> {Object bean = ctx.getBean(name);System.out.printf(MSG, name, bean.getClass().getSimpleName());})
+
+http://localhost:8090/actuator/metrics/system.cpu.usage
+
+management.metrics.enable.system=falsemanagement.metrics.enable.tomcat=fals
+--------------------------------------------------------------------------------------------------------
+<plugin><groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId><configuration><executable>true</executable></configuration></plugin>
+
+your-application.conf
+
+JAVA_OPTS=-Xmx1024mDEBUG=true
+
+<plugin><groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId><dependencies><dependency><groupId>org.springframework.boot.experimental</groupId><artifactId>spring-boot-thin-layout</artifactId><version>1.0.15.RELEASE</version></dependency></dependencies></plugin>
+
+META-INF/thin.properties
+
+thin.repo
+
+FROM openjdk:11-jre-slimVOLUME /tmpARG JAR_FILECOPY ${JAR_FILE} app.jarENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar"
+
+<plugin><groupId>com.spotify</groupId><artifactId>dockerfile-maven-plugin</artifactId><version>1.4.4</version><configuration><repository>spring-boot-recipes/${project.name}</repository><tag>${project.version}</tag><buildArgs><JAR_FILE>target/${project.build.finalName}.jar</JAR_FILE></buildArgs></configuration><dependencies><dependency><groupId>javax.activation</groupId><artifactId>javax.activation-api</artifactId><version>1.2.0</version></dependency><dependency><groupId>org.codehaus.plexus</groupId><artifactId>plexus-archiver</artifactId><version>3.6.0</version></dependency></dependencies></plugin>
+
+ocker run -d -e AUDIENCE='Docker' spring-boot-recipes/dockerize:2.0.0-SNAPSHOT
+
+go get github.com/marpaia/graphite-golang
+
+$ java -jar myapp.jar --thin.dryrun --thin.root=target/thin/root
+$ java -jar myapp.jar --thin.library=org.springframework.boot.experimental:spring-boot-thin-tools-converter:1.0.21.RELEASE
+$ java -jar myapp-exec.jar
+
+$ CP1=`java -jar myapp.jar --thin.classpath=path`
+$ CP2=`java -jar otherapp.jar --thin.classpath=path --thin.parent=myapp.jar`
+
+$ java -XX:+UnlockCommercialFeatures -XX:+UseAppCDS -Xshare:off \
+  -XX:DumpLoadedClassList=app.classlist \
+  -noverify -cp $CP1:myapp.jar demo.MyApplication
+$ java -XX:+UnlockCommercialFeatures -XX:+UseAppCDS -Xshare:dump \
+  -XX:SharedArchiveFile=app.jsa -XX:SharedClassListFile=app.classlist \
+  -noverify -cp $CP1
+
+$ java -XX:+UnlockCommercialFeatures -XX:+UseAppCDS -Xshare:on \
+  -XX:SharedArchiveFile=app.jsa -noverify -cp $CP1:myapp.jar demo.MyApplication 
+$ java -XX:+UnlockCommercialFeatures -XX:+UseAppCDS -Xshare:on \
+  -XX:SharedArchiveFile=app.jsa -noverify -cp $CP1:otherapp.jar demo.OtherApplication
+  
+./mvnw spring-boot-thin:resolve -Dthin.repo=http://localhost:8081/repository/maven-central
+./gradlew thinResolve -P thin.repo=http://localhost:8081/repository/maven-central
+--------------------------------------------------------------------------------------------------------
+	static class ServiceStream extends ByteArrayOutputStream {
+
+		public ServiceStream() {
+			super(1024);
+		}
+
+		public void append(String content) throws IOException {
+			if (count > 0 && buf[count - 1] != '\n' && buf[count - 1] != '\r') {
+				write('\n');
+			}
+
+			byte[] contentBytes = content.getBytes("UTF-8");
+			this.write(contentBytes);
+		}
+
+		public InputStream toInputStream() {
+			return new ByteArrayInputStream(buf, 0, count);
+		}
+
+	}
+--------------------------------------------------------------------------------------------------------
 mvn install -s settings.xml
 
 mvn release:prepare -Preporting,distribution
 mvn release:perform -Preporting,distribution
+--------------------------------------------------------------------------------------------------------
+@DisabledIfSystemProperty(named = "file.separator", matches = "[/]")
+import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.*;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+public class ConditionalAnnotationsUnitTest {
+    @Test
+    @EnabledOnOs({OS.WINDOWS, OS.MAC})
+    public void shouldRunBothWindowsAndMac() {
+        System.out.println("runs on Windows and Mac");
+    }
+
+    @Test
+    @DisabledOnOs(OS.LINUX)
+    public void shouldNotRunAtLinux() {
+        System.out.println("will not run on Linux");
+    }
+
+    @Test
+    @EnabledOnJre({JRE.JAVA_10, JRE.JAVA_11})
+    public void shouldOnlyRunOnJava10And11() {
+        System.out.println("runs with java 10 and 11");
+    }
+
+    @Test
+    @DisabledOnJre(JRE.OTHER)
+    public void thisTestOnlyRunsWithUpToDateJREs() {
+        System.out.println("this test will only run on java8, 9, 10 and 11.");
+    }
+
+    @Test
+    @EnabledIfSystemProperty(named = "java.vm.vendor", matches = "Oracle.*")
+    public void onlyIfVendorNameStartsWithOracle() {
+        System.out.println("runs only if vendor name starts with Oracle");
+    }
+
+    @Test
+    @DisabledIfSystemProperty(named = "file.separator", matches = "[/]")
+    public void disabledIfFileSeperatorIsSlash() {
+        System.out.println("Will not run if file.sepeartor property is /");
+    }
+
+    @Test
+    @EnabledIfEnvironmentVariable(named = "GDMSESSION", matches = "ubuntu")
+    public void onlyRunOnUbuntuServer() {
+        System.out.println("only runs if GDMSESSION is ubuntu");
+    }
+
+    @Test
+    @DisabledIfEnvironmentVariable(named = "LC_TIME", matches = ".*UTF-8.")
+    public void shouldNotRunWhenTimeIsNotUTF8() {
+        System.out.println("will not run if environment variable LC_TIME is UTF-8");
+    }
+
+    @Test
+    @EnabledIf("'FR' == systemProperty.get('user.country')")
+    public void onlyFrenchPeopleWillRunThisMethod() {
+        System.out.println("will run only if user.country is FR");
+    }
+
+    @Test
+    @DisabledIf("java.lang.System.getProperty('os.name').toLowerCase().contains('mac')")
+    public void shouldNotRunOnMacOS() {
+        System.out.println("will not run if our os.name is mac");
+    }
+
+    @Test
+    @EnabledIf(value = {
+            "load('nashorn:mozilla_compat.js')",
+            "importPackage(java.time)",
+            "",
+            "var thisMonth = LocalDate.now().getMonth().name()",
+            "var february = Month.FEBRUARY.name()",
+            "thisMonth.equals(february)"
+    },
+            engine = "nashorn",
+            reason = "Self-fulfilling: {result}")
+    public void onlyRunsInFebruary() {
+        System.out.println("this test only runs in February");
+    }
+
+    @Test
+    @DisabledIf("systemEnvironment.get('XPC_SERVICE_NAME') != null " +
+            "&& systemEnvironment.get('XPC_SERVICE_NAME').contains('intellij')")
+    public void notValidForIntelliJ() {
+        System.out.println("this test will run if our ide is INTELLIJ");
+    }
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @Test
+    @DisabledOnOs({OS.WINDOWS, OS.SOLARIS, OS.OTHER})
+    @EnabledOnJre({JRE.JAVA_9, JRE.JAVA_10, JRE.JAVA_11})
+    @interface ThisTestWillOnlyRunAtLinuxAndMacWithJava9Or10Or11 {
+    }
+
+    @ThisTestWillOnlyRunAtLinuxAndMacWithJava9Or10Or11
+    public void someSuperTestMethodHere() {
+        System.out.println("this method will run with java9, 10, 11 and Linux or macOS.");
+    }
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @DisabledIf("Math.random() >= 0.5")
+    @interface CoinToss {
+    }
+
+    @RepeatedTest(2)
+    @CoinToss
+    public void gamble() {
+        System.out.println("This tests run status is a gamble with %50 rate");
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.junit.jupiter.api.extension.ParameterContext;
+import org.junit.jupiter.params.converter.ArgumentConversionException;
+import org.junit.jupiter.params.converter.ArgumentConverter;
+
+import java.time.LocalDate;
+
+class SlashyDateConverter implements ArgumentConverter {
+
+    @Override
+    public Object convert(Object source, ParameterContext context) throws ArgumentConversionException {
+        if (!(source instanceof String))
+            throw new IllegalArgumentException("The argument should be a string: " + source);
+
+        try {
+            String[] parts = ((String) source).split("/");
+            int year = Integer.parseInt(parts[0]);
+            int month = Integer.parseInt(parts[1]);
+            int day = Integer.parseInt(parts[2]);
+
+            return LocalDate.of(year, month, day);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Failed to convert", e);
+        }
+    }
+}
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.aggregator.AggregateWith;
+import org.junit.jupiter.params.aggregator.ArgumentsAccessor;
+import org.junit.jupiter.params.provider.CsvSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class PersonUnitTest {
+
+    @ParameterizedTest
+    @CsvSource({"Isaac,,Newton, Isaac Newton", "Charles,Robert,Darwin,Charles Robert Darwin"})
+    void fullName_ShouldGenerateTheExpectedFullName(ArgumentsAccessor argumentsAccessor) {
+        String firstName = argumentsAccessor.getString(0);
+        String middleName = (String) argumentsAccessor.get(1);
+        String lastName = argumentsAccessor.get(2, String.class);
+        String expectedFullName = argumentsAccessor.getString(3);
+
+        Person person = new Person(firstName, middleName, lastName);
+        assertEquals(expectedFullName, person.fullName());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"Isaac Newton,Isaac,,Newton", "Charles Robert Darwin,Charles,Robert,Darwin"})
+    void fullName_ShouldGenerateTheExpectedFullName(String expectedFullName,
+                                                    @AggregateWith(PersonAggregator.class) Person person) {
+
+        assertEquals(expectedFullName, person.fullName());
+    }
+}
+
+import org.junit.jupiter.api.extension.ParameterContext;
+import org.junit.jupiter.params.aggregator.ArgumentsAccessor;
+import org.junit.jupiter.params.aggregator.ArgumentsAggregationException;
+import org.junit.jupiter.params.aggregator.ArgumentsAggregator;
+
+class PersonAggregator implements ArgumentsAggregator {
+
+    @Override
+    public Object aggregateArguments(ArgumentsAccessor accessor, ParameterContext context)
+            throws ArgumentsAggregationException {
+        return new Person(accessor.getString(1), accessor.getString(2), accessor.getString(3));
+    }
+}
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+
+import javax.sql.DataSource;
+
+@Configuration
+@ComponentScan("com.baeldung.junit.tags.example")
+public class SpringJdbcConfig {
+
+    @Bean
+    public DataSource dataSource() {
+        return new EmbeddedDatabaseBuilder().setType(EmbeddedDatabaseType.H2).addScript("classpath:jdbc/schema.sql").addScript("classpath:jdbc/test-data.sql").build();
+    }
+}
+
+import org.junit.platform.runner.JUnitPlatform;
+import org.junit.platform.suite.api.IncludeTags;
+import org.junit.platform.suite.api.SelectPackages;
+import org.junit.runner.RunWith;
+
+@RunWith(JUnitPlatform.class)
+@SelectPackages("com.baeldung.tags")
+@IncludeTags("UnitTest")
+public class EmployeeDAOTestSuite {
+}
+
+
+import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertLinesMatch;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.List;
+
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.io.TempDir;
+
+import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+
+@TestMethodOrder(OrderAnnotation.class)
+class SharedTemporaryDirectoryUnitTest {
+
+    @TempDir
+    static Path sharedTempDir;
+    
+    @Test
+    @Order(1)
+    void givenFieldWithSharedTempDirectoryPath_whenWriteToFile_thenContentIsCorrect() throws IOException {
+        Path numbers = sharedTempDir.resolve("numbers.txt");
+
+        List<String> lines = Arrays.asList("1", "2", "3");
+        Files.write(numbers, lines);
+
+        assertAll(
+            () -> assertTrue("File should exist", Files.exists(numbers)),
+            () -> assertLinesMatch(lines, Files.readAllLines(numbers)));
+        
+        Files.createTempDirectory("bpb");
+    }
+
+    @Test
+    @Order(2)
+    void givenAlreadyWrittenToSharedFile_whenCheckContents_thenContentIsCorrect() throws IOException {
+        Path numbers = sharedTempDir.resolve("numbers.txt");
+
+        assertLinesMatch(Arrays.asList("1", "2", "3"), Files.readAllLines(numbers));
+    }
+
+}import org.junit.Rule;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.migrationsupport.rules.EnableRuleMigrationSupport;
+import org.junit.rules.ExpectedException;
+
+@EnableRuleMigrationSupport
+public class RuleMigrationSupportUnitTest {
+
+    @Rule
+    public ExpectedException exceptionRule = ExpectedException.none();
+
+    @Test
+    public void whenExceptionThrown_thenExpectationSatisfied() {
+        exceptionRule.expect(NullPointerException.class);
+        String test = null;
+        test.length();
+    }
+
+    @Test
+    public void whenExceptionThrown_thenRuleIsApplied() {
+        exceptionRule.expect(NumberFormatException.class);
+        exceptionRule.expectMessage("For input string");
+        Integer.parseInt("1a");
+    }
+}
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.platform.runner.JUnitPlatform;
+import org.junit.runner.RunWith;
+
+@RunWith(JUnitPlatform.class)
+@ExtendWith(TraceUnitExtension.class)
+public class RuleExampleUnitTest {
+
+    @Test
+    public void whenTracingTests() {
+        System.out.println("This is my test");
+        /*...*/
+    }
+}
+--------------------------------------------------------------------------------------------------------
+sudo add-apt-repository -y ppa:webupd8team/javasudo apt-get updatesudo apt-get install oracle-java8-installersudo apt-get install oracle-java8-set-defaul
+
+sudo add-apt-repository -y ppa:natecarlson/maven3sudo apt-get updatesudo apt-get --assume-yes install maven3sudo ln -sf /usr/bin/mvn3 /usr/bin/mvn
+
+SELECT *
+FROM tablename
+WHERE 
+columnname REGEXP '^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$'
+--------------------------------------------------------------------------------------------------------
+language: javajdk:- openjdk8script: mvn clean install -Ptestcache:directories:- $HOME/.m2/deploy:provider: herokuapp: HEROKU-APP-NAMEapi_key:secure: YOUR-API-KEYrun: "DATABASE_URL_JDBC=$DB_PROD mvn liquibase:update -pl liquibase -Pheroku"on: master
+
+./travis-encrypt.sh -r user/repo -e 258cfb90-XXXX-4720-XXX-9bfba5332254
+
+heroku auth:token
+
+heroku addons:create heroku-postgresql:hobby-dev
+
+--------------------------------------------------------------------------------------------------------
+/**
+ * Interface to build objects in a
+ * fluent fashion.
+ *
+ * @param <T> The type of object being built.
+ * @author Rui Vilao (rui.vilao@ed-era.com)
+ */
+public interface FluentBuilder<T> {
+    /**
+     * Builds the object.
+     *
+     * @return The object.
+     */
+    T build();
+}
+--------------------------------------------------------------------------------------------------------
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import io.restassured.builder.RequestSpecBuilder;
+import io.restassured.specification.RequestSpecification;
+import org.junit.*;
+
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.*;
+
+public class RestAssuredExercises4Test {
+
+	private static RequestSpecification requestSpec;
+
+	@Rule
+	public WireMockRule wireMockRule = new WireMockRule(options().port(9876));
+
+	@BeforeClass
+	public static void createRequestSpecification() {
+
+		requestSpec = new RequestSpecBuilder().
+			setBaseUri("http://localhost").
+			setPort(9876).
+			build();
+	}
+
+	/*******************************************************
+	 * Perform a GET request to /xml/de/24848 to get the
+	 * list of places associated with German zip code 24848
+	 * in XML format. Assert that the third place in the list
+	 * is Kropp
+	 ******************************************************/
+
+	@Test
+	public void getDeZipCode24848_checkThirdPlaceInList_expectKropp() {
+
+		given().
+			spec(requestSpec).
+		when().
+		then();
+	}
+
+	/*******************************************************
+	 * Perform a GET request to /xml/de/24848 to get the
+	 * list of places associated with German zip code 24848
+	 * in XML format. Assert that the latitude for the third
+	 * place in the list equal to 54.45
+	 ******************************************************/
+
+	@Test
+	public void getDeZipCode24848_checkLatitudeForSecondPlaceInList_expect5445() {
+
+		given().
+			spec(requestSpec).
+		when().
+		then();
+	}
+
+	/*******************************************************
+	 * Perform a GET request to /xml/de/24848 to get the
+	 * list of places associated with German zip code 24848
+	 * in XML format. Assert that there are 4 places that
+	 * have a stateAbbreviation that equals 'SH'
+	 ******************************************************/
+
+	@Test
+	public void getDeZipCode24848_checkNumberOfPlacesInSH_expect4() {
+
+		given().
+			spec(requestSpec).
+		when().
+		then();
+	}
+
+
+	/*******************************************************
+	 * Perform a GET request to /xml/de/24848 to get the
+	 * list of places associated with German zip code 24848
+	 * in XML format. Assert that there are 3 places that
+	 * have a name that starts with 'Klein'
+	 ******************************************************/
+
+	@Test
+	public void getDeZipCode24848_checkNumberOfPlacesStartingWithKlein_expect3() {
+
+		given().
+			spec(requestSpec).
+		when().
+		then();
+	}
+}
+
+jumia
+finastra
+--------------------------------------------------------------------------------------------------------
+vue init vuetifyjs/nuxt frontend
+--------------------------------------------------------------------------------------------------------
+icacls "D:\test" /grant John:(OI)(CI)F /T
+According do MS documentation:
+
+F = Full Control
+CI = Container Inherit - This flag indicates that subordinate containers will inherit this ACE.
+OI = Object Inherit - This flag indicates that subordinate files will inherit the ACE.
+/T = Apply recursively to existing files and sub-folders. (OI and CI only apply to new files and sub-folders). Credit: comment by @AlexSpence.
+--------------------------------------------------------------------------------------------------------
+@Bean    public LocalContainerEntityManagerFactoryBean entityManagerFactory()    {LocalContainerEntityManagerFactoryBean factory = new LocalContainerEntityManagerFactoryBean();HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();vendorAdapter.setShowSql(Boolean.TRUE);factory.setDataSource(dataSource());factory.setJpaVendorAdapter(vendorAdapter);factory.setPackagesToScan(env.getProperty("packages-to-scan"));Properties jpaProperties = new Properties();jpaProperties.put("hibernate.hbm2ddl.auto", env.getProperty ("hibernate.hbm2ddl.auto"));factory.setJpaProperties(jpaProperties);factory.afterPropertiesSet();factory.setLoadTimeWeaver(new InstrumentationLoadTimeWeaver());return factory;    }
+--------------------------------------------------------------------------------------------------------
+@Target(ElementType.TYPE)@Retention(RetentionPolicy.RUNTIME)@Documented@Inherited@SpringBootConfiguration@EnableAutoConfiguration@ComponentScan(excludeFilters = {@Filter(type = FilterType.CUSTOM, classes = TypeExcludeFilter.class),@Filter(type = FilterType.CUSTOM, classes = AutoConfigurationExcludeFilter.class) })public @interface SpringBootApplication {    ....    ....}
+--------------------------------------------------------------------------------------------------------
+@RequestMapping(value = "/{roomId}", method = RequestMethod.GET,   consumes = "application/json;version=2")public RoomDTOv2 getRoomV2(@PathVariable("roomId") long id) {  Room room = inventoryService.getRoom(id);  return new RoomDTOv2(room);}
+
+@RequestMapping(value = "/{roomId}", method = RequestMethod.GET, headers = {"X-API-Version=3"})public RoomDTOv3 getRoomV3(@PathVariable("roomId") long id) {  Room room = inventoryService.getRoom(id);  return new RoomDTOv3(room);}
+
+@RequestMapping(value = "/{roomId}", method = RequestMethod.POST, headers = {"X-HTTP-Method-Override=PUT"})public ApiResponse updateRoomAsPost(@PathVariable("roomId") long   id, @RequestBody RoomDTO updatedRoom) {  return updateRoom(id, updatedRoom);}
+--------------------------------------------------------------------------------------------------------
+@Configuration@EnableWebMvc@ComponentScanpublic class WebApplicationConfiguration extends WebMvcAutoConfiguration {  @Bean  public Filter etagFilter() {    return new ShallowEtagHeaderFilter();  }}
+
+@RunWith(SpringJUnit4ClassRunner.class)@SpringApplicationConfiguration(classes = WebApplication.class)@WebAppConfiguration@IntegrationTest("integration_server:9000")public class BookingsResourceIntegrationTest {  @Test  public void runTests() {    // ...  }}
+--------------------------------------------------------------------------------------------------------
+<build>        <plugins>            <plugin>                <artifactId>maven-war-plugin</artifactId>                <version>2.6</version>                <configuration><attachClasses>true</attachClasses>                </configuration>            </plugin>        </plugins>    </build>
+
+<plugin>      <groupId>org.mortbay.jetty</groupId>      <artifactId>jetty-maven-plugin</artifactId>      <configuration>        <useTestScope>true</useTestScope>        <stopPort>8005</stopPort>        <stopKey>DIE!</stopKey>        <systemProperties>          <systemProperty>            <name>jetty.port</name>            <value>8080</value>          </systemProperty>        </systemProperties>      </configuration>    </plugin>
+--------------------------------------------------------------------------------------------------------
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
+import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
+import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@Configuration
+@ComponentScan
+@EnableAutoConfiguration
+@EnableResourceServer
+@RestController
+public class Application {
+	
+	@Bean
+	public JwtTokenStore tokenStore() throws Exception {
+		JwtAccessTokenConverter enhancer = new JwtAccessTokenConverter();
+		// N.B. in a real system you would have to configure the verifierKey (or use JdbcTokenStore)
+		enhancer.afterPropertiesSet();
+		return new JwtTokenStore(enhancer);
+	}
+
+	public static void main(String[] args) {
+		SpringApplication.run(Application.class, args);
+	}
+
+	@RequestMapping("/")
+	public String home() {
+		return "Hello World";
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+Usage
+
+    Download script travis-encrypt.sh
+    Make it executable chmod +x travis-encrypt.sh
+    Run the script with ./travis-encrypt.sh -r username/repositoryname -e example
+        It will return something like O+woVD9K+PeFrcyu5GCjKSFvfcSPwDW0kyDYEQnNbwt/iSkqjpl2OPA9W//KEKEB9UUSZD+XmQ3Ij0gnvJnOowcWY5sSeJlVEVTrSer0kW6uWpa/uWzDHCBz2YhBnI6u9SfYfMkhDl22pcaCEwaUkmK2gjcVo+v0bS8vAQFz0Na5/WiKj0GkSX50iIGgfaXheuC8KgIC25T0h+czpap7vb13OlblMnClfyTH9+TmAwTlcV7ljXpv1QY+K72L8jK1/CQVZ8quBYrBwwxO2V6cpXRMMCIw4m4lqxUyN4FBGnq7cJ7BWLzeqSMpFBoP+ZxAqS5yem8KLh1VkEo7PVjCkZE6M+2meFf2VJEVUs/KJY9xnH3eDzipWkwXon2qVpCkT7FDEzGFs/DapYsSo7eCO6pUYYhcpaYpWeYV9DSSV0QcrOeZp664iJMHWPSmrs/lESbbHpKWsM/AFVB9X75q/OB+QU0tQxpReZmKw3ZHbDVMlmlwhP8VSiQ05LV2W6gYzADGiUiL6n1X8teeHEVDSZnD7nrxMD/FchnWI5La3tZeFovRMf6hH3NItW+QZaGaGNftJrP488J/F2hCycPJk3+YrxbBCGHE2X379QbkMz3S0B5UiAcJKmwuTstF6X3CCurZVYIkUGGXhnmalPtVpEqxeTiLw5RU6C9z2qSwhhw=
+    Use the encrypted secret in your .travis.yml according to https://docs.travis-ci.com/user/encryption-keys/#Usage
+
+
+#!/bin/bash
+
+usage() { echo -e "Travis Encrypt Script\nUsage:\t$0 \n -r\t<username/repository> \n -e\t<string which should be encrypted>" 1>&2; exit 1; }
+
+while getopts ":r:e:" param; do
+  case "${param}" in
+    r)
+      r=${OPTARG}
+      ;;
+    e)
+      e=${OPTARG}
+      ;;
+    *)
+      usage
+      ;;
+  esac
+done
+shift $((OPTIND -1))
+
+if [ -z "${r}" ] || [[ !(${r} =~ [[:alnum:]]/[[:alnum:]]) ]] || [ -z "${e}" ]; then
+  usage
+fi
+
+key_match="\"key\":\"([^\"]+)\""
+key_url="https://api.travis-ci.org/repos/${r}/key"
+request_result=$(curl --silent $key_url)
+
+if [[ !($request_result =~ $key_match) ]]; then
+  echo "Couldn't retrieve key from ${key_url}. "
+  usage
+fi
+
+echo -n "${e}" | openssl rsautl -encrypt -pubin -inkey <(echo -e "${BASH_REMATCH[1]}") | openssl base64 -A
+echo
 --------------------------------------------------------------------------------------------------------
 import org.springframework.boot.ApplicationRunner;import org.springframework.boot.SpringApplication;import org.springframework.boot.autoconfigure.SpringBootApplication;import org.springframework.context.annotation.Bean;@SpringBootApplicationpublic class CalculatorApplication {public static void main(String[] args) {SpringApplication.run(CalculatorApplication.class, args);  }  @Beanpublic ApplicationRunner calculationRunner(Calculator calculator) {return args -> {calculator.calculate(137, 21, '+');calculator.calculate(137, 21, '*');calculator.calculate(137, 21, '-');};  }}
 --------------------------------------------------------------------------------------------------------
