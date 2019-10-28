@@ -8700,7 +8700,95 @@ public class RestAssuredExercises4Test {
 jumia
 finastra
 --------------------------------------------------------------------------------------------------------
+@Controllerpublic class RegistrationController{    @Autowired    private UserValidator userValidator;    @PostMapping("/registration")    public String handleRegistration(@Valid User user, BindingResult result) {userValidator.validate(user, result);if(result.hasErrors()){return "registration";}return "redirect:/registrationsuccess";    }}
+
+spring.servlet.multipart.enabled=truespring.servlet.multipart.max-file-size=2MBspring.servlet.multipart.max-request-size=20MBspring.servlet.multipart.file-size-threshold=5MB
+--------------------------------------------------------------------------------------------------------
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnBean(TogglzProperties.class)
+    @ConditionalOnClass({EnableWebSecurity.class, AuthenticationEntryPoint.class, SpringSecurityUserProvider.class})
+    @Description("Spring security user provider")
+    public UserProvider userProvider(final TogglzProperties properties) {
+        return new SpringSecurityUserProvider(properties.getConsole().getFeatureAdminAuthority());
+    }
+--------------------------------------------------------------------------------------------------------
+@Test
+public void givenFeaturePropertyTrue_whenIncreaseSalary_thenIncrease() 
+  throws Exception {
+    Employee emp = new Employee(1, 2000);
+    employeeRepository.save(emp);
+    System.setProperty("employee.feature", "true");
+ 
+    mockMvc.perform(post("/increaseSalary")
+      .param("id", emp.getId() + ""))
+      .andExpect(status().is(200));
+ 
+    emp = employeeRepository.findById(1L).orElse(null);
+    assertEquals("salary incorrect", 2200, emp.getSalary(), 0.5);
+}
+--------------------------------------------------------------------------------------------------------
+public enum MyFeatures implements Feature {
+ 
+    @Label("Employee Management Feature")
+    EMPLOYEE_MANAGEMENT_FEATURE;
+ 
+    public boolean isActive() {
+        return FeatureContext.getFeatureManager().isActive(this);
+    }
+}
+@Configuration
+public class ToggleConfiguration {
+ 
+    @Bean
+    public FeatureProvider featureProvider() {
+        return new EnumBasedFeatureProvider(MyFeatures.class);
+    }
+}
+
+public enum MyFeatures implements Feature {
+ 
+    @Label("Employee Management Feature") 
+    @EnabledByDefault
+    @DefaultActivationStrategy(id = SystemPropertyActivationStrategy.ID, 
+      parameters = { 
+      @ActivationParameter(
+        name = SystemPropertyActivationStrategy.PARAM_PROPERTY_NAME,
+        value = "employee.feature"),
+      @ActivationParameter(
+        name = SystemPropertyActivationStrategy.PARAM_PROPERTY_VALUE,
+        value = "true") }) 
+    EMPLOYEE_MANAGEMENT_FEATURE;
+    //...
+}
+--------------------------------------------------------------------------------------------------------
+@Configuration@EnableWebMvcpublic class WebMvcConfig implements WebMvcConfigurer{@Bean(name="simpleMappingExceptionResolver")public SimpleMappingExceptionResolver simpleMappingExceptionResolver(){SimpleMappingExceptionResolver exceptionResolver = new SimpleMappingException Resolver();Properties mappings = new Properties();mappings.setProperty("DataAccessException", "dbError");mappings.setProperty("RuntimeException", "error");exceptionResolver.setExceptionMappings(mappings);exceptionResolver.setDefaultErrorView("error");return exceptionResolver;}}
+
+@Controllerpublic class CustomerController{@GetMapping("/customers/{id}")public String findCustomer(@PathVariable Long id, Model model){Customer c = customerRepository.findById(id);if(c == null) throw new CustomerNotFoundException();model.add("customer", c);return "view_customer";}@ExceptionHandler(CustomerNotFoundException.class)public ModelAndView handleCustomerNotFoundException(CustomerNotFoundException ex){ModelAndView model = new ModelAndView("error/404");model.addObject("exception", ex);return model;}}
+
+@Controllerpublic class GenericErrorController implements ErrorController{private static final String ERROR_PATH = "/error";@RequestMapping(ERROR_PATH)public String error(){return "errorPage.html";}@Overridepublic String getErrorPath() {return ERROR_PATH;}}
+
+@Configurationpublic class WebConfig implements WebMvcConfigurer{@Overridepublic void addCorsMappings(CorsRegistry registry) {registry.addMapping("/api/**").allowedOrigins("http://localhost:3000").allowedMethods("*").allowedHeaders("*").allowCredentials(false).maxAge(3600);}}
+--------------------------------------------------------------------------------------------------------
 vue init vuetifyjs/nuxt frontend
+
+spring.devtools.restart.exclude=assets/**,resources/**
+
+spring.devtools.restart.additional-exclude=assets/**,setup-instructions/**spring.devtools.restart.additional-paths=D:/global-overrides/
+
+spring.devtools.restart.trigger-file=restart.txt
+java -jar -Dspring.devtools.restart.enabled=false app.jar
+
+spring.datasource.hikari.allow-pool-suspension=truespring.datasource.hikari.connection-test-query=SELECT 1spring.datasource.hikari.transaction-isolation=TRANSACTION_READ_COMMITTEDspring.datasource.hikari.connection-timeout=45000
+
+java -classpath jooq-3.9.3.jar;jooq-meta-3.9.3.jar;jooq-codegen-3.9.3.jar;mysql-connector-java-5.1.18-bin.jar;. org.jooq.util.GenerationTool jooq-config.xml
+
+spring.datasource.driver-class-name=com.mysql.jdbc.Driverspring.datasource.url=jdbc:mysql://localhost:3306/testspring.datasource.username=rootspring.datasource.password=adminspring.jooq.sql-dialect=MYSQ
+
+@Query("{ 'name' : ?0 }")User findByUserName(String name);
+
+keytool -genkey -alias mydomain -keyalg RSA -keysize 2048 -keystore KeyStore.jks -validity 3650
+server.port=8443server.ssl.key-store=classpath:KeyStore.jksserver.ssl.key-store-password=mysecretserver.ssl.keyStoreType=JKSserver.ssl.keyAlias=mydomain
 --------------------------------------------------------------------------------------------------------
 icacls "D:\test" /grant John:(OI)(CI)F /T
 According do MS documentation:
