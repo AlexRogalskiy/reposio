@@ -7828,6 +7828,380 @@ mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent test sonar:sonar
 mvn versions:set -DnewVersion=X.Z-SNAPSHOT -Pall
 mvn versions:commit -Pall
 --------------------------------------------------------------------------------------------------------
+https://gitlab.paragon-software.com/pba/DevOps/ansible/
+--------------------------------------------------------------------------------------------------------
+@EnableRuleMigrationSupport
+public class JUnit4TemporaryFolderTest {
+   @Rule
+   public TemporaryFolder temporaryFolder = new TemporaryFolder();
+   @Test
+   public void test() throws IOException {
+      temporaryFolder.newFile(“new_file”);
+   }
+}
+--------------------------------------------------------------------------------------------------------
+public class SMTPServerRule extends ExternalResource {
+
+   private GreenMail smtpServer;
+   private String hostname;
+   private int port;
+
+   public SMTPServerRule() {
+       this(25);
+   }
+
+   public SMTPServerRule(int port) {
+       this("localhost", port);
+   }
+
+   public SMTPServerRule(String hostname, int port) {
+       this.hostname = hostname;
+       this.port = port;
+   }
+
+
+   @Override
+   protected void before() throws Throwable {
+       super.before();
+
+       smtpServer = new GreenMail(new ServerSetup(port, hostname, "smtp"));
+       smtpServer.start();
+   }
+
+   public List<ExpectedMail> getMessages() {
+       return Lists.newArrayList(smtpServer.getReceivedMessages()).stream()
+           .parallel()
+           .map(mimeMessage -> ExpectedMail.transformMimeMessage(mimeMessage)).collect(Collectors.toList());
+   }
+
+   @Override
+   protected void after() {
+       super.after();
+       smtpServer.stop();
+   }
+}
+--------------------------------------------------------------------------------------------------------
+import static org.apiguardian.api.API.Status.STABLE;
+
+import java.util.Locale;
+
+import org.apiguardian.api.API;
+import org.junit.platform.commons.logging.Logger;
+import org.junit.platform.commons.logging.LoggerFactory;
+import org.junit.platform.commons.util.StringUtils;
+
+/**
+ * Enumeration of common operating systems used for testing Java applications.
+ *
+ * <p>If the current operating system cannot be detected &mdash; for example,
+ * if the {@code os.name} JVM system property is undefined &mdash; then none
+ * of the constants defined in this enum will be considered to be the
+ * {@linkplain #isCurrentOs current operating system}.
+ *
+ * @since 5.1
+ * @see #AIX
+ * @see #LINUX
+ * @see #MAC
+ * @see #SOLARIS
+ * @see #WINDOWS
+ * @see #OTHER
+ * @see EnabledOnOs
+ * @see DisabledOnOs
+ */
+@API(status = STABLE, since = "5.1")
+public enum OS {
+
+	/**
+	 * IBM AIX operating system.
+	 *
+	 * @since 5.3
+	 */
+	@API(status = STABLE, since = "5.3")
+	AIX,
+
+	/**
+	 * Linux-based operating system.
+	 */
+	LINUX,
+
+	/**
+	 * Apple Macintosh operating system (e.g., macOS).
+	 */
+	MAC,
+
+	/**
+	 * Oracle Solaris operating system.
+	 */
+	SOLARIS,
+
+	/**
+	 * Microsoft Windows operating system.
+	 */
+	WINDOWS,
+
+	/**
+	 * An operating system other than {@link #AIX}, {@link #LINUX}, {@link #MAC},
+	 * {@link #SOLARIS}, or {@link #WINDOWS}.
+	 */
+	OTHER;
+
+	private static final Logger logger = LoggerFactory.getLogger(OS.class);
+
+	private static final OS CURRENT_OS = determineCurrentOs();
+
+	private static OS determineCurrentOs() {
+		String osName = System.getProperty("os.name");
+
+		if (StringUtils.isBlank(osName)) {
+			logger.debug(
+				() -> "JVM system property 'os.name' is undefined. It is therefore not possible to detect the current OS.");
+
+			// null signals that the current OS is "unknown"
+			return null;
+		}
+
+		osName = osName.toLowerCase(Locale.ENGLISH);
+
+		if (osName.contains("aix")) {
+			return AIX;
+		}
+		if (osName.contains("linux")) {
+			return LINUX;
+		}
+		if (osName.contains("mac")) {
+			return MAC;
+		}
+		if (osName.contains("sunos") || osName.contains("solaris")) {
+			return SOLARIS;
+		}
+		if (osName.contains("win")) {
+			return WINDOWS;
+		}
+		return OTHER;
+	}
+
+	/**
+	 * @return {@code true} if <em>this</em> {@code OS} is known to be the
+	 * operating system on which the current JVM is executing
+	 */
+	public boolean isCurrentOs() {
+		return this == CURRENT_OS;
+	}
+
+}
+
+import static org.apiguardian.api.API.Status.STABLE;
+
+import java.lang.reflect.Method;
+
+import org.apiguardian.api.API;
+import org.junit.platform.commons.logging.Logger;
+import org.junit.platform.commons.logging.LoggerFactory;
+import org.junit.platform.commons.util.ReflectionUtils;
+import org.junit.platform.commons.util.StringUtils;
+
+/**
+ * Enumeration of Java Runtime Environment (JRE) versions.
+ *
+ * <p>If the current JRE version cannot be detected &mdash; for example, if the
+ * {@code java.version} JVM system property is undefined &mdash; then none of
+ * the constants defined in this enum will be considered to be the
+ * {@linkplain #isCurrentVersion current JRE version}.
+ *
+ * @since 5.1
+ * @see #JAVA_8
+ * @see #JAVA_9
+ * @see #JAVA_10
+ * @see #JAVA_11
+ * @see #JAVA_12
+ * @see #JAVA_13
+ * @see #JAVA_14
+ * @see #OTHER
+ * @see EnabledOnJre
+ * @see DisabledOnJre
+ */
+@API(status = STABLE, since = "5.1")
+public enum JRE {
+
+	/**
+	 * Java 8.
+	 */
+	JAVA_8,
+
+	/**
+	 * Java 9.
+	 */
+	JAVA_9,
+
+	/**
+	 * Java 10.
+	 */
+	JAVA_10,
+
+	/**
+	 * Java 11.
+	 */
+	JAVA_11,
+
+	/**
+	 * Java 12.
+	 *
+	 * @since 5.4
+	 */
+	@API(status = STABLE, since = "5.4")
+	JAVA_12,
+
+	/**
+	 * Java 13.
+	 *
+	 * @since 5.4
+	 */
+	@API(status = STABLE, since = "5.4")
+	JAVA_13,
+
+	/**
+	 * Java 14.
+	 *
+	 * @since 5.5
+	 */
+	@API(status = STABLE, since = "5.5")
+	JAVA_14,
+
+	/**
+	 * A JRE version other than {@link #JAVA_8}, {@link #JAVA_9},
+	 * {@link #JAVA_10}, {@link #JAVA_11}, {@link #JAVA_12},
+	 * {@link #JAVA_13}, or {@link #JAVA_14}.
+	 */
+	OTHER;
+
+	private static final Logger logger = LoggerFactory.getLogger(JRE.class);
+
+	private static final JRE CURRENT_VERSION = determineCurrentVersion();
+
+	private static JRE determineCurrentVersion() {
+		String javaVersion = System.getProperty("java.version");
+		boolean javaVersionIsBlank = StringUtils.isBlank(javaVersion);
+
+		if (javaVersionIsBlank) {
+			logger.debug(
+				() -> "JVM system property 'java.version' is undefined. It is therefore not possible to detect Java 8.");
+		}
+
+		if (!javaVersionIsBlank && javaVersion.startsWith("1.8")) {
+			return JAVA_8;
+		}
+
+		try {
+			// java.lang.Runtime.version() is a static method available on Java 9+
+			// that returns an instance of java.lang.Runtime.Version which has the
+			// following method: public int major()
+			Method versionMethod = Runtime.class.getMethod("version");
+			Object version = ReflectionUtils.invokeMethod(versionMethod, null);
+			Method majorMethod = version.getClass().getMethod("major");
+			int major = (int) ReflectionUtils.invokeMethod(majorMethod, version);
+			switch (major) {
+				case 9:
+					return JAVA_9;
+				case 10:
+					return JAVA_10;
+				case 11:
+					return JAVA_11;
+				case 12:
+					return JAVA_12;
+				case 13:
+					return JAVA_13;
+				case 14:
+					return JAVA_14;
+				default:
+					return OTHER;
+			}
+		}
+		catch (Exception ex) {
+			logger.debug(ex, () -> "Failed to determine the current JRE version via java.lang.Runtime.Version.");
+		}
+
+		// null signals that the current JRE version is "unknown"
+		return null;
+	}
+
+	/**
+	 * @return {@code true} if <em>this</em> {@code JRE} is known to be the
+	 * Java Runtime Environment version for the currently executing JVM
+	 */
+	public boolean isCurrentVersion() {
+		return this == CURRENT_VERSION;
+	}
+}
+--------------------------------------------------------------------------------------------------------
+@RunWith(JUnitPlatform.class)
+@SelectPackages({net.mednikov.teststutorial.groupA, net.mednikov.teststutorial.groupB, net.mednikov.teststutorial.groupC})
+public class TestSuite(){}
+--------------------------------------------------------------------------------------------------------
+@TestMethodOrder(OrderAnnotation.class)
+class OrderedTestsDemo {
+
+    @Test
+    @Order(1)
+    void nullValues() {
+        // perform assertions against null values
+    }
+
+    @Test
+    @Order(2)
+    void emptyValues() {
+        // perform assertions against empty values
+    }
+
+    @Test
+    @Order(3)
+    void validValues() {
+        // perform assertions against valid values
+    }
+
+}
+
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.TestMethodOrder;
+
+@TestMethodOrder(MethodOrderer.Alphanumeric.class)
+public class TestClass{
+   //..
+}
+--------------------------------------------------------------------------------------------------------
+python -m pip install --upgrade pip
+
+<dependency>
+   <groupId>org.springframework.boot</groupId>
+   <artifactId>spring-boot-starter-test</artifactId>
+   <exclusions>
+     <exclusion>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+     </exclusion>
+   </exclusions>
+</dependency>
+<dependency>
+   <groupId>org.dbunit</groupId>
+   <artifactId>dbunit</artifactId>
+   <version>${dbunit.version}</version>
+   <exclusions>
+     <exclusion>
+       <groupId>junit</groupId>
+       <artifactId>junit</artifactId>
+     </exclusion>
+   </exclusions>
+</dependency>
+--------------------------------------------------------------------------------------------------------
+@ExtendWith(SpringExtension.class)
+@ExtendWith(MockitoExtension.class)
+
+        <!--<dependency>-->
+        <!--<groupId>org.junit.jupiter</groupId>-->
+        <!--<artifactId>junit-jupiter-migrationsupport</artifactId>-->
+        <!--<version>${junit-jupiter.version}</version>-->
+        <!--<scope>test</scope>-->
+        <!--</dependency>-->
+--------------------------------------------------------------------------------------------------------
 language: java
 jdk:
   - oraclejdk8
@@ -10835,6 +11209,43 @@ public final class TypeSafeKeys
     public static final MetaDataKey<String> A1 = StringKeys.A1;
     public static final MetaDataKey<Integer> A2 = IntegerKeys.A2;
 }
+--------------------------------------------------------------------------------------------------------
+private static WireMockServer wireMockServer
+  = new WireMockServer();
+ 
+@BeforeClass
+public static void setUp() throws Exception {
+    wireMockServer.start();
+    configureFor("localhost", 8080);
+    stubFor(
+      get(urlEqualTo("/user/get"))
+        .willReturn(aResponse()
+          .withStatus(200)
+          .withHeader("Content-Type", "application/json")
+          .withBody("{ \"id\": \"1234\", name: \"John Smith\" }")));
+ 
+    stubFor(
+      post(urlEqualTo("/user/create"))
+        .withHeader("content-type", equalTo("application/json"))
+        .withRequestBody(containing("id"))
+        .willReturn(aResponse()
+          .withStatus(200)
+          .withHeader("Content-Type", "application/json")
+          .withBody("{ \"id\": \"1234\", name: \"John Smith\" }")));
+ 
+}
+ 
+@AfterClass
+public static void tearDown() throws Exception {
+    wireMockServer.stop();
+}
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------

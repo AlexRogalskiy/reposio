@@ -828,6 +828,8 @@ public interface ITaskSubscriptionRepository<E extends TaskSubscriptionEntity, D
 ////                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
 ////    }
 -----------------------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------------------
     @Test
     public void testAddUserSubscription() {
         final UserDTO user1 = given().contentType(ContentType.JSON).accept(ContentType.JSON).auth().basic("user", "user123").when().get(getServiceURI() + "/api/user/1").as(UserDTO.class);
