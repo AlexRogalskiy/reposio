@@ -8700,6 +8700,14 @@ public class RestAssuredExercises4Test {
 jumia
 finastra
 --------------------------------------------------------------------------------------------------------
+http://localhost:8080/posts?sort=createdOn,desc
+--------------------------------------------------------------------------------------------------------
+cp .xinitrc /home/YOUR_USERNAME/.xinitrc 
+--------------------------------------------------------------------------------------------------------
+@FunctionalInterfacepublic interface HandlerFunction<T extends ServerResponse>{    Mono<T> handle(ServerRequest request);}
+
+@FunctionalInterfacepublic interface HandlerFilterFunction<T extends ServerResponse, R extends ServerResponse>{    Mono<R> filter(ServerRequest request, HandlerFunction<T> next);    //other methods}
+--------------------------------------------------------------------------------------------------------
 @Controllerpublic class RegistrationController{    @Autowired    private UserValidator userValidator;    @PostMapping("/registration")    public String handleRegistration(@Valid User user, BindingResult result) {userValidator.validate(user, result);if(result.hasErrors()){return "registration";}return "redirect:/registrationsuccess";    }}
 
 spring.servlet.multipart.enabled=truespring.servlet.multipart.max-file-size=2MBspring.servlet.multipart.max-request-size=20MBspring.servlet.multipart.file-size-threshold=5MB
