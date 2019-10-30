@@ -8758,6 +8758,77 @@ public class ConditionalAnnotationsUnitTest {
     }
 }
 --------------------------------------------------------------------------------------------------------
+npm install express
+npm install -D @types/express
+--------------------------------------------------------------------------------------------------------
+yarn global add bower• yarn global add gulp-cli
+jhipster entity Post --table-name post
+
+
+@OneToMany(mappedBy = "post")@JsonIgnore@Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)private Set<Comment> comments = new HashSet<>();
+
+heroku logs --tail --app <application_name>
+--------------------------------------------------------------------------------------------------------
+import java.util.Date;import org.springframework.boot.actuate.health.Health;import org.springframework.boot.actuate.health.HealthIndicator;import org.springframework.stereotype.Component;import org.springframework.web.client.RestClientException;import org.springframework.web.client.RestTemplate;@Componentpublic class FeedServerHealthIndicator implements HealthIndicator{    @Override    public Health health() {RestTemplate restTemplate = new RestTemplate();String url = "http://feedserver.com/ping";try {String resp = restTemplate.getForObject(url, String.class);if("OK".equalsIgnoreCase(resp)){return Health.up().build();} else {return Health.down().withDetail("ping_url", url).withDetail("ping_time", new Date()).build();}} catch (RestClientException e) {return Health.down(e).withDetail("ping_url", url).withDetail("ping_time", new Date()).build();}    }}
+
+
+import org.springframework.beans.factory.annotation.Autowired;import org.springframework.boot.actuate.metrics.CounterService;import org.springframework.stereotype.Service;@Servicepublic class LoginService{@Autowiredprivate CounterService counterService;public boolean login(String email, String password){if("admin@gmail.com".equalsIgnoreCase(email) && "admin".equals(password)){counterService.increment("counter.login.success");return true;} else {counterService.increment("counter.login.failure");return false;}}}
+--------------------------------------------------------------------------------------------------------
+@BeforeEach
+void init(@Mock SettingRepository settingRepository) {
+    userService = new DefaultUserService(userRepository, settingRepository, mailClient);
+       
+    Mockito.lenient().when(settingRepository.getUserMinAge()).thenReturn(10);
+         
+    when(settingRepository.getUserNameMinLength()).thenReturn(4);
+         
+    Mockito.lenient().when(userRepository.isUsernameAlreadyExists(any(String.class))).thenReturn(false);
+}
+--------------------------------------------------------------------------------------------------------
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-module-junit4-rule</artifactId>
+            <version>2.0.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-classloading-objenesis</artifactId>
+            <version>2.0.2</version>
+            <scope>test</scope>
+        </dependency>
+--------------------------------------------------------------------------------------------------------
+@RunWith(PowerMockRunner.class)
+@PowerMockRunnerDelegate(Parameterized.class)
+@PrepareForTest({FinalDemo.class, PrivateFinal.class})
+public class FinalDemoTest {
+
+    @Parameterized.Parameter(0)
+    public String expected;
+
+    @Parameterized.Parameters(name = "expected={0}")
+    public static Collection<?> expections() {
+        return java.util.Arrays.asList(new Object[][]{
+            {"Hello altered World"}, {"something"}, {"test"}
+        });
+    }
+
+    @Test
+    public void assertMockFinalWithExpectationsWorks() throws Exception {
+        final String argument = "hello";
+
+        FinalDemo tested = mock(FinalDemo.class);
+
+        when(tested.say(argument)).thenReturn(expected);
+
+        final String actual = "" + tested.say(argument);
+
+        verify(tested).say(argument);
+
+        assertEquals("Expected and actual did not match", expected, actual);
+    }
+}
+--------------------------------------------------------------------------------------------------------
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.params.converter.ArgumentConversionException;
 import org.junit.jupiter.params.converter.ArgumentConverter;
