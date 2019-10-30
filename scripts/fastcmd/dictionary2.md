@@ -8137,6 +8137,67 @@ public enum JRE {
 @SelectPackages({net.mednikov.teststutorial.groupA, net.mednikov.teststutorial.groupB, net.mednikov.teststutorial.groupC})
 public class TestSuite(){}
 --------------------------------------------------------------------------------------------------------
+import net.andreinc.jbvext.annotations.digits.MinDigits;
+
+import javax.validation.ConstraintValidator;
+import javax.validation.ConstraintValidatorContext;
+
+public class MinDigitsDoubleValidator implements ConstraintValidator<MinDigits, Double> {
+
+    private MinDigits annotation;
+
+    @Override
+    public void initialize(MinDigits constraintAnnotation) {
+        this.annotation = constraintAnnotation;
+    }
+
+    @Override
+    public boolean isValid(Double value, ConstraintValidatorContext context) {
+
+        if (value == null) {
+            return false;
+        }
+
+        Double minDigitsValue = Double.valueOf(this.annotation.value());
+
+        int result = Double.compare(value, minDigitsValue);
+
+        if (0 == result){
+            // Value is equal to min
+            return true;
+        } else if (result < 0){
+            // Value is less than min
+            return false;
+        } else if (result > 0){
+            // Value is greater than min
+            return true;
+        } else {
+            throw new IllegalArgumentException("How this could be possible");
+        }
+
+    }
+}
+--------------------------------------------------------------------------------------------------------
+- src: 'git@gitlab.paragon-software.com:pba/DevOps/paragon.ansible.k8s.roles/pim.git'
+  scm: 'git'
+  name: 'pim'
+
+- src: 'git@gitlab.paragon-software.com:pba/DevOps/paragon.ansible.k8s.roles/usercontour.git'
+  scm: 'git'
+  name: 'usercontour'
+  version: GD-199-usercontour-mailer-documentsgenerator
+
+--------------------------------------------------------------------------------------------------------
+public LocalDate convertToLocalDate(Date dateToConvert) {
+    return LocalDate.ofInstant(
+      dateToConvert.toInstant(), ZoneId.systemDefault());
+}
+ 
+public LocalDateTime convertToLocalDateTime(Date dateToConvert) {
+    return LocalDateTime.ofInstant(
+      dateToConvert.toInstant(), ZoneId.systemDefault());
+}
+--------------------------------------------------------------------------------------------------------
 @TestMethodOrder(OrderAnnotation.class)
 class OrderedTestsDemo {
 
