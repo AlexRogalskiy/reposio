@@ -8822,6 +8822,2722 @@ public class ConditionalAnnotationsUnitTest {
 npm install express
 npm install -D @types/express
 --------------------------------------------------------------------------------------------------------
+import java.io.Serializable;
+import java.util.Date;
+import javax.persistence.Basic;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Lob;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+import javax.xml.bind.annotation.XmlRootElement;
+import org.apache.solr.analysis.LowerCaseFilterFactory;
+import org.apache.solr.analysis.SnowballPorterFilterFactory;
+import org.apache.solr.analysis.StandardTokenizerFactory;
+import org.apache.solr.analysis.SynonymFilterFactory;
+import org.hibernate.search.annotations.Analyzer;
+import org.hibernate.search.annotations.AnalyzerDef;
+import org.hibernate.search.annotations.Boost;
+import org.hibernate.search.annotations.DateBridge;
+import org.hibernate.search.annotations.Field;
+import org.hibernate.search.annotations.Index;
+import org.hibernate.search.annotations.Indexed;
+import org.hibernate.search.annotations.Latitude;
+import org.hibernate.search.annotations.Longitude;
+import org.hibernate.search.annotations.Parameter;
+import org.hibernate.search.annotations.Resolution;
+import org.hibernate.search.annotations.Spatial;
+import org.hibernate.search.annotations.SpatialMode;
+import org.hibernate.search.annotations.Store;
+import org.hibernate.search.annotations.TokenFilterDef;
+import org.hibernate.search.annotations.TokenizerDef;
+
+/**
+*
+* @author sam
+*/
+@Entity
+@Table(name = "myisam_product_article", catalog = "hibernatedb", schema = "")
+@XmlRootElement
+@NamedQueries({
+    @NamedQuery(name = "MyisamProductArticle.findAll", query = "SELECT m FROM MyisamProductArticle m"),
+    @NamedQuery(name = "MyisamProductArticle.findByArticleId", query = "SELECT m FROM MyisamProductArticle m WHERE m.articleId = :articleId"),
+    @NamedQuery(name = "MyisamProductArticle.findByLat", query = "SELECT m FROM MyisamProductArticle m WHERE m.lat = :lat"),
+    @NamedQuery(name = "MyisamProductArticle.findByLon", query = "SELECT m FROM MyisamProductArticle m WHERE m.lon = :lon"),
+    @NamedQuery(name = "MyisamProductArticle.findByCreationDate", query = "SELECT m FROM MyisamProductArticle m WHERE m.creationDate = :creationDate")})
+
+@Spatial(spatialMode = SpatialMode.GRID)
+//This annotation tells hibernate search that this class has to be indexed
+@Indexed(index = "MyisamProductArticle")
+@Analyzer(impl = org.apache.lucene.analysis.standard.StandardAnalyzer.class)
+@AnalyzerDef(name = "customanalyzer", tokenizer = @TokenizerDef(factory = StandardTokenizerFactory.class),
+        filters = {@TokenFilterDef(factory = LowerCaseFilterFactory.class),
+                    @TokenFilterDef(factory = SnowballPorterFilterFactory.class, params = {
+                        @Parameter(name = "language", value = "English"),
+                    }),
+                    @TokenFilterDef(factory = SynonymFilterFactory.class, params = {
+                        @Parameter(name = "ignoreCase", value = "true"),
+                        @Parameter(name = "expand", value = "true"),
+                        @Parameter(name = "synonyms", value="syntest.txt")})
+                    })
+public class MyisamProductArticle implements Serializable, Comparable<MyisamProductArticle> {
+    private static final long serialVersionUID = 1L;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Basic(optional = false)
+    @Column(name = "article_id")
+    private Integer articleId;
+    @Lob
+    @Size(max = 65535)
+    @Column(name = "a_desc")
+    @Analyzer(definition = "customanalyzer")
+    @Field(index = Index.YES, store = Store.YES)
+    private String aDesc;
+    // @Max(value=?)  @Min(value=?)//if you know range of your decimal fields consider using these annotations to enforce field validation
+    @Column(name = "lat")
+    @Latitude(of="location")
+    private Double lat;
+    @Column(name = "lon")
+    @Longitude(of="location")
+    private Double lon;
+    @Column(name = "creation_date")
+    @Temporal(TemporalType.DATE)
+    private Date creationDate;
+
+    public MyisamProductArticle() {
+    }
+
+    public MyisamProductArticle(Integer articleId) {
+        this.articleId = articleId;
+    }
+
+    public Integer getArticleId() {
+        return articleId;
+    }
+
+    public void setArticleId(Integer articleId) {
+        this.articleId = articleId;
+    }
+
+    public String getADesc() {
+        return aDesc;
+    }
+
+    public void setADesc(String aDesc) {
+        this.aDesc = aDesc;
+    }
+
+    public Double getLat() {
+        return lat;
+    }
+
+    public void setLat(Double lat) {
+        this.lat = lat;
+    }
+
+    public Double getLon() {
+        return lon;
+    }
+
+    public void setLon(Double lon) {
+        this.lon = lon;
+    }
+
+    public Date getCreationDate() {
+        return creationDate;
+    }
+
+    public void setCreationDate(Date creationDate) {
+        this.creationDate = creationDate;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 0;
+        hash += (articleId != null ? articleId.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        // TODO: Warning - this method won't work in the case the id fields are not set
+        if (!(object instanceof MyisamProductArticle)) {
+            return false;
+        }
+        MyisamProductArticle other = (MyisamProductArticle) object;
+        if ((this.articleId == null && other.articleId != null) || (this.articleId != null && !this.articleId.equals(other.articleId))) {
+            return false;
+        }
+        return true;
+    }
+
+    // default comparator on Date
+    @Override
+    public int compareTo(MyisamProductArticle compareArticle) {
+        //ascending order
+        return this.creationDate.compareTo(compareArticle.creationDate);
+
+        //descending order
+        //return compareAritcle.compareTo(this.creationDate.creationDate);
+
+   }
+    
+    @Override
+    public String toString() {
+        return "HibernateSearch.entity.MyisamProductArticle[ articleId=" + articleId + " ]";
+    }
+    
+}
+
+
+Thank you for your time again.
+Samuel
+
+
+Top	 Profile   
+
+samsam9988	
+ Post subject: Re: DelegateNamedAnalyzer not found in Hibernate-search 4.2.0PostPosted: Mon Jan 28, 2013 5:18 am 
+Regular
+Regular
+
+Joined: Fri Feb 04, 2011 8:34 pm
+Posts: 66	
+After added value="LUCENE_36" in the following persistence.xml file,
+
+Code:
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence version="1.0" xmlns="http://java.sun.com/xml/ns/persistence" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_1_0.xsd">
+  <persistence-unit name="HibernateSeasrchTestPU" transaction-type="JTA">
+    <provider>org.hibernate.ejb.HibernatePersistence</provider>
+    <jta-data-source>java:jboss/datasources/HibernateSearchTest</jta-data-source>
+    <exclude-unlisted-classes>false</exclude-unlisted-classes>
+    <properties>
+      <property name="hibernate.hbm2ddl.auto" value="update"/>
+      <property name="hibernate.show_sql" value="true"/>
+      <property name="hibernate.format_sql" value="true"/>
+      <property name="hibernate.max_fetch_depth" value="4"/>
+      <property name="hibernate.default_batch_fetch_size" value="365"/>
+       
+      <property name="hibernate.search.default.directory_provider" value="filesystem"/>
+      <property name="hibernate.search.default.indexBase" value="./lucene/indexes"/>
+      <property name="hibernate.search.default.batch.merge_factor" value="10"/>
+      <property name="hibernate.search.default.batch.max_buffered_docs" value="10"/>
+      <property name="hibernate.search.lucene_version" value="LUCENE_36" />
+
+    </properties>
+  </persistence-unit>
+</persistence>
+--------------------------------------------------------------------------------------------------------
+@Component
+public class TokenProcessingFilter extends UsernamePasswordAuthenticationFilter {
+
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+        HttpServletRequest httpRequest = this.getAsHttpRequest(request);
+        String authToken = this.extractAuthTokenFromRequest(httpRequest);
+        String userName = TokenUtils.getUserNameFromToken(authToken);
+        if (userName != null) {/*
+            UserDetails userDetails = userDetailsService.loadUserByUsername(userName);*/
+            UserDetails userDetails = fakeUserDetails();
+            if (TokenUtils.validateToken(authToken, userDetails)) {
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(userDetails.getUsername(), userDetails.getPassword(), userDetails.getAuthorities());
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(httpRequest));
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            }
+        }
+        chain.doFilter(request, response);
+    }
+
+    private HttpServletRequest getAsHttpRequest(ServletRequest request){
+        if (!(request instanceof HttpServletRequest)) {
+            throw new RuntimeException("Expecting an HTTP request");
+        }
+        return (HttpServletRequest) request;
+    }
+
+
+    private String extractAuthTokenFromRequest(HttpServletRequest httpRequest) {
+        /* Get token from header */
+        String authToken = httpRequest.getHeader("x-auth-token");
+        /* If token not found get it from request parameter */
+        if (authToken == null) {
+            authToken = httpRequest.getParameter("token");
+        }
+        return authToken;
+    }
+
+    private UserDetails fakeUserDetails(){
+        UsernamePasswordAuthenticationToken authenticationToken = new
+                UsernamePasswordAuthenticationToken("user","password");
+
+        List<SimpleGrantedAuthority> auth= new ArrayList<>();
+        auth.add(new SimpleGrantedAuthority("USER"));
+        return  new User("user","password",auth);
+    }
+}
+
+@Bean
+TokenProcessingFilter tokenProcessingFilter() {
+  TokenProcessingFilter tokenProcessingFilter = new TokenProcessingFilter();
+  tokenProcessingFilter.setAuthenticationManager(authenticationManager());
+  return tokenProcessingFilter;
+}
+
+protected void configure(HttpSecurity http) throws Exception {
+  ...
+  .addFilter(tokenProcessingFilter())
+--------------------------------------------------------------------------------------------------------
+	@ElementCollection
+	@JoinTable(name = "WEBSITE_COOKIES", joinColumns = @JoinColumn(name = "WEBSITE_ID"))
+	@MapKeyColumn(name = "COOKIES_KEY")
+	@Column(name = "COOKIES_VALUE")
+	private Map<String, String> cookies;
+--------------------------------------------------------------------------------------------------------
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
+
+import com.mifmif.networking.mspider.model.ParameterValue;
+
+/**
+ * It present the parameter model that has a website. values used to query the
+ * website are presented by <code>ParameterValue</code>
+ * 
+ * @author y.mifrah
+ *
+ */
+@Entity
+@Table(name = "URL_PARAMETER")
+public class URLParameter {
+
+	@Id
+	@SequenceGenerator(name = "URL_PARAMETER_SEQ_GEN", sequenceName = "URL_PARAMETER_SEQ_GEN")
+	@GeneratedValue(generator = "URL_PARAMETER_SEQ_GEN", strategy = GenerationType.TABLE)
+	@Column(name = "ID")
+	private Long id;
+
+	/**
+	 * Name of the parameter that will be used when requesting the url
+	 */
+	private String name;
+	/**
+	 * Value could have a constant value or a pattern expression that will be
+	 * used to generate parameter value to use when requesting the url
+	 */
+	private String expression;
+
+	/**
+	 * description of the parameter (not used when we request the url)
+	 */
+	private String description;
+	/**
+	 * Type of the parameter : CONSTANT or PATTERN_EXPRESSION
+	 */
+	@Enumerated(EnumType.STRING)
+	private URLParameterType type = URLParameterType.PATTERN_EXPRESSION;
+	@ManyToOne
+	@JoinColumn(name = "URL_PATTERN_ID")
+	private URLPattern pattern;
+	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "urlParameter")
+	private List<ParameterValue> parameterValues;
+
+	/**
+	 * 
+	 */
+	public URLParameter() {
+		// TODO Auto-generated constructor stub
+	}
+
+	/**
+	 * @param pattern
+	 * @param name
+	 * @param value
+	 */
+	public URLParameter(URLPattern pattern, String name, String expression) {
+		super();
+		this.pattern = pattern;
+		this.name = name;
+		this.expression = expression;
+		parameterValues = new ArrayList<ParameterValue>();
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public URLParameterType getType() {
+		return type;
+	}
+
+	public void setType(URLParameterType type) {
+		this.type = type;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public URLPattern getPattern() {
+		return pattern;
+	}
+
+	public void setPattern(URLPattern pattern) {
+		this.pattern = pattern;
+	}
+
+	public String getExpression() {
+		return expression;
+	}
+
+	public void setExpression(String expression) {
+		this.expression = expression;
+	}
+
+	public List<ParameterValue> getParameterValues() {
+		return parameterValues;
+	}
+
+	public void setParameterValues(List<ParameterValue> parameterValues) {
+		this.parameterValues = parameterValues;
+	}
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.HashMap;
+import java.util.Map;
+
+import com.mifmif.gefmmat.core.Agent;
+import com.mifmif.gefmmat.core.Result;
+import com.mifmif.gefmmat.core.Task;
+
+/**
+ * @author y.mifrah
+ *
+ */
+public class CamouflageDishonestStudent extends Student {
+
+	public CamouflageDishonestStudent() {
+		setTaskHandler(new CamouflageDishonestTaskHandler(this));
+	}
+
+	class CamouflageDishonestTaskHandler extends HonestTaskHandler {
+		Map<String, Status> proposerIdStatus = new HashMap<String, Status>();
+
+		public CamouflageDishonestTaskHandler(Agent ownerAgent) {
+			super(ownerAgent);
+		}
+
+		@Override
+		public Result performTask(Task task) {
+			boolean performFairly = isTimeToPerformFairly(task);
+			Result result = null;
+			if (performFairly) {
+				result = prepareFairResult(task);
+			} else {
+				result = prepareUnfairResult(task);
+
+			}
+			updateProposerStatus(task, performFairly);
+			return result;
+
+		}
+
+		private void updateProposerStatus(Task task, boolean performFairly) {
+			String proposerId = task.getProposerId();
+			Status status = proposerIdStatus.get(proposerId);
+			if (performFairly) {
+				status.incrementFairlyCount();
+			} else {
+				status.incrementUnfairlyCount();
+			}
+		}
+
+		/**
+		 * This method inform whether if the camouflageAgent could perform the task unfairly or fairly
+		 * 
+		 * @param task
+		 * @return
+		 */
+		private boolean isTimeToPerformFairly(Task task) {
+			String proposerId = task.getProposerId();
+			Status status = proposerIdStatus.get(proposerId);
+			if (status == null) {
+				status = new Status();
+				proposerIdStatus.put(proposerId, status);
+				return true;
+			}
+			if (status.getFairCount() > 10)
+				return false;
+			// analyze status e.g. how many time did we perform a valid
+			// result
+			// for this agent.
+			return true;
+		}
+
+	}
+
+	static class Status {
+		private long fairCount, unfairCount;// TODO we have to think about
+											// another
+
+		// structure that handle the order and the
+		// services of tasks processed
+		// fairly/unfairly
+
+		public void incrementFairlyCount() {
+			fairCount++;
+		}
+
+		public void incrementUnfairlyCount() {
+			unfairCount++;
+		}
+
+		public long getFairCount() {
+			return fairCount;
+		}
+
+		public long getUnfairCount() {
+			return unfairCount;
+		}
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.Map;
+
+import com.mifmif.gefmmat.core.Result;
+import com.mifmif.gefmmat.core.Service;
+import com.mifmif.gefmmat.core.Task;
+import com.mifmif.gefmmat.testbed.student.exception.InvalidInputParameterException;
+import com.mifmif.gefmmat.testbed.student.exception.TaskProcessingException;
+import com.mifmif.gefmmat.testbed.student.operation.task.SpeedTask;
+import com.mifmif.gefmmat.testbed.student.operation.task.EnergyTask.EnergyResult;
+import com.mifmif.gefmmat.testbed.student.operation.task.SpeedTask.SpeedResult;
+
+/**
+ * @author y.mifrah
+ *
+ */
+public class CalculateSpeed extends Service {
+	private double d, t, speedResult;
+
+	public CalculateSpeed() {
+		setName("calculateSpeed");
+	}
+
+	@Override
+	protected void prepareInputs(Task task) throws InvalidInputParameterException {
+		try {
+			d = ((SpeedTask) task).getD();
+			t = ((SpeedTask) task).getT();
+		} catch (NumberFormatException exception) {
+			throw new InvalidInputParameterException();
+		}
+		return;
+	}
+
+	@Override
+	protected Result processTask(Task task) throws TaskProcessingException {
+		SpeedResult result = new SpeedResult();
+		speedResult = d / t;
+		result.setSpeedResult(speedResult);
+		return result;
+	}
+
+	@Override
+	public boolean isResultTaskValid(Task task) {
+		try {
+			SpeedResult curResult = (SpeedResult) task.getResult();
+			SpeedResult validResult = (SpeedResult) execute(task);
+			return curResult.getSpeedResult().equals(validResult.getSpeedResult());
+		} catch (Exception exception) {
+			exception.printStackTrace();
+		}
+
+		return false;
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.Map;
+
+import com.mifmif.gefmmat.core.Result;
+import com.mifmif.gefmmat.core.Service;
+import com.mifmif.gefmmat.core.Task;
+import com.mifmif.gefmmat.testbed.student.exception.InvalidInputParameterException;
+import com.mifmif.gefmmat.testbed.student.exception.TaskProcessingException;
+import com.mifmif.gefmmat.testbed.student.operation.task.AdditionTask;
+import com.mifmif.gefmmat.testbed.student.operation.task.AdditionTask.AdditionResult;
+
+/**
+ * Addition service implementation
+ * 
+ * @author y.mifrah
+ *
+ */
+public class Addition extends Service {
+	double a, b, additionResult;
+
+	public Addition() {
+		setName("addition");
+	}
+
+	@Override
+	protected void prepareInputs(Task task) throws InvalidInputParameterException {
+		try {
+			a = ((AdditionTask) task).getA();
+			b = ((AdditionTask) task).getB();
+		} catch (Exception exception) {
+			throw new InvalidInputParameterException();
+		}
+	}
+
+	@Override
+	protected Result processTask(Task task) throws TaskProcessingException {
+		AdditionResult result = new AdditionResult();
+		additionResult = a + b;
+		result.setAdditionResult(additionResult);
+		return result;
+	}
+
+	@Override
+	public boolean isResultTaskValid(Task task) {
+		try {
+			AdditionResult curResult = (AdditionResult) task.getResult();
+			AdditionResult validResult = (AdditionResult) execute(task);
+			return curResult.getAdditionResult().equals(validResult.getAdditionResult());
+		} catch (Exception exception) {
+			exception.printStackTrace();
+		}
+
+		return false;
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * @author y.mifrah
+ *
+ */
+public class Feature implements Serializable {
+
+	private String id;
+	private String name;
+	private String value;
+	private float SLAValue;
+	private float width;
+	/**
+	 * 
+	 */
+	private static Map<String, Feature> featureMap = new HashMap<String, Feature>();
+
+	private Feature() {
+	}
+
+	synchronized public static Feature getInstance(String featureName) {
+		Feature feature = featureMap.get(featureName);
+		if (feature == null) {
+			feature = new Feature();
+			feature.setName(featureName);
+			featureMap.put(featureName, feature);
+		}
+		return feature;
+	}
+
+	/**
+	 * @return the name
+	 */
+	public String getName() {
+		return name;
+	}
+
+	/**
+	 * @param name
+	 *            the name to set
+	 */
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	/**
+	 * @return the value
+	 */
+	public String getValue() {
+		return value;
+	}
+
+	/**
+	 * @param value
+	 *            the value to set
+	 */
+	public void setValue(String value) {
+		this.value = value;
+	}
+
+	/**
+	 * @return the id
+	 */
+	public String getId() {
+		return id;
+	}
+
+	/**
+	 * @param id
+	 *            the id to set
+	 */
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public float getSLAValue() {
+		return SLAValue;
+	}
+
+	public void setSLAValue(float sLAValue) {
+		SLAValue = sLAValue;
+	}
+
+	public float getWidth() {
+		return width;
+	}
+
+	public void setWidth(float width) {
+		this.width = width;
+	}
+}
+
+import java.util.Date;
+
+/**
+ * Immutable ResponseTime Event class. The process control system creates these events. The
+ * ResponseTimeEventHandler picks these up and processes them.
+ */
+public class ResponseTimeEvent {
+
+    /** Response Time in milliseconds. */
+    private int responseTime;
+    
+    /** Time responseTime reading was taken. */
+    private Date timeOfReading;
+    
+    /**
+     * Single value constructor.
+     * @param value ResponseTime in Milliseconds.
+     */
+    /**
+     * ResponseTime constructor.
+     * @param responseTime ResponseTime in Milliseconds
+     * @param timeOfReading Time of Reading
+     */
+    public ResponseTimeEvent(int responseTime, Date timeOfReading) {
+        this.responseTime = responseTime;
+        this.timeOfReading = timeOfReading;
+    }
+
+    /**
+     * Get the ResponseTime.
+     * @return ResponseTime in Milliseconds
+     */
+    public int getResponseTime() {
+        return responseTime;
+    }
+       
+    /**
+     * Get time ResponseTime reading was taken.
+     * @return Time of Reading
+     */
+    public Date getTimeOfReading() {
+        return timeOfReading;
+    }
+
+    @Override
+    public String toString() {
+        return "ResponseTimeEvent ["+timeOfReading + ": " +responseTime + " ms]";
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.util.StringUtils;
+
+import javax.servlet.http.HttpSessionEvent;
+import javax.servlet.http.HttpSessionListener;
+
+public class HttpSessionCreatedListener implements HttpSessionListener {
+    private final Log logger = LogFactory.getLog(this.getClass());
+
+    @Override
+    public void sessionCreated(HttpSessionEvent event) {
+        String stackTrace = StringUtils.arrayToDelimitedString(Thread.currentThread().getStackTrace(), " ");
+        logger.warn("HttpSession was created: " + stackTrace);
+        if (event.getSession() == null) {
+            return;
+        }
+        try {
+            logger.warn("Invalidating unexpected HttpSession");
+            event.getSession().invalidate();
+        } catch (IllegalStateException e) {
+            logger.warn("Could not invalidate already invalidated HttpSession", e);
+        }
+    }
+
+    @Override
+    public void sessionDestroyed(HttpSessionEvent event) {
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.security.web.csrf.DefaultCsrfToken;
+import org.springframework.util.Assert;
+
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.math.BigInteger;
+import java.security.SecureRandom;
+
+/**
+ * Cross-site request forgery (CSRF or CSRF) protection using double submit cookies:
+ * https://www.owasp.org/index.php/Cross-Site_Request_Forgery_%28CSRF%29_Prevention_Cheat_Sheet#Double_Submit_Cookies
+ * <p>
+ * Issues to be aware of when using double submit cookies for CSRF protection: http://security.stackexchange.com/a/61039
+ * <p>
+ * Some code borrowed from cloudfoundry/uaa under the Apache 2.0 license:
+ * https://github.com/cloudfoundry/uaa/blob/41dba9d81dbdf24ede4fb9719de28b1b88b3e1b4/common/src/main/java/org/cloudfoundry/identity/uaa/web/CookieBasedCsrfTokenRepository.java
+ */
+public class CookieCsrfTokenRepository implements CsrfTokenRepository {
+    public static final String DEFAULT_CSRF_COOKIE_NAME = "csrf";
+
+    private SecureRandom secureRandom = new SecureRandom();
+    private String csrfHeaderName = "X-CSRF-TOKEN";
+    private String csrfParameterName = "_csrf";
+    private String csrfCookieName = DEFAULT_CSRF_COOKIE_NAME;
+    private String csrfCookiePath = null;
+    private int csrfCookieMaxAgeSeconds = -1;  // default to session cookie (non-persistent)
+
+    @Override
+    public CsrfToken generateToken(HttpServletRequest request) {
+        String tokenValue = new BigInteger(130, secureRandom).toString(32); // http://stackoverflow.com/a/41156
+        return new DefaultCsrfToken(csrfHeaderName, csrfParameterName, tokenValue);
+    }
+
+    @Override
+    public void saveToken(CsrfToken token, HttpServletRequest request, HttpServletResponse response) {
+        Cookie csrfCookie;
+        if (token == null) {
+            csrfCookie = new Cookie(csrfCookieName, "");
+            csrfCookie.setMaxAge(0);
+        } else {
+            csrfCookie = new Cookie(csrfCookieName, token.getToken());
+            csrfCookie.setMaxAge(csrfCookieMaxAgeSeconds);
+        }
+        csrfCookie.setHttpOnly(true);
+        csrfCookie.setSecure(request.isSecure());
+        csrfCookie.setPath(csrfCookiePath);
+        response.addCookie(csrfCookie);
+    }
+
+    @Override
+    public CsrfToken loadToken(HttpServletRequest request) {
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if (cookie != null && csrfCookieName.equals(cookie.getName())) {
+                    return new DefaultCsrfToken(csrfHeaderName, csrfParameterName, cookie.getValue());
+                }
+            }
+        }
+        return null;
+    }
+
+    public void setSecureRandom(SecureRandom secureRandom) {
+        Assert.notNull(secureRandom);
+        this.secureRandom = secureRandom;
+    }
+
+    public void setCsrfHeaderName(String csrfHeaderName) {
+        Assert.notNull(csrfHeaderName);
+        this.csrfHeaderName = csrfHeaderName;
+    }
+
+    public void setCsrfParameterName(String csrfParameterName) {
+        Assert.notNull(csrfParameterName);
+        this.csrfParameterName = csrfParameterName;
+    }
+
+    public void setCsrfCookieName(String csrfCookieName) {
+        Assert.notNull(csrfCookieName);
+        this.csrfCookieName = csrfCookieName;
+    }
+
+    public void setCsrfCookiePath(String csrfCookiePath) {
+        this.csrfCookiePath = csrfCookiePath;
+    }
+
+    public void setCsrfCookieMaxAgeSeconds(int csrfCookieMaxAgeSeconds) {
+        this.csrfCookieMaxAgeSeconds = csrfCookieMaxAgeSeconds;
+    }
+}
+
+
+import com.nimbusds.jose.EncryptionMethod;
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.JWEAlgorithm;
+import com.nimbusds.jose.JWEHeader;
+import com.nimbusds.jose.JWEObject;
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.JWSHeader;
+import com.nimbusds.jose.Payload;
+import com.nimbusds.jose.crypto.DirectDecrypter;
+import com.nimbusds.jose.crypto.DirectEncrypter;
+import com.nimbusds.jose.crypto.MACSigner;
+import com.nimbusds.jose.crypto.MACVerifier;
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.util.Assert;
+
+import java.text.ParseException;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+
+public class JwtEncryption implements TokenEncryption {
+    private final Log logger = LogFactory.getLog(this.getClass());
+    private final byte[] sessionJwtEncryptionKey;
+
+    private List<JwtClaimsSetVerifier> jwtClaimsSetVerifiers = new ArrayList<>(Collections.singletonList(new ExpirationJwtClaimsSetVerifier()));
+    private int jwtExpirationSeconds = 3600;
+    private JWSAlgorithm jwsAlgorithm = JWSAlgorithm.HS256;
+    private JWEAlgorithm jweAlgorithm = JWEAlgorithm.DIR;
+    private EncryptionMethod encryptionMethod = EncryptionMethod.A256GCM;
+
+    public JwtEncryption(String sessionJwtEncryptionKeyBase64) {
+        Assert.notNull(sessionJwtEncryptionKeyBase64);
+        this.sessionJwtEncryptionKey = Base64.getDecoder().decode(sessionJwtEncryptionKeyBase64);
+    }
+
+    @Override
+    public String encryptAndSign(String jwtSubject) {
+        try {
+            Date date = Date.from(ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(jwtExpirationSeconds).toInstant());
+            JWTClaimsSet claimsSet = new JWTClaimsSet.Builder().subject(jwtSubject).expirationTime(date).build();
+            SignedJWT signedJWT = new SignedJWT(new JWSHeader(jwsAlgorithm), claimsSet);
+            signedJWT.sign(new MACSigner(sessionJwtEncryptionKey));
+            JWEHeader jweHeader = new JWEHeader.Builder(jweAlgorithm, encryptionMethod).contentType("JWT").build();
+            JWEObject jweObject = new JWEObject(jweHeader, new Payload(signedJWT));
+            jweObject.encrypt(new DirectEncrypter(sessionJwtEncryptionKey));
+            return jweObject.serialize();
+        } catch (JOSEException e) {
+            throw new RuntimeException("Could not create JWT", e);
+        }
+    }
+
+    @Override
+    public String decryptAndVerify(String encryptedAndSignedJwt) {
+        try {
+            JWEObject jweObject = JWEObject.parse(encryptedAndSignedJwt);
+            jweObject.decrypt(new DirectDecrypter(sessionJwtEncryptionKey));
+            SignedJWT signedJWT = jweObject.getPayload().toSignedJWT();
+            if (!signedJWT.verify(new MACVerifier(sessionJwtEncryptionKey))) {
+                logger.warn("JWT signature verification failed.");
+                return null;
+            }
+            for (JwtClaimsSetVerifier verifier : jwtClaimsSetVerifiers) {
+                if (!verifier.verify(signedJWT.getJWTClaimsSet())) {
+                    logger.warn("JWT claims verification failed.");
+                    return null;
+                }
+            }
+            return signedJWT.getJWTClaimsSet().getSubject();
+        } catch (ParseException | JOSEException e) {
+            throw new RuntimeException("Could not parse JWT", e);
+        }
+    }
+
+    public void setJwtClaimsSetVerifiers(List<JwtClaimsSetVerifier> jwtClaimsSetVerifiers) {
+        Assert.notNull(jwtClaimsSetVerifiers);
+        this.jwtClaimsSetVerifiers = new ArrayList<>(jwtClaimsSetVerifiers);
+    }
+
+    public boolean addJwtClaimsSetVerifier(JwtClaimsSetVerifier jwtClaimsSetVerifier) {
+        Assert.notNull(jwtClaimsSetVerifier);
+        return this.jwtClaimsSetVerifiers.add(jwtClaimsSetVerifier);
+    }
+
+    public void setJwtExpirationSeconds(int jwtExpirationSeconds) {
+        this.jwtExpirationSeconds = jwtExpirationSeconds;
+    }
+
+    public void setJwsAlgorithm(JWSAlgorithm jwsAlgorithm) {
+        Assert.notNull(jwsAlgorithm);
+        this.jwsAlgorithm = jwsAlgorithm;
+    }
+
+    public void setJweAlgorithm(JWEAlgorithm jweAlgorithm) {
+        Assert.notNull(jweAlgorithm);
+        this.jweAlgorithm = jweAlgorithm;
+    }
+
+    public void setEncryptionMethod(EncryptionMethod encryptionMethod) {
+        Assert.notNull(encryptionMethod);
+        this.encryptionMethod = encryptionMethod;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+    @Bean
+    ServletListenerRegistrationBean<HttpSessionListener> httpSessionCreatedListener() {
+        ServletListenerRegistrationBean<HttpSessionListener> listenerRegistrationBean = new ServletListenerRegistrationBean<>();
+        listenerRegistrationBean.setListener(new HttpSessionCreatedListener());
+        return listenerRegistrationBean;
+    }
+	
+	import au.gov.dto.servlet.http.HttpSessionCreatedListener;
+import au.gov.dto.servlet.http.HttpsOnlyFilter;
+import au.gov.dto.servlet.http.NoHttpSessionFilter;
+import au.gov.dto.springframework.security.web.context.CookieSecurityContextRepository;
+import au.gov.dto.springframework.security.web.context.JwtEncryption;
+import au.gov.dto.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import au.gov.dto.springframework.security.web.savedrequest.CookieRequestCache;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.embedded.FilterRegistrationBean;
+import org.springframework.boot.context.embedded.ServletContextInitializer;
+import org.springframework.boot.context.embedded.ServletListenerRegistrationBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import javax.servlet.http.HttpSessionListener;
+import java.util.Collections;
+
+@Configuration
+class AppConfig {
+    @Bean
+    ServletContextInitializer noSessionTrackingServletContextInitializer() {
+        return servletContext -> servletContext.setSessionTrackingModes(Collections.emptySet());
+    }
+
+    @Bean
+    ServletListenerRegistrationBean<HttpSessionListener> httpSessionCreatedListener() {
+        ServletListenerRegistrationBean<HttpSessionListener> listenerRegistrationBean = new ServletListenerRegistrationBean<>();
+        listenerRegistrationBean.setListener(new HttpSessionCreatedListener());
+        return listenerRegistrationBean;
+    }
+
+    @Bean
+    FilterRegistrationBean noHttpSessionFilter() {
+        FilterRegistrationBean registration = new FilterRegistrationBean();
+        registration.setFilter(new NoHttpSessionFilter());
+        registration.addUrlPatterns("/*");
+        return registration;
+    }
+
+    @Bean
+    CookieCsrfTokenRepository csrfTokenRepository() {
+        return new CookieCsrfTokenRepository();
+    }
+
+    @Bean
+    @Autowired
+    CookieSecurityContextRepository securityContextRepository(@Value("${session.encryption.key.base64}") String sessionEncryptionKeyBase64) {
+        return new CookieSecurityContextRepository(new JwtEncryption(sessionEncryptionKeyBase64));
+    }
+
+    @Bean
+    CookieRequestCache cookieRequestCache() {
+        return new CookieRequestCache();
+    }
+
+    @Bean
+    FilterRegistrationBean httpsOnlyFilter() {
+        FilterRegistrationBean registration = new FilterRegistrationBean();
+        registration.setFilter(new HttpsOnlyFilter());
+        registration.addUrlPatterns("/*");
+        return registration;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+import au.gov.dto.springframework.security.web.authentication.CookieSavedRequestAwareAuthenticationSuccessHandler;
+import au.gov.dto.springframework.security.web.authentication.StatelessSimpleUrlAuthenticationFailureHandler;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.security.web.savedrequest.RequestCache;
+
+@Configuration
+@EnableWebSecurity
+class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+    @Autowired
+    private SecurityContextRepository securityContextRepository;
+
+    @Autowired
+    private CsrfTokenRepository csrfTokenRepository;
+
+    @Autowired
+    private RequestCache requestCache;
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http
+            .sessionManagement()
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and()
+            .securityContext()
+                .securityContextRepository(securityContextRepository)
+                .and()
+            .csrf()
+                .csrfTokenRepository(csrfTokenRepository)
+                .and()
+            .requestCache()
+                .requestCache(requestCache)
+                .and()
+            .anonymous()
+                .disable()
+            .authorizeRequests()
+                .antMatchers("/").permitAll()
+                .anyRequest().authenticated()
+                .and()
+            .formLogin()
+                .successHandler(new CookieSavedRequestAwareAuthenticationSuccessHandler(requestCache))
+                .failureHandler(new StatelessSimpleUrlAuthenticationFailureHandler("/login?error"))
+                .permitAll()
+                .and()
+            .logout()
+                .logoutSuccessUrl("/")
+                .permitAll();
+    }
+
+    @Override
+    public void configure(WebSecurity web) throws Exception {
+        web.ignoring().antMatchers(HttpMethod.GET, "/");
+    }
+
+    @Override
+    @Autowired
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth
+            .inMemoryAuthentication()
+                .withUser("user").password("password").roles("USER");
+    }
+}
+--------------------------------------------------------------------------------------------------------
+package com.paragon.mailingcontour.commons.rest.handler;
+
+import org.springframework.stereotype.Component;
+
+import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+
+@Component
+public class RequestFilter implements Filter {
+
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+        String threadName = Thread.currentThread().getName();
+        try {
+            Thread.currentThread().setName(String.format("%1$s_[started:%2$s | user:%3$s | uri:%4$s]_%1$s", threadName, timeNow(), user(), uri(request)));
+            chain.doFilter(request, response);
+        } finally {
+            Thread.currentThread().setName(threadName);
+        }
+    }
+
+    private String uri(ServletRequest request) {
+        return ((HttpServletRequest) request).getRequestURI();
+    }
+
+    private String timeNow() {
+        return ZonedDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+    }
+
+    private String user() {
+        return "johndoe";
+    }
+
+    @Override
+    public void init(FilterConfig filterConfig) throws ServletException {
+    }
+
+    @Override
+    public void destroy() {
+    }
+}
+
+--------------------------------------------------------------------------------------------------------
+/**
+ * An enumeration of the different types of operation supported by an endpoint.
+ *
+ * @author Andy Wilkinson
+ * @since 2.0.0
+ * @see Operation
+ */
+public enum OperationType {
+
+	/**
+	 * A read operation.
+	 */
+	READ,
+
+	/**
+	 * A write operation.
+	 */
+	WRITE,
+
+	/**
+	 * A delete operation.
+	 */
+	DELETE
+
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.AsyncConfigurerSupport;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+
+import java.util.concurrent.Executor;
+
+@EnableAsync(proxyTargetClass = true)
+@SpringBootApplication
+public class Application extends AsyncConfigurerSupport {
+
+  @Override
+  public Executor getAsyncExecutor() {
+    ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+    executor.setTaskDecorator(new MdcTaskDecorator());
+    executor.initialize();
+    return executor;
+  }
+
+  public static void main(String[] args) {
+    SpringApplication.run(Application.class, args);
+  }
+--------------------------------------------------------------------------------------------------------
+import org.slf4j.MDC;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.GenericFilterBean;
+
+import javax.servlet.*;
+import java.io.IOException;
+
+@Component
+public class MdcFilter extends GenericFilterBean {
+
+  @Override
+  public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+      throws IOException, ServletException {
+    try {
+      MDC.put("mdcData", "[userId:Duke]");
+      chain.doFilter(request, response);
+    } finally {
+      MDC.clear();
+    }
+  }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Autowired;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
+@Autowired
+@Retention(RetentionPolicy.RUNTIME)
+public @interface LocalizedMessage {
+
+  String value() default "";
+
+}
+import org.springframework.beans.factory.InjectionPoint;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.MessageSource;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Scope;
+import org.springframework.context.support.ResourceBundleMessageSource;
+import org.springframework.core.annotation.AnnotationUtils;
+
+@Configuration
+public class MessageConfig {
+
+  @Bean
+  public MessageSource messageSource() {
+
+    ResourceBundleMessageSource messageSource = new ResourceBundleMessageSource();
+    messageSource.setBasename("messages");
+
+    return messageSource;
+  }
+
+  @Bean
+  @Scope(scopeName = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+  public Message message(InjectionPoint ip) {
+
+    LocalizedMessage localizedMessage = AnnotationUtils
+        .getAnnotation(ip.getAnnotatedElement(), LocalizedMessage.class);
+
+    String resourceBundleKey = localizedMessage.value();
+
+    return new Message(messageSource(), resourceBundleKey);
+  }
+
+}
+--------------------------------------------------------------------------------------------------------
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
+import org.aspectj.lang.reflect.MethodSignature;
+import org.springframework.stereotype.Component;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import javax.validation.constraints.NotNull;
+
+@Aspect
+@Component
+public class NotNullParameterAspect {
+
+  @Before("@within(com.moelholm.spring43.customannotations.BusinessService)")
+  public void before(JoinPoint caller) {
+
+    Method method = getCurrentMethod(caller);
+
+    Object[] parameters = caller.getArgs();
+
+    Annotation[][] parameterAnnotations = method.getParameterAnnotations();
+
+    // Throw exception if a parameter value is null AND
+    // at the same time declares that it must be @NotNull
+    for (int i = 0; i < parameters.length; i++) {
+      Object parameterValue = parameters[i];
+      Annotation[] annotationsOnParameter = parameterAnnotations[i];
+
+      if (parameterValue == null && hasNotNullAnnotation(annotationsOnParameter)) {
+        String msgTemplate = String.format("Parameter at index %s must not be null", i);
+        throw new IllegalArgumentException(msgTemplate);
+      }
+    }
+
+  }
+
+  private boolean hasNotNullAnnotation(Annotation... annotations) {
+    return Arrays.asList(annotations).stream().anyMatch(a -> a.annotationType() == NotNull.class);
+  }
+
+  private Method getCurrentMethod(JoinPoint joinPoint) {
+    MethodSignature signature = (MethodSignature) joinPoint.getSignature();
+    return signature.getMethod();
+  }
+}
+--------------------------------------------------------------------------------------------------------
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.servlet.ServletListenerRegistrationBean;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
+import org.springframework.security.core.session.SessionDestroyedEvent;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
+
+@Configuration
+@SuppressWarnings("Convert2Lambda")
+public class SessionListenerConfig {
+
+    @Autowired
+    private ActiveUsersService activeUsersService;
+
+    @Bean
+    public ServletListenerRegistrationBean<HttpSessionEventPublisher> httpSessionEventPublisher() {
+        return new ServletListenerRegistrationBean(new HttpSessionEventPublisher());
+    }
+
+    @Bean
+    public ApplicationListener<AuthenticationSuccessEvent> userAuthenticated() {
+        return new ApplicationListener<AuthenticationSuccessEvent>() {
+            @Override
+            public void onApplicationEvent(AuthenticationSuccessEvent event) {
+                UserDetails userDetails = (UserDetails) event.getAuthentication().getPrincipal();
+                activeUsersService.userLoggedIn(userDetails.getUsername());
+            }
+        };
+    }
+
+    @Bean
+    public ApplicationListener<SessionDestroyedEvent> sessionDestroyedListener() {
+        return new ApplicationListener<SessionDestroyedEvent>() {
+            @Override
+            public void onApplicationEvent(SessionDestroyedEvent event) {
+                UserDetails userDetails = (UserDetails) event.getSecurityContexts().stream()
+                        .findFirst().get().getAuthentication().getPrincipal();
+                activeUsersService.userLoggedOut(userDetails.getUsername());
+            }
+        };
+    }
+
+}
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.endpoint.mvc.AbstractMvcEndpoint;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import java.util.List;
+
+@Component
+public class ActiveUsersActuatorEndpoint extends AbstractMvcEndpoint {
+
+    @Autowired
+    private ActiveUsersService activeUsersService;
+
+    public ActiveUsersActuatorEndpoint() {
+        super("/activeusers", false /* sensitive */);
+    }
+
+    @RequestMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public ActiveUsersResponse listActiveUsers() {
+        return new ActiveUsersResponse("Active users right now", activeUsersService.listActiveUsers());
+    }
+
+    @JsonPropertyOrder({"info", "activeUsers"})
+    public static class ActiveUsersResponse {
+
+        @JsonProperty
+        private String info;
+
+        @JsonProperty
+        private List<String> activeUsers;
+
+        public ActiveUsersResponse(String info, List<String> activeUsers) {
+            this.info = info;
+            this.activeUsers = activeUsers;
+        }
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+version: '2'
+services:
+  cdbookstore-postgresql:
+    image: postgres:11.3
+    environment:
+      - POSTGRES_USER=cdbookstoreDB
+      - POSTGRES_PASSWORD=h2g2
+    ports:
+      - 5432:5432
+--------------------------------------------------------------------------------------------------------
+import javax.persistence.FetchType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import static javax.persistence.FetchType.EAGER;
+
+// @formatter:off
+// tag::adocSnippet[]
+@Target({METHOD, FIELD})
+@Retention(RUNTIME)
+public @interface Basic {
+
+  FetchType fetch() default EAGER;
+  boolean optional() default true;
+}
+// end::adocSnippet[]
+
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+// @formatter:off
+// tag::adocSnippet[]
+@Target({METHOD, FIELD})
+@Retention(RUNTIME)
+public @interface Column {
+
+  String  name()       default "";
+  boolean unique()     default false;
+  boolean nullable()   default true;
+  boolean insertable() default true;
+  boolean updatable()  default true;
+  String  columnDefinition() default "";
+  String  table()      default "";
+  int     length()     default 255;
+  int     precision()  default 0; // decimal precision
+  int     scale()      default 0; // decimal scale
+}
+// end::adocSnippet[]
+
+
+import javax.persistence.ForeignKey;
+import javax.persistence.Index;
+import javax.persistence.JoinColumn;
+import javax.persistence.UniqueConstraint;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import static javax.persistence.ConstraintMode.PROVIDER_DEFAULT;
+
+// @formatter:off
+// tag::adocSnippet[]
+@Target({METHOD, FIELD})
+@Retention(RUNTIME)
+public @interface JoinTable {
+
+  String name() default "";
+  String catalog() default "";
+  String schema() default "";
+  JoinColumn[] joinColumns() default {};
+  JoinColumn[] inverseJoinColumns() default {};
+  ForeignKey foreignKey() default @ForeignKey(PROVIDER_DEFAULT);
+  ForeignKey inverseForeignKey() default @ForeignKey(PROVIDER_DEFAULT);
+  UniqueConstraint[] uniqueConstraints() default {};
+  Index[] indexes() default {};
+}
+// end::adocSnippet[]
+
+
+import javax.persistence.CascadeType;
+import javax.persistence.FetchType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import static javax.persistence.FetchType.EAGER;
+
+// @formatter:off
+// tag::adocSnippet[]
+@Target({METHOD, FIELD})
+@Retention(RUNTIME)
+public @interface OneToOne {
+
+  Class targetEntity() default void.class;
+  CascadeType[] cascade() default {};
+  FetchType fetch() default EAGER;
+  boolean optional() default true;
+  String mappedBy() default "";
+  boolean orphanRemoval() default false;
+}
+// end::adocSnippet[]
+--------------------------------------------------------------------------------------------------------
+import javax.validation.Constraint;
+import javax.validation.Payload;
+import javax.validation.ReportAsSingleViolation;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
+import static java.lang.annotation.ElementType.CONSTRUCTOR;
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.PARAMETER;
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+// tag::adocSnippet[]
+@Constraint(validatedBy = {})
+
+@NotNull
+@Size(min = 7)
+@Pattern(regexp = "[a-f]{1,}")
+@ReportAsSingleViolation
+
+@Retention(RUNTIME)
+@Target({METHOD, FIELD, PARAMETER, TYPE, ANNOTATION_TYPE, CONSTRUCTOR})
+@Documented
+public @interface Isbn {
+
+  String message() default "Invalid ISBN number";
+
+  Class<?>[] groups() default {};
+
+  Class<? extends Payload>[] payload() default {};
+}
+--------------------------------------------------------------------------------------------------------
+import javax.validation.Constraint;
+import javax.validation.Payload;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Repeatable;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
+import static java.lang.annotation.ElementType.CONSTRUCTOR;
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.PARAMETER;
+import static java.lang.annotation.ElementType.TYPE_USE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+// @formatter:off
+// tag::adocSnippet[]
+@Target({METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE})
+@Retention(RUNTIME)
+@Constraint(validatedBy = {})
+@Repeatable(Size.List.class)
+@Documented
+public @interface Size {
+
+  String message() default "{javax.validation.constraints.Size.message}";
+  Class<?>[] groups() default {};
+  Class<? extends Payload>[] payload() default {};
+  int min() default 0;
+  int max() default Integer.MAX_VALUE;
+  @Target({METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE})
+  @Retention(RUNTIME)
+  @Documented
+  @interface List {
+    Size[] value();
+  }
+}
+
+import javax.validation.Constraint;
+import javax.validation.Payload;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Repeatable;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
+import static java.lang.annotation.ElementType.CONSTRUCTOR;
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.PARAMETER;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+/**
+ * @author Antonio Goncalves
+ * http://www.antoniogoncalves.org
+ * --
+ */
+// @formatter:off
+// tag::adocSnippet[]
+@Constraint(validatedBy = ZipCodeValidator.class)
+@Repeatable(ZipCode.List.class)
+@Target({METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER})
+@Retention(RUNTIME)
+@Documented
+public @interface ZipCode {
+
+  String message() default "{org.agoncal.fascicle.ZipCode.message}";
+  Class<?>[] groups() default {};
+  Class<? extends Payload>[] payload() default {};
+  @Target({METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER})
+  @Retention(RUNTIME)
+  @Documented
+  @interface List {
+    ZipCode[] value();
+  }
+}
+--------------------------------------------------------------------------------------------------------
+import javax.validation.Constraint;
+import javax.validation.Payload;
+import javax.validation.ReportAsSingleViolation;
+import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+/**
+ * @author Antonio Goncalves
+ * http://www.antoniogoncalves.org
+ * --
+ */
+@Pattern(regexp = "[A-Z][a-z]{1,}")
+@Size(min = 3, max = 20)
+@ReportAsSingleViolation
+@Constraint(validatedBy = {})
+@Documented
+@Target({ElementType.METHOD, ElementType.FIELD})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface MusicGenre {
+
+  String message() default "{music.genre}";
+  Class<? extends Payload>[] payload() default {};
+  Class<?>[] groups() default {};
+}
+--------------------------------------------------------------------------------------------------------
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.info.Info;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+
+@Path("/authors")
+@Produces(MediaType.TEXT_PLAIN)
+@OpenAPIDefinition(
+  info = @Info(
+    title = "Authors",
+    version = "1.0",
+    description = "Operations on authors"
+  ),
+  tags = {
+    @Tag(name = "author"),
+    @Tag(name = "book")
+  }
+)
+public class AuthorResource {
+
+  String[] scifiAuthors = {"Isaac Asimov", "Ray Bradbury", "Douglas Adams"};
+
+  @GET
+  @Operation(summary = "Gets all the sci-fi authors", tags = {"scifi"},
+    responses = {
+      @ApiResponse(responseCode = "200", description = "Comma-separated list of sci-fi authors")
+    })
+  public String getAllScifiAuthors() {
+    return String.join(", ", scifiAuthors);
+  }
+
+  @GET
+  @Path("/{index}")
+  @Operation(summary = "Gets a sci-fi author by index",
+    tags = {"scifi"},
+    responses = {
+      @ApiResponse(responseCode = "200", description = "A sci-fi author"),
+      @ApiResponse(responseCode = "400", description = "Invalid index supplied"),
+      @ApiResponse(responseCode = "404", description = "Author not found")}
+  )
+  public String getScifiAuthor(@Parameter(description = "Author index", required = true) @PathParam("index") int index) {
+    return scifiAuthors[index];
+  }
+}
+
+import org.agoncal.fascicle.jaxrs.invoking.Customer;
+
+import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.ext.MessageBodyWriter;
+import javax.ws.rs.ext.Provider;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Type;
+
+/**
+ * @author Antonio Goncalves
+ * http://www.antoniogoncalves.org
+ * --
+ */
+@Provider
+@Produces("custom/format")
+public class CustomCustomerWriter implements MessageBodyWriter<Customer> {
+
+  @Override
+  public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
+    return Customer.class.isAssignableFrom(type);
+  }
+
+  @Override
+  public void writeTo(Customer customer, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream outputStream) throws IOException, WebApplicationException {
+    outputStream.write(customer.getId().getBytes());
+    outputStream.write('/');
+    outputStream.write(customer.getFirstName().getBytes());
+    outputStream.write('/');
+    outputStream.write(customer.getLastName().getBytes());
+  }
+
+  @Override
+  public long getSize(Customer customer, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
+    return customer.getId().length() + 1 + customer.getFirstName().length() + 1 + customer.getLastName().length();
+  }
+}
+
+
+import org.agoncal.fascicle.jaxrs.invoking.Customer;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.ext.MessageBodyReader;
+import javax.ws.rs.ext.Provider;
+import java.io.*;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Type;
+import java.util.StringTokenizer;
+
+/**
+ * @author Antonio Goncalves
+ * http://www.antoniogoncalves.org
+ * --
+ */
+@Provider
+@Consumes("custom/format")
+public class CustomCustomerReader implements MessageBodyReader<Customer> {
+
+  @Override
+  public boolean isReadable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
+    return Customer.class.isAssignableFrom(type);
+  }
+
+  @Override
+  public Customer readFrom(Class<Customer> type, Type genericType, Annotation[] annotations, MediaType mediaType, MultivaluedMap<String, String> httpHeaders, InputStream inputStream) throws IOException, WebApplicationException {
+
+    String str = convertStreamToString(inputStream);
+    StringTokenizer s = new StringTokenizer(str, "/");
+
+    Customer customer = new Customer();
+    customer.setId(s.nextToken());
+    customer.setFirstName(s.nextToken());
+    customer.setLastName(s.nextToken());
+
+    return customer;
+  }
+
+  public String convertStreamToString(InputStream is)
+    throws IOException {
+
+    if (is != null) {
+      Writer writer = new StringWriter();
+
+      char[] buffer = new char[1024];
+      try {
+        Reader reader = new BufferedReader(
+          new InputStreamReader(is, "UTF-8"));
+        int n;
+        while ((n = reader.read(buffer)) != -1) {
+          writer.write(buffer, 0, n);
+        }
+      } finally {
+        is.close();
+      }
+      return writer.toString();
+    } else {
+      return "";
+    }
+  }
+}
+
+
+   @GET
+   @Produces( {"application/xml", "application/json"})
+   @ApiOperation("Lists all the customers")
+   public List<Customer> listAll(@QueryParam("start") Integer startPosition, @QueryParam("max") Integer maxResult)
+   {
+      TypedQuery<Customer> findAllQuery = em.createQuery("SELECT DISTINCT c FROM Customer c LEFT JOIN FETCH c.homeAddress.country ORDER BY c.id", Customer.class);
+      if (startPosition != null)
+      {
+         findAllQuery.setFirstResult(startPosition);
+      }
+      if (maxResult != null)
+      {
+         findAllQuery.setMaxResults(maxResult);
+      }
+      final List<Customer> results = findAllQuery.getResultList();
+      return results;
+   }
+   
+   
+   
+import org.glassfish.grizzly.http.server.HttpServer;
+import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
+import org.glassfish.jersey.server.ResourceConfig;
+
+import java.io.IOException;
+import java.net.URI;
+
+/**
+ * Main class.
+ *
+ */
+public class Main {
+    // Base URI the Grizzly HTTP server will listen on
+    public static final String BASE_URI = "http://localhost:8080/cdbookstore/";
+
+    /**
+     * Starts Grizzly HTTP server exposing JAX-RS resources defined in this application.
+     * @return Grizzly HTTP server.
+     */
+    public static HttpServer startServer() {
+        // create a resource config that scans for JAX-RS resources and providers
+        // in org.agoncal.fascicle.jaxrs.firststep package
+        final ResourceConfig rc = new ResourceConfig().packages("org.agoncal.fascicle.commons.restassured");
+
+        // create and start a new instance of grizzly http server
+        // exposing the Jersey application at BASE_URI
+        return GrizzlyHttpServerFactory.createHttpServer(URI.create(BASE_URI), rc);
+    }
+
+    /**
+     * Main method.
+     * @param args
+     * @throws IOException
+     */
+    public static void main(String[] args) throws IOException {
+        final HttpServer server = startServer();
+        System.out.println(String.format("Jersey app started with WADL available at "
+                + "%sapplication.wadl\nHit enter to stop it...", BASE_URI));
+        System.in.read();
+        server.stop();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+import org.jackson.views.domain.User;
+import org.jackson.views.repository.UserRepository;
+import org.hibernate.validator.internal.constraintvalidators.hv.EmailValidator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * Authenticate a user from the database.
+ */
+@Component("userDetailsService")
+public class DomainUserDetailsService implements UserDetailsService {
+
+    private final Logger log = LoggerFactory.getLogger(DomainUserDetailsService.class);
+
+    private final UserRepository userRepository;
+
+    public DomainUserDetailsService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    @Override
+    @Transactional
+    public UserDetails loadUserByUsername(final String login) {
+        log.debug("Authenticating {}", login);
+
+        if (new EmailValidator().isValid(login, null)) {
+            return userRepository.findOneWithAuthoritiesByEmail(login)
+                .map(user -> createSpringSecurityUser(login, user))
+                .orElseThrow(() -> new UsernameNotFoundException("User with email " + login + " was not found in the database"));
+        }
+
+        String lowercaseLogin = login.toLowerCase(Locale.ENGLISH);
+        return userRepository.findOneWithAuthoritiesByLogin(lowercaseLogin)
+            .map(user -> createSpringSecurityUser(lowercaseLogin, user))
+            .orElseThrow(() -> new UsernameNotFoundException("User " + lowercaseLogin + " was not found in the database"));
+
+    }
+
+    private org.springframework.security.core.userdetails.User createSpringSecurityUser(String lowercaseLogin, User user) {
+        if (!user.getActivated()) {
+            throw new UserNotActivatedException("User " + lowercaseLogin + " was not activated");
+        }
+        List<GrantedAuthority> grantedAuthorities = user.getAuthorities().stream()
+            .map(authority -> new SimpleGrantedAuthority(authority.getName()))
+            .collect(Collectors.toList());
+        return new org.springframework.security.core.userdetails.User(user.getLogin(),
+            user.getPassword(),
+            grantedAuthorities);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.nio.charset.StandardCharsets;
+import java.security.Key;
+import java.util.*;
+import java.util.stream.Collectors;
+import javax.annotation.PostConstruct;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+
+import io.github.jhipster.config.JHipsterProperties;
+import io.jsonwebtoken.*;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
+
+@Component
+public class TokenProvider {
+
+    private final Logger log = LoggerFactory.getLogger(TokenProvider.class);
+
+    private static final String AUTHORITIES_KEY = "auth";
+
+    private Key key;
+
+    private long tokenValidityInMilliseconds;
+
+    private long tokenValidityInMillisecondsForRememberMe;
+
+    private final JHipsterProperties jHipsterProperties;
+
+    public TokenProvider(JHipsterProperties jHipsterProperties) {
+        this.jHipsterProperties = jHipsterProperties;
+    }
+
+    @PostConstruct
+    public void init() {
+        byte[] keyBytes;
+        String secret = jHipsterProperties.getSecurity().getAuthentication().getJwt().getSecret();
+        if (!StringUtils.isEmpty(secret)) {
+            log.warn("Warning: the JWT key used is not Base64-encoded. " +
+                "We recommend using the `jhipster.security.authentication.jwt.base64-secret` key for optimum security.");
+            keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+        } else {
+            log.debug("Using a Base64-encoded JWT secret key");
+            keyBytes = Decoders.BASE64.decode(jHipsterProperties.getSecurity().getAuthentication().getJwt().getBase64Secret());
+        }
+        this.key = Keys.hmacShaKeyFor(keyBytes);
+        this.tokenValidityInMilliseconds =
+            1000 * jHipsterProperties.getSecurity().getAuthentication().getJwt().getTokenValidityInSeconds();
+        this.tokenValidityInMillisecondsForRememberMe =
+            1000 * jHipsterProperties.getSecurity().getAuthentication().getJwt()
+                .getTokenValidityInSecondsForRememberMe();
+    }
+
+    public String createToken(Authentication authentication, boolean rememberMe) {
+        String authorities = authentication.getAuthorities().stream()
+            .map(GrantedAuthority::getAuthority)
+            .collect(Collectors.joining(","));
+
+        long now = (new Date()).getTime();
+        Date validity;
+        if (rememberMe) {
+            validity = new Date(now + this.tokenValidityInMillisecondsForRememberMe);
+        } else {
+            validity = new Date(now + this.tokenValidityInMilliseconds);
+        }
+
+        return Jwts.builder()
+            .setSubject(authentication.getName())
+            .claim(AUTHORITIES_KEY, authorities)
+            .signWith(key, SignatureAlgorithm.HS512)
+            .setExpiration(validity)
+            .compact();
+    }
+
+    public Authentication getAuthentication(String token) {
+        Claims claims = Jwts.parser()
+            .setSigningKey(key)
+            .parseClaimsJws(token)
+            .getBody();
+
+        Collection<? extends GrantedAuthority> authorities =
+            Arrays.stream(claims.get(AUTHORITIES_KEY).toString().split(","))
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
+
+        User principal = new User(claims.getSubject(), "", authorities);
+
+        return new UsernamePasswordAuthenticationToken(principal, token, authorities);
+    }
+
+    public boolean validateToken(String authToken) {
+        try {
+            Jwts.parser().setSigningKey(key).parseClaimsJws(authToken);
+            return true;
+        } catch (io.jsonwebtoken.security.SecurityException | MalformedJwtException e) {
+            log.info("Invalid JWT signature.");
+            log.trace("Invalid JWT signature trace: {}", e);
+        } catch (ExpiredJwtException e) {
+            log.info("Expired JWT token.");
+            log.trace("Expired JWT token trace: {}", e);
+        } catch (UnsupportedJwtException e) {
+            log.info("Unsupported JWT token.");
+            log.trace("Unsupported JWT token trace: {}", e);
+        } catch (IllegalArgumentException e) {
+            log.info("JWT token compact of handler are invalid.");
+            log.trace("JWT token compact of handler are invalid trace: {}", e);
+        }
+        return false;
+    }
+}
+
+import org.springframework.security.config.annotation.SecurityConfigurerAdapter;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.DefaultSecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+public class JWTConfigurer extends SecurityConfigurerAdapter<DefaultSecurityFilterChain, HttpSecurity> {
+
+    private TokenProvider tokenProvider;
+
+    public JWTConfigurer(TokenProvider tokenProvider) {
+        this.tokenProvider = tokenProvider;
+    }
+
+    @Override
+    public void configure(HttpSecurity http) throws Exception {
+        JWTFilter customFilter = new JWTFilter(tokenProvider);
+        http.addFilterBefore(customFilter, UsernamePasswordAuthenticationFilter.class);
+    }
+}
+
+  @EntityGraph(attributePaths = "authorities")
+    @Cacheable(cacheNames = USERS_BY_EMAIL_CACHE)
+    Optional<User> findOneWithAuthoritiesByEmail(String email);
+
+--------------------------------------------------------------------------------------------------------
+import org.jackson.views.domain.PersistentAuditEvent;
+
+import org.springframework.boot.actuate.audit.AuditEvent;
+import org.springframework.security.web.authentication.WebAuthenticationDetails;
+import org.springframework.stereotype.Component;
+
+import java.util.*;
+
+@Component
+public class AuditEventConverter {
+
+    /**
+     * Convert a list of PersistentAuditEvent to a list of AuditEvent
+     *
+     * @param persistentAuditEvents the list to convert
+     * @return the converted list.
+     */
+    public List<AuditEvent> convertToAuditEvent(Iterable<PersistentAuditEvent> persistentAuditEvents) {
+        if (persistentAuditEvents == null) {
+            return Collections.emptyList();
+        }
+        List<AuditEvent> auditEvents = new ArrayList<>();
+        for (PersistentAuditEvent persistentAuditEvent : persistentAuditEvents) {
+            auditEvents.add(convertToAuditEvent(persistentAuditEvent));
+        }
+        return auditEvents;
+    }
+
+    /**
+     * Convert a PersistentAuditEvent to an AuditEvent
+     *
+     * @param persistentAuditEvent the event to convert
+     * @return the converted list.
+     */
+    public AuditEvent convertToAuditEvent(PersistentAuditEvent persistentAuditEvent) {
+        if (persistentAuditEvent == null) {
+            return null;
+        }
+        return new AuditEvent(persistentAuditEvent.getAuditEventDate(), persistentAuditEvent.getPrincipal(),
+            persistentAuditEvent.getAuditEventType(), convertDataToObjects(persistentAuditEvent.getData()));
+    }
+
+    /**
+     * Internal conversion. This is needed to support the current SpringBoot actuator AuditEventRepository interface
+     *
+     * @param data the data to convert
+     * @return a map of String, Object
+     */
+    public Map<String, Object> convertDataToObjects(Map<String, String> data) {
+        Map<String, Object> results = new HashMap<>();
+
+        if (data != null) {
+            for (Map.Entry<String, String> entry : data.entrySet()) {
+                results.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return results;
+    }
+
+    /**
+     * Internal conversion. This method will allow to save additional data.
+     * By default, it will save the object as string
+     *
+     * @param data the data to convert
+     * @return a map of String, String
+     */
+    public Map<String, String> convertDataToStrings(Map<String, Object> data) {
+        Map<String, String> results = new HashMap<>();
+
+        if (data != null) {
+            for (Map.Entry<String, Object> entry : data.entrySet()) {
+                // Extract the data that will be saved.
+                if (entry.getValue() instanceof WebAuthenticationDetails) {
+                    WebAuthenticationDetails authenticationDetails = (WebAuthenticationDetails) entry.getValue();
+                    results.put("remoteAddress", authenticationDetails.getRemoteAddress());
+                    results.put("sessionId", authenticationDetails.getSessionId());
+                } else {
+                    results.put(entry.getKey(), Objects.toString(entry.getValue()));
+                }
+            }
+        }
+        return results;
+    }
+}
+
+import org.jackson.views.security.*;
+import org.jackson.views.security.jwt.*;
+
+import org.springframework.beans.factory.BeanInitializationException;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.filter.CorsFilter;
+import org.zalando.problem.spring.web.advice.security.SecurityProblemSupport;
+
+import javax.annotation.PostConstruct;
+
+@Configuration
+@EnableWebSecurity
+@EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true)
+@Import(SecurityProblemSupport.class)
+public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
+
+    private final AuthenticationManagerBuilder authenticationManagerBuilder;
+
+    private final UserDetailsService userDetailsService;
+
+    private final TokenProvider tokenProvider;
+
+    private final CorsFilter corsFilter;
+
+    private final SecurityProblemSupport problemSupport;
+
+    public SecurityConfiguration(AuthenticationManagerBuilder authenticationManagerBuilder, UserDetailsService userDetailsService, TokenProvider tokenProvider, CorsFilter corsFilter, SecurityProblemSupport problemSupport) {
+        this.authenticationManagerBuilder = authenticationManagerBuilder;
+        this.userDetailsService = userDetailsService;
+        this.tokenProvider = tokenProvider;
+        this.corsFilter = corsFilter;
+        this.problemSupport = problemSupport;
+    }
+
+    @PostConstruct
+    public void init() {
+        try {
+            authenticationManagerBuilder
+                .userDetailsService(userDetailsService)
+                .passwordEncoder(passwordEncoder());
+        } catch (Exception e) {
+            throw new BeanInitializationException("Security configuration failed", e);
+        }
+    }
+
+    @Override
+    @Bean
+    public AuthenticationManager authenticationManagerBean() throws Exception {
+        return super.authenticationManagerBean();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Override
+    public void configure(WebSecurity web) throws Exception {
+        web.ignoring()
+            .antMatchers(HttpMethod.OPTIONS, "/**")
+            .antMatchers("/app/**/*.{js,html}")
+            .antMatchers("/i18n/**")
+            .antMatchers("/content/**")
+            .antMatchers("/h2-console/**")
+            .antMatchers("/swagger-ui/index.html")
+            .antMatchers("/test/**");
+    }
+
+    @Override
+    public void configure(HttpSecurity http) throws Exception {
+        http
+            .csrf()
+            .disable()
+            .addFilterBefore(corsFilter, UsernamePasswordAuthenticationFilter.class)
+            .exceptionHandling()
+            .authenticationEntryPoint(problemSupport)
+            .accessDeniedHandler(problemSupport)
+        .and()
+            .headers()
+            .frameOptions()
+            .disable()
+        .and()
+            .sessionManagement()
+            .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        .and()
+            .authorizeRequests()
+            .antMatchers("/api/register").permitAll()
+            .antMatchers("/api/activate").permitAll()
+            .antMatchers("/api/authenticate").permitAll()
+            .antMatchers("/api/account/reset-password/init").permitAll()
+            .antMatchers("/api/account/reset-password/finish").permitAll()
+            .antMatchers("/api/**").authenticated()
+            .antMatchers("/management/health").permitAll()
+            .antMatchers("/management/info").permitAll()
+            .antMatchers("/management/**").hasAuthority(AuthoritiesConstants.ADMIN)
+        .and()
+            .apply(securityConfigurerAdapter());
+
+    }
+
+    private JWTConfigurer securityConfigurerAdapter() {
+        return new JWTConfigurer(tokenProvider);
+    }
+}
+
+import org.jackson.views.aop.logging.LoggingAspect;
+
+import io.github.jhipster.config.JHipsterConstants;
+
+import org.springframework.context.annotation.*;
+import org.springframework.core.env.Environment;
+
+@Configuration
+@EnableAspectJAutoProxy
+public class LoggingAspectConfiguration {
+
+    @Bean
+    @Profile(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT)
+    public LoggingAspect loggingAspect(Environment env) {
+        return new LoggingAspect(env);
+    }
+}
+
+import io.github.jhipster.config.JHipsterConstants;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.cloud.config.java.AbstractCloudConfig;
+import org.springframework.context.annotation.*;
+
+import javax.sql.DataSource;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+
+@Configuration
+@Profile(JHipsterConstants.SPRING_PROFILE_CLOUD)
+public class CloudDatabaseConfiguration extends AbstractCloudConfig {
+
+    private final Logger log = LoggerFactory.getLogger(CloudDatabaseConfiguration.class);
+    
+    private final String CLOUD_CONFIGURATION_HIKARI_PREFIX = "spring.datasource.hikari";
+
+    @Bean
+    @ConfigurationProperties(CLOUD_CONFIGURATION_HIKARI_PREFIX)
+    public DataSource dataSource() {
+        log.info("Configuring JDBC datasource from a cloud provider");
+        return connectionFactory().dataSource();
+    }
+}
+
+    @Override
+    public void configureTasks(ScheduledTaskRegistrar taskRegistrar) {
+        taskRegistrar.setScheduler(scheduledTaskExecutor());
+    }
+
+    @Bean
+    public Executor scheduledTaskExecutor() {
+        return Executors.newScheduledThreadPool(jHipsterProperties.getAsync().getCorePoolSize());
+    }
+--------------------------------------------------------------------------------------------------------
+
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlSeeAlso;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * @author Antonio Goncalves
+ *         http://www.antoniogoncalves.org
+ *         --
+ */
+@XmlRootElement
+@XmlSeeAlso(Customer.class)
+public class Customers extends ArrayList<Customer> {
+
+  // ======================================
+  // =          Getters & Setters         =
+  // ======================================
+
+  @XmlElement(name = "customer")
+  public List<Customer> getCustomers() {
+    return this;
+  }
+}
+--------------------------------------------------------------------------------------------------------
+- mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+
+
+os:
+  - linux
+services:
+  - docker
+language: java
+jdk:
+  - oraclejdk8
+sudo: false
+cache:
+  directories:
+    - $HOME/.m2
+before_install:
+  - mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+  - java -version
+script:
+  - mvn clean test
+notifications:
+  webhooks:
+    on_success: change  # options: [always|never|change] default: always
+    on_failure: always  # options: [always|never|change] default: always
+    on_start: false     # default: false
+--------------------------------------------------------------------------------------------------------
+import org.slf4j.MDC;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.GenericFilterBean;
+
+import javax.servlet.*;
+import java.io.IOException;
+
+@Component
+public class MdcFilter extends GenericFilterBean {
+
+  @Override
+  public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+      throws IOException, ServletException {
+    try {
+      MDC.put("mdcData", "[userId:Duke]");
+      chain.doFilter(request, response);
+    } finally {
+      MDC.clear();
+    }
+  }
+}
+--------------------------------------------------------------------------------------------------------
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.AsyncResult;
+import org.springframework.stereotype.Repository;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.Future;
+
+@Repository
+class MessageRepository {
+
+  private final Logger logger = LoggerFactory.getLogger(getClass());
+
+  @Async
+  Future<List<String>> findAll() {
+    logger.info("Repository in action");
+    return new AsyncResult<>(Arrays.asList("Hello World", "Spring Boot is awesome"));
+  }
+}
+--------------------------------------------------------------------------------------------------------
+   @Component
+    @RestControllerEndpoint(id = "remote")
+    public class CustomActuator {
+        @RequestMapping(value = {"/{actuatorInput}"}, produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+        @ResponseBody
+        public Map<String, Object> feature(@PathVariable("actuatorInput") String actuatorInput) {
+            System.out.println("actuatorInput : " + actuatorInput);
+            Map<String, Object> details = new HashMap<>();
+            details.put("input", actuatorInput);
+            return details;
+        }
+    }
+	
+	@Component
+@Endpoint(id = "custom-health")
+public class CustomHealthEndpoint {
+
+    @ReadOperation
+    public String customEndPointByName(@Selector String name) {
+        return "custom-end-point : " + name;
+    }
+    @WriteOperation
+    public void writeOperation(@Selector String name) {
+        System.out.println("Write Operation! :: " + name);
+    }
+    @DeleteOperation
+    public void deleteOperation(@Selector String name){
+        System.out.println("Delete Operation! :: " + name);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.stereotype.Service;
+
+import javax.servlet.http.HttpSession;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentSkipListMap;
+
+@Service
+public class SessionRegistry {
+
+    private final Map<String, HttpSession> httpSessionMap = new ConcurrentSkipListMap<>();
+
+    public void addSession(HttpSession httpSession) {
+        this.httpSessionMap.put(httpSession.getId(), httpSession);
+    }
+
+    public void removeSession(HttpSession httpSession) {
+        this.httpSessionMap.remove(httpSession.getId());
+    }
+
+    public List<HttpSession> getSessions() {
+        return new ArrayList<>(httpSessionMap.values());
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import javax.servlet.http.HttpSession;
+import java.util.Optional;
+
+@RestController
+public class GreetingController {
+
+    @RequestMapping(value = "/greetings/{caller}", produces = MediaType.TEXT_HTML_VALUE)
+    public String getGreeting(@PathVariable("caller") String caller, HttpSession httpSession) {
+
+        httpSession.setAttribute("invocationCount", 1 + Optional.ofNullable((Integer) httpSession.getAttribute("invocationCount")).orElse(0));
+        httpSession.setAttribute("latestGreetingArgument", caller);
+
+        return new StringBuilder()
+                .append("<html><body>")
+                .append("Your session id is: [").append(httpSession.getId()).append("]")
+                .append("<br> ( Invocation count is : [").append(httpSession.getAttribute("invocationCount")).append("] )")
+                .append("</body></html>")
+                .toString();
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.util.DateUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.Date;
+
+public class ExpirationJwtClaimsSetVerifier implements JwtClaimsSetVerifier {
+    private final Log logger = LogFactory.getLog(this.getClass());
+
+    private int maxClockSkewSeconds = 60;
+
+    @Override
+    public boolean verify(JWTClaimsSet claimsSet) {
+        Date now = Date.from(ZonedDateTime.now(ZoneOffset.UTC).toInstant());
+        Date expirationTime = claimsSet.getExpirationTime();
+        if (expirationTime == null) {
+            logger.warn("Missing expiration date in JWT claims set");
+            return false;
+        }
+        return DateUtils.isAfter(expirationTime, now, maxClockSkewSeconds);
+    }
+
+    public void setMaxClockSkewSeconds(int maxClockSkewSeconds) {
+        this.maxClockSkewSeconds = maxClockSkewSeconds;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+openssl rand 32 | base64
+
+machine:
+  java:
+    version: oraclejdk8
+  post:
+    # Install Java Cryptography Extension (JCE) Unlimited Strength Jurisdiction Policy Files for build
+    - rm -f jce_policy-8.zip
+    - "curl -o jce_policy-8.zip -v -j -k -L -H 'Cookie: oraclelicense=accept-securebackup-cookie' http://download.oracle.com/otn-pub/java/jce/8/jce_policy-8.zip"
+    - sudo unzip -j -o -d $JAVA_HOME/jre/lib/security jce_policy-8.zip
+test:
+  override:
+    - ./gradlew clean build
+  post:
+    - mkdir -p $CIRCLE_TEST_REPORTS/junit/
+    - find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
+deployment:
+  gh-release:
+    tag: /^v\d+\.\d+\.\d+$/
+    owner: AusDTO
+    commands:
+      - gradle assemble
+      - mkdir -p release
+      - cp build/libs/* release/
+      - curl -kjLo ghr.zip https://github.com/tcnksm/ghr/releases/download/v0.4.0/ghr_v0.4.0_linux_amd64.zip
+      - unzip ghr.zip
+      - ./ghr -t $GITHUB_ACCESS_TOKEN -u $CIRCLE_PROJECT_USERNAME -r $CIRCLE_PROJECT_REPONAME $CIRCLE_TAG release/
+      - "curl -skL -o /dev/null -c jitpack_cookie.txt https://jitpack.io"
+      - "curl -skiL -H 'Referer: https://jitpack.io/' -b jitpack_cookie.txt https://jitpack.io/api/builds/com.github.AusDTO/spring-security-stateless/${CIRCLE_TAG}"
+
+--------------------------------------------------------------------------------------------------------
+@Configuration
+public class Config {
+    @Bean
+    public CsrfTokenInterceptor csrfTokenInterceptor() {
+        return new CsrfTokenInterceptor();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.List;
+
+import com.mifmif.networking.mspider.database.dao.api.WebsiteDao;
+import com.mifmif.networking.mspider.model.Website;
+
+/**
+ * @author y.mifrah
+ * 
+ */
+public class JpaWebsiteDao extends JpaDao<Long, Website> implements WebsiteDao {
+
+	@Override
+	public Website finbByHost(String host) {
+		List<Website> found = entityManager.createNamedQuery("Website.findByHost", Website.class).setParameter("host", host).getResultList();
+		return found.isEmpty() ? null : found.get(0);
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+app.menus:
+  - title: Home
+    name: Home
+    path: /
+  - title: Login
+    name: Login
+    path: /login
+spring:
+  mustache:
+    expose-request-attributes: true
+logging:
+  level:
+    org.springframework.security: DEBUG
+--------------------------------------------------------------------------------------------------------
+import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+
+import java.io.IOException;
+
+public final class ResponseUtil {
+    private ResponseUtil() {
+    }
+
+    public static void closeResponse(CloseableHttpResponse response) throws IOException {
+        if (response == null) {
+            return;
+        }
+
+        try {
+            final HttpEntity entity = response.getEntity();
+            if (entity != null) {
+                entity.getContent().close();
+            }
+        } finally {
+            response.close();
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
 yarn global add bower• yarn global add gulp-cli
 jhipster entity Post --table-name post
 
