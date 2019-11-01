@@ -7825,10 +7825,22 @@ mvn versions:display-dependency-updates versions:display-plugin-updates -Pall
 mvn validate license:format -Pall
 mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent test sonar:sonar
 
+http://localhost:8089/api/v0/distributor/download?sku=sku-b7d41c8c&locale=ru&platform=file-platform
+http://localhost:8089/api/v0/distributor/download?sku=PSG-1770-BSU-SE-TL-1Y&locale=ru&platform=x86
+
 mvn versions:set -DnewVersion=X.Z-SNAPSHOT -Pall
 mvn versions:commit -Pall
+git branch -D GD-199-usercontour-mailer-documentsgenerator
+
+    <property name="LOG_FILE" value="{{ crmadapter_logdir }}/Service.log"/>
+    <property name="JSON_LOG_FILE" value="{{ crmadapter_logdir }}/Service.json"/>
 --------------------------------------------------------------------------------------------------------
 https://gitlab.paragon-software.com/pba/DevOps/ansible/
+
+    <property name="LOG_FILE" value="{{ ConfirmationLinkCallback.logdir }}/Service.log"/>
+    <property name="JSON_LOG_FILE" value="{{ ConfirmationLinkCallback.logdir }}/Service.json"/>
+--------------------------------------------------------------------------------------------------------
+ERROR: cannot serialize input value
 --------------------------------------------------------------------------------------------------------
 @EnableRuleMigrationSupport
 public class JUnit4TemporaryFolderTest {
@@ -8183,6 +8195,63 @@ topic: Delivery
 clientId: delivery-status-id
 groupId: free-coupons-delivery-status
 mapping: 
+--------------------------------------------------------------------------------------------------------
+import java.util.Arrays;
+
+class Array<E> {
+
+	private final Object[] arr;
+	public final int length;
+
+	// constructor
+	public Array(int length)
+	{
+		// Creates a new Object array of specified length
+		arr = new Object[length];
+		this.length = length;
+	}
+
+	// Function to get Object present at index i in the array
+	E get(int i) {
+		@SuppressWarnings("unchecked")
+		final E e = (E)arr[i];
+		return e;
+	}
+
+	// Function to set a value e at index i in the array
+	void set(int i, E e) {
+		arr[i] = e;
+	}
+
+	@Override
+	public String toString() {
+		return Arrays.toString(arr);
+	}
+}
+
+class Main {
+	// Program to create a generic array in Java
+	public static void main(String[] args)
+	{
+		final int length = 5;
+
+		// create an Integer array of given length
+		Array<Integer> intArray = new Array(length);
+
+		for (int i = 0; i < length; i++)
+			intArray.set(i, i + 1);
+
+		System.out.println(intArray);
+
+		// create a String array of given length
+		Array<String> strArray = new Array(length);
+
+		for (int i = 0; i < length; i++)
+			strArray.set(i, String.valueOf((char)(i + 65)));
+
+		System.out.println(strArray);
+	}
+}
 --------------------------------------------------------------------------------------------------------
 - src: 'git@gitlab.paragon-software.com:pba/DevOps/paragon.ansible.k8s.roles/pim.git'
   scm: 'git'
