@@ -11423,6 +11423,866 @@ public class Customers extends ArrayList<Customer> {
   }
 }
 --------------------------------------------------------------------------------------------------------
+import org.apache.kafka.common.annotation.InterfaceStability;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+/**
+ * Resource pattern type.
+ */
+@InterfaceStability.Evolving
+public enum PatternType {
+    /**
+     * Represents any PatternType which this client cannot understand, perhaps because this client is too old.
+     */
+    UNKNOWN((byte) 0),
+
+    /**
+     * In a filter, matches any resource pattern type.
+     */
+    ANY((byte) 1),
+
+    /**
+     * In a filter, will perform pattern matching.
+     *
+     * e.g. Given a filter of {@code ResourcePatternFilter(TOPIC, "payments.received", MATCH)`}, the filter match
+     * any {@link ResourcePattern} that matches topic 'payments.received'. This might include:
+     * <ul>
+     *     <li>A Literal pattern with the same type and name, e.g. {@code ResourcePattern(TOPIC, "payments.received", LITERAL)}</li>
+     *     <li>A Wildcard pattern with the same type, e.g. {@code ResourcePattern(TOPIC, "*", LITERAL)}</li>
+     *     <li>A Prefixed pattern with the same type and where the name is a matching prefix, e.g. {@code ResourcePattern(TOPIC, "payments.", PREFIXED)}</li>
+     * </ul>
+     */
+    MATCH((byte) 2),
+
+    /**
+     * A literal resource name.
+     *
+     * A literal name defines the full name of a resource, e.g. topic with name 'foo', or group with name 'bob'.
+     *
+     * The special wildcard character {@code *} can be used to represent a resource with any name.
+     */
+    LITERAL((byte) 3),
+
+    /**
+     * A prefixed resource name.
+     *
+     * A prefixed name defines a prefix for a resource, e.g. topics with names that start with 'foo'.
+     */
+    PREFIXED((byte) 4);
+
+    private final static Map<Byte, PatternType> CODE_TO_VALUE =
+        Collections.unmodifiableMap(
+            Arrays.stream(PatternType.values())
+                .collect(Collectors.toMap(PatternType::code, Function.identity()))
+        );
+
+    private final static Map<String, PatternType> NAME_TO_VALUE =
+        Collections.unmodifiableMap(
+            Arrays.stream(PatternType.values())
+                .collect(Collectors.toMap(PatternType::name, Function.identity()))
+        );
+
+    private final byte code;
+
+    PatternType(byte code) {
+        this.code = code;
+    }
+
+    /**
+     * @return the code of this resource.
+     */
+    public byte code() {
+        return code;
+    }
+
+    /**
+     * @eturn whether this resource pattern type is UNKNOWN.
+     */
+    public boolean isUnknown() {
+        return this == UNKNOWN;
+    }
+
+    /**
+     * @return whether this resource pattern type is a concrete type, rather than UNKNOWN or one of the filter types.
+     */
+    public boolean isSpecific() {
+        return this != UNKNOWN && this != ANY && this != MATCH;
+    }
+
+    /**
+     * Return the PatternType with the provided code or {@link #UNKNOWN} if one cannot be found.
+     */
+    public static PatternType fromCode(byte code) {
+        return CODE_TO_VALUE.getOrDefault(code, UNKNOWN);
+    }
+
+    /**
+     * Return the PatternType with the provided name or {@link #UNKNOWN} if one cannot be found.
+     */
+    public static PatternType fromString(String name) {
+        return NAME_TO_VALUE.getOrDefault(name, UNKNOWN);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
+/**
+ * Annotation to inform users of how much to rely on a particular package, class or method not changing over time.
+ * Currently the stability can be {@link Stable}, {@link Evolving} or {@link Unstable}.
+ */
+@InterfaceStability.Evolving
+public class InterfaceStability {
+    /**
+     * Compatibility is maintained in major, minor and patch releases with one exception: compatibility may be broken
+     * in a major release (i.e. 0.m) for APIs that have been deprecated for at least one major/minor release cycle.
+     * In cases where the impact of breaking compatibility is significant, there is also a minimum deprecation period
+     * of one year.
+     *
+     * This is the default stability level for public APIs that are not annotated.
+     */
+    @Documented
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface Stable { }
+
+    /**
+     * Compatibility may be broken at minor release (i.e. m.x).
+     */
+    @Documented
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface Evolving { }
+
+    /**
+     * No guarantee is provided as to reliability or stability across any level of release granularity.
+     */
+    @Documented
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface Unstable { }
+}
+--------------------------------------------------------------------------------------------------------
+./gradlew build --stacktrace --info
+--------------------------------------------------------------------------------------------------------
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.stream.Stream;
+
+public class LocalFileSystem implements FileSystem {
+
+    @Override
+    public boolean existingDirectory(Path pathToTest) {
+        return (pathToTest != null) && (pathToTest.toFile().isDirectory());
+    }
+
+    @Override
+    public Stream<Path> streamOfAllFilesFromPath(Path from) {
+        try {
+            return Files.list(from);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void move(Path from, Path to) throws IOException {
+        ensureDirectoryStructureExists(to.getParent());
+        Files.move(from, to);
+    }
+
+    private void ensureDirectoryStructureExists(Path directoryPath) {
+        if (directoryPath != null && !directoryPath.toFile().exists()) {
+            directoryPath.toFile().mkdirs();
+        }
+    }
+}
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.stream.Stream;
+
+public interface FileSystem {
+
+    void move(Path from, Path to) throws IOException;
+
+    Stream<Path> streamOfAllFilesFromPath(Path from);
+
+    boolean existingDirectory(Path from);
+}
+--------------------------------------------------------------------------------------------------------
+    /**
+     * GET  /languages : get all the languages.
+     *
+     * @param pageable the pagination information
+     * @param criteria the criterias which the requested entities should match
+     * @return the ResponseEntity with status 200 (OK) and the list of languages in body
+     */
+    @GetMapping("/languages")
+    @Timed
+    @JsonView(Format.Minimal.class)
+    public ResponseEntity<List<LanguageDTO>> getAllLanguages(LanguageCriteria criteria, Pageable pageable) {
+        log.debug("REST request to get Languages by criteria: {}", criteria);
+        Page<LanguageDTO> page = languageQueryService.findByCriteria(criteria, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(page, "/api/languages");
+        return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
+    }
+--------------------------------------------------------------------------------------------------------
+import org.combo.autocompletedtooptim.web.rest.util.HeaderUtil;
+
+import org.springframework.dao.ConcurrencyFailureException;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.context.request.NativeWebRequest;
+import org.zalando.problem.DefaultProblem;
+import org.zalando.problem.Problem;
+import org.zalando.problem.ProblemBuilder;
+import org.zalando.problem.Status;
+import org.zalando.problem.spring.web.advice.ProblemHandling;
+import org.zalando.problem.violations.ConstraintViolationProblem;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.servlet.http.HttpServletRequest;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
+
+/**
+ * Controller advice to translate the server side exceptions to client-friendly json structures.
+ * The error response follows RFC7807 - Problem Details for HTTP APIs (https://tools.ietf.org/html/rfc7807)
+ */
+@ControllerAdvice
+public class ExceptionTranslator implements ProblemHandling {
+
+    /**
+     * Post-process the Problem payload to add the message key for the front-end if needed
+     */
+    @Override
+    public ResponseEntity<Problem> process(@Nullable ResponseEntity<Problem> entity, NativeWebRequest request) {
+        if (entity == null) {
+            return entity;
+        }
+        Problem problem = entity.getBody();
+        if (!(problem instanceof ConstraintViolationProblem || problem instanceof DefaultProblem)) {
+            return entity;
+        }
+        ProblemBuilder builder = Problem.builder()
+            .withType(Problem.DEFAULT_TYPE.equals(problem.getType()) ? ErrorConstants.DEFAULT_TYPE : problem.getType())
+            .withStatus(problem.getStatus())
+            .withTitle(problem.getTitle())
+            .with("path", request.getNativeRequest(HttpServletRequest.class).getRequestURI());
+
+        if (problem instanceof ConstraintViolationProblem) {
+            builder
+                .with("violations", ((ConstraintViolationProblem) problem).getViolations())
+                .with("message", ErrorConstants.ERR_VALIDATION);
+        } else {
+            builder
+                .withCause(((DefaultProblem) problem).getCause())
+                .withDetail(problem.getDetail())
+                .withInstance(problem.getInstance());
+            problem.getParameters().forEach(builder::with);
+            if (!problem.getParameters().containsKey("message") && problem.getStatus() != null) {
+                builder.with("message", "error.http." + problem.getStatus().getStatusCode());
+            }
+        }
+        return new ResponseEntity<>(builder.build(), entity.getHeaders(), entity.getStatusCode());
+    }
+
+    @Override
+    public ResponseEntity<Problem> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, @Nonnull NativeWebRequest request) {
+        BindingResult result = ex.getBindingResult();
+        List<FieldErrorVM> fieldErrors = result.getFieldErrors().stream()
+            .map(f -> new FieldErrorVM(f.getObjectName(), f.getField(), f.getCode()))
+            .collect(Collectors.toList());
+
+        Problem problem = Problem.builder()
+            .withType(ErrorConstants.CONSTRAINT_VIOLATION_TYPE)
+            .withTitle("Method argument not valid")
+            .withStatus(defaultConstraintViolationStatus())
+            .with("message", ErrorConstants.ERR_VALIDATION)
+            .with("fieldErrors", fieldErrors)
+            .build();
+        return create(ex, problem, request);
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<Problem> handleNoSuchElementException(NoSuchElementException ex, NativeWebRequest request) {
+        Problem problem = Problem.builder()
+            .withStatus(Status.NOT_FOUND)
+            .with("message", ErrorConstants.ENTITY_NOT_FOUND_TYPE)
+            .build();
+        return create(ex, problem, request);
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<Problem> handleBadRequestAlertException(BadRequestAlertException ex, NativeWebRequest request) {
+        return create(ex, request, HeaderUtil.createFailureAlert(ex.getEntityName(), ex.getErrorKey(), ex.getMessage()));
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<Problem> handleConcurrencyFailure(ConcurrencyFailureException ex, NativeWebRequest request) {
+        Problem problem = Problem.builder()
+            .withStatus(Status.CONFLICT)
+            .with("message", ErrorConstants.ERR_CONCURRENCY_FAILURE)
+            .build();
+        return create(ex, problem, request);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.combo.autocompletedtooptim.domain.*;
+import org.combo.autocompletedtooptim.service.dto.LanguageDTO;
+
+import org.mapstruct.*;
+
+/**
+ * Mapper for the entity Language and its DTO LanguageDTO.
+ */
+@Mapper(componentModel = "spring", uses = {})
+public interface LanguageMapper extends EntityMapper<LanguageDTO, Language> {
+
+
+
+    default Language fromId(Long id) {
+        if (id == null) {
+            return null;
+        }
+        Language language = new Language();
+        language.setId(id);
+        return language;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.combo.autocompletedtooptim.domain.*;
+import org.combo.autocompletedtooptim.service.dto.ContactDTO;
+
+import org.mapstruct.*;
+
+/**
+ * Mapper for the entity Contact and its DTO ContactDTO.
+ */
+@Mapper(componentModel = "spring", uses = {LanguageMapper.class})
+public interface ContactMapper extends EntityMapper<ContactDTO, Contact> {
+
+    @Mapping(source = "language.id", target = "languageId")
+    @Mapping(source = "language.name", target = "languageName")
+    ContactDTO toDto(Contact contact);
+
+    @Mapping(source = "languageId", target = "language")
+    Contact toEntity(ContactDTO contactDTO);
+
+    default Contact fromId(Long id) {
+        if (id == null) {
+            return null;
+        }
+        Contact contact = new Contact();
+        contact.setId(id);
+        return contact;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.combo.autocompletedtooptim.domain.User;
+import org.combo.autocompletedtooptim.repository.UserRepository;
+import org.hibernate.validator.internal.constraintvalidators.hv.EmailValidator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * Authenticate a user from the database.
+ */
+@Component("userDetailsService")
+public class DomainUserDetailsService implements UserDetailsService {
+
+    private final Logger log = LoggerFactory.getLogger(DomainUserDetailsService.class);
+
+    private final UserRepository userRepository;
+
+    public DomainUserDetailsService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    @Override
+    @Transactional
+    public UserDetails loadUserByUsername(final String login) {
+        log.debug("Authenticating {}", login);
+
+        if (new EmailValidator().isValid(login, null)) {
+            return userRepository.findOneWithAuthoritiesByEmail(login)
+                .map(user -> createSpringSecurityUser(login, user))
+                .orElseThrow(() -> new UsernameNotFoundException("User with email " + login + " was not found in the database"));
+        }
+
+        String lowercaseLogin = login.toLowerCase(Locale.ENGLISH);
+        return userRepository.findOneWithAuthoritiesByLogin(lowercaseLogin)
+            .map(user -> createSpringSecurityUser(lowercaseLogin, user))
+            .orElseThrow(() -> new UsernameNotFoundException("User " + lowercaseLogin + " was not found in the database"));
+
+    }
+
+    private org.springframework.security.core.userdetails.User createSpringSecurityUser(String lowercaseLogin, User user) {
+        if (!user.getActivated()) {
+            throw new UserNotActivatedException("User " + lowercaseLogin + " was not activated");
+        }
+        List<GrantedAuthority> grantedAuthorities = user.getAuthorities().stream()
+            .map(authority -> new SimpleGrantedAuthority(authority.getName()))
+            .collect(Collectors.toList());
+        return new org.springframework.security.core.userdetails.User(user.getLogin(),
+            user.getPassword(),
+            grantedAuthorities);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.nio.charset.StandardCharsets;
+import java.security.Key;
+import java.util.*;
+import java.util.stream.Collectors;
+import javax.annotation.PostConstruct;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+
+import io.github.jhipster.config.JHipsterProperties;
+import io.jsonwebtoken.*;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
+
+@Component
+public class TokenProvider {
+
+    private final Logger log = LoggerFactory.getLogger(TokenProvider.class);
+
+    private static final String AUTHORITIES_KEY = "auth";
+
+    private Key key;
+
+    private long tokenValidityInMilliseconds;
+
+    private long tokenValidityInMillisecondsForRememberMe;
+
+    private final JHipsterProperties jHipsterProperties;
+
+    public TokenProvider(JHipsterProperties jHipsterProperties) {
+        this.jHipsterProperties = jHipsterProperties;
+    }
+
+    @PostConstruct
+    public void init() {
+        byte[] keyBytes;
+        String secret = jHipsterProperties.getSecurity().getAuthentication().getJwt().getSecret();
+        if (!StringUtils.isEmpty(secret)) {
+            log.warn("Warning: the JWT key used is not Base64-encoded. " +
+                "We recommend using the `jhipster.security.authentication.jwt.base64-secret` key for optimum security.");
+            keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+        } else {
+            log.debug("Using a Base64-encoded JWT secret key");
+            keyBytes = Decoders.BASE64.decode(jHipsterProperties.getSecurity().getAuthentication().getJwt().getBase64Secret());
+        }
+        this.key = Keys.hmacShaKeyFor(keyBytes);
+        this.tokenValidityInMilliseconds =
+            1000 * jHipsterProperties.getSecurity().getAuthentication().getJwt().getTokenValidityInSeconds();
+        this.tokenValidityInMillisecondsForRememberMe =
+            1000 * jHipsterProperties.getSecurity().getAuthentication().getJwt()
+                .getTokenValidityInSecondsForRememberMe();
+    }
+
+    public String createToken(Authentication authentication, boolean rememberMe) {
+        String authorities = authentication.getAuthorities().stream()
+            .map(GrantedAuthority::getAuthority)
+            .collect(Collectors.joining(","));
+
+        long now = (new Date()).getTime();
+        Date validity;
+        if (rememberMe) {
+            validity = new Date(now + this.tokenValidityInMillisecondsForRememberMe);
+        } else {
+            validity = new Date(now + this.tokenValidityInMilliseconds);
+        }
+
+        return Jwts.builder()
+            .setSubject(authentication.getName())
+            .claim(AUTHORITIES_KEY, authorities)
+            .signWith(key, SignatureAlgorithm.HS512)
+            .setExpiration(validity)
+            .compact();
+    }
+
+    public Authentication getAuthentication(String token) {
+        Claims claims = Jwts.parser()
+            .setSigningKey(key)
+            .parseClaimsJws(token)
+            .getBody();
+
+        Collection<? extends GrantedAuthority> authorities =
+            Arrays.stream(claims.get(AUTHORITIES_KEY).toString().split(","))
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
+
+        User principal = new User(claims.getSubject(), "", authorities);
+
+        return new UsernamePasswordAuthenticationToken(principal, token, authorities);
+    }
+
+    public boolean validateToken(String authToken) {
+        try {
+            Jwts.parser().setSigningKey(key).parseClaimsJws(authToken);
+            return true;
+        } catch (io.jsonwebtoken.security.SecurityException | MalformedJwtException e) {
+            log.info("Invalid JWT signature.");
+            log.trace("Invalid JWT signature trace: {}", e);
+        } catch (ExpiredJwtException e) {
+            log.info("Expired JWT token.");
+            log.trace("Expired JWT token trace: {}", e);
+        } catch (UnsupportedJwtException e) {
+            log.info("Unsupported JWT token.");
+            log.trace("Unsupported JWT token trace: {}", e);
+        } catch (IllegalArgumentException e) {
+            log.info("JWT token compact of handler are invalid.");
+            log.trace("JWT token compact of handler are invalid trace: {}", e);
+        }
+        return false;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+   @JsonIgnore
+    @ManyToMany
+    @JoinTable(
+        name = "aud_user_authority",
+        joinColumns = {@JoinColumn(name = "user_id", referencedColumnName = "id")},
+        inverseJoinColumns = {@JoinColumn(name = "authority_name", referencedColumnName = "name")})
+    @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+    @BatchSize(size = 20)
+    private Set<Authority> authorities = new HashSet<>();
+	
+	
+	 private LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
+	 
+	    private void addContextListener(LoggerContext context) {
+        LogbackLoggerContextListener loggerContextListener = new LogbackLoggerContextListener();
+        loggerContextListener.setContext(context);
+        context.addListener(loggerContextListener);
+    }
+	
+	
+--------------------------------------------------------------------------------------------------------
+import java.net.InetSocketAddress;
+import java.util.Iterator;
+
+import io.github.jhipster.config.JHipsterProperties;
+
+import ch.qos.logback.classic.AsyncAppender;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.boolex.OnMarkerEvaluator;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.classic.spi.LoggerContextListener;
+import ch.qos.logback.core.Appender;
+import ch.qos.logback.core.filter.EvaluatorFilter;
+import ch.qos.logback.core.spi.ContextAwareBase;
+import ch.qos.logback.core.spi.FilterReply;
+import net.logstash.logback.appender.LogstashTcpSocketAppender;
+import net.logstash.logback.encoder.LogstashEncoder;
+import net.logstash.logback.stacktrace.ShortenedThrowableConverter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class LoggingConfiguration {
+
+    private static final String LOGSTASH_APPENDER_NAME = "LOGSTASH";
+
+    private static final String ASYNC_LOGSTASH_APPENDER_NAME = "ASYNC_LOGSTASH";
+
+    private final Logger log = LoggerFactory.getLogger(LoggingConfiguration.class);
+
+    private LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
+
+    private final String appName;
+
+    private final String serverPort;
+
+    private final JHipsterProperties jHipsterProperties;
+
+    public LoggingConfiguration(@Value("${spring.application.name}") String appName, @Value("${server.port}") String serverPort,
+         JHipsterProperties jHipsterProperties) {
+        this.appName = appName;
+        this.serverPort = serverPort;
+        this.jHipsterProperties = jHipsterProperties;
+        if (jHipsterProperties.getLogging().getLogstash().isEnabled()) {
+            addLogstashAppender(context);
+            addContextListener(context);
+        }
+        if (jHipsterProperties.getMetrics().getLogs().isEnabled()) {
+            setMetricsMarkerLogbackFilter(context);
+        }
+    }
+
+    private void addContextListener(LoggerContext context) {
+        LogbackLoggerContextListener loggerContextListener = new LogbackLoggerContextListener();
+        loggerContextListener.setContext(context);
+        context.addListener(loggerContextListener);
+    }
+
+    private void addLogstashAppender(LoggerContext context) {
+        log.info("Initializing Logstash logging");
+
+        LogstashTcpSocketAppender logstashAppender = new LogstashTcpSocketAppender();
+        logstashAppender.setName(LOGSTASH_APPENDER_NAME);
+        logstashAppender.setContext(context);
+        String customFields = "{\"app_name\":\"" + appName + "\",\"app_port\":\"" + serverPort + "\"}";
+
+        // More documentation is available at: https://github.com/logstash/logstash-logback-encoder
+        LogstashEncoder logstashEncoder = new LogstashEncoder();
+        // Set the Logstash appender config from JHipster properties
+        logstashEncoder.setCustomFields(customFields);
+        // Set the Logstash appender config from JHipster properties
+        logstashAppender.addDestinations(new InetSocketAddress(jHipsterProperties.getLogging().getLogstash().getHost(), jHipsterProperties.getLogging().getLogstash().getPort()));
+
+        ShortenedThrowableConverter throwableConverter = new ShortenedThrowableConverter();
+        throwableConverter.setRootCauseFirst(true);
+        logstashEncoder.setThrowableConverter(throwableConverter);
+        logstashEncoder.setCustomFields(customFields);
+
+        logstashAppender.setEncoder(logstashEncoder);
+        logstashAppender.start();
+
+        // Wrap the appender in an Async appender for performance
+        AsyncAppender asyncLogstashAppender = new AsyncAppender();
+        asyncLogstashAppender.setContext(context);
+        asyncLogstashAppender.setName(ASYNC_LOGSTASH_APPENDER_NAME);
+        asyncLogstashAppender.setQueueSize(jHipsterProperties.getLogging().getLogstash().getQueueSize());
+        asyncLogstashAppender.addAppender(logstashAppender);
+        asyncLogstashAppender.start();
+
+        context.getLogger("ROOT").addAppender(asyncLogstashAppender);
+    }
+
+    // Configure a log filter to remove "metrics" logs from all appenders except the "LOGSTASH" appender
+    private void setMetricsMarkerLogbackFilter(LoggerContext context) {
+        log.info("Filtering metrics logs from all appenders except the {} appender", LOGSTASH_APPENDER_NAME);
+        OnMarkerEvaluator onMarkerMetricsEvaluator = new OnMarkerEvaluator();
+        onMarkerMetricsEvaluator.setContext(context);
+        onMarkerMetricsEvaluator.addMarker("metrics");
+        onMarkerMetricsEvaluator.start();
+        EvaluatorFilter<ILoggingEvent> metricsFilter = new EvaluatorFilter<>();
+        metricsFilter.setContext(context);
+        metricsFilter.setEvaluator(onMarkerMetricsEvaluator);
+        metricsFilter.setOnMatch(FilterReply.DENY);
+        metricsFilter.start();
+
+        for (ch.qos.logback.classic.Logger logger : context.getLoggerList()) {
+            for (Iterator<Appender<ILoggingEvent>> it = logger.iteratorForAppenders(); it.hasNext();) {
+                Appender<ILoggingEvent> appender = it.next();
+                if (!appender.getName().equals(ASYNC_LOGSTASH_APPENDER_NAME)) {
+                    log.debug("Filter metrics logs from the {} appender", appender.getName());
+                    appender.setContext(context);
+                    appender.addFilter(metricsFilter);
+                    appender.start();
+                }
+            }
+        }
+    }
+
+    /**
+     * Logback configuration is achieved by configuration file and API.
+     * When configuration file change is detected, the configuration is reset.
+     * This listener ensures that the programmatic configuration is also re-applied after reset.
+     */
+    class LogbackLoggerContextListener extends ContextAwareBase implements LoggerContextListener {
+
+        @Override
+        public boolean isResetResistant() {
+            return true;
+        }
+
+        @Override
+        public void onStart(LoggerContext context) {
+            addLogstashAppender(context);
+        }
+
+        @Override
+        public void onReset(LoggerContext context) {
+            addLogstashAppender(context);
+        }
+
+        @Override
+        public void onStop(LoggerContext context) {
+            // Nothing to do.
+        }
+
+        @Override
+        public void onLevelChange(ch.qos.logback.classic.Logger logger, Level level) {
+            // Nothing to do.
+        }
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+
+import io.github.jhipster.config.JHipsterConstants;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.core.env.Environment;
+
+import java.util.*;
+
+/**
+ * Utility class to load a Spring profile to be used as default
+ * when there is no <code>spring.profiles.active</code> set in the environment or as command line argument.
+ * If the value is not available in <code>application.yml</code> then <code>dev</code> profile will be used as default.
+ */
+public final class DefaultProfileUtil {
+
+    private static final String SPRING_PROFILE_DEFAULT = "spring.profiles.default";
+
+    private DefaultProfileUtil() {
+    }
+
+    /**
+     * Set a default to use when no profile is configured.
+     *
+     * @param app the Spring application
+     */
+    public static void addDefaultProfile(SpringApplication app) {
+        Map<String, Object> defProperties = new HashMap<>();
+        /*
+        * The default profile to use when no other profiles are defined
+        * This cannot be set in the <code>application.yml</code> file.
+        * See https://github.com/spring-projects/spring-boot/issues/1219
+        */
+        defProperties.put(SPRING_PROFILE_DEFAULT, JHipsterConstants.SPRING_PROFILE_DEVELOPMENT);
+        app.setDefaultProperties(defProperties);
+    }
+
+    /**
+     * Get the profiles that are applied else get default profiles.
+     *
+     * @param env spring environment
+     * @return profiles
+     */
+    public static String[] getActiveProfiles(Environment env) {
+        String[] profiles = env.getActiveProfiles();
+        if (profiles.length == 0) {
+            return env.getDefaultProfiles();
+        }
+        return profiles;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+#!/bin/sh
+
+echo "The application will start in ${JHIPSTER_SLEEP}s..." && sleep ${JHIPSTER_SLEEP}
+exec java ${JAVA_OPTS} -Djava.security.egd=file:/dev/./urandom -jar "${HOME}/app.war" "$@"
+
+version: '2'
+services:
+    autocompletedto-app:
+        image: autocompletedto
+        environment:
+            - _JAVA_OPTIONS=-Xmx512m -Xms256m
+            - SPRING_PROFILES_ACTIVE=prod,swagger
+            - SPRING_DATASOURCE_URL=jdbc:postgresql://autocompletedto-postgresql:5432/autocompletedto
+            - JHIPSTER_SLEEP=10 # gives time for the database to boot before the application
+        ports:
+            - 8080:8080
+    autocompletedto-postgresql:
+        extends:
+            file: postgresql.yml
+            service: autocompletedto-postgresql
+			
+			  
+FROM openjdk:8-jre-alpine
+
+ENV SPRING_OUTPUT_ANSI_ENABLED=ALWAYS \
+    JHIPSTER_SLEEP=0 \
+    JAVA_OPTS=""
+
+# Add a jhipster user to run our application so that it doesn't need to run as root
+RUN adduser -D -s /bin/sh jhipster
+WORKDIR /home/jhipster
+
+ADD entrypoint.sh entrypoint.sh
+RUN chmod 755 entrypoint.sh && chown jhipster:jhipster entrypoint.sh
+USER jhipster
+
+ENTRYPOINT ["./entrypoint.sh"]
+
+EXPOSE 8080
+
+ADD *.war app.war
+
+--------------------------------------------------------------------------------------------------------
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+ com.moelholm.prometheus.PrometheusAutoConfiguration
+--------------------------------------------------------------------------------------------------------
+import io.prometheus.client.spring.boot.SpringBootMetricsCollector;
+import java.util.Collection;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.actuate.endpoint.PublicMetrics;
+import org.springframework.boot.actuate.endpoint.mvc.AbstractMvcEndpoint;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+@ConditionalOnWebApplication
+public class PrometheusAutoConfiguration {
+
+  @Bean
+  @ConditionalOnMissingBean(name = "prometheusActuatorEndpoint")
+  AbstractMvcEndpoint prometheusActuatorEndpoint(
+      @Value("${endpoints.prometheus.path:/prometheus}") String path,
+      @Value("${endpoints.prometheus.sensitive:false}") boolean sensitive) {
+    return new PrometheusActuatorEndpoint(path, sensitive);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean(SpringBootMetricsCollector.class)
+  SpringBootMetricsCollector springBootMetricsCollector(Collection<PublicMetrics> publicMetrics) {
+    SpringBootMetricsCollector collector = new SpringBootMetricsCollector(publicMetrics);
+    collector.register();
+    return collector;
+  }
+}
+
+https://github.com/moelholm/prometheus-spring-boot-starter/blob/master/src/main/java/com/moelholm/prometheus/PrometheusActuatorEndpoint.java
+--------------------------------------------------------------------------------------------------------
+    @RequestMapping("${actuator-ui.dump-ui.path:dump-ui}")
+    public void dumpAsHtml(HttpServletRequest request, HttpServletResponse response) {
+        response.setContentType("text/html");
+        try (PrintWriter writer = response.getWriter()) {
+            writer.println(getHtml(request));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+--------------------------------------------------------------------------------------------------------
 - mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
 
 
