@@ -6693,6 +6693,254 @@ lotto_resource_returns_200_with_expected_id_and_winners() {
 
 }
 --------------------------------------------------------------------------------------------------------
+gcloud config set project project-id
+gcloud auth login
+gcloud components update sql
+To list the current Cloud SQL instances for the project:
+gcloud sql instances list
+To get detailed information about the instance in YAML format:
+gcloud sql instances describe instance-name
+To get a list of automatic backups for the instance, each identified by a timestamp:
+gcloud sql backups list --instance instance-name
+To restore a backup from this list:
+gcloud sql instances restore-backup --instance instance-name --due-time timestamp
+You can initiate exports and imports from the command line as well. As with doing
+this from the Cloud Console, exports and imports use Cloud Storage for storing or
+reading data. To initiate an export of all databases on the instance to a given Cloud
+Storage path:
+gcloud sql instances export instance-name gs://bucket-name/object-name
+You can narrow the export to specific databases or tables using the --database and
+--table flags.
+The command to import a file from Cloud Storage is similar:
+gcloud sql instances import instance-name gs://bucket-name/object-name
+Naturally, you can upload and download files to and from Cloud Storage from the
+command line as well. For this, you use the gsutil command. Make sure you have
+this command installed:
+gcloud components update gsutil
+To download a file from Cloud Storage:
+gsutil cp gs://bucket-name/object-name .
+Just like the cp command, gsutil cp takes a path to the file to copy, and a destination
+path. If the destination path is a directory path (like . for the current directory), the
+file is copied using its original filename.
+To upload a file to Cloud Storage, use the gsutil cp command with a gs:// path as
+the second argument:
+gsutil cp filename.gz gs://bucket-name/object-name
+
+jdbc:google:mysql://project-id:instance-name/database?user=username
+--------------------------------------------------------------------------------------------------------
+Book book = new Book();
+ book.setBookCoverImage(new BookCoverImage());
+ book.setTitle("The Grapes of Wrath");
+ book.bookCoverImage.setType("image/jpg");
+ EntityTransaction txn = em.getTransaction();
+ txn.begin();
+ try {
+ em.persist(book);
+ txn.commit();
+ } finally {
+ if (txn.isActive()) {
+ txn.rollback();
+ }
+ }
+ em.close();
+
+
+import javax.persistence.Basic;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import org.datanucleus.api.jpa.annotations.Extension;
+@Entity
+public class BookReview {
+ @Id
+ @GeneratedValue(strategy = GenerationType.IDENTITY)
+ @Extension(vendorName = "datanucleus",
+ key = "gae.encoded-pk",
+ value = "true")
+ private String keyString;
+ @Basic
+ @Extension(vendorName = "datanucleus",
+ key = "gae.parent-pk",
+ value = "true")
+ private String bookKeyString;
+}
+
+
+package myapp; // where "myapp" is your app's package
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
+public final class EMF {
+ private static final EntityManagerFactory emfInstance =
+ Persistence.createEntityManagerFactory("transactions-optional");
+ private EMF() {}
+ public static EntityManagerFactory get() {
+ return emfInstance;
+ }
+}
+--------------------------------------------------------------------------------------------------------
+$ play new play-server
+--------------------------------------------------------------------------------------------------------
+
+import cucumber.api.junit.Cucumber;
+import org.junit.runner.RunWith;
+
+@RunWith(Cucumber.class)
+@Cucumber.Options(
+        format = {"pretty"},
+        features = "./src/it/resources"
+)
+
+// The class name must end in "Test" to be found by Maven by default
+public class CucumberTest {
+}
+--------------------------------------------------------------------------------------------------------
+ packer build template.json
+--------------------------------------------------------------------------------------------------------
+FROM ubuntu:precise
+MAINTAINER Casimir Saternos
+
+RUN echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu precise main" | tee -a /etc/apt/sources.list
+RUN echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu precise main" | tee -a /etc/apt/sources.list
+RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886
+RUN apt-get update
+run apt-get -y install python
+RUN echo oracle-java7-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections
+RUN apt-get -y install oracle-java7-installer
+RUN update-alternatives --display java
+RUN echo "JAVA_HOME=/usr/lib/jvm/java-7-oracle" >> /etc/environment
+RUN wget http://repo2.maven.org/maven2/org/mortbay/jetty/jetty-runner/8.1.9.v20130131/jetty-runner-8.1.9.v20130131.jar
+RUN wget https://web-actions.googlecode.com/files/helloworld.war
+RUN java -jar jetty-runner-8.1.9.v20130131.jar helloworld.war
+  
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.htmlunit.HtmlUnitDriver;
+import org.openqa.selenium.support.ui.ExpectedCondition;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
+public class SeleniumTest1 {
+    public static void main(String[] args) {
+
+        // WebDriver driver = new FirefoxDriver();
+//		  WebDriver driver = new SafariDriver();
+        WebDriver driver = new HtmlUnitDriver();  //HtmlUnitDriver(true) blows up though
+
+
+// Additional work is required for Chrome...		
+//  http://code.google.com/p/selenium/wiki/ChromeDriver
+//  import org.openqa.selenium.chrome.ChromeDriver;
+//  WebDriver driver = new ChromeDriver(); 
+
+        driver.get("http://www.google.com");  //or driver.navigate().to("http://www.google.com");
+        WebElement element = driver.findElement(By.name("q"));
+        element.sendKeys("Cheese!");
+        element.submit();  //  WebDriver finds the form from the element
+
+        // Check the title of the page
+        System.out.println("Page title is: " + driver.getTitle());
+
+        // Google's search is rendered dynamically with JavaScript.
+        // Wait for the page to load, timeout after 10 seconds
+        (new WebDriverWait(driver, 10)).until(new ExpectedCondition<Boolean>() {
+            public Boolean apply(WebDriver d) {
+                return d.getTitle().toLowerCase().startsWith("cheese!");
+            }
+        });
+
+        System.out.println("Page title is: " + driver.getTitle());
+        driver.quit();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+language: node_js
+node_js:
+  - 0.8
+
+before_script:
+  - export DISPLAY=:99.0
+  - sh -e /etc/init.d/xvfb start
+  - npm install --quiet -g karma
+  - ./scripts/web-server.js > /dev/null &
+  - sleep 1 # give server time to start
+
+script:
+  - karma start config/karma.conf.js --no-auto-watch --single-run --reporters=dots --browsers=Firefox
+  - karma start config/karma-e2e.conf.js --reporters=dots --browsers=Firefox
+--------------------------------------------------------------------------------------------------------
+-webkit-transition: width 1s;
+
+keytool -exportcert -alias rest -file %USERPROFILE%\tomcat.cer -storepass
+tomcat 
+<Connector port="8443"
+protocol="org.apache.coyote.http11.Http11NioProtocol"
+maxThreads="150" SSLEnabled="true" scheme="https" secure="true"
+clientAuth="false" sslProtocol="TLS" keystorePass="tomcat" /> 
+--------------------------------------------------------------------------------------------------------
+-Xlint:{all, cast, deprecation, divzero, empty, unchecked, fallthrough, path, serial,
+finally, overrides, -cast, -deprecation, -divzero, -empty, -unchecked, -fallthrough,
+-path, -serial, -finally, -overrides, none} Enable or disable specific warnings
+--------------------------------------------------------------------------------------------------------
+ public static void main(String[] args) throws Exception {
+ Class<SimpleTest> myClass = SimpleTest.class;
+ if (myClass.isAnnotationPresent(RemoteObject.class)) {
+ System.out.println("It is a RemoteObject");
+ }
+ else {
+ System.out.println("It doesn't appear to be a RemoteObject!");
+ }
+ }
+--------------------------------------------------------------------------------------------------------
+import java.io.*;
+ import java.util.*;
+ public class Maze {
+ static int[][]G; //known to all methods
+ static int m, n, sr, sc; //known to all methods
+ public static void main(String[] args) throws IOException {
+ Scanner in = new Scanner(new FileReader("maze.in"));
+ PrintWriter out = new PrintWriter(new FileWriter("maze.out"));
+ getData(in);
+ if (findPath(sr, sc)) printMaze(out);
+ else out.printf("\nNo solution\n");
+ in.close(); out.close();
+ } // end main
+ public static void getData(Scanner in) {
+ m = in.nextInt(); n = in.nextInt();
+ G = new int[m+1][n+1];
+ sr = in.nextInt(); sc = in.nextInt();
+ for (int r = 1; r <= m; r++)
+ for (int c = 1; c <= n; c++)
+ G[r][c] = in.nextInt();
+ } //end getData
+ public static boolean findPath(int r, int c) {
+ if (r < 1 || r > m || c < 1 || c > n) return false;
+ if (G[r][c] == 1) return false; //into a wall
+ if (G[r][c] == 2) return false; //already considered
+ // else G[r][c] = 0;
+ G[r][c] = 2; //mark the path
+ if (r == 1 || r == m || c == 1 || c == n) return true;
+ //path found - space located on the border of the maze
+ if (findPath(r-1, c)) return true;
+ if (findPath(r, c+1)) return true;
+ if (findPath(r+1, c)) return true;
+ if (findPath(r, c-1)) return true;
+ G[r][c] = 0; //no path found; unmark
+ return false;
+ } //end findPath
+ public static void printMaze(PrintWriter out) {
+ int r, c;
+ for (r = 1; r <= m; r++) {
+ for (c = 1; c <= n; c++)
+ if (r == sr && c == sc) out.printf("S");
+ else if (G[r][c] == 0) out.printf(" ");
+ else if (G[r][c] == 1) out.printf("#");
+ else out.printf("x");
+ out.printf("\n");
+ }
+ } //end printMaze
+ } //end class Maze
+--------------------------------------------------------------------------------------------------------
 QBean<Parent> parentProjection = Projections.fields(Parent.class, QParent.parent.id);
 QBean<Child> childProjection = Projections.fields(Child.class, QChild.child.id);
 EnumPath<Hobby> hobbies = Expressions.enumPath(Hobby.class, "hobbies");

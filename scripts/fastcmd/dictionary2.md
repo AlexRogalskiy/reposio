@@ -17079,6 +17079,3317 @@ public class HawtioConfiguration {
     }
 }
 --------------------------------------------------------------------------------------------------------
+System.out.println(Comparator.comparingInt( (Student x) -> x.id)
+ .compare(s1, s2));
+--------------------------------------------------------------------------------------------------------
+    private static final class ArraySpliterator implements Spliterator<Integer> {
+        private final Integer[] array;
+        private int cursor;
+
+        public ArraySpliterator(final Integer... values) {
+            this.array = Arrays.copyOf(values, values.length);
+            this.cursor = 0;
+        }
+
+        @Override
+        public int characteristics() {
+            return SIZED | SUBSIZED | ORDERED | NONNULL;
+        }
+
+        @Override
+        public long estimateSize() {
+            return this.array.length;
+        }
+
+        @Override
+        public Spliterator<Integer> trySplit() {
+            final int midpoint = this.array.length / 2;
+            final Integer[] temp = new Integer[midpoint];
+            Integer[] temp2;
+            if (this.array.length % 2 > 0)
+                temp2 = new Integer[midpoint + 1];
+            else
+                temp2 = new Integer[midpoint];
+            for (int i = 0; i < midpoint; i++) {
+                temp[i] = this.array[i];
+            }
+            for (int i = midpoint; i < this.array.length; i++) {
+                temp2[i - midpoint] = this.array[i];
+            }
+            this.array = temp2;
+            return new ArraySpliterator(temp);
+        }
+
+        @Override
+        public boolean tryAdvance(final Consumer<? super Integer> action) {
+            boolean result = true;
+            action.accept(this.array[cursor]);
+            this.cursor++;
+            if (this.cursor >= this.array.length) {
+                result = false;
+            }
+            return result;
+        }
+    }
+	
+javadoc -d Documents -author *.java 
+
+javadoc -d Documents -private *.java
+--------------------------------------------------------------------------------------------------------
+import java.lang.reflect.Array;
+
+/**
+ * Collected methods which allow easy implementation of <code>hashCode</code>.
+ * Based on the recommendations of Effective Java, by Joshua Bloch.
+ * 
+ * Example use case:
+ * 
+ * <pre>
+ * public int hashCode()
+ * {
+ * 	int result = HashCodeUtil.SEED;
+ * 	// collect the contributions of various fields
+ * 	result = HashCodeUtil.hash(result, fPrimitive);
+ * 	result = HashCodeUtil.hash(result, fObject);
+ * 	result = HashCodeUtil.hash(result, fArray);
+ * 	return result;
+ * }
+ * </pre>
+ */
+public final class HashCodeUtil
+{
+	/**
+	 * An initial value for a <code>hashCode</code>, to which is added
+	 * contributions from fields. Using a non-zero value decreases collisions of
+	 * <code>hashCode</code> values.
+	 */
+	public static final int SEED = 23;
+
+	/**
+	 * booleans.
+	 */
+	public static int hash(int aSeed, boolean aBoolean)
+	{
+		return firstTerm(aSeed) + (aBoolean ? 1 : 0);
+	}
+
+	/**
+	 * chars.
+	 */
+	public static int hash(int aSeed, char aChar)
+	{
+		return firstTerm(aSeed) + (int) aChar;
+	}
+
+	/**
+	 * ints.
+	 */
+	public static int hash(int aSeed, int aInt)
+	{
+		/*
+		 * Implementation Note Note that byte and short are handled by this
+		 * method, through implicit conversion.
+		 */
+		return firstTerm(aSeed) + aInt;
+	}
+
+	/**
+	 * longs.
+	 */
+	public static int hash(int aSeed, long aLong)
+	{
+		return firstTerm(aSeed) + (int) (aLong ^ (aLong >>> 32));
+	}
+
+	/**
+	 * floats.
+	 */
+	public static int hash(int aSeed, float aFloat)
+	{
+		return hash(aSeed, Float.floatToIntBits(aFloat));
+	}
+
+	/**
+	 * doubles.
+	 */
+	public static int hash(int aSeed, double aDouble)
+	{
+		return hash(aSeed, Double.doubleToLongBits(aDouble));
+	}
+
+	/**
+	 * <code>aObject</code> is a possibly-null object field, and possibly an
+	 * array.
+	 * 
+	 * If <code>aObject</code> is an array, then each element may be a primitive
+	 * or a possibly-null object.
+	 */
+	public static int hash(int aSeed, Object aObject)
+	{
+		int result = aSeed;
+		if (aObject == null)
+		{
+			result = hash(result, 0);
+		}
+		else if (!isArray(aObject))
+		{
+			result = hash(result, aObject.hashCode());
+		}
+		else
+		{
+			int length = Array.getLength(aObject);
+			for (int idx = 0; idx < length; ++idx)
+			{
+				Object item = Array.get(aObject, idx);
+				// recursive call!
+				result = hash(result, item);
+			}
+		}
+		return result;
+	}
+
+	// / PRIVATE ///
+	private static final int fODD_PRIME_NUMBER = 31;
+
+	private static int firstTerm(int aSeed)
+	{
+		return fODD_PRIME_NUMBER * aSeed;
+	}
+
+	private static boolean isArray(Object aObject)
+	{
+		return aObject.getClass().isArray();
+	}
+}
+
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+/**
+ * <p>
+ * Represents a <code>Future</code> that's already completed. All methods
+ * return immediately. The result of the future is provided in this class'
+ * constructor.
+ * </p>
+ * 
+ * @author Borislav Iordanov
+ *
+ * @param <V>
+ */
+public class CompletedFuture<V> implements Future<V>
+{
+    private static final CompletedFuture<Object> null_instance = new CompletedFuture<Object>(null);
+    
+    @SuppressWarnings("unchecked")
+    public static <T> CompletedFuture<T> getNull() { return (CompletedFuture<T>)null_instance; }
+    
+    V result;
+    
+    public CompletedFuture(V result)
+    {
+        this.result = result;
+    }
+    
+    public boolean cancel(boolean mayInterruptIfRunning)
+    {
+        return false;
+    }
+
+    public V get() throws InterruptedException, ExecutionException
+    {
+        return result;
+    }
+
+    public V get(long timeout, TimeUnit unit) throws InterruptedException,
+            ExecutionException, TimeoutException
+    {
+        return result;
+    }
+    
+    public boolean isCancelled()
+    {
+        return false;
+    }
+
+    
+    public boolean isDone()
+    {
+        return true;
+    }
+}
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+/**
+ * 
+ * <p>
+ * An <code>CallbackFuture</code> offers the possibility to call back a registered
+ * listener when it is completed. To avoid taking up a thread and waiting for
+ * completion, this is accomplished by required the creator of the future
+ * to invoke the <code>completed</code> method when the result this 
+ * <code>Future</code> represents has been computed. 
+ * </p>
+ *
+ * <p>
+ * Only one listener can be registered for call back and it is of type
+ * Mapping<CallbackFuture<T>, T>. That is, a mapping that will receive
+ * the <code>CallbackFuture</code> itself as an argument and must return
+ * the result of the <code>Future</code>. Typically the mapping will
+ * just return the <code>CallbackFuture</code>'s own result by
+ * calling the <code>getResult</code>, but it may choose to assign a different 
+ * result. Note that blocking calls to <code>get</code> will not return
+ * until the registered listener (if any) returns, so the listener
+ * must rely on the provided <code>getResult</code> to obtain the 
+ * <code>Future</code>'s result value. 
+ * </p>
+ *
+ * <p>
+ * This class may be extended to provide semantics for cancellation. In this
+ * case the <code>cancel</code> method must be overridden and the 
+ * <code>canceled</code> flag must be set to <code>true</code> if cancellation
+ * was successful. 
+ * </p>
+ * 
+ * @author Borislav Iordanov
+ *
+ */
+public class CallbackFuture<T> implements Future<T>
+{
+    private CountDownLatch latch;	
+	private T result;
+	private Mapping<CallbackFuture<T>, T> listener;
+	protected volatile boolean canceled = false;
+	
+	public CallbackFuture()
+	{
+		latch = new CountDownLatch(1);
+	}	
+	public synchronized void setCompletionListener(Mapping<CallbackFuture<T>, T> listener)
+	{
+		this.listener = listener;
+	}
+	
+	public synchronized void complete(T result)
+	{
+		if (isDone())
+			throw new IllegalStateException("JobFuture completion attempted after it was done.");
+		this.result = result;
+		latch.countDown();
+		if (listener != null)
+			result = listener.eval(this);
+	}
+	
+	public T getResult()
+	{
+		return result;
+	}
+	
+	public boolean cancel(boolean mayInterruptIfRunning)
+	{
+		return false;
+	}
+
+	public T get() throws InterruptedException, ExecutionException
+	{
+		latch.await();
+		return result;
+	}
+
+	public T get(long timeout, TimeUnit unit) throws InterruptedException,
+			ExecutionException, TimeoutException
+	{
+		if (latch.await(timeout, unit))
+			return result;
+		else
+			return null;
+	}
+	
+	public boolean isCancelled()
+	{
+		return canceled;
+	}
+
+	public boolean isDone()
+	{
+		return latch.getCount() == 0 && !canceled;
+	}
+}
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+/**
+ * <p>
+ * An <code>AggregateFuture</code> encapsulates several <code>Future</code>
+ * into a single one. The result of an aggregate future is the list of 
+ * results of all its components in the order in which they were added.
+ * </p>
+ */
+public class AggregateFuture<T> implements Future<List<T>>
+{	
+	private List<Future<T>> components = new ArrayList<Future<T>>();
+
+    /**
+     * <p>
+     * Construct from a set of futures which is copied
+     * internally.
+     * </p>
+     */
+    public AggregateFuture(Future<T>...futures)
+    {
+        for (Future<T> f : futures)
+            components.add(f);
+    }
+    
+	/**
+	 * <p>
+	 * Construct from a non-null list of components which is copied
+	 * internally.
+	 * </p>
+	 */
+	public AggregateFuture(List<Future<T>> components)
+	{
+		this.components.addAll(components);
+	}
+	
+	/**
+	 * <p>Canceling an aggregate future succeeds only if canceling
+	 * all of its components succeeds. Note that during the process
+	 * some components may be canceled while others not which would
+	 * lead to an inconsistent state.</p>
+	 */
+	public boolean cancel(boolean mayInterruptIfRunning)
+	{
+		for (Future<T> f : components)
+			if (!f.cancel(mayInterruptIfRunning))
+				return false;
+		return true;
+	}
+
+	public List<T> get() throws InterruptedException, ExecutionException
+	{
+		List<T> value = new ArrayList<T>();
+		for (Future<T> f : components)
+			value.add(f.get());
+		return value;
+	}
+
+	public List<T> get(long timeout, TimeUnit unit) 
+		throws InterruptedException, ExecutionException, TimeoutException
+	{
+		List<T> value = new ArrayList<T>();
+		for (Future<T> f : components)
+			value.add(f.get(timeout, unit));
+		return value;
+	}
+
+	/**
+	 * An aggregate is canceled iff at least one of its components is canceled.
+	 */
+	public boolean isCancelled()
+	{
+		for (Future<T> f : components)
+			if (f.isCancelled())
+				return true;
+		return false;
+	}
+
+	/**
+	 * An aggregate is done iff all of its components are done.
+	 */
+	public boolean isDone()
+	{
+		for (Future<T> f : components)
+			if (!f.isDone())
+				return false;
+		return true;
+	}
+}
+--------------------------------------------------------------------------------------------------------
+/**
+ * <p>
+ * This class contains some utilities methods to read/write primitively typed values from/to
+ * a byte buffer.
+ * </p>
+ *  
+ * @author Borislav Iordanov
+ */
+public class BAUtils 
+{
+  public static long readLong(byte [] data, int offset)
+  {
+  	return readUnsignedLong(data, offset) ^ 0x8000000000000000L;
+  }
+  
+  private static long readUnsignedLong(byte [] data, int offset)
+  {
+    return (((long)(data[offset] & 255) << 56) +
+            ((long)(data[offset + 1] & 255) << 48) +
+            ((long)(data[offset + 2] & 255) << 40) +
+            ((long)(data[offset + 3] & 255) << 32) +
+            ((long)(data[offset + 4] & 255) << 24) +
+            ((long)(data[offset + 5] & 255) << 16) + 
+            ((long)(data[offset + 6] & 255) <<  8) + 
+            ((long)(data[offset + 7] & 255) <<  0)); 
+  }
+  
+
+  public static void writeLong(long v, byte [] data, int offset)
+  {
+    writeUnsignedLong(v ^ 0x8000000000000000L, data, offset);
+  }
+  
+  public static void writeUnsignedLong(long v, byte [] data, int offset)
+  {
+    data[offset] = (byte) ((v >>> 56)); 
+    data[offset + 1] = (byte) ((v >>> 48));
+    data[offset + 2] = (byte) ((v >>> 40)); 
+    data[offset + 3] = (byte) ((v >>> 32));
+    data[offset + 4] = (byte) ((v >>> 24)); 
+    data[offset + 5] = (byte) ((v >>> 16));
+    data[offset + 6] = (byte) ((v >>> 8)); 
+    data[offset + 7] = (byte) ((v >>> 0));
+  }
+    
+	public static int readInt(byte[] data, int offset)
+	{
+    return (int) (readUnsignedInt(data, offset) ^ 0x80000000);
+	}
+	
+	public static long readUnsignedInt(byte[] data, int offset)
+	{
+    long c1 = (data[offset] & 0xFF);
+    long c2 = (data[offset + 1] & 0xFF);
+    long c3 = (data[offset + 2] & 0xFF);
+    long c4 = (data[offset + 3] & 0xFF);
+    return ((c1 << 24) | (c2 << 16) | (c3 << 8) | c4);
+	}
+	
+	public static void writeInt(int val, byte[] data, int offset)
+	{
+    writeUnsignedInt(val ^ 0x80000000, data, offset);
+	}
+	
+	public static void writeUnsignedInt(long c, byte[] data, int offset)
+	{
+		data[offset + 0] = (byte) ((c >>> 24) & 0xFF);
+		data[offset + 1] = (byte) ((c >>> 16) & 0xFF);
+		data[offset + 2] = (byte) ((c >>> 8) & 0xFF);
+		data[offset + 3] = (byte) ((c >>> 0) & 0xFF);
+	}
+	
+	public static boolean eq(byte[] left, int leftPos, byte[] right, int rightPos, int size)
+	{
+		int i = leftPos, j = rightPos;
+		if (leftPos + size > left.length)
+			return false;
+		if (rightPos + size > right.length)
+			return false;
+		while (size > 0)
+		{
+			if (left[i++] != right[j++])
+				return false;
+			size--;
+		}
+		return true;
+	}
+	
+	public static int compare(byte[] left, int leftPos, byte[] right, int rightPos, int max)
+	{
+		int maxLeft = leftPos + max;
+		int maxRight = rightPos + max;
+		int i = leftPos;
+		int j = rightPos;
+		int comp = 0;
+		while (comp == 0 && i < maxLeft && j < maxRight)
+			comp = left[i++] - right[j++];
+		return comp;
+	}
+}
+--------------------------------------------------------------------------------------------------------
+
+import java.io.Serializable;
+
+/**
+ * <b>NOTE - code adapted from JUG libary (Copyright (c) 2002- Tatu Saloranta, tatu.saloranta@iki.fi)</b>. See
+ * http://jug.safehaus.org/.
+ *
+ * This code only support type 4 UUID - randomly generated ones. 
+ */
+
+public class UUID implements Serializable, Cloneable, Comparable<UUID>
+{
+	private final static long serialVersionUID = -1;
+	
+    private final static String kHexChars = "0123456789abcdefABCDEF";
+
+    public final static byte INDEX_CLOCK_HI = 6;
+    public final static byte INDEX_CLOCK_MID = 4;
+    public final static byte INDEX_CLOCK_LO = 0;
+
+    public final static byte INDEX_TYPE = 6;
+    // Clock seq. & variant are multiplexed...
+    public final static byte INDEX_CLOCK_SEQUENCE = 8;
+    public final static byte INDEX_VARIATION = 8;
+
+    public final static byte TYPE_NULL = 0;
+    public final static byte TYPE_TIME_BASED = 1;
+    public final static byte TYPE_DCE = 2; // Not used
+    public final static byte TYPE_NAME_BASED = 3;
+    public final static byte TYPE_RANDOM_BASED = 4;
+
+    /* 'Standard' namespaces defined (suggested) by UUID specs:
+     */
+    public final static String NAMESPACE_DNS = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
+    public final static String NAMESPACE_URL = "6ba7b811-9dad-11d1-80b4-00c04fd430c8";
+    public final static String NAMESPACE_OID = "6ba7b812-9dad-11d1-80b4-00c04fd430c8";
+    public final static String NAMESPACE_X500 = "6ba7b814-9dad-11d1-80b4-00c04fd430c8";
+
+    /**
+     * The shared null UUID. Would be nice to do lazy instantiation, but
+     * if the instance really has to be a singleton, that would mean
+     * class-level locking (synchronized getNullUUID()), which would
+     * be some overhead... So let's just bite the bullet the first time
+     * assuming creation of the null UUID (plus wasted space if it's
+     * not needed) can be ignored.
+     */
+    private final static UUID sNullUUID = new UUID();
+
+    final byte[] mId = new byte[16];
+    // Both string presentation and hash value may be cached...
+//    private transient String mDesc = null;
+    private transient int mHashCode = 0;
+
+    /* *** Object creation: *** */
+
+    /**
+     * Default constructor creates a NIL UUID, one that contains all
+     * zeroes
+     *
+     * Note that the clearing of array is actually unnecessary as
+     * JVMs are required to clear up the allocated arrays by default.
+     */
+    public UUID()
+    {
+        /*
+          for (int i = 0; i < 16; ++i) {
+          mId[i] = (byte)0;
+          }
+        */
+    }
+
+    /**
+     * Constructor for cases where you already have the 16-byte binary
+     * representation of the UUID (for example if you save UUIDs binary
+     * takes less than half of space string representation takes).
+     *
+     * @param data array that contains the binary representation of UUID
+     */
+    public UUID(byte[] data)
+    {
+        /* Could call the other constructor... and/or use System.arraycopy.
+         * However, it's likely that those would make this slower to use,
+         * and initialization is really simple as is in any case.
+         */
+        for (int i = 0; i < 16; ++i) {
+            mId[i] = data[i];
+        }
+    }
+
+    /**
+     * Constructor for cases where you already have the binary
+     * representation of the UUID (for example if you save UUIDs binary
+     * takes less than half of space string representation takes) in
+     * a byte array
+     *
+     * @param data array that contains the binary representation of UUID
+     * @param start byte offset where UUID starts
+     */
+    public UUID(byte[] data, int start)
+    {
+        for (int i = 0; i < 16; ++i) {
+            mId[i] = data[start + i];
+        }
+    }
+
+    /**
+     * Protected constructor used by UUIDGenerator
+     *
+     * @param type UUID type
+     * @param data 16 byte UUID contents
+     */
+    UUID(int type, byte[] data)
+    {
+        for (int i = 0; i < 16; ++i) {
+            mId[i] = data[i];
+        }
+        // Type is multiplexed with time_hi:
+        mId[INDEX_TYPE] &= (byte) 0x0F;
+        mId[INDEX_TYPE] |= (byte) (type << 4);
+        // Variant masks first two bits of the clock_seq_hi:
+        mId[INDEX_VARIATION] &= (byte) 0x3F;
+        mId[INDEX_VARIATION] |= (byte) 0x80;
+    }
+
+    /**
+     * Constructor for creating UUIDs from the canonical string
+     * representation
+     *
+     * Note that implementation is optimized for speed, not necessarily
+     * code clarity... Also, since what we get might not be 100% canonical
+     * (see below), let's not yet populate mDesc here.
+     *
+     * @param id String that contains the canonical representation of
+     *   the UUID to build; 36-char string (see UUID specs for details).
+     *   Hex-chars may be in upper-case too; UUID class will always output
+     *   them in lowercase.
+     */
+    public UUID(String id)
+        throws NumberFormatException
+    {
+        if (id == null) {
+            throw new NullPointerException();
+        }
+        if (id.length() != 36) {
+            throw new NumberFormatException("UUID has to be represented by the standard 36-char representation");
+        }
+
+        for (int i = 0, j = 0; i < 36; ++j) {
+            // Need to bypass hyphens:
+            switch (i) {
+            case 8:
+            case 13:
+            case 18:
+            case 23:
+                if (id.charAt(i) != '-') {
+                    throw new NumberFormatException("UUID has to be represented by the standard 36-char representation");
+                }
+                ++i;
+            }
+
+            char c = id.charAt(i);
+
+            if (c >= '0' && c <= '9') {
+                mId[j] = (byte) ((c - '0') << 4);
+            } else if (c >= 'a' && c <= 'f') {
+                mId[j] = (byte) ((c - 'a' + 10) << 4);
+            } else if (c >= 'A' && c <= 'F') {
+                mId[j] = (byte) ((c - 'A' + 10) << 4);
+            } else {
+                throw new NumberFormatException("Non-hex character '"+c+"'");
+            }
+
+            c = id.charAt(++i);
+
+            if (c >= '0' && c <= '9') {
+                mId[j] |= (byte) (c - '0');
+            } else if (c >= 'a' && c <= 'f') {
+                mId[j] |= (byte) (c - 'a' + 10);
+            } else if (c >= 'A' && c <= 'F') {
+                mId[j] |= (byte) (c - 'A' + 10);
+            } else {
+                throw new NumberFormatException("Non-hex character '"+c+"'");
+            }
+            ++i;
+        }
+    }
+
+    /**
+     * Default cloning behaviour (bitwise copy) is just fine...
+     *
+     * Could clear out cached string presentation, but there's
+     * probably no point in doing that.
+     */
+    public Object clone()
+    {
+        try {
+            return super.clone();
+        } catch (CloneNotSupportedException e) {
+            // shouldn't happen
+            return null;
+        }
+    }
+
+    /* *** Accessors: *** */
+
+    /**
+     * Accessor for getting the shared null UUID
+     *
+     * @return the shared null UUID
+     */
+    public static UUID getNullUUID()
+    {
+        return sNullUUID;
+    }
+
+    public boolean isNullUUID()
+    {
+        // Assuming null uuid is usually used for nulls:
+        if (this == sNullUUID) {
+            return true;
+        }
+        // Could also check hash code; null uuid has -1 as hash?
+        byte[] data = mId;
+        int i = mId.length;
+        byte zero = (byte) 0;
+        while (--i >= 0) {
+            if (data[i] != zero) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Returns the UUID type code
+     *
+     * @return UUID type
+     */
+    public int getType()
+    {
+        return (mId[INDEX_TYPE] & 0xFF) >> 4;
+    }
+
+    /**
+     * Returns the UUID as a 16-byte byte array
+     *
+     * @return 16-byte byte array that contains UUID bytes in the network
+     *   byte order
+     */
+    public byte[] asByteArray()
+    {
+        byte[] result = new byte[16];
+        toByteArray(result);
+        return result;
+    }
+
+    /**
+     * Fills in the 16 bytes (from index pos) of the specified byte array
+     * with the UUID contents.
+     *
+     * @param dst Byte array to fill
+     * @param pos Offset in the array
+     */
+    public void toByteArray(byte[] dst, int pos)
+    {
+        byte[] src = mId;
+        for (int i = 0; i < 16; ++i) {
+            dst[pos+i] = src[i];
+        }
+    }
+
+    public void toByteArray(byte[] dst) { toByteArray(dst, 0); }
+
+    /**
+     * 'Synonym' for 'asByteArray'
+     */
+    public byte[] toByteArray() { return asByteArray(); }
+    
+    /* *** Standard methods from Object overridden: *** */
+
+    /**
+     * Could use just the default hash code, but we can probably create
+     * a better identity hash (ie. same contents generate same hash)
+     * manually, without sacrificing speed too much. Although multiplications
+     * with modulos would generate better hashing, let's use just shifts,
+     * and do 2 bytes at a time.
+     *<p>
+     * Of course, assuming UUIDs are randomized enough, even simpler
+     * approach might be good enough?
+     *<p>
+     * Is this a good hash? ... one of these days I better read more about
+     * basic hashing techniques I swear!
+     */
+    private final static int[] kShifts = {
+        3, 7, 17, 21, 29, 4, 9
+    };
+
+    public int hashCode()
+    {
+        if (mHashCode == 0) {
+            // Let's handle first and last byte separately:
+            int result = mId[0] & 0xFF;
+	    
+            result |= (result << 16);
+            result |= (result << 8);
+	    
+            for (int i = 1; i < 15; i += 2) {
+                int curr = (mId[i] & 0xFF) << 8 | (mId[i+1] & 0xFF);
+                int shift = kShifts[i >> 1];
+		
+                if (shift > 16) {
+                    result ^= (curr << shift) | (curr >>> (32 - shift));
+                } else {
+                    result ^= (curr << shift);
+                }
+            }
+
+            // and then the last byte:
+            int last = mId[15] & 0xFF;
+            result ^= (last << 3);
+            result ^= (last << 13);
+
+            result ^= (last << 27);
+            // Let's not accept hash 0 as it indicates 'not hashed yet':
+            if (result == 0) {
+                mHashCode = -1;
+            } else {
+                mHashCode = result;
+            }
+        }
+        return mHashCode;
+    }
+
+    public String toString()
+    {    	
+    	StringBuffer b = new StringBuffer(36);
+	    for (int i = 0; i < 16; ++i) 
+	    {
+            // Need to bypass hyphens:
+            switch (i) 
+            {
+	            case 4:
+	            case 6:
+	            case 8:
+	            case 10:
+	                b.append('-');
+	        }
+            int hex = mId[i] & 0xFF;
+            b.append(kHexChars.charAt(hex >> 4));
+            b.append(kHexChars.charAt(hex & 0x0f));
+        }
+	    return b.toString();
+    }
+
+    public int compareTo(UUID o)
+    {
+        UUID other = (UUID) o;
+        byte[] thisId = mId;
+        byte[] thatId = other.mId;
+        for (int i = 0; i < 16; ++i) {
+            int cmp = (((int) thisId[i]) & 0xFF) - (((int) thatId[i]) & 0xFF);
+            if (cmp != 0) {
+                return cmp;
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * Checking equality of UUIDs is easy; just compare the 128-bit
+     * number.
+     */
+    public boolean equals(Object o)
+    {
+        if (!(o instanceof UUID)) {
+            return false;
+        }
+        byte[] otherId = ((UUID) o).mId;
+        byte[] thisId = mId;
+        for (int i = 0; i < 16; ++i) {
+            if (otherId[i] != thisId[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Constructs a new UUID instance given the canonical string
+     * representation of an UUID.
+     *
+     * Note that calling this method returns the same result as would
+     * using the matching (1 string arg) constructor.
+     *
+     * @param id Canonical string representation used for constructing
+     *  an UUID instance
+     *
+     * @throws NumberFormatException if 'id' is invalid UUID
+     */
+    public static UUID valueOf(String id)
+        throws NumberFormatException
+    {
+        return new UUID(id);
+    }
+
+    /**
+     * Constructs a new UUID instance given a byte array that contains
+     * the (16 byte) binary representation.
+     *
+     * Note that calling this method returns the same result as would
+     * using the matching constructor
+     *
+     * @param src Byte array that contains the UUID definition
+     * @param start Offset in the array where the UUID starts
+     */
+    public static UUID valueOf(byte[] src, int start)
+    {
+        return new UUID(src, start);
+    }
+
+    /**
+     * Constructs a new UUID instance given a byte array that contains
+     * the (16 byte) binary representation.
+     *
+     * Note that calling this method returns the same result as would
+     * using the matching constructor
+     *
+     * @param src Byte array that contains the UUID definition
+     */
+    public static UUID valueOf(byte[] src)
+    {
+        return new UUID(src);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.hypergraphdb.HGPersistentHandle;
+import org.hypergraphdb.HGRandomAccessResult;
+import org.hypergraphdb.HGSearchResult;
+import org.hypergraphdb.storage.BAUtils;
+import org.hypergraphdb.storage.BAtoString;
+import org.hypergraphdb.storage.ByteArrayConverter;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
+
+/**
+ * @author Yuriy Sechko
+ */
+public class TestUtils
+{
+	/**
+	 * Creates list which contains given items.
+	 * <p/>
+	 * Items in the list appear in the same order as in parameters. More items
+	 * can be added to the list later.
+	 * <p/>
+	 * Usage scenario of this method:
+	 *
+	 * <pre>
+	 * {@code
+	 * List<Integer> list = list(1, 2, 3); // we have list with 3 items here }
+	 * </pre>
+	 *
+	 * @param items
+	 *            items of the list
+	 * @param <T>
+	 *            type of the items in the list
+	 */
+	public static <T> List<T> list(final T... items)
+	{
+		return new ArrayList<T>(Arrays.asList(items));
+	}
+
+	/**
+	 * Deletes directory's content and then deletes directory itself. Deleting
+	 * is not recursive.
+	 *
+	 * @param directory
+	 */
+	public static void deleteDirectory(final File directory)
+	{
+		final File[] filesInTestDir = directory.listFiles();
+		if (filesInTestDir != null)
+		{
+			for (final File eachFile : filesInTestDir)
+			{
+				eachFile.delete();
+			}
+		}
+		directory.delete();
+	}
+
+	/**
+	 * Iterates through result and copies encountered items to the list.
+	 */
+	public static <T> List<T> list(final HGSearchResult<T> result)
+	{
+		final List<T> outputList = new ArrayList<T>();
+		while (result.hasNext())
+		{
+			final T currentValue = result.next();
+			outputList.add(currentValue);
+		}
+		return outputList;
+	}
+
+	/**
+	 * Iterates through result and copies encountered items to the list.
+	 */
+	public static <T> List<T> listAndClose(final HGSearchResult<T> result)
+	{
+		final List<T> outputList = new ArrayList<T>();
+		while (result.hasNext())
+		{
+			final T currentValue = result.next();
+			outputList.add(currentValue);
+		}
+		result.close();
+		return outputList;
+	}
+
+	/**
+	 * Puts all handles which are accessible from given result set into hash
+	 * set. In some test cases stored data returned as
+	 * {@link HGRandomAccessResult}. Two results cannot be compared directly. So
+	 * we put all handles into set and that compare two sets. The order of
+	 * handles in result set (obtained from database) is difficult to predict.
+	 */
+	public static Set<HGPersistentHandle> set(
+			final HGRandomAccessResult<HGPersistentHandle> handles)
+	{
+		final Set<HGPersistentHandle> allHandles = new HashSet<HGPersistentHandle>();
+		while (handles.hasNext())
+		{
+			allHandles.add(handles.next());
+		}
+		return allHandles;
+	}
+
+	/**
+	 * Creates temporary file with given prefix and suffix.
+	 *
+	 * @return link to the created file instance
+	 */
+	public static File createTempFile(final String prefix, final String suffix)
+	{
+		File tempFile;
+		try
+		{
+			tempFile = File.createTempFile(prefix, suffix);
+		}
+		catch (IOException ioException)
+		{
+			throw new IllegalStateException(ioException);
+		}
+		return tempFile;
+	}
+
+	/**
+	 * Shortcut for the {@link java.io.File#getCanonicalPath()}. But throws
+	 * {@link java.lang.IllegalStateException } if something went wrong.
+	 *
+	 * @return
+	 */
+	public static String getCanonicalPath(final File file)
+	{
+		String canonicalPath;
+		try
+		{
+			canonicalPath = file.getCanonicalPath();
+		}
+		catch (IOException ioException)
+		{
+			throw new IllegalStateException(ioException);
+		}
+		return canonicalPath;
+	}
+
+	/**
+	 * Converts from Integer number to appropriate byte array (in terms of
+	 * HyperGraphDB)
+	 */
+	public static class ByteArrayConverterForInteger implements
+			ByteArrayConverter<Integer>
+	{
+		public byte[] toByteArray(final Integer input)
+		{
+			final byte[] buffer = new byte[4];
+			BAUtils.writeInt(input, buffer, 0);
+			return buffer;
+		}
+
+		public Integer fromByteArray(final byte[] byteArray, final int offset,
+				final int length)
+		{
+			return BAUtils.readInt(byteArray, 0);
+		}
+	}
+
+	/**
+	 * Converts from String object number to appropriate byte array (in terms of
+	 * HyperGraphDB)
+	 */
+	public static class ByteArrayConverterForString implements
+			ByteArrayConverter<String>
+	{
+		public byte[] toByteArray(final String input)
+		{
+			return BAtoString.getInstance().toByteArray(input);
+		}
+
+		public String fromByteArray(final byte[] byteArray, final int offset,
+				final int length)
+		{
+			return BAtoString.getInstance().fromByteArray(byteArray, offset,
+					length);
+		}
+	}
+
+	// TODO: investigate how to compare messages but don't take Sleepycat's
+	// TODO: library version into account
+	/**
+	 * Compares two instances which represent exceptions by:
+	 * <ul>
+	 * <li>by object's class</li>
+	 * <li>by message</li>
+	 * </ul>
+	 *
+	 * TestNG assertion are in use.
+	 */
+	public static void assertExceptions(final Exception occurred,
+			final Exception expected)
+	{
+		assertEquals(occurred.getClass(), expected.getClass());
+		assertEquals(occurred.getMessage(), expected.getMessage());
+	}
+
+	/**
+	 * Verifies that given exception is an instance of certain class. Also
+	 * verifies that exception contains all specified strings in its message.
+	 * 
+	 * @param occurred
+	 *            exception to be verified
+	 * @param expectedClass
+	 *            expected class name
+	 * @param expectedMessageParts
+	 *            strings than should be contained in the exception's message
+	 */
+	public static void assertExceptions(final Exception occurred,
+			final Class expectedClass, final String... expectedMessageParts)
+	{
+		assertEquals(occurred.getClass(), expectedClass);
+		final String actualMessage = occurred.getMessage();
+		final List<String> parts = Arrays.asList(expectedMessageParts);
+		for (final String currentPart : parts)
+			assertTrue(actualMessage.contains(currentPart), String.format(
+					"Actual exception's message [%s] does not contain [%s] text.",
+					actualMessage, currentPart));
+	}
+
+	/**
+	 * Returns array like [1..N][1] composed from given [1..N] list.
+	 * <p>
+	 * 2D arrays used for providing parameters in test cases written with
+	 * TestNG.
+	 */
+	public static Object[][] like2DArray(final Class... clazz)
+	{
+		final int totalItems = clazz.length;
+		final Object[][] objects = new Object[totalItems][1];
+		for (int i = 0; i < totalItems; i++)
+		{
+			objects[i][0] = clazz[i];
+		}
+		return objects;
+	}
+}
+public class RandomStringUtils {
+
+    /**
+     * <p>Random object used by random method. This has to be not local
+     * to the random method so as to not return the same value in the 
+     * same millisecond.</p>
+     */
+    private static final Random RANDOM = new Random();
+
+    /**
+     * <p><code>RandomStringUtils</code> instances should NOT be constructed in
+     * standard programming. Instead, the class should be used as
+     * <code>RandomStringUtils.random(5);</code>.</p>
+     *
+     * <p>This constructor is public to permit tools that require a JavaBean instance
+     * to operate.</p>
+     */
+    public RandomStringUtils() {
+        super ();
+    }
+
+    // Random
+    //-----------------------------------------------------------------------
+    /**
+     * <p>Creates a random string whose length is the number of characters
+     * specified.</p>
+     *
+     * <p>Characters will be chosen from the set of all characters.</p>
+     *
+     * @param count  the length of random string to create
+     * @return the random string
+     */
+    public static String random(int count) {
+        return random(count, false, false);
+    }
+
+    /**
+     * <p>Creates a random string whose length is the number of characters
+     * specified.</p>
+     *
+     * <p>Characters will be chosen from the set of characters whose
+     * ASCII value is between <code>32</code> and <code>126</code> (inclusive).</p>
+     *
+     * @param count  the length of random string to create
+     * @return the random string
+     */
+    public static String randomAscii(int count) {
+        return random(count, 32, 127, false, false);
+    }
+
+    /**
+     * <p>Creates a random string whose length is the number of characters
+     * specified.</p>
+     *
+     * <p>Characters will be chosen from the set of alphabetic
+     * characters.</p>
+     *
+     * @param count  the length of random string to create
+     * @return the random string
+     */
+    public static String randomAlphabetic(int count) {
+        return random(count, true, false);
+    }
+
+    /**
+     * <p>Creates a random string whose length is the number of characters
+     * specified.</p>
+     *
+     * <p>Characters will be chosen from the set of alpha-numeric
+     * characters.</p>
+     *
+     * @param count  the length of random string to create
+     * @return the random string
+     */
+    public static String randomAlphanumeric(int count) {
+        return random(count, true, true);
+    }
+
+    /**
+     * <p>Creates a random string whose length is the number of characters
+     * specified.</p>
+     *
+     * <p>Characters will be chosen from the set of numeric
+     * characters.</p>
+     *
+     * @param count  the length of random string to create
+     * @return the random string
+     */
+    public static String randomNumeric(int count) {
+        return random(count, false, true);
+    }
+
+    /**
+     * <p>Creates a random string whose length is the number of characters
+     * specified.</p>
+     *
+     * <p>Characters will be chosen from the set of alpha-numeric
+     * characters as indicated by the arguments.</p>
+     *
+     * @param count  the length of random string to create
+     * @param letters  if <code>true</code>, generated string will include
+     *  alphabetic characters
+     * @param numbers  if <code>true</code>, generated string will include
+     *  numeric characters
+     * @return the random string
+     */
+    public static String random(int count, boolean letters,
+            boolean numbers) {
+        return random(count, 0, 0, letters, numbers);
+    }
+
+    /**
+     * <p>Creates a random string whose length is the number of characters
+     * specified.</p>
+     *
+     * <p>Characters will be chosen from the set of alpha-numeric
+     * characters as indicated by the arguments.</p>
+     *
+     * @param count  the length of random string to create
+     * @param start  the position in set of chars to start at
+     * @param end  the position in set of chars to end before
+     * @param letters  if <code>true</code>, generated string will include
+     *  alphabetic characters
+     * @param numbers  if <code>true</code>, generated string will include
+     *  numeric characters
+     * @return the random string
+     */
+    public static String random(int count, int start, int end,
+            boolean letters, boolean numbers) {
+        return random(count, start, end, letters, numbers, null, RANDOM);
+    }
+
+    /**
+     * <p>Creates a random string based on a variety of options, using
+     * default source of randomness.</p>
+     *
+     * <p>This method has exactly the same semantics as
+     * {@link #random(int,int,int,boolean,boolean,char[],Random)}, but
+     * instead of using an externally supplied source of randomness, it uses
+     * the internal static {@link Random} instance.</p>
+     *
+     * @param count  the length of random string to create
+     * @param start  the position in set of chars to start at
+     * @param end  the position in set of chars to end before
+     * @param letters  only allow letters?
+     * @param numbers  only allow numbers?
+     * @param chars  the set of chars to choose randoms from.
+     *  If <code>null</code>, then it will use the set of all chars.
+     * @return the random string
+     * @throws ArrayIndexOutOfBoundsException if there are not
+     *  <code>(end - start) + 1</code> characters in the set array.
+     */
+    public static String random(int count, int start, int end,
+            boolean letters, boolean numbers, char[] chars) {
+        return random(count, start, end, letters, numbers, chars,
+                RANDOM);
+    }
+
+    /**
+     * <p>Creates a random string based on a variety of options, using
+     * supplied source of randomness.</p>
+     *
+     * <p>If start and end are both <code>0</code>, start and end are set
+     * to <code>' '</code> and <code>'z'</code>, the ASCII printable
+     * characters, will be used, unless letters and numbers are both
+     * <code>false</code>, in which case, start and end are set to
+     * <code>0</code> and <code>Integer.MAX_VALUE</code>.
+     *
+     * <p>If set is not <code>null</code>, characters between start and
+     * end are chosen.</p>
+     *
+     * <p>This method accepts a user-supplied {@link Random}
+     * instance to use as a source of randomness. By seeding a single 
+     * {@link Random} instance with a fixed seed and using it for each call,
+     * the same random sequence of strings can be generated repeatedly
+     * and predictably.</p>
+     *
+     * @param count  the length of random string to create
+     * @param start  the position in set of chars to start at
+     * @param end  the position in set of chars to end before
+     * @param letters  only allow letters?
+     * @param numbers  only allow numbers?
+     * @param chars  the set of chars to choose randoms from.
+     *  If <code>null</code>, then it will use the set of all chars.
+     * @param random  a source of randomness.
+     * @return the random string
+     * @throws ArrayIndexOutOfBoundsException if there are not
+     *  <code>(end - start) + 1</code> characters in the set array.
+     * @throws IllegalArgumentException if <code>count</code> &lt; 0.
+     * @since 2.0
+     */
+    public static String random(int count, int start, int end,
+            boolean letters, boolean numbers, char[] chars,
+            Random random) {
+        if (count == 0) {
+            return "";
+        } else if (count < 0) {
+            throw new IllegalArgumentException(
+                    "Requested random string length " + count
+                            + " is less than 0.");
+        }
+        if ((start == 0) && (end == 0)) {
+            end = 'z' + 1;
+            start = ' ';
+            if (!letters && !numbers) {
+                start = 0;
+                end = Integer.MAX_VALUE;
+            }
+        }
+
+        char[] buffer = new char[count];
+        int gap = end - start;
+
+        while (count-- != 0) {
+            char ch;
+            if (chars == null) {
+                ch = (char) (random.nextInt(gap) + start);
+            } else {
+                ch = chars[random.nextInt(gap) + start];
+            }
+            if ((letters && Character.isLetter(ch))
+                    || (numbers && Character.isDigit(ch))
+                    || (!letters && !numbers)) {
+                if (ch >= 56320 && ch <= 57343) {
+                    if (count == 0) {
+                        count++;
+                    } else {
+                        // low surrogate, insert high surrogate after putting it in
+                        buffer[count] = ch;
+                        count--;
+                        buffer[count] = (char) (55296 + random
+                                .nextInt(128));
+                    }
+                } else if (ch >= 55296 && ch <= 56191) {
+                    if (count == 0) {
+                        count++;
+                    } else {
+                        // high surrogate, insert low surrogate before putting it in
+                        buffer[count] = (char) (56320 + random
+                                .nextInt(128));
+                        count--;
+                        buffer[count] = ch;
+                    }
+                } else if (ch >= 56192 && ch <= 56319) {
+                    // private high surrogate, no effing clue, so skip it
+                    count++;
+                } else {
+                    buffer[count] = ch;
+                }
+            } else {
+                count++;
+            }
+        }
+        return new String(buffer);
+    }
+
+    /**
+     * <p>Creates a random string whose length is the number of characters
+     * specified.</p>
+     *
+     * <p>Characters will be chosen from the set of characters
+     * specified.</p>
+     *
+     * @param count  the length of random string to create
+     * @param chars  the String containing the set of characters to use,
+     *  may be null
+     * @return the random string
+     * @throws IllegalArgumentException if <code>count</code> &lt; 0.
+     */
+    public static String random(int count, String chars) {
+        if (chars == null) {
+            return random(count, 0, 0, false, false, null, RANDOM);
+        }
+        return random(count, chars.toCharArray());
+    }
+
+    /**
+     * <p>Creates a random string whose length is the number of characters
+     * specified.</p>
+     *
+     * <p>Characters will be chosen from the set of characters specified.</p>
+     *
+     * @param count  the length of random string to create
+     * @param chars  the character array containing the set of characters to use,
+     *  may be null
+     * @return the random string
+     * @throws IllegalArgumentException if <code>count</code> &lt; 0.
+     */
+    public static String random(int count, char[] chars) {
+        if (chars == null) {
+            return random(count, 0, 0, false, false, null, RANDOM);
+        }
+        return random(count, 0, chars.length, false, false, chars,
+                RANDOM);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+  interface MyList<T> {
+
+    T head();
+
+    MyList<T> tail();
+
+    default boolean isEmpty() {
+      return true;
+    }
+
+    MyList<T> filter(Predicate<T> p);
+
+  }
+
+  static class MyLinkedList<T> implements MyList<T> {
+
+    final T head;
+    final MyList<T> tail;
+
+    public MyLinkedList(T head, MyList<T> tail) {
+      this.head = head;
+      this.tail = tail;
+    }
+
+    @Override
+    public T head() {
+      return head;
+    }
+
+    @Override
+    public MyList<T> tail() {
+      return tail;
+    }
+
+    @Override
+    public boolean isEmpty() {
+      return false;
+    }
+
+    @Override
+    public MyList<T> filter(Predicate<T> p) {
+      return isEmpty() ? this : p.test(head()) ? new MyLinkedList<>(head(), tail().filter(p)) : tail().filter(p);
+    }
+
+  }
+
+  static class Empty<T> implements MyList<T> {
+
+    @Override
+    public T head() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public MyList<T> tail() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public MyList<T> filter(Predicate<T> p) {
+      return this;
+    }
+
+  }
+
+  static class LazyList<T> implements MyList<T> {
+
+    final T head;
+    final Supplier<MyList<T>> tail;
+
+    public LazyList(T head, Supplier<MyList<T>> tail) {
+      this.head = head;
+      this.tail = tail;
+    }
+
+    @Override
+    public T head() {
+      return head;
+    }
+
+    @Override
+    public MyList<T> tail() {
+      return tail.get();
+    }
+
+    @Override
+    public boolean isEmpty() {
+      return false;
+    }
+
+    @Override
+    public MyList<T> filter(Predicate<T> p) {
+      return isEmpty() ? this : p.test(head()) ? new LazyList<>(head(), () -> tail().filter(p)) : tail().filter(p);
+    }
+
+  }
+
+  public static LazyList<Integer> from(int n) {
+    return new LazyList<Integer>(n, () -> from(n + 1));
+  }
+
+  public static MyList<Integer> primes(MyList<Integer> numbers) {
+    return new LazyList<>(numbers.head(), () -> primes(numbers.tail().filter(n -> n % numbers.head() != 0)));
+  }
+
+  static <T> void printAll(MyList<T> numbers) {
+    if (numbers.isEmpty()) {
+      return;
+    }
+    System.out.println(numbers.head());
+    printAll(numbers.tail());
+  }
+
+}
+
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+public class MyMathUtils {
+
+  public static void main(String[] args) {
+    System.out.println(primes(25).map(String::valueOf).collect(Collectors.joining(", ")));
+  }
+
+  public static Stream<Integer> primes(int n) {
+    return Stream.iterate(2, i -> i + 1)
+        .filter(MyMathUtils::isPrime)
+        .limit(n);
+  }
+
+  public static boolean isPrime(int candidate) {
+    int candidateRoot = (int) Math.sqrt(candidate);
+    return IntStream.rangeClosed(2, candidateRoot)
+        .noneMatch(i -> candidate % i == 0);
+  }
+
+}
+
+
+--------------------------------------------------------------------------------------------------------
+  public static void main(String[] args) {
+    System.out.println(repeat(3, (Integer x) -> 2 * x).apply(10));
+  }
+
+  static <A, B, C> Function<A, C> compose(Function<B, C> g, Function<A, B> f) {
+    return x -> g.apply(f.apply(x));
+  }
+
+  static <A> Function<A, A> repeat(int n, Function<A, A> f) {
+    return n == 0 ? x -> x : compose(f, repeat(n - 1, f));
+  }
+
+--------------------------------------------------------------------------------------------------------
+
+public class PatternMatching {
+
+  public static void main(String[] args) {
+    simplify();
+
+    Expr e = new BinOp("+", new Number(5), new BinOp("*", new Number(3), new Number(4)));
+    Integer result = evaluate(e);
+    System.out.println(e + " = " + result);
+  }
+
+  private static void simplify() {
+    TriFunction<String, Expr, Expr, Expr> binopcase = (opname, left, right) -> {
+      if ("+".equals(opname)) {
+        if (left instanceof Number && ((Number) left).val == 0) {
+          return right;
+        }
+        if (right instanceof Number && ((Number) right).val == 0) {
+          return left;
+        }
+      }
+      if ("*".equals(opname)) {
+        if (left instanceof Number && ((Number) left).val == 1) {
+          return right;
+        }
+        if (right instanceof Number && ((Number) right).val == 1) {
+          return left;
+        }
+      }
+      return new BinOp(opname, left, right);
+    };
+    Function<Integer, Expr> numcase = val -> new Number(val);
+    Supplier<Expr> defaultcase = () -> new Number(0);
+
+    Expr e = new BinOp("+", new Number(5), new Number(0));
+    Expr match = patternMatchExpr(e, binopcase, numcase, defaultcase);
+    if (match instanceof Number) {
+      System.out.println("Number: " + match);
+    }
+    else if (match instanceof BinOp) {
+      System.out.println("BinOp: " + match);
+    }
+  }
+
+  private static Integer evaluate(Expr e) {
+    Function<Integer, Integer> numcase = val -> val;
+    Supplier<Integer> defaultcase = () -> 0;
+    TriFunction<String, Expr, Expr, Integer> binopcase = (opname, left, right) -> {
+      if ("+".equals(opname)) {
+        if (left instanceof Number && right instanceof Number) {
+          return ((Number) left).val + ((Number) right).val;
+        }
+        if (right instanceof Number && left instanceof BinOp) {
+          return ((Number) right).val + evaluate(left);
+        }
+        if (left instanceof Number && right instanceof BinOp) {
+          return ((Number) left).val + evaluate(right);
+        }
+        if (left instanceof BinOp && right instanceof BinOp) {
+          return evaluate(left) + evaluate(right);
+        }
+      }
+      if ("*".equals(opname)) {
+        if (left instanceof Number && right instanceof Number) {
+          return ((Number) left).val * ((Number) right).val;
+        }
+        if (right instanceof Number && left instanceof BinOp) {
+          return ((Number) right).val * evaluate(left);
+        }
+        if (left instanceof Number && right instanceof BinOp) {
+          return ((Number) left).val * evaluate(right);
+        }
+        if (left instanceof BinOp && right instanceof BinOp) {
+          return evaluate(left) * evaluate(right);
+        }
+      }
+      return defaultcase.get();
+    };
+
+    return patternMatchExpr(e, binopcase, numcase, defaultcase);
+  }
+
+  static class Expr {}
+
+  static class Number extends Expr {
+
+    int val;
+
+    public Number(int val) {
+      this.val = val;
+    }
+
+    @Override
+    public String toString() {
+      return "" + val;
+    }
+
+  }
+
+  static class BinOp extends Expr {
+
+    String opname;
+    Expr left, right;
+
+    public BinOp(String opname, Expr left, Expr right) {
+      this.opname = opname;
+      this.left = left;
+      this.right = right;
+    }
+
+    @Override
+    public String toString() {
+      return "(" + left + " " + opname + " " + right + ")";
+    }
+
+  }
+
+  static <T> T MyIf(boolean b, Supplier<T> truecase, Supplier<T> falsecase) {
+    return b ? truecase.get() : falsecase.get();
+  }
+
+  static interface TriFunction<S, T, U, R> {
+    R apply(S s, T t, U u);
+  }
+
+  static <T> T patternMatchExpr(Expr e, TriFunction<String, Expr, Expr, T> binopcase, Function<Integer, T> numcase, Supplier<T> defaultcase) {
+    if (e instanceof BinOp) {
+      return binopcase.apply(((BinOp) e).opname, ((BinOp) e).left, ((BinOp) e).right);
+    }
+    else if (e instanceof Number) {
+      return numcase.apply(((Number) e).val);
+    }
+    else {
+      return defaultcase.get();
+    }
+  }
+
+}
+--------------------------------------------------------------------------------------------------------
+public class PersistentTree {
+
+  public static void main(String[] args) {
+    Tree t = new Tree("Mary", 22,
+        new Tree("Emily", 20,
+            new Tree("Alan", 50, null, null),
+            new Tree("Georgie", 23, null, null)
+        ),
+        new Tree("Tian", 29,
+            new Tree("Raoul", 23, null, null),
+            null
+        )
+    );
+
+    // found = 23
+    System.out.printf("Raoul: %d%n", lookup("Raoul", -1, t));
+    // not found = -1
+    System.out.printf("Jeff: %d%n", lookup("Jeff", -1, t));
+
+    Tree f = fupdate("Jeff", 80, t);
+    // found = 80
+    System.out.printf("Jeff: %d%n", lookup("Jeff", -1, f));
+
+    Tree u = update("Jim", 40, t);
+    // t was not altered by fupdate, so Jeff is not found = -1
+    System.out.printf("Jeff: %d%n", lookup("Jeff", -1, u));
+    // found = 40
+    System.out.printf("Jim: %d%n", lookup("Jim", -1, u));
+
+    Tree f2 = fupdate("Jeff", 80, t);
+    // found = 80
+    System.out.printf("Jeff: %d%n", lookup("Jeff", -1, f2));
+    // f2 built from t altered by update() above, so Jim is still present = 40
+    System.out.printf("Jim: %d%n", lookup("Jim", -1, f2));
+  }
+
+  static class Tree {
+
+    private String key;
+    private int val;
+    private Tree left, right;
+
+    public Tree(String k, int v, Tree l, Tree r) {
+      key = k;
+      val = v;
+      left = l;
+      right = r;
+    }
+
+  }
+
+  public static int lookup(String k, int defaultval, Tree t) {
+    if (t == null) {
+      return defaultval;
+    }
+    if (k.equals(t.key)) {
+      return t.val;
+    }
+    return lookup(k, defaultval, k.compareTo(t.key) < 0 ? t.left : t.right);
+  }
+
+  public static Tree update(String k, int newval, Tree t) {
+    if (t == null) {
+      t = new Tree(k, newval, null, null);
+    }
+    else if (k.equals(t.key)) {
+      t.val = newval;
+    }
+    else if (k.compareTo(t.key) < 0) {
+      t.left = update(k, newval, t.left);
+    }
+    else {
+      t.right = update(k, newval, t.right);
+    }
+    return t;
+  }
+
+  public static Tree fupdate(String k, int newval, Tree t) {
+    return (t == null) ?
+        new Tree(k, newval, null, null) :
+        k.equals(t.key) ?
+            new Tree(k, newval, t.left, t.right) :
+            k.compareTo(t.key) < 0 ?
+                new Tree(t.key, t.val, fupdate(k,newval, t.left), t.right) :
+                new Tree(t.key, t.val, t.left, fupdate(k,newval, t.right));
+  }
+
+}
+--------------------------------------------------------------------------------------------------------
+    DateTimeFormatter complexFormatter = new DateTimeFormatterBuilder()
+        .appendText(ChronoField.DAY_OF_MONTH)
+        .appendLiteral(". ")
+        .appendText(ChronoField.MONTH_OF_YEAR)
+        .appendLiteral(" ")
+        .appendText(ChronoField.YEAR)
+        .parseCaseInsensitive()
+        .toFormatter(Locale.ITALIAN);
+--------------------------------------------------------------------------------------------------------
+import static java.util.stream.Collector.Characteristics.IDENTITY_FINISH;
+import static java.util.stream.Collectors.partitioningBy;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+public class PartitionPrimeNumbers {
+
+  public static void main(String ... args) {
+    System.out.println("Numbers partitioned in prime and non-prime: " + partitionPrimes(100));
+    System.out.println("Numbers partitioned in prime and non-prime: " + partitionPrimesWithCustomCollector(100));
+  }
+
+  public static Map<Boolean, List<Integer>> partitionPrimes(int n) {
+    return IntStream.rangeClosed(2, n).boxed()
+        .collect(partitioningBy(candidate -> isPrime(candidate)));
+  }
+
+  public static boolean isPrime(int candidate) {
+    return IntStream.rangeClosed(2, candidate-1)
+        .limit((long) Math.floor(Math.sqrt(candidate)) - 1)
+        .noneMatch(i -> candidate % i == 0);
+  }
+
+  public static Map<Boolean, List<Integer>> partitionPrimesWithCustomCollector(int n) {
+    return IntStream.rangeClosed(2, n).boxed().collect(new PrimeNumbersCollector());
+  }
+
+  public static boolean isPrime(List<Integer> primes, Integer candidate) {
+    double candidateRoot = Math.sqrt(candidate);
+    //return takeWhile(primes, i -> i <= candidateRoot).stream().noneMatch(i -> candidate % i == 0);
+    return primes.stream().takeWhile(i -> i <= candidateRoot).noneMatch(i -> candidate % i == 0);
+  }
+
+/*
+  public static <A> List<A> takeWhile(List<A> list, Predicate<A> p) {
+    int i = 0;
+    for (A item : list) {
+      if (!p.test(item)) {
+        return list.subList(0, i);
+      }
+      i++;
+    }
+    return list;
+  }
+*/
+
+  public static class PrimeNumbersCollector
+      implements Collector<Integer, Map<Boolean, List<Integer>>, Map<Boolean, List<Integer>>> {
+
+    @Override
+    public Supplier<Map<Boolean, List<Integer>>> supplier() {
+      return () -> new HashMap<>() {{
+        put(true, new ArrayList<Integer>());
+        put(false, new ArrayList<Integer>());
+      }};
+    }
+
+    @Override
+    public BiConsumer<Map<Boolean, List<Integer>>, Integer> accumulator() {
+      return (Map<Boolean, List<Integer>> acc, Integer candidate) -> {
+        acc.get(isPrime(acc.get(true), candidate))
+            .add(candidate);
+      };
+    }
+
+    @Override
+    public BinaryOperator<Map<Boolean, List<Integer>>> combiner() {
+      return (Map<Boolean, List<Integer>> map1, Map<Boolean, List<Integer>> map2) -> {
+        map1.get(true).addAll(map2.get(true));
+        map1.get(false).addAll(map2.get(false));
+        return map1;
+      };
+    }
+
+    @Override
+    public Function<Map<Boolean, List<Integer>>, Map<Boolean, List<Integer>>> finisher() {
+      return i -> i;
+    }
+
+    @Override
+    public Set<Characteristics> characteristics() {
+      return Collections.unmodifiableSet(EnumSet.of(IDENTITY_FINISH));
+    }
+
+  }
+
+  public Map<Boolean, List<Integer>> partitionPrimesWithInlineCollector(int n) {
+    return Stream.iterate(2, i -> i + 1).limit(n)
+        .collect(
+            () -> new HashMap<Boolean, List<Integer>>() {{
+              put(true, new ArrayList<Integer>());
+              put(false, new ArrayList<Integer>());
+            }},
+            (acc, candidate) -> {
+              acc.get(isPrime(acc.get(true), candidate))
+                  .add(candidate);
+            },
+            (map1, map2) -> {
+              map1.get(true).addAll(map2.get(true));
+              map1.get(false).addAll(map2.get(false));
+            }
+        );
+  }
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.List;
+
+import java.util.TimeZone;
+import java.util.SimpleTimeZone;
+
+/**
+ * Creates a list of TimeZones for use in the UI. The current implementation just creates a
+ * {@link SimpleTimeZone} for all 25 hours from -12 UTC to +12 UTC.
+ */
+public final class TimeZoneFactory {
+    public static final List<TimeZone> TIMEZONES;
+
+    static {
+        List<TimeZone> temp = new java.util.ArrayList<TimeZone>(25);
+
+        for (int i = -12; i <= 12; i++) {
+            String id = "UTC";
+
+            if (i < 0) {
+                id += i;
+                id += ":00";
+            }
+            else if (i > 0) {
+                id += '+';
+                id += i;
+                id += ":00";
+            }
+
+            temp.add(new SimpleTimeZone(i * 3600000, id));
+        }
+
+        TIMEZONES = java.util.Collections.unmodifiableList(temp);
+    }
+
+    private TimeZoneFactory() {}
+}
+--------------------------------------------------------------------------------------------------------
+import java.nio.charset.Charset;
+import java.util.concurrent.ThreadLocalRandom;
+
+/**
+ * Miscellaneous useful functions for dealing with low level bits and bytes.
+ */
+public class BitUtil
+{
+    /**
+     * Size of a byte in bytes
+     */
+    public static final int SIZE_OF_BYTE = 1;
+
+    /**
+     * Size of a boolean in bytes
+     */
+    public static final int SIZE_OF_BOOLEAN = 1;
+
+    /**
+     * Size of a char in bytes
+     */
+    public static final int SIZE_OF_CHAR = 2;
+
+    /**
+     * Size of a short in bytes
+     */
+    public static final int SIZE_OF_SHORT = 2;
+
+    /**
+     * Size of an int in bytes
+     */
+    public static final int SIZE_OF_INT = 4;
+
+    /**
+     * Size of a a float in bytes
+     */
+    public static final int SIZE_OF_FLOAT = 4;
+
+    /**
+     * Size of a long in bytes
+     */
+    public static final int SIZE_OF_LONG = 8;
+
+    /**
+     * Size of a double in bytes
+     */
+    public static final int SIZE_OF_DOUBLE = 8;
+
+    /**
+     * Length of the data blocks used by the CPU cache sub-system in bytes.
+     */
+    public static final int CACHE_LINE_LENGTH = 64;
+
+    private static final byte[] HEX_DIGIT_TABLE =
+    {
+        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
+    };
+
+    private static final byte[] FROM_HEX_DIGIT_TABLE;
+
+    static
+    {
+        FROM_HEX_DIGIT_TABLE = new byte[128];
+
+        FROM_HEX_DIGIT_TABLE['0'] = 0x00;
+        FROM_HEX_DIGIT_TABLE['1'] = 0x01;
+        FROM_HEX_DIGIT_TABLE['2'] = 0x02;
+        FROM_HEX_DIGIT_TABLE['3'] = 0x03;
+        FROM_HEX_DIGIT_TABLE['4'] = 0x04;
+        FROM_HEX_DIGIT_TABLE['5'] = 0x05;
+        FROM_HEX_DIGIT_TABLE['6'] = 0x06;
+        FROM_HEX_DIGIT_TABLE['7'] = 0x07;
+        FROM_HEX_DIGIT_TABLE['8'] = 0x08;
+        FROM_HEX_DIGIT_TABLE['9'] = 0x09;
+        FROM_HEX_DIGIT_TABLE['a'] = 0x0a;
+        FROM_HEX_DIGIT_TABLE['A'] = 0x0a;
+        FROM_HEX_DIGIT_TABLE['b'] = 0x0b;
+        FROM_HEX_DIGIT_TABLE['B'] = 0x0b;
+        FROM_HEX_DIGIT_TABLE['c'] = 0x0c;
+        FROM_HEX_DIGIT_TABLE['C'] = 0x0c;
+        FROM_HEX_DIGIT_TABLE['d'] = 0x0d;
+        FROM_HEX_DIGIT_TABLE['D'] = 0x0d;
+        FROM_HEX_DIGIT_TABLE['e'] = 0x0e;
+        FROM_HEX_DIGIT_TABLE['E'] = 0x0e;
+        FROM_HEX_DIGIT_TABLE['f'] = 0x0f;
+        FROM_HEX_DIGIT_TABLE['F'] = 0x0f;
+    }
+
+    private static final int LAST_DIGIT_MASK = 0b1;
+
+    private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
+
+    /**
+     * Fast method of finding the next power of 2 greater than or equal to the supplied value.
+     * <p>
+     * If the value is &lt;= 0 then 1 will be returned.
+     * <p>
+     * This method is not suitable for {@link Integer#MIN_VALUE} or numbers greater than 2^30.
+     *
+     * @param value from which to search for next power of 2
+     * @return The next power of 2 or the value itself if it is a power of 2
+     */
+    public static int findNextPositivePowerOfTwo(final int value)
+    {
+        return 1 << (32 - Integer.numberOfLeadingZeros(value - 1));
+    }
+
+    /**
+     * Align a value to the next multiple up of alignment.
+     * If the value equals an alignment multiple then it is returned unchanged.
+     * <p>
+     * This method executes without branching. This code is designed to be use in the fast path and should not
+     * be used with negative numbers. Negative numbers will result in undefined behaviour.
+     *
+     * @param value     to be aligned up.
+     * @param alignment to be used.
+     * @return the value aligned to the next boundary.
+     */
+    public static int align(final int value, final int alignment)
+    {
+        return (value + (alignment - 1)) & ~(alignment - 1);
+    }
+
+    /**
+     * Generate a byte array from the hex representation of the given byte array.
+     *
+     * @param buffer to convert from a hex representation (in Big Endian)
+     * @return new byte array that is decimal representation of the passed array
+     */
+    public static byte[] fromHexByteArray(final byte[] buffer)
+    {
+        final byte[] outputBuffer = new byte[buffer.length >> 1];
+
+        for (int i = 0; i < buffer.length; i += 2)
+        {
+            outputBuffer[i >> 1] =
+                (byte)((FROM_HEX_DIGIT_TABLE[buffer[i]] << 4) | FROM_HEX_DIGIT_TABLE[buffer[i + 1]]);
+        }
+
+        return outputBuffer;
+    }
+
+    /**
+     * Generate a byte array that is a hex representation of a given byte array.
+     *
+     * @param buffer to convert to a hex representation
+     * @return new byte array that is hex representation (in Big Endian) of the passed array
+     */
+    public static byte[] toHexByteArray(final byte[] buffer)
+    {
+        return toHexByteArray(buffer, 0, buffer.length);
+    }
+
+    /**
+     * Generate a byte array that is a hex representation of a given byte array.
+     *
+     * @param buffer to convert to a hex representation
+     * @param offset the offset into the buffer
+     * @param length the number of bytes to convert
+     * @return new byte array that is hex representation (in Big Endian) of the passed array
+     */
+    public static byte[] toHexByteArray(final byte[] buffer, final int offset, final int length)
+    {
+        final byte[] outputBuffer = new byte[length << 1];
+
+        for (int i = 0; i < (length << 1); i += 2)
+        {
+            final byte b = buffer[offset + (i >> 1)];
+
+            outputBuffer[i] = HEX_DIGIT_TABLE[(b >> 4) & 0x0F];
+            outputBuffer[i + 1] = HEX_DIGIT_TABLE[b & 0x0F];
+        }
+
+        return outputBuffer;
+    }
+
+    /**
+     * Generate a byte array from a string that is the hex representation of the given byte array.
+     *
+     * @param string to convert from a hex representation (in Big Endian)
+     * @return new byte array holding the decimal representation of the passed array
+     */
+    public static byte[] fromHex(final String string)
+    {
+        return fromHexByteArray(string.getBytes(UTF8_CHARSET));
+    }
+
+    /**
+     * Generate a string that is the hex representation of a given byte array.
+     *
+     * @param buffer to convert to a hex representation
+     * @param offset the offset into the buffer
+     * @param length the number of bytes to convert
+     * @return new String holding the hex representation (in Big Endian) of the passed array
+     */
+    public static String toHex(final byte[] buffer, final int offset, final int length)
+    {
+        return new String(toHexByteArray(buffer, offset, length), UTF8_CHARSET);
+    }
+
+    /**
+     * Generate a string that is the hex representation of a given byte array.
+     *
+     * @param buffer to convert to a hex representation
+     * @return new String holding the hex representation (in Big Endian) of the passed array
+     */
+    public static String toHex(final byte[] buffer)
+    {
+        return new String(toHexByteArray(buffer), UTF8_CHARSET);
+    }
+
+    /**
+     * Is a number even.
+     *
+     * @param value to check.
+     * @return true if the number is even otherwise false.
+     */
+    public static boolean isEven(final int value)
+    {
+        return (value & LAST_DIGIT_MASK) == 0;
+    }
+
+    /**
+     * Is a value a positive power of two.
+     *
+     * @param value to be checked.
+     * @return true if the number is a positive power of two otherwise false.
+     */
+    public static boolean isPowerOfTwo(final int value)
+    {
+        return value > 0 && ((value & (~value + 1)) == value);
+    }
+
+    /**
+     * Cycles indices of an array one at a time in a forward fashion
+     *
+     * @param current value to be incremented.
+     * @param max     value for the cycle.
+     * @return the next value, or zero if max is reached.
+     */
+    public static int next(final int current, final int max)
+    {
+        int next = current + 1;
+        if (next == max)
+        {
+            next = 0;
+        }
+
+        return next;
+    }
+
+    /**
+     * Cycles indices of an array one at a time in a backwards fashion
+     *
+     * @param current value to be decremented.
+     * @param max     value of the cycle.
+     * @return the next value, or max - 1 if current is zero
+     */
+    public static int previous(final int current, final int max)
+    {
+        if (0 == current)
+        {
+            return max - 1;
+        }
+
+        return current - 1;
+    }
+
+    /**
+     * Calculate the shift value to scale a number based on how refs are compressed or not.
+     *
+     * @param scale of the number reported by Unsafe.
+     * @return how many times the number needs to be shifted to the left.
+     */
+    public static int calculateShiftForScale(final int scale)
+    {
+        if (4 == scale)
+        {
+            return 2;
+        }
+        else if (8 == scale)
+        {
+            return 3;
+        }
+        else
+        {
+            throw new IllegalArgumentException("Unknown pointer size");
+        }
+    }
+
+    /**
+     * Generate a randomized integer over [{@link Integer#MIN_VALUE}, {@link Integer#MAX_VALUE}] suitable for
+     * use as an Aeron Id.
+     *
+     * @return randomized integer suitable as an Id.
+     */
+    public static int generateRandomisedId()
+    {
+        return ThreadLocalRandom.current().nextInt();
+    }
+
+    /**
+     * Is an address aligned on a boundary.
+     *
+     * @param address   to be tested.
+     * @param alignment boundary the address is tested against.
+     * @return true if the address is on the aligned boundary otherwise false.
+     * @throws IllegalArgumentException if the alignment is not a power of 2`
+     */
+    public static boolean isAligned(final long address, final int alignment)
+    {
+        if (!BitUtil.isPowerOfTwo(alignment))
+        {
+            throw new IllegalArgumentException("Alignment must be a power of 2: alignment=" + alignment);
+        }
+
+        return (address & (alignment - 1)) == 0;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+
+import static java.lang.invoke.MethodType.methodType;
+
+/**
+ * This class captures possible hints that may be used by some
+ * runtimes to improve code performance. It is intended to capture hinting
+ * behaviours that are implemented in or anticipated to be spec'ed under the
+ * {@link java.lang.Thread} class in some Java SE versions, but missing in prior
+ * versions.
+ */
+public final class ThreadHints
+{
+    private static final MethodHandle ON_SPIN_WAIT_METHOD_HANDLE;
+
+    static
+    {
+        final MethodHandles.Lookup lookup = MethodHandles.lookup();
+
+        MethodHandle methodHandle = null;
+        try
+        {
+            methodHandle = lookup.findStatic(Thread.class, "onSpinWait", methodType(void.class));
+        }
+        catch (final Exception ignore)
+        {
+        }
+
+        ON_SPIN_WAIT_METHOD_HANDLE = methodHandle;
+    }
+
+    private ThreadHints()
+    {
+    }
+
+    /**
+     * Indicates that the caller is momentarily unable to progress, until the
+     * occurrence of one or more actions on the part of other activities.  By
+     * invoking this method within each iteration of a spin-wait loop construct,
+     * the calling thread indicates to the runtime that it is busy-waiting. The runtime
+     * may take action to improve the performance of invoking spin-wait loop constructions.
+     */
+    public static void onSpinWait()
+    {
+        // Call java.lang.Thread.onSpinWait() on Java SE versions that support it. Do nothing otherwise.
+        // This should optimize away to either nothing or to an inlining of java.lang.Thread.onSpinWait()
+        if (null != ON_SPIN_WAIT_METHOD_HANDLE)
+        {
+            try
+            {
+                ON_SPIN_WAIT_METHOD_HANDLE.invokeExact();
+            }
+            catch (final Throwable ignore)
+            {
+            }
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+jlink --module-path $JAVA_HOME/jmods:mods --add-modules org.firstModule --output
+firstmoduleapp
+javac -d mods --module-source-path src $(find src -name "*.java")
+jrunscript –l js myTest.js
+
+jjs /src/org/java9recipes/chapter18/js/helloNashorn.js
+
+--------------------------------------------------------------------------------------------------------
+@Component
+public class NewUserValidator implements Validator {
+ @Autowired
+ private UserRepository userRepository;
+ @Override
+ public boolean supports(Class<?> clazz) {
+ return User.class.isAssignableFrom(clazz);
+ }
+ @Override
+ public void validate(Object target, Errors errors) {
+ User newUser = (User) target;
+ if (userRepository.exists(newUser.getUsername())) {
+ errors.rejectValue("username", "new.account.username.already.
+exists");
+ }
+ }
+--------------------------------------------------------------------------------------------------------
+
+/**
+ * Do-while, break, and continue.
+ */
+public class Validate {
+
+    public static double scanDouble() {
+        Scanner in = new Scanner(System.in);
+        boolean okay;
+        do {
+            System.out.print("Enter a number: ");
+            if (in.hasNextDouble()) {
+                okay = true;
+            } else {
+                okay = false;
+                String word = in.next();
+                System.err.println(word + " is not a number");
+            }
+        } while (!okay);
+        double x = in.nextDouble();
+        return x;
+    }
+
+    public static double scanDouble2() {
+        Scanner in = new Scanner(System.in);
+        while (true) {
+            System.out.print("Enter a number: ");
+            if (in.hasNextDouble()) {
+                break;
+            }
+            String word = in.next();
+            System.err.println(word + " is not a number");
+        }
+        double x = in.nextDouble();
+        return x;
+    }
+
+    public static double addNumbers() {
+        Scanner in = new Scanner(System.in);
+        int x = -1;
+        int sum = 0;
+        while (x != 0) {
+            x = in.nextInt();
+            if (x <= 0) {
+                continue;
+            }
+            System.out.println("Adding " + x);
+            sum += x;
+        }
+        return sum;
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+C:\Some Directory>set path=C:\Program Files\Java\jdk1.8.0_25\bin;%path%
+C:\Some Directory>keytool -genkey -alias mykeystore -keystore
+keystore.jks
+keytool -list -v -keystore keystore.jks -alias mykeystore
+
+keytool -genkeypair -alias mykeystore -keystore keystore.jks -keypass
+password -storepass password -dname "cn=some name, ou=development,
+o=mycom.com, l=some city, st=some state c=jv
+
+
+This command will create the serverkeystore.jck keystore file using the RSA algorithm
+with a key size of 1,024 bits and an expiration date of 365 days:
+keytool -genkeypair -alias server -keyalg RSA -keysize 1024 -storetype
+jceks -validity 365 -keypass password -keystore serverkeystore.jck -
+storepass password -dname "cn=localhost, ou=Department, o=MyComp Inc,
+l=Some City, st=JV c=US
+
+
+This command generates a clientkeystore.jck keystore to be used by the client
+application:
+keytool -genkeypair -alias client -keyalg RSA -keysize 1024 -storetype
+jceks -validity 365 -keypass password -keystore clientkeystore.jck -
+storepass password -dname "cn=localhost, ou=Department, o=MyComp Inc,
+l=Some City, st=JV c=US
+A certificate file for the client is created next and is placed in the client.crt file:
+keytool -export -alias client -storetype jceks -keystore clientkeystore.jck
+-storepass password -file client.crt
+The server’s certificate is exported here:
+keytool -export -alias server -storetype jceks -keystore serverkeystore.jck
+-storepass password -file server.crt
+
+The following command creates the clienttruststore.jck file, which is the trust store
+for the client:
+keytool -importcert -alias server -file server.crt -keystore
+clienttruststore.jck -keypass password -storepass storepassword
+
+ByteBuffer buffer = ByteBuffer.allocate(4096);
+System.out.println(buffer.order());
+buffer.order(ByteOrder.LITTLE_ENDIAN);
+System.out.println(buffer.order());
+--------------------------------------------------------------------------------------------------------
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.UndeclaredThrowableException;
+import java.sql.SQLException;
+import java.sql.Wrapper;
+import java.util.*;
+
+/**
+ * Implements an {@link java.lang.reflect.InvocationHandler} that handles {@link java.sql.Wrapper} method invocations.
+ */
+public class WrapperInvocationHandler<T> implements InvocationHandler {
+
+  private final T wrapped;
+  private final boolean wrappedIsWrapper;
+
+  public WrapperInvocationHandler(final T wrapped) {
+    Objects.requireNonNull(wrapped, "object to be wrapped");
+    this.wrapped = wrapped;
+    this.wrappedIsWrapper = this.wrapped instanceof Wrapper;
+  }
+
+  @Override
+  public Object invoke(final Object proxy, final Method method, Object[] args) throws Throwable {
+    if (args == null) args = new Object[0];
+    if (args.length == 1 && Class.class.isAssignableFrom(args[0].getClass())) {
+      Class<?> clazz = Class.class.cast(args[0]);
+      String methodName = method.getName();
+      switch (methodName) {
+        case "unwrap":
+          return unwrapTo(clazz);
+        case "isWrapperFor":
+          return isWrapped(clazz);
+        default: // Fall through
+      }
+    }
+    return method.invoke(wrapped, args);
+  }
+
+  private <A> A unwrapTo(Class<A> clazz) throws SQLException {
+    Objects.requireNonNull(clazz, "class to unwrap to");
+    if (wrappedIsWrapper) {
+      Wrapper w = ((Wrapper) wrapped);
+      try {
+        if (w.isWrapperFor(clazz)) return w.unwrap(clazz);
+      } catch(SQLException | UndeclaredThrowableException e) {
+        // Driver doesn't implement the wrapper functionality
+      }
+    }
+    if (clazz.isAssignableFrom(wrapped.getClass())) return clazz.cast(wrapped);
+    throw new SQLException("Could not unwrap " + wrapped + " to " + clazz);
+  }
+
+  private boolean isWrapped(Class<?> clazz) throws SQLException {
+    Objects.requireNonNull(clazz, "class to check for wrapping");
+    if (clazz.isAssignableFrom(wrapped.getClass())) return true;
+    if (wrappedIsWrapper) return ((Wrapper) wrapped).isWrapperFor(clazz);
+    return false;
+  }
+}
+--------------------------------------------------------------------------------------------------------
+%javac -Xlint:unchecked DeceptiveLibrary.java
+% javac -classpath s g/Client.java
+% java -ea -classpath l g/Client
+
+--------------------------------------------------------------------------------------------------------
+@ExcludeDefaultInterceptors
+@ExcludeClassInterceptors
+--------------------------------------------------------------------------------------------------------
+import java.io.*;
+ import java.util.*;
+ public class WordFrequency {
+ final static int MaxWords = 50;
+ public static void main(String[] args) throws IOException {
+ String[] wordList = new String[MaxWords];
+ int[] frequency = new int[MaxWords];
+ FileReader in = new FileReader("passage.txt");
+ PrintWriter out = new PrintWriter(new FileWriter("output.txt"));
+
+ for (int h = 0; h < MaxWords; h++) {
+ frequency[h] = 0;
+ wordList[h] = "";
+ }
+ int numWords = 0;
+ String word = getWord(in).toLowerCase();
+ while (!word.equals("")) {
+ int loc = binarySearch(word, wordList, 0, numWords-1);
+ if (word.compareTo(wordList[loc]) == 0) ++frequency[loc]; //word found
+ else //this is a new word
+ if (numWords < MaxWords) { //if table is not full
+ addToList(word, wordList, frequency, loc, numWords-1);
+ ++numWords;
+ }
+ else out.printf("'%s' not added to table\n", word);
+ word = getWord(in).toLowerCase();
+ }
+ printResults(out, wordList, frequency, numWords);
+ in.close();
+ out.close();
+ } // end main
+ public static int binarySearch(String key, String[] list, int lo, int hi){
+ //search for key from list[lo] to list[hi]
+ //if found, return its location;
+ //if not found, return the location in which it should be inserted
+ //the calling program will check the location to determine if found
+ while (lo <= hi) {
+ int mid = (lo + hi) / 2;
+ int cmp = key.compareTo(list[mid]);
+ if (cmp == 0) return mid; // search succeeds
+ if (cmp < 0) hi = mid -1; // key is 'less than' list[mid]
+ else lo = mid + 1; // key is 'greater than' list[mid]
+ }
+ return lo; //key must be inserted in location lo
+ } //end binarySearch
+ public static void addToList(String item, String[] list, int[] freq, int p, int n) {
+ //adds item in position list[p]; sets freq[p] to 1
+ //shifts list[n] down to list[p] to the right
+ for (int h = n; h >= p; h--) {
+ list[h + 1] = list[h];
+ freq[h + 1] = freq[h];
+ }
+ list[p] = item;
+ freq[p] = 1;
+ } //end addToList
+ public static void printResults(PrintWriter out, String[] list, int freq[], int n) {
+ out.printf("\nWords Frequency\n\n");
+ for (int h = 0; h < n; h++)
+ out.printf("%-20s %2d\n", list[h], freq[h]);
+ } //end printResults
+ public static String getWord(FileReader in) throws IOException {
+ //returns the next word found
+ final int MaxLen = 255;
+ int c, n = 0;
+ char[] word = new char[MaxLen];
+ // read over non-letters
+ while (!Character.isLetter((char) (c = in.read())) && (c != -1)) ;
+ //empty while body
+ if (c == -1) return ""; //no letter found
+ word[n++] = (char) c;
+ while (Character.isLetter(c = in.read()))
+ if (n < MaxLen) word[n++] = (char) c;
+ return new String(word, 0, n);
+ } // end getWord
+ } //end class WordFrequency
+--------------------------------------------------------------------------------------------------------
+public static int kthSmall(int[] A, int k, int lo, int hi) {
+ //returns the kth smallest from A[lo] to A[hi]
+ int kShift = lo + k - 1; //shift k to the given portion, A[lo..hi]
+ if (kShift < lo || kShift > hi) return -9999;
+ int dp = partition1(A, lo, hi);
+ while (dp != kShift) {
+ if (kShift < dp) hi = dp - 1; //kth smallest is in the left part
+ else lo = dp + 1; //kth smallest is in the right part
+ dp = partition1(A, lo, hi);
+ }
+ return A[dp];
+ }
+--------------------------------------------------------------------------------------------------------
+import java.lang.annotation.ElementType;
+ import java.lang.annotation.Retention;
+ import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+ import javax.inject.Qualifier;
+ @Qualifier
+ @Retention(RetentionPolicy.RUNTIME)
+ @Target({ElementType.FIELD,ElementType.PARAMETER,ElementType.TYPE})
+ public @interface MessageEvent {
+ Type value();
+ enum Type{ SERVICE, PARAMETER }
+}
+--------------------------------------------------------------------------------------------------------
+ package com.devchronicles.singleton;
+ public class MySingleton {
+ private volatile MySingleton instance;
+ private MySingleton() {}
+ public MySingleton getInstance() {
+ if (instance == null) { // 1
+synchronized (MySingleton.class) {
+if (instance == null) { // 2
+instance = new MySingleton();
+}
+}
+}
+return instance;
+ }
+}
+--------------------------------------------------------------------------------------------------------
+// enum Season { WINTER, SPRING, SUMMER, FALL }
+final class Season extends Enum<Season> {
+ private Season(String name, int ordinal) { super(name,ordinal); }
+ public static final Season WINTER = new Season("WINTER",0);
+ public static final Season SPRING = new Season("SPRING",1);
+ public static final Season SUMMER = new Season("SUMMER",2);
+ public static final Season FALL = new Season("FALL",3);
+ private static final Season[] VALUES = { WINTER, SPRING, SUMMER, FALL };
+ public static Season[] values() { return VALUES.clone(); }
+ public static Season valueOf(String name) {
+ for (Season e : VALUES) if (e.name().equals(name)) return e;
+ throw new IllegalArgumentException();
+ }
+}
+--------------------------------------------------------------------------------------------------------
+/**
+ * If this file is a plain file, provides the lines of the file (read as
+ * UTF-8) without the line-termination characters as a stream.
+ * Otherwise, returns a single {@link Result} instance with an
+ * {@link IOException}.
+ *
+ * @return The lines of the file; never {@code null}
+ */
+public Stream<Result<String>> getLines() {
+ if (!isFile()) {
+ return Stream.of(new Result<>(new IOException(
+ "File is not a plain file: " + toString()
+ )));
+ }
+ try {
+ return Files.lines(toPath()).map(Result::new);
+ } catch (IOException ioe) {
+ return Stream.of(new Result<>(ioe));
+ }
+}
+--------------------------------------------------------------------------------------------------------
+Function<Path, Stream<String>> readLines = path -> {
+ try {
+ return Files.lines(path);
+ } catch (IOException ioe) {
+ throw new RuntimeException("Error reading " + path, ioe);
+ }
+};
+Stream<String> lines = Stream.of("foo.txt", "bar.txt", "baz.txt")
+ .map(Paths::get)
+ .filter(Files::exists)
+ .flatMap(readLines);
+ 
+ Map<Book.Genre, List<Book>> booksByGenre =
+ library.getBooks().parallelStream()
+ .collect(Collectors.groupingByConcurrent(Book::getGenre));
+--------------------------------------------------------------------------------------------------------
+<RETURN_T> Result<RETURN_T> withTempFile(Function<File, RETURN_T> function) {
+ Objects.requireNonNull(function, "function to apply to temp file");
+ Optional<File> file = Optional.empty();
+ try {
+ file = Optional.of(File.createTempFile("funfile", "tmp"));
+ return new Result<>(file.map(function).get());
+ } catch (IOException e) {
+ return new Result<>(e);
+ } finally {
+ file.ifPresent(File::delete);
+ }
+} // This code would work, but could do with improvement: read on!
+
+--------------------------------------------------------------------------------------------------------
+  Collection<Character> unique = new ArrayList<Character>();
+    
+  for (int i = 0; i < s.length(); i++) {
+    char c = Character.toLowerCase(s.charAt(i));
+    if (Character.isWhitespace(c)) { continue; }
+      
+    if (!unique.contains(c)) {
+      unique.add(c);
+    }
+  }
+--------------------------------------------------------------------------------------------------------
+Comparator<File> fileComparator =
+ Comparator.nullsLast(
+ Comparator.comparing(File::getName)
+ );
+--------------------------------------------------------------------------------------------------------
+mvn install:install-file -Dfile=opencvjar -runtime-natives-linux-x86.
+jar -DgroupId=opencvjar -DartifactId=opencvjar-runtime -Dversion=3.0.0
+-Dpackaging=jar -Dclassifier=natives-linux-x86
+
+ <plugins>
+ <plugin>
+ <artifactId>maven-jar-plugin</artifactId>
+ <version>2.4</version>
+ <configuration>
+ <archive>
+ <manifest>
+ <addClasspath>true</addClasspath>
+ <classpathPrefix>lib/</classpathPrefix>
+ <mainClass>com.mycompany.app.App</mainClass>
+ </manifest>
+ </archive>
+ </configuration>
+ </plugin>
+ <plugin>
+ <groupId>org.apache.maven.plugins</groupId>
+ <artifactId>maven-dependency-plugin</artifactId>
+ <version>2.1</version>
+ <executions>
+ <execution>
+ <id>copy-dependencies</id>
+
+ <goals>
+ <goal>copy-dependencies</goal>
+ </goals>
+ <configuration>
+ <outputDirectory>${project.build.directory}/lib</
+outputDirectory>
+ <overWriteReleases>false</overWriteReleases>
+ <overWriteSnapshots>false</overWriteSnapshots>
+ <overWriteIfNewer>true</overWriteIfNewer>
+ </configuration>
+ </execution>
+ </executions>
+ </plugin>
+ <plugin>
+ <groupId>com.googlecode.mavennatives</groupId>
+ <artifactId>maven-nativedependencies-plugin</artifactId>
+ <version>0.0.7</version>
+ <executions>
+ <execution>
+ <id>unpacknatives</id>
+ <phase>generate-resources</phase>
+ <goals>
+ <goal>copy</goal>
+ </goals>
+ </execution>
+ </executions>
+ </plugin>
+ </plugin
+--------------------------------------------------------------------------------------------------------
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+
+import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+@Component
+public class AuthFilter implements Filter {
+    private static Logger log = LoggerFactory.getLogger(AuthFilter.class);
+    public static final int NOT_AUTHORIZED = 401;
+
+    @Override
+    public void init(FilterConfig filterConfig) throws ServletException {
+
+    }
+
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+        HttpServletRequest httpRequest = (HttpServletRequest) request;
+        final String secret = httpRequest.getHeader("X-PartnerSecret");
+        log.info("Partner secret is {}", secret);
+        if (true || "packt".equals(secret) ) {
+            chain.doFilter(request, response);
+        } else {
+            HttpServletResponse httpResponse = (HttpServletResponse) response;
+            httpResponse.sendError(NOT_AUTHORIZED);
+        }
+    }
+
+    @Override
+    public void destroy() {
+
+    }
+}
+
+
+java -Xmx1g -cp lingpipe-cookbook.1.0.jar:lib/lingpipe4.1.0.jar:lib/opencsv-2.4.jar com.lingpipe.cookbook.chapter6.
+SpellCheck 
+
+
+<dependency>
+ <groupId>org.nd4j</groupId>
+ <artifactId>nd4j-x86</artifactId>
+ <version>${nd4j.version}</version>
+</dependency>
+
+<dependency>
+ <artifactId>canova-nd4j-image</artifactId>
+ <groupId>org.nd4j</groupId>
+ <version>${canova.version}</version>
+</dependency>
+<dependency>
+ <artifactId>canova-nd4j-codec</artifactId>
+ <groupId>org.nd4j</groupId>
+ <version>${canova.version}</version>
+</dependency>
+
+
+<dependency>
+ <groupId>org.nd4j</groupId>
+ <artifactId>nd4j-jcublas-XXX</artifactId>
+ <version>${nd4j.version}</version>
+</dependency>
+
+<dependency>
+ <groupId>org.deeplearning4j</groupId>
+ <artifactId>deeplearning4j-nlp</artifactId>
+ <version>${dl4j.version}</version>
+</dependency>
+<dependency>
+ <groupId>org.deeplearning4j</groupId>
+ <artifactId>deeplearning4j-core</artifactId>
+ <version>${dl4j.version}</version>
+</dependency>
+--------------------------------------------------------------------------------------------------------
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.ReadOnlyBufferException;
+
+public enum ByteBufferUtils {
+  ;
+
+  public static void checkRange(ByteBuffer buf, int off, int len) {
+    SafeUtils.checkLength(len);
+    if (len > 0) {
+      checkRange(buf, off);
+      checkRange(buf, off + len - 1);
+    }
+  }
+
+  public static void checkRange(ByteBuffer buf, int off) {
+    if (off < 0 || off >= buf.capacity()) {
+      throw new ArrayIndexOutOfBoundsException(off);
+    }
+  }
+
+  public static ByteBuffer inLittleEndianOrder(ByteBuffer buf) {
+    if (buf.order().equals(ByteOrder.LITTLE_ENDIAN)) {
+      return buf;
+    } else {
+      return buf.duplicate().order(ByteOrder.LITTLE_ENDIAN);
+    }
+  }
+
+  public static ByteBuffer inNativeByteOrder(ByteBuffer buf) {
+    if (buf.order().equals(Utils.NATIVE_BYTE_ORDER)) {
+      return buf;
+    } else {
+      return buf.duplicate().order(Utils.NATIVE_BYTE_ORDER);
+    }
+  }
+
+  public static byte readByte(ByteBuffer buf, int i) {
+    return buf.get(i);
+  }
+
+  public static void writeInt(ByteBuffer buf, int i, int v) {
+    assert buf.order() == Utils.NATIVE_BYTE_ORDER;
+    buf.putInt(i, v);
+  }
+
+  public static int readInt(ByteBuffer buf, int i) {
+    assert buf.order() == Utils.NATIVE_BYTE_ORDER;
+    return buf.getInt(i);
+  }
+
+  public static int readIntLE(ByteBuffer buf, int i) {
+    assert buf.order() == ByteOrder.LITTLE_ENDIAN;
+    return buf.getInt(i);
+  }
+
+  public static void writeLong(ByteBuffer buf, int i, long v) {
+    assert buf.order() == Utils.NATIVE_BYTE_ORDER;
+    buf.putLong(i, v);
+  }
+
+  public static long readLong(ByteBuffer buf, int i) {
+    assert buf.order() == Utils.NATIVE_BYTE_ORDER;
+    return buf.getLong(i);
+  }
+
+  public static long readLongLE(ByteBuffer buf, int i) {
+    assert buf.order() == ByteOrder.LITTLE_ENDIAN;
+    return buf.getLong(i);
+  }
+
+  public static void writeByte(ByteBuffer dest, int off, int i) {
+    dest.put(off, (byte) i);
+  }
+
+  public static void writeShortLE(ByteBuffer dest, int off, int i) {
+    dest.put(off, (byte) i);
+    dest.put(off + 1, (byte) (i >>> 8));
+  }
+
+  public static void checkNotReadOnly(ByteBuffer buffer) {
+    if (buffer.isReadOnly()) {
+      throw new ReadOnlyBufferException();
+    }
+  }
+
+  public static int readShortLE(ByteBuffer buf, int i) {
+    return (buf.get(i) & 0xFF) | ((buf.get(i+1) & 0xFF) << 8);
+  }
+}
+--------------------------------------------------------------------------------------------------------
+import java.io.File;
+import java.io.FileFilter;
+
+import java.util.List;
+
+/**
+ * Utility methods for recursive directory searches.
+ */
+public final class FileHelper {
+    public static void recurseDirectories(File[] files, FileFilter filter, List<String> filenames) {
+        for (int i = 0; i < files.length; i++) {
+            if (files[i].isDirectory()) {
+                recurseDirectories(files[i].listFiles(), filter, filenames);
+            }
+            else {
+                if (filter.accept(files[i])) {
+                    filenames.add(files[i].getAbsolutePath());
+                }
+            }
+        }
+    }
+
+    public static void recurseDirectories(List<File> files, FileFilter filter, List<String> filenames) {
+        for (File file : files) {
+            if (file.isDirectory()) {
+                recurseDirectories(file.listFiles(), filter, filenames);
+            }
+            else {
+                if (filter.accept(file)) {
+                    filenames.add(file.getAbsolutePath());
+                }
+            }
+        }
+    }
+
+    private FileHelper() {}
+}
+--------------------------------------------------------------------------------------------------------
+
+    private static final class LRUMap<K, V> extends LinkedHashMap<K, V> {
+        private static final long serialVersionUID = -1440114072711805032L;
+
+        private final int maxSize;
+
+        LRUMap(int maxSize) {
+            this.maxSize = maxSize;
+        }
+
+        public V put(K key, V value) {
+            V v = super.put(key, value);
+
+            if (v == null) {
+                TimeFormatCache.LOGGER.trace("cached {}={}", key, value);
+            }
+
+            return v;
+        };
+
+        protected boolean removeEldestEntry(java.util.Map.Entry<K, V> eldest) {
+            boolean oversized = size() > maxSize;
+
+            if (oversized) {
+                TimeFormatCache.LOGGER.trace("evicted {}={}", eldest.getKey(), eldest.getValue());
+            }
+
+            return oversized;
+        };
+    }
+--------------------------------------------------------------------------------------------------------
+jcmd <myJavaPid> GC.heap_dump /path/to/myDump8.dat
+jmap -histo 29620
+-Xmx1g -XX:NewSize=512m -XX:MaxNewSize=512m -XX:+UseConcMarkSweepGC -XX:ConcGCThreads=4
+jstat -gc <myPid> 1s
+
+tcpdump -X -i any -s 0 "port 8675 and greater 100"
+
+jstack 15893 > myThreadDump.txt
+
+--------------------------------------------------------------------------------------------------------
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class StackWalkerDemo {
+    public static void main(String[] args) {
+        List<StackWalker.StackFrame> frames = StackWalker.getInstance()
+                                                       .walk(s -> s.limit(10)
+                                                                   .collect(Collectors.toList()));
+        frames.forEach(System.out::println);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+-d docs
+-html5
+-author
+-version
+--module-source-path docsrc
+--module jdojo.utility,jdojo.jshell
+-overview docsrc\overview.html
+--------------------------------------------------------------------------------------------------------
+  private static class WordCounterSpliterator implements Spliterator<Character> {
+
+    private final String string;
+    private int currentChar = 0;
+
+    private WordCounterSpliterator(String string) {
+      this.string = string;
+    }
+
+    @Override
+    public boolean tryAdvance(Consumer<? super Character> action) {
+      action.accept(string.charAt(currentChar++));
+      return currentChar < string.length();
+    }
+
+    @Override
+    public Spliterator<Character> trySplit() {
+      int currentSize = string.length() - currentChar;
+      if (currentSize < 10) {
+        return null;
+      }
+      for (int splitPos = currentSize / 2 + currentChar; splitPos < string.length(); splitPos++) {
+        if (Character.isWhitespace(string.charAt(splitPos))) {
+          Spliterator<Character> spliterator = new WordCounterSpliterator(string.substring(currentChar, splitPos));
+          currentChar = splitPos;
+          return spliterator;
+        }
+      }
+      return null;
+    }
+
+    @Override
+    public long estimateSize() {
+      return string.length() - currentChar;
+    }
+
+    @Override
+    public int characteristics() {
+      return ORDERED + SIZED + SUBSIZED + NONNULL + IMMUTABLE;
+    }
+
+  }
+--------------------------------------------------------------------------------------------------------
+import java.util.stream.LongStream;
+
+public class Recursion {
+
+  public static void main(String[] args) {
+    System.out.println(factorialIterative(5));
+    System.out.println(factorialRecursive(5));
+    System.out.println(factorialStreams(5));
+    System.out.println(factorialTailRecursive(5));
+  }
+
+  public static int factorialIterative(int n) {
+    int r = 1;
+    for (int i = 1; i <= n; i++) {
+      r *= i;
+    }
+    return r;
+  }
+
+  public static long factorialRecursive(long n) {
+    return n == 1 ? 1 : n * factorialRecursive(n - 1);
+  }
+
+  public static long factorialStreams(long n) {
+    return LongStream.rangeClosed(1, n).reduce(1, (long a, long b) -> a * b);
+  }
+
+  public static long factorialTailRecursive(long n) {
+    return factorialHelper(1, n);
+  }
+
+  public static long factorialHelper(long acc, long n) {
+    return n == 1 ? acc : factorialHelper(acc * n, n - 1);
+  }
+
+}
+
+--------------------------------------------------------------------------------------------------------
+@Author(name = "Raoul")
+@Author(name = "Mario")
+@Author(name = "Alan")
+public class Book {
+
+    public static void main(String[] args) {
+        Author[] authors = Book.class.getAnnotationsByType(Author.class);
+        Arrays.asList(authors).stream().forEach(a -> {
+            System.out.println(a.name());
+        });
+    }
+
+--------------------------------------------------------------------------------------------------------
+package ai.grakn.engine;
+
+/**
+ * <p>
+ *     Describes the six possible states a task can be in.
+ *     Each state represents a different point in the process of execution.
+ * </p>
+ *
+ * @author alexandraorth, Denis Lobanov
+ */
+public enum TaskStatus {
+    /**
+     * Save task in the graph, but not plans to run it yet - initial state.
+     */
+    CREATED,
+    /**
+     * Scheduled for execution. For example, if one instance of the Engine server schedules it,
+     * other instances won't.
+     */
+    SCHEDULED,
+    /**
+     * Currently executing task.
+     */
+    RUNNING,
+    /**
+     * The task has successfully completed execution.
+     */
+    COMPLETED,
+    /**
+     * The task has been stopped on request.
+     */
+    STOPPED,
+    /**
+     * The task has failed to execute.
+     */
+    FAILED;
+}
+--------------------------------------------------------------------------------------------------------
+Comparator<Student> byNameConsonants
+ = Comparator.comparing( x -> x.name,
+ (x,y) ->
+ removeVowels(x).compareTo(removeVowels(y)));
+Comparator<Integer> byDifference = (x,y) -> x - y;
+Comparator<Double> byCeil =
+ (x,y) -> (int)(Math.ceil(x) - Math.ceil(y));
+
+
+Arrays.parallelPrefix(arr, op);
+
+--------------------------------------------------------------------------------------------------------
+BiConsumer<StringBuilder,String> accs = (x,y) ->
+ x.append(y.replaceAll("[aeiou]",""));
+String s = Stream.of("Joe","Kalpana","Christopher")
+ .collect(Collector.of(
+ StringBuilder::new,
+Appendix Method References
+402
+ accs,
+StringBuilder::append,
+StringBuilder::toString));
+ System.out.println(s);
+
+--------------------------------------------------------------------------------------------------------
 import com.basaki.example.postgres.jsonb.util.UuidBeanFactory;
 import java.util.UUID;
 import org.dozer.DozerBeanMapper;
