@@ -7807,6 +7807,30 @@ public FeatureProvider featureProvider() {
     return new EnumBasedFeatureProvider(MyFeatures.class);
 }
 --------------------------------------------------------------------------------------------------------
+https://mvnrepository.com/search?q=com.mysema.querydsl
+--------------------------------------------------------------------------------------------------------
+            <plugin>
+                <groupId>com.mysema.maven</groupId>
+                <artifactId>maven-apt-plugin</artifactId>
+                <version>1.0.3</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>process</goal>
+                        </goals>
+                        <phase>generate-sources</phase>
+                        <configuration>
+                            <outputDirectory>${project.basedir}/target/generated-sources/java</outputDirectory>
+                            <processor>com.mysema.query.apt.jpa.JPAAnnotationProcessor</processor>
+                            <processors>
+                                <processor>com.mysema.query.apt.jpa.JPAAnnotationProcessor</processor>
+                        </processors>
+                        <showWarnings>true</showWarnings>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+--------------------------------------------------------------------------------------------------------
 <servers>
   <server>
     <id>sonatype-nexus-snapshots</id>
@@ -7820,10 +7844,16 @@ public FeatureProvider featureProvider() {
   </server>
 </servers>
 
+mvn license:update-project-license
 mvn dependency:resolve -Dclassifier=sources
 mvn versions:display-dependency-updates versions:display-plugin-updates -Pall
 mvn validate license:format -Pall
 mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent test sonar:sonar
+
+https://prm-wiki.paragon-software.com/pages/viewpage.action?pageId=83889735
+https://prm-wiki.paragon-software.com/display/DEVOPS/In-house+k8s+infrastructure
+https://gitlab.paragon-software.com/pba/DevOps/ansible/pipelines/62858
+
 
 http://localhost:8089/api/v0/distributor/download?sku=sku-b7d41c8c&locale=ru&platform=file-platform
 http://localhost:8089/api/v0/distributor/download?sku=PSG-1770-BSU-SE-TL-1Y&locale=ru&platform=x86
@@ -7839,8 +7869,40 @@ https://gitlab.paragon-software.com/pba/DevOps/ansible/
 
     <property name="LOG_FILE" value="{{ ConfirmationLinkCallback.logdir }}/Service.log"/>
     <property name="JSON_LOG_FILE" value="{{ ConfirmationLinkCallback.logdir }}/Service.json"/>
+	
+	        <!--<license.licenseResolver>file://${main.basedir}/src/license</license.licenseResolver>-->
+        <license.licenseResolver>${project.baseUri}src/license</license.licenseResolver>
 --------------------------------------------------------------------------------------------------------
 ERROR: cannot serialize input value
+
+mvn versions:display-dependency-updates
+mvn versions:display-plugin-updates
+mvn versions:display-property-updates
+
+
+<plugin>
+  <groupId>org.codehaus.mojo</groupId>
+  <artifactId>versions-maven-plugin</artifactId>
+  <version>${maven.versions.plugin}</version>
+  <configuration>
+    <rulesUri>file:///${session.executionRootDirectory}/config/maven-versions-plugin-rules.xml</rulesUri> 
+  </configuration>
+</plugin>
+
+
+--------------------------------------------------------------------------------------------------------
+The compare-dependencies goal can be used to compare the dependencies in the current project to the dependencyManagement of a remote project. This is useful, for example, for finding differences between the current project dependencies and an organizational bill of materials (BOM) pom. You specify the remote groupId, artifactId, and the version to which the current project should be compared, for example
+
+mvn versions:compare-dependencies -DremotePom=org.foo:bom-pom:1.0
+By default the list of dependency differences will be output to the command line. This can be written to a file using the "reportOutputFile" parameter.
+
+mvn versions:compare-dependencies -DremotePom=org.foo:bom-pom:1.0 -DreportOutputFile=${project.build.directory}/depDiffs.txt
+The plugin can also automatically update the dependencies of the current project to match the remote project using the "updateDependencies" parameter. By default this is turned off.
+
+mvn versions:compare-dependencies -DremotePom=org.foo:bom-pom:1.0 -DupdateDependencies=true
+In addition to that, any property defined in the current project that represent the version of one of several artifacts can be updated to match the remote project using the "updatePropertyVersions" parameter. By default this is turned off.
+
+mvn versions:compare-dependencies -DremotePom=org.foo:bom-pom:1.0 -updatePropertyVersions=true
 --------------------------------------------------------------------------------------------------------
 @EnableRuleMigrationSupport
 public class JUnit4TemporaryFolderTest {
