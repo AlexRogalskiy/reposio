@@ -7873,11 +7873,63 @@ https://gitlab.paragon-software.com/pba/DevOps/ansible/
 	        <!--<license.licenseResolver>file://${main.basedir}/src/license</license.licenseResolver>-->
         <license.licenseResolver>${project.baseUri}src/license</license.licenseResolver>
 --------------------------------------------------------------------------------------------------------
+@Value("#{'${listOfValues}'.split(',')}")
+private List<String> valuesList;
+@Value("#{${valuesMap}.?[value>'1']}")
+--------------------------------------------------------------------------------------------------------
 ERROR: cannot serialize input value
 
 mvn versions:display-dependency-updates
 mvn versions:display-plugin-updates
 mvn versions:display-property-updates
+
+
+
+#!/bin/sh
+(set -o igncr) 2>/dev/null && set -o igncr; # cygwin encoding fix
+
+# Run through the current and parent directories for Brackets.exe
+# and execute when found. $0 is the path to this script.
+
+TARGET_PATH="$(dirname "$0")"
+
+case `uname` in
+    *CYGWIN*) OS_NAME="CYGWIN";;
+    *MINGW32_NT*) OS_NAME="MinGW";;
+esac
+
+if [ "$OS_NAME" == "MinGW" ]; then
+    # Suprisingly MING32 platform recognizes
+    # windows "start" command. Use this against
+    # launching .exe as the later is blocking.
+    start "Brackets.exe" "$@"
+else
+    if [ "$OS_NAME" == "CYGWIN" ]; then
+        TARGET_PATH=`cygpath -w "$TARGET_PATH"`
+    fi
+
+    while [ ! -z "$TARGET_PATH" ] && [ "$TARGET_PATH" != "/" ] && [ "$TARGET_PATH" != "." ]
+    do
+        if [ -x "$TARGET_PATH/Brackets.exe" ]; then
+            break;
+        fi
+
+        TARGET_PATH="$(dirname "$TARGET_PATH")"
+        if [ OS_NAME == 'CYGWIN' ]; then
+            TARGET_PATH=`cygpath -w "$TARGET_PATH"`
+        fi
+    done
+
+    # Unfortunately windows "start" command is not recognized natively
+    # and hence have to launch exe from command line prompt in a blocking
+    # way.
+    if [ ! -z "$TARGET_PATH" ] && [ -x "$TARGET_PATH/Brackets.exe" ]; then
+        "$TARGET_PATH/Brackets.exe" "$@"
+    else
+        echo "Unable to launch Brackets as Brackets.exe could not be located. Try re-installing Brackets."
+    fi
+fi
+
 
 
 <plugin>
@@ -7888,8 +7940,8 @@ mvn versions:display-property-updates
     <rulesUri>file:///${session.executionRootDirectory}/config/maven-versions-plugin-rules.xml</rulesUri> 
   </configuration>
 </plugin>
-
-
+--------------------------------------------------------------------------------------------------------
+mvn package -B -D maven.repo.local=F:\BuildAgent\work\9d24e4e3ca3c7728\build\..\.build\m2 -U -P CI
 --------------------------------------------------------------------------------------------------------
 The compare-dependencies goal can be used to compare the dependencies in the current project to the dependencyManagement of a remote project. This is useful, for example, for finding differences between the current project dependencies and an organizational bill of materials (BOM) pom. You specify the remote groupId, artifactId, and the version to which the current project should be compared, for example
 

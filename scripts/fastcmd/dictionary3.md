@@ -28,6 +28,10 @@ sudo -i
 
 nmcli nm enable false eth0 && nmcli nm enable true eth0
 -----------------------------------------------------------------------------------------
+@echo off
+start Brackets.exe %*
+
+-----------------------------------------------------------------------------------------
 import com.jerry.security.core.config.JerrySecurityProperties;
 import com.jerry.security.core.exception.JerrySecurityCodeException;
 import com.jerry.security.core.service.JerryUserInfo;
