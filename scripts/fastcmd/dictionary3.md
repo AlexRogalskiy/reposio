@@ -32,6 +32,102 @@ nmcli nm enable false eth0 && nmcli nm enable true eth0
 start Brackets.exe %*
 
 -----------------------------------------------------------------------------------------
+@SupportedSourceVersion(SourceVersion.RELEASE_8)
+-----------------------------------------------------------------------------------------
+
+import com.igormaznitsa.meta.annotation.Weight;
+import com.igormaznitsa.meta.common.exceptions.MetaErrorListeners;
+import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
+import java.util.zip.DataFormatException;
+import java.util.zip.Deflater;
+import java.util.zip.Inflater;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.annotation.concurrent.ThreadSafe;
+
+/**
+ * Auxiliary methods for IO operations.
+ *
+ * @since 1.0
+ */
+@ThreadSafe
+public final class IOUtils {
+
+  private IOUtils() {
+  }
+
+  /**
+   * Pack some binary data.
+   *
+   * @param data data to be packed
+   * @return packed data as byte array
+   * @since 1.0
+   */
+  @Nonnull
+  @Weight(Weight.Unit.VARIABLE)
+  public static byte[] packData(@Nonnull final byte[] data) {
+    final Deflater compressor = new Deflater(Deflater.BEST_COMPRESSION);
+    compressor.setInput(Assertions.assertNotNull(data));
+    compressor.finish();
+    final ByteArrayOutputStream resultData = new ByteArrayOutputStream(data.length + 100);
+
+    final byte[] buffer = new byte[1024];
+    while (!compressor.finished()) {
+      resultData.write(buffer, 0, compressor.deflate(buffer));
+    }
+
+    return resultData.toByteArray();
+  }
+
+  /**
+   * Unpack binary data packed by the packData method.
+   *
+   * @param data packed data array
+   * @return unpacked byte array
+   * @throws IllegalArgumentException it will be thrown if the data has wrong format, global error listeners will be also notified
+   * @see #packData(byte[])
+   * @since 1.0
+   */
+  @Nonnull
+  @Weight(Weight.Unit.VARIABLE)
+  public static byte[] unpackData(@Nonnull final byte[] data) {
+    final Inflater decompressor = new Inflater();
+    decompressor.setInput(Assertions.assertNotNull(data));
+    final ByteArrayOutputStream outStream = new ByteArrayOutputStream(data.length * 2);
+    final byte[] buffer = new byte[1024];
+    try {
+      while (!decompressor.finished()) {
+        outStream.write(buffer, 0, decompressor.inflate(buffer));
+      }
+      return outStream.toByteArray();
+    } catch (DataFormatException ex) {
+      MetaErrorListeners.fireError("Can't unpack data for wrong format", ex);
+      throw new IllegalArgumentException("Wrong formatted data", ex);
+    }
+  }
+
+  /**
+   * Closing quetly any closeable object. Any exception will be caught (but global error listeners will be notified)
+   *
+   * @param closeable object to be closed quetly
+   * @return the same object provided in args
+   * @since 1.0
+   */
+  @Weight(Weight.Unit.LIGHT)
+  @Nullable
+  public static Closeable closeQuetly(@Nullable final Closeable closeable) {
+    if (closeable != null) {
+      try {
+        closeable.close();
+      } catch (Exception ex) {
+        MetaErrorListeners.fireError("Exception in closeQuetly", ex);
+      }
+    }
+    return closeable;
+  }
+}
+-----------------------------------------------------------------------------------------
 import com.jerry.security.core.config.JerrySecurityProperties;
 import com.jerry.security.core.exception.JerrySecurityCodeException;
 import com.jerry.security.core.service.JerryUserInfo;

@@ -7943,6 +7943,346 @@ fi
 --------------------------------------------------------------------------------------------------------
 mvn package -B -D maven.repo.local=F:\BuildAgent\work\9d24e4e3ca3c7728\build\..\.build\m2 -U -P CI
 --------------------------------------------------------------------------------------------------------
+import javax.annotation.Nonnull;
+
+/**
+ * Complexity constants. List was taken from <a href="https://en.wikipedia.org/wiki/Time_complexity">the wiki page</a>.
+ *
+ * @since 1.1.2
+ */
+public enum Complexity {
+
+  /**
+   * <a href="https://en.wikipedia.org/wiki/Time_complexity#Constant_time">Constant value.</a> Example: Determining if an integer (represented in binary) is even or odd.
+   * <p>
+   * <b>O(1)</b></p>
+   *
+   * @since 1.1.2
+   */
+  CONSTANT("O(1)"),
+  /**
+   * <a href="https://en.wikipedia.org/wiki/Ackermann_function#Inverse">Inverse Ackermann.</a> Example: Amortized time per operation using a disjoint set.
+   * <p>
+   * <b>O(α(n))</b></p>
+   *
+   * @since 1.1.2
+   */
+  INVERSE_ACKERMANN("O(a(n))"),
+  /**
+   * <a href="https://en.wikipedia.org/wiki/Iterated_logarithm">Iterated logarithmic.</a> Example:
+   * <a href="https://en.wikipedia.org/wiki/Graph_coloring#Parallel_and_distributed_algorithms">Distributed coloring of cycles.</a>
+   * <p>
+   * <b>O(log* n)</b></p>
+   *
+   * @since 1.1.2
+   */
+  ITERATED_LOGARITHMIC("O(log* n)"),
+  /**
+   * <a href="https://en.wikipedia.org/wiki/Time_complexity#Logarithmic_time">Log-logarithmic.</a> Example: Amortized time per operation using a bounded priority queue.
+   * <p>
+   * <b>O(log log n)</b></p>
+   *
+   * @since 1.1.2
+   */
+  LOG_LOGARITHMIC("O(log log n)"),
+  /**
+   * <a href="https://en.wikipedia.org/wiki/Time_complexity#Logarithmic_time">Logarithmic.</a> Example: <a href="https://en.wikipedia.org/wiki/Binary_search">Binary search</a>.
+   * <p>
+   * <b>O(log n)</b></p>
+   *
+   * @since 1.1.2
+   */
+  LOGARITHMIC("O(log n)"),
+  /**
+   * <a href="https://en.wikipedia.org/wiki/Time_complexity#Logarithmic_time">Polylogarithmic.</a>
+   * <p>
+   * <b>poly(log n)</b></p>
+   *
+   * @since 1.1.2
+   */
+  POLYLOGARITHMIC("poly(log n)"),
+  /**
+   * Fractional power. Example: <a href="https://en.wikipedia.org/wiki/Kd-tree">Searching in a kd-tree</a>.
+   * <p>
+   * <b>O(n<sup>c</sup>) where 0 &lt; c &lt; 1 </b></p>
+   *
+   * @since 1.1.2
+   */
+  FRACTIONAL_POWER("O(n^c)"),
+  /**
+   * <a href="https://en.wikipedia.org/wiki/Time_complexity#Linear_time">Linear</a>. Example: Finding the smallest or largest item in an unsorted array.
+   * <p>
+   * <b>O(n)</b></p>
+   *
+   * @since 1.1.2
+   */
+  LINEAR("O(n)"),
+  /**
+   * n log star n. Example: <a href="https://en.wikipedia.org/wiki/Polygon_triangulation">Seidel's polygon triangulation algorithm</a>.
+   * <p>
+   * <b>O(n log* n)</b></p>
+   *
+   * @since 1.1.2
+   */
+  N_LOG_STAR_N("O(n log* n)"),
+  /**
+   * <a href="https://en.wikipedia.org/wiki/Time_complexity#Linearithmic_time">Lineqarithmic</a>. Example: Fastest possible comparison sort.
+   * <p>
+   * <b>O(n log n)</b></p>
+   *
+   * @since 1.1.2
+   */
+  LINEARITHMIC("O(n log n)"),
+  /**
+   * Quadratic. Example: Bubble sort; Insertion sort; Direct convolution.
+   * <p>
+   * <b>O(n<sup>2</sup>)</b></p>
+   *
+   * @since 1.1.2
+   */
+  QUADRATIC("O(n^2)"),
+  /**
+   * Cubic. Example: Naive multiplication of two n×n matrices. Calculating partial correlation.
+   * <p>
+   * <b>O(n<sup>3</sup>)</b></p>
+   *
+   * @since 1.1.2
+   */
+  CUBIC("O(n^3)"),
+  /**
+   * <a href="https://en.wikipedia.org/wiki/Time_complexity#Polynomial_time">Polynomial</a>. Example: <a href="https://en.wikipedia.org/wiki/Karmarkar's_algorithm">Karmarkar's
+   * algorithm for linear programming</a>; AKS primality test.
+   * <p>
+   * <b>2<sup>O(log n)</sup> = poly(n)</b></p>
+   *
+   * @since 1.1.2
+   */
+  POLYNOMIAL("poly(n)"),
+  /**
+   * <a href="https://en.wikipedia.org/wiki/Time_complexity#Quasi-polynomial_time">Quasi-polinomial</a>. Example: Best-known O(log2 n)-approximation algorithm for the directed
+   * Steiner tree problem.
+   * <p>
+   * <b>2<sup>poly(log n)</sup></b></p>
+   *
+   * @since 1.1.2
+   */
+  QUASI_POLYNOMIAL("2^poly(log n)"),
+  /**
+   * <a href="https://en.wikipedia.org/wiki/Time_complexity#Sub-exponential_time">Sub-exponential</a>. Example: Assuming complexity theoretic conjectures, BPP is contained in
+   * SUBEXP.
+   * <p>
+   * <b>O(2^n^ε) for all ε &gt; 0</b></p>
+   *
+   * @since 1.1.2
+   */
+  SUB_EXPONENTIAL("O(2^n^e)"),
+  /**
+   * <a href="https://en.wikipedia.org/wiki/Time_complexity#Exponential_time">Exponential</a>. Example: Solving matrix chain multiplication via brute-force search.
+   * <p>
+   * <b>2<sup>O(n)</sup></b></p>
+   *
+   * @since 1.1.2
+   */
+  EXPONENTIAL("2^O(n)"),
+  /**
+   * Factorial. Example: Solving the traveling salesman problem via brute-force search.
+   * <p>
+   * <b>O(n!)</b></p>
+   *
+   * @since 1.1.2
+   */
+  FACTORIAL("O(n!)"),
+  /**
+   * <a href="https://en.wikipedia.org/wiki/Time_complexity#Double_exponential_time">Double exponential</a>. Example: Deciding the truth of a given statement in Presburger
+   * arithmetic.
+   * <p>
+   * <b>2^2^poly(n)</b></p>
+   *
+   * @since 1.1.2
+   */
+  DOUBLE_EXPONENTIAL("2^2^poly(n)");
+
+  private final String formula;
+
+  private Complexity(@Nonnull final String formula) {
+    this.formula = formula;
+  }
+
+  /**
+   * Get the formula.
+   *
+   * @return formula as string
+   * @since 1.1.2
+   */
+  @Nonnull
+  public String getFormula() {
+    return this.formula;
+  }
+
+  @Override
+  @Nonnull
+  public String toString() {
+    return this.formula;
+  }
+}
+--------------------------------------------------------------------------------------------------------
+public static void writeToFileZipFileContents(String zipFileName,
+    String outputFileName) throws IOException {
+	Charset charset = StandardCharsets.US_ASCII;
+    Path outputFilePath = Paths.get(outputFileName);
+
+    try (
+        ZipFile zf = new ZipFile(zipFileName);
+        BufferedWriter writer = Files.newBufferedWriter(outputFilePath, charset)
+    ) {
+        for (Enumeration entries = zf.entries(); entries.hasMoreElements();) {
+            String newLine = System.getProperty("line.separator");
+            String zipEntryName =
+                 ((ZipEntry)entries.nextElement()).getName() + newLine;
+            writer.write(zipEntryName, 0, zipEntryName.length());
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+private List<String> aMethodReturningNullList(){
+    return null;
+}
+ 
+@Test
+public void givenNullObject_whenRequireNonNullElse_thenElse() {
+    List<String> aList = Objects.<List>requireNonNullElse(
+      aMethodReturningNullList(), Collections.EMPTY_LIST);
+  
+    assertThat(aList, is(Collections.EMPTY_LIST));
+}
+ 
+private List<String> aMethodReturningNonNullList() {
+    return List.of("item1", "item2");
+}
+ 
+@Test
+public void givenObject_whenRequireNonNullElse_thenObject() {
+    List<String> aList = Objects.<List>requireNonNullElse(
+      aMethodReturningNonNullList(), Collections.EMPTY_LIST);
+  
+    assertThat(aList, is(List.of("item1", "item2")));
+}
+ 
+@Test(expected = NullPointerException.class)
+public void givenNull_whenRequireNonNullElse_thenException() {
+    Objects.<List>requireNonNullElse(null, null);
+}
+--------------------------------------------------------------------------------------------------------
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+
+/**
+ * Singleton that will delete directory on normal JVM exit.
+ * 
+ * @author James Leigh
+ * 
+ */
+public class DirUtil {
+	static final Collection<File> temporary = new ArrayList<File>();
+
+	public static File createTempDir(String prefix) throws IOException {
+		String tmpDirStr = System.getProperty("java.io.tmpdir");
+		if (tmpDirStr == null) {
+			tmpDirStr = "tmp";
+		}
+		File tmpDir = new File(tmpDirStr);
+		if (!tmpDir.exists()) {
+			tmpDir.mkdirs();
+		}
+		File dir = File.createTempFile(prefix, "", tmpDir);
+		dir.delete();
+		dir.mkdirs();
+		return dir;
+	}
+
+	public static void deleteOnExit(File dir) {
+		synchronized (temporary) {
+			if (temporary.isEmpty()) {
+				Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+					public void run() {
+						synchronized (temporary) {
+							for (File dir : temporary) {
+								deleteFileOrDir(dir, 256);
+							}
+						}
+					}
+				}, "Temporary Directory Cleanup"));
+			}
+			temporary.add(dir);
+		}
+	}
+
+	static void deleteFileOrDir(File dir, int max) {
+		File[] listFiles = dir.listFiles();
+		if (listFiles != null && max > 0) {
+			for (File file : listFiles) {
+				deleteFileOrDir(file, max - 1);
+			}
+		}
+		dir.delete();
+	}
+}
+--------------------------------------------------------------------------------------------------------
+Method[] methods = TestClass.class.getMethods();
+for (Method m : methods) {
+    if (m.isAnnotationPresent(TestAnnotation.class)) {
+        TestAnnotation ta = m.getAnnotation(TestAnnotation.class);
+        System.out.println(ta.testText());
+    }
+}
+--------------------------------------------------------------------------------------------------------
+REM "Use handle.exe to figure out the process id and handle ids, parse the output, then close the handle (again using handle.exe)"
+
+cd "C:\Users\Nikolay_Tkachev\workspace\HHSystem\UI\target"
+"c:/Program Files/Process Explorer/handle.exe" -p java.exe "C:\Users\Nikolay_Tkachev\workspace\HHSystem\UI\target" > handles.txt
+
+@echo "O====== Going to unlock all the below file handles! =======O"
+FOR /F "tokens=1-26 delims=: " %a in (handles.txt) DO @echo %h
+FOR /F "tokens=1-26 delims=: " %a in (handles.txt) DO handle -p %c -c %f -y
+--------------------------------------------------------------------------------------------------------
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.METHOD})
+public @interface Test {
+
+    /**
+     * Default empty exception.
+     */
+    static class None extends Throwable {
+        private static final long serialVersionUID = 1L;
+
+        private None() {
+        }
+    }
+
+    /**
+     * Optionally specify <code>expected</code>, a Throwable, to cause a test method to succeed if
+     * and only if an exception of the specified class is thrown by the method. If the Throwable's
+     * message or one of its properties should be verified, the
+     * {@link org.junit.rules.ExpectedException ExpectedException} rule can be used instead.
+     */
+    Class<? extends Throwable> expected() default None.class;
+
+    /**
+     * Optionally specify <code>timeout</code> in milliseconds to cause a test method to fail if it
+     * takes longer than that number of milliseconds.
+     * <p>
+     * <b>THREAD SAFETY WARNING:</b> Test methods with a timeout parameter are run in a thread other than the
+     * thread which runs the fixture's @Before and @After methods. This may yield different behavior for
+     * code that is not thread safe when compared to the same test method without a timeout parameter.
+     * <b>Consider using the {@link org.junit.rules.Timeout} rule instead</b>, which ensures a test method is run on the
+     * same thread as the fixture's @Before and @After methods.
+     * </p>
+     */
+    long timeout() default 0L;
+}
+--------------------------------------------------------------------------------------------------------
 The compare-dependencies goal can be used to compare the dependencies in the current project to the dependencyManagement of a remote project. This is useful, for example, for finding differences between the current project dependencies and an organizational bill of materials (BOM) pom. You specify the remote groupId, artifactId, and the version to which the current project should be compared, for example
 
 mvn versions:compare-dependencies -DremotePom=org.foo:bom-pom:1.0
