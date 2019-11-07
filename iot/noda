@@ -8688,6 +8688,1312 @@ https://excellgroupplc.zendesk.com/hc/en-gb/articles/203686992-Dot11-Connecting-
 
 }
 
+
+The description of LoRa Tool
+
+Using the LoRaTool application on your phone you will be able to manage devices of mcf88 based on the LoRaWAN with NFC technology, configure LoRaWAN credentials and other preferences, read data from sensors, update firmware, enable and manage passwords.
+
+ 
+
+ 
+
+ 
+
+The description of LoRa Alliance
+
+"The LoRa Alliance is the fastest growing technology alliance. A non-profit association of more than 500 member companies, committed to enabling large scale deployment of Low Power Wide Area Networks (LPWAN) IoT through the development and promotion of the LoRaWAN open standard.
+
+Download with official LoRa Alliance Mobile App to keep up to date with all our events. The app allows you to:
+*Check out Agendas and Sessions
+*Plan you days in advance by creating your Personalized Agenda
+*Network with other members in the app
+*Reminders for events
+*Take notes, ask questions to speakers and lots more"
+
+ 
+
+ 
+
+ 
+
+The description of Lora
+
+The Lora app will allow users to check if they are in range of a TTN (The Things Network) LoRaWAN gateway.
+On launch, the app will show information on the nearest gateway available.
+By clicking a gateway on the map, additional information regarding this gateway is displayed.
+A simple search option allows you to scan gateway availability and with location sharing turned on, a click of the button will bring you to your current location.
+
+Disclaimer:
+Gateway range can deviate from the data displayed by the app.
+Gateways are managed independently uptimes are not guaranteed.
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of LoRa Tracker
+
+Version 1.0 LoRa Tracker Indusys SRL
+
+Read and graph the information acquired by LoRa Trackers devices.
+
+ 
+
+ 
+
+ 
+
+The description of LoRa Remote
+
+With the LoRa Remote app you can change settings or update the firmware of your LoRa node.
+
+ 
+
+ 
+
+The description of Sense for Innovation IoT
+
+To register, track and report status of IoT Devices sensors (Temperature, IR, Motion, Ultrasonic ,Touch, Proximity, Pressure, Level, Smoke and Gas), which are designed and developed in-house using LoRa technology.
+
+ 
+
+ 
+
+The description of TTN Mapper
+
+This is the third version of the TTN Mapper Android app. Use this app to map coverage of The Things Network using the GPS receiver in your phone. A LoRa node that is being kept in close proximity of your phone transmits LoRaWAN messages to The Things Network. This app subscribes to TTN to receive these messages. The metadata that is associated with received messages contains the signal strength and quality of the message as received by one or many gateways. This metadata is paired with your phone's location and sent to TTN Mapper. There we use this signal strength and quality data, and the location where the observation is made to draw a heatmap of the coverage of The Things Network.
+
+TTN Mapper 2019.06.19b Update
+
+2019-10-17
+
+Fixes a number of bugs that caused the app to crash
+
+Please report any issues here:
+https://github.com/ttnmapper/ttnmapper-android-v3/issues
+
+ 
+
+ 
+
+ 
+
+The description of Ripple
+
+This is intended for groups which are out of cell coverage, eg. camping/hiking, and wish to use SMS-like communications.
+
+This app is used in conjunction with a DIY LoRa radio module. Full instructions on how to assemble these are here: https://www.instructables.com/id/LoRa-Mesh-Radio
+
+The radios use ECC encryption, so your conversations are completely safe from prying eyes. You can also easily send your GPS location as part of your conversation, and recipient can tap to see where you are on Google maps.
+
+ 
+
+ 
+
+ 
+
+The description of Sensor settings
+
+Change settings on Elsys LoRa sensors, ESM5k, ERS,ERS desk sensor, ERS gridsensor, and ELT-1. You can change settings,keys,sample rates and more on the sensor
+
+Sensor settings 12.0 Update
+
+2018-12-14
+
+New settings for ELT modules and sensors. New settings and configuration for the accelerometer. Fix ELT-lite external period bug. Removed unused settings for ERS and ELT.
+
+ 
+Coverage creates your own personal cell and WiFi coverage map based on signal strength readings from your phone.
+
+ 
+
+See where your device has better signal strength and where it encounters dead zones. Put your carrier's claims to the test by creating your own personal coverage map and by performing your own speed tests.
+
+ 
+
+Test your network performance
+
+- Map your cell and WiFi coverage
+
+- Works with GSM, CDMA, UMTS, and LTE cell networks
+
+- Uses accurate WiFi and cell signal strength readings from your phone
+
+- Find dead zones on your commute
+
+- Speed test your connection
+
+- Swap SIM cards and compare your coverage on different carriers
+
+ 
+
+Lots of interesting WiFi and cell statistics about your phone
+
+- Your average LTE signal strength
+
+- How many new cell towers you saw today
+
+- How much of your time does your phone spend connected to WiFi
+
+- How much of your time does your phone spend on an LTE network
+
+- Your average WiFi signal strength
+
+- Much more
+
+ 
+
+ 
+
+ 
+
+ 
+
+Network scanner:
+
+- Discovers all devices connected at the network.
+
+- Displays most important information for each device connected, IP Address, MAC Address, Vendor, Bonjour Name, NetBIOS Name and Domain.
+
+ 
+
+- Wake On LAN (WOL): switch on a remote device from your phone or tablet when you are connected via wifi or with a mobile data connection.
+
+ 
+
+- Secure SHell (SSH): put a remote device in sleep mode or shutdown from your phone or tablet when you are connected via wifi or with a mobile data connection.
+
+Displays the operative system version installed on the remote device. (In the remote device must be installed and started a SSH server)
+
+ 
+
+ 
+
+- Loads off-line all devices of a network previously detected.
+
+ 
+
+- Adds a new network or a new device manually in order to manage all functionality for a no detected device.
+
+ 
+
+Network analyser:
+
+- Shows information about the wifi connection (external IP, signal strength, download and upload speed, subnet mask, gateway, DNS).
+
+- Shows information about the mobile provider (external IP, signal strength, download and upload speed, CID, LAC, MCC, MNC).
+
+ 
+
+- Wifi scanner: find nearby wifi.
+
+- WIfi analyzer: displays SSID, signal strength, channel, encryption.
+
+- Shows graphically the band width and the overlapping between channels of wifi networks.
+
+ 
+
+- Network monitor. Monitoring and diagnostics remote devices: shows CPU usage, RAM usage and displays the available memory inside the disks.
+
+ 
+
+- Network security. Monitoring access to network wifi. Receive notification when a new device or an unknown device connects to the network.
+
+ 
+
+Net tools:
+
+- Ping tools. It's possible to ping every device connected and any hostname or IP Address.
+
+- Port scanner to scan the most common port used.
+
+ 
+
+- Themes available.
+
+ 
+
+- Available languages: Czech, German, Greek, English, Spanish, French, Italian, Polish, Portuguese, Russian and Chinese.
+
+ 
+
+ 
+
+ 
+
+Follow me on Twitter @developerNetGEL in order to share ideas, opinions, support and to be informed about new release.
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of Port Authority
+
+A handy systems and security-focused tool, Port Authority is a very fast port scanner. Port Authority also allows you to quickly discover hosts on your network and will display useful network information about your device and other hosts.
+
+ 
+
+One of the fastest port scanners with host discovery on the market! Host discovery is typically performed in less than 5 seconds. If the device you're scanning drops packets, it takes about 10 seconds to scan 1000 ports. If the device you're scanning rejects packets, it takes less than 30 seconds to scan all 65,535 ports!
+
+ 
+
+Features
+
+ 
+
+* Heavily threaded, no more waiting for results one at a time
+
+* LAN host discovery
+
+* Public IP discovery
+
+* MAC address vendor detection
+
+* LAN/WAN host TCP port scanning
+
+* Custom port range scans
+
+* Open discovered HTTP(S) services to browser
+
+* Lightweight service fingerprinting (SSH/HTTP(S) server type and version)
+
+* DNS record lookups supporting almost every record type
+
+* Wake-on-LAN for LAN hosts
+
+ 
+
+How are scans so fast?
+
+ 
+
+This application makes heavy use of threading. Because most of the operations performed are I/O bound a lot more threads can be used than the number of cores on a device. In fact, one of the most intensive parts of the application is updating the UI during scans. This has gone through many optimizations but still remains a bit of a hotspot.
+
+ 
+
+I have a lower end and/or older device, will this work?
+
+ 
+
+Absolutely! Just lower the number of threads that are used for port scans in the settings. I'm always working on improving the efficiency and memory footprint of the application, and things have been greatly improved since the original version!
+
+ 
+
+I keep getting crashes when scanning a large range of ports
+
+ 
+
+The crash is most likely an out of memory exception that is occurring due to using too many threads. Lower your port scan thread count in the settings. The right value will be highly dependent on the device and its hardware.
+
+ 
+
+I'm getting a warning that says this application is trying to send email
+
+ 
+
+A few users have reported that a warning pops up on their device, warning them that this application is trying to send mail. This is caused by various security software so you can be assured (or just look at the code yourself) that I'm not sending mail.
+
+ 
+
+Some security software looks at where traffic is coming and going from the device and takes certain actions for certain cases. If you're running any kind of port scan that includes port 25 (SMTP) this will most likely be flagged. Even though no data is being sent to that port the security software will see an outbound connection to an SMTP service and throw up a warning. Obviously this is a very bad check but some security tools are better than others and may actually look for data flowing out to port 25 to see if there's really anything happening.
+
+ 
+
+I'm not finding some of the hosts/devices on my LAN
+
+ 
+
+If you're finding that some devices aren't responding in time you should increase the host scan timeout setting, just be aware that it will cause host scans to take longer. In some cases it may be worth trading time for accuracy.
+
+ 
+
+I'm not finding open ports that I know are truly open
+
+ 
+
+You can now adjust the timeout for connections made to ports when performing either LAN or WAN scans. If you're scanning something over WAN (mobile network if you're using a cell phone) please be aware that scanning is best effort. Mobile carriers may detect that a real port scan is occurring and apply traffic shaping dynamically, or they may just start terminating the connections entirely. Additionally, if you happen to have poor signal or to not have 4G the quality of the network connection may be so poor that you'll need to have a fairly high timeout in order to tolerate latency spikes.
+
+ 
+
+ 
+
+Do you like the application? Consider purchasing the donate version https://play.google.com/store/apps/details?id=com.aaronjwood.portauthority.donate
+
+ 
+
+This software is 100% free and open source https://github.com/aaronjwood/PortAuthority
+
+Show less
+
+ 
+
+ 
+
+ 
+
+The description of WiFi Analyzer
+
+Introducing a new way to analyze and optimize your WiFi, Turn you android device into WiFi Analyzer!
+
+WiFi Analyzer Recommends the best channel and place for your network.
+
+WiFi Analyzer gives you the most useful optimization information to help decrease interference and increase connection speed and stability.
+
+ 
+
+Features:
+
+- WiFi Optimizer for Interference Issues
+
+- Channel Analyzer for Nearby APs
+
+- Real-time data and distance calculations.
+
+- History of signal strength
+
+- Supports 2.4GHz/5GHz
+
+- View Hidden WiFis
+
+- Copy MAC address
+
+- Channel Optimizer + Much More!
+
+Show less
+
+ 
+
+ 
+
+ 
+
+The description of Geeky hacks : IP tools network analyzer
+
+Description:
+
+Geeky itools: Network Analyzer can help you diagnose various problems in your wifi network setup, Internet connectivity, and also detect various issues on remote servers thanks to the wide range of tools it provides.
+
+The app combines the most popular network utilities usually found on your desktop PC. itool will help you fix a network problem easily or optimize the network tool ｉｐ connection when you are hundreds of miles away (i.e. not at work :-))
+
+It is equipped with a high-performance wifi device discovery tool, including all the lan tool device's addresses, manufacturers and names. Finally, it shows all neighbouring wi-fi networks together with tutorial app additional details such as signal strength, encryption and router manufacturer to help discovering the best channel for a wireless router signal. Everything works with both IPv4 and IPv6.
+
+it tool is a powerful feng network tools for speed up and setup networks. Helps to quickly detecting any computer netzwerk problems, ip address detection and boosting netwerk performance. This is a must-have app for every user, IT expert and network administrator.
+
+The IP Tools app provides access to the most popular network utilities that administrators and users often use on their fingbox learn hacking.
+
+ 
+
+Features:
+
+∙ Ping
+
+∙ LAN Scanner
+
+∙ Port Scanner
+
+∙ DNS Lookup
+
+∙ Whois - Provides information about a website and its owner
+
+∙ Router Setup Page suche netzwerk
+
+∙ Traceroute
+
+∙ WiFi Analyzer
+
+∙ IP address with "My ip(endereço de ip)" feature
+
+∙ Connection Log
+
+∙ IP Calculator
+
+∙ ip test & Host Converter
+
+∙ ip utility tools analyser
+
+ 
+
+Wifi signal meter( wifi channel ):
+
+- Both graphical and textual representation showing network channels and signal strengths
+
+- Wifi network type (WEP, WPA, WPA2)
+
+- wifi analizer encryption (AES, TKIP)
+
+- BSSID (router MAC address аипи), manufacturer, WPS support
+
+- Bandwidth análise(cain and abel)
+
+ 
+
+LAN scan:
+
+- Fast and reliable detection of all network scanning tools devices
+
+- Vendor name, ipe, and MAC addresses of all discovered devices
+
+- NetBIOS, mDNS (bonjour), LLMNR, and DNS name where available
+
+- Pingability test of discovered devices nettools
+
+- Detection of IPv6 availability zmap analyzer
+
+ 
+
+Ping & traceroute:
+
+- Round trip delay including IP address and hostname for every finc network ip utility node
+
+- Support of both for IPv4 and IPv6 (selectable ipy)
+
+ 
+
+Port scanner:
+
+- Fast, adaptive algorithm for scanning the most common ports or user specified port ranges netscanner
+
+- Detection of closed, firewalled, and open ports
+
+- Description of the known open port services & port checker
+
+ 
+
+Whois:
+
+- Whois of domains, IP addresses and AS numbers, musikberbagi wifi
+
+- Support of both for IPv4 and IPv6 (selectable)
+
+ 
+
+DNS lookup:
+
+- Functionality similar to nslookup or dig
+
+- Support for A, AAAA, SOA, PTR, MX, CNAME, NS, TXT, SPF, SRV records
+
+- Support of both for IPv4 and IPv6 (selectable)
+
+ 
+
+Network information:
+
+- Default gateway,open porte, external IP (v4 and v6), DNS server, port scan tool
+
+- Scan Wifi network information such as SSID, BSSID, IP address, HTTP proxy, subnet mask , signal strength, wireshark.
+
+- Cell (3G, LTE) social network analyses information such as IP address, scanner signal strength, network provider, MCC, MNC, etc.
+
+ 
+
+WiFi analyze will help you get full and clear picture of your network state. With IP tools premium, analyse and optimization are fast, easy and absolutely friendly. geek app reloaded is improved continuously ethical hacking. Its developers allow for customer opinions and modify the product offering new, more functional and handy versions.
+
+ 
+
+Warning: Permissions
+
+ACCESS_COARSE_LOCATION & ACCESS_FINE_LOCATION
+
+NEEDS for WiFi network Analyzer and SSID detection.
+
+It's Android OS requirement.
+
+Show less
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+he description of Network Cell Info Lite
+
+💪Thank you! We have reached 3,000,000+ unique users who have installed our app on at least one device for the first time
+
+ 
+
+⚠️We do not show/have carrier tower locations, but indications of cell locations from the Mozilla MLS database.
+
+ 
+
+Network Cell Signal & WiFi Info is a thorough cell network/WiFi monitor and measurements/diagnostic log tool(4G+, LTE, CDMA, WCDMA, GSM) that helps troubleshoot reception and connectivity issues and for those that like to be in the know about their local cell carrier radio frequency landscape.
+
+ 
+
+Features comparison: https://m2catalyst.com/apps/network-cell-info/features
+
+ 
+
+📡Main features📡:
+
+☆Almost Real-Time (1 sec.) monitoring of cellular carrier and WiFi signals, in Gauge/Raw Tabs (*)
+
+☆GSM, CDMA, UMTS (WCDMA), IWLAN, LTE, LTE+ support
+
+☆Dual-SIM support (*)
+
+☆2/3 Signal-meter gauges for both SIMs and WiFi (*)
+
+☆Signal Plots, up to 2 cells
+
+☆Band number (*)
+
+☆SIM# preference option, for other than Gauge tab
+
+☆Map with network cellular info and signal-meter gauges
+
+☆Logs, Measurements of cellular signals (in the Map tab)
+
+☆Indication of cell locations (not carrier cell towers) in the Map, from Mozilla Location Service (MLS), ☆excl. CDMA (*)
+
+☆Crowd sourced Best Signal Finder shows your carrier's nearest best signals
+
+☆Route coloring (in the Map) according to the signal strength, and map markers with location and signal info
+
+☆Measurements settings (minimum distance, minimum accuracy, motion sensor, etc.)
+
+☆Database export measurements in KML 2.2, MLS Geosubmit v.2, CLF v.3, OpenCellID CSV, ☆CMWF database types
+
+☆Network information in Status Bar
+
+☆Raw view of carrier network cellular info
+
+☆Connection statistics (2G/3G/4G)
+
+☆SIM and device info
+
+ 
+
+📃Notes:
+
+Data accuracy is dependent on the device implementation of Android APIs. Not all manufacturers/devices implement fully/correctly Android APIs.
+
+For Android < 5.0, Dual SIM is not supported for non-MediaTek devices, due to Android/device limitation.
+
+You may use Mozilla Stumbler app, to update the Mozilla MLS database in your area.
+
+ 
+
+Please check also the richer features of our paid app: https://play.google.com/store/apps/details?id=com.wilysis.cellinfo
+
+ 
+
+BETA, when available: https://m2catalyst.com/apps/network-cell-info/beta-testing
+
+ 
+
+Manual: https://m2catalyst.com/apps/network-cell-info/manual
+
+ 
+
+FAQ: http://m2catalyst.com/apps/network-cell-info/faq (also FAQ inside app settings / about)
+
+ 
+
+Common Database Formats: https://m2catalyst.com/apps/network-cell-info/database
+
+ 
+
+Pro subscription Database Formats: https://m2catalyst.com/apps/network-cell-info/database-pro
+
+ 
+
+Phone issues: https://m2catalyst.com/apps/network-cell-info/android-issues
+
+ 
+
+Dual SIM issues: Make sure you enable it in the app settings, https://m2catalyst.com/apps/network-cell-info/dual-sim-issues
+
+ 
+
+Measurements database: The measurements you make in the MAP tab, can be saved locally on your device.
+
+ 
+
+* Tips to common install issues:
+
+1. If Google Play hangs while installing the app, reboot your device.
+
+ 
+
+* Tips to common start-up issues:
+
+1. Update app to latest Release.
+
+2. Uninstall the app, (reboot the device,) and re-install.
+
+3. Perform any pending system and/or google apps update(s), and re-install the app.
+
+4. If your Android/ROM/root somehow modifies the apk, then the app will not work.
+
+5. Turn the internet on, before you start the app for the first time (or after a long time).
+
+6. Email us to help you!
+
+ 
+
+ 
+
+Thanks for all the feedback!
+
+ 
+
+** Network Cell Signal & WiFi Info Lite is distributed exclusively in the Google Play Store **
+
+Show less
+
+Network Cell Info Lite 4.21.1 Update
+
+2019-11-05
+
+Release 4.21.1
+
+ 
+
+* Added Best Signal Finder
+
+* Bug fixes
+
+ 
+
+* Manual v3 (for paid/pro): https://m2catalyst.com/apps/network-cell-info/manual
+
+* Features: https://m2catalyst.com/apps/network-cell-info/features
+
+* FAQ: https://m2catalyst.com/apps/network-cell-info/faq
+
+* BETA app testing: https://m2catalyst.com/apps/network-cell-info/beta-testing
+
+* Check out our Ad-Free Network Cell Info: https://play.google.com/store/apps/details?id=com.wilysis.cellinfo
+
+* Distributed only on Google Play
+
+Network Cell Info Lite Tags
+
+Tools
+
+ 
+
+ 
+
+ 
+
+ 
+
+ The description of Who is on my WiFi? WiFi Spy Tool & Network Scanner
+
+If You are Facing Slow WiFi speed 😪, and you want to know if someone else is connected to your WiFi network or internet Hotspot anonymously. What do you do in such situations? If you are looking for the fastest, smartest and easiest way to control and block wifi thief and to find wifi users connected to your WiFi network or Hotspot , get information about the connected devices, you’ve come to the right place.Download and start saving wifi Internet money today!
+
+ 
+
+This application will help you solved that Who is Connected to my WiFi? WiFi spy Inspector is all in one perfect Network tool. It will Block Wifi user you want to also do Router Configuration.
+
+ 
+
+Smart wifi spy 🕵️ Inspector master Who Use My WiFi? - Network Scanner comes with a clean and neat design, and the interface is so user-friendly that doesn’t take a genius to track the connected users and devices to your wireless network.
+
+ 
+
+It’s fast, smart and reliable. Scan your WiFi network in seconds.
+
+ 
+
+Who is Connected to my wifi tools master is a device discovery and network discovery tool which shows some information about the current network, like Speed and Name, and it also lets you know about the devices connected to your wireless network.
+
+ 
+
+You will get these Detailed Features / Screens:
+
+ 
+
+📱Devices Connect to my WiFi
+
+Full device details including IP address, MAC address, Device Name, Vendor, Device Manufacturer and more.
+
+ 
+
+ℹ️ Wi-Fi Info:
+
+Wi-Fi-Name (SSID), BSSID, MAC address, maximum Wi-Fi speed, IP address, external IP address, net capability, net channel, subnet mask, Gateway IP address, DHCP server address, DNS1 and DNS2 address
+
+ 
+
+📶 Signal Strength:
+
+Network operators, Sim operator, phone type, network type, network strength in dbm and ASU, data state, data activity, country code of the mobile phone, device ID, IP address, roaming state ...
+
+ 
+
+🌐 Internet Speed Test
+
+2G, 3G, 4G, 4G LTE, 5G, WiFi Speed test.
+
+Wifi, download test, Upload test, latency test, Ping test and speed test network (streaming video speed, upload speed, download speed and more).
+
+Wifi connection and internet quality test for app performance – twitter speed test, facebook test, instagram speed test and more social media connection testing.
+
+Connection testing for signal and speed – use apps best suited for your network speed and performance.
+
+ 
+
+ 
+
+✔ Features
+
+∙ Scans all WiFi network devices in seconds
+
+∙ Check who on my wifi / Detect wifi thief
+
+∙ detailed MOBILE network informations
+
+∙ Network Signal Info
+
+∙ 2G, 3G, 4G, 4G LTE, 5G, WiFi Speed test
+
+∙ One-Click Quick Scan
+
+∙ Supports tplink devices, Huawei devices, Tenda Devices and many more
+
+∙ accurate signal strength indication
+
+∙ detailed WiFi informations
+
+∙ Router Password List
+
+∙ Internet connectivity checker
+
+∙ Ping and traceroute: for network quality measurement
+
+∙ Protect your network with a wireless Digital Fence that continuously watches over Wi-Fi
+
+devices around you
+
+∙ Gives you ip, type of that device
+
+∙ Vendor address database to find which vendor's device is connected
+
+∙ Goto Admin Router to lock strange device connected to WiFi network
+
+ 
+
+ 
+
+Supported languages:
+
+∙ English (Default)
+
+∙ العربية
+
+∙ 中文
+
+∙ Urdu
+
+∙ Français
+
+∙ Deutsche
+
+∙ हिंदी
+
+∙ Português
+
+∙ Español
+
+∙ Türk
+
+ 
+
+✩✩✩✩✩ Rate Us 5 Stars if you found this app useful ✩✩✩✩✩
+
+whos on my network
+
+how to tell if someone is using your wifi
+
+who is on my wifi download
+
+how to see who is on your wifi
+
+how to know if someone is using your wifi
+
+how to see who is using my wifi
+
+how to check if someone is using my wifi
+
+wifi user checker
+
+who is on my wifi full
+
+check wifi user
+
+who is on my wifi ultimate
+
+how to check who is using your wifi
+
+who in my wifi
+
+how to check wifi users
+
+who is on my wifi
+
+my wifi
+
+who is using my wifi
+
+how to check who is using my wifi
+
+whoisonmywifi
+
+who uses my wifi
+
+wifi thief finder
+
+Show less
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of Who Use My WiFi? 📱 Network Tool
+
+My wireless network is slow and I believe someone is connected to my Wi-Fi and using the internet without my knowledge.
+
+ 
+
+What do you do in such situations? If you are looking for the fastest, smartest and easiest way to control and monitor the number of users connected to your WiFi network and get information about the connected devices, you’ve come to the right place.
+
+ 
+
+Who Use My WiFi comes with a clean and neat design, and the interface is so user-friendly that doesn’t take a genius to track the connected users and devices to your wireless network.
+
+ 
+
+It’s fast, smart and reliable.
+
+ 
+
+Who Use My WiFi, shows some information about the current network, like Speed and Name, and it also lets you know about the devices connected to your wireless network.
+
+ 
+
+So, you can easily find out who is using your internet and what their devices are.
+
+ 
+
+So, if your wireless network is on a limited plan and you believe someone is sending and receiving data without your permission, install this Wi-Fi monitor app for free and look for the suspicious devices connected to your WiFi.
+
+ 
+
+Who Use My WiFi Main Features at a Glance:
+
+ 
+
+∙ Clean and neat design with fresh and intuitive interface
+
+∙ Fastest and Smartest way to track connected devices
+
+∙ Learn more about your current network: Speed, Name and …
+
+∙ Learn more about connected devices
+
+∙ Port Scanning (coming soon)
+
+∙ Wake-on-LAN (coming soon)
+
+∙ Troubleshoot your Internet connection (coming soon)
+
+∙ It’s fast, smart and reliable
+
+∙ Vendor Address Database
+
+∙ Useful for anyone
+
+∙ Less Ads
+
+∙ Free
+
+∙ light weight (3.83 MB)
+
+ 
+
+Scan your WiFi network in seconds.
+
+ 
+
+languages:
+
+ 
+
+- English
+
+- French
+
+- Arabic
+
+- Italian (coming soon)
+
+- Catalan (coming soon)
+
+- Russian (coming soon)
+
+- Spanish
+
+- Portuguese
+
+ 
+
+Download Who Use My WiFi for free and let us know about any bugs, questions, feature requests or any other suggestions.
+
+ 
+
+kerbalsc@gmail.com
+
+ 
+
+✩✩✩✩✩ Rate Us 5 Stars if you found this app useful ✩✩✩✩✩
+
+whos on my network
+
+how to tell if someone is using your wifi
+
+who is on my wifi download
+
+how to see who is on your wifi
+
+how to know if someone is using your wifi
+
+how to see who is using my wifi
+
+how to check if someone is using my wifi
+
+wifi user checker
+
+who is on my wifi full
+
+check wifi user
+
+who is on my wifi ultimate
+
+how to check who is using your wifi
+
+who in my wifi
+
+how to check wifi users
+
+who is on my wifi
+
+my wifi
+
+whos on my wifi
+
+who is using my wifi
+
+how to check who is using my wifi
+
+whoisonmywifi
+
+who uses my wifi
+
+wifi thief finder
+
+Show less
+
+Who Use My WiFi? 📱 Network Tool 6.0.0 Update
+
+2018-03-23
+
+New design
+
+Supporting Tablets.
+
+Added new languages.
+
+General bug fixes and improvements.
+
+How to block devices.
+
+ 
+
+ 
+
+ 
+
+The description of WiFiman
+
+WiFiman is ideal for analyzing nearby Wi-Fi networks and Bluetooth LE devices, device discovery, and network speedtests. These features are conveniently accessed through the sleekly designed UI created by Ubiquiti Networks. WiFiman contains no ads and is free of charge.
+
+ 
+
+WiFiman helps you locate a less crowded channel for your Wi-Fi Access Point. It lists nearby Wi-Fi channels and Bluetooth LE devices and shows you the details of those channels.
+
+ 
+
+With the app you can easily list and analyze devices connected to your current network. WiFiman scans the whole network subnet and shows you all of the available devices with the applicable details, using Bonjour, SNMP, NetBIOS, and UBNT discovery protocols.
+
+ 
+
+Another core feature is the network speedtest. You can test the speed of your internet connection and save the results for later comparison – or quickly share the results.
+
+Show less
+
+WiFiman 1.3.1 Update
+
+2019-07-27
+
+* support for upcoming Android Q
+
+* custom names for Wi-Fi AP
+
+* fixed IPv6 device availability check
+
+* support dark mode based on day time on latest Android versions
+
+* fixed wireless networks listing - sometimes it took very long to show nearby wireless networks on latest Android versions
+
+* few minor stability and other fixes
+
+ 
+
+ 
+
+ 
+
+The description of Network Scanner
+
+Are you ready to discover any devices connected to your network?
+
+Would you like to know who is using your WiFi?
+
+ 
+
+ 
+
+Highlighted features:
+
+* Find who uses your Wifi! Detect all connected network devices, scan your wireless network
+
+* IP scan, host detection
+
+* Replay any scan in history, see any device or host connected to your network in the past
+
+* Scan custom network range, change netmask, calculate network range
+
+* Customize device (rename, change device type)
+
+* Useful filters based on device type, device name, access time and others
+
+* Highlight new devices on the network
+
+* Generate charts from data (device type distribution and others)
+
+* Export database for further processing
+
+* Ping hosts
+
+Show less
+
+ 
+
+ 
+
+The description of Who is on my WiFi - Network Scanner & WiFi Scanner
+
+Who is on my WiFi? - Network Scanner & WiFi Scanner is super WiFi Protector and Network Scanner to Detect Who is on my WiFi and Protect my WiFi security.
+
+ 
+
+Who is on my WiFi? - Network Scanner & WiFi Scanner is the simplest network scanner, IP scanner and WiFi scanner that allows you to detect who is on my WiFi and you can block the thief device in router settings from my WiFi.
+
+ 
+
+Who is on my WiFi? - Network Scanner & WiFi Scanner help you find who is stealing my WiFi network speed.
+
+ 
+
+Who is on my WiFi? - Network Scanner & WiFi Scanner tell you Who is on my WiFi and wireless network without your permission.
+
+ 
+
+Who is on my WiFi? - Network Scanner & WiFi Scanner can easily scan my WiFi and see how many devices connected to my WiFi network router.
+
+ 
+
+Do you want to know who is on my WiFi? You just need to start Who is on my WiFi? - Network Scanner & WiFi Scanner and it will help you!
+
+Show less
+
+ 
+
+ 
+
+ 
+
+The description of IP Tools
+
+IP Tools is a powerful network tools for speed up and setup networks. Helps to quickly detecting any computer network problems, ip address detection and boosting network performance. This is a must-have app for every user, IT expert and network administrator.
+
+ 
+
+The app combines the most popular network utilities usually found on your desktop PC. Tools will help you fix a network problem easily or optimize the network connection when you are hundreds of miles away (i.e. not at work :-))
+
+ 
+
+IP Tools has a simple, intuitive interface, so you can receive within seconds full information about your network, find out internal or external IP (with "My ip" feature), SSID, BSSID, broadcast address, gateway, network mask, country, region, city, the provider’s geographical coordinates (latitude and longitude), whois and other basic information.
+
+ 
+
+The IP Tools app provides access to the most popular network utilities that administrators and users often use on their computers.
+
+ 
+
+Features:
+
+∙ Ping
+
+∙ LAN Scanner
+
+∙ Port Scanner
+
+∙ DNS Lookup
+
+∙ Whois - Provides information about a website and its owner
+
+∙ Router Setup Page
+
+∙ Traceroute
+
+∙ WiFi Analyzer
+
+∙ IP address with "My ip" feature
+
+∙ Connection Log
+
+∙ IP Calculator
+
+∙ IP & Host Converter
+
+∙ And so much more...
+
+ 
+
+WiFi analyzer will help you get full and clear picture of your network state. With IP Tools, analysis and optimization are fast, easy and absolutely friendly. The app is improved continuously. Its developers allow for customer opinions and modify the product offering new, more functional and handy versions.
+
+The app’s benefits go far beyond the above list. However, even those mentioned are enough to dismiss doubts, download the IP Tools network utilities to your smartphone and assess advantages from using them right now.
+
+ 
+
+Warning:
+
+Permissions
+
+ACCESS_COARSE_LOCATION & ACCESS_FINE_LOCATION
+
+NEEDS for WiFi Analyzer and SSID detection.
+
+It's Android OS requirement.
+
+Show less
+
+ 
+
+ 
+
+The description of Network Scanner
+
+The program displays the IP and MAC addresses, the names of the hosts on the your local network. Also there is a built-in port scanner (tcp) and small auxiliary tools.
+
+ 
+
+Key features:
+
+-Check hosts over a range of possible addresses in the network.
+
+-Function Vendor by mac lookup displays network equipment manufacturer.
+
+-Flexible Setting the number of passes and timeouts network scanner to achieve ballansa between speed and reliability display.
+
+-Ability To manually adjust the resolver names.
+
+-Getting IP, MAC addresses and host names can be copied to the clipboard.
+
+-You Can specify a range of port numbers, scanned port scanner.
+
+-Port scanner recognizes all registered services.
+
+-Intelligent scanning function of the scanner port (bust only registered ports).
+
+-Full Base port numbers and their descriptions.
+
+ 
+
+Additional features:
+
+-Built IP calculator
+
+-Built DNS resolver
+
+Show less
+
+
+
+
+GPS Tools Website: https://gpstools.app
+
+ 
+
+Permissions detailed: http://www.3c71.com/perms
+
+ 
+
+The project home page: http://appsisle.com/project/developer-assistant/
+The wiki addressing common questions: https://github.com/jwisniewski/android-developer-assistant/wiki
+
+Show less
+
+ 
+
+ 
+
+ 
+
+https://github.com/skjolber/external-nfc-api/tree/develop
+ 
+
+ 
+
+ 
+
+The description of Lora
+
+Mit der LORA-GmbH haben Sie den modernen Ansprechpartner in allen Fragen der zeitgemäßen
+Haustechnik. Als Spezialist für Flächenheizungen und Systemlösungen von Harreither
+steht der LORA-GmbH modernste Technik für die hygienische Brauchwarmwasser-
+bereitung, optimaler Energienutzung sowie behagliche Wärmeverteilung und sanfte stille Kühlung
+zur Verfügung.
+
+ 
+
+ 
+
+
+Оптимизация торговых точек по марштрутным картам покупателей
+Решение направлено на обеспечение торговых и рекламных предложений конечным потребителям/покупателям на основе системы персонифицированных рассылок и контрольных точек
+
 https://github.com/dermatthias
 http://brouter.de/brouter/segments4
 github.com/vuejs/vue-devtools

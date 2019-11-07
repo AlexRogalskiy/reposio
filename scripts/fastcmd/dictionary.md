@@ -20,6 +20,973 @@ systemctl config nginx
 service nginx -V
 systemctl -V nginx
 --------------------------------------------------------------------------------------------------------
+import com.codepoetics.octarine.records.Key;
+import com.codepoetics.octarine.records.Record;
+import com.codepoetics.octarine.records.Value;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.Version;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
+import java.util.stream.Stream;
+
+import static com.codepoetics.octarine.Octarine.$$;
+
+public class ReflectiveRecordSerialiser extends JsonSerializer<Record> {
+
+    private static final ObjectMapper DEFAULT_MAPPER = mapperWith();
+
+    public static ObjectMapper mapperWith(JsonSerializer<?>...extraSerialisers) {
+        ObjectMapper mapper = new ObjectMapper();
+        SimpleModule simpleModule = new SimpleModule("SimpleModule", Version.unknownVersion());
+        simpleModule.addSerializer(new ReflectiveRecordSerialiser());
+        simpleModule.addSerializer(new StreamSerialiser());
+        Stream.of(extraSerialisers).forEach(simpleModule::addSerializer);
+
+        mapper.registerModules(simpleModule);
+
+        return mapper;
+    }
+
+    private static final class StreamSerialiser extends JsonSerializer<Stream> {
+
+        private static final class WrappedIOException extends RuntimeException {
+
+            private final IOException e;
+
+            private WrappedIOException(IOException e) {
+                this.e = e;
+            }
+
+            public IOException getWrappedException() {
+                return e;
+            }
+        }
+
+        @Override
+        public Class<Stream> handledType() { return Stream.class; }
+
+        @Override
+        public void serialize(Stream stream, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+            jsonGenerator.writeStartArray();
+            try {
+                stream.forEach(item -> {
+                    try {
+                        serializerProvider.defaultSerializeValue(item, jsonGenerator);
+                    } catch (IOException e) {
+                        throw new WrappedIOException(e);
+                    }
+                });
+            } catch (WrappedIOException e) {
+                throw e.getWrappedException();
+            }
+            jsonGenerator.writeEndArray();
+        }
+    }
+
+    public static String toJson(Value...values) throws JsonProcessingException {
+        return toJson($$(values));
+    }
+
+    public static String toJson(Record record) throws JsonProcessingException {
+        return DEFAULT_MAPPER.writeValueAsString(record);
+    }
+
+    public static String toJson(Record...records) throws JsonProcessingException {
+        return toJson(Stream.of(records));
+    }
+
+    public static String toJson(Record record, JsonSerializer<?>...extraSerialisers) throws JsonProcessingException {
+        return mapperWith(extraSerialisers).writeValueAsString(record);
+    }
+
+    public static String toJson(Collection<Record> records) throws JsonProcessingException {
+        return toJson(records.stream());
+    }
+
+    public static String toJson(Stream<Record> records) throws JsonProcessingException {
+        return DEFAULT_MAPPER.writeValueAsString(records);
+    }
+
+    public static String toJson(Collection<Record> records, JsonSerializer<?>...extraSerialisers) throws JsonProcessingException {
+        return mapperWith(extraSerialisers).writeValueAsString(records);
+    }
+
+    public static String toJson(Stream<Record> records, JsonSerializer<?>...extraSerialisers) throws JsonProcessingException {
+        return mapperWith(extraSerialisers).writeValueAsString(records);
+    }
+
+    public static String toJson(Map<String, Record> records) throws JsonProcessingException {
+        return DEFAULT_MAPPER.writeValueAsString(records);
+    }
+
+    public static String toJson(Map<String, Record> records, JsonSerializer<?>...extraSerialisers) throws JsonProcessingException {
+        return mapperWith(extraSerialisers).writeValueAsString(records);
+    }
+
+    @Override
+    public Class<Record> handledType() { return Record.class; }
+
+    @Override
+    public void serialize(Record o, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+        jsonGenerator.writeStartObject();
+        for (Map.Entry<Key<?>, Object> entry : o.values().entrySet()) {
+            jsonGenerator.writeFieldName(entry.getKey().name());
+            serializerProvider.defaultSerializeValue(entry.getValue(), jsonGenerator);
+        }
+        jsonGenerator.writeEndObject();
+    }
+}
+
+
+v
+--------------------------------------------------------------------------------------------------------
+mvn dependency:tree -Dscope=test
+--------------------------------------------------------------------------------------------------------
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toSet;
+
+public interface JoinKey<S, K> extends Function<S, K>, Comparator<S> {
+
+    static <S, K> JoinKey<S, K> on(Function<? super S, ? extends K> f, Comparator<? super K> comparator) {
+        return new JoinKey<S, K>() {
+            @Override
+            public K apply(S s) {
+                return f.apply(s);
+            }
+
+            @Override
+            public int compare(S o1, S o2) {
+                return comparator.compare(apply(o1), apply(o2));
+            }
+
+            @Override
+            public Index<K, S> index(Stream<? extends S> source) {
+                return Index.on(source, f, comparator);
+            }
+        };
+    }
+
+    default Set<K> project(Stream<? extends S> source) {
+        return source.map(this).collect(toSet());
+    }
+
+    default Index<K, S> index(Collection<? extends S> source) {
+        return index(source.stream());
+    }
+
+    Index<K, S> index(Stream<? extends S> source);
+}
+--------------------------------------------------------------------------------------------------------
+ *     public static class JodaTimeConverter extends Transformer<LocalDate> {
+ *         private static DateTimeFormatter FORMATTER = DateTimeFormat.forStyle("S-");
+ *
+ *         &#064;Override
+ *         public LocalDate transform(String value) {
+ *             return FORMATTER.withLocale(getLocale()).parseLocalDate(value);
+ *         }
+ *     }
+--------------------------------------------------------------------------------------------------------
+    /**
+     * Calculate the average of a list of duration entries
+     */
+    static class AverageUsageStatisticStrategy implements UsageStatisticStrategy {
+        @Override
+        public Long calculate(List<Long> durationEntries) {
+            if (verifyNoNulls(durationEntries)) {
+                return 0L;
+            }
+
+            long sum = 0;
+            for (Long duration : durationEntries) {
+                sum += duration;
+            }
+            return sum / durationEntries.size();
+        }
+
+        private boolean verifyNoNulls(List<Long> durationEntries) {
+            return durationEntries == null || durationEntries.isEmpty() || durationEntries.contains(null);
+        }
+    }
+
+    /**
+     * Calculate the median of a list of duration entries
+     */
+    static class MedianUsageStatisticStrategy implements UsageStatisticStrategy {
+        @Override
+        public Long calculate(List<Long> durationEntries) {
+            if (verifyNoNulls(durationEntries)) {
+                return 0L;
+            }
+            Collections.sort(durationEntries);
+            int middle = durationEntries.size() / 2;
+            if (durationEntries.size() % 2 == 1) {
+                return durationEntries.get(middle);
+            } else {
+                return (durationEntries.get(middle - 1) + durationEntries.get(middle)) / 2;
+            }
+        }
+
+        private boolean verifyNoNulls(List<Long> durationEntries) {
+            return durationEntries == null || durationEntries.isEmpty() || durationEntries.contains(null);
+        }
+    }
+--------------------------------------------------------------------------------------------------------
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface After {
+    /**
+     * @return a tag expression
+     */
+    String[] value() default {};
+
+    /**
+     * @return max amount of milliseconds this is allowed to run for. 0 (default) means no restriction.
+     */
+    long timeout() default 0;
+
+    /**
+     * The order in which this hook should run. Higher numbers are run first.
+     * The default order is 10000.
+     */
+    int order() default 10000;
+}
+
+
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface Before {
+    /**
+     * @return a tag expression
+     */
+    String[] value() default {};
+
+    /**
+     * @return max amount of milliseconds this is allowed to run for. 0 (default) means no restriction.
+     */
+    long timeout() default 0;
+
+    /**
+     * The order in which this hook should run. Lower numbers are run first.
+     * The default order is 10000.
+     */
+    int order() default 10000;
+}
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface StepDefAnnotation {
+}
+
+
+--------------------------------------------------------------------------------------------------------
+@Bean
+@ConditionalOnProperty(name = "spring.config.location", matchIfMissing = false)
+public PropertiesConfiguration propertiesConfiguration(
+  @Value("${spring.config.location}") String path) throws Exception {
+    String filePath = new File(path.substring("file:".length())).getCanonicalPath();
+    PropertiesConfiguration configuration = new PropertiesConfiguration(
+      new File(filePath));
+    configuration.setReloadingStrategy(new FileChangedReloadingStrategy());
+    return configuration;
+}
+
+https://www.baeldung.com/spring-reloading-properties
+--------------------------------------------------------------------------------------------------------
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.annotation.TopicPartition;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.kafka.support.SendResult;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.util.concurrent.ListenableFuture;
+import org.springframework.util.concurrent.ListenableFutureCallback;
+
+@SpringBootApplication
+public class KafkaApplication {
+
+    public static void main(String[] args) throws Exception {
+
+        ConfigurableApplicationContext context = SpringApplication.run(KafkaApplication.class, args);
+        
+        MessageProducer producer = context.getBean(MessageProducer.class);
+        MessageListener listener = context.getBean(MessageListener.class);
+        /*
+         * Sending a Hello World message to topic 'baeldung'. 
+         * Must be recieved by both listeners with group foo
+         * and bar with containerFactory fooKafkaListenerContainerFactory
+         * and barKafkaListenerContainerFactory respectively.
+         * It will also be recieved by the listener with
+         * headersKafkaListenerContainerFactory as container factory
+         */
+        producer.sendMessage("Hello, World!");
+        listener.latch.await(10, TimeUnit.SECONDS);
+
+        /*
+         * Sending message to a topic with 5 partition,
+         * each message to a different partition. But as per
+         * listener configuration, only the messages from
+         * partition 0 and 3 will be consumed.
+         */
+        for (int i = 0; i < 5; i++) {
+            producer.sendMessageToPartion("Hello To Partioned Topic!", i);
+        }
+        listener.partitionLatch.await(10, TimeUnit.SECONDS);
+
+        /*
+         * Sending message to 'filtered' topic. As per listener
+         * configuration,  all messages with char sequence
+         * 'World' will be discarded.
+         */
+        producer.sendMessageToFiltered("Hello Baeldung!");
+        producer.sendMessageToFiltered("Hello World!");
+        listener.filterLatch.await(10, TimeUnit.SECONDS);
+
+        /*
+         * Sending message to 'greeting' topic. This will send
+         * and recieved a java object with the help of 
+         * greetingKafkaListenerContainerFactory.
+         */
+        producer.sendGreetingMessage(new Greeting("Greetings", "World!"));
+        listener.greetingLatch.await(10, TimeUnit.SECONDS);
+
+        context.close();
+    }
+
+    @Bean
+    public MessageProducer messageProducer() {
+        return new MessageProducer();
+    }
+
+    @Bean
+    public MessageListener messageListener() {
+        return new MessageListener();
+    }
+
+    public static class MessageProducer {
+
+        @Autowired
+        private KafkaTemplate<String, String> kafkaTemplate;
+
+        @Autowired
+        private KafkaTemplate<String, Greeting> greetingKafkaTemplate;
+
+        @Value(value = "${message.topic.name}")
+        private String topicName;
+
+        @Value(value = "${partitioned.topic.name}")
+        private String partionedTopicName;
+
+        @Value(value = "${filtered.topic.name}")
+        private String filteredTopicName;
+
+        @Value(value = "${greeting.topic.name}")
+        private String greetingTopicName;
+
+        public void sendMessage(String message) {
+            
+            ListenableFuture<SendResult<String, String>> future = kafkaTemplate.send(topicName, message);
+            
+            future.addCallback(new ListenableFutureCallback<SendResult<String, String>>() {
+
+                @Override
+                public void onSuccess(SendResult<String, String> result) {
+                    System.out.println("Sent message=[" + message + "] with offset=[" + result.getRecordMetadata().offset() + "]");
+                }
+                @Override
+                public void onFailure(Throwable ex) {
+                    System.out.println("Unable to send message=[" + message + "] due to : " + ex.getMessage());
+                }
+            });
+        }
+
+        public void sendMessageToPartion(String message, int partition) {
+            kafkaTemplate.send(partionedTopicName, partition, null, message);
+        }
+
+        public void sendMessageToFiltered(String message) {
+            kafkaTemplate.send(filteredTopicName, message);
+        }
+
+        public void sendGreetingMessage(Greeting greeting) {
+            greetingKafkaTemplate.send(greetingTopicName, greeting);
+        }
+    }
+
+    public static class MessageListener {
+
+        private CountDownLatch latch = new CountDownLatch(3);
+
+        private CountDownLatch partitionLatch = new CountDownLatch(2);
+
+        private CountDownLatch filterLatch = new CountDownLatch(2);
+
+        private CountDownLatch greetingLatch = new CountDownLatch(1);
+
+        @KafkaListener(topics = "${message.topic.name}", groupId = "foo", containerFactory = "fooKafkaListenerContainerFactory")
+        public void listenGroupFoo(String message) {
+            System.out.println("Received Messasge in group 'foo': " + message);
+            latch.countDown();
+        }
+
+        @KafkaListener(topics = "${message.topic.name}", groupId = "bar", containerFactory = "barKafkaListenerContainerFactory")
+        public void listenGroupBar(String message) {
+            System.out.println("Received Messasge in group 'bar': " + message);
+            latch.countDown();
+        }
+
+        @KafkaListener(topics = "${message.topic.name}", containerFactory = "headersKafkaListenerContainerFactory")
+        public void listenWithHeaders(@Payload String message, @Header(KafkaHeaders.RECEIVED_PARTITION_ID) int partition) {
+            System.out.println("Received Messasge: " + message + " from partition: " + partition);
+            latch.countDown();
+        }
+
+        @KafkaListener(topicPartitions = @TopicPartition(topic = "${partitioned.topic.name}", partitions = { "0", "3" }))
+        public void listenToParition(@Payload String message, @Header(KafkaHeaders.RECEIVED_PARTITION_ID) int partition) {
+            System.out.println("Received Message: " + message + " from partition: " + partition);
+            this.partitionLatch.countDown();
+        }
+
+        @KafkaListener(topics = "${filtered.topic.name}", containerFactory = "filterKafkaListenerContainerFactory")
+        public void listenWithFilter(String message) {
+            System.out.println("Recieved Message in filtered listener: " + message);
+            this.filterLatch.countDown();
+        }
+
+        @KafkaListener(topics = "${greeting.topic.name}", containerFactory = "greetingKafkaListenerContainerFactory")
+        public void greetingListener(Greeting greeting) {
+            System.out.println("Recieved greeting message: " + greeting);
+            this.greetingLatch.countDown();
+        }
+
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+mvn release:prepare release:perform
+--------------------------------------------------------------------------------------------------------
+
+import java.util.LinkedList;
+import java.util.List;
+import java.util.function.BiFunction;
+
+final class CaseSeparatedReader {
+
+    private static interface StateFunction extends BiFunction<Character, CaseSeparatedReader, State> {
+    }
+
+    private static enum State implements StateFunction {
+        INITIAL() {
+            @Override
+            public State apply(Character c, CaseSeparatedReader reader) {
+                return Character.isUpperCase(c)
+                    ? READING_UPPERCASE : READING_LOWERCASE;
+            }
+        },
+
+        READING_LOWERCASE() {
+            @Override
+            public State apply(Character c, CaseSeparatedReader reader) {
+                return Character.isUpperCase(c)
+                    ? reader.pushName(READING_UPPERCASE) : READING_LOWERCASE;
+            }
+        },
+
+        READING_ACRONYM() {
+            @Override
+            public State apply(Character c, CaseSeparatedReader reader) {
+                return Character.isUpperCase(c)
+                    ? State.READING_ACRONYM : reader.pushAcronym(READING_LOWERCASE);
+            }
+        },
+
+        READING_UPPERCASE() {
+            @Override
+            public State apply(Character c, CaseSeparatedReader reader) {
+                return Character.isUpperCase(c)
+                        ? READING_ACRONYM : READING_LOWERCASE;
+            }
+        }
+    }
+
+    private State state;
+    private List<String> parts;
+    private StringBuilder currentName;
+
+    private void clearCurrentName() {
+        currentName.setLength(0);
+    }
+
+    private void addPart(String part) {
+        parts.add(part);
+    }
+
+    private void addChar(char c) {
+        currentName.append(c);
+    }
+
+    private State pushName(State newState) {
+        addPart(currentName.toString());
+        clearCurrentName();
+        return newState;
+    }
+
+    private State pushAcronym(State newState) {
+        addPart(currentName.substring(0, currentName.length() - 1));
+        char lastChar = currentName.charAt(currentName.length() - 1);
+        clearCurrentName();
+        addChar(lastChar);
+        return newState;
+    }
+
+    private void initialise() {
+        state = State.INITIAL;
+        parts = new LinkedList<>();
+        currentName = new StringBuilder();
+    }
+
+    public String[] read(String input) {
+        initialise();
+        input.chars().forEach(this::readCharacter);
+        if (currentName.length() > 0) {
+            pushName(null);
+        }
+        return parts.stream().toArray(String[]::new);
+    }
+
+    private void readCharacter(int c) {
+        state = state.apply((char) c, this);
+        addChar((char) c);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.IntStream;
+
+public final class MTuple<T> implements Consumer<T> {
+
+    public static <T> MTuple<T> over(Method method, Object[] args) {
+        return new MTuple<>(method, args);
+    }
+    public static <T> MTuple<T> over(Method method, Map<String, Object> map) {
+        Parameter[] parameters = method.getParameters();
+        Object[] args = new Object[method.getParameterCount()];
+        IntStream.range(0, args.length).forEach(i -> args[i] = map.get(parameters[i].getName()));
+        return over(method, args);
+    }
+
+    private final Method method;
+    private final Object[] args;
+    private AtomicReference<Map<String, Object>> asMap = new AtomicReference<>();
+
+    public MTuple(Method method, Object[] args) {
+        this.method = method;
+        this.args = args;
+    }
+
+    @Override
+    public void accept(T receiver) {
+        try {
+            method.invoke(receiver, args);
+        } catch (IllegalAccessException e) {
+            throw new MethodSendingException(e);
+        } catch (InvocationTargetException e) {
+            throw new MethodSendingException(e.getCause());
+        }
+    }
+
+    public <V> V extract(Function<Consumer<V>, T> extractor) {
+        AtomicReference<V> ref = new AtomicReference<>();
+        accept(extractor.apply(ref::set));
+        return ref.get();
+    }
+
+    @SuppressWarnings("unchecked")
+    public <V> V get(String parameterName) {
+        return (V) toMap().get(parameterName);
+    }
+
+    public Method getMethod() {
+        return method;
+    }
+
+    public Object[] getArgs() {
+        return args;
+    }
+
+    public Map<String, Object> toMap() {
+        return asMap.updateAndGet(m -> m != null ? m : createMap());
+    }
+
+    private Map<String, Object> createMap() {
+        Parameter[] parameters = method.getParameters();
+        return IntStream.range(0, method.getParameterCount()).collect(
+                HashMap::new,
+                (map, i) -> map.put(parameters[i].getName(), args[i]),
+                Map::putAll
+        );
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        MTuple<?> mTuple = (MTuple<?>) o;
+        return Objects.equals(method, mTuple.method) &&
+                Arrays.equals(args, mTuple.args);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(method, Arrays.deepHashCode(args));
+    }
+
+    @Override
+    public String toString() {
+        return method.getDeclaringClass().getSimpleName() + "." + method.getName() + toMap().toString();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+public interface Person extends PhantomPojo<Person.Builder> {
+
+    interface Builder extends Supplier<Person> {
+        Builder withName(String name);
+        Builder withAge(int age);
+        Builder withFriends(Builder...friendBuilders);
+        Builder withAddress(Address.Builder addressBuilder);
+    }
+
+    static Builder builder() {
+        return PhantomBuilder.building(Person.class);
+    }
+
+    String getName();
+    int getAge();
+    List<Person> getFriends();
+    Address getAddress();
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.Iterator;
+
+public interface PeekableIterator<T> extends Iterator<T> {
+    static <T> PeekableIterator<T> peeking(Iterator<T> iterator) {
+        return new PeekableIterator<T>() {
+            private T buffer = null;
+            @Override
+            public T peek() {
+                if (buffer == null) {
+                    buffer = iterator.hasNext() ? iterator.next() : null;
+                }
+                return buffer;
+            }
+
+            @Override
+            public boolean hasNext() {
+                return buffer != null || iterator.hasNext();
+            }
+
+            @Override
+            public T next() {
+                T result = buffer == null ? iterator.next() : buffer;
+                buffer = null;
+                return result;
+            }
+        };
+    }
+    T peek();
+}
+--------------------------------------------------------------------------------------------------------
+public class ContactInfoValidator implements ConstraintValidator<ContactInfo, String> {
+
+    private static final Logger LOG = Logger.getLogger(ContactInfoValidator.class);
+
+    @Value("${contactInfoType}")
+    private String expressionType;
+
+    private String pattern;
+
+    @Autowired
+    private ContactInfoExpressionRepository expressionRepository;
+
+    @Override
+    public void initialize(ContactInfo contactInfo) {
+        if (StringUtils.isEmptyOrWhitespace(expressionType)) {
+            LOG.error("Contact info type missing!");
+        } else {
+            pattern = expressionRepository.findById(expressionType)
+              .map(ContactInfoExpression::getPattern).get();
+        }
+    }
+
+    @Override
+    public boolean isValid(String value, ConstraintValidatorContext context) {
+        if (!StringUtils.isEmptyOrWhitespace(pattern)) {
+            return Pattern.matches(pattern, value);
+        }
+        LOG.error("Contact info pattern missing!");
+        return false;
+    }
+}
+
+@Constraint(validatedBy = { ContactInfoValidator.class })
+@Target({ METHOD, FIELD, ANNOTATION__TYPE, CONSTRUCTOR, PARAMETER })
+@Retention(RetentionPolicy.RUNTIME)
+public @interface ContactInfo {
+    String message() default "Invalid value";
+
+    Class<?>[]groups() default {};
+
+    Class<? extends Payload>[]payload() default {};
+}
+--------------------------------------------------------------------------------------------------------
+@EnableJpaRepositories("com.baeldung.dynamicvalidation.dao")
+@EntityScan("com.baeldung.dynamicvalidation.model")
+@Configuration
+public class PersistenceConfig {
+
+    @Bean
+    public DataSource dataSource() {
+        EmbeddedDatabaseBuilder builder = new EmbeddedDatabaseBuilder();
+        EmbeddedDatabase db = builder.setType(EmbeddedDatabaseType.H2)
+          .addScript("schema-expressions.sql")
+          .addScript("data-expressions.sql")
+          .build();
+        return db;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+// class annotations as before
+@Builder(builderClassName = "PojoBuilder")
+public class Pojo {
+    private String name = "foo";
+    private boolean original = true;
+ 
+    public static class PojoBuilder {
+        private String name = "foo";
+        private boolean original = true;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@Configuration
+public class ReloadablePropertySourceConfig {
+ 
+    private ConfigurableEnvironment env;
+ 
+    public ReloadablePropertySourceConfig(@Autowired ConfigurableEnvironment env) {
+        this.env = env;
+    }
+ 
+    @Bean
+    @ConditionalOnProperty(name = "spring.config.location", matchIfMissing = false)
+    public ReloadablePropertySource reloadablePropertySource(PropertiesConfiguration properties) {
+        ReloadablePropertySource ret = new ReloadablePropertySource("dynamic", properties);
+        MutablePropertySources sources = env.getPropertySources();
+        sources.addFirst(ret);
+        return ret;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+public class ReloadablePropertySource extends PropertySource {
+ 
+    PropertiesConfiguration propertiesConfiguration;
+ 
+    public ReloadablePropertySource(String name, PropertiesConfiguration propertiesConfiguration) {
+        super(name);
+        this.propertiesConfiguration = propertiesConfiguration;
+    }
+ 
+    public ReloadablePropertySource(String name, String path) {
+        super(StringUtils.isEmpty(name) ? path : name);
+        try {
+            this.propertiesConfiguration = new PropertiesConfiguration(path);
+            this.propertiesConfiguration.setReloadingStrategy(new FileChangedReloadingStrategy());
+        } catch (Exception e) {
+            throw new PropertiesException(e);
+        }
+    }
+ 
+    @Override
+    public Object getProperty(String s) {
+        return propertiesConfiguration.getProperty(s);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+    private static final Map<String, Character> CHARS = new HashMap<String, Character>() {{
+        put("passed", '.');
+        put("undefined", 'U');
+        put("pending", 'P');
+        put("skipped", '-');
+        put("failed", 'F');
+    }};
+    private static final Map<String, AnsiEscapes> ANSI_ESCAPES = new HashMap<String, AnsiEscapes>() {{
+        put("passed", AnsiEscapes.GREEN);
+        put("undefined", AnsiEscapes.YELLOW);
+        put("pending", AnsiEscapes.YELLOW);
+        put("skipped", AnsiEscapes.CYAN);
+        put("failed", AnsiEscapes.RED);
+    }};
+--------------------------------------------------------------------------------------------------------
+.highlight  { background: #ffffff; }
+.highlight .c { color: #999988; font-style: italic } /* Comment */
+.highlight .err { color: #a61717; background-color: #e3d2d2 } /* Error */
+.highlight .k { font-weight: bold } /* Keyword */
+.highlight .o { font-weight: bold } /* Operator */
+.highlight .cm { color: #999988; font-style: italic } /* Comment.Multiline */
+.highlight .cp { color: #999999; font-weight: bold } /* Comment.Preproc */
+.highlight .c1 { color: #999988; font-style: italic } /* Comment.Single */
+.highlight .cs { color: #999999; font-weight: bold; font-style: italic } /* Comment.Special */
+.highlight .gd { color: #000000; background-color: #ffdddd } /* Generic.Deleted */
+.highlight .gd .x { color: #000000; background-color: #ffaaaa } /* Generic.Deleted.Specific */
+.highlight .ge { font-style: italic } /* Generic.Emph */
+.highlight .gr { color: #aa0000 } /* Generic.Error */
+.highlight .gh { color: #999999 } /* Generic.Heading */
+.highlight .gi { color: #000000; background-color: #ddffdd } /* Generic.Inserted */
+.highlight .gi .x { color: #000000; background-color: #aaffaa } /* Generic.Inserted.Specific */
+.highlight .go { color: #888888 } /* Generic.Output */
+.highlight .gp { color: #555555 } /* Generic.Prompt */
+.highlight .gs { font-weight: bold } /* Generic.Strong */
+.highlight .gu { color: #800080; font-weight: bold; } /* Generic.Subheading */
+.highlight .gt { color: #aa0000 } /* Generic.Traceback */
+.highlight .kc { font-weight: bold } /* Keyword.Constant */
+.highlight .kd { font-weight: bold } /* Keyword.Declaration */
+.highlight .kn { font-weight: bold } /* Keyword.Namespace */
+.highlight .kp { font-weight: bold } /* Keyword.Pseudo */
+.highlight .kr { font-weight: bold } /* Keyword.Reserved */
+.highlight .kt { color: #445588; font-weight: bold } /* Keyword.Type */
+.highlight .m { color: #009999 } /* Literal.Number */
+.highlight .s { color: #d14 } /* Literal.String */
+.highlight .na { color: #008080 } /* Name.Attribute */
+.highlight .nb { color: #0086B3 } /* Name.Builtin */
+.highlight .nc { color: #445588; font-weight: bold } /* Name.Class */
+.highlight .no { color: #008080 } /* Name.Constant */
+.highlight .ni { color: #800080 } /* Name.Entity */
+.highlight .ne { color: #990000; font-weight: bold } /* Name.Exception */
+.highlight .nf { color: #990000; font-weight: bold } /* Name.Function */
+.highlight .nn { color: #555555 } /* Name.Namespace */
+.highlight .nt { color: #000080 } /* Name.Tag */
+.highlight .nv { color: #008080 } /* Name.Variable */
+.highlight .ow { font-weight: bold } /* Operator.Word */
+.highlight .w { color: #bbbbbb } /* Text.Whitespace */
+.highlight .mf { color: #009999 } /* Literal.Number.Float */
+.highlight .mh { color: #009999 } /* Literal.Number.Hex */
+.highlight .mi { color: #009999 } /* Literal.Number.Integer */
+.highlight .mo { color: #009999 } /* Literal.Number.Oct */
+.highlight .sb { color: #d14 } /* Literal.String.Backtick */
+.highlight .sc { color: #d14 } /* Literal.String.Char */
+.highlight .sd { color: #d14 } /* Literal.String.Doc */
+.highlight .s2 { color: #d14 } /* Literal.String.Double */
+.highlight .se { color: #d14 } /* Literal.String.Escape */
+.highlight .sh { color: #d14 } /* Literal.String.Heredoc */
+.highlight .si { color: #d14 } /* Literal.String.Interpol */
+.highlight .sx { color: #d14 } /* Literal.String.Other */
+.highlight .sr { color: #009926 } /* Literal.String.Regex */
+.highlight .s1 { color: #d14 } /* Literal.String.Single */
+.highlight .ss { color: #990073 } /* Literal.String.Symbol */
+.highlight .bp { color: #999999 } /* Name.Builtin.Pseudo */
+.highlight .vc { color: #008080 } /* Name.Variable.Class */
+.highlight .vg { color: #008080 } /* Name.Variable.Global */
+.highlight .vi { color: #008080 } /* Name.Variable.Instance */
+.highlight .il { color: #009999 } /* Literal.Number.Integer.Long */
+
+.type-csharp .highlight .k { color: #0000FF }
+.type-csharp .highlight .kt { color: #0000FF }
+.type-csharp .highlight .nf { color: #000000; font-weight: normal }
+.type-csharp .highlight .nc { color: #2B91AF }
+.type-csharp .highlight .nn { color: #000000 }
+.type-csharp .highlight .s { color: #A31515 }
+.type-csharp .highlight .sc { color: #A31515 }
+--------------------------------------------------------------------------------------------------------
+import java.util.Comparator;
+import java.util.function.Function;
+import java.util.stream.Stream;
+
+public final class Joins<L> {
+
+    private final Stream<L> lefts;
+
+    private Joins(Stream<L> lefts) {
+        this.lefts = lefts;
+    }
+
+    public static <L> Joins<L> join(Stream<L> lefts) {
+        return new Joins<>(lefts);
+    }
+
+    public <K extends Comparable<K>> JoinBuilder<K, L> on(Function<? super L, ? extends K> foreignKey) {
+        return comparingWith(Comparator.<K>naturalOrder()).on(foreignKey);
+    }
+
+    public static interface ComparatorCapture<K, L> {
+        JoinBuilder<K, L> on(Function<? super L, ? extends K> foreignKey);
+    }
+
+    public <K> ComparatorCapture<K, L> comparingWith(Comparator<? super K> comparator) {
+        return f -> new JoinBuilder<>(comparator, lefts, JoinKey.on(f, comparator));
+    }
+
+    public static final class JoinBuilder<K, L> {
+        private final Comparator<? super K> comparator;
+        private final Stream<L> lefts;
+        private final JoinKey<L, K> foreignKey;
+
+        public JoinBuilder(Comparator<? super K> comparator, Stream<L> lefts, JoinKey<L, K> foreignKey) {
+            this.comparator = comparator;
+            this.lefts = lefts;
+            this.foreignKey = foreignKey;
+        }
+
+        public <R> Joiner<L, R, K> to(Function<? super R, ? extends K> primaryKey) {
+            return new Joiner<>(foreignKey.index(lefts), JoinKey.on(primaryKey, comparator));
+        }
+    }
+}
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
@@ -6796,6 +7763,137 @@ public class CucumberTest {
 }
 --------------------------------------------------------------------------------------------------------
  packer build template.json
+--------------------------------------------------------------------------------------------------------
+package firsttestngpackage;
+import org.openqa.selenium.*;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.testng.Assert;
+import org.testng.annotations.*;
+
+public class firsttestngfile {
+    public String baseUrl = "http://demo.guru99.com/test/newtours/";
+    String driverPath = "C:\\geckodriver.exe";
+    public WebDriver driver ; 
+     
+  @Test
+  public void verifyHomepageTitle() {
+       
+      System.out.println("launching firefox browser"); 
+      System.setProperty("webdriver.firefox.marionette", driverPath);
+      driver = new FirefoxDriver();
+      driver.get(baseUrl);
+      String expectedTitle = "Welcome: Mercury Tours";
+      String actualTitle = driver.getTitle();
+      Assert.assertEquals(actualTitle, expectedTitle);
+      driver.close();
+  }
+}
+
+package firsttestngpackage;
+import org.openqa.selenium.*;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.testng.Assert;
+import org.testng.annotations.*;
+public class firsttestngfile {
+    public String baseUrl = "http://demo.guru99.com/test/newtours/";
+    String driverPath = "C:\\geckodriver.exe";
+    public WebDriver driver ; 
+     
+     @BeforeTest
+      public void launchBrowser() {
+          System.out.println("launching firefox browser"); 
+          System.setProperty("webdriver.firefox.marionette", driverPath);
+          driver = new FirefoxDriver();
+          driver.get(baseUrl);
+      }
+      @Test
+      public void verifyHomepageTitle() {
+          String expectedTitle = "Welcome: Mercury Tours";
+          String actualTitle = driver.getTitle();
+          Assert.assertEquals(actualTitle, expectedTitle);
+     }
+      @AfterTest
+      public void terminateBrowser(){
+          driver.close();
+      }
+}
+--------------------------------------------------------------------------------------------------------
+ private RestTemplate restTemplate() {
+ ObjectMapper mapper = new ObjectMapper();
+ mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
+ false);
+ mapper.registerModule(new Jackson2HalModule());
+ MappingJackson2HttpMessageConverter converter =
+ new MappingJackson2HttpMessageConverter();
+ converter.setSupportedMediaTypes(
+ MediaType.parseMediaTypes("application/hal+json"));
+ converter.setObjectMapper(mapper);
+ return new RestTemplate(Arrays.asList(converter));
+ }
+--------------------------------------------------------------------------------------------------------
+<dependencies>
+ <dependency>
+ <groupId>org.springframework.data</groupId>
+ <artifactId>spring-data-rest-hal-browser</artifactId>
+ </dependency>
+</dependencies>
+
+mvn clean package -Dmaven.test.skip=true
+--------------------------------------------------------------------------------------------------------
+<plugin>
+ <groupId>com.github.os72</groupId>
+ <artifactId>protoc-jar-maven-plugin</artifactId>
+ <version>3.1.0</version>
+ <executions>
+ <execution>
+ <phase>generate-sources</phase>
+<goals>
+ <goal>run</goal>
+ </goals>
+<configuration>
+ <protocVersion>3.1.0</protocVersion>
+<includeStdTypes>true</includeStdTypes>
+<includeDirectories>
+ <include>
+ src/main/resources
+ </include>
+ </includeDirectories>
+<inputDirectories>
+ <include>
+ src/main/protobuf
+ </include>
+ </inputDirectories>
+ </configuration>
+ </execution>
+ </executions>
+ </plugin>
+--------------------------------------------------------------------------------------------------------
+package com.codepoetics.octarine.records;
+
+public interface RecordKey extends Key<Record> {
+    static <T> RecordKey named(String name, Value...metadata) {
+        return named(name, Record.of(metadata));
+    }
+
+    static <T> RecordKey named(String name, Record metadata) {
+        return new Impl<T>(name, metadata);
+    }
+
+    static final class Impl<T> extends BaseKey<Record> implements RecordKey {
+        Impl(String name, Record metadata) {
+            super(name, metadata);
+        }
+    }
+
+    default Value of(Value... values) {
+        return of(Record.of(values));
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+D:\Applns\Google\ProtocolBuffer\protoc-3.4.0-win32\bin\protoc --proto_path
+.\src\main\resources --java_out .\src\main\java .\src\main\resources\
+product.proto
 --------------------------------------------------------------------------------------------------------
 FROM ubuntu:precise
 MAINTAINER Casimir Saternos
