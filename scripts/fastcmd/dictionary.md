@@ -693,6 +693,38 @@ public final class MTuple<T> implements Consumer<T> {
     }
 }
 --------------------------------------------------------------------------------------------------------
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
+
+<!-- @BeforeSuite -->
+<suite name="TestAll">
+
+	<!-- @BeforeTest -->
+	<test name="case1">
+	  <classes>
+		<class name="com.mkyong.testng.examples.configuration.TestConfiguration" />
+		<class name="com.mkyong.testng.examples.configuration.TestDBConnection" />
+		<class name="com.mkyong.testng.examples.configuration.DBConfig" />
+	  </classes>
+	</test>
+	<!-- @AfterTest -->
+	
+	<!-- @BeforeTest -->
+	<test name="case2">
+	  <classes>
+		<class name="com.mkyong.testng.examples.configuration.TestDBConnection" />
+		<class name="com.mkyong.testng.examples.configuration.DBConfig" />
+	  </classes>
+	</test>
+	<!-- @AfterTest -->
+	
+</suite>
+<!-- @AfterSuite -->
+--------------------------------------------------------------------------------------------------------
+https://circuitdigest.com/
+pinterest
+
+
+--------------------------------------------------------------------------------------------------------
 public interface Person extends PhantomPojo<Person.Builder> {
 
     interface Builder extends Supplier<Person> {
@@ -711,6 +743,876 @@ public interface Person extends PhantomPojo<Person.Builder> {
     List<Person> getFriends();
     Address getAddress();
 }
+--------------------------------------------------------------------------------------------------------
+    /**
+     * The Levenshtein distance is a string metric for measuring the difference between two sequences.
+     * Informally, the Levenshtein distance between two words is the minimum number of single-character edits
+     * (i.e. insertions, deletions or substitutions) required to change one word into the other. The phrase
+     * 'edit distance' is often used to refer specifically to Levenshtein distance.
+     *
+     * @param s String one
+     * @param t String two
+     * @return the 'edit distance' (Levenshtein distance) between the two strings.
+     */
+    public static int levenshteinDistance(CharSequence s, CharSequence t)
+    {
+        // degenerate cases          s
+        if (s == null || "".equals(s))
+        {
+            return t == null || "".equals(t) ? 0 : t.length();
+        }
+        else if (t == null || "".equals(t))
+        {
+            return s.length();
+        }
+
+        // create two work vectors of integer distances
+        int[] v0 = new int[t.length() + 1];
+        int[] v1 = new int[t.length() + 1];
+
+        // initialize v0 (the previous row of distances)
+        // this row is A[0][i]: edit distance for an empty s
+        // the distance is just the number of characters to delete from t
+        for (int i = 0; i < v0.length; i++)
+        {
+            v0[i] = i;
+        }
+
+        int sLen = s.length();
+        int tLen = t.length();
+        for (int i = 0; i < sLen; i++)
+        {
+            // calculate v1 (current row distances) from the previous row v0
+
+            // first element of v1 is A[i+1][0]
+            //   edit distance is delete (i+1) chars from s to match empty t
+            v1[0] = i + 1;
+
+            // use formula to fill in the rest of the row
+            for (int j = 0; j < tLen; j++)
+            {
+                int cost = (s.charAt(i) == t.charAt(j)) ? 0 : 1;
+                v1[j + 1] = (int) MathUtilities.minimum(v1[j] + 1, v0[j + 1] + 1, v0[j] + cost);
+            }
+
+            // copy v1 (current row) to v0 (previous row) for next iteration
+            System.arraycopy(v1, 0, v0, 0, v0.length);
+        }
+
+        return v1[t.length()];
+    }
+
+    /**
+     * Calculate the Damerau-Levenshtein Distance between two strings.  The basic difference
+     * between this algorithm and the general Levenshtein algorithm is that damerau-Levenshtein
+     * counts a swap of two characters next to each other as 1 instead of 2.  This breaks the
+     * 'triangular equality', which makes it unusable for Metric trees.  See Wikipedia pages on
+     * both Levenshtein and Damerau-Levenshtein and then make your decision as to which algorithm
+     * is appropriate for your situation.
+     *
+     * @param source Source input string
+     * @param target Target input string
+     * @return The number of substitutions it would take
+     * to make the source string identical to the target
+     * string
+     */
+    public static int damerauLevenshteinDistance(CharSequence source, CharSequence target)
+    {
+        if (source == null || "".equals(source))
+        {
+            return target == null || "".equals(target) ? 0 : target.length();
+        }
+        else if (target == null || "".equals(target))
+        {
+            return source.length();
+        }
+
+        int srcLen = source.length();
+        int targetLen = target.length();
+        int[][] distanceMatrix = new int[srcLen + 1][targetLen + 1];
+
+        // We need indexers from 0 to the length of the source string.
+        // This sequential set of numbers will be the row "headers"
+        // in the matrix.
+        for (int srcIndex = 0; srcIndex <= srcLen; srcIndex++)
+        {
+            distanceMatrix[srcIndex][0] = srcIndex;
+        }
+
+        // We need indexers from 0 to the length of the target string.
+        // This sequential set of numbers will be the
+        // column "headers" in the matrix.
+        for (int targetIndex = 0; targetIndex <= targetLen; targetIndex++)
+        {
+            // Set the value of the first cell in the column
+            // equivalent to the current value of the iterator
+            distanceMatrix[0][targetIndex] = targetIndex;
+        }
+
+        for (int srcIndex = 1; srcIndex <= srcLen; srcIndex++)
+        {
+            for (int targetIndex = 1; targetIndex <= targetLen; targetIndex++)
+            {
+                // If the current characters in both strings are equal
+                int cost = source.charAt(srcIndex - 1) == target.charAt(targetIndex - 1) ? 0 : 1;
+
+                // Find the current distance by determining the shortest path to a
+                // match (hence the 'minimum' calculation on distances).
+                distanceMatrix[srcIndex][targetIndex] = (int) MathUtilities.minimum(
+                        // Character match between current character in
+                        // source string and next character in target
+                        distanceMatrix[srcIndex - 1][targetIndex] + 1,
+                        // Character match between next character in
+                        // source string and current character in target
+                        distanceMatrix[srcIndex][targetIndex - 1] + 1,
+                        // No match, at current, add cumulative penalty
+                        distanceMatrix[srcIndex - 1][targetIndex - 1] + cost);
+
+                // We don't want to do the next series of calculations on
+                // the first pass because we would get an index out of bounds
+                // exception.
+                if (srcIndex == 1 || targetIndex == 1)
+                {
+                    continue;
+                }
+
+                // transposition check (if the current and previous
+                // character are switched around (e.g.: t[se]t and t[es]t)...
+                if (source.charAt(srcIndex - 1) == target.charAt(targetIndex - 2) && source.charAt(srcIndex - 2) == target.charAt(targetIndex - 1))
+                {
+                    // What's the minimum cost between the current distance
+                    // and a transposition.
+                    distanceMatrix[srcIndex][targetIndex] = (int) MathUtilities.minimum(
+                            // Current cost
+                            distanceMatrix[srcIndex][targetIndex],
+                            // Transposition
+                            distanceMatrix[srcIndex - 2][targetIndex - 2] + cost);
+                }
+            }
+        }
+
+        return distanceMatrix[srcLen][targetLen];
+    }
+--------------------------------------------------------------------------------------------------------
+mvn -B -e verify -U -Dmaven.javadoc.skip=true -Dmaven.groovydoc.skip=true
+--------------------------------------------------------------------------------------------------------
+import static java.util.Objects.requireNonNull;
+
+import java.util.function.Function;
+
+import com.typesafe.config.Config;
+
+/**
+ * The report data formats.
+ *
+ * @author ben.manes@gmail.com (Ben Manes)
+ */
+public enum ReportFormat {
+  TABLE(TableReporter::new),
+  CSV(CsvReporter::new);
+
+  private final Function<Config, Reporter> factory;
+
+  private ReportFormat(Function<Config, Reporter> factory) {
+    this.factory = requireNonNull(factory);
+  }
+
+  public Reporter create(Config config) {
+    return factory.apply(config);
+  }
+}
+
+import java.util.List;
+import java.util.function.Function;
+
+import com.github.benmanes.caffeine.cache.simulator.parser.address.AddressTraceReader;
+import com.github.benmanes.caffeine.cache.simulator.parser.arc.ArcTraceReader;
+import com.github.benmanes.caffeine.cache.simulator.parser.cache2k.Cache2kTraceReader;
+import com.github.benmanes.caffeine.cache.simulator.parser.lirs.LirsTraceReader;
+import com.github.benmanes.caffeine.cache.simulator.parser.scarab.ScarabTraceReader;
+import com.github.benmanes.caffeine.cache.simulator.parser.umass.storage.StorageTraceReader;
+import com.github.benmanes.caffeine.cache.simulator.parser.wikipedia.WikipediaTraceReader;
+
+/**
+ * The trace file formats.
+ *
+ * @author ben.manes@gmail.com (Ben Manes)
+ */
+public enum TraceFormat {
+  ADDRESS(AddressTraceReader::new),
+  ARC(ArcTraceReader::new),
+  LIRS(LirsTraceReader::new),
+  UMASS_STORAGE(StorageTraceReader::new),
+  WIKIPEDIA(WikipediaTraceReader::new),
+  CACHE2K(Cache2kTraceReader::new),
+  SCARAB(ScarabTraceReader::new);
+
+  private final Function<List<String>, TraceReader> factory;
+
+  private TraceFormat(Function<List<String>, TraceReader> factory) {
+    this.factory = factory;
+  }
+
+  /**
+   * Returns a new reader for streaming the events from the trace file.
+   *
+   * @param filePaths the path to the files in the trace's format
+   * @return a reader for streaming the events from the file
+   */
+  public TraceReader readFiles(List<String> filePaths) {
+    return factory.apply(filePaths);
+  }
+}
+
+import javax.annotation.Nonnull;
+import javax.cache.configuration.Factory;
+
+/**
+ * An object capable of providing factories that produce an instance for a given class name.
+ *
+ * @author ben.manes@gmail.com (Ben Manes)
+ */
+@FunctionalInterface
+public interface FactoryCreator {
+
+  /**
+   * Returns a {@link Factory} that will produce instances of the specified class.
+   *
+   * @param className the fully qualified name of the desired class
+   * @param <T> the type of the instances being produced
+   * @return a {@link Factory} for the specified class
+   */
+  @Nonnull
+  <T> Factory<T> factoryOf(String className);
+}
+--------------------------------------------------------------------------------------------------------
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.net.URL;
+import java.nio.file.AccessDeniedException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Utility-Class with various operating system related helper methods.
+ *
+ * @author hypfvieh
+ * @since v0.0.5 - 2015-08-05
+ */
+public final class SystemUtil {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SystemUtil.class);
+
+    /** List of known terminal emulators on linux/unix systems. */
+    private static final String[] TERMINAL_EMULATORS = new String[]
+            {"x-terminal-emulator", "gnome-terminal", "mate-terminal",
+                    "konsole", "xterm", "rxvt", "xdg-terminal", "lxterminal", "pterm",
+                    "aterm", "eterm", "roxterm", "qterminal", "terminator",
+                    "tmux", "screen"};
+
+    /** Character that separates components of a file path. This is "/" on UNIX and "\" on Windows. */
+    public static final String FILE_SEPARATOR = System.getProperty("file.separator");
+    /** Sequence used by operating system to separate lines in text files. */
+    public static final String LINE_SEPARATOR = System.getProperty("line.separator");
+    /** The system's temporary-file directory. */
+    public static final String TMP_DIR        = normalizePath(System.getProperty("java.io.tmpdir"));
+
+    private SystemUtil() {
+
+    }
+
+    /**
+     * Determines the operating system's type and version.
+     * @return the OS type and version as a string
+     */
+    public static String getOs() {
+        return (System.getProperty("os.name") + " " + System.getProperty("os.version"));
+    }
+
+
+    /**
+     * Gets the host name of the local machine.
+     * @return host name
+     */
+    public static String getHostName() {
+        try {
+            return java.net.InetAddress.getLocalHost().getHostName();
+        } catch (java.net.UnknownHostException _ex) {
+            return null;
+        }
+    }
+
+    /**
+     * Returns the current working directory.
+     * @return current working dir
+     */
+    public static String getWorkingDirectory() {
+        return System.getProperty("user.dir");
+    }
+
+    /**
+     * Returns the running class path.
+     * @return String with classpath
+     */
+    public static String getRunningClassPath() {
+        return ClassLoader.getSystemClassLoader().getResource(".").getPath();
+    }
+
+    /**
+     * Returns the temp directory of this platform.
+     * @return temp directory
+     */
+    public static String getTempDir() {
+        return TMP_DIR;
+    }
+
+    /**
+     * Determines the Java version of the executing JVM.
+     * @return Java version
+     */
+    public static String getJavaVersion() {
+        String[] sysPropParms = new String[] {"java.runtime.version", "java.version"};
+        for (int i = 0; i < sysPropParms.length; i++) {
+            String val = System.getProperty(sysPropParms[i]);
+            if (!StringUtil.isEmpty(val)) {
+                return val;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Determines the current logged on user.
+     * @return logged on user
+     */
+    public static String getCurrentUser() {
+        String[] sysPropParms = new String[] {"user.name", "USER", "USERNAME"};
+        for (int i = 0; i < sysPropParms.length; i++) {
+            String val = System.getProperty(sysPropParms[i]);
+            if (!StringUtil.isEmpty(val)) {
+                return val;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Concats a path from all given parts, using the path delimiter for the currently used platform.
+     * @param _includeTrailingDelimiter include delimiter after last token
+     * @param _parts parts to concat
+     * @return concatinated string
+     */
+    public static String concatFilePath(boolean _includeTrailingDelimiter, String..._parts) {
+        String concatStrings = StringUtil.concatStrings(false, File.separator, _parts);
+        
+        if (_includeTrailingDelimiter && concatStrings.length() > 0) {
+            return concatStrings + File.separator;
+        }
+
+        return concatStrings;
+    }
+    /**
+     * Concats a path from all given parts, using the path delimiter for the currently used platform.
+     * Does not include trailing delimiter.
+     * @param _parts parts to concat
+     * @return concatinated string
+     */
+    public static String concatFilePath(String... _parts) {
+        return concatFilePath(false, _parts);
+    }
+
+    /**
+     * Append a suffix to the string (e.g. filename) if it doesn't have it already.
+     * @param _str string to check
+     * @param _suffix suffix to append
+     * @return string with suffix or original if no suffix was appended
+     */
+    public static String appendSuffixIfMissing(String _str, String _suffix) {
+        if (_str == null) {
+            return null;
+        }
+        if (!_str.endsWith(_suffix)) {
+            _str += _suffix;
+        }
+        return _str;
+    }
+
+    /**
+     * Appends the OS specific path delimiter to the end of the String, if it is missing.
+     * @param _filePath file path
+     * @return String
+     */
+    public static String appendTrailingDelimiter(String _filePath) {
+        if (_filePath == null) {
+            return null;
+        }
+        if (!_filePath.endsWith(File.separator)) {
+            _filePath += File.separator;
+        }
+        return _filePath;
+    }
+
+    /**
+     * Creates a new temporary directory in the given path.
+     * @param _path path
+     * @param _name directory name
+     * @param _deleteOnExit delete directory on jvm shutdown
+     * @return created Directory, null if directory/file was already existing
+     */
+    public static File createTempDirectory(String _path, String _name, boolean _deleteOnExit) {
+
+        File outputDir = new File(concatFilePath(_path, _name));
+        if (!outputDir.exists()) {
+            try {
+                Files.createDirectory(Paths.get(outputDir.toString()));
+            } catch (IOException _ex) {
+                LOGGER.error("Error while creating temp directory: ", _ex);
+            }
+        } else {
+            return null;
+        }
+        if (_deleteOnExit) {
+            outputDir.deleteOnExit();
+        }
+        return outputDir;
+    }
+
+    /**
+     * Creates a temporary directory in the given path.
+     * You can  specify certain files to get a random unique name.
+     * @param _path where to place the temp folder
+     * @param _prefix prefix of the folder
+     * @param _length length of random chars
+     * @param _timestamp add timestamp (yyyyMMdd_HHmmss-SSS) to directory name
+     * @param _deleteOnExit mark directory for deletion on jvm termination
+     * @return file
+     */
+    public static File createTempDirectory(String _path, String _prefix, int _length, boolean _timestamp, boolean _deleteOnExit) {
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd_HHmmss-SSS");
+        String randomStr = StringUtil.randomString(_length);
+
+        StringBuilder fileName = new StringBuilder();
+
+        if (_prefix != null) {
+            fileName.append(_prefix);
+        }
+        fileName.append(randomStr);
+
+        if (_timestamp) {
+            fileName.append("_").append(formatter.format(new Date()));
+        }
+        File result = createTempDirectory(_path, fileName.toString(), _deleteOnExit);
+        while (result == null) {
+            result = createTempDirectory(_path, _prefix, _length, _timestamp, _deleteOnExit);
+        }
+        return result;
+    }
+
+    /**
+     * Examines some system properties to determine whether the process is likely being debugged
+     * in an IDE or remotely.
+     * @return true if being debugged, false otherwise
+     */
+    public static boolean isDebuggingEnabled() {
+        boolean debuggingEnabled = false;
+        if (ManagementFactory.getRuntimeMXBean().getInputArguments().toString().indexOf("-agentlib:jdwp") > 0) {
+            debuggingEnabled = true;
+        } else if (ManagementFactory.getRuntimeMXBean().getInputArguments().contains("-Xdebug")) {
+            debuggingEnabled = true;
+        } else if (System.getProperty("debug", "").equals("true")) {
+            debuggingEnabled = true;
+        }
+        return debuggingEnabled;
+    }
+
+    /**
+     * Extracts the file extension (part behind last dot of a filename).
+     * Only returns the extension, without the leading dot.
+     *
+     * @param _fileName filename
+     * @return extension, empty string if no dot was found in filename or null if given String was null
+     */
+    public static String getFileExtension(String _fileName) {
+        if (_fileName == null) {
+            return null;
+        }
+        int lastDot = _fileName.lastIndexOf('.');
+        if (lastDot == -1) {
+            return "";
+        }
+        return _fileName.substring(lastDot + 1);
+    }
+
+    /**
+     * Extracts the file extension (part behind last dot of a filename).
+     * Only returns the extension, without the leading dot.
+     *
+     * @param _file file
+     * @return extension, empty string if no dot was found in filename or null if given String was null
+     */
+    public static String getFileExtension(File _file) {
+        return getFileExtension(_file.getAbsolutePath());
+    }
+
+    /**
+     * Checks if given String is a valid file, e.g. file exists, is really a file and can be read.
+     *
+     * Throws IOException or Subclass of it, if file is either non-existing, not a file or unreadable.
+     *
+     * @param _file filename
+     * @return file object, never null
+     * @throws IOException if file could not be read
+     */
+    public static File getFileIfReadable(String _file) throws IOException {
+        if (StringUtil.isBlank(_file)) {
+            throw new IOException("Empty or null string is not a valid file");
+        }
+
+        File file = new File(_file);
+
+        if (!file.exists()) {
+            throw new FileNotFoundException("No such file: " + _file);
+        } else if (!file.isFile()) {
+            throw new IOException("Not a file: " + _file);
+        } else if (!file.canRead()) {
+            throw new AccessDeniedException("File not readable: " + _file);
+        }
+
+        return file;
+    }
+
+    /**
+     * Formats a file size given in byte to something human readable.
+     *
+     * @param _bytes size in bytes
+     * @param _use1000BytesPerMb use 1000 bytes per MByte instead of 1024
+     * @return String
+     */
+    public static String formatBytesHumanReadable(long _bytes, boolean _use1000BytesPerMb) {
+        int unit = _use1000BytesPerMb ? 1000 : 1024;
+        if (_bytes < unit)  {
+            return _bytes + " B";
+        }
+        int exp = (int) (Math.log(_bytes) / Math.log(unit));
+        String pre = (_use1000BytesPerMb ? "kMGTPE" : "KMGTPE").charAt(exp-1) + (_use1000BytesPerMb ? "" : "i");
+        return String.format("%.1f %sB", _bytes / Math.pow(unit, exp), pre);
+    }
+
+    /**
+     * Read the JARs manifest and try to get the current program version from it.
+     * @param _class class to use as entry point
+     * @param _default default string to use if version could not be found
+     * @return version or null
+     */
+    public static String getApplicationVersionFromJar(Class<?> _class, String _default) {
+        try {
+            Enumeration<URL> resources = _class.getClassLoader().getResources("META-INF/MANIFEST.MF");
+            while (resources.hasMoreElements()) {
+
+                Manifest manifest = new Manifest(resources.nextElement().openStream());
+                Attributes attribs = manifest.getMainAttributes();
+                String ver = attribs.getValue(Attributes.Name.IMPLEMENTATION_VERSION);
+                if (ver == null) {
+                	return _default;
+                }
+
+                String rev = attribs.getValue("Implementation-Revision");
+                if (rev != null) {
+                    ver += "-r" + rev;
+                }
+                return ver;
+
+            }
+        } catch (IOException _ex) {
+        }
+
+        return _default;
+    }
+
+    /**
+     * Tries to find the "default" terminal emulator.
+     * This will be cmd.exe on windows and may vary on linux/unix systems depending on installed terminal programs.
+     * On linux/unix there is no generic way to find the default terminal,
+     * so all known terminal programs will be tried until any of them is found.
+     * @return String with terminal name or null if terminal could not be determined
+     */
+    public static String guessDefaultTerminal() {
+        if (System.getProperty("os.name", "").equalsIgnoreCase("windows")) {
+            return "cmd.exe";
+        }
+
+        String envPath = System.getenv("PATH");
+        if (envPath == null) {
+            throw new RuntimeException("Could not find enviroment PATH setting.");
+        }
+        String[] pathes = envPath.split(":");
+
+        for (String term : TERMINAL_EMULATORS) {
+            for (String path : pathes) {
+                File terminalExe = new File(concatFilePath(path, term));
+                if (terminalExe.exists() && terminalExe.canExecute()) {
+                    return terminalExe.getAbsolutePath();
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Normalize a file system path expression for the current OS.
+     * Replaces path separators by this OS's path separator.
+     * Appends a final path separator if parameter is set
+     * and if not yet present.
+     * @param _path path
+     * @param _appendFinalSeparator controls appendix of separator at the end
+     * @return normalized path
+     */
+    public static String normalizePath(String _path, boolean _appendFinalSeparator) {
+        if (_path == null) {
+            return _path;
+        }
+
+        String path = _path
+            .replace("\\", FILE_SEPARATOR)
+            .replace("/", FILE_SEPARATOR);
+        if (_appendFinalSeparator && !path.endsWith(FILE_SEPARATOR)) {
+            path += FILE_SEPARATOR;
+        }
+        return path;
+    }
+
+    /**
+     * Normalize a file system path expression for the current OS.
+     * Replaces path separators by this OS's path separator.
+     * Appends a final path separator unless present.
+     * @param _path path
+     * @return normalized path
+     */
+    public static String normalizePath(String _path) {
+        return normalizePath(_path, true);
+    }
+
+    /**
+     * Checks if the running OS is a MacOS/MacOS X.
+     * @return true if MacOS (or MacOS X), false otherwise
+     */
+    public static boolean isMacOs() {
+        String osName = System.getProperty("os.name");
+        return osName == null ? false : osName.toLowerCase().startsWith("mac");
+    }
+
+    /**
+     * Tries to get the current version of MacOS/MacOS X.
+     * The version usually looks like '10.13.4', where the part behind the last dot represents the patchlevel.
+     * The major version in this case would be '10.13'.
+     * @return version without patchlevel or null
+     */
+    public static String getMacOsMajorVersion() {
+        if (!isMacOs()) {
+            return null;
+        }
+
+        String osVersion = System.getProperty("os.version");
+
+        if (osVersion != null) {
+            String[] split = osVersion.split("\\.");
+            if (split.length >= 2) {
+                return split[0] + "." + split[1];
+            } else {
+                return osVersion;
+            }
+        }
+
+        return null;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@Description("Detects @Dekorate and configures application based on the specified configuration files.")
+@SupportedAnnotationTypes({"io.dekorate.annotation.Dekorate"})
+@SupportedSourceVersion(SourceVersion.RELEASE_8)
+--------------------------------------------------------------------------------------------------------
+
+import java.net.InetAddress;
+import java.util.regex.Pattern;
+
+public final class NetUtil {
+
+    private static final Pattern IPV4_PATTERN = Pattern.compile("(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])", Pattern.CASE_INSENSITIVE);
+    private static final Pattern IPV6_PATTERN = Pattern.compile("([0-9a-f]{1,4}:){7}([0-9a-f]){1,4}", Pattern.CASE_INSENSITIVE);
+
+    private NetUtil() {
+
+    }
+
+    /**
+     * Get the host name of a local address, if available.
+     *
+     * @param _ipAddress the IP address
+     * @return the host name, or the original IP if name not available
+     */
+    public static String getHostName(String _ipAddress) {
+        try {
+            InetAddress addr = InetAddress.getByName(_ipAddress);
+            return addr.getHostName();
+        } catch (Exception _ex) {
+            return _ipAddress;
+        }
+    }
+
+    /**
+     * Checks if given String is an IPv4 address.
+     *
+     * @param _ipAddress
+     * @return true if valid address, false otherwise
+     */
+    public static boolean isIPv4Address(String _ipAddress) {
+        return IPV4_PATTERN.matcher(_ipAddress).matches();
+    }
+
+    /**
+     * Checks if given String is an IPv6 address.
+     *
+     * @param _ipAddress
+     * @return true if valid address, false otherwise
+     */
+    public static boolean isIPv6Address(String _ipAddress) {
+        return IPV6_PATTERN.matcher(_ipAddress).matches();
+    }
+
+    /**
+     * Checks if given String is either a valid IPv4 or IPv6 address.
+     *
+     * @param _ipAddress
+     * @return true if valid address, false otherwise
+     */
+    public static boolean isIPv4orIPv6Address(String _ipAddress) {
+        return IPV4_PATTERN.matcher(_ipAddress).matches() || IPV6_PATTERN.matcher(_ipAddress).matches();
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+public class Functions {
+    public static <T> Function<T, T> identity() {
+        return new Function<T, T>() {
+            @Override
+            public T apply(T input) {
+                return input;
+            }
+        };
+    }
+
+    public static <T> Function<T, Void> STDOUT() {
+        return new Function<T, Void>() {
+            @Override
+            public Void apply(T input) {
+                System.out.println(input);
+                return null;
+            }
+        };
+    }
+
+    public static <T> Function<T, Void> STDERR() {
+        return new Function<T, Void>() {
+            @Override
+            public Void apply(T input) {
+                System.err.println(input);
+                return null;
+            }
+        };
+    }
+}
+--------------------------------------------------------------------------------------------------------
+#!/usr/bin/perl -w
+use SOAP::Lite;
+my $url = 'http://127.0.0.1:9876/ts?wsdl';
+my $service = SOAP::Lite->service($url);
+print "\nCurrent time is: ", $service->getTimeAsString();
+print "\nElapsed milliseconds from the epoch: ", $service->getTimeAsElapsed();
+--------------------------------------------------------------------------------------------------------
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Function;
+
+public enum Pluralize implements Function<String, String> {
+
+    FUNCTION;
+
+    private static final List<String> UNCOUNTABLE = Arrays.asList("equipment", "fish", "information", "money", "rice", "series", "sheep", "species");
+
+    private static final List<Function<String, String>> PLURALS = Arrays.<Function<String, String>>asList(
+            //Irregulars
+            new StringReplace("(p)eople$", "$1erson"),
+            new StringReplace("(m)en$", "$1an"),
+            new StringReplace("(c)hildren$", "$1hild"),
+            new StringReplace("(s)exes$", "$1ex"),
+            new StringReplace("(m)oves$", "$1ove"),
+            new StringReplace("(s)tadiums$", "$1tadium"),
+
+            //Rules
+            new StringReplace("(quiz)$", "$1zes"),
+            new StringReplace("(matr)ix$", "$1ices"),
+            new StringReplace("(vert|ind)ex$", "$1ices"),
+            new StringReplace("^(ox)$", "$1en"),
+            new StringReplace("(alias|status)$", "$1"),
+            new StringReplace("(alias|status)$", "$1es"),
+            new StringReplace("(octop|vir)us$", "$1us"),
+            new StringReplace("(cris|ax|test)is$", "$1es"),
+            new StringReplace("(shoe)$", "$1s"),
+            new StringReplace("(o)$", "$1es"),
+            new StringReplace("(bus)$", "$1es"),
+            new StringReplace("([m|l])ouse$", "$1ice"),
+            new StringReplace("(x|ch|ss|sh)$", "$1es"),
+            new StringReplace("(m)ovie$", "$1ovies"),
+            new StringReplace("(s)eries$", "$1eries"),
+            new StringReplace("([^aeiouy]|qu)y$", "$1ies"),
+            new StringReplace("([lr])f$", "$1ves"),
+            new StringReplace("(tive)$", "$1s"),
+            new StringReplace("(hive)$", "$1s"),
+            new StringReplace("([^f])fe$", "$1ves"),
+            new StringReplace("(^analy)sis$", "$1sis"),
+            new StringReplace("((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)ses$", "$1$2sis"),
+            new StringReplace("([ti])um$", "$1a"),
+            new StringReplace("(n)ews$", "$1ews"),
+            new StringReplace("(s|si|u)s$", "$1s")
+    );
+
+    public String apply(String word) {
+        if (word == null) {
+            return null;
+        } else if (word.isEmpty()) {
+            return word;
+        } else if (UNCOUNTABLE.contains(word)) {
+            return word;
+        }
+
+        for (Function<String, String> function : PLURALS) {
+            String result = function.apply(word);
+            if (result != null) {
+                return result;
+            }
+        }
+        return word + "s";
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+LoadingCache<Key, Graph> graphs = Caffeine.newBuilder()
+    .maximumSize(10_000)
+    .expireAfterWrite(5, TimeUnit.MINUTES)
+    .refreshAfterWrite(1, TimeUnit.MINUTES)
+    .build(key -> createExpensiveGraph(key));
 --------------------------------------------------------------------------------------------------------
 import java.util.Iterator;
 
