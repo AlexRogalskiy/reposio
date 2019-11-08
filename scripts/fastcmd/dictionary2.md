@@ -15298,6 +15298,41 @@ public class WrappableAspect {
         }
     }
 }
+gdprStatus
+
+{
+	"requestId": <request-id>,
+	"subjects":
+	[{
+		"sku": <sku>,
+		"quantity": <quantity>
+	}]
+}
+
+{
+	"requestId": <request-id>,
+	"subjects":
+	[{
+		"sku": <sku>,
+		"quantity": <quantity>,
+		"serialNumberPns":
+		[
+			"serialNumberPns-01",
+			"serialNumberPns-02",
+			"serialNumberPns-03",
+			...
+		]
+	}]
+}
+
+{
+	"id": <id>,
+	"ownerId": <owner-id>
+}
+
+http://vdlg-pba11-redis-1.pba.internal:5027/api/v0/registry/applications/user?userid=<user-id>
+--------------------------------------------------------------------------------------------------------
+#0.3.0-alpha-0352-ef7813f
 --------------------------------------------------------------------------------------------------------
    @After("@annotation(annotation) || @within(annotation)")
     public void wrapper(
