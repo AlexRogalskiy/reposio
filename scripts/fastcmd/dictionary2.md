@@ -15332,6 +15332,2633 @@ gdprStatus
 
 http://vdlg-pba11-redis-1.pba.internal:5027/api/v0/registry/applications/user?userid=<user-id>
 --------------------------------------------------------------------------------------------------------
+new NegatedRequestMatcher(authorizationHeaderRequestMatcher)
+
+import java.nio.charset.StandardCharsets;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.*;
+import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
+
+@Configuration
+public class ThymeleafConfiguration {
+
+    @SuppressWarnings("unused")
+    private final Logger log = LoggerFactory.getLogger(ThymeleafConfiguration.class);
+
+    @Bean
+    @Description("Thymeleaf template resolver serving HTML 5 emails")
+    public ClassLoaderTemplateResolver emailTemplateResolver() {
+        ClassLoaderTemplateResolver emailTemplateResolver = new ClassLoaderTemplateResolver();
+        emailTemplateResolver.setPrefix("mails/");
+        emailTemplateResolver.setSuffix(".html");
+        emailTemplateResolver.setTemplateMode("HTML");
+        emailTemplateResolver.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        emailTemplateResolver.setOrder(1);
+        return emailTemplateResolver;
+    }
+}
+
+   /**
+     * Initializes H2 console.
+     */
+    private void initH2Console(ServletContext servletContext) {
+        log.debug("Initialize H2 console");
+        try {
+            // We don't want to include H2 when we are packaging for the "prod" profile and won't
+            // actually need it, so we have to load / invoke things at runtime through reflection.
+            ClassLoader loader = Thread.currentThread().getContextClassLoader();
+            Class<?> servletClass = Class.forName("org.h2.server.web.WebServlet", true, loader);
+            Servlet servlet = (Servlet) servletClass.newInstance();
+
+            ServletRegistration.Dynamic h2ConsoleServlet = servletContext.addServlet("H2Console", servlet);
+            h2ConsoleServlet.addMapping("/h2-console/*");
+            h2ConsoleServlet.setInitParameter("-properties", "src/main/resources/");
+            h2ConsoleServlet.setLoadOnStartup(1);
+
+        } catch (ClassNotFoundException | LinkageError  e) {
+            throw new RuntimeException("Failed to load and initialize org.h2.server.web.WebServlet", e);
+
+        } catch (IllegalAccessException | InstantiationException e) {
+            throw new RuntimeException("Failed to instantiate org.h2.server.web.WebServlet", e);
+        }
+    }<% } %>
+	
+	
+	
+
+import <%=packageName%>.domain.Authority;
+import <%=packageName%>.domain.User;
+import <%=packageName%>.security.AuthoritiesConstants;
+
+import com.github.mongobee.changeset.ChangeLog;
+import com.github.mongobee.changeset.ChangeSet;
+import org.springframework.data.mongodb.core.MongoTemplate;
+
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.Collections;
+
+/**
+ * Creates the initial database setup
+ */
+@ChangeLog(order = "001")
+public class InitialSetupMigration {
+
+    @ChangeSet(order = "01", author = "initiator", id = "01-addAuthorities")
+    public void addAuthorities(MongoTemplate mongoTemplate) {
+        Authority adminAuthority = new Authority();
+        adminAuthority.setName(AuthoritiesConstants.ADMIN);
+        Authority userAuthority = new Authority();
+        userAuthority.setName(AuthoritiesConstants.USER);
+        mongoTemplate.save(adminAuthority);
+        mongoTemplate.save(userAuthority);
+    }
+
+    @ChangeSet(order = "02", author = "initiator", id = "02-addUsers")
+    public void addUsers(MongoTemplate mongoTemplate) {
+        Authority adminAuthority = new Authority();
+        adminAuthority.setName(AuthoritiesConstants.ADMIN);
+        Authority userAuthority = new Authority();
+        userAuthority.setName(AuthoritiesConstants.USER);
+
+        User systemUser = new User();
+        systemUser.setId("user-0");
+        systemUser.setLogin("system");
+        <%_ if (authenticationType !== 'oauth2') { _%>
+        systemUser.setPassword("$2a$10$mE.qmcV0mFU5NcKh73TZx.z4ueI/.bDWbj0T1BYyqP481kGGarKLG");
+        <%_ } _%>
+        systemUser.setFirstName("");
+        systemUser.setLastName("System");
+        systemUser.setEmail("system@localhost");
+        systemUser.setActivated(true);
+        systemUser.setLangKey("en");
+        systemUser.setCreatedBy(systemUser.getLogin());
+        systemUser.setCreatedDate(Instant.now());
+        systemUser.getAuthorities().add(adminAuthority);
+        systemUser.getAuthorities().add(userAuthority);
+        mongoTemplate.save(systemUser);
+
+        User anonymousUser = new User();
+        anonymousUser.setId("user-1");
+        anonymousUser.setLogin("anonymoususer");
+        <%_ if (authenticationType !== 'oauth2') { _%>
+        anonymousUser.setPassword("$2a$10$j8S5d7Sr7.8VTOYNviDPOeWX8KcYILUVJBsYV83Y5NtECayypx9lO");
+        <%_ } _%>
+        anonymousUser.setFirstName("Anonymous");
+        anonymousUser.setLastName("User");
+        anonymousUser.setEmail("anonymous@localhost");
+        anonymousUser.setActivated(true);
+        anonymousUser.setLangKey("en");
+        anonymousUser.setCreatedBy(systemUser.getLogin());
+        anonymousUser.setCreatedDate(Instant.now());
+        mongoTemplate.save(anonymousUser);
+
+        User adminUser = new User();
+        adminUser.setId("user-2");
+        adminUser.setLogin("admin");
+        <%_ if (authenticationType !== 'oauth2') { _%>
+        adminUser.setPassword("$2a$10$gSAhZrxMllrbgj/kkK9UceBPpChGWJA7SYIb1Mqo.n5aNLq1/oRrC");
+        <%_ } _%>
+        adminUser.setFirstName("admin");
+        adminUser.setLastName("Administrator");
+        adminUser.setEmail("admin@localhost");
+        adminUser.setActivated(true);
+        adminUser.setLangKey("en");
+        adminUser.setCreatedBy(systemUser.getLogin());
+        adminUser.setCreatedDate(Instant.now());
+        adminUser.getAuthorities().add(adminAuthority);
+        adminUser.getAuthorities().add(userAuthority);
+        mongoTemplate.save(adminUser);
+
+        User userUser = new User();
+        userUser.setId("user-3");
+        userUser.setLogin("user");
+        <%_ if (authenticationType !== 'oauth2') { _%>
+        userUser.setPassword("$2a$10$VEjxo0jq2YG9Rbk2HmX9S.k1uZBGYUHdUcid3g/vfiEl7lwWgOH/K");
+        <%_ } _%>
+        userUser.setFirstName("");
+        userUser.setLastName("User");
+        userUser.setEmail("user@localhost");
+        userUser.setActivated(true);
+        userUser.setLangKey("en");
+        userUser.setCreatedBy(systemUser.getLogin());
+        userUser.setCreatedDate(Instant.now());
+        userUser.getAuthorities().add(userAuthority);
+        mongoTemplate.save(userUser);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+import java.net.InetSocketAddress;
+import java.util.Iterator;
+
+import io.github.jhipster.config.JHipsterProperties;
+
+import ch.qos.logback.classic.AsyncAppender;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.boolex.OnMarkerEvaluator;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.classic.spi.LoggerContextListener;
+import ch.qos.logback.core.Appender;
+import ch.qos.logback.core.filter.EvaluatorFilter;
+import ch.qos.logback.core.spi.ContextAwareBase;
+import ch.qos.logback.core.spi.FilterReply;
+import net.logstash.logback.appender.LogstashTcpSocketAppender;
+import net.logstash.logback.encoder.LogstashEncoder;
+import net.logstash.logback.stacktrace.ShortenedThrowableConverter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+<%_ if (serviceDiscoveryType === "eureka") { _%>
+import org.springframework.cloud.context.config.annotation.RefreshScope;
+<%_ } _%>
+<%_ if (serviceDiscoveryType === "consul") { _%>
+import org.springframework.cloud.consul.ConditionalOnConsulEnabled;
+import org.springframework.cloud.consul.serviceregistry.ConsulRegistration;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
+<%_ } _%>
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+<%_ if (serviceDiscoveryType === "eureka") { _%>
+@RefreshScope
+<%_ } _%>
+<%_ if (serviceDiscoveryType === "consul") { _%>
+@ConditionalOnConsulEnabled
+@RefreshScope
+<%_ } _%>
+public class LoggingConfiguration {
+
+    private static final String LOGSTASH_APPENDER_NAME = "LOGSTASH";
+
+    private static final String ASYNC_LOGSTASH_APPENDER_NAME = "ASYNC_LOGSTASH";
+
+    private final Logger log = LoggerFactory.getLogger(LoggingConfiguration.class);
+
+    private LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
+
+    private final String appName;
+
+    private final String serverPort;
+    <%_ if (serviceDiscoveryType === "consul") { _%>
+
+    private final ConsulRegistration consulRegistration;
+    <%_ } _%>
+    <%_ if (serviceDiscoveryType && (applicationType === 'microservice' || applicationType === 'gateway' || applicationType === 'uaa')) { _%>
+
+    private final String version;
+    <%_ } _%>
+
+    private final JHipsterProperties jHipsterProperties;
+
+    public LoggingConfiguration(@Value("${spring.application.name}") String appName, @Value("${server.port}") String serverPort,
+        <% if (serviceDiscoveryType === "consul") { %> ConsulRegistration consulRegistration,<% } %><% if (serviceDiscoveryType && (applicationType === 'microservice' || applicationType === 'gateway' || applicationType === 'uaa')) { %> @Value("${info.project.version}") String version,<% } %> JHipsterProperties jHipsterProperties) {
+        this.appName = appName;
+        this.serverPort = serverPort;
+        <%_ if (serviceDiscoveryType === 'consul') { _%>
+        this.consulRegistration = consulRegistration;
+        <%_ } _%>
+        <%_ if (serviceDiscoveryType && (applicationType === 'microservice' || applicationType === 'gateway' || applicationType === 'uaa')) { _%>
+        this.version = version;
+        <%_ } _%>
+        this.jHipsterProperties = jHipsterProperties;
+        if (jHipsterProperties.getLogging().getLogstash().isEnabled()) {
+            addLogstashAppender(context);
+            addContextListener(context);
+        }
+        if (jHipsterProperties.getMetrics().getLogs().isEnabled()) {
+            setMetricsMarkerLogbackFilter(context);
+        }
+    }
+
+    private void addContextListener(LoggerContext context) {
+        LogbackLoggerContextListener loggerContextListener = new LogbackLoggerContextListener();
+        loggerContextListener.setContext(context);
+        context.addListener(loggerContextListener);
+    }
+
+    private void addLogstashAppender(LoggerContext context) {
+        log.info("Initializing Logstash logging");
+
+        LogstashTcpSocketAppender logstashAppender = new LogstashTcpSocketAppender();
+        logstashAppender.setName(LOGSTASH_APPENDER_NAME);
+        logstashAppender.setContext(context);
+        <%_ if (serviceDiscoveryType && (applicationType === 'microservice' || applicationType === 'gateway' || applicationType === 'uaa')) { _%>
+        String optionalFields = "";
+        <%_ if (serviceDiscoveryType === 'consul') { _%>
+        if (consulRegistration != null) {
+            optionalFields = "\"instance_id\":\"" + consulRegistration.getInstanceId() + "\",";
+        }
+        <%_ } _%>
+        String customFields = "{\"app_name\":\"" + appName + "\",\"app_port\":\"" + serverPort + "\"," +
+            optionalFields + "\"version\":\"" + version + "\"}";
+        <%_ } else { _%>
+        String customFields = "{\"app_name\":\"" + appName + "\",\"app_port\":\"" + serverPort + "\"}";
+        <%_ } _%>
+
+        // More documentation is available at: https://github.com/logstash/logstash-logback-encoder
+        LogstashEncoder logstashEncoder=new LogstashEncoder();
+        // Set the Logstash appender config from JHipster properties
+        logstashEncoder.setCustomFields(customFields);
+        // Set the Logstash appender config from JHipster properties
+        logstashAppender.addDestinations(new InetSocketAddress(jHipsterProperties.getLogging().getLogstash().getHost(),jHipsterProperties.getLogging().getLogstash().getPort()));
+
+        ShortenedThrowableConverter throwableConverter = new ShortenedThrowableConverter();
+        throwableConverter.setRootCauseFirst(true);
+        logstashEncoder.setThrowableConverter(throwableConverter);
+        logstashEncoder.setCustomFields(customFields);
+
+        logstashAppender.setEncoder(logstashEncoder);
+        logstashAppender.start();
+
+        // Wrap the appender in an Async appender for performance
+        AsyncAppender asyncLogstashAppender = new AsyncAppender();
+        asyncLogstashAppender.setContext(context);
+        asyncLogstashAppender.setName(ASYNC_LOGSTASH_APPENDER_NAME);
+        asyncLogstashAppender.setQueueSize(jHipsterProperties.getLogging().getLogstash().getQueueSize());
+        asyncLogstashAppender.addAppender(logstashAppender);
+        asyncLogstashAppender.start();
+
+        context.getLogger("ROOT").addAppender(asyncLogstashAppender);
+    }
+
+    // Configure a log filter to remove "metrics" logs from all appenders except the "LOGSTASH" appender
+    private void setMetricsMarkerLogbackFilter(LoggerContext context) {
+        log.info("Filtering metrics logs from all appenders except the {} appender", LOGSTASH_APPENDER_NAME);
+        OnMarkerEvaluator onMarkerMetricsEvaluator = new OnMarkerEvaluator();
+        onMarkerMetricsEvaluator.setContext(context);
+        onMarkerMetricsEvaluator.addMarker("metrics");
+        onMarkerMetricsEvaluator.start();
+        EvaluatorFilter<ILoggingEvent> metricsFilter = new EvaluatorFilter<>();
+        metricsFilter.setContext(context);
+        metricsFilter.setEvaluator(onMarkerMetricsEvaluator);
+        metricsFilter.setOnMatch(FilterReply.DENY);
+        metricsFilter.start();
+
+        for (ch.qos.logback.classic.Logger logger : context.getLoggerList()) {
+            for (Iterator<Appender<ILoggingEvent>> it = logger.iteratorForAppenders(); it.hasNext();) {
+                Appender<ILoggingEvent> appender = it.next();
+                if (!appender.getName().equals(ASYNC_LOGSTASH_APPENDER_NAME)) {
+                    log.debug("Filter metrics logs from the {} appender", appender.getName());
+                    appender.setContext(context);
+                    appender.addFilter(metricsFilter);
+                    appender.start();
+                }
+            }
+        }
+    }
+
+    /**
+     * Logback configuration is achieved by configuration file and API.
+     * When configuration file change is detected, the configuration is reset.
+     * This listener ensures that the programmatic configuration is also re-applied after reset.
+     */
+    class LogbackLoggerContextListener extends ContextAwareBase implements LoggerContextListener {
+
+        @Override
+        public boolean isResetResistant() {
+            return true;
+        }
+
+        @Override
+        public void onStart(LoggerContext context) {
+            addLogstashAppender(context);
+        }
+
+        @Override
+        public void onReset(LoggerContext context) {
+            addLogstashAppender(context);
+        }
+
+        @Override
+        public void onStop(LoggerContext context) {
+            // Nothing to do.
+        }
+
+        @Override
+        public void onLevelChange(ch.qos.logback.classic.Logger logger, Level level) {
+            // Nothing to do.
+        }
+    }
+}
+
+    @Bean
+    @Qualifier("authorizationHeaderRequestMatcher")
+    public RequestMatcher authorizationHeaderRequestMatcher() {
+        return new RequestHeaderRequestMatcher("Authorization");
+    }
+	
+package <%=packageName%>.config.metrics;
+import com.datastax.driver.core.Session;
+import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class JHipsterHealthIndicatorConfiguration {
+
+    private final Session session;
+
+    public JHipsterHealthIndicatorConfiguration(Session session) {
+        this.session = session;
+    }
+
+    @Bean
+    public HealthIndicator cassandraHealthIndicator() {
+        return new CassandraHealthIndicator(session);
+    }
+}
+
+import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.Session;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.boot.actuate.health.AbstractHealthIndicator;
+import org.springframework.boot.actuate.health.Health;
+import org.springframework.util.Assert;
+
+/**
+ * Simple implementation of a {@link org.springframework.boot.actuate.health.HealthIndicator} returning status information for
+ * Cassandra data stores.
+ */
+public class CassandraHealthIndicator extends AbstractHealthIndicator {
+
+    private static Log log = LogFactory.getLog(CassandraHealthIndicator.class);
+
+    private Session session;
+
+    private PreparedStatement validationStmt;
+
+    public CassandraHealthIndicator(Session session) {
+        Assert.notNull(session, "Cassandra session must not be null");
+        this.session = session;
+        this.validationStmt = session.prepare(
+            "SELECT release_version FROM system.local");
+    }
+
+    @Override
+    protected void doHealthCheck(Health.Builder builder) throws Exception {
+        log.debug("Initializing Cassandra health indicator");
+        try {
+            ResultSet results = session.execute(validationStmt.bind());
+            if (results.isExhausted()) {
+                builder.up();
+            } else {
+                builder.up().withDetail("version", results.one().getString(0));
+            }
+        } catch (Exception e) {
+            log.debug("Cannot connect to Cassandra cluster. Error: {}", e);
+            builder.down(e);
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.io.IOException;
+
+import org.elasticsearch.client.Client;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
+import org.springframework.data.elasticsearch.core.EntityMapper;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+@Configuration
+@EnableConfigurationProperties(ElasticsearchProperties.class)
+@ConditionalOnProperty("spring.data.elasticsearch.cluster-nodes")
+public class ElasticsearchConfiguration {
+
+    @Bean
+    public ElasticsearchTemplate elasticsearchTemplate(Client client, Jackson2ObjectMapperBuilder jackson2ObjectMapperBuilder) {
+        return new ElasticsearchTemplate(client, new CustomEntityMapper(jackson2ObjectMapperBuilder.createXmlMapper(false).build()));
+    }
+
+    public class CustomEntityMapper implements EntityMapper {
+
+        private ObjectMapper objectMapper;
+
+        public CustomEntityMapper(ObjectMapper objectMapper) {
+            this.objectMapper = objectMapper;
+            objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            objectMapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
+        }
+
+        @Override
+        public String mapToString(Object object) throws IOException {
+            return objectMapper.writeValueAsString(object);
+        }
+
+        @Override
+        public <T> T mapToObject(String source, Class<T> clazz) throws IOException {
+            return objectMapper.readValue(source, clazz);
+        }
+    }
+}
+
+
+    @Bean
+    public MongoCustomConversions customConversions() {
+        List<Converter<?, ?>> converters = new ArrayList<>();
+        converters.add(DateToZonedDateTimeConverter.INSTANCE);
+        converters.add(ZonedDateTimeToDateConverter.INSTANCE);
+        return new MongoCustomConversions(converters);
+    }
+--------------------------------------------------------------------------------------------------------
+import <%=packageName%>.AbstractCassandraTest;<% } %>
+import cucumber.api.CucumberOptions;
+import cucumber.api.junit.Cucumber;
+
+@RunWith(Cucumber.class)
+@CucumberOptions(plugin = "pretty", features = "<%= TEST_DIR %>features")
+public class CucumberTest <% if (databaseType === 'cassandra') { %>extends AbstractCassandraTest<% } %> {
+
+}
+
+
+import cucumber.api.java.Before;
+import cucumber.api.java.en.Then;
+import cucumber.api.java.en.When;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import <%=packageName%>.web.rest.UserResource;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+public class UserStepDefs extends StepDefs {
+
+    @Autowired
+    private UserResource userResource;
+
+    private MockMvc restUserMockMvc;
+
+    @Before
+    public void setup() {
+        this.restUserMockMvc = MockMvcBuilders.standaloneSetup(userResource).build();
+    }
+
+    @When("^I search user '(.*)'$")
+    public void i_search_user_admin(String userId) throws Throwable {
+        actions = restUserMockMvc.perform(get("/api/users/" + userId)
+                .accept(MediaType.APPLICATION_JSON));
+    }
+
+    @Then("^the user is found$")
+    public void the_user_is_found() throws Throwable {
+        actions
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE));
+    }
+
+    @Then("^his last name is '(.*)'$")
+    public void his_last_name_is(String lastName) throws Throwable {
+        actions.andExpect(jsonPath("$.lastName").value(lastName));
+    }
+
+}
+
+import <%=packageName%>.<%= mainClass %>;
+
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.web.servlet.ResultActions;
+
+import org.springframework.boot.test.context.SpringBootTest;
+
+@WebAppConfiguration
+@SpringBootTest
+@ContextConfiguration(classes = <%= mainClass %>.class)
+public abstract class StepDefs {
+
+    protected ResultActions actions;
+
+}
+--------------------------------------------------------------------------------------------------------
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder;
+import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.spring.springboot.domain.City;
+import org.spring.springboot.repository.CityRepository;
+import org.spring.springboot.service.CityService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
+import org.springframework.data.elasticsearch.core.query.SearchQuery;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+/**
+ * 城市 ES 业务逻辑实现类
+ *
+ * Created by bysocket on 07/02/2017.
+ */
+@Service
+public class CityESServiceImpl implements CityService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CityESServiceImpl.class);
+
+    @Autowired
+    CityRepository cityRepository;
+
+    @Override
+    public Long saveCity(City city) {
+
+        City cityResult = cityRepository.save(city);
+        return cityResult.getId();
+    }
+
+    @Override
+    public List<City> searchCity(Integer pageNumber,
+                                 Integer pageSize,
+                                 String searchContent) {
+        // 分页参数
+        Pageable pageable = new PageRequest(pageNumber, pageSize);
+
+        // Function Score Query
+        FunctionScoreQueryBuilder functionScoreQueryBuilder = QueryBuilders.functionScoreQuery()
+                .add(QueryBuilders.boolQuery().should(QueryBuilders.matchQuery("cityname", searchContent)),
+                    ScoreFunctionBuilders.weightFactorFunction(1000))
+                .add(QueryBuilders.boolQuery().should(QueryBuilders.matchQuery("description", searchContent)),
+                        ScoreFunctionBuilders.weightFactorFunction(100));
+
+        // 创建搜索 DSL 查询
+        SearchQuery searchQuery = new NativeSearchQueryBuilder()
+                .withPageable(pageable)
+                .withQuery(functionScoreQueryBuilder).build();
+
+        LOGGER.info("\n searchCity(): searchContent [" + searchContent + "] \n DSL  = \n " + searchQuery.getQuery().toString());
+
+        Page<City> searchPageResults = cityRepository.search(searchQuery);
+        return searchPageResults.getContent();
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+import com.google.common.base.Predicate;
+import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
+import com.google.common.io.ByteSink;
+import com.google.common.io.ByteSource;
+import com.google.common.io.ByteStreams;
+import com.google.common.io.Files;
+import com.metamx.common.guava.CloseQuietly;
+import com.metamx.common.logger.Logger;
+
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FilterInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Enumeration;
+import java.util.concurrent.Callable;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
+
+public class CompressionUtils
+{
+  private static final Logger log = new Logger(CompressionUtils.class);
+  private static final int DEFAULT_RETRY_COUNT = 3;
+
+  public static final String GZ_SUFFIX = ".gz";
+  public static final String ZIP_SUFFIX = ".zip";
+
+  /**
+   * Zip the contents of directory into the file indicated by outputZipFile. Sub directories are skipped
+   *
+   * @param directory     The directory whose contents should be added to the zip in the output stream.
+   * @param outputZipFile The output file to write the zipped data to
+   *
+   * @return The number of bytes (uncompressed) read from the input directory.
+   *
+   * @throws IOException
+   */
+  public static long zip(File directory, File outputZipFile) throws IOException
+  {
+    if (!isZip(outputZipFile.getName())) {
+      log.warn("No .zip suffix[%s], putting files from [%s] into it anyway.", outputZipFile, directory);
+    }
+
+    try (final FileOutputStream out = new FileOutputStream(outputZipFile)) {
+      return zip(directory, out);
+    }
+  }
+
+  /**
+   * Zips the contents of the input directory to the output stream. Sub directories are skipped
+   *
+   * @param directory The directory whose contents should be added to the zip in the output stream.
+   * @param out       The output stream to write the zip data to. It is closed in the process
+   *
+   * @return The number of bytes (uncompressed) read from the input directory.
+   *
+   * @throws IOException
+   */
+  public static long zip(File directory, OutputStream out) throws IOException
+  {
+    if (!directory.isDirectory()) {
+      throw new IOException(String.format("directory[%s] is not a directory", directory));
+    }
+    final File[] files = directory.listFiles();
+
+    long totalSize = 0;
+    try (final ZipOutputStream zipOut = new ZipOutputStream(out)) {
+      for (File file : files) {
+        log.info("Adding file[%s] with size[%,d].  Total size so far[%,d]", file, file.length(), totalSize);
+        if (file.length() >= Integer.MAX_VALUE) {
+          zipOut.finish();
+          throw new IOException(String.format("file[%s] too large [%,d]", file, file.length()));
+        }
+        zipOut.putNextEntry(new ZipEntry(file.getName()));
+        totalSize += Files.asByteSource(file).copyTo(zipOut);
+      }
+      zipOut.closeEntry();
+      // Workarround for http://hg.openjdk.java.net/jdk8/jdk8/jdk/rev/759aa847dcaf
+      zipOut.flush();
+    }
+
+    return totalSize;
+  }
+
+  /**
+   * Unzip the byteSource to the output directory. If cacheLocally is true, the byteSource is cached to local disk before unzipping.
+   * This may cause more predictable behavior than trying to unzip a large file directly off a network stream, for example.
+   * * @param byteSource The ByteSource which supplies the zip data
+   *
+   * @param byteSource   The ByteSource which supplies the zip data
+   * @param outDir       The output directory to put the contents of the zip
+   * @param shouldRetry  A predicate expression to determine if a new InputStream should be acquired from ByteSource and the copy attempted again
+   * @param cacheLocally A boolean flag to indicate if the data should be cached locally
+   *
+   * @return A FileCopyResult containing the result of writing the zip entries to disk
+   *
+   * @throws IOException
+   */
+  public static FileUtils.FileCopyResult unzip(
+      final ByteSource byteSource,
+      final File outDir,
+      final Predicate<Throwable> shouldRetry,
+      boolean cacheLocally
+  ) throws IOException
+  {
+    if (!cacheLocally) {
+      try {
+        return RetryUtils.retry(
+            new Callable<FileUtils.FileCopyResult>()
+            {
+              @Override
+              public FileUtils.FileCopyResult call() throws Exception
+              {
+                return unzip(byteSource.openStream(), outDir);
+              }
+            },
+            shouldRetry,
+            DEFAULT_RETRY_COUNT
+        );
+      }
+      catch (Exception e) {
+        throw Throwables.propagate(e);
+      }
+    } else {
+      final File tmpFile = File.createTempFile("compressionUtilZipCache", ZIP_SUFFIX);
+      try {
+        FileUtils.retryCopy(
+            byteSource,
+            tmpFile,
+            shouldRetry,
+            DEFAULT_RETRY_COUNT
+        );
+        return unzip(tmpFile, outDir);
+      }
+      finally {
+        if (!tmpFile.delete()) {
+          log.warn("Could not delete zip cache at [%s]", tmpFile.toString());
+        }
+      }
+    }
+  }
+
+  /**
+   * Unzip the byteSource to the output directory. If cacheLocally is true, the byteSource is cached to local disk before unzipping.
+   * This may cause more predictable behavior than trying to unzip a large file directly off a network stream, for example.
+   *
+   * @param byteSource   The ByteSource which supplies the zip data
+   * @param outDir       The output directory to put the contents of the zip
+   * @param cacheLocally A boolean flag to indicate if the data should be cached locally
+   *
+   * @return A FileCopyResult containing the result of writing the zip entries to disk
+   *
+   * @throws IOException
+   */
+  public static FileUtils.FileCopyResult unzip(
+      final ByteSource byteSource,
+      final File outDir,
+      boolean cacheLocally
+  ) throws IOException
+  {
+    return unzip(byteSource, outDir, FileUtils.IS_EXCEPTION, cacheLocally);
+  }
+
+  /**
+   * Unzip the pulled file to an output directory. This is only expected to work on zips with lone files, and is not intended for zips with directory structures.
+   *
+   * @param pulledFile The file to unzip
+   * @param outDir     The directory to store the contents of the file.
+   *
+   * @return a FileCopyResult of the files which were written to disk
+   *
+   * @throws IOException
+   */
+  public static FileUtils.FileCopyResult unzip(final File pulledFile, final File outDir) throws IOException
+  {
+    if (!(outDir.exists() && outDir.isDirectory())) {
+      throw new ISE("outDir[%s] must exist and be a directory", outDir);
+    }
+    log.info("Unzipping file[%s] to [%s]", pulledFile, outDir);
+    final FileUtils.FileCopyResult result = new FileUtils.FileCopyResult();
+    try (final ZipFile zipFile = new ZipFile(pulledFile)) {
+      final Enumeration<? extends ZipEntry> enumeration = zipFile.entries();
+      while (enumeration.hasMoreElements()) {
+        final ZipEntry entry = enumeration.nextElement();
+        result.addFiles(
+            FileUtils.retryCopy(
+                new ByteSource()
+                {
+                  @Override
+                  public InputStream openStream() throws IOException
+                  {
+                    return new BufferedInputStream(zipFile.getInputStream(entry));
+                  }
+                },
+                new File(outDir, entry.getName()),
+                FileUtils.IS_EXCEPTION,
+                DEFAULT_RETRY_COUNT
+            ).getFiles()
+        );
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Unzip from the input stream to the output directory, using the entry's file name as the file name in the output directory.
+   * The behavior of directories in the input stream's zip is undefined.
+   * If possible, it is recommended to use unzip(ByteStream, File) instead
+   *
+   * @param in     The input stream of the zip data. This stream is closed
+   * @param outDir The directory to copy the unzipped data to
+   *
+   * @return The FileUtils.FileCopyResult containing information on all the files which were written
+   *
+   * @throws IOException
+   */
+  public static FileUtils.FileCopyResult unzip(InputStream in, File outDir) throws IOException
+  {
+    try (final ZipInputStream zipIn = new ZipInputStream(in)) {
+      final FileUtils.FileCopyResult result = new FileUtils.FileCopyResult();
+      ZipEntry entry;
+      while ((entry = zipIn.getNextEntry()) != null) {
+        final File file = new File(outDir, entry.getName());
+        Files.asByteSink(file).writeFrom(zipIn);
+        result.addFile(file);
+        zipIn.closeEntry();
+      }
+      return result;
+    }
+  }
+
+  /**
+   * gunzip the file to the output file.
+   *
+   * @param pulledFile The source of the gz data
+   * @param outFile    A target file to put the contents
+   *
+   * @return The result of the file copy
+   *
+   * @throws IOException
+   */
+  public static FileUtils.FileCopyResult gunzip(final File pulledFile, File outFile) throws IOException
+  {
+    return gunzip(Files.asByteSource(pulledFile), outFile);
+  }
+
+  /**
+   * Unzips the input stream via a gzip filter. use gunzip(ByteSource, File, Predicate) if possible
+   *
+   * @param in      The input stream to run through the gunzip filter. This stream is closed
+   * @param outFile The file to output to
+   *
+   * @throws IOException
+   */
+  public static FileUtils.FileCopyResult gunzip(InputStream in, File outFile) throws IOException
+  {
+    try (GZIPInputStream gzipInputStream = gzipInputStream(in)) {
+      Files.asByteSink(outFile).writeFrom(gzipInputStream);
+      return new FileUtils.FileCopyResult(outFile);
+    }
+  }
+
+  /**
+   * Fixes java bug 7036144 http://bugs.java.com/bugdatabase/view_bug.do?bug_id=7036144 which affects concatenated GZip
+   *
+   * @param in The raw input stream
+   *
+   * @return A GZIPInputStream that can handle concatenated gzip streams in the input
+   */
+  public static GZIPInputStream gzipInputStream(final InputStream in) throws IOException
+  {
+    return new GZIPInputStream(
+        new FilterInputStream(in)
+        {
+          @Override
+          public int available() throws IOException
+          {
+            final int otherAvailable = super.available();
+            // Hack. Docs say available() should return an estimate,
+            // so we estimate about 1KB to work around available == 0 bug in GZIPInputStream
+            return otherAvailable == 0 ? 1 << 10 : otherAvailable;
+          }
+        }
+    );
+  }
+
+  /**
+   * gunzip from the source stream to the destination stream.
+   *
+   * @param in  The input stream which is to be decompressed. This stream is closed.
+   * @param out The output stream to write to. This stream is closed
+   *
+   * @return The number of bytes written to the output stream.
+   *
+   * @throws IOException
+   */
+  public static long gunzip(InputStream in, OutputStream out) throws IOException
+  {
+    try (GZIPInputStream gzipInputStream = gzipInputStream(in)) {
+      final long result =  ByteStreams.copy(gzipInputStream, out);
+      out.flush();
+      return result;
+    }
+    finally {
+      out.close();
+    }
+  }
+
+  /**
+   * A gunzip function to store locally
+   *
+   * @param in          The factory to produce input streams
+   * @param outFile     The file to store the result into
+   * @param shouldRetry A predicate to indicate if the Throwable is recoverable
+   *
+   * @return The count of bytes written to outFile
+   */
+  public static FileUtils.FileCopyResult gunzip(
+      final ByteSource in,
+      final File outFile,
+      Predicate<Throwable> shouldRetry
+  )
+  {
+    return FileUtils.retryCopy(
+        new ByteSource()
+        {
+          @Override
+          public InputStream openStream() throws IOException
+          {
+            return gzipInputStream(in.openStream());
+          }
+        },
+        outFile,
+        shouldRetry,
+        DEFAULT_RETRY_COUNT
+    );
+  }
+
+
+  /**
+   * Gunzip from the input stream to the output file
+   *
+   * @param in      The compressed input stream to read from
+   * @param outFile The file to write the uncompressed results to
+   *
+   * @return A FileCopyResult of the file written
+   */
+  public static FileUtils.FileCopyResult gunzip(final ByteSource in, File outFile)
+  {
+    return gunzip(in, outFile, FileUtils.IS_EXCEPTION);
+  }
+
+  /**
+   * Copy inputStream to out while wrapping out in a GZIPOutputStream
+   * Closes both input and output
+   *
+   * @param inputStream The input stream to copy data from. This stream is closed
+   * @param out         The output stream to wrap in a GZIPOutputStream before copying. This stream is closed
+   *
+   * @return The size of the data copied
+   *
+   * @throws IOException
+   */
+  public static long gzip(InputStream inputStream, OutputStream out) throws IOException
+  {
+    try (GZIPOutputStream outputStream = new GZIPOutputStream(out)) {
+      final long result = ByteStreams.copy(inputStream, outputStream);
+      out.flush();
+      return result;
+    }
+    finally {
+      inputStream.close();
+    }
+  }
+
+  /**
+   * Gzips the input file to the output
+   *
+   * @param inFile      The file to gzip
+   * @param outFile     A target file to copy the uncompressed contents of inFile to
+   * @param shouldRetry Predicate on a potential throwable to determine if the copy should be attempted again.
+   *
+   * @return The result of the file copy
+   *
+   * @throws IOException
+   */
+  public static FileUtils.FileCopyResult gzip(final File inFile, final File outFile, Predicate<Throwable> shouldRetry)
+      throws IOException
+  {
+    gzip(Files.asByteSource(inFile), Files.asByteSink(outFile), shouldRetry);
+    return new FileUtils.FileCopyResult(outFile);
+  }
+
+  public static long gzip(final ByteSource in, final ByteSink out, Predicate<Throwable> shouldRetry)
+      throws IOException
+  {
+    return StreamUtils.retryCopy(
+        in,
+        new ByteSink()
+        {
+          @Override
+          public OutputStream openStream() throws IOException
+          {
+            return new GZIPOutputStream(out.openStream());
+          }
+        },
+        shouldRetry,
+        DEFAULT_RETRY_COUNT
+    );
+  }
+
+
+  /**
+   * GZip compress the contents of inFile into outFile
+   *
+   * @param inFile  The source of data
+   * @param outFile The destination for compressed data
+   *
+   * @return A FileCopyResult of the resulting file at outFile
+   *
+   * @throws IOException
+   */
+  public static FileUtils.FileCopyResult gzip(final File inFile, final File outFile) throws IOException
+  {
+    return gzip(inFile, outFile, FileUtils.IS_EXCEPTION);
+  }
+
+  /**
+   * Checks to see if fName is a valid name for a "*.zip" file
+   *
+   * @param fName The name of the file in question
+   *
+   * @return True if fName is properly named for a .zip file, false otherwise
+   */
+  public static boolean isZip(String fName)
+  {
+    if (Strings.isNullOrEmpty(fName)) {
+      return false;
+    }
+    return fName.endsWith(ZIP_SUFFIX); // Technically a file named `.zip` would be fine
+  }
+
+  /**
+   * Checks to see if fName is a valid name for a "*.gz" file
+   *
+   * @param fName The name of the file in question
+   *
+   * @return True if fName is a properly named .gz file, false otherwise
+   */
+  public static boolean isGz(String fName)
+  {
+    if (Strings.isNullOrEmpty(fName)) {
+      return false;
+    }
+    return fName.endsWith(GZ_SUFFIX) && fName.length() > GZ_SUFFIX.length();
+  }
+
+  /**
+   * Get the file name without the .gz extension
+   *
+   * @param fname The name of the gzip file
+   *
+   * @return fname without the ".gz" extension
+   *
+   * @throws com.metamx.common.IAE if fname is not a valid "*.gz" file name
+   */
+  public static String getGzBaseName(String fname)
+  {
+    final String reducedFname = Files.getNameWithoutExtension(fname);
+    if (isGz(fname) && !reducedFname.isEmpty()) {
+      return reducedFname;
+    }
+    throw new IAE("[%s] is not a valid gz file name", fname);
+  }
+}
+
+/*
+ * Copyright 2011 - 2015 Metamarkets Group Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.metamx.common.parsers;
+
+import com.google.common.base.Function;
+import com.google.common.base.Preconditions;
+import com.metamx.common.IAE;
+import com.metamx.common.logger.Logger;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
+
+public class TimestampParser
+{
+
+  public static Function<String, DateTime> createTimestampParser(
+      final String format
+  )
+  {
+    if (format.equalsIgnoreCase("auto")) {
+      // Could be iso or millis
+      return new Function<String, DateTime>()
+      {
+        @Override
+        public DateTime apply(String input)
+        {
+          Preconditions.checkArgument(input != null && !input.isEmpty(), "null timestamp");
+
+          for (int i = 0; i < input.length(); i++) {
+            if (input.charAt(i) < '0' || input.charAt(i) > '9') {
+              return new DateTime(ParserUtils.stripQuotes(input));
+            }
+          }
+
+          return new DateTime(Long.parseLong(input));
+        }
+      };
+    } else if (format.equalsIgnoreCase("iso")) {
+      return new Function<String, DateTime>()
+      {
+        @Override
+        public DateTime apply(String input)
+        {
+          Preconditions.checkArgument(input != null && !input.isEmpty(), "null timestamp");
+          return new DateTime(ParserUtils.stripQuotes(input));
+        }
+      };
+    } else if (format.equalsIgnoreCase("posix")
+               || format.equalsIgnoreCase("millis")
+               || format.equalsIgnoreCase("nano")) {
+      final Function<Number, DateTime> numericFun = createNumericTimestampParser(format);
+      return new Function<String, DateTime>()
+      {
+        @Override
+        public DateTime apply(String input)
+        {
+          Preconditions.checkArgument(input != null && !input.isEmpty(), "null timestamp");
+          return numericFun.apply(Long.parseLong(ParserUtils.stripQuotes(input)));
+        }
+      };
+    } else if (format.equalsIgnoreCase("ruby")) {
+      // Numeric parser ignores millis for ruby.
+      final Function<Number, DateTime> numericFun = createNumericTimestampParser(format);
+      return new Function<String, DateTime>()
+      {
+        @Override
+        public DateTime apply(String input)
+        {
+          Preconditions.checkArgument(input != null && !input.isEmpty(), "null timestamp");
+          return numericFun.apply(Double.parseDouble(ParserUtils.stripQuotes(input)));
+        }
+      };
+    } else {
+      try {
+        final DateTimeFormatter formatter = DateTimeFormat.forPattern(format);
+        return new Function<String, DateTime>()
+        {
+          @Override
+          public DateTime apply(String input)
+          {
+            Preconditions.checkArgument(input != null && !input.isEmpty(), "null timestamp");
+            return formatter.parseDateTime(ParserUtils.stripQuotes(input));
+          }
+        };
+      }
+      catch (Exception e) {
+        throw new IAE(e, "Unable to parse timestamps with format [%s]", format);
+      }
+    }
+  }
+
+  public static Function<Number, DateTime> createNumericTimestampParser(
+      final String format
+  )
+  {
+    // Ignore millis for ruby
+    if (format.equalsIgnoreCase("posix") || format.equalsIgnoreCase("ruby")) {
+      return new Function<Number, DateTime>()
+      {
+        @Override
+        public DateTime apply(Number input)
+        {
+          return new DateTime(input.longValue() * 1000);
+        }
+      };
+    } else if (format.equalsIgnoreCase("nano")) {
+      return new Function<Number, DateTime>()
+      {
+        @Override
+        public DateTime apply(Number input)
+        {
+          return new DateTime(input.longValue() / 1000000L);
+        }
+      };
+    } else {
+      return new Function<Number, DateTime>()
+      {
+        @Override
+        public DateTime apply(Number input)
+        {
+          return new DateTime(input.longValue());
+        }
+      };
+    }
+  }
+
+  public static Function<Object, DateTime> createObjectTimestampParser(
+      final String format
+  )
+  {
+    final Function<String, DateTime> stringFun = createTimestampParser(format);
+    final Function<Number, DateTime> numericFun = createNumericTimestampParser(format);
+
+    return new Function<Object, DateTime>()
+    {
+      @Override
+      public DateTime apply(Object o)
+      {
+        Preconditions.checkArgument(o != null, "null timestamp");
+
+        if (o instanceof Number) {
+          return numericFun.apply((Number) o);
+        } else {
+          return stringFun.apply(o.toString());
+        }
+      }
+    };
+  }
+}
+
+public class Parsers
+{
+  public static final String DEFAULT_LIST_DELIMITER = "\u0001";
+
+  public static <K, V> Function<String, Map<K, V>> toFunction(final Parser p)
+  {
+    /**
+     * Creates a Function object wrapping the given parser.
+     * Parser inputs that throw an FormattedException are mapped to null.
+     */
+    return new Function<String, Map<K, V>>()
+    {
+      @Override
+      public Map<K, V> apply(String input)
+      {
+        try {
+          return p.parse(input);
+        }
+        catch (Exception e) {
+          return null;
+        }
+      }
+    };
+  }
+}
+--------------------------------------------------------------------------------------------------------
+/*
+ * Copyright 2011,2012 Metamarkets Group Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.metamx.common.logger;
+
+import com.metamx.common.StringUtils;
+import org.slf4j.LoggerFactory;
+
+/**
+ */
+public class Logger
+{
+  private final org.slf4j.Logger log;
+
+  public Logger(String name)
+  {
+    log = LoggerFactory.getLogger(name);
+  }
+
+  public Logger(Class clazz)
+  {
+    log = LoggerFactory.getLogger(clazz);
+  }
+
+  public void trace(String message, Object... formatArgs)
+  {
+    if (log.isTraceEnabled()) {
+      log.trace(StringUtils.safeFormat(message, formatArgs));
+    }
+  }
+
+  public void trace(Throwable t, String message, Object... formatArgs)
+  {
+    if (log.isTraceEnabled()) {
+      log.trace(StringUtils.safeFormat(message, formatArgs), t);
+    }
+  }
+
+  public void debug(String message, Object... formatArgs)
+  {
+    if (log.isDebugEnabled()) {
+      log.debug(StringUtils.safeFormat(message, formatArgs));
+    }
+  }
+
+  public void debug(Throwable t, String message, Object... formatArgs)
+  {
+    if (log.isDebugEnabled()) {
+      log.debug(StringUtils.safeFormat(message, formatArgs), t);
+    }
+  }
+
+  public void info(String message, Object... formatArgs)
+  {
+    if (log.isInfoEnabled()) {
+      log.info(StringUtils.safeFormat(message, formatArgs));
+    }
+  }
+
+  public void info(Throwable t, String message, Object... formatArgs)
+  {
+    if (log.isInfoEnabled()) {
+      log.info(StringUtils.safeFormat(message, formatArgs), t);
+    }
+  }
+
+  /**
+   * Protect against assuming slf4j convention. use `warn(Throwable t, String message, Object... formatArgs)` instead
+   *
+   * @param message The string message
+   * @param t       The Throwable to log
+   */
+  @Deprecated
+  public void warn(String message, Throwable t)
+  {
+    log.warn(message, t);
+  }
+
+  public void warn(String message, Object... formatArgs)
+  {
+    log.warn(StringUtils.safeFormat(message, formatArgs));
+  }
+
+  public void warn(Throwable t, String message, Object... formatArgs)
+  {
+    log.warn(StringUtils.safeFormat(message, formatArgs), t);
+  }
+
+  public void error(String message, Object... formatArgs)
+  {
+    log.error(StringUtils.safeFormat(message, formatArgs));
+  }
+
+  /**
+   * Protect against assuming slf4j convention. use `error(Throwable t, String message, Object... formatArgs)` instead
+   *
+   * @param message The string message
+   * @param t       The Throwable to log
+   */
+  @Deprecated
+  public void error(String message, Throwable t)
+  {
+    log.error(message, t);
+  }
+
+  public void error(Throwable t, String message, Object... formatArgs)
+  {
+    log.error(StringUtils.safeFormat(message, formatArgs), t);
+  }
+
+  public void wtf(String message, Object... formatArgs)
+  {
+    log.error(StringUtils.safeFormat("WTF?!: " + message, formatArgs), new Exception());
+  }
+
+  public void wtf(Throwable t, String message, Object... formatArgs)
+  {
+    log.error(StringUtils.safeFormat("WTF?!: " + message, formatArgs), t);
+  }
+
+  public boolean isTraceEnabled()
+  {
+    return log.isTraceEnabled();
+  }
+
+  public boolean isDebugEnabled()
+  {
+    return log.isDebugEnabled();
+  }
+
+  public boolean isInfoEnabled()
+  {
+    return log.isInfoEnabled();
+  }
+}
+
+
+Runtime.getRuntime().addShutdownHook(
+          new Thread(
+              new Runnable()
+              {
+                @Override
+                public void run()
+                {
+                  log.info("Running shutdown hook");
+                  stop();
+                }
+              }
+          )
+      );
+	  
+	  
+import com.google.common.base.Charsets;
+import com.google.common.base.Throwables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.io.Closeables;
+import com.google.common.io.Files;
+import com.metamx.common.ByteBufferUtils;
+import com.metamx.common.ISE;
+
+import java.io.BufferedReader;
+import java.io.Closeable;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.ByteBuffer;
+import java.nio.MappedByteBuffer;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * Class that works in conjunction with FileSmoosher.  This class knows how to map in a set of files smooshed
+ * by the FileSmoosher.
+ */
+public class SmooshedFileMapper implements Closeable
+{
+  public static SmooshedFileMapper load(File baseDir) throws IOException
+  {
+    File metaFile = FileSmoosher.metaFile(baseDir);
+
+    BufferedReader in = null;
+    try {
+      in = new BufferedReader(new InputStreamReader(new FileInputStream(metaFile), Charsets.UTF_8));
+
+      String line = in.readLine();
+      if (line == null) {
+        throw new ISE("First line should be version,maxChunkSize,numChunks, got null.");
+      }
+
+      String[] splits = line.split(",");
+      if (!"v1".equals(splits[0])) {
+        throw new ISE("Unknown version[%s], v1 is all I know.", splits[0]);
+      }
+      if (splits.length != 3) {
+        throw new ISE("Wrong number of splits[%d] in line[%s]", splits.length, line);
+      }
+      final Integer numFiles = Integer.valueOf(splits[2]);
+      List<File> outFiles = Lists.newArrayListWithExpectedSize(numFiles);
+
+      for (int i = 0; i < numFiles; ++i) {
+        outFiles.add(FileSmoosher.makeChunkFile(baseDir, i));
+      }
+
+      Map<String, Metadata> internalFiles = Maps.newTreeMap();
+      while ((line = in.readLine()) != null) {
+        splits = line.split(",");
+
+        if (splits.length != 4) {
+          throw new ISE("Wrong number of splits[%d] in line[%s]", splits.length, line);
+        }
+        internalFiles.put(
+            splits[0],
+            new Metadata(Integer.parseInt(splits[1]), Integer.parseInt(splits[2]), Integer.parseInt(splits[3]))
+        );
+      }
+
+      return new SmooshedFileMapper(outFiles, internalFiles);
+    }
+    finally {
+      Closeables.close(in, false);
+    }
+  }
+
+  private final List<File> outFiles;
+  private final Map<String, Metadata> internalFiles;
+  private final List<MappedByteBuffer> buffersList = Lists.newArrayList();
+
+  private SmooshedFileMapper(
+      List<File> outFiles,
+      Map<String, Metadata> internalFiles
+  )
+  {
+    this.outFiles = outFiles;
+    this.internalFiles = internalFiles;
+  }
+
+  public Set<String> getInternalFilenames()
+  {
+    return internalFiles.keySet();
+  }
+
+  public ByteBuffer mapFile(String name) throws IOException
+  {
+    final Metadata metadata = internalFiles.get(name);
+    if (metadata == null) {
+      return null;
+    }
+
+    final int fileNum = metadata.getFileNum();
+    while (buffersList.size() <= fileNum) {
+      buffersList.add(null);
+    }
+
+    MappedByteBuffer mappedBuffer = buffersList.get(fileNum);
+    if (mappedBuffer == null) {
+      mappedBuffer = Files.map(outFiles.get(fileNum));
+      buffersList.set(fileNum, mappedBuffer);
+    }
+
+    ByteBuffer retVal = mappedBuffer.duplicate();
+    retVal.position(metadata.getStartOffset()).limit(metadata.getEndOffset());
+    return retVal.slice();
+  }
+
+  @Override
+  public void close()
+  {
+    Throwable thrown = null;
+    for (MappedByteBuffer mappedByteBuffer : buffersList) {
+      try {
+        ByteBufferUtils.unmap(mappedByteBuffer);
+      } catch (Throwable t) {
+        if (thrown == null) {
+          thrown = t;
+        } else {
+          thrown.addSuppressed(t);
+        }
+      }
+    }
+    Throwables.propagateIfPossible(thrown);
+  }
+}
+--------------------------------------------------------------------------------------------------------
+import org.joda.time.Duration;
+import org.joda.time.Period;
+import org.skife.config.Coercer;
+import org.skife.config.Coercible;
+
+/**
+*/
+public class DurationCoercible implements Coercible<Duration>
+{
+  @Override
+  public Coercer<Duration> accept(Class<?> clazz)
+  {
+    if (Duration.class != clazz) {
+      return null;
+    }
+
+    return new Coercer<Duration>()
+    {
+      @Override
+      public Duration coerce(String value)
+      {
+        return new Period(value).toStandardDuration();
+      }
+    };
+  }
+}
+--------------------------------------------------------------------------------------------------------
+package com.metamx.common.concurrent;
+
+import com.google.common.base.Function;
+
+import java.util.concurrent.ThreadFactory;
+
+/**
+ */
+public class FunctionalThreadFactory implements ThreadFactory
+{
+  private final ThreadFactory delegate;
+
+  public FunctionalThreadFactory(final String name)
+  {
+    this(
+        new ThreadFactory()
+        {
+          @Override
+          public Thread newThread(Runnable runnable)
+          {
+            return new Thread(runnable, name);
+          }
+        }
+    );
+  }
+
+  public FunctionalThreadFactory(ThreadFactory delegate)
+  {
+    this.delegate = delegate;
+  }
+
+  @Override
+  public Thread newThread(Runnable runnable)
+  {
+    return delegate.newThread(runnable);
+  }
+
+  public FunctionalThreadFactory transform(Function<ThreadFactory, ThreadFactory> fn)
+  {
+    return new FunctionalThreadFactory(fn.apply(delegate));
+  }
+
+  public FunctionalThreadFactory transformThread(final Function<Thread, Thread> fn)
+  {
+    return new FunctionalThreadFactory(new ThreadFactory()
+    {
+      @Override
+      public Thread newThread(Runnable runnable)
+      {
+        return fn.apply(delegate.newThread(runnable));
+      }
+    });
+  }
+
+  public FunctionalThreadFactory daemonize()
+  {
+    return transformThread(
+        new Function<Thread, Thread>()
+        {
+          @Override
+          public Thread apply(Thread input)
+          {
+            input.setDaemon(true);
+            return input;
+          }
+        }
+    );
+  }
+}
+--------------------------------------------------------------------------------------------------------
+  public static enum Severity
+  {
+    ANOMALY
+    {
+      @Override
+      public String toString()
+      {
+        return "anomaly";
+      }
+    },
+
+    COMPONENT_FAILURE
+    {
+      @Override
+      public String toString()
+      {
+        return "component-failure";
+      }
+    },
+
+    SERVICE_FAILURE
+    {
+      @Override
+      public String toString()
+      {
+        return "service-failure";
+      }
+    };
+
+    public static final Severity DEFAULT = COMPONENT_FAILURE;
+  }
+--------------------------------------------------------------------------------------------------------
+import com.google.common.base.Preconditions;
+import com.google.common.base.Throwables;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.google.common.collect.ImmutableSet;
+import com.metamx.common.logger.Logger;
+
+import java.io.Closeable;
+import java.util.ArrayDeque;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+/**
+ */
+public class ResourcePool<K, V> implements Closeable
+{
+  private static final Logger log = new Logger(ResourcePool.class);
+  private final LoadingCache<K, ImmediateCreationResourceHolder<K, V>> pool;
+  private final AtomicBoolean closed = new AtomicBoolean(false);
+
+  public ResourcePool(
+      final ResourceFactory<K, V> factory,
+      final ResourcePoolConfig config
+  )
+  {
+    this.pool = CacheBuilder.newBuilder().build(
+        new CacheLoader<K, ImmediateCreationResourceHolder<K, V>>()
+        {
+          @Override
+          public ImmediateCreationResourceHolder<K, V> load(K input) throws Exception
+          {
+            return new ImmediateCreationResourceHolder<K, V>(
+                config.getMaxPerKey(),
+                config.getUnusedConnectionTimeoutMillis(),
+                input,
+                factory
+            );
+          }
+        }
+    );
+  }
+
+  public ResourceContainer<V> take(final K key)
+  {
+    if (closed.get()) {
+      log.error(String.format("take(%s) called even though I'm closed.", key));
+      return null;
+    }
+
+    final ImmediateCreationResourceHolder<K, V> holder;
+    try {
+      holder = pool.get(key);
+    }
+    catch (ExecutionException e) {
+      throw Throwables.propagate(e);
+    }
+    final V value = holder.get();
+
+    return new ResourceContainer<V>()
+    {
+      private final AtomicBoolean returned = new AtomicBoolean(false);
+
+      @Override
+      public V get()
+      {
+        Preconditions.checkState(!returned.get(), "Resource for key[%s] has been returned, cannot get().", key);
+        return value;
+      }
+
+      @Override
+      public void returnResource()
+      {
+        if (returned.getAndSet(true)) {
+          log.warn(String.format("Resource at key[%s] was returned multiple times?", key));
+        } else {
+          holder.giveBack(value);
+        }
+      }
+
+      @Override
+      protected void finalize() throws Throwable
+      {
+        if (!returned.get()) {
+          log.warn(
+              String.format(
+                  "Resource[%s] at key[%s] was not returned before Container was finalized, potential resource leak.",
+                  value,
+                  key
+              )
+          );
+          returnResource();
+        }
+        super.finalize();
+      }
+    };
+  }
+
+  public void close()
+  {
+    closed.set(true);
+    final Map<K, ImmediateCreationResourceHolder<K, V>> mapView = pool.asMap();
+    for (K k : ImmutableSet.copyOf(mapView.keySet())) {
+      mapView.remove(k).close();
+    }
+  }
+
+  private static class ImmediateCreationResourceHolder<K, V>
+  {
+    private final int maxSize;
+    private final K key;
+    private final ResourceFactory<K, V> factory;
+    private final ArrayDeque<ResourceHolder<V>> resourceHolderList;
+    private int deficit = 0;
+    private boolean closed = false;
+    private final long unusedResourceTimeoutMillis;
+
+    private ImmediateCreationResourceHolder(
+        int maxSize,
+        long unusedResourceTimeoutMillis,
+        K key,
+        ResourceFactory<K, V> factory
+    )
+    {
+      this.maxSize = maxSize;
+      this.key = key;
+      this.factory = factory;
+      this.unusedResourceTimeoutMillis = unusedResourceTimeoutMillis;
+      this.resourceHolderList = new ArrayDeque<>();
+
+      for (int i = 0; i < maxSize; ++i) {
+        resourceHolderList.add(new ResourceHolder<>(
+            System.currentTimeMillis(),
+            Preconditions.checkNotNull(
+                factory.generate(key),
+                "factory.generate(key)"
+            )
+        ));
+      }
+    }
+
+    V get()
+    {
+      // resourceHolderList can't have nulls, so we'll use a null to signal that we need to create a new resource.
+      final V poolVal;
+      synchronized (this) {
+        while (!closed && resourceHolderList.size() == 0 && deficit == 0) {
+          try {
+            this.wait();
+          }
+          catch (InterruptedException e) {
+            Thread.interrupted();
+            return null;
+          }
+        }
+
+        if (closed) {
+          log.info(String.format("get() called even though I'm closed. key[%s]", key));
+          return null;
+        } else if (!resourceHolderList.isEmpty()) {
+          ResourceHolder<V> holder = resourceHolderList.removeFirst();
+          if (System.currentTimeMillis() - holder.getLastAccessedTime() > unusedResourceTimeoutMillis) {
+            factory.close(holder.getResource());
+            poolVal = factory.generate(key);
+          } else {
+            poolVal = holder.getResource();
+          }
+        } else if (deficit > 0) {
+          deficit--;
+          poolVal = null;
+        } else {
+          throw new IllegalStateException("WTF?! No objects left, and no object deficit. This is probably a bug.");
+        }
+      }
+
+      // At this point, we must either return a valid resource or increment "deficit".
+      final V retVal;
+      try {
+        if (poolVal != null && factory.isGood(poolVal)) {
+          retVal = poolVal;
+        } else {
+          if (poolVal != null) {
+            factory.close(poolVal);
+          }
+          retVal = factory.generate(key);
+        }
+      }
+      catch (Throwable e) {
+        synchronized (this) {
+          deficit++;
+          this.notifyAll();
+        }
+        throw Throwables.propagate(e);
+      }
+
+      return retVal;
+    }
+
+    void giveBack(V object)
+    {
+      Preconditions.checkNotNull(object, "object");
+
+      synchronized (this) {
+        if (closed) {
+          log.info(String.format("giveBack called after being closed. key[%s]", key));
+          factory.close(object);
+          return;
+        }
+
+        if (resourceHolderList.size() >= maxSize) {
+          if (holderListContains(object)) {
+            log.warn(
+                String.format(
+                    "Returning object[%s] at key[%s] that has already been returned!? Skipping",
+                    object,
+                    key
+                ),
+                new Exception("Exception for stacktrace")
+            );
+          } else {
+            log.warn(
+                String.format(
+                    "Returning object[%s] at key[%s] even though we already have all that we can hold[%s]!? Skipping",
+                    object,
+                    key,
+                    resourceHolderList
+                ),
+                new Exception("Exception for stacktrace")
+            );
+          }
+          return;
+        }
+
+        resourceHolderList.addLast(new ResourceHolder<>(System.currentTimeMillis(), object));
+        this.notifyAll();
+      }
+    }
+
+    private boolean holderListContains(V object)
+    {
+      return resourceHolderList.stream().anyMatch(a -> a.getResource().equals(object));
+    }
+
+    void close()
+    {
+      synchronized (this) {
+        closed = true;
+        resourceHolderList.forEach(v -> factory.close(v.getResource()));
+        resourceHolderList.clear();
+        this.notifyAll();
+      }
+    }
+  }
+
+  private static class ResourceHolder<V>
+  {
+    private long lastAccessedTime;
+    private V resource;
+
+    public ResourceHolder(long lastAccessedTime, V resource)
+    {
+      this.resource = resource;
+      this.lastAccessedTime = lastAccessedTime;
+    }
+
+    public long getLastAccessedTime()
+    {
+      return lastAccessedTime;
+    }
+
+    public V getResource()
+    {
+      return resource;
+    }
+
+  }
+}
+--------------------------------------------------------------------------------------------------------
+/**
+ */
+public class ClientResponse<T>
+{
+  private final boolean finished;
+  private final T obj;
+
+  public static <T> ClientResponse<T> finished(T obj)
+  {
+    return new ClientResponse<T>(true, obj);
+  }
+
+  public static <T> ClientResponse<T> unfinished(T obj)
+  {
+    return new ClientResponse<T>(false, obj);
+  }
+
+  protected ClientResponse(
+    boolean finished,
+    T obj
+  )
+  {
+    this.finished = finished;
+    this.obj = obj;
+  }
+
+  public boolean isFinished()
+  {
+    return finished;
+  }
+
+  public T getObj()
+  {
+    return obj;
+  }
+}
+--------------------------------------------------------------------------------------------------------
+import java.nio.ByteBuffer;
+import java.util.UUID;
+
+public class ByteUtils {
+    final static char[] hexArray = "0123456789ABCDEF".toCharArray();
+
+    /**
+     * Transform a byte array into a hex string.
+     *
+     * @param bytes The byte array.
+     * @return The bytes in hex format.
+     */
+    public static String hexFromBytes(byte[] bytes) {
+        if (bytes == null) return "(null)";
+        if (bytes.length == 0) return "[]";
+
+        char[] hexChars = new char[bytes.length * 2];
+        for (int j = 0; j < bytes.length; j++) {
+            int v = bytes[j] & 0xFF;
+            hexChars[j * 2] = hexArray[v >>> 4];
+            hexChars[j * 2 + 1] = hexArray[v & 0x0F];
+        }
+
+        return new String(hexChars);
+    }
+
+    /**
+     * Transform a hex string into a byte array.
+     *
+     * @param s The hex string.
+     * @return The hex string translated to bytes.
+     */
+    public static byte[] bytesFromHex(String s) {
+        int len = s.length();
+        byte[] data = new byte[len / 2];
+
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4) + Character
+                    .digit(s.charAt(i + 1), 16));
+        }
+
+        return data;
+    }
+
+    /**
+     * Transform a hex string into a byte array. Also checks if the input is in hex characters.
+     *
+     * @param s The hex string.
+     * @return The hex string translated to bytes.
+     */
+    public static byte[] bytesFromHexCheckInput(String s) {
+        int len = s.length();
+        byte[] data = new byte[len / 2];
+
+        boolean[] hexArrayContains = new boolean[2];
+        for (int i = 0; i < len; i += 2) {
+            Character hexFirstCharacter = Character.toUpperCase(s.charAt(i));
+            Character hexSecondCharacter = Character.toUpperCase(s.charAt(i + 1));
+            for (int j = 0; j < hexArray.length; j++) {
+
+                if (hexArrayContains[0] == false && hexFirstCharacter == hexArray[j]) {
+                    hexArrayContains[0] = true;
+                }
+
+                if (hexArrayContains[1] == false && hexSecondCharacter == hexArray[j]) {
+                    hexArrayContains[1] = true;
+                }
+            }
+
+            if (hexArrayContains[0] == false || hexArrayContains[1] == false) {
+                throw new IllegalArgumentException("Not a hex string.");
+            } else {
+                hexArrayContains[0] = false;
+                hexArrayContains[1] = false;
+            }
+
+            data[i / 2] = (byte) ((Character.digit(hexFirstCharacter, 16) << 4) + Character
+                    .digit(hexSecondCharacter, 16));
+        }
+
+        return data;
+    }
+
+    /**
+     * Tries to parse input to a byte array. First tries to parse the input as hex, then as base64.
+     * Base64 string is detected quite fast but in case of hex it verifies all of the string's
+     * characters. {@link #bytesFromHex(String)} is faster for strings that are known to be hex.
+     *
+     * @param input The input, in hex or base64.
+     * @return The byte[] if parsing was successful.
+     */
+    public static byte[] bytesFromHexOrBase64(String input) {
+        byte[] result;
+        try {
+            result = ByteUtils.bytesFromHexCheckInput(input);
+            return result;
+        } catch (Exception e) {
+            try {
+                result = Base64.decode(input);
+                return result;
+            } catch (Exception e2) {
+                throw new IllegalArgumentException("Cannot parse the input string to a byte array" +
+                        ": " + e2.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Concatenates two byte arrays.
+     *
+     * @param a A byte array that will get concatenated.
+     * @param b A byte array that will get concatenated.
+     * @return The concatenated byte array.
+     */
+    public static byte[] concatBytes(byte[] a, byte[] b) {
+        int aLen = a.length;
+        int bLen = b.length;
+        byte[] c = new byte[aLen + bLen];
+        System.arraycopy(a, 0, c, 0, aLen);
+        System.arraycopy(b, 0, c, aLen, bLen);
+        return c;
+    }
+
+    /**
+     * Concatenates a byte array and a byte.
+     *
+     * @param a A byte array that will get concatenated.
+     * @param b A byte array that will get concatenated.
+     * @return The concatenated byte array.
+     */
+    public static byte[] concatBytes(byte[] a, byte b) {
+        int aLen = a.length;
+
+        byte[] c = new byte[aLen + 1];
+        System.arraycopy(a, 0, c, 0, aLen);
+        c[c.length - 1] = b;
+
+        return c;
+    }
+
+    /**
+     * Set the bytes in an array.
+     *
+     * @param inArray The array the bytes are set in.
+     * @param toBytes The bytes that are set.
+     * @param offset  The offset of the set bytes.
+     */
+    public static void setBytes(byte[] inArray, byte[] toBytes, int offset) {
+        for (int i = offset; i < offset + toBytes.length; i++) {
+            if (i > inArray.length - 1) return;
+            inArray[offset + (i - offset)] = toBytes[i - offset];
+        }
+    }
+
+    /**
+     * Test whether a bit is set in a byte.
+     *
+     * @param fromByte The byte.
+     * @param bitIndex The bit location.
+     * @return True if the bit is 1.
+     */
+    public static boolean getBit(byte fromByte, int bitIndex) {
+        return ((fromByte >> bitIndex) & 1) == 1;
+    }
+
+    /**
+     * Does this byte array begin with match array content?
+     *
+     * @param source Byte array to examine
+     * @param match  Byte array to locate in <code>source</code>
+     * @return true If the starting bytes are equal
+     */
+    public static boolean startsWith(byte[] source, byte[] match) {
+        return startsWith(source, 0, match);
+    }
+
+    /**
+     * Does this byte array begin with match array content?
+     *
+     * @param source Byte array to examine
+     * @param offset An offset into the <code>source</code> array
+     * @param match  Byte array to locate in <code>source</code>
+     * @return true If the starting bytes are equal
+     */
+    public static boolean startsWith(byte[] source, int offset, byte[] match) {
+
+        if (match.length > (source.length - offset)) {
+            return false;
+        }
+
+        for (int i = 0; i < match.length; i++) {
+            if (source[offset + i] != match[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Convert a byte array into UUID.
+     *
+     * @param bytes The byte array.
+     * @return The UUID.
+     */
+    public static UUID UUIDFromByteArray(byte[] bytes) {
+        ByteBuffer bb = ByteBuffer.wrap(bytes);
+        long high = bb.getLong();
+        long low = bb.getLong();
+        UUID uuid = new UUID(high, low);
+        return uuid;
+    }
+
+    /**
+     * Convert a mac string into byte array
+     *
+     * @param mac The mac address in String format eg FF:FF:FF:FF:FF:FF
+     * @return The
+     */
+    public static byte[] bytesFromMacString(String mac) {
+        String[] macAddressParts = mac.split(":");
+
+        // convert hex string to byte values
+        byte[] macAddressBytes = new byte[6];
+        for (int i = 0; i < 6; i++) {
+            Integer hex = Integer.parseInt(macAddressParts[i], 16);
+            macAddressBytes[i] = hex.byteValue();
+        }
+
+        return macAddressBytes;
+    }
+
+    /**
+     * Trim the bytes to given length eg remove the elements that are over length.
+     *
+     * @param bytes  The bytes that will get trimmed.
+     * @param length The length of the trimmed byte array.
+     * @return The trimmed byte array.
+     */
+    public static byte[] trimmedBytes(byte[] bytes, int length) {
+        if (bytes.length == length) return bytes;
+
+        byte[] trimmedBytes = new byte[length];
+
+        for (int i = 0; i < length; i++) {
+            trimmedBytes[i] = bytes[i];
+        }
+
+        return trimmedBytes;
+    }
+
+    /**
+     * Reverse the byte array.
+     *
+     * @param array The array to be reversed.
+     */
+    public static void reverse(byte[] array) {
+        if (array == null) {
+            return;
+        }
+        int i = 0;
+        int j = array.length - 1;
+        byte tmp;
+        while (j > i) {
+            tmp = array[j];
+            array[j] = array[i];
+            array[i] = tmp;
+            j--;
+            i++;
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+public enum NotificationType {
+
+	BACKUP("backup.email.subject", "backup.email.text", "backup.email.attachment"),
+	REMIND("remind.email.subject", "remind.email.text", null);
+
+	private String subject;
+	private String text;
+	private String attachment;
+
+	NotificationType(String subject, String text, String attachment) {
+		this.subject = subject;
+		this.text = text;
+		this.attachment = attachment;
+	}
+
+	public String getSubject() {
+		return subject;
+	}
+
+	public String getText() {
+		return text;
+	}
+
+	public String getAttachment() {
+		return attachment;
+	}
+}
+
+import com.piggymetrics.notification.domain.Recipient;
+import org.springframework.data.mongodb.repository.Query;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface RecipientRepository extends CrudRepository<Recipient, String> {
+
+	Recipient findByAccountName(String name);
+
+	@Query("{ $and: [ {scheduledNotifications.BACKUP.active: true }, { $where: 'this.scheduledNotifications.BACKUP.lastNotified < " +
+			"new Date(new Date().setDate(new Date().getDate() - this.scheduledNotifications.BACKUP.frequency ))' }] }")
+	List<Recipient> findReadyForBackup();
+
+	@Query("{ $and: [ {scheduledNotifications.REMIND.active: true }, { $where: 'this.scheduledNotifications.REMIND.lastNotified < " +
+			"new Date(new Date().setDate(new Date().getDate() - this.scheduledNotifications.REMIND.frequency ))' }] }")
+	List<Recipient> findReadyForRemind();
+
+}
+
+import java.util.stream.Stream;
+
+public enum Frequency {
+
+	WEEKLY(7), MONTHLY(30), QUARTERLY(90);
+
+	private int days;
+
+	Frequency(int days) {
+		this.days = days;
+	}
+
+	public int getDays() {
+		return days;
+	}
+
+	public static Frequency withDays(int days) {
+		return Stream.of(Frequency.values())
+				.filter(f -> f.getDays() == days)
+				.findFirst()
+				.orElseThrow(IllegalArgumentException::new);
+	}
+}
+--------------------------------------------------------------------------------------------------------
+    private static Properties loadProperties(InputStream inputStream) {
+        try {
+            final Properties properties = new Properties();
+            try {
+                properties.load(inputStream);
+                return properties;
+            } finally {
+                if (inputStream != null) {
+                    inputStream.close();
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+--------------------------------------------------------------------------------------------------------
+import com.metamx.common.logger.Logger;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class KeyedDiff
+{
+  private static final Logger log = new Logger(KeyedDiff.class);
+
+  private final Map<String, Map<String, Long>> prevs = new HashMap<String, Map<String, Long>>();
+
+  public Map<String, Long> to(String key, Map<String, Long> curr)
+  {
+    final Map<String, Long> prev = prevs.put(key, curr);
+    if (prev != null) {
+      return subtract(curr, prev);
+    }
+    else {
+      log.debug("No previous data for key[%s]", key);
+      return null;
+    }
+  }
+
+  public static Map<String, Long> subtract(Map<String, Long> xs, Map<String, Long> ys)
+  {
+    assert xs.keySet().equals(ys.keySet());
+    final Map<String, Long> zs = new HashMap<String, Long>();
+    for (String k : xs.keySet()) {
+      zs.put(k, xs.get(k) - ys.get(k));
+    }
+    return zs;
+  }
+}
+--------------------------------------------------------------------------------------------------------
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Map;
+import java.util.Properties;
+
+public class Props {
+
+  public static Properties fromFilename(String filename) throws IOException {
+    final Properties props = new Properties();
+    props.load(new FileInputStream(filename));
+    return props;
+  }
+
+  public static Properties fromEnvs(String prefix) {
+    final Properties props = new Properties();
+    for (Map.Entry<String, String> env: System.getenv().entrySet()) {
+      if (env.getKey().startsWith(prefix)) {
+        props.put(env.getKey().replaceAll("_", "."), env.getValue());
+      }
+    }
+    return props;
+  }
+
+}
+--------------------------------------------------------------------------------------------------------
+import javax.servlet.http.Cookie;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
+/**
+ * A Collection of Cookies that allows modification - unlike a mere array.
+ * <p>
+ * Since {@link Cookie} doesn't implement <code>hashCode</code> nor <code>equals</code>,
+ * we cannot simply put it into a <code>HashSet</code>.
+ */
+public class CookieCollection implements Collection<Cookie> {
+    private final Map<String, Cookie> cookieMap;
+
+    public CookieCollection() {
+        cookieMap = new HashMap<>();
+    }
+
+    public CookieCollection(Cookie... cookies) {
+        this(Arrays.asList(cookies));
+    }
+
+    public CookieCollection(Collection<? extends Cookie> cookies) {
+        cookieMap = new HashMap<>(cookies.size());
+        addAll(cookies);
+    }
+
+    @Override
+    public int size() {
+        return cookieMap.size();
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return cookieMap.isEmpty();
+    }
+
+    @Override
+    public boolean contains(Object o) {
+        if(o instanceof String) {
+            return cookieMap.containsKey(o);
+        }
+        if(o instanceof Cookie) {
+            return cookieMap.containsValue(o);
+        }
+        return false;
+    }
+
+    @Override
+    public Iterator<Cookie> iterator() {
+        return cookieMap.values().iterator();
+    }
+
+    public Cookie []toArray() {
+        Cookie []cookies=new Cookie[cookieMap.size()];
+        return toArray(cookies);
+    }
+
+    @Override
+    public <T> T[] toArray(T[] ts) {
+        return cookieMap.values().toArray(ts);
+    }
+
+    @Override
+    public boolean add(Cookie cookie) {
+        if(cookie==null) {
+            return false;
+        }
+        cookieMap.put(cookie.getName(), cookie);
+        return true;
+    }
+
+    @Override
+    public boolean remove(Object o) {
+        if(o instanceof String) {
+            return cookieMap.remove((String)o) != null;
+        }
+        if(o instanceof Cookie) {
+            Cookie c=(Cookie)o;
+            return cookieMap.remove(c.getName()) != null;
+        }
+        return false;
+    }
+
+    public Cookie get(String name) {
+        return cookieMap.get(name);
+    }
+
+    @Override
+    public boolean containsAll(Collection<?> collection) {
+        for(Object o : collection) {
+            if(!contains(o)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public boolean addAll(Collection<? extends Cookie> collection) {
+        boolean result = false;
+        for(Cookie cookie : collection) {
+            result|= add(cookie);
+        }
+        return result;
+    }
+
+    @Override
+    public boolean removeAll(Collection<?> collection) {
+        boolean result = false;
+        for(Object cookie : collection) {
+            result|= remove(cookie);
+        }
+        return result;
+    }
+
+    @Override
+    public boolean retainAll(Collection<?> collection) {
+        boolean result=false;
+        Iterator<Map.Entry<String, Cookie>> it=cookieMap.entrySet().iterator();
+        while(it.hasNext()) {
+            Map.Entry<String, Cookie> e=it.next();
+            if(!collection.contains(e.getKey()) && !collection.contains(e.getValue())) {
+                it.remove();
+                result=true;
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public void clear() {
+        cookieMap.clear();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+<bean id="xaDataSourceMySQL-01" class="com.mysql.cj.jdbc.
+MysqlXADataSource">
+ <property name="url">
+ <value>jdbc:mysql://localhost:3306/ecom01</value>
+ </property>
+ <property name="user"><value>root</value></property>
+ <property name="password"><value>rootpassword</value></property>
+</bean>
+
+server.port=8080
+spring.datasource.url = jdbc:mysql://localhost:3306/ecom01?autoReconnect=true&
+useUnicode=true&characterEncoding=UTF-8&allowMultiQueries=true&useSSL=false
+spring.datasource.username = root
+spring.datasource.password = rootpassword
+spring.jpa.properties.hibernate.dialect = org.hibernate.dialect.
+MySQL5Dialect
+spring.jpa.hibernate.ddl-auto = update
+spring.freemarker.cache=false
+
+ch13\ch13-01\XA-TX-Distributed\Settlement-Web\src\main\resources\
+application.properties
+server.port=8081
+spring.datasource.url=jdbc:derby://localhost:1527/D:/Applns/apache/Derby/
+derbydb/exampledb;create=false
+spring.datasource.initialize=false
+spring.datasource.driver-class-name=org.apache.derby.jdbc.ClientDriver
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.
+DerbyTenSevenDialect
+spring.freemarker.cache=false
+--------------------------------------------------------------------------------------------------------
 #0.3.0-alpha-0352-ef7813f
 --------------------------------------------------------------------------------------------------------
    @After("@annotation(annotation) || @within(annotation)")
