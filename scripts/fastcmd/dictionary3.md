@@ -128,6 +128,358 @@ public final class IOUtils {
   }
 }
 -----------------------------------------------------------------------------------------
+TransactionSupportAsyncJobServiceTest.test_async_job_execute:112 
+-----------------------------------------------------------------------------------------
+paragon.mailingcontour.commons
+paragon.mailingcontour.autotests
+paragon.mailingcontour.freecoupons
+paragon.mailingcontour.crmadapter
+paragon.mailingcontour.distributor
+paragon.mailingcontour.mailer
+paragon.mailingcontour.documents.generator
+paragon.mailingcontour.confirmationlink.callback
+paragon.mailingcontour.bounceparser
+paragon.mailingcontour.crmmailadapter
+paragon.mailingcontour.confirmationlink
+paragon.mailingcontour.links
+
+{
+	"sku": <sku>,
+	"name": <name>,
+	"versions":
+	[{
+		"version": <version>,
+		"locale": <locale>,
+		"changelog": <changelog>,
+		"files":
+		[{
+			"fileName": <file-name>,
+			"filePath": <file-path>,
+			"filePlatform": <file-platform>
+		}]
+	}]
+}
+
+{
+	"sku": <sku>,
+	"name": <name>
+}
+
+{
+	"productId": <product-id>,
+	"fileName": <file-name>,
+	"filePath": <file-path>
+	"platform": <platform>
+}
+
+sku=PSG-1770-BSU-SE-TL-1Y&locale=ru&platform=x86
+-----------------------------------------------------------------------------------------
+	@DeprecatedConfigurationProperty(reason = "replaced to support additional strategies",
+			replacement = "server.forward-headers-strategy")
+-----------------------------------------------------------------------------------------
+import ngSpring.demo.domain.dto.UserProfileDTO;
+import ngSpring.demo.domain.entities.User;
+import ngSpring.demo.repositories.UserRepository;
+import ngSpring.demo.transformer.GenericTransformer;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
+
+@Component
+public class UserProfileTransformer extends GenericTransformer<User, UserProfileDTO> {
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Override
+    public User transformToEntity(UserProfileDTO dto) {
+        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+        return User.builder()
+                .userId(dto.getUserId())
+                .username(dto.getUsername())
+                .password(dto.getPassword() != null ? passwordEncoder.encode(dto.getPassword()) : this.userRepository.findByUserIdAndDeletedFalse(dto.getUserId()).getPassword())
+                .build();
+    }
+
+    @Override
+    public UserProfileDTO transformToDTO(User user) {
+        return UserProfileDTO.builder()
+                .userId(user.getUserId())
+                .username(user.getUsername())
+                .build();
+    }
+}
+-----------------------------------------------------------------------------------------
+   @ExceptionHandler(ValidationException.class)
+    @ResponseBody
+    public ResponseEntity<?> handleBadRequestException(ValidationException ex) {
+        LOG.error("Got validation errors", ex);
+        if (ex.getValidationMessages() == null || ex.getValidationMessages().isEmpty()) {
+            return new ResponseEntity<Message>(new Message(ex.getMessage()), HttpStatus.BAD_REQUEST);
+        } else {
+            return new ResponseEntity<List<ValidationMessage>>(ex.getValidationMessages(), HttpStatus.BAD_REQUEST);
+        }
+    }
+	
+	    private List<ValidationMessage> getValidationErrorResponse(ConstraintViolationException constraintViolationException) {
+        final List<ValidationMessage> validationErrors = new ArrayList<>();
+        LOG.error("Got validation errors", constraintViolationException);
+        for (ConstraintViolation<?> violationSet : constraintViolationException.getConstraintViolations()) {
+            List<String> propertyList = new ArrayList<>();
+            Iterator<Path.Node> propertyIterator = violationSet
+                    .getPropertyPath().iterator();
+            while (propertyIterator.hasNext()) {
+                propertyList.add(propertyIterator.next().getName());
+            }
+            // add violations errors in response
+            validationErrors.add(ValidationMessage.builder()
+                    .entity(violationSet.getRootBeanClass().getName())
+                            // remove { and }
+                    .messageTemplate(violationSet.getMessageTemplate().replaceAll("^[{]|[}]$", ""))
+                    .propertyList(propertyList).build());
+        }
+        return validationErrors;
+    }
+-----------------------------------------------------------------------------------------
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jayway.restassured.RestAssured;
+import com.jayway.restassured.specification.RequestSpecification;
+import ngSpring.demo.AngularSpringApplication;
+import ngSpring.demo.domain.entities.User;
+import ngSpring.demo.repositories.EventRepository;
+import ngSpring.demo.repositories.UserRepository;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.IntegrationTest;
+import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.web.WebAppConfiguration;
+
+import java.text.ParseException;
+import java.util.HashMap;
+import java.util.Map;
+
+import static com.jayway.restassured.RestAssured.given;
+
+@RunWith(SpringJUnit4ClassRunner.class)
+@ActiveProfiles("test")
+@SpringApplicationConfiguration(classes = AngularSpringApplication.class)
+@WebAppConfiguration
+@IntegrationTest("server.port:0")
+public abstract class RestITBase {
+
+    @Autowired
+    private EventRepository eventRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Value("${local.server.port}")
+    protected int port;
+
+    @Before
+    public void setUp() throws ParseException {
+        RestAssured.port = port;
+        userRepository.save(User.builder()
+                .enabled(true)
+                .username("user")
+                .password(new BCryptPasswordEncoder().encode("password"))
+                .build());
+    }
+
+    @After
+    public void clean() {
+        try {
+            this.userRepository.deleteAll();
+            this.eventRepository.deleteAll();
+        } catch (Exception ignored) {
+        }
+    }
+
+    protected UserRepository getUserRepository() {
+        return userRepository;
+    }
+
+    public EventRepository getEventRepository() {
+        return eventRepository;
+    }
+
+    protected int getPort() {
+        return port;
+    }
+
+    protected RequestSpecification login(String user, String password) {
+        return given().auth().preemptive().basic(user, password).redirects()
+                .follow(false);
+    }
+
+    protected String toJSON(Object entity) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            return mapper.writeValueAsString(entity);
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    protected String toJSON(Map<String, String> map) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            return mapper.writeValueAsString(map);
+        } catch (Exception ignored) {
+            return "";
+        }
+    }
+
+    // HELPERS
+    protected RequestSpecification loginWithCorrectCredentials() {
+        return login("user", "password");
+    }
+
+    protected RequestSpecification loginWithIncorrectCredentials() {
+        return login("user", "blub");
+    }
+
+    protected RequestSpecification loginWithEmptyCredentials() {
+        return given().auth().none().redirects().follow(false);
+    }
+
+    public class JSONBuilder {
+
+        private Map<String, String> properties = new HashMap<String, String>();
+
+        public JSONBuilder add(String key, String value) {
+            this.properties.put(key, value);
+            return this;
+        }
+
+        public String build() {
+            return toJSON(this.properties);
+        }
+    }
+
+}
+-----------------------------------------------------------------------------------------
+  protected String createJSON(Object object) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        SimpleDateFormat outputFormat = new SimpleDateFormat("dd MMM yyyy");
+        mapper.configure(SerializationFeature.INDENT_OUTPUT, true);
+        mapper.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
+        mapper.setDateFormat(outputFormat);
+        mapper.setSerializationInclusion(Include.NON_EMPTY);
+        return mapper.writeValueAsString(object);
+    }
+	
+	
+	   protected RequestSpecification login(String user, String password) {
+        return given().auth().preemptive().basic(user, password).redirects()
+                .follow(false);
+    }
+-----------------------------------------------------------------------------------------
+https://www.programcreek.com/java-api-examples/index.php?project_name=hypery2k%2Fangular-spring-boot-sample#
+-----------------------------------------------------------------------------------------
+#!/bin/sh
+
+# restart mysql
+/etc/init.d/mysql restart
+
+# run spring boot
+
+java -jar /tmp/ng-spring-boot.jar  --server.port=40080 2> boot-error.log 1> boot-info.log
+
+
+
+
+#!/bin/sh
+java -version
+
+serverPort=${server.port}
+dbUrl="jdbc:mysql://"$DB_PORT_${mysql.port}_TCP_ADDR"/NGSPRING?useUnicode=true&characterEncoding=utf8"
+
+
+echo "App name: "$1
+echo "Server Port: "$serverPort
+echo "DB URL: "$dbUrl
+
+echo "starting app"
+java -Djava.security.egd=file:/dev/./urandom -jar /$1.jar --flyway.url=${dbUrl} --spring.datasource.url=${dbUrl} --server.port=${serverPort} 2> /boot-error.log 1> /boot-info.log
+-----------------------------------------------------------------------------------------
+    @ExceptionHandler(Exception.class)
+    @ResponseBody
+    public ResponseEntity<?> handleErrors(Exception ex) {
+        if (ex.getCause() instanceof RollbackException
+                && ex.getCause().getCause() instanceof ConstraintViolationException) {
+            ConstraintViolationException constraintViolationException = (ConstraintViolationException) ex.getCause().getCause();
+            return new ResponseEntity<List<ValidationMessage>>(getValidationErrorResponse(constraintViolationException), HttpStatus.BAD_REQUEST);
+        } else {
+            LOG.error("Got unknown error", ex);
+            // fallback to server error
+            return new ResponseEntity<Message>(new Message(ex.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+-----------------------------------------------------------------------------------------
+import ngSpring.demo.domain.entities.User;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.query.Param;
+
+public interface UserRepository extends CrudRepository<User, String> {
+
+    @Query(nativeQuery = true, value = "select u.user_name from user u where u.customer_id = :customerId and exists (select * from user_roles where user_id = u.user_id and role_id = 2)")
+    String findControllerUserNameByCustomerId(
+            @Param("customerId") String customerId);
+
+
+    @Query(nativeQuery = true, value = "select u.user_name from user u, user_branches ub where u.user_id = ub.user_id and ub.branch_id = :branchId")
+    String findPlanerUserNameByBranchId(@Param("branchId") String branchId);
+
+    User findByUsernameAndDeletedFalse(String username);
+
+    User findByUserIdAndDeletedFalse(String userId);
+}
+-----------------------------------------------------------------------------------------
+# general
+spring.application.name=angular-spring-demo
+server.port=9080
+
+# http encoding
+spring.http.encoding.charset=UTF-8
+spring.http.encoding.enabled=true
+spring.http.encoding.force=true
+
+# database: mysql
+spring.datasource.driverClassName=com.mysql.jdbc.Driver
+spring.datasource.url=jdbc:mysql://localhost/NGSPRING
+spring.datasource.username=ngspring
+spring.datasource.password=password
+spring.jpa.hibernate.ddl-auto=update
+hibernate.dialect=mysql
+
+#flyway properties
+flyway.url=jdbc:mysql://localhost/NGSPRING
+flyway.user=ngspring
+flyway.password=password
+flyway.enabled=true
+
+# Show or not log for each sql query
+spring.jpa.show-sql = false
+
+org.springframework.security.level=DEBUG
+
+# monitoring
+management.context-path=/actuator
+endpoints.enabled=true
+
+# pretty-print output
+spring.jackson.serialization.INDENT_OUTPUT=true
+spring.jackson.serialization.write-dates-as-timestamps:false
+-----------------------------------------------------------------------------------------
 import com.jerry.security.core.config.JerrySecurityProperties;
 import com.jerry.security.core.exception.JerrySecurityCodeException;
 import com.jerry.security.core.service.JerryUserInfo;

@@ -14687,6 +14687,42 @@ public class BasicAuthRelayGlobalFilter implements GlobalFilter, Ordered {
     }
 }
 --------------------------------------------------------------------------------------------------------
+app6.pba.internal
+--------------------------------------------------------------------------------------------------------
+DeliveryInfoBiMatcherTest
+MessageSourceHelperTest
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+kubectl create -f rbac-config.yaml
+
+kubectl create -f k8s-dashboard-admin.yml
+kubectl create -f k8s-dashboard-readonly-role.yml
+kubectl create -f k8s-dashboard-user.yml
+kubectl create -f k8s-dashboard-manager.yml
+
+kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep psg-admin | awk '{print $1}')
+kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep dashboard-user | awk '{print $1}')
+kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep dashboard-manager | awk '{print $1}')
+
+First, we will create a Kubernetes namespace for all our monitoring components. Execute the following command to create a new namespace called monitoring.
+
+kubectl apply -f namespace.yaml
+You need to assign cluster reader permission to this namespace so that Prometheus can fetch the metrics from kubernetes API’s
+
+kubectl create -f clusterRole.yaml
+We should create a config map with all the prometheus scrape config and alerting rules, which will be mounted to the Prometheus container in /etc/prometheus as prometheus.yaml and prometheus.rules files. The prometheus.yaml contains all the configuration to dynamically discover pods and services running in the kubernetes cluster. prometheus.rules will contain all the alert rules for sending alerts to alert manager.
+
+kubectl create -f config-map.yaml -n monitoring
+Apply Prometheus deployment (ensure you are using the latest stable version of Prometheus)
+
+kubectl create  -f prometheus-deployment.yaml --namespace=monitoring
+You can check the created deployment using the following command.
+
+kubectl get deployments --namespace=monitoring
+To access the Prometheus dashboard over a IP or a DNS name, you need to expose it as kubernetes service. Once created, you can access the Prometheus dashboard using any Kubernetes node IP on port 30090.
+
+kubectl create -f prometheus-service.yaml --namespace=monitoring
+--------------------------------------------------------------------------------------------------------
 import com.basaki.edge.exception.AuthenticationException;
 import com.basaki.edge.exception.BadCredentialsException;
 import com.basaki.edge.security.Authenticator;
