@@ -3670,6 +3670,175 @@ You can see it by analyzing your history file with this kind of command:
 
 history | awk '{CMD[$2]++;count++;}END { for (a in CMD)print CMD[a] " " CMD[a]/count*100 "% " a;}' | grep -v "./" | column -c3 -s " " -t | sort -nr | nl | head -n10
 --------------------------------------------------------------------------------------------------------
+import com.bfwg.security.TokenHelper;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+/**
+ * Created by fan.jin on 2016-10-19.
+ */
+public class TokenAuthenticationFilter extends OncePerRequestFilter {
+
+    private final Log logger = LogFactory.getLog(this.getClass());
+
+    private TokenHelper tokenHelper;
+
+    private UserDetailsService userDetailsService;
+
+    public TokenAuthenticationFilter(TokenHelper tokenHelper, UserDetailsService userDetailsService) {
+        this.tokenHelper = tokenHelper;
+        this.userDetailsService = userDetailsService;
+    }
+
+
+    @Override
+    public void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain chain
+    ) throws IOException, ServletException {
+
+        String username;
+        String authToken = tokenHelper.getToken(request);
+
+        if (authToken != null) {
+            // get username from token
+            username = tokenHelper.getUsernameFromToken(authToken);
+            if (username != null) {
+                // get user
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                if (tokenHelper.validateToken(authToken, userDetails)) {
+                    // create authentication
+                    TokenBasedAuthentication authentication = new TokenBasedAuthentication(userDetails);
+                    authentication.setToken(authToken);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
+            }
+        }
+        chain.doFilter(request, response);
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+import com.bfwg.security.TokenHelper;
+import com.bfwg.security.auth.RestAuthenticationEntryPoint;
+import com.bfwg.security.auth.TokenAuthenticationFilter;
+import com.bfwg.service.impl.CustomUserDetailsService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ * Created by fan.jin on 2016-10-19.
+ */
+
+@Configuration
+@EnableWebSecurity
+@EnableGlobalMethodSecurity(prePostEnabled = true)
+public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Autowired
+    private CustomUserDetailsService jwtUserDetailsService;
+
+    @Autowired
+    private RestAuthenticationEntryPoint restAuthenticationEntryPoint;
+
+    @Bean
+    @Override
+    public AuthenticationManager authenticationManagerBean() throws Exception {
+        return super.authenticationManagerBean();
+    }
+
+    @Autowired
+    public void configureGlobal( AuthenticationManagerBuilder auth ) throws Exception {
+        auth.userDetailsService( jwtUserDetailsService )
+            .passwordEncoder( passwordEncoder() );
+    }
+
+    @Autowired
+    TokenHelper tokenHelper;
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        List<RequestMatcher> csrfMethods = new ArrayList<>();
+        Arrays.asList( "POST", "PUT", "PATCH", "DELETE" )
+                .forEach( method -> csrfMethods.add( new AntPathRequestMatcher( "/**", method ) ) );
+        http
+                .sessionManagement().sessionCreationPolicy( SessionCreationPolicy.STATELESS ).and()
+                .exceptionHandling().authenticationEntryPoint( restAuthenticationEntryPoint ).and()
+                .authorizeRequests()
+                .antMatchers(
+                        HttpMethod.GET,
+                        "/",
+                        "/webjars/**",
+                        "/*.html",
+                        "/favicon.ico",
+                        "/**/*.html",
+                        "/**/*.css",
+                        "/**/*.js"
+                ).permitAll()
+                .antMatchers("/auth/**").permitAll()
+                .anyRequest().authenticated().and()
+                .addFilterBefore(new TokenAuthenticationFilter(tokenHelper, jwtUserDetailsService), BasicAuthenticationFilter.class);
+
+        http.csrf().disable();
+    }
+
+
+    @Override
+    public void configure(WebSecurity web) throws Exception {
+        // TokenAuthenticationFilter will ignore the below paths
+        web.ignoring().antMatchers(
+                HttpMethod.POST,
+                "/auth/login"
+        );
+        web.ignoring().antMatchers(
+                HttpMethod.GET,
+                "/",
+                "/webjars/**",
+                "/*.html",
+                "/favicon.ico",
+                "/**/*.html",
+                "/**/*.css",
+                "/**/*.js"
+            );
+
+    }
+}
+--------------------------------------------------------------------------------------------------------
 <?xml version="1.0" encoding="UTF-8" ?><gpx version="1.0" creator="GPSLogger 103 - http://gpslogger.mendhak.com/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.topografix.com/GPX/1/0" xsi:schemaLocation="http://www.topografix.com/GPX/1/0 http://www.topografix.com/GPX/1/0/gpx.xsd"><time>2019-10-03T20:26:03.000Z</time><trk><trkseg><trkpt lat="59.958738333333336" lon="30.400466666666663"><ele>-31.5</ele><time>2019-10-03T20:26:03.000Z</time><course>0.0</course><speed>0.0</speed><geoidheight>18.0</geoidheight><src>gps</src><hdop>6.26</hdop><vdop>1.00</vdop><pdop>6.34</pdop></trkpt>
 <trkpt lat="59.954496666666664" lon="30.407616666666666"><ele>-36.2</ele><time>2019-10-03T20:31:00.000Z</time><course>201.54</course><speed>2.3378685</speed><geoidheight>18.0</geoidheight><src>gps</src><hdop>3.19</hdop><vdop>1.00</vdop><pdop>3.34</pdop></trkpt>
 <trkpt lat="59.951800000000006" lon="30.40981"><ele>102.4</ele><time>2019-10-03T20:34:32.000Z</time><course>0.0</course><speed>0.0</speed><geoidheight>18.0</geoidheight><src>gps</src><hdop>1.89</hdop><vdop>0.97</vdop><pdop>2.13</pdop></trkpt>
