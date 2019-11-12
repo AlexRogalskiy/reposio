@@ -365,6 +365,17 @@ public abstract class RestITBase {
     }
 
 }
+
+{
+	"id": <id>,
+	"filepath": <file-path>,
+	"filename": <file-name>,
+	"downloadStatus": "NEW | DOWNLOADING | FINISHED | INVALID | INTERRUPTED"
+}
+-----------------------------------------------------------------------------------------
+rf mondial
+digiton
+
 -----------------------------------------------------------------------------------------
   protected String createJSON(Object object) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
@@ -382,7 +393,536 @@ public abstract class RestITBase {
                 .follow(false);
     }
 -----------------------------------------------------------------------------------------
+import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
+
+
+/**
+ * Created by fan.jin on 2016-11-11.
+ */
+public class TokenBasedAuthentication extends AbstractAuthenticationToken {
+
+    private String token;
+    private final UserDetails principle;
+
+    public TokenBasedAuthentication( UserDetails principle ) {
+        super( principle.getAuthorities() );
+        this.principle = principle;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken( String token ) {
+        this.token = token;
+    }
+
+    @Override
+    public boolean isAuthenticated() {
+        return true;
+    }
+
+    @Override
+    public Object getCredentials() {
+        return token;
+    }
+
+    @Override
+    public UserDetails getPrincipal() {
+        return principle;
+    }
+
+}
+ 
+ 
+ 
+ 
+ 
+ 
+import com.bfwg.common.TimeProvider;
+import com.bfwg.model.User;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mobile.device.Device;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Component;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.Date;
+
+
+/**
+ * Created by fan.jin on 2016-10-19.
+ */
+
+@Component
+public class TokenHelper {
+
+    @Value("${app.name}")
+    private String APP_NAME;
+
+    @Value("${jwt.secret}")
+    public String SECRET;
+
+    @Value("${jwt.expires_in}")
+    private int EXPIRES_IN;
+
+    @Value("${jwt.mobile_expires_in}")
+    private int MOBILE_EXPIRES_IN;
+
+    @Value("${jwt.header}")
+    private String AUTH_HEADER;
+
+    static final String AUDIENCE_UNKNOWN = "unknown";
+    static final String AUDIENCE_WEB = "web";
+    static final String AUDIENCE_MOBILE = "mobile";
+    static final String AUDIENCE_TABLET = "tablet";
+
+    @Autowired
+    TimeProvider timeProvider;
+
+    private SignatureAlgorithm SIGNATURE_ALGORITHM = SignatureAlgorithm.HS512;
+
+    public String getUsernameFromToken(String token) {
+        String username;
+        try {
+            final Claims claims = this.getAllClaimsFromToken(token);
+            username = claims.getSubject();
+        } catch (Exception e) {
+            username = null;
+        }
+        return username;
+    }
+
+    public Date getIssuedAtDateFromToken(String token) {
+        Date issueAt;
+        try {
+            final Claims claims = this.getAllClaimsFromToken(token);
+            issueAt = claims.getIssuedAt();
+        } catch (Exception e) {
+            issueAt = null;
+        }
+        return issueAt;
+    }
+
+    public String getAudienceFromToken(String token) {
+        String audience;
+        try {
+            final Claims claims = this.getAllClaimsFromToken(token);
+            audience = claims.getAudience();
+        } catch (Exception e) {
+            audience = null;
+        }
+        return audience;
+    }
+
+    public String refreshToken(String token, Device device) {
+        String refreshedToken;
+        Date a = timeProvider.now();
+        try {
+            final Claims claims = this.getAllClaimsFromToken(token);
+            claims.setIssuedAt(a);
+            refreshedToken = Jwts.builder()
+                .setClaims(claims)
+                .setExpiration(generateExpirationDate(device))
+                .signWith( SIGNATURE_ALGORITHM, SECRET )
+                .compact();
+        } catch (Exception e) {
+            refreshedToken = null;
+        }
+        return refreshedToken;
+    }
+
+    public String generateToken(String username, Device device) {
+        String audience = generateAudience(device);
+        return Jwts.builder()
+                .setIssuer( APP_NAME )
+                .setSubject(username)
+                .setAudience(audience)
+                .setIssuedAt(timeProvider.now())
+                .setExpiration(generateExpirationDate(device))
+                .signWith( SIGNATURE_ALGORITHM, SECRET )
+                .compact();
+    }
+
+    private String generateAudience(Device device) {
+        String audience = AUDIENCE_UNKNOWN;
+        if (device.isNormal()) {
+            audience = AUDIENCE_WEB;
+        } else if (device.isTablet()) {
+            audience = AUDIENCE_TABLET;
+        } else if (device.isMobile()) {
+            audience = AUDIENCE_MOBILE;
+        }
+        return audience;
+    }
+
+    private Claims getAllClaimsFromToken(String token) {
+        Claims claims;
+        try {
+            claims = Jwts.parser()
+                    .setSigningKey(SECRET)
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (Exception e) {
+            claims = null;
+        }
+        return claims;
+    }
+
+    private Date generateExpirationDate(Device device) {
+        long expiresIn = device.isTablet() || device.isMobile() ? MOBILE_EXPIRES_IN : EXPIRES_IN;
+        return new Date(timeProvider.now().getTime() + expiresIn * 1000);
+    }
+
+    public int getExpiredIn(Device device) {
+        return device.isMobile() || device.isTablet() ? MOBILE_EXPIRES_IN : EXPIRES_IN;
+    }
+
+    public Boolean validateToken(String token, UserDetails userDetails) {
+        User user = (User) userDetails;
+        final String username = getUsernameFromToken(token);
+        final Date created = getIssuedAtDateFromToken(token);
+        return (
+                username != null &&
+                username.equals(userDetails.getUsername()) &&
+                        !isCreatedBeforeLastPasswordReset(created, user.getLastPasswordResetDate())
+        );
+    }
+
+    private Boolean isCreatedBeforeLastPasswordReset(Date created, Date lastPasswordReset) {
+        return (lastPasswordReset != null && created.before(lastPasswordReset));
+    }
+
+    public String getToken( HttpServletRequest request ) {
+        /**
+         *  Getting the token from Authentication header
+         *  e.g Bearer your_token
+         */
+        String authHeader = getAuthHeaderFromHeader( request );
+        if ( authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+
+        return null;
+    }
+
+    public String getAuthHeaderFromHeader( HttpServletRequest request ) {
+        return request.getHeader(AUTH_HEADER);
+    }
+
+}
+ 
+ 
+ 
+import org.springframework.mobile.device.Device;
+import org.springframework.mobile.device.DeviceUtils;
+import org.springframework.stereotype.Component;
+
+import javax.servlet.http.HttpServletRequest;
+
+/**
+ * Created by fanjin on 2017-10-16.
+ */
+@Component
+public class DeviceProvider {
+
+    public Device getCurrentDevice(HttpServletRequest request) {
+        return DeviceUtils.getCurrentDevice(request);
+    }
+}
+ 
+ 
+ 
+ 
+ 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.springframework.security.core.GrantedAuthority;
+
+import javax.persistence.*;
+
+/**
+ * Created by fan.jin on 2016-11-03.
+ */
+
+@Entity
+@Table(name="AUTHORITY")
+public class Authority implements GrantedAuthority {
+
+    @Id
+    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    Long id;
+
+    @Column(name="name")
+    String name;
+
+    @Override
+    public String getAuthority() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @JsonIgnore
+    public String getName() {
+        return name;
+    }
+
+    @JsonIgnore
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+}
+ 
+ 
+ 
+import com.bfwg.common.TimeProvider;
+import com.bfwg.model.User;
+import org.assertj.core.util.DateUtil;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.mobile.device.Device;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.sql.Timestamp;
+import java.util.Date;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+/**
+ * Created by fan.jin on 2017-01-08.
+ */
+public class TokenHelperTest {
+
+    private static final String TEST_USERNAME = "testUser";
+
+    @InjectMocks
+    private TokenHelper tokenHelper;
+
+    @Mock
+    private TimeProvider timeProviderMock;
+
+    @InjectMocks
+    DeviceDummy device;
+
+    @Before
+    public void init() {
+        MockitoAnnotations.initMocks(this);
+
+        ReflectionTestUtils.setField(tokenHelper, "EXPIRES_IN", 10); // 10 sec
+        ReflectionTestUtils.setField(tokenHelper, "MOBILE_EXPIRES_IN", 20); // 20 sec
+        ReflectionTestUtils.setField(tokenHelper, "SECRET", "mySecret");
+    }
+
+    @Test
+    public void testGenerateTokenGeneratesDifferentTokensForDifferentCreationDates() throws Exception {
+        when(timeProviderMock.now())
+                .thenReturn(DateUtil.yesterday())
+                .thenReturn(DateUtil.now());
+
+        final String token = createToken(device);
+        final String laterToken = createToken(device);
+
+        assertThat(token).isNotEqualTo(laterToken);
+    }
+
+    @Test
+    public void mobileTokenShouldLiveLonger() {
+        Date beforeSomeTime = new Date(DateUtil.now().getTime() - 15 * 1000);
+
+        UserDetails userDetails = mock(User.class);
+        when(userDetails.getUsername()).thenReturn(TEST_USERNAME);
+
+        when(timeProviderMock.now())
+                .thenReturn(beforeSomeTime);
+        device.setMobile(true);
+        final String mobileToken = createToken(device);
+        assertThat(tokenHelper.validateToken(mobileToken, userDetails)).isTrue();
+    }
+
+    @Test
+    public void mobileTokenShouldExpire() {
+        Date beforeSomeTime = new Date(DateUtil.now().getTime() - 20 * 1000);
+
+        when(timeProviderMock.now())
+                .thenReturn(beforeSomeTime);
+
+        UserDetails userDetails = mock(User.class);
+        when(userDetails.getUsername()).thenReturn(TEST_USERNAME);
+
+        device.setMobile(true);
+        final String mobileToken = createToken(device);
+        assertThat(tokenHelper.validateToken(mobileToken, userDetails)).isFalse();
+    }
+
+    @Test
+    public void getUsernameFromToken() throws Exception {
+        when(timeProviderMock.now()).thenReturn(DateUtil.now());
+
+        final String token = createToken(device);
+
+        assertThat(tokenHelper.getUsernameFromToken(token)).isEqualTo(TEST_USERNAME);
+    }
+
+    @Test
+    public void getCreatedDateFromToken() {
+        final Date now = DateUtil.now();
+        when(timeProviderMock.now()).thenReturn(now);
+
+        final String token = createToken(device);
+
+        assertThat(tokenHelper.getIssuedAtDateFromToken(token)).isInSameMinuteWindowAs(now);
+    }
+
+    @Test
+    public void expiredTokenCannotBeRefreshed() {
+        when(timeProviderMock.now())
+                .thenReturn(DateUtil.yesterday());
+
+        String token = createToken(device);
+        tokenHelper.refreshToken(token, device);
+    }
+
+    @Test
+    public void getAudienceFromToken() throws Exception {
+        when(timeProviderMock.now()).thenReturn(DateUtil.now());
+        device.setNormal(true);
+        final String token = createToken(this.device);
+
+        assertThat(tokenHelper.getAudienceFromToken(token)).isEqualTo(tokenHelper.AUDIENCE_WEB);
+    }
+
+    @Test
+    public void getAudienceFromMobileToken() throws Exception {
+        when(timeProviderMock.now()).thenReturn(DateUtil.now());
+        device.setMobile(true);
+        final String token = createToken(this.device);
+        assertThat(tokenHelper.getAudienceFromToken(token)).isEqualTo(tokenHelper.AUDIENCE_MOBILE);
+    }
+
+    @Test
+    public void changedPasswordCannotBeRefreshed() throws Exception {
+        when(timeProviderMock.now())
+                .thenReturn(DateUtil.now());
+
+        User user = mock(User.class);
+        when(user.getLastPasswordResetDate()).thenReturn(new Timestamp(DateUtil.tomorrow().getTime()));
+        String token = createToken(device);
+        assertThat(tokenHelper.validateToken(token, user)).isFalse();
+    }
+
+    @Test
+    public void canRefreshToken() throws Exception {
+        when(timeProviderMock.now())
+                .thenReturn(DateUtil.now())
+                .thenReturn(DateUtil.tomorrow());
+        String firstToken = createToken(device);
+        String refreshedToken = tokenHelper.refreshToken(firstToken, device);
+        Date firstTokenDate = tokenHelper.getIssuedAtDateFromToken(firstToken);
+        Date refreshedTokenDate = tokenHelper.getIssuedAtDateFromToken(refreshedToken);
+        assertThat(firstTokenDate).isBefore(refreshedTokenDate);
+    }
+
+    private String createToken(Device device) {
+        return tokenHelper.generateToken(TEST_USERNAME, device);
+    }
+
+}
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+import org.springframework.mobile.device.Device;
+import org.springframework.mobile.device.DevicePlatform;
+import org.springframework.stereotype.Component;
+
+/**
+ * Created by fanjin on 2017-10-07.
+ */
+@Component
+public class DeviceDummy implements Device {
+    private boolean normal;
+    private boolean mobile;
+    private boolean tablet;
+
+    @Override
+    public boolean isNormal() {
+        return normal;
+    }
+
+    @Override
+    public boolean isMobile() {
+        return mobile;
+    }
+
+    @Override
+    public boolean isTablet() {
+        return tablet;
+    }
+
+    @Override
+    public DevicePlatform getDevicePlatform() {
+        return null;
+    }
+
+    public void setNormal(boolean normal) {
+        this.normal = normal;
+    }
+
+    public void setMobile(boolean mobile) {
+        this.mobile = mobile;
+    }
+
+    public void setTablet(boolean tablet) {
+        this.tablet = tablet;
+    }
+}
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mobile</artifactId>
+		</dependency>
+ 
+ 
+		<dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt</artifactId>
+            <version>0.6.0</version>
+        </dependency>
+ 
+
+
+-----------------------------------------------------------------------------------------
 https://www.programcreek.com/java-api-examples/index.php?project_name=hypery2k%2Fangular-spring-boot-sample#
+-----------------------------------------------------------------------------------------
+EcomPilot.io
 -----------------------------------------------------------------------------------------
 #!/bin/sh
 

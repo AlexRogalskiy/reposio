@@ -30464,6 +30464,139 @@ void init(@Mock SettingRepository settingRepository) {
             <scope>test</scope>
         </dependency>
 --------------------------------------------------------------------------------------------------------
+class BlankStringsArgumentsProvider implements ArgumentsProvider {
+ 
+    @Override
+    public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
+        return Stream.of(
+          Arguments.of((String) null), 
+          Arguments.of(""), 
+          Arguments.of("   ") 
+        );
+    }
+}
+
+@ParameterizedTest
+@ArgumentsSource(BlankStringsArgumentsProvider.class)
+void isBlank_ShouldReturnTrueForNullOrBlankStringsArgProvider(String input) {
+    assertTrue(Strings.isBlank(input));
+}
+--------------------------------------------------------------------------------------------------------
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.RepetitionInfo;
+import org.junit.jupiter.api.TestInfo;
+
+public class RepeatedTestAnnotationUnitTest {
+
+    @BeforeEach
+    void beforeEachTest() {
+        System.out.println("Before Each Test");
+    }
+
+    @AfterEach
+    void afterEachTest() {
+        System.out.println("After Each Test");
+        System.out.println("=====================");
+    }
+
+    @RepeatedTest(3)
+    void repeatedTest(TestInfo testInfo) {
+        System.out.println("Executing repeated test");
+        assertEquals(2, Math.addExact(1, 1), "1 + 1 should equal 2");
+    }
+
+    @RepeatedTest(value = 3, name = RepeatedTest.LONG_DISPLAY_NAME)
+    void repeatedTestWithLongName() {
+        System.out.println("Executing repeated test with long name");
+        assertEquals(2, Math.addExact(1, 1), "1 + 1 should equal 2");
+    }
+
+    @RepeatedTest(value = 3, name = RepeatedTest.SHORT_DISPLAY_NAME)
+    void repeatedTestWithShortName() {
+        System.out.println("Executing repeated test with long name");
+        assertEquals(2, Math.addExact(1, 1), "1 + 1 should equal 2");
+    }
+
+    @RepeatedTest(value = 3, name = "Custom name {currentRepetition}/{totalRepetitions}")
+    void repeatedTestWithCustomDisplayName() {
+        assertEquals(2, Math.addExact(1, 1), "1 + 1 should equal 2");
+    }
+
+    @RepeatedTest(3)
+    void repeatedTestWithRepetitionInfo(RepetitionInfo repetitionInfo) {
+        System.out.println("Repetition #" + repetitionInfo.getCurrentRepetition());
+        assertEquals(3, repetitionInfo.getTotalRepetitions());
+    }
+}
+--------------------------------------------------------------------------------------------------------
+TransactionSupportAsyncJobServiceTest
+--------------------------------------------------------------------------------------------------------
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
+
+import java.time.Month;
+import java.util.EnumSet;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class EnumsUnitTest {
+
+    @ParameterizedTest
+    @EnumSource(Month.class)
+    void getValueForAMonth_IsAlwaysBetweenOneAndTwelve(Month month) {
+        int monthNumber = month.getValue();
+        assertTrue(monthNumber >= 1 && monthNumber <= 12);
+    }
+
+    @ParameterizedTest(name = "{index} {0} is 30 days long")
+    @EnumSource(value = Month.class, names = {"APRIL", "JUNE", "SEPTEMBER", "NOVEMBER"})
+    void someMonths_Are30DaysLong(Month month) {
+        final boolean isALeapYear = false;
+        assertEquals(30, month.length(isALeapYear));
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = Month.class, names = {"APRIL", "JUNE", "SEPTEMBER", "NOVEMBER", "FEBRUARY"}, mode = EnumSource.Mode.EXCLUDE)
+    void exceptFourMonths_OthersAre31DaysLong(Month month) {
+        final boolean isALeapYear = false;
+        assertEquals(31, month.length(isALeapYear));
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = Month.class, names = ".+BER", mode = EnumSource.Mode.MATCH_ANY)
+    void fourMonths_AreEndingWithBer(Month month) {
+        EnumSet<Month> months = EnumSet.of(Month.SEPTEMBER, Month.OCTOBER, Month.NOVEMBER, Month.DECEMBER);
+        assertTrue(months.contains(month));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"APRIL", "JUNE", "SEPTEMBER", "NOVEMBER"})
+    void someMonths_Are30DaysLongCsv(Month month) {
+        final boolean isALeapYear = false;
+        assertEquals(30, month.length(isALeapYear));
+    }
+    
+}
+--------------------------------------------------------------------------------------------------------
+static Stream<Arguments> arguments = Stream.of(
+  Arguments.of(null, true), // null strings should be considered blank
+  Arguments.of("", true),
+  Arguments.of("  ", true),
+  Arguments.of("not blank", false)
+);
+ 
+@ParameterizedTest
+@VariableSource("arguments")
+void isBlank_ShouldReturnTrueForNullOrBlankStringsVariableSource(String input, boolean expected) {
+    assertEquals(expected, Strings.isBlank(input));
+}
+--------------------------------------------------------------------------------------------------------
 @RunWith(PowerMockRunner.class)
 @PowerMockRunnerDelegate(Parameterized.class)
 @PrepareForTest({FinalDemo.class, PrivateFinal.class})
