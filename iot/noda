@@ -15435,7 +15435,40 @@ https://gps-coordinates.org/
 
  
  
- 
+ Описание для GPS Waypoints
+
+Multi-purpose mapping and surveying tool for both professional and personal use. It is used for land surveying (agriculture, forest), urban planning & real state, emergency events mapping, infrastructure maintenance and also personal outdoor entertainment, such as hiking, walking, orienteering and travelling.
+
+The application collects Waypoints (such as points of interest) and Paths (sequence of points) to perform mapping and surveying activities. The Waypoints are acquired with accuracy information and tagged by the user with any specific information. The Paths are created with points acquired on the field aiming to measure distances and, if closed, forming polygons to determine areas and perimeters. Both Waypoints and Paths can be exported to a KML, GPX and CSV file and thus be processed externally with a geospatial tool.
+
+The application uses the internal GPS receiver from the mobile device (typically with accuracies>3m) or, alternatively, allows professional users attaining better accuracies with a Bluetooth external GNSS receiver (e.g. <1m). See below the list with external receivers supported.
+
+The application includes the following features:
+- Acquire positioning, navigation and precision information;
+- Provide details of the active and visible satellites (GPS, GLONASS, GALILEO, BEIDOU and other);
+- Create Waypoints with accuracy information, geotag them and convert coordinates into a human-readable address (reverse geocoding);
+- Import Waypoints from geographic coordinates (lat, long) or alternatively search for a street address/point of interest (geocoding);
+- Create Paths by acquiring sequences of points manually or automatically;
+- Import Paths from existing Waypoints;
+- Get directions and distances from current position to Waypoints and Paths;
+- Export Waypoints/Paths to KML and GPX file format;
+- Share data with other applications (e.g. Dropbox/Google Drive).
+
+The Premium subscription include three main professional features:
+- Backup and restore user’s data (it also allows transfer data from one handset to another);
+- Export Waypoints and Paths to CSV file format;
+- Import multiple Waypoints and Paths from CSV and GPX files;
+- Sort and filter Waypoints and Paths by creation time, name and proximity.
+
+Additionally to the internal mobile receiver, the current version is known to work with the following external receivers:
+- Bad Elf GNSS Surveyor
+- Garmin Glo
+- Navilock BT-821G (tested by Bluecover)
+- Qstarz BT-Q818XT (tested by Bluecover)
+- Trimple R1
+
+
+
  
  https://github.com/wiglenet/wigle-wifi-wardriving or sending email to wigle-admin@wigle.net
  

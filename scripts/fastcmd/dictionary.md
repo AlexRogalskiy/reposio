@@ -63928,6 +63928,120 @@ public class UserDetailsServiceImpl implements UserDetailsService{
     }
 }
 --------------------------------------------------------------------------------------------------------
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.reactive.server.WebTestClient;
+
+import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+
+/**
+ * @author Spencer Gibb
+ */
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = GatewaySampleApplication.class, webEnvironment = RANDOM_PORT)
+public class GatewaySampleApplicationTests {
+
+	@LocalServerPort
+	protected int port = 0;
+
+	protected WebTestClient webClient;
+	protected String baseUri;
+
+	@Before
+	public void setup() {
+		baseUri = "http://localhost:" + port;
+		this.webClient = WebTestClient.bindToServer().baseUrl(baseUri).build();
+	}
+
+	@Test
+	public void contextLoads() {
+		webClient.get()
+				.uri("/get")
+				.exchange()
+				.expectStatus().isOk();
+	}
+
+	@Test
+	public void complexPredicate() {
+		webClient.get()
+				.uri("/image/png")
+				.header("Host", "www.abc.org")
+				.exchange()
+				.expectHeader().valueEquals("X-TestHeader", "foobar")
+				.expectStatus().isOk();
+
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.concurrent.TimeUnit;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.cloud.gateway.route.RouteLocator;
+import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.server.RequestPredicates;
+import org.springframework.web.reactive.function.server.RouterFunction;
+import org.springframework.web.reactive.function.server.RouterFunctions;
+import org.springframework.web.reactive.function.server.ServerResponse;
+
+/**
+ * @author Spencer Gibb
+ */
+@SpringBootConfiguration
+@EnableAutoConfiguration
+@Import(AdditionalRoutes.class)
+public class GatewaySampleApplication {
+
+	@Bean
+	public RouteLocator customRouteLocator(RouteLocatorBuilder builder, ThrottleGatewayFilterFactory throttle) {
+		//@formatter:off
+		return builder.routes()
+				.route(r -> r.host("**.abc.org").and().path("/image/png")
+						.addResponseHeader("X-TestHeader", "foobar")
+						.uri("http://httpbin.org:80")
+				)
+				.route(r -> r.path("/image/webp")
+					.addResponseHeader("X-AnotherHeader", "baz")
+					.uri("http://httpbin.org:80")
+				)
+				.route(r -> r.order(-1)
+					.host("**.throttle.org").and().path("/get")
+					.filter(throttle.apply(1,
+							1,
+							10,
+							TimeUnit.SECONDS))
+					.uri("http://httpbin.org:80")
+				)
+				.build();
+		////@formatter:on
+	}
+
+	@Bean
+	public ThrottleGatewayFilterFactory throttleWebFilterFactory() {
+		return new ThrottleGatewayFilterFactory();
+	}
+
+	@Bean
+	public RouterFunction<ServerResponse> testFunRouterFunction() {
+		RouterFunction<ServerResponse> route = RouterFunctions.route(
+				RequestPredicates.path("/testfun"),
+				request -> ServerResponse.ok().body(BodyInserters.fromObject("hello")));
+		return route;
+	}
+
+	public static void main(String[] args) {
+		SpringApplication.run(GatewaySampleApplication.class, args);
+	}
+}
+--------------------------------------------------------------------------------------------------------
 import java.math.BigDecimal;
 import java.util.concurrent.*;
 
