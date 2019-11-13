@@ -15469,6 +15469,760 @@ Additionally to the internal mobile receiver, the current version is known to wo
 
 
 
+
+Описание для ZipKey Dev Tool
+
+Wi-Fi enabled devices in the home are bringing a new level of flexibility to our lives, whether it is being able to see who is ringing your doorbell when you are not at home, adjusting the thermostat automatically when you are going to be home earlier or later than usual, or being reassured by being able to look at your home's security camera feed while on vacation. These are just a few of the internet-connected devices that are coming to the market, and in the years ahead, there will be countless connected-devices designed to give us more comfort and flexibility in our homes.
+
+ 
+
+However, those very devices that are designed to make our lives easier can be incredibly frustrating to get up and running. Connecting a device that does not have a screen or keyboard to your home Wi-Fi network can be a complicated experience, and there are high return rates for these products, simply because end users cannot get them to connect or stay connected to their home Wi-Fi network.
+
+ 
+
+This is where Cirrent comes in. The Cirrent ZipKey Network is a parallel internet connection, not managed by the end user, that enables the devices to come online without any user involvement. Once the device is online, it is much easier to manage, whether by the end user or the customer care team.
+
+ 
+
+This application is for ZipKey developers to be able to experience the seamless Wi-Fi on boarding that a ZipKey-enabled product can deliver. The application lets you walk through all the available user experiences, so that you can ensure that your ZipKey-enabled product delivers the best on boarding experience whether in range or out of range of a ZipKey hotspot. You can also use this app to test your product, and to ensure that it delivers the best Wi-FI on boarding experience.
+
+ 
+
+ 
+
+ 
+
+Описание для Android Device Policy
+
+Приложение Android Device Policy помогает ИТ-администраторам обеспечивать безопасность данных, принадлежащих вашей организации, а также управлять правилами и настройками безопасности. Создайте код демоверсии с помощью инструмента Android Management Experience на странице https://enterprise.google.com/android/experience.
+
+ 
+
+Преимущества приложения Android Device Policy:
+
+∙ простая регистрация;
+
+∙ доступ к корпоративному Google Play;
+
+∙ доступ к электронной почте и рабочим ресурсам.
+
+ 
+
+Для управления устройствами с Android Device Policy следует использовать Android Management API (https://g.co/dev/androidmanagement).
+
+ 
+
+Управление разрешениями:
+
+∙ Доступ к камере обеспечивает сканирование QR-кодов, что может потребоваться при регистрации в программе.
+
+∙ Доступ к контактам используется при добавлении рабочего аккаунта на устройство и является обязательным для доступа к корпоративному Google Play.
+
+∙ Доступ к телефону используется для регистрации устройства и передачи идентификаторов устройств ИТ-администратору.
+
+∙ Доступ к данным о местоположении позволяет запрашивать список доступных сетей Wi-Fi, обеспечивать соблюдение правил в отношении ИТ и получать доступ к новой сети в случае неисправности текущей конфигурации.
+
+Чтобы пользоваться устройством, не обязательно предоставлять все разрешения.
+
+Скрыть
+
+Android Device Policy 11.04.10.v23 Обновить
+
+2019-10-24
+
+∙ Исправлены ошибки.
+
+Полностью примечание к выпуску читайте здесь: https://developers.google.com/android/management/release-notes.
+
+ 
+
+ 
+
+Описание для Developer Toys
+
+This app is meant for helping developers while developing complex device specific applications and also for users who want a simple tool to manage their device applications [backup and uninstall applications]
+
+ 
+
+This application will make the development tasks bit easier.
+
+ 
+
+Applications features -
+
+ 
+
+∙ Backup Application APKs [can take backup of installed applications]
+
+∙ Uninstall Applications [can uninstall one or multiple apps]
+
+∙ Create Desktop Shortcut of Applications [long press to select app and select create shortcut]
+
+∙ Device Sensors [displays list of all the sensors present in device]
+
+∙ Sensor Information [displays all the details of selected sensor]
+
+∙ Battery Status [current status of battery with all other details ex. temperature and voltage]
+
+∙ Screen Information [all the details regarding device screen, screen size, resolution, refresh rate etc.]
+
+∙ IP Address [IP address of device based on connection]
+
+∙ IMEI numbers
+
+∙ Device Build Information [make, model, hardware serial no, brand name, android version and SDK version]
+
+∙ Telephony Details [phone type, no of SIMs, network type, SIM operator details, IMEI no, subscriber id etc.]
+
+∙ Wi-Fi & Bluetooth Details [Wi-Fi & Bluetooth Mac address, SSID, link speed, frequency of link]
+
+∙ Storage & RAM Info [Internal and External Storage info at a glance]
+
+∙ CPU Information [CPU core and utilization info]
+
+∙ Hardware Information [Information regarding processor, hardware manufacturer, CPU cores, its frequencies, etc]
+
+∙ Camera Information [configurations and info regarding front and back camera]
+
+∙ Multi-touch detector [check how many finger touch your screen supports ]
+
+∙ Reboot Options [Only for rooted devices]
+
+∙ Widget as shortcut for opening Developer Options menu from home screen.
+
+
+
+
+
+2018-04-16
+
+Shortcuts added for Android 7.1 and above.
+
+Full change-list here: https://github.com/JTechMe/JumpGo/releases/tag/v4.4.1.0-dev.01
+
+ 
+
+http://tapteek.com
+
+Facebook.com/tapteek
+
+Twitter.com/tapteek
+
+Instagram.com/tapteek
+
+ 
+
+ 
+
+ 
+
+Описание для DevCheck
+
+Monitor your hardware in real time and get complete information about your device model, CPU, GPU, memory, battery, camera, disk, network, sensors and operating system. DevCheck gives you all the information you need about your hardware and operating system in a clear, accurate and organized way.
+
+ 
+
+DevCheck provides the most detailed CPU and System-on-a-chip (SOC) info available. See specifications for Bluetooth, GPU, RAM, storage and other hardware in your phone or tablet. Find all the details about your WiFi and mobile networks, including dual SIM info. Get real time sensor data. Learn about your phone's operating system and architecture.
+
+ 
+
+DevCheck displays the most advanced camera specifications, including sensor size, pixel size, aperture, focal length, ISO range, RAW capability, face detection, 35mm equivalents and more
+
+ 
+
+Dashboard: real-time monitoring of CPU and GPU frequencies, temperatures, memory usage, battery stats, deep sleep and uptime. Click on the CPU frequencies for a sortable summary of CPU frequency usage and time in deep sleep. Click on the temperatures for a complete list of temperature sensors on your device. Choose which temperatures to display on the Dashboard.
+
+ 
+
+Hardware: displays all detail about your SOC, CPU, GPU, memory, storage, bluetooth and other hardware, including chip names and manufacturers, architecture, processor cores and big.LITTLE configuration, manufacturing process, frequencies, governor, memory type and bandwidth, storage capacity, resolution, OpenGL, and panel type. Some information requires root access.
+
+ 
+
+System: get all info about your device, including codename, brand, manufacturer, bootloader, radio, serial number, device id Android version, security patch level and kernel. DevCheck can also check root, busybox, KNOX status and other interesting information.
+
+ 
+
+Battery: real-time info about your battery status, temperature, level, technology, health, voltage, current and capacity
+
+ 
+
+Network: shows info about your WiFi and mobile/cellular connections, including IP addresses (ipv4 and ipv6), connection info, operator, phone number, phone and network type, public IP and more. Most complete dual SIM information available
+
+ 
+
+Apps: Detailed info and management of all your apps. Running apps provides list of apps and services running on your device, with current memory usage. On Android Nougat or later, memory usage is only available on rooted devices.
+
+ 
+
+Specifications for front and back cameras: resolution (megapixels), sensor size, pixel size, ISO range, RAW capability, aperture, focal length, crop factor, field of view, focus modes, flash modes, JPEG quality and image format, max face count and available face detection modes
+
+ 
+
+Sensors: a list of all sensors on the device, including type, manufacturer, power and resolution. Real time graphical info for accelerometer, step detector, gyroscope, proximity, light and other sensors.
+
+ 
+
+ 
+
+PRO VERSION is available through in-app purchase
+
+The pro version includes completely customizable, movable, always-on-top floating monitors. This allows you to monitor CPU frequencies, temperatures, GPU frequency, battery, network activity, signal strength, memory and system load in real time while using other apps. The size, transparency and position of the overlay windows is completely adjustable. On Android 5.0 and above, the floating monitors can be conveniently docked to the statusbar. A click-through option also available.
+
+ 
+
+The pro version also allows you to switch between light and dark Material Design themes and choose from nine different color schemes (amber, blue, slate grey, aqua, red, green, orange, pink and indigo)
+
+ 
+
+ 
+
+PERMISSIONS
+
+This app requires several permissions in order to display detailed information about your device. None of this information leaves your device. This information is not shared or collected in any way. Your privacy is always respected.
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для Pascal N-IDE
+
+The application is a Pascal interpreter on Android. This application is confusing for everyone to learn Pascal on the mobile without a computer, so that we can practice anytime, anywhere.
+
+ 
+
+1. The main features of the IDE:
+
+- Compile Pascal programs and run them without Internet.
+
+- Error when compiling
+
+- Powerful editor with many smart features:
+
+★ File menu: create a new program file, open, save,automatically save file
+
+★ Menu edit: Undo, redo, copy, paste.
+
+★ Auto suggest: Display a small popup window that suggests words that coincide with the word being typed
+
+★ Auto format: automatically reformat the code for easier viewing.
+
+★ Find / Find and replace: Regular Expression support.
+
+★ Goto line: Move the cursor to a line.
+
+★ Highlight code: highlight the keywords.
+
+★ Code style: many interface for the editor.
+
+★ Font size, font, word wrap.
+
+- Support library Android (Sensor, battery, record audio, camera...)
+
+ 
+
+3. Libraries supported for Android
+
+- The "aTTSpeech" library converts text to speech. See example text_to_speech.pas
+
+- The "aRecognition" library converts speech to text (requires Google Voice). See example speech_to_text.pas.
+
+- The "aVibrate" library supports vibration control. You see example vibrate.pas
+
+- The "aSensor" library supports processing of Android sensors (light, acceleration, ...). See accelerometer_sensor.pas for accelerometer sensor example
+
+- The "aNotify" library helps display notifications in the status bar. See the example notify.pas
+
+- The "aClipboard" library works with the clipboard in Android. See the clipboard.pas example
+
+- The "aBattery" library retrieves the battery information of the device. See battery.pas example
+
+ 
+
+- If you want to add or improve a translation of PASCAL-NIDE, please visit this link http://osewnui.oneskyapp.com/collaboration/project/272800
+
+ 
+
+I am constantly working to improve this product. If you want to help me with the content (language translation, example code), please contact me via mail. I am very happy for your support.
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для Удаленный рабочий стол
+
+Безопасный удаленный доступ к компьютеру с Android-устройства
+
+ 
+
+∙ Установите на компьютере приложение "Удаленный рабочий стол Chrome" отсюда: https://chrome.google.com/remotedesktop
+
+∙ Откройте приложение на Android-устройстве и выберите компьютер, чтобы получить к нему доступ. Эта функция работает, только когда компьютер подключен к Интернету.
+
+ 
+
+Данные в приложении подпадают под действие Политики конфиденциальности Google (http://www.google.com/intl/ru/policies/privacy/) и Примечания о конфиденциальности Chrome (https://www.google.ru/intl/ru/chrome/browser/privacy/).
+
+ 
+
+ 
+
+ 
+
+Описание для LostMiner
+
+Игре-песочница с элементами добычи, созидания и исследования. В игре есть камера бокового обзора, смешение 2D и 3D и хорошо проработанная пиксельная графика!
+
+Вы можете делать все, что хотите, в регламентированном, пиксельном, полностью разрушаемом мире со множеством различных биомов и секретов!
+
+Размещайте и разбивайте блоки; стройте дом, садоводческое хозяйство, животноводческую ферму; рубите деревья; создавайте новые предметы; собирайте ресурсы; отправляйтесь на рыбалку; катайтесь на страусах, коровах, боевых монстрах; копайте и исследуйте секреты случайного подземного мира и пытайтесь выжить! Игре будет тем сложнее, чем глубже вы зайдете!
+
+ 
+
+LostMiner - не просто одна из крафт / блочных игр в 2D. В ней много новых идей. Она была разработана специально для мобильных устройств, вы можете играть без WiFi, с простыми элементами управления и интуитивно понятной системой крафтинга. Это великолепная, захватывающая игра, в которую можно играть везде!
+
+ 
+
+LostMiner - это постоянно развивающаяся инди-игра. Вы можете ожидать появления новых функций при каждом обновлении.
+
+ 
+
+Если вы хотите предложить нам какую-либо функцию или у вас есть какие-либо вопросы, не стесняйтесь связаться со мной (ferreira.marcelo@gmail.com). Давайте строить LostMiner вместе! ;)
+
+Наслаждайтесь!
+
+ 
+
+Особенности игры:
+
+- Простое управление
+
+- Пиксельная графика
+
+- Регламентированный мир
+
+- Творческий режим и режим выживания
+
+- Интуитивная система крафтинга
+
+- Множество секретов и случайных элементов
+
+- Оффлайн (можно играть без WiFi)
+
+- Поддержка локального мультиплеера
+
+- Бесплатно!
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для Sub4Sub Pro
+
+Sub4Sub Pro is best platform to promote Youtube channel and video.
+
+ 
+
+Sub4Sub Pro creates a community for people to introduce their own channels and videos to everyone all over the world. Users can watch the videos they like, subscribes the impressive channels easily, so the channels and videos are spread quickly.
+
+ 
+
+★★★★How to make your YouTube video and channel grow up ?
+
+To reach to potential user and get views/subscriber follow these steps:
+
+★Search your YouTube video or channel from search box and share it to other people.
+
+★Other people in the world will watch your videos, subscribe your channel and make them viral.
+
+★You have to watch other's video for at least 60 sec to earn points.
+
+★You have to subscribe other's channel to earn points.
+
+ 
+
+★★★★Features:
+
+★Only real sub, no bots
+
+★Only real views with comment, no bots
+
+★Randomized timer
+
+★You watch others video & people will watch yours
+
+★You subscribe other channel & people will subscribe yours
+
+★Earn and win bonus points by watching videos and subscribe channel
+
+★See all people who subscribe your channel or view your video
+
+★Easy to use interface
+
+ 
+
+★★★★Please Note:
+
+★Sub4Sub Pro is a 3rd party app. It only a platform to bring nice channels and video to other people in the world.
+
+★It shows only YouTube videos and channel hosted on YouTube servers.
+
+★Sub4Sub Pro does NOT offer the ability to buy views or exchange subscriptions or likes, as these are all against YouTube policy. People subscribe channels which they like and watch videos which they feel interested in.
+
+ 
+
+Sub4Sub Pro, the perfect support application for Youtube.
+
+ 
+
+Follow us on Google+
+
+https://plus.google.com/u/0/111474111011663189720
+
+ 
+
+Follow us to get latest news
+
+https://www.facebook.com/hdcyoutubetools
+
+ 
+
+Please feel free to contact us by email at dev.hdcstudio@gmail.com
+
+ 
+
+ 
+
+ 
+
+Описание для Black Analog Clock Launcher Theme 2019
+
+💗 New theme is available！Beautify your phone with classic Black Luxury Analog Clock Launcher Theme 2019that makes your screen so stylish & deluxe. 💗
+
+ 
+
+⌚️New luxury & elegant Black Luxury Analog Clock Launcher Theme 2019 is Ready, it will make your smartphone stylish and unique. Just for you!
+
+ 
+
+✨ 2 million users’ choice！More than 1000 themes provided. ✨
+
+ 
+
+Customize your phone
+
+- Free beautiful themes: Weekly updated collection of distinctive and fancy launcher themes and icon packs for you
+
+- 3D live wallpapers: No more boring backgrounds! In Ace Launcher, you can find cooler live wallpapers with different effects.
+
+ 
+
+Phone Optimization
+
+- 1-Tap booster: clean up memory and boost your phone.
+
+- Junk cleaner: clean junk for more storage space
+
+- Battery saver: Protect your battery for better performance
+
+-CPU cooler：Stop high power consumption，save power in seconds.
+
+ 
+
+ 
+
+Smart Launcher
+
+- Customizable home screen layout: you can pick your favorite home screen layout grid and customize home screen icons and fonts to match your personal style.
+
+- Awesome 3D transition effects: Different scroll and transition effects to choose from
+
+- Smart folder: Your apps will stay organized in different smart folders, so you don’t have to organize them yourself.
+
+-Smart gestures: Swipe up, swipe down, swipe left, swipe right, double tap. You can also use one or two fingers gestures. By using gestures, you can do your task easily and fast. You will set your power button free just by double tapping home screen to lock screen. At the same time, you can set gestures to match your personal habits.
+
+ 
+
+ 
+
+Detailed and Accurate Weather
+
+-This smart launcher offers 24-hour forecasts
+
+- 15-day weather forecasts is also provided in this efficient launcher
+
+- AQI (air quality index)
+
+- Fancy weather and clock widgets on home screen
+
+ 
+
+ 
+
+Handy Search
+
+- Quick search for apps
+
+- Quick search for contacts
+
+- Quick search for messages
+
+- Web search
+
+- Support different search engines
+
+ 
+
+Privacy Protection
+
+- Hide apps: Hide private apps to protect your privacy
+
+- App lock: Lock important apps like social apps, messaging apps and credit card app.
+
+ 
+
+ 
+
+Contact:
+
+yangli@amberweather.com
+
+ 
+
+ 
+
+ 
+
+Описание для Камера Z
+
+Камера Z – это самая быстрая камера для фото- и видеосъемки. Используя живые фильтры, можно посмотреть, как будут выглядеть ваши фотографии еще до того, как вы их снимите. Камера Z поддерживает управление при помощи жестов – переключайтесь между режимами фото- и видеосъемки просто проведя пальцем по экрану.
+
+После того, как вы сделали фото, можно очень легко улучшить изображение при помощи простых функций. Вы можете его обрезать, повернуть, применить фильтры, настроить параметры изображения или написать на нем что-нибудь по своему желанию. Делитесь фотографиями в социальных сетях, например, Instagram, Facebook, Twitter и т. д.
+
+ 
+
+Функции:
+
+∙ Фильтры в реальном времени – Просматривайте свои фотографии до того, как вы их снимете.
+
+∙ Удивительные фильтры – При фотографировании и редактировании изображений доступно множество фильтров.
+
+∙ Самая быстрая съемка – Фото будет сделано всего через одну секунду после нажатия на кнопку спуска затвора.
+
+∙ Простой интерфейс – Интуитивно понятный интерфейс и быстрое переключение в режим видеосъемки.
+
+∙ HDR – Откройте режим HDR, чтобы улучшить качество изображений, снятых при слабом освещении и с подсветкой на заднем плане.
+
+ 
+
+—— ★ —— ★ ——Z Camera VIP—— ★ —— ★ ——
+
+Часть эффектов и опыта без рекламы предлагаются только для Z Camera VIP.
+
+Содержание подписки будет регулярно обновляться, и вы сможете наслаждаться обновлением контента в течение активного периода подписки. Это автоматически продлеваемая подписка после 3-дневной бесплатной пробной версии. Если вы решите приобрести Z Camera VIP, оплата будет списана с вашего аккаунта Google Play, а с вашего аккаунта будет взиматься плата за обновление в течение 24 часов до окончания текущего периода. Автообновление можно отключить в любое время, перейдя в настройки в магазине Play после покупки. Текущая цена подписки начинается с $ 9,99 / месяц, $ 59,88 / год. Цены указаны в долларах США, могут отличаться в других странах, кроме США, и могут быть изменены без предварительного уведомления. Если вы не решите приобрести Z Camera VIP, вы можете просто продолжить использовать его бесплатно.
+
+ 
+
+Дорогие друзья, ваши отзывы, даже критические, очень много значат для нас.
+
+Они помогают нам стать лучше, и мы очень ценим вашу поддержку.
+
+Оставайтесь на связи!
+
+Эл. почта: zcamerafeedback@gmail.com
+
+Скрыть
+
+ 
+
+ 
+
+Описание для JumpGo
+
+JumpGo Dev is the earliest build channel available to testers.
+
+ 
+
+Disclamer: These builds of JumpGo may be unstable or (in some cases) unusable. No testing is performed on Dev builds ahead of time.
+
+More details on our release channels here: https://jtechme.github.io/jumpgo/project/
+
+ 
+
+Download the current stable release of JumpGo here: https://play.google.com/store/apps/details?id=com.jtechme.jumpgo
+
+ 
+
+JumpGo Dev for Android is a faster build channel with upcoming features at your fingertips. The best way to see what changes are coming to the mainstream version is to check out the Dev channel. All changes to the Dev app are experimental and can change on a whim, but you can have a say in what changes need to stay or changes that need to be made!
+
+ 
+
+Please report any bugs or crashes on our issue tracker: https://github.com/jtechme/jumpgo/issues
+
+ 
+
+JumpGo is open-source and free! The source code can be found here: https://github.com/jtechme/jumpgo/
+
+Скрыть
+
+JumpGo 4.4.1.0-dev.01 Обновить
+
+2018-04-16
+
+Shortcuts added for Android 7.1 and above.
+
+Full change-list here: https://github.com/JTechMe/JumpGo/releases/tag/v4.4.1.0-dev.01
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для M 10 Launcher MUI Theme & Icon Pack
+
+✨Upgrade the launcher on your Android device for M 10 Launcher for MUI experience, available on all devices with Android 4.1 or higher.✨
+
+ 
+
+🔥M Launcher is inspired by M 10 Launcher, adding many useful features, such as all apps drawer, gestures, hide app, gesture quick ball. This is not the official MUI launcher, it is a highly customzable, clean, MUI look launcher with the App Drawer. 🔥
+
+ 
+
+ 
+
+M 10 Launcher features:
+
+∙ M 10 Launcher offers MUI icons, flat design, customizable icon size
+
+∙ M 10 colorful icon background, disable it to use MUI icon background
+
+∙ M 10 launcher support thousands of icon themes on the Play Store
+
+∙ Customizable M Launcher 10 desktop grid
+
+∙ M 10 style lock, Unlock desktop
+
+∙ M 10 Infinite scrolling on desktop and dock
+
+∙ M 10 launcher function: All apps in the Drawer, and you can hide apps
+
+∙ Classic M 10 Scrollable dock, customizable dock pages and number of dock icons
+
+∙ M 10 Screen orientation
+
+∙ Set default screen for M 10 Launcher desktop
+
+∙ Edit shortcut icons and text
+
+∙ Enable/Disable wallpaper scrolling
+
+∙ Resize any widget
+
+∙ More customizations and options
+
+ 
+
+------------------------------------------------------------------------------------------------------------------------------------------------
+
+ 
+
+Customize your phone
+
+- Free beautiful themes: Weekly updated collection of distinctive and fancy launcher themes and icon packs for you
+
+- 3D live wallpapers: No more boring backgrounds!
+
+ 
+
+ 
+
+Phone Optimization
+
+- 1-Tap booster: clean up memory and boost your phone.
+
+- Junk cleaner: clean junk for more storage space
+
+- Battery saver: Protect your battery for better performance
+
+-CPU cooler：Stop high power consumption，save power in seconds.
+
+ 
+
+ 
+
+Smart Launcher
+
+- Customizable home screen layout: you can pick your favorite home screen layout grid and customize home screen icons and fonts to match your personal style.
+
+- Awesome 3D transition effects: Different scroll and transition effects to choose from
+
+- Smart folder: Your apps will stay organized in different smart folders, so you don’t have to organize them yourself.
+
+-Smart gestures: Swipe up, swipe down, swipe left, swipe right, double tap. You can also use one or two fingers gestures. By using gestures, you can do your task easily and fast. You will set your power button free just by double tapping home screen to lock screen. At the same time, you can set gestures to match your personal habits.
+
+ 
+
+ 
+
+Detailed and Accurate Weather
+
+-This smart launcher offers 24-hour forecasts
+
+- 15-day weather forecasts is also provided in this efficient launcher
+
+- AQI (air quality index)
+
+- Fancy weather and clock widgets on home screen
+
+ 
+
+ 
+
+Handy Search
+
+- Quick search for apps
+
+- Quick search for contacts
+
+- Quick search for messages
+
+- Web search
+
+- Support different search engines
+
+ 
+
+Privacy Protection
+
+- Hide apps: Hide private apps to protect your privacy
+
+- App lock: Lock important apps like social apps, messaging apps and credit card app.
+
+ 
+
+Contact:
+
+yangli@amberweather.com
+
+
+
+
  
  https://github.com/wiglenet/wigle-wifi-wardriving or sending email to wigle-admin@wigle.net
  

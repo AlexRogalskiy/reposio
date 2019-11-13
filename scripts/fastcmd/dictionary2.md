@@ -3839,6 +3839,444 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     }
 }
 --------------------------------------------------------------------------------------------------------
+import org.apache.coyote.http11.Http11NioProtocol;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.embedded.ConfigurableEmbeddedServletContainer;
+import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomizer;
+import org.springframework.boot.context.embedded.tomcat.TomcatEmbeddedServletContainerFactory;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.io.File;
+
+@Configuration
+public class ContainerConfiguration {
+
+    @Bean
+    EmbeddedServletContainerCustomizer containerCustomizer(
+            @Value("${keystore.file}") String keystoreFile,
+            @Value("${server.port}") final String serverPort,
+            @Value("${keystore.pass}") final String keystorePass)
+            throws Exception {
+
+        // This is boiler plate code to setup https on embedded Tomcat
+        // with Spring Boot:
+
+        final String absoluteKeystoreFile = new File(keystoreFile)
+                .getAbsolutePath();
+
+        return new EmbeddedServletContainerCustomizer() {
+            @Override
+            public void customize(ConfigurableEmbeddedServletContainer container) {
+                TomcatEmbeddedServletContainerFactory tomcat = (TomcatEmbeddedServletContainerFactory) container;
+                tomcat.addConnectorCustomizers(connector -> {
+                    connector.setPort(Integer.parseInt(serverPort));
+                    connector.setSecure(true);
+                    connector.setScheme("https");
+
+                    Http11NioProtocol proto = (Http11NioProtocol) connector
+                            .getProtocolHandler();
+                    proto.setSSLEnabled(true);
+
+                    proto.setKeystoreFile(absoluteKeystoreFile);
+                    proto.setKeystorePass(keystorePass);
+                    proto.setKeystoreType("JKS");
+                    proto.setKeyAlias("tomcat");
+                });
+            }
+        };
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.futureprocessing.spring.api.ApiController;
+import com.google.common.base.Optional;
+import com.google.common.base.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.encoding.MessageDigestPasswordEncoder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
+import org.springframework.web.filter.GenericFilterBean;
+import org.springframework.web.util.UrlPathHelper;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+public class AuthenticationFilter extends GenericFilterBean {
+
+    private final static Logger logger = LoggerFactory.getLogger(AuthenticationFilter.class);
+    public static final String TOKEN_SESSION_KEY = "token";
+    public static final String USER_SESSION_KEY = "user";
+    private AuthenticationManager authenticationManager;
+
+    public AuthenticationFilter(AuthenticationManager authenticationManager) {
+        this.authenticationManager = authenticationManager;
+    }
+
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+        HttpServletRequest httpRequest = asHttp(request);
+        HttpServletResponse httpResponse = asHttp(response);
+
+        Optional<String> username = Optional.fromNullable(httpRequest.getHeader("X-Auth-Username"));
+        Optional<String> password = Optional.fromNullable(httpRequest.getHeader("X-Auth-Password"));
+        Optional<String> token = Optional.fromNullable(httpRequest.getHeader("X-Auth-Token"));
+
+        String resourcePath = new UrlPathHelper().getPathWithinApplication(httpRequest);
+
+        try {
+            if (postToAuthenticate(httpRequest, resourcePath)) {
+                logger.debug("Trying to authenticate user {} by X-Auth-Username method", username);
+                processUsernamePasswordAuthentication(httpResponse, username, password);
+                return;
+            }
+
+            if (token.isPresent()) {
+                logger.debug("Trying to authenticate user by X-Auth-Token method. Token: {}", token);
+                processTokenAuthentication(token);
+            }
+
+            logger.debug("AuthenticationFilter is passing request down the filter chain");
+            addSessionContextToLogging();
+            chain.doFilter(request, response);
+        } catch (InternalAuthenticationServiceException internalAuthenticationServiceException) {
+            SecurityContextHolder.clearContext();
+            logger.error("Internal authentication service exception", internalAuthenticationServiceException);
+            httpResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        } catch (AuthenticationException authenticationException) {
+            SecurityContextHolder.clearContext();
+            httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, authenticationException.getMessage());
+        } finally {
+            MDC.remove(TOKEN_SESSION_KEY);
+            MDC.remove(USER_SESSION_KEY);
+        }
+    }
+
+    private void addSessionContextToLogging() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String tokenValue = "EMPTY";
+        if (authentication != null && !Strings.isNullOrEmpty(authentication.getDetails().toString())) {
+            MessageDigestPasswordEncoder encoder = new MessageDigestPasswordEncoder("SHA-1");
+            tokenValue = encoder.encodePassword(authentication.getDetails().toString(), "not_so_random_salt");
+        }
+        MDC.put(TOKEN_SESSION_KEY, tokenValue);
+
+        String userValue = "EMPTY";
+        if (authentication != null && !Strings.isNullOrEmpty(authentication.getPrincipal().toString())) {
+            userValue = authentication.getPrincipal().toString();
+        }
+        MDC.put(USER_SESSION_KEY, userValue);
+    }
+
+    private HttpServletRequest asHttp(ServletRequest request) {
+        return (HttpServletRequest) request;
+    }
+
+    private HttpServletResponse asHttp(ServletResponse response) {
+        return (HttpServletResponse) response;
+    }
+
+    private boolean postToAuthenticate(HttpServletRequest httpRequest, String resourcePath) {
+        return ApiController.AUTHENTICATE_URL.equalsIgnoreCase(resourcePath) && httpRequest.getMethod().equals("POST");
+    }
+
+    private void processUsernamePasswordAuthentication(HttpServletResponse httpResponse, Optional<String> username, Optional<String> password) throws IOException {
+        Authentication resultOfAuthentication = tryToAuthenticateWithUsernameAndPassword(username, password);
+        SecurityContextHolder.getContext().setAuthentication(resultOfAuthentication);
+        httpResponse.setStatus(HttpServletResponse.SC_OK);
+        TokenResponse tokenResponse = new TokenResponse(resultOfAuthentication.getDetails().toString());
+        String tokenJsonResponse = new ObjectMapper().writeValueAsString(tokenResponse);
+        httpResponse.addHeader("Content-Type", "application/json");
+        httpResponse.getWriter().print(tokenJsonResponse);
+    }
+
+    private Authentication tryToAuthenticateWithUsernameAndPassword(Optional<String> username, Optional<String> password) {
+        UsernamePasswordAuthenticationToken requestAuthentication = new UsernamePasswordAuthenticationToken(username, password);
+        return tryToAuthenticate(requestAuthentication);
+    }
+
+    private void processTokenAuthentication(Optional<String> token) {
+        Authentication resultOfAuthentication = tryToAuthenticateWithToken(token);
+        SecurityContextHolder.getContext().setAuthentication(resultOfAuthentication);
+    }
+
+    private Authentication tryToAuthenticateWithToken(Optional<String> token) {
+        PreAuthenticatedAuthenticationToken requestAuthentication = new PreAuthenticatedAuthenticationToken(token, null);
+        return tryToAuthenticate(requestAuthentication);
+    }
+
+    private Authentication tryToAuthenticate(Authentication requestAuthentication) {
+        Authentication responseAuthentication = authenticationManager.authenticate(requestAuthentication);
+        if (responseAuthentication == null || !responseAuthentication.isAuthenticated()) {
+            throw new InternalAuthenticationServiceException("Unable to authenticate Domain User for provided credentials");
+        }
+        logger.debug("User successfully authenticated");
+        return responseAuthentication;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.futureprocessing.spring.api.ApiController;
+import com.google.common.base.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.filter.GenericFilterBean;
+import org.springframework.web.util.UrlPathHelper;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
+
+public class ManagementEndpointAuthenticationFilter extends GenericFilterBean {
+
+    private final static Logger logger = LoggerFactory.getLogger(ManagementEndpointAuthenticationFilter.class);
+    private AuthenticationManager authenticationManager;
+    private Set<String> managementEndpoints;
+
+    public ManagementEndpointAuthenticationFilter(AuthenticationManager authenticationManager) {
+        this.authenticationManager = authenticationManager;
+        prepareManagementEndpointsSet();
+    }
+
+    private void prepareManagementEndpointsSet() {
+        managementEndpoints = new HashSet<>();
+        managementEndpoints.add(ApiController.AUTOCONFIG_ENDPOINT);
+        managementEndpoints.add(ApiController.BEANS_ENDPOINT);
+        managementEndpoints.add(ApiController.CONFIGPROPS_ENDPOINT);
+        managementEndpoints.add(ApiController.ENV_ENDPOINT);
+        managementEndpoints.add(ApiController.MAPPINGS_ENDPOINT);
+        managementEndpoints.add(ApiController.METRICS_ENDPOINT);
+        managementEndpoints.add(ApiController.SHUTDOWN_ENDPOINT);
+    }
+
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+        HttpServletRequest httpRequest = asHttp(request);
+        HttpServletResponse httpResponse = asHttp(response);
+
+        Optional<String> username = Optional.fromNullable(httpRequest.getHeader("X-Auth-Username"));
+        Optional<String> password = Optional.fromNullable(httpRequest.getHeader("X-Auth-Password"));
+
+        String resourcePath = new UrlPathHelper().getPathWithinApplication(httpRequest);
+
+        try {
+            if (postToManagementEndpoints(resourcePath)) {
+                logger.debug("Trying to authenticate user {} for management endpoint by X-Auth-Username method", username);
+                processManagementEndpointUsernamePasswordAuthentication(username, password);
+            }
+
+            logger.debug("ManagementEndpointAuthenticationFilter is passing request down the filter chain");
+            chain.doFilter(request, response);
+        } catch (AuthenticationException authenticationException) {
+            SecurityContextHolder.clearContext();
+            httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, authenticationException.getMessage());
+        }
+    }
+
+    private HttpServletRequest asHttp(ServletRequest request) {
+        return (HttpServletRequest) request;
+    }
+
+    private HttpServletResponse asHttp(ServletResponse response) {
+        return (HttpServletResponse) response;
+    }
+
+    private boolean postToManagementEndpoints(String resourcePath) {
+        return managementEndpoints.contains(resourcePath);
+    }
+
+    private void processManagementEndpointUsernamePasswordAuthentication(Optional<String> username, Optional<String> password) throws IOException {
+        Authentication resultOfAuthentication = tryToAuthenticateWithUsernameAndPassword(username, password);
+        SecurityContextHolder.getContext().setAuthentication(resultOfAuthentication);
+    }
+
+    private Authentication tryToAuthenticateWithUsernameAndPassword(Optional<String> username, Optional<String> password) {
+        BackendAdminUsernamePasswordAuthenticationToken requestAuthentication = new BackendAdminUsernamePasswordAuthenticationToken(username, password);
+        return tryToAuthenticate(requestAuthentication);
+    }
+
+    private Authentication tryToAuthenticate(Authentication requestAuthentication) {
+        Authentication responseAuthentication = authenticationManager.authenticate(requestAuthentication);
+        if (responseAuthentication == null || !responseAuthentication.isAuthenticated()) {
+            throw new InternalAuthenticationServiceException("Unable to authenticate Backend Admin for provided credentials");
+        }
+        logger.debug("Backend Admin successfully authenticated");
+        return responseAuthentication;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+    private String[] actuatorEndpoints() {
+        return new String[]{ApiController.AUTOCONFIG_ENDPOINT, ApiController.BEANS_ENDPOINT, ApiController.CONFIGPROPS_ENDPOINT,
+                ApiController.ENV_ENDPOINT, ApiController.MAPPINGS_ENDPOINT,
+                ApiController.METRICS_ENDPOINT, ApiController.SHUTDOWN_ENDPOINT};
+    }
+	antMatchers(actuatorEndpoints()).hasRole(backendAdminRole).
+--------------------------------------------------------------------------------------------------------
+import com.futureprocessing.spring.api.ApiController;
+import com.futureprocessing.spring.infrastructure.externalwebservice.SomeExternalServiceAuthenticator;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.annotation.web.servlet.configuration.EnableWebMvcSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+
+import javax.servlet.http.HttpServletResponse;
+
+@Configuration
+@EnableWebMvcSecurity
+@EnableScheduling
+@EnableGlobalMethodSecurity(prePostEnabled = true)
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+    @Value("${backend.admin.role}")
+    private String backendAdminRole;
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.
+                csrf().disable().
+                sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).
+                and().
+                authorizeRequests().
+                antMatchers(actuatorEndpoints()).hasRole(backendAdminRole).
+                anyRequest().authenticated().
+                and().
+                anonymous().disable().
+                exceptionHandling().authenticationEntryPoint(unauthorizedEntryPoint());
+
+        http.addFilterBefore(new AuthenticationFilter(authenticationManager()), BasicAuthenticationFilter.class).
+                addFilterBefore(new ManagementEndpointAuthenticationFilter(authenticationManager()), BasicAuthenticationFilter.class);
+    }
+
+    private String[] actuatorEndpoints() {
+        return new String[]{ApiController.AUTOCONFIG_ENDPOINT, ApiController.BEANS_ENDPOINT, ApiController.CONFIGPROPS_ENDPOINT,
+                ApiController.ENV_ENDPOINT, ApiController.MAPPINGS_ENDPOINT,
+                ApiController.METRICS_ENDPOINT, ApiController.SHUTDOWN_ENDPOINT};
+    }
+
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.authenticationProvider(domainUsernamePasswordAuthenticationProvider()).
+                authenticationProvider(backendAdminUsernamePasswordAuthenticationProvider()).
+                authenticationProvider(tokenAuthenticationProvider());
+    }
+
+    @Bean
+    public TokenService tokenService() {
+        return new TokenService();
+    }
+
+    @Bean
+    public ExternalServiceAuthenticator someExternalServiceAuthenticator() {
+        return new SomeExternalServiceAuthenticator();
+    }
+
+    @Bean
+    public AuthenticationProvider domainUsernamePasswordAuthenticationProvider() {
+        return new DomainUsernamePasswordAuthenticationProvider(tokenService(), someExternalServiceAuthenticator());
+    }
+
+    @Bean
+    public AuthenticationProvider backendAdminUsernamePasswordAuthenticationProvider() {
+        return new BackendAdminUsernamePasswordAuthenticationProvider();
+    }
+
+    @Bean
+    public AuthenticationProvider tokenAuthenticationProvider() {
+        return new TokenAuthenticationProvider(tokenService());
+    }
+
+    @Bean
+    public AuthenticationEntryPoint unauthorizedEntryPoint() {
+        return (request, response, authException) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.google.common.base.Optional;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+
+public class DomainUsernamePasswordAuthenticationProvider implements AuthenticationProvider {
+
+    private TokenService tokenService;
+    private ExternalServiceAuthenticator externalServiceAuthenticator;
+
+    public DomainUsernamePasswordAuthenticationProvider(TokenService tokenService, ExternalServiceAuthenticator externalServiceAuthenticator) {
+        this.tokenService = tokenService;
+        this.externalServiceAuthenticator = externalServiceAuthenticator;
+    }
+
+    @Override
+    public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+        Optional<String> username = (Optional) authentication.getPrincipal();
+        Optional<String> password = (Optional) authentication.getCredentials();
+
+        if (!username.isPresent() || !password.isPresent()) {
+            throw new BadCredentialsException("Invalid Domain User Credentials");
+        }
+
+        AuthenticationWithToken resultOfAuthentication = externalServiceAuthenticator.authenticate(username.get(), password.get());
+        String newToken = tokenService.generateNewToken();
+        resultOfAuthentication.setToken(newToken);
+        tokenService.store(newToken, resultOfAuthentication);
+
+        return resultOfAuthentication;
+    }
+
+    @Override
+    public boolean supports(Class<?> authentication) {
+        return authentication.equals(UsernamePasswordAuthenticationToken.class);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+<?xml version="1.0" encoding="UTF-8"?>
+<ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="http://ehcache.org/ehcache.xsd">
+    <!-- 14400 == 4 hours
+         No disk storage
+         Unlimited memory for elements
+         Elements are evicted by Spring scheduled task
+         by default run every 30 minutes
+     -->
+    <cache name="restApiAuthTokenCache" eternal="false" maxElementsInMemory="0" overflowToDisk="false"
+           timeToLiveSeconds="14400" memoryStoreEvictionPolicy="LRU">
+        <persistence strategy="none"/>
+    </cache>
+</ehcache>
+--------------------------------------------------------------------------------------------------------
 <?xml version="1.0" encoding="UTF-8" ?><gpx version="1.0" creator="GPSLogger 103 - http://gpslogger.mendhak.com/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.topografix.com/GPX/1/0" xsi:schemaLocation="http://www.topografix.com/GPX/1/0 http://www.topografix.com/GPX/1/0/gpx.xsd"><time>2019-10-03T20:26:03.000Z</time><trk><trkseg><trkpt lat="59.958738333333336" lon="30.400466666666663"><ele>-31.5</ele><time>2019-10-03T20:26:03.000Z</time><course>0.0</course><speed>0.0</speed><geoidheight>18.0</geoidheight><src>gps</src><hdop>6.26</hdop><vdop>1.00</vdop><pdop>6.34</pdop></trkpt>
 <trkpt lat="59.954496666666664" lon="30.407616666666666"><ele>-36.2</ele><time>2019-10-03T20:31:00.000Z</time><course>201.54</course><speed>2.3378685</speed><geoidheight>18.0</geoidheight><src>gps</src><hdop>3.19</hdop><vdop>1.00</vdop><pdop>3.34</pdop></trkpt>
 <trkpt lat="59.951800000000006" lon="30.40981"><ele>102.4</ele><time>2019-10-03T20:34:32.000Z</time><course>0.0</course><speed>0.0</speed><geoidheight>18.0</geoidheight><src>gps</src><hdop>1.89</hdop><vdop>0.97</vdop><pdop>2.13</pdop></trkpt>
