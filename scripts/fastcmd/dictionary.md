@@ -87388,6 +87388,152 @@ ip neigh help
 
 Display neighbour commands and arguments
 --------------------------------------------------------------------------------------------------------
+try (KafkaConsumer<String, User> consumer = new KafkaConsumer<>(props)) {
+    consumer.subscribe(Collections.singletonList(topic));
+    while (true) {
+        ConsumerRecords<String, User> messages = consumer.poll(100);
+        for (ConsumerRecord<String, User> message : messages) {
+          System.out.println("Message received " + message.value().toString());
+        }
+    }
+} catch (Exception e) {
+    e.printStackTrace();
+}
+--------------------------------------------------------------------------------------------------------
+ F:\BuildAgent\work\9d24e4e3ca3c7728\build\Paragon.Build.proj : error MSB4057: The target "CleanUp_After_Build" does not exist in the project.  
+--------------------------------------------------------------------------------------------------------
+@ExtendWith(SpringExtension.class)
+@WebMvcTest(controllers = RegisterRestController.class)
+class RegisterRestControllerTest {
+  @Autowired
+  private MockMvc mockMvc;
+
+  @Autowired
+  private ObjectMapper objectMapper;
+
+  @MockBean
+  private RegisterUseCase registerUseCase;
+
+  @Test
+  void whenValidInput_thenReturns200() throws Exception {
+    mockMvc.perform(...);
+  }
+}
+
+C:\git-project\Changeset_on_build_properties.patch
+--------------------------------------------------------------------------------------------------------
+0.3.0-alpha-0018-c9ebac0
+--------------------------------------------------------------------------------------------------------
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        } else if (!(o instanceof KafkaRetryProperty)) {
+            return false;
+        } else {
+            KafkaRetryProperty other = (KafkaRetryProperty)o;
+            if (!other.canEqual(this)) {
+                return false;
+            } else if (!super.equals(o)) {
+                return false;
+            } else {
+                return this.isEnabled() == other.isEnabled();
+            }
+        }
+    }
+
+    protected boolean canEqual(Object other) {
+        return other instanceof KafkaRetryProperty;
+    }
+
+    public int hashCode() {
+        int PRIME = true;
+        int result = super.hashCode();
+        result = result * 59 + (this.isEnabled() ? 79 : 97);
+        return result;
+    }
+
+    public String toString() {
+        return "KafkaRetryProperty(super=" + super.toString() + ", enabled=" + this.isEnabled() + ")";
+    }
+--------------------------------------------------------------------------------------------------------
+git -c diff.mnemonicprefix=false -c core.quotepath=false --no-optional-locks checkout PBA-4653_old --progress
+
+--------------------------------------------------------------------------------------------------------
+        final HttpHeaders headers = this.getHeaders(requestUrl);
+        headers.setBearerAuth(TestUtils.JWT);
+		
+		https://wigle.net/phpbb/viewtopic.php?t=2370
+--------------------------------------------------------------------------------------------------------
+List<List<Emploee>> divided = employees.stream().collect(
+      Collectors.teeing(
+              Collectors.filtering(Emploee::isActive, Collectors.toList()),
+              Collectors.filtering(Predicate.not(Emploee::isActive), Collectors.toList()),
+              List::of
+      ));
+
+System.out.println(divided.get(0));  //active
+System.out.println(divided.get(1));  //inactive
+--------------------------------------------------------------------------------------------------------
+Map<String, String> map = Stream.of(new String[][] {
+  { "Hello", "World" }, 
+  { "John", "Doe" }, 
+}).collect(Collectors.toMap(data -> data[0], data -> data[1]));
+
+Map<String, String> map = Stream.of(new String[][] { 
+    { "Hello", "World" }, 
+    { "John", "Doe" },
+}).collect(Collectors.collectingAndThen(
+    Collectors.toMap(data -> data[0], data -> data[1]), 
+    Collections::<String, String> unmodifiableMap));
+--------------------------------------------------------------------------------------------------------
+Function<Integer, CompletableFuture<Integer>> processAsynchronously = i -> CompletableFuture.completedFuture(i * 2);
+assertThat(
+        Stream.of(1, 2, 3).map(processAsynchronously)
+                .collect(CompletableFutures.toFutureList())
+                .get(),
+        contains(2, 4, 6));
+--------------------------------------------------------------------------------------------------------
+@Test
+public void whenGenerateStream_thenGetInfiniteStream() {
+    Stream.generate(Math::random)
+      .limit(5)
+      .forEach(System.out::println);
+}
+
+@Test
+public void whenIterateStream_thenGetInfiniteStream() {
+    Stream<Integer> evenNumStream = Stream.iterate(2, i -> i * 2);
+
+    List<Integer> collect = evenNumStream
+      .limit(5)
+      .collect(Collectors.toList());
+
+    assertEquals(collect, Arrays.asList(2, 4, 8, 16, 32));
+}
+
+private List<String> getPalindrome(Stream<String> stream, int length) {
+    return stream.filter(s -> s.length() == length)
+      .filter(s -> s.compareToIgnoreCase(
+        new StringBuilder(s).reverse().toString()) == 0)
+      .collect(Collectors.toList());
+}
+
+@Test
+public void whenFileToStream_thenGetStream() throws IOException {
+    List<String> str = getPalindrome(Files.lines(Paths.get(fileName)), 5);
+    assertThat(str, contains("refer", "level"));
+}
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
