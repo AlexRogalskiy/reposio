@@ -64042,6 +64042,397 @@ public class GatewaySampleApplication {
 	}
 }
 --------------------------------------------------------------------------------------------------------
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+import com.siemens.microservices.sonarine.sensors.converter.CoordinatesToGeolocationConverter;
+import com.siemens.microservices.sonarine.sensors.converter.MetricsToRecordConverter;
+import com.siemens.microservices.sonarine.sensors.converter.SensorDataRequestToSensorConverter;
+import com.siemens.microservices.sonarine.sensors.converter.SensorDataRequestToSensorRecordConverter;
+import com.siemens.microservices.sonarine.sensors.repository.SensorMetricsRepository;
+import com.siemens.microservices.sonarine.sensors.repository.SensorRepository;
+import com.siemens.microservices.sonarine.sensors.system.properties.DatabaseProperties;
+import com.siemens.microservices.sonarine.sensors.validation.impl.*;
+import io.r2dbc.postgresql.PostgresqlConnectionConfiguration;
+import io.r2dbc.postgresql.PostgresqlConnectionFactory;
+import io.r2dbc.spi.ConnectionFactory;
+import org.codehaus.jackson.map.DeserializationConfig;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
+import org.springframework.context.MessageSource;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import org.springframework.context.support.ReloadableResourceBundleMessageSource;
+import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.data.r2dbc.dialect.Database;
+import org.springframework.data.r2dbc.function.DatabaseClient;
+import org.springframework.data.r2dbc.function.DefaultReactiveDataAccessStrategy;
+import org.springframework.data.r2dbc.function.ReactiveDataAccessStrategy;
+import org.springframework.data.r2dbc.repository.support.R2dbcRepositoryFactory;
+import org.springframework.data.r2dbc.support.SqlStateR2dbcExceptionTranslator;
+import org.springframework.data.relational.core.mapping.RelationalMappingContext;
+import org.springframework.format.FormatterRegistry;
+import org.springframework.format.datetime.standard.DateTimeFormatterRegistrar;
+import org.springframework.http.codec.ServerCodecConfigurer;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
+import org.springframework.validation.beanvalidation.MethodValidationPostProcessor;
+import org.springframework.web.reactive.config.EnableWebFlux;
+import org.springframework.web.reactive.config.WebFluxConfigurer;
+import org.springframework.web.servlet.LocaleResolver;
+import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
+import org.springframework.web.servlet.i18n.SessionLocaleResolver;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
+
+import javax.validation.ValidatorFactory;
+import java.nio.charset.StandardCharsets;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+import java.util.concurrent.Executor;
+
+import static com.siemens.microservices.sonarine.sensors.utility.DateUtils.DEFAULT_DATETIME_FORMAT;
+import static com.siemens.microservices.sonarine.sensors.utility.DateUtils.DEFAULT_DATE_FORMAT;
+
+/**
+ * Application configuration
+ */
+@Configuration
+@EnableWebFlux
+public class AppConfiguration implements WebFluxConfigurer {
+
+    @Override
+    public void configureHttpMessageCodecs(final ServerCodecConfigurer configurer) {
+        configurer.defaultCodecs().enableLoggingRequestDetails(true);
+    }
+
+    @Override
+    public void addFormatters(final FormatterRegistry registry) {
+        final DateTimeFormatterRegistrar registrar = new DateTimeFormatterRegistrar();
+        registrar.setUseIsoFormat(true);
+        registrar.registerFormatters(registry);
+
+        registry.addConverter(new CoordinatesToGeolocationConverter());
+        registry.addConverter(new MetricsToRecordConverter());
+        registry.addConverter(new SensorDataRequestToSensorConverter());
+        registry.addConverter(new SensorDataRequestToSensorRecordConverter());
+        WebFluxConfigurer.super.addFormatters(registry);
+    }
+
+//    @Bean
+//    @Validated
+//    @ConfigurationProperties(prefix = "spring.datasource", ignoreInvalidFields = true)
+//    public DataSourceProperties dataSourceProperties() {
+//        return new DataSourceProperties();
+//    }
+
+    @Bean
+    public Scheduler jdbcScheduler(final Executor asyncTaskExecutor) {
+        return Schedulers.fromExecutor(asyncTaskExecutor);
+    }
+
+    @Bean
+    public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() {
+        final PropertySourcesPlaceholderConfigurer properties = new PropertySourcesPlaceholderConfigurer();
+        properties.setLocation(new ClassPathResource("application.yml"));
+        properties.setIgnoreResourceNotFound(false);
+        return properties;
+    }
+
+    @Bean(name = "messageSource")
+    public ReloadableResourceBundleMessageSource localizationMessageSource(@Value("${sonarine.i18n.location:'/i18n'}") final String sourceLocation,
+                                                                           @Value("${sonarine.i18n.timeout:3600}") final Integer cacheTimeout) {
+        return this.loadMessageSource(sourceLocation, cacheTimeout);
+    }
+
+    @Bean(name = "validationSource")
+    public ReloadableResourceBundleMessageSource validationMessageSource(@Value("${sonarine.validation.location:'/validation'}") final String sourceLocation,
+                                                                         @Value("${sonarine.validation.timeout:3600}") final Integer cacheTimeout) {
+        return this.loadMessageSource(sourceLocation, cacheTimeout);
+    }
+
+    @Bean
+    public DefaultValidatorRegistry validatorRegistry() {
+        final DefaultValidatorRegistry registry = new DefaultValidatorRegistry();
+        registry.addValidator(new TemperatureValidator());
+        registry.addValidator(new CoordinatesValidator());
+        registry.addValidator(new GeneralRequestValidator());
+        registry.addValidator(new GeneralParamRequestValidator());
+        return registry;
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "spring.jackson.date-format", matchIfMissing = true, havingValue = "none")
+    public Jackson2ObjectMapperBuilderCustomizer jsonCustomizer() {
+        return builder -> {
+            builder.simpleDateFormat(DEFAULT_DATETIME_FORMAT);
+            builder.serializers(new LocalDateSerializer(DateTimeFormatter.ofPattern(DEFAULT_DATE_FORMAT)));
+            builder.serializers(new LocalDateTimeSerializer(DateTimeFormatter.ofPattern(DEFAULT_DATETIME_FORMAT)));
+            builder.featuresToEnable(
+                JsonParser.Feature.ALLOW_SINGLE_QUOTES,
+                JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES,
+                JsonGenerator.Feature.WRITE_NUMBERS_AS_STRINGS,
+                JsonGenerator.Feature.QUOTE_NON_NUMERIC_NUMBERS
+            );
+            builder.featuresToDisable(
+                DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES,
+                DeserializationConfig.Feature.FAIL_ON_NUMBERS_FOR_ENUMS
+            );
+            builder.indentOutput(true);
+            builder.autoDetectFields(true);
+            builder.createXmlMapper(false);
+        };
+    }
+
+    @Bean
+    public ValidatorFactory validator(final MessageSource validationSource) {
+        final LocalValidatorFactoryBean factoryBean = new LocalValidatorFactoryBean();
+        factoryBean.setValidationMessageSource(validationSource);
+        factoryBean.setParameterNameDiscoverer(new LocalVariableTableParameterNameDiscoverer());
+        return factoryBean;
+    }
+
+    @Bean
+    public MethodValidationPostProcessor methodValidationPostProcessor(final ValidatorFactory validator) {
+        final MethodValidationPostProcessor processor = new MethodValidationPostProcessor();
+        processor.setValidatorFactory(validator);
+        return processor;
+    }
+
+    @Bean
+    public LocaleResolver localeResolver() {
+        final SessionLocaleResolver localeResolver = new SessionLocaleResolver();
+        localeResolver.setDefaultLocale(Locale.getDefault());
+        return localeResolver;
+    }
+
+    @Bean
+    public LocaleChangeInterceptor localeChangeInterceptor() {
+        final LocaleChangeInterceptor interceptor = new LocaleChangeInterceptor();
+        interceptor.setParamName("lang");
+        return interceptor;
+    }
+
+    private ReloadableResourceBundleMessageSource loadMessageSource(final String location, final int timeout) {
+        final ReloadableResourceBundleMessageSource resourceBundleMessageSource = new ReloadableResourceBundleMessageSource();
+        resourceBundleMessageSource.setBasename(location);
+        resourceBundleMessageSource.setDefaultEncoding(StandardCharsets.UTF_8.name());
+        resourceBundleMessageSource.setCacheSeconds(timeout);
+        resourceBundleMessageSource.setUseCodeAsDefaultMessage(true);
+        resourceBundleMessageSource.setFallbackToSystemLocale(true);
+        return resourceBundleMessageSource;
+    }
+
+//    @Override
+//    public void addResourceHandlers(final ResourceHandlerRegistry registry) {
+//        registry.addResourceHandler("/swagger-ui.html**").addResourceLocations("classpath:/META-INF/resources/");
+//        registry.addResourceHandler("/webjars/**").addResourceLocations("classpath:/META-INF/resources/webjars/");
+//        registry.addResourceHandler("/resources/**").addResourceLocations("/resources/").setCachePeriod(3600).resourceChain(true).addResolver(new PathResourceResolver());
+//        registry.addResourceHandler("/resources/**").addResourceLocations("/resources/").setCacheControl(CacheControl.maxAge(3600, TimeUnit.MILLISECONDS)).resourceChain(true).addResolver(new PathResourceResolver());
+//        WebFluxConfigurer.super.addResourceHandlers(registry);
+//    }
+
+//    @Override
+//    public void addCorsMappings(final CorsRegistry corsRegistry) {
+//        corsRegistry.addMapping("/**")
+//            .allowedOrigins("localhost")
+//            .allowedMethods("PUT", "GET", "DELETE", "POST")
+//            .allowedHeaders("PEM", "PEM-Exposed")
+//            .maxAge(3600);
+//    }
+
+    @Bean
+    public SensorRepository sensorRepository(final R2dbcRepositoryFactory factory) {
+        return factory.getRepository(SensorRepository.class);
+    }
+
+    @Bean
+    public SensorMetricsRepository sensorMetricsRepository(final R2dbcRepositoryFactory factory) {
+        return factory.getRepository(SensorMetricsRepository.class);
+    }
+
+    @Bean
+    public R2dbcRepositoryFactory factory(final DatabaseClient client) {
+        final RelationalMappingContext context = new RelationalMappingContext();
+        final ReactiveDataAccessStrategy strategy = new DefaultReactiveDataAccessStrategy(Database.POSTGRES.defaultDialect());
+        context.afterPropertiesSet();
+        return new R2dbcRepositoryFactory(client, context, strategy);
+    }
+
+    @Bean
+    public DatabaseClient databaseClient(final ConnectionFactory connectionFactory) {
+        return DatabaseClient.builder()
+            .exceptionTranslator(new SqlStateR2dbcExceptionTranslator())
+            .connectionFactory(connectionFactory)
+            .build();
+    }
+
+    @Bean
+    public PostgresqlConnectionFactory connectionFactory(final DatabaseProperties properties) {
+        final PostgresqlConnectionConfiguration config = PostgresqlConnectionConfiguration.builder()
+            .host(properties.getHost())
+            .port(properties.getPort())
+            .database(properties.getDatabase())
+            .username(properties.getUsername())
+            .password(properties.getPassword())
+            .build();
+        return new PostgresqlConnectionFactory(config);
+    }
+}
+
+--------------------------------------------------------------------------------------------------------
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.springframework.context.event.EventListener;
+import reactor.core.publisher.Flux;
+
+/**
+ * @author Spencer Gibb
+ */
+public class CachingRouteDefinitionLocator implements RouteDefinitionLocator {
+
+	private final RouteDefinitionLocator delegate;
+	private final AtomicReference<List<RouteDefinition>> cachedRoutes = new AtomicReference<>();
+
+	public CachingRouteDefinitionLocator(RouteDefinitionLocator delegate) {
+		this.delegate = delegate;
+		this.cachedRoutes.compareAndSet(null, collectRoutes());
+	}
+
+	@Override
+	public Flux<RouteDefinition> getRouteDefinitions() {
+		return Flux.fromIterable(this.cachedRoutes.get());
+	}
+
+	/**
+	 * Sets the new routes
+	 * @return old routes
+	 */
+	public Flux<RouteDefinition> refresh() {
+		return Flux.fromIterable(this.cachedRoutes.getAndUpdate(
+				routes -> CachingRouteDefinitionLocator.this.collectRoutes()));
+	}
+
+	private List<RouteDefinition> collectRoutes() {
+		return this.delegate.getRouteDefinitions().collectList().block();
+	}
+
+	@EventListener(RefreshRoutesEvent.class)
+    /* for testing */ void handleRefresh() {
+        refresh();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+package org.springframework.cloud.gateway.route.builder;
+
+import org.springframework.cloud.gateway.route.Route;
+import org.springframework.util.Assert;
+import org.springframework.web.server.ServerWebExchange;
+
+import java.util.function.Predicate;
+
+import static org.springframework.cloud.gateway.route.builder.BooleanSpec.Operator.*;
+
+public class BooleanSpec extends GatewayFilterSpec {
+
+	enum Operator { AND, OR, NEGATE }
+
+	final Predicate<ServerWebExchange> predicate;
+
+	public BooleanSpec(Route.Builder routeBuilder, RouteLocatorBuilder.Builder builder) {
+		super(routeBuilder, builder);
+		// save current predicate useful in kotlin dsl
+		predicate = routeBuilder.getPredicate();
+	}
+
+	public BooleanOpSpec and() {
+		return new BooleanOpSpec(routeBuilder, builder, AND);
+	}
+
+	public BooleanOpSpec or() {
+		return new BooleanOpSpec(routeBuilder, builder, OR);
+	}
+
+	public BooleanOpSpec negate() {
+		return new BooleanOpSpec(routeBuilder, builder, NEGATE);
+	}
+
+	public static class BooleanOpSpec extends PredicateSpec {
+
+		private Operator operator;
+
+		BooleanOpSpec(Route.Builder routeBuilder, RouteLocatorBuilder.Builder builder, Operator operator) {
+			super(routeBuilder, builder);
+			Assert.notNull(operator, "operator may not be null");
+			this.operator = operator;
+		}
+
+		@Override
+		public BooleanSpec predicate(Predicate<ServerWebExchange> predicate) {
+			switch (this.operator) {
+				case AND:
+					this.routeBuilder.and(predicate);
+					break;
+				case OR:
+					this.routeBuilder.or(predicate);
+					break;
+				case NEGATE:
+					this.routeBuilder.negate();
+			}
+			return createBooleanSpec();
+		}
+	}
+}
+--------------------------------------------------------------------------------------------------------
+	/**
+	 * Common message code formats.
+	 * @see MessageCodeFormatter
+	 * @see DefaultMessageCodesResolver#setMessageCodeFormatter(MessageCodeFormatter)
+	 */
+	public enum Format implements MessageCodeFormatter {
+
+		/**
+		 * Prefix the error code at the beginning of the generated message code. e.g.:
+		 * {@code errorCode + "." + object name + "." + field}
+		 */
+		PREFIX_ERROR_CODE {
+			@Override
+			public String format(String errorCode, @Nullable String objectName, @Nullable String field) {
+				return toDelimitedString(errorCode, objectName, field);
+			}
+		},
+
+		/**
+		 * Postfix the error code at the end of the generated message code. e.g.:
+		 * {@code object name + "." + field + "." + errorCode}
+		 */
+		POSTFIX_ERROR_CODE {
+			@Override
+			public String format(String errorCode, @Nullable String objectName, @Nullable String field) {
+				return toDelimitedString(objectName, field, errorCode);
+			}
+		};
+
+		/**
+		 * Concatenate the given elements, delimiting each with
+		 * {@link DefaultMessageCodesResolver#CODE_SEPARATOR}, skipping zero-length or
+		 * null elements altogether.
+		 */
+		public static String toDelimitedString(String... elements) {
+			StringJoiner rtn = new StringJoiner(CODE_SEPARATOR);
+			for (String element : elements) {
+				if (StringUtils.hasLength(element)) {
+					rtn.add(element);
+				}
+			}
+			return rtn.toString();
+		}
+	}
+--------------------------------------------------------------------------------------------------------
 import java.math.BigDecimal;
 import java.util.concurrent.*;
 

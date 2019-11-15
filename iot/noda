@@ -16191,6 +16191,2369 @@ Detailed and Accurate Weather
 - Fancy weather and clock widgets on home screen
 
  
+ 
+ 
+ 
+ 
+ 
+  
+
+Описание для G-MoN
+
+Now LTE ready! Fieldtest shows LTE RSRP and RSRQ.
+
+ 
+
+A permanent RXL level of -115dBm on some Samsung phones is a Samsung bug! Only Samsung is able to fix that.
+
+ 
+
+Powerful WarDriving scanner and GSM / CDMA / EVDO / UMTS and LTE Netmonitor and drive test tool with voice notifications. It scans for all WiFi networks in range & saves the data with GPS coordinates into a file on your sd card. You can create a kml file for Google Earth. It shows you the encrytion, channel an signal strength. It shows all APs in range in a live map.
+
+ 
+
+G-MoN is a Wardriving scanner to collect and map all received wifi access points. It is also a 2G/3G netmonitor and field test drive tool for radio planning engineers. Needs enabled GPS for correct position in map!
+
+ 
+
+To import a V3.0 (decimal cell data and coordinates without characters) CLF file, remove all comment lines, rename it to import.clf and copy it to /sdcard/gmon/ then start import CLF from menu.
+
+ 
+
+You can log GSM or UMTS RX levels into a kml file for Google Earth or a csv file. There are 5 color groups for different levels. These levels can be defined by the user in the settings menue. This file is saved into the gmon folder on the sdcard or external memory. When the log is running, the G-MoN Notification Icon changes color to red. 2G/3G logging does not work when the screen is off!
+
+Скрыть
+
+ 
+
+ 
+
+ 
+
+Описание для Wifi Tracker
+
+Этот сканер использует GPS и Wi-Fi в комбинации для поиска горячих точек Wi-Fi, а затем сохраняет их расположение на файл, который вы можете экспортировать файл KML для Google Планета Земля или использовать в реальном времени Сети закачки! Отлично подходит для Сети и сканировать много "горячих точек"
+
+Wifi Tracker 1.2.122 Обновить
+
+2018-01-16
+
+* Back button now quits app, press home to leave running in background
+
+* Add some more icons to describe access point types and also improve the detection of them
+
+* Map now has an initial tilt
+
+* Fixed a couple of crash/hang bugs
+
+* Update to fix security issue in file exporter
+
+* Couple of hang fixes
+
+Wifi Tracker Tags
+
+ 
+
+ 
+
+ 
+
+Описание для G-MoN Pro
+
+This app will be constantly developed and improved. There are still many features missing, which are replenished over time. In case of crashes please press the feedback button. The developer likes to receive requests for new functions by e-mail.
+
+ 
+
+If the displayed values doesn't seem to be correct, please try different api settings for each value. You will find them in the calibration settings.
+
+ 
+
+With G-MoN Pro, all available cell data and measured values in GSM, UMTS and LTE mobile networks can be clearly displayed and graphically displayed. The details of this data depend on the smartphone manufacturer and the Android version.
+
+ 
+
+The new cell list file format clf v4 is supported. Please follow the link below for details:
+
+https://sites.google.com/site/clfgmon/clf4
+
+ 
+
+The Cell Compass always points to the Best Server cell when moving (GPS) if it is included in the CLF. With a tap on the arrow, the seat direction can be changed to the direction of travel, e.g. when you sit in a train. In addition to the direction, the distance to the cell as well as the current speed and the GSM accuracy are displayed.
+
+ 
+
+Dual sim phones are supported. In the overview tab you can quickly switch between the two active SIM cards with a tap of the network and cell data.
+
+Скрыть
+
+G-MoN Pro 1.0.0 Обновить
+
+2018-12-27
+
+Join the new G-MoN Pro user group on Facebook
+
+* some bug fixes for dual sim support
+
+* tap on network and cell data to switch quickly between 2 active sim cards
+
+ 
+
+ 
+
+ 
+
+Описание для Mozilla Stumbler
+
+Mozilla is a nonprofit project and global community building a better internet. Mozilla Stumbler is an open-source wireless network scanner that collects GPS data for the Mozilla Location Service, our crowd-sourced location database. As you move around, the app "stumbles" upon new Wi-Fi networks and cell towers. The Mozilla Location Service combines these wireless network measurements to provide geolocation services for Firefox and other open source projects. For more information, visit our project page:
+
+∙ https://location.services.mozilla.com
+
+ 
+
+How to use Mozilla Stumbler
+
+∙ The app stops/pauses automatically when you are not moving or your battery is low. (This feature works better on newer devices as they have better sensors).
+
+∙ Go to un-stumbled areas (not covered in blue) to fill in the coverage map: https://location.services.mozilla.com/map
+
+∙ Improve the accuracy of the service by stumbling in the blue areas.
+
+∙ Try walking, biking, or driving new routes with Mozilla Stumbler every day!
+
+∙ Start with major streets and intersections, then explore smaller streets.
+
+∙ Your contributions will take a day to show up on the coverage map.
+
+ 
+
+ 
+
+Feedback
+
+ 
+
+∙ Please report bugs on GitHub: https://github.com/mozilla/MozStumbler/issues
+
+∙ or the #geo IRC channel on https://wiki.mozilla.org/IRC
+
+ 
+
+To conserve cellular data usage, the Stumbler's map view only shows high resolution map tiles on Wi-Fi. In the Settings, you can change this to always show the high resolution maps,
+
+ 
+
+License
+
+ 
+
+∙ Mozilla Stumbler is open-source software. The code is available on GitHub: https://github.com/mozilla/MozStumbler
+
+Скрыть
+
+ 
+
+ 
+
+ 
+
+Описание для WPSPIN. WPS Wireless Scanner.
+
+WPSPIN. WPS Wireless Scanner.
+
+ 
+
+Wireless Wi-Fi Network Scanner with WPS filter types and the access to open networks.
+
+ 
+
+The main features are the wireless Wi-Fi network scanner with WPS filter types and the access to wireless open networks.
+
+ 
+
+The scanner basic functionality are autoscan fast and slow, normal scan on demand, turbo scan, looking for types of networks, search for WPS, search for WPS WPA, search for WPS WPA2, a network connection status and a description of wireless networks.
+
+ 
+
+In order to connected to open Wireles Wi-Fi networks click on the open network, for other Wireless Wi-Fi networks invoke to setup Wireless Wi-Fi.
+
+ 
+
+Simple way to check the WPS WiFi-Access Points.
+
+ 
+
+The Google Play Store version does NOT contain any functionality to perform criminal acts of intrusion on protected Wireless Wi-Fi networks. This is NOT a hacker app.
+
+ 
+
+Disclaimer
+
+ 
+
+The use of this product wireless analysis software should be a basic tool for professionals and individuals who are eager to know the security level of wireless facilities is strictly forbidden to use it to commit criminal acts of intrusion on wireless networks of which we do not own or do not have permissions to analyze their security.
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для BSSID Logger
+
+Do you know which APs does a Wi-Fi client connect to as it moves from one place to the other in a venue that has full Wi-Fi coverage?
+
+ 
+
+Do you want to know the RSSI measured, channel used and data rate established by the phone in real time?
+
+ 
+
+This tool can help you.
+
+ 
+
+It logs the BSSID of the connected AP, RSSI, channel and data rate every second. Logging continues when the app runs at background. With this information, you can tell:
+
+ 
+
+- whether the client is connected to the best AP at its location or not
+
+- whether the client roams to the expected APs as it moves from one location to the other or not
+
+- the RSSI measured by the client right before it performs roaming
+
+- whether bad experience on an app is caused by poor roaming behavior
+
+ 
+
+With information captured by this tool, you can fine tune your Wi-Fi infrastructure to provide better roaming experience.
+
+ 
+
+Note:
+
+- Although the logging area is updated once per second, the update frequency of the RSSI, channel and data rate readings depends on the underlying OS. All of the devices I used for testing show new data every 3 seconds.
+
+Скрыть
+
+ 
+
+ 
+
+Описание для Plunder Bug - Smart LAN Tap
+
+* Requires root
+
+ 
+
+The Plunder Bug by Hak5 is a pocket-sized LAN tap that lets you "bug" Ethernet connections with USB-C convenience. Requires root permission.
+
+ 
+
+- Device detection -- Automatically detects when the Plunder Bug is connected and ready to use.
+
+- Packet capture -- Captures live network traffic and records it in standard pcap format.
+
+- Share -- Exports your packet capture (pcap) files for packet analysis.
+
+ 
+
+* Some devices are not supported
+
+ 
+
+ 
+
+ 
+
+Описание для Wifi Radar
+
+The Wifi Radar is an application which can display the physical location of wireless networks on a map.
+
+The application uses your device's gps and sensors like digital compass, accelerometer and gyroscope for determining the location of each network and display it on a map.
+
+ 
+
+See the wireless networks around you, recover your default passwords for your wifi router, analyze signals and find the best channel for your Access Point.
+
+ 
+
+Features:
+
+- Visualize and pinpoint wifi networks on a map.
+
+- 360° Radar Scan with compass visualization.
+
+- Recover default passwords for your wifi network with keygen (a lot of common routers are supported).
+
+- Signal strength graph analyzer.
+
+- Channel analyzer.
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+The application is currently in beta, please feel free to send suggestions, report bugs and errors.
+
+ 
+
+*** Additional Info:
+
+All used keygen algorithms are from public domain/open source code.
+
+ 
+
+ 
+
+ 
+
+Описание для PilferShush Jammer
+
+PilferShush Jammer blocks other apps attempting to utilise the microphone without your knowledge. Some apps use hidden processes to record tracking audio in the background that is either generated by nearby beacons, television commercials, streamed music services or websites. This tracking audio is transmitted between 18 kHz and 22 kHz (near ultra high frequency) which is beyond the range of typical human hearing but within the recording range of a typical Android phone.
+
+ 
+
+To block unwanted use of the microphone by hidden app processes, PilferShush Jammer requests use of the hardware microphone from the Android system and holds it. This technique locks up the microphone from any other apps attempting to gain access to it. This technique has been tested only on user apps, not system apps. The Android system should halt PilferShush Jammer from blocking the microphone whenever a phone call is received or made.
+
+ 
+
+When the jamming technique is running and the microphone is locked up, PilferShush Jammer posts a notification to keep the user informed that it is running. Tests have shown that it uses 0% CPU, 0% network and 43.6mb RAM when running for over an hour.
+
+ 
+
+This is an experimental app made as part of research into audio counter-surveillance methods within the Android and IoT world.
+
+ 
+
+It requires RECORD_AUDIO permission so that it may access and lock up the microphone.
+
+ 
+
+It does NOT record or listen to any audio.
+
+It does NOT connect to the internet.
+
+ 
+
+Version 2.0 Active Jammer addition:
+
+ 
+
+Tones can be emitted with a carrier frequency and a drift limit with rate all constrained to NUHF of 18 kHz to 24 kHz depending on the device capabilities. For instance 20000 Hz carrier, drift limit 1000 Hz and rate slow - will output random frequency between 19 kHz and 21 kHz approximately every second.
+
+ 
+
+Version 3.0 Jammers run as a service:
+
+ 
+
+Both the active and passive jammers now run as a (foreground) service that should accurately indicate whether they are running or not. This is dependent on both the Android OS (power management) and any App Managers that may destroy running services.
+
+ 
+
+As this app seeks to block microphone use it is important to NOT dismiss or hide the notification otherwise you may forget it is running.
+
+ 
+
+Also includes a scanner to check user installed apps for NUHF and Audio Content Recognition (ACR) SDKs as well as any services or receivers.
+
+ 
+
+Version 4.0 Redesign
+
+Major overhaul of the design to make information clearer and to simplify typical uses of the app
+
+ 
+
+Notes:
+
+The next release will investigate removing the audible artifacts (popping and clicking) present during the active jamming tones.
+
+ 
+
+White noise output may not be very effective at blocking and is a somewhat annoying sound.
+
+ 
+
+The speaker output may not have enough amplitude to block unwanted NUHF signals - testing will determine.
+
+ 
+
+ 
+
+Source code is available here: https://github.com/kaputnikGo/PilferShushJammer
+
+Research and Project webpage : https://www.cityfreqs.com.au/pilfer.php
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для пароль wifi wpa3
+
+Это приложение позволит вам защитить себя от хакеров.
+
+Он содержит случайный буквенно-цифровой алгоритм, способный генерировать надежные пароли против взлома.
+
+С помощью этого приложения вы можете управлять различными функциями вашей сети Wi-Fi.
+
+ 
+
+Основные характеристики:
+
+ 
+
+* Генерация ключей аутентификации высокого уровня wep, wpa, wpa2, wpa3.
+
+* Скопируйте и вставьте пароль.
+
+* Показать точки Wi-Fi с большим покрытием вокруг вас.
+
+* Просмотр IP, MAC-адрес, т. Д.
+
+* Страница конфигурации администратора роутера.
+
+* Найти пароль по умолчанию для вашего роутера.
+
+* Посмотрите, кто на моем Wi-Fi.
+
+* Тест скорости интернет-соединения.
+
+ 
+
+Оптимизировано для устройств Android.
+
+ 
+
+ВАЖНЫЙ
+
+Это приложение не взломать любой вид пароля Wi-Fi.
+
+Скрыть
+
+пароль wifi wpa3 5.6.0 Обновить
+
+2019-10-21
+
+* New design
+
+* Added, default router password finder
+
+* Compatible with Android 10
+
+* Updated libraries
+
+* Bugs fixed
+
+ 
+
+ 
+
+ 
+
+Описание для G-NetWiFi
+
+G-NetWiFi is a WiFi network monitor and drive test tool for Android OS devices. It allows monitoring and logging of WiFi network parameters without using special equipment. It's a tool and it's a toy. It can be used by professionals to get better insight on the network or by radio enthusiasts to learn more about WiFi networks.
+
+ 
+
+G-NetWifi can be used in outdoor and in indoor environment with loading of floorplans.
+
+ 
+
+The main features of G-NetWiFi are:
+
+- measuring of WiFi network parameters
+
+- logging of measured values in text and kml files
+
+- displaying measured values on map view
+
+- auto connect to best configured WiFi - in Settings - Other
+
+ 
+
+The app uses runtime permissions. Grant needed permissions in Menu - App permissions in order to use all app features.
+
+ 
+
+Get G-NetWiFi Pro version:
+
+Google Play: http://play.google.com/store/apps/details?id=com.gyokovsolutions.gnetwifipro
+
+ 
+
+G-NetWiFi Pro - additional features:
+
+ 
+
+- WiFi scan logging
+
+- Data test (ping, upload, download)
+
+- Data sequence
+
+- loading of cellfile and displaying WiFi access points and serving cell line on map view
+
+- Scan only configured WiFi
+
+- Change WiFi AP color
+
+- Extended kml export
+
+- Predefined routes load
+
+- Auto add new WiFi AP to cellfile
+
+- Import/export app settings
+
+- Extended text logging
+
+- Change app folder
+
+- Log reduction factor
+
+ 
+
+ 
+
+2. Tabs
+
+ 
+
+2.1. WIFI Tab
+
+WIFI tab shows network and geographical information.
+
+ 
+
+2.2 SCAN Tab
+
+SCAN tab shows information about neighbor WIFI AP measurements. It consists of two tables:
+
+You can change the chart to show all WiFi or only configured WiFi via the button under the chart.
+
+ 
+
+2.3 MAP tab
+
+MAP tab shows geographical view of the measurements and WiFi access points
+
+ 
+
+2.4 INFO tab
+
+The INFO tab provides miscellaneous information.
+
+ 
+
+2.5 DRIVE tab
+
+DRIVE tab represent the main serving AP information in comfortable format with big font letters
+
+ 
+
+ 
+
+Cellfile
+
+Create cellfile and put it into folder G_NetWiFi_Logs/cellfile.
+
+Here is a sample cellfile: http://www.gyokovsolutions.com/downloads/G-NetWiFi/cellfile.txt
+
+ 
+
+ 
+
+INDOOR MODE
+
+How to use indoor mode:
+
+ 
+
+1. Go to Settings and activate INDOOR MODE
+
+2. On Map the button [Set Point] and center point will appear
+
+3. Point your current location on the map center and press [Set Point] - a marker will appear on the map
+
+4. Move to the next point. Center map on it and press [Set Point] - several new markers (one for each second) will appear connecting previous and current location
+
+5. Go through the route putting points when you change direction.
+
+6. You can clear the markers using [CLR] button
+
+ 
+
+AUTO INDOOR mode allows auto filling of measurement points when the GPS fix is not available like in tunnels or on places with bad GPS reception.
+
+ 
+
+AUTO INDOOR mode works only when the log is active.
+
+If INDOOR mode is selected AUTO INDOOR mode is not activated.
+
+ 
+
+How to use it:
+
+1. Enable AUTO INDOOR mode in Settings.
+
+2. Choose threshold for GPS validity
+
+3. Start log.
+
+4. When you enter the tunnel and lose GPS fix the GPS writing on upper right corner of MAP tab will color in blue which means that AUTO INDOOR mode is active and measurements are collected.
+
+5. When you go out of the tunnel and GPS fix is valid the values for GPS accuracy and time are colored in green, the exiting point is auto set and the missing measurements between entering and exiting point are shown on the map and filled in the log.
+
+ 
+
+ 
+
+Floorplans
+
+ 
+
+How to load floorplans:
+
+1. In folder G_NetWiFi_Logs/floorplan put the floorplan images and create text index file (index.txt) with rows for each image and following content (tab delimited)
+
+imagename longitudeSW latitudeSW longitudeNE latitudeNE
+
+where SW and NE are South - West corner and North - East corner.
+
+ 
+
+2. Go to Menu - Load Floorplan. The floorplans will be shown on map and you can change the floor with the help of the Floor button - next to CLR button
+
+ 
+
+Here you can download floorplan sample: http://www.gyokovsolutions.com/downloads/G-NetTrack/floorplan.rar
+
+Скрыть
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для RF Analyzer
+
+Use an OTG (on-the-go) USB cable to connect your HackRF/RTL-SDR to an Android phone/tablet and this app will visualize the RF spectrum (frequency magnitude and waterfall plot)!
+
+Browse through the frequency spectrum just by using scroll and zoom touch gestures. Additional features as of today are:
+
+- Many settings: FFT size, averaging, peak holding, color scheme, ...
+
+- read samples from a file (generated by hackrf_transfer tool or by rtl_sdr)
+
+- AM/FM/SSB audio demodulation
+
+- adjust squelch and channel width
+
+- Record to a raw IQ file compatible with hackrf_transfer, ...
+
+- Bookmarks
+
+- rad1o support
+
+ 
+
+Read the manual for more details: https://github.com/demantz/RFAnalyzer/blob/master/doc/rf_analyzer_manual.md
+
+ 
+
+Due to time constraints the app is currently not actively developed anymore.
+
+I also try to keep the app stable and as bug-free as possible. Bug reports are always welcome and I try to find the time to fix them! Note that there is a logging feature in the settings which helps a lot with trouble shooting any errors.
+
+ 
+
+Interested in the latest updates? Join the beta program: https://play.google.com/apps/testing/com.mantz_it.rfanalyzer
+
+ 
+
+PERMISSIONS:
+
+This app uses the INTERNET permission only to connect to the local rtl_tcp instance used by the RTL2832U driver. The WRITE_EXTERNAL STORAGE permission is only used to write log files to the SD card (disabled by default).
+
+ 
+
+ 
+
+WHAT YOU NEED:
+
+In order to use this app you will need:
+
+- A HackRF or an RTL-SDR dongle (this is obvious xD)
+
+- An Android device that either supports USB OTG (please google if your device supports OTG!) or has an USB host port
+
+- An USB OTG cable (costs about 3$) to connect the HackRF/RTL-SDR to your Android device (not needed if your device has a full size USB host port)
+
+- Only for RTL-SDR: The free RTL2832U driver from Martin Marinov (https://play.google.com/store/apps/details?id=marto.rtl_tcp_andro)
+
+ 
+
+ 
+
+IMPORTANT:
+
+The HackRF/RTL-SDR is powered by the Android phone/tablet. Some phones or tablets might not deliver enough power on their USB port to power the HackRF/RTL-SDR (power issues are often caused by low quality USB cables or OTG adapters). Also notice that doing the necessary digital signal processing is very CPU intensive and though I did my best to optimize the algorithms the app still needs a decent device (I recommend 2 CPU cores or more) to run fluently. Please use the 2-hour refund period provided for every Google Play app to test functionality and refund the app if it does not work for your device!
+
+ 
+
+Here is a list of already tested and working devices (may be incomplete):
+
+- Nexus 7 2012
+
+- Nexus 7 2013
+
+- Nexus 5
+
+- Moto G
+
+- Moto G 4G
+
+- Acer A500
+
+- Samsung S3 LTE
+
+- Samsung S4
+
+- Samsung S4 LTE
+
+- Samsung S5
+
+- Samsung Note 3
+
+- Samsung Galaxy Tap S 8.4 & 10.5
+
+- HTC M7
+
+- HTC M8
+
+- LG G2
+
+- LG G3
+
+- Motorola Xoom M601
+
+- Dragon Touch A1X
+
+ 
+
+If the app is working for you and your device is not in this list, please include your phone type in a short rating
+
+and share the good news with other users ;)
+
+ 
+
+Here is a list of devices that were reported NOT to work with this app (may be incomplete):
+
+- Sony Xperia Pro + HackRF (because USB output power is too low -.-)
+
+- Nexus 4 (works only with Y cable and custom ROM to enable OTG support)
+
+- Nexus 9 (Not a power issue, I am still investigating on this)
+
+ 
+
+ 
+
+LICENSE:
+
+This application is released under the GNU General Public License v2. It is free software and the source code is
+
+available on GitHub: https://github.com/demantz/RFAnalyzer
+
+ 
+
+The APK package is also available in the git repository and you can download and install it from there. But keep in mind: by downloading the app from the store you will get automatic updates!
+
+ 
+
+ 
+
+LEGAL ISSUES
+
+Please note that I am not responsible for any legal issues caused by the usage of this application. Be responsible and comply with your local law!
+
+Скрыть
+
+ 
+
+ 
+
+ 
+
+Описание для WiFiman
+
+WiFiman идеально подходит для анализа Wi-Fi сетей, устройств Bluetooth LE, обнаружение новых устройств в сети и измерения скорости. Эти возможности доступны в удобном и элегантном интерфейсе пользователя, разработанным Ubiquiti Networks. WiFiman не содержит рекламы и является бесплатным.
+
+ 
+
+WiFiman поможет вам найти свободный канал для вашей Wi-Fi точки доступа. WiFiman отображает список каналов Wi-Fi и устройств Bluetooth LE которые используются неподалеку и предоставляет их детальную информацию о них.
+
+ 
+
+С помощью приложения вы с легкостью сможете обнаружить и анализировать устройства подключенные к вашей сети. WiFiman анализирует всю подсеть и отображает все доступные устройства и сервисы, используя протоколы Bonjour, SNMP, NetBIOS и UBNT.
+
+ 
+
+Еще одна главная особенность приложения это измерение скорости. Вы сможете, проверить скорость своего подключения к сети Интернет, сохранить результаты для дальнейшего сравнения и быстро ими поделиться.
+
+Скрыть
+
+ 
+
+ 
+
+ 
+
+Описание для Catch the Man-in-the-Middle
+
+Is your HTTPS traffic being spied on?
+
+ 
+
+Is there a hacker near you? Is your employer watching your traffic?
+
+ 
+
+This is the fastest way to check.
+
+ 
+
+This app will check the SHA fingerprint of the SSL certificate as seen by the Android device and will compare it to the fingerprint of the same website as seen on an external network. It will catch a case of a Man-in-the-Middle (MITM) listening in to your HTTPS encrypted browsing.
+
+ 
+
+This convenient tool does not require you to record certificate fingerprints. It handles everything for you including checking on a different network. You get an immediate answer to the question of spying.
+
+ 
+
+A Brax.Me Cybersecurity Tool created by Rob Braxman.
+
+Скрыть
+
+ 
+
+ 
+
+ 
+
+Описание для [root] Указатель паролей Wi-Fi
+
+Наша современная легкая в управлении программа не содержащая никаких реклам, с открытыми исходными кодами (Open Source).
+
+ 
+
+Вам необходимо знать следующее:
+
+ 
+
+Для этой программы вам необходим "root".
+
+ 
+
+Для того чтобы правильно и без проблем применить "root" на вашем приборе, вам необходимо в первую очередь использовать Информацию в Интернете.
+
+ 
+
+Только после получения Информации в Интернете вы можете скачать программу и оценить её.
+
+ 
+
+Эта программа показывает все сохранённые пароли Wi-Fi и к ним пренадлежащие имена, вашего прибора системы Android.
+
+ 
+
+В нашей программе можно использоватъ следующие Профили:
+
+ 
+
+- WEP (включительно кодовый номер)
+
+- WPA / WPA2 PSK
+
+- 802.1x (включительно ваше входное имя и пароль)
+
+ 
+
+Исходный Код: https://github.com/evait-security/android-wifi-key-view
+
+Скрыть
+
+[root] Указатель паролей Wi-Fi 1.7 Обновить
+
+2018-12-23
+
+merge community maintenance
+
+ 
+
+- code optimizing
+
+- shrink app size
+
+- app speed increased
+
+[root] Указатель паролей Wi-Fi Tags
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для Покрытие
+
+Coverage создает собственную карту покрытия сотовой сети и сети Wi-Fi, основанную на показаниях уровня сигнала на телефоне.
+
+ 
+
+Узнайте, где для вашего устройства уровень сигнала более высокий, а где оно попадает в мертвые зоны. Проверьте заявления своего оператора мобильной связи, создав собственную карту покрытия и выполнив тесты скорости.
+
+ 
+
+Тестирование производительности сети
+
+- Создание карты покрытия мобильной сети и сети Wi-Fi
+
+- Поддержка сетей GSM, CDMA, UMTS и LTE
+
+- Использование точных показаний телефона для определения уровня сигнала сетей Wi-Fi и сотовой связи
+
+- Поиск мертвых зон на маршруте
+
+- Проверка скорости соединения
+
+- Меняйте SIM-карты и сравнивайте покрытие для разных операторов связи
+
+ 
+
+Множество интересной статистики о сетях Wi-Fi и сотовой связи, а также о телефоне
+
+- Средняя сила сигнала LTE
+
+- Сколько новых ячеек обнаружено сегодня
+
+- Сколько времени телефон подключен к сети Wi-Fi
+
+- Сколько времени телефон подключен к сети LTE
+
+- Средняя сила сигнала Wi-Fi
+
+- А также многое другое
+
+ 
+
+ 
+
+ 
+
+Описание для Wi-Fi Бесплатный поиск Открыть
+
+Найти быстро и сразу все беспроводные сети без открытых пароль и бесплатно, где можно подключиться с вашего смартфона.
+
+С помощью этого приложения вы не должны будете искать среди сотен близлежащих беспроводных сетей, к которым вы можете подключиться без пароля. С помощью всего лишь одним щелчком вы можете увидеть его и подключите бесплатно.
+
+Кроме того, вы можете увидеть в деталях сетевые параметры, выбрать. Если, кроме того, что открытая беспроводная сеть твое,приложение позволит вам создавать надежный пароль и PIN WPS, если вы решите, чтобы блокировать потенциальные атаки хакеров.
+
+ 
+
+Приложение позволяет также увидеть остальную часть доступных беспроводных сетей, со всеми возможными имеющихся данных, таких как SSID, MAC, шифрование (WEP, WPA, WPA2 / WPS), частота, мощность сигнала Wi-Fi получены иканал на который вы работаете.
+
+Он содержит рекламу от других приложений, которые могут представлять интерес.
+
+ 
+
+ 
+
+ 
+
+Описание для WiEye
+
+WiEye - это БЕСПЛАТНЫЙ анализатор WiFi 802.11 для Android. WiEye можно использовать для инженерной съёмки беспроводного участка, сканирования wifi и обнаружения беспроводной связи. Он сообщает имя, BSSID, мощность сигнала (дБм), канал и частоту всех точек доступа в диапазоне. Он также представляет данные в графической форме, чтобы можно было посмотреть плотность WiFi-трафика по каждому доступному каналу.
+
+ 
+
+Используя WiFi-сканер, вы помогаете в поддержке группы по исследованию беспроводных технологий университета Southern Methodist University в изучении используемых в настоящее время беспроводных сигналов по всему миру и разработке более эффективных протоколов и алгоритмов.
+
+Мы надеемся, что WiEye окажется полезным приложением для ваших нужд в беспроводном сканировании. Вдобавок к приложению мы собираем статистику использования от добровольных участников, которая используется анонимно для оценки ЭТХ беспроводных сетей во многих городах мира, а также в контексте пользователя (за рулём, сидя, стоя, и т.п.) при выполнении анализа трафика. Данные внесут свой вклад в глобальную картину беспроводных сетей и их ЭТХ. Мы предлагаем WiEye в надежде, что образуется большая пользовательская база для проведения исследования. Ваша конфиденциальность очень важна для нас.
+
+Соответственно, мы разработали политику конфиденциальности для того, чтобы помочь вам понять, как мы собираем, используем, передаём и обнародуем и применяем статистику использования. Далее описываются основные принципы нашей политики конфиденциальности.
+
+ 
+
+- Перед началом или во время сбора статистики пользования мы отделяем измеряемые данные от персональной идентификации пользователя.
+
+ 
+
+- Мы собираем и применяем статистику использования с единственной целью выполнения тех задач, которые были определены нами и для других непротиворечивых целей за исключением случаев получения согласия изучаемого лица или согласно требованиям закона.
+
+ 
+
+- Мы храним статистику использования только на тот период, который необходим для выполнения этих задач.
+
+ 
+
+- Мы собираем статистику использования законными и справедливыми средствами и, в случае необходимости, с уведомлением или получении согласия исследуемого лица.
+
+ 
+
+- Место расположения пользователя должно быть значимым для поставленных целей использования и, в степени, необходимой для достижения этих целей, должно быть точным, полным и актуальным вне зависимости от идентификации лица.
+
+ 
+
+- Мы защищаем персональную информацию разумными средствами обеспечения безопасности от утери или кражи, а также от несанкционированного доступа, обнародования, копирования, использования или видоизменения.
+
+ 
+
+- Мы по первому требованию предоставляем клиентам информацию о нашей политике и практике работы, относящейся к администрированию персональных данных.
+
+ 
+
+Пожалуйста, укажите, согласны ли вы принять участие в исследовании пользователей.
+
+Скрыть
+
+ 
+
+ 
+
+ 
+
+Описание для Wifi Analyzer 2018
+
+Shows the Wi-Fi channels around you. Helps you to find a less crowded channel for your wireless router.
+
+ 
+
+Optimize your WiFi network using WiFi Analyzer 2018 by examining surrounding WiFi networks, measuring their signal strength as well as identifying crowded channels.
+
+ 
+
+Users' privacy and security is a huge concern these days and WiFi Analyzer 2018 is designed to use as few permissions as possible. It asks for just enough to perform the analysis. Plus, it is all open source so nothing is hidden! Most notably, this application does not require access to internet, so you can be sure it does not send any personal/device information to any other source and it does not receive any information from other sources.
+
+ 
+
+WiFi Analyzer 2018 is under active development by volunteers.
+
+WiFi Analyzer 2018 is free, has no-ads and does not collect any personal information.
+
+WiFi Analyzer 2018 is not a WiFi password cracking or phishing tool.
+
+ 
+
+Features:
+
+- Identify nearby Access Points
+
+- Graph channels signal strength
+
+- Graph Access Point signal strength over time
+
+- Analyze WiFi networks to rate channels
+
+- HT/VHT Detection - 40/80/160MHz (Requires Android OS 6+)
+
+- Access Point view complete or compact
+
+- Estimated Distance to the Access Points
+
+- Export access points details
+
+- Dark or Light theme available
+
+- Pause/Resume scanning
+
+- Available filters: WiFi band, Signal strength, Security and SSID
+
+- Vendor/OUI Database Lookup
+
+ 
+
+Usage Tips:
+
+- Tap the title bar to switch between 2.4 and 5 GHz WiFi band.
+
+- Swipe to manually refresh screen content.
+
+- Swipe left/right at the bottom of the screen to navigate to the next/previous screen
+
+- SSID with (***) means it is hidden.
+
+ 
+
+ 
+
+ 
+
+Описание для Locater GO (GPS-WiFi position)
+
+With this application you can save all the places you want. Locater allows you to save the position where you are or find one on the map.
+
+ 
+
+Optimized for phones, tablets and car screens with landscape system.
+
+ 
+
+You can save your current location quickly and easily. The positions will be stored only on your device and so no one will have any access to them.
+
+ 
+
+You may find positions from the browser to add from anywhere.
+
+ 
+
+Then you can select a place of the position list to guide you to the destiny or choose another application-navigator you prefer.
+
+ 
+
+HOW DOES IT WORK:
+
+· Pressing the symbol position you will save your current position with a custom icon and description.
+
+· On the position list you will have all your positions you have saved earlier and here, you can choose one to view it or navigate to the appropriate destination.
+
+· To save a new position on the map screen, hold the place you want to save, and press the option "save position".
+
+· In the map screen you can choose between 3 different tracking modes:
+
+    - AUTO MODE: The zoom between your current position and the destination is automatic and positioning map is synchronized by the device compass.
+
+   - SEMI MODE: The zoom is automatic but the map is not oriented according to the compass.
+
+   - MANU MODE: You can set the zoom and the map will be centered on your current position.
+
+ 
+
+· With the search option you can locate any point or address you want to save.
+
+· Options:
+
+   - You can delete the entire list of positions.
+
+   - In Advanced Options you can choose the accuracy level of the GPS or to show the distance to the destination and / or the altitude at which you are.
+
+ 
+
+Locater can use either the "high accuracy" mode or the "energy saving" mode of your device to make the location.
+
+Скрыть
+
+Locater GO (GPS-WiFi position) 2.3 Обновить
+
+2016-06-05
+
+V 2.3
+
+Corrections for Android 6.0
+
+V 2.2
+
+Corrections on compass orientation
+
+ 
+
+V 2.0
+
+New icons available
+
+ 
+
+Satellite Map
+
+ 
+
+New visualization options
+
+ 
+
+ 
+
+ 
+
+Описание для Pockethernet
+
+App for the Pockethernet cable and network tester hardware device.
+
+ 
+
+Pockethernet is a tool for computer network professionals.
+
+It's a smartphone connected cable and network analyzer that helps you in the installation and maintenance of Ethernet networks.
+
+ 
+
+The app enables you to make measurements with the Pockethernet device, remote control every function and generate a report of your findings.
+
+Pockethernet 28 Обновить
+
+2017-08-11
+
+- Link info and CDP/LLDP correctly displays on 10/100Mbits
+
+- TDR accuracy improved in <30m range
+
+- Updated TDR calibration algorithm
+
+- App version displayed in info section
+
+ 
+
+Описание для Deeps Network Utility
+
+Ever got annoyed on the fact that you lost your data connectivity and didn't realize it for a long period of time causing delayed message and email delivery ?
+
+Do you always switch ON and OFF your WiFi each and every time you enter and leave your configured WiFi range and wondered why can't I have a Smart WiFi controller on a Smart Phone to save power ?
+
+Here is a simple solution for both the above questions - Deeps Network Utility.
+
+This simple, configurable and low on battery utility helps you to get notified when your device lose all type of data connectivity (cellular, WiFi etc) and when your device is connected back to any one of those available data connection.
+
+This utility also has a Smart WiFi function that helps you to turn off your WiFi when you are out of range and periodically checks for any available connection when it is automatically switched off. This feature helps you save battery when you are out of WiFi range and helps you to connect back to WiFi when you are back to a pre-configured WiFi range.
+
+Configuring the app
+
+The settings page is opened when the app is first time installed and launched on a device. It can also be activated by tapping on the settings icon or by selecting Settings from the menu.
+
+There are two portions in the settings namely: Network Status Monitor (notifications) and WiFi Auto Switcher (Smart WiFi).
+
+ 
+
+The Network Status Monitor is to enable the notifications, select the notification sounds and enable saving/logging of connection lost/restored events. Enable and set unique notification sounds for the notifications so that you can quickly recognise the event without looking at the screen. If no notification sound is selected or selected sound becomes unavailable, the default notification sound from the system settings will be used.
+
+ 
+
+The Smart WiFi settings allows you to configure the app for auto switch off and auto scan of the device WiFi.
+
+Enable the auto switch off and set a wait time (recommended 2 minutes) to switch off WiFi. This setting allows the device WiFi to be active until the specified time before automatically switching it off. This wait time allows the device to connect back to the WiFi immediately if the device was briefly out of range for a short period.
+
+Enable auto scan and set the scan interval (recommended between 10 and 15 minutes). This setting allows the device to briefly turn on the WiFi at the end of each scan interval to check if any of the pre-configured WiFi signal is available for connection. If nothing is available the WiFi is switched off to save power.
+
+Please note that setting a too short scan interval (like 1 minute) might not really help to save power. However, an interval of 10 or 15 minutes would do so as the total time the device WiFi is enabled during each hour is much much less than that of keeping the WiFi always on or setting a one minute interval.
+
+ 
+
+How this app helps you ?
+
+The network status monitor helps you to get notified immediately when your data connectivity is totally lost. You can immediately take next course of action by checking your device and doing a restart or a toggle between airplane mode to reconnect the data. Saving the event log helps you to see how many times these events are occurring each day and other details.
+
+The Smart WiFi helps you to automatically switch off and on your WiFi when configured correctly. This takes away the pain of doing it manually every time when you leave your home or office and returns. You can configure the app and forget about switching on and off the device WiFi manually.
+
+ 
+
+Notes:
+
+There might be some delay in notification compared to the actual time the event occurs. This is because of the delay in the system when the event information was relayed to the app.
+
+After enabling and configuring the timing for WiFi auto switch off and auto scan, if the device WiFi was manually switched off, the auto scan will not turn it on again until the device is restarted or the WiFi is enabled manually again.
+
+ 
+
+Скрыть
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для Zakus WiFi Profiles
+
+----
+
+Note:
+
+Only android below 3.0 version supported. Sorry for that.
+
+Starting from Android Honeycomb, API was changed, and part of app functionality already provided
+
+by operation system.
+
+----
+
+If you work often with different WiFi networks, and these networks require static IP, you need each time manually configure network settings. This can be very hard and boring.
+
+ 
+
+This utility application allows you to store different network (WiFi) settings (devices IP-address, gateway IP-address etc.), and switch from one settings to another with only two clicks. In other words, application allows to create and manage WiFi profiles.
+
+ 
+
+THIS SOFTWARE IS PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND
+
+ 
+
+Features:
+
+- list of profiles with predefined IP, Mask, Gateway, DNS, allow you to switch network configurations with few clicks
+
+- widget (with different styles) to show info about current WiFi status and provide fast access to list of profiles
+
+- automatic profiles switch according to name of access point
+
+- backup profiles to storage device (SD card)
+
+ 
+
+Known issues:
+
+Please avoid to press 'back' button or some how to close widget configuration activity. There is issue with android OS (not only in my application, but in all application with configurable widgets), and because of this issue, if you cancel widget configuration - widget will not be added to screen but still be present in device memory. And the only way to remove these 'zombie widgets' is to reinstall application from what this widgets come.
+
+ 
+
+I know, this suck, but there nothing i can do (without enormous efforts). Just don't cancel, add widget and then remove manually from screen.
+
+ 
+
+See details here:
+
+http://code.google.com/p/android/issues/detail?id=2539
+
+ 
+
+Be aware (but don't worry =)):
+
+Application process will start(in background) every time when you turn on, or off WiFi, or when access point is changed, because app need to react on these events. But application will be active only few seconds (to update widget or check name of new access point). So don't worry about performance or power usage.
+
+ 
+
+If you have some problems with app - DON'T PANIC!
+
+Try to describe carefully, what your problem, and what you was trying to do. If i will understand problem, i will try to fix it.
+
+ 
+
+Don't forget to rate app!
+
+ 
+
+Скрыть
+
+Zakus WiFi Profiles 0.3 Обновить
+
+2016-01-02
+
+- UI fixes for low and high DPI devices
+
+- added widget to display WiFi status
+
+- easy access (by click on widget) menu with profiles
+
+- automatic profile switch, according to access point name (disabled by default - see menu -> settings)
+
+- backup (and restore) profiles to (from) storage device (SD card)
+
+ 
+
+ 
+
+ 
+
+Описание для Network Log
+
+Requires rooted devices.
+
+ 
+
+ATTENTION: Some versions of Android, especially on Samsung stock ROMs, may have restrictive SELinux policies that may prevent this app from working. We are working hard to resolve or provide workarounds for this.
+
+ 
+
+In the meantime, if you find this app is not working due to permission denied errors when you in fact do have root, it is likely due to a prohibitive SELinux policy being enforced. You can disable SELinux enforcing by executing 'setenforce 0' in a root shell.
+
+ 
+
+Please do not leave a bad rating/review due to the decision of some device ROMs to enforce restrictive SELinux policies. As mentioned, we are working hard to resolve/workaround these issues. Feel free to use the in-app 'Report Bug/Feedback' option to provide useful information to help us out.
+
+ 
+
+ 
+
+Please do not use the reviews to request features or report issues. If you have a request for Language Translations, features or want to report a bug, use the in-app Report Bug/Feedback option or send e-mail to pragma78@gmail.com.
+
+ 
+
+ 
+
+Wondering when and to where your Android apps are connecting across the Internet? Look no further! Network Log is for you!
+
+ 
+
+Network Log monitors iptables-logging to display a real-time list of which apps are making network connections, and provides statistics about those app connections.
+
+ 
+
+★ Real-time log display
+
+ 
+
+The log tab shows the network packets being transmitted and their details such as:
+
+ 
+
+* source and destination addresses/ports
+
+* network protocol and interface
+
+* bytes transmitted
+
+* timestamp
+
+ 
+
+★ Real-time network usage statistics
+
+ 
+
+The Apps tab lists installed applications along with network usage statistics such as:
+
+ 
+
+* total packets and bytes sent
+
+* active network throughput speed in Bps/Kbps/Mbps
+
+* timestamp of last connection
+
+* list of all the unique connections made by each app
+
+* sortable and filterable packets/bytes counters
+
+ 
+
+★ Real-time connection notifications
+
+ 
+
+The statusbar icon's up/down arrows will highlight when upload/download traffic occurs, and the notification drop-down shade displays the connection throughput speed in Kbps.
+
+ 
+
+You can also configure toast pop-up notifications on a per-app basis that will pop-up a temporary notification containing connection details no matter which app you are in.
+
+ 
+
+★ Graphs
+
+ 
+
+Click an app in either tab to see time-lines of its connections.
+
+ 
+
+Select the 'Apps Timeline' menu item to see an over-all time-line of all apps.
+
+ 
+
+Adjustable interval from 1 ms to 48 hours for summing data:
+
+ 
+
+* to see each packet, set to 1 ms
+
+* for Kbps, set to 1 second
+
+* for Kb-per-hour, set to 1 hour; etc
+
+ 
+
+Adjustable pinch-zoomable and scrollable graphs.
+
+ 
+
+ 
+
+Note: While the app itself is designed to use minimal CPU/battery, you can further reduce the CPU/battery use by exiting the app after starting the logging service.
+
+ 
+
+ 
+
+Full source code available at https://github.com/pragma-/networklog.
+
+ 
+
+ 
+
+Requires rooted devices.
+
+ 
+
+Скрыть
+
+Network Log 2.25.1 Обновить
+
+2015-08-07
+
+Improve German translations (thanks CHEF-KOCH!)
+
+ 
+
+ 
+
+ 
+
+Описание для Wifi Password Free Generator
+
+Wifi Password Free Generator - это приложение, которое поможет вам увеличить вашу сеть или офисную сеть Wi-Fi, создавая для вас длинные случайные пароли wifi.
+
+ 
+
+Также содержит функцию проверки безопасности вашего Wi-Fi. После проверки вы получите, если ваша безопасность будет нормальной или опасной.
+
+ 
+
+Еще одна функция этого бесплатного приложения wifi - получить некоторые важные данные о сетях Wi-Fi вокруг вас, как SSID, тип безопасности, например, WEP WPA WPS или получить идентификатор mac
+
+ 
+
+Если вы пользуетесь этим бесплатным приложением для wifi-паролей, пожалуйста, оцените его или оставьте комментарий!
+
+Скрыть
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для WiFi Widgets
+
+Monitor your WiFi connection with these widgets. You can quickly turn on / off your WiFi (double tap) with these widgets from your home / lock screen. THREE WiFi WIDGETS, Simple, Basic & Pro, all in one pack! And all for free!
+
+ 
+
+GESTURES
+
+~~~~~~~~~~
+
+In all the widgets,
+
+Double Tap - Toggles WiFi state i.e. turns it on / off.
+
+Triple Tap - Opens WiFi Settings page
+
+ 
+
+ 
+
+ 
+
+WIDGET TYPES
+
+~~~~~~~~~~~~~
+
+ 
+
+1. WiFi WIDGET - SIMPLE
+
+*******************************
+
+Just want to see a visual indicator of your WiFi strength? Then this is the WiFi widget for you! Beautifully shows your WiFi signal strength in a small widget. Also, shows the network you are connected to.
+
+ 
+
+2. WiFi WIDGET - BASIC
+
+*****************************
+
+Ah! So, just the strength as a visual icon wouldn't do with you? You need to know the network link speed and possibly the strength in dBm unit also? Then, this is the widget for you. Not as simple as widget 'Simple', but not too advanced as the next one 'Advanced'.
+
+ 
+
+3. WiFi WIDGET - ADVANCED
+
+************************************
+
+So, you are that real techie WiFi guy who wants to know detailed info on the WiFi signal (i.e. SSID) you are connected to? Then, this is the one built with you in mind! Check it out!
+
+ 
+
+ 
+
+ 
+
+HOW TO USE THE WIDGET?
+
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Check this out: https://www.google.com/search?q=how+to+install+a+widget
+
+You should see these widgets listed as
+
+1. [WiFi Widget] - Simple
+
+2. [WiFi Widget] - Basic
+
+3. [WiFi Widget] - Advanced
+
+ 
+
+ 
+
+QUESTIONS?
+
+~~~~~~~~~~~
+
+Keep your feedback & questions coming to freetools-support@manageengine.com ! We are all ears!
+
+ 
+
+ 
+
+Описание для WiFi Analyzer
+
+WiFi Analyzer application used to optimise wifi Networks by scanning signal strength, Crowded signal, Channel rating, Estimated distance And much More.
+
+ 
+
+Features:
+
+ 
+
+- Network SSID
+
+- Signal strength
+
+- Network security
+
+- MAC address of access point
+
+- WiFi Device Vendor ID
+
+- Network frequency,
+
+- Channel Rating And Much More
+
+ 
+
+Usage Tips
+
+ 
+
+- Tap the title bar to switch between 2.4 and 5 GHz WiFi band.
+
+- Swipe to manually refresh screen content.
+
+- SSID with (***) means it is hidden.
+
+- Distance to the Access Point is estimated.
+
+ 
+
+Note: Application is designed to use as few permission as Possible. Application only required wifi permission to read wifi data,
+
+For users has a OS above Marshmallo(M) That is 6.0 may required Location permission in order to work properly (Application not required location permission but some users are experts say that it may be an issue of Operating syatem.)
+
+Скрыть
+
+WiFi Analyzer 1.1 Обновить
+
+2018-08-20
+
+Added Option to Remove Ads
+
+and UI Improvement
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Описание для SoloLearn
+
+SoloLearn - это крупнейшая коллекция БЕСПЛАТНЫХ материалов по изучению программирования для новичков и профессионалов! Тысячи аспектов программирования помогут вам освоить азы, отточить навыки или просто быть в курсе последних тенденций.
+
+ 
+
+Встречайте самое дружелюбное сообщество программистов, где все помогают друг другу учиться и развиваться. Каждый день наше сообщество создает новые учебные материалы, чтобы вы могли быстро и эффективно оттачивать свои навыки.
+
+ 
+
+Миллионы программистов помогут вам освоить несметное множество тем и заданий из любой точки мира, в любое время. Пишите и запускайте реальный код в мобильном редакторе для Android, черпайте вдохновение из реальных примеров кода или просто общайтесь!
+
+ 
+
+∙ Лучшее приложение Facebook FbStart 2017 года
+
+ 
+
+∙ Упоминалось в TechCrunch, Forbes, ProductHunt, Lifehacker и др. изданиях
+
+ 
+
+НОВЫЙ СВЕЖИЙ КОНТЕНТ КАЖДЫЙ ДЕНЬ:
+
+∙ Веб-разработка, включая HTML5, CSS3, JavaScript, JQuery
+
+∙ Python
+
+∙ Java
+
+∙ Kotlin
+
+∙ C++
+
+∙ C
+
+∙ C#
+
+∙ PHP
+
+∙ SQL
+
+∙ Алгоритмы и структуры данных
+
+∙ Ruby
+
+∙ Машинное обучение
+
+∙ Swift
+
+∙ Git
+
+∙ и множество других тем, которые вы не найдете больше нигде.
+
+ 
+
+ПЕРСОНАЛИЗАЦИЯ. Представление содержимого на основе ваших предпочтений и самых последних тенденций, с учетом вашего прогресса․
+
+ 
+
+БЕСПЛАТНАЯ ПОДДЕРЖКА СООБЩЕСТВА 24 ЧАСА В СУТКИ. Непрерывная поддержка сообщества и уведомления в реальном времени - все для того, чтобы учиться программированию было как можно проще и приятнее.
+
+ 
+
+БЕСПЛАТНЫЙ ОБМЕН ЗНАНИЯМИ. Создайте уроки по своей специализации и станьте экспертом сообщества, на которого будут равняться миллионы. Улучшайте профиль и инвестируйте в свое будущее шаг за шагом.
+
+ 
+
+БЕСПЛАТНЫЙ МОБИЛЬНЫЙ РЕДАКТОР КОДА. Пишите, запускайте и публикуйте реальный код прямо на мобильном устройстве без всяких дополнительных установок и настроек.
+
+ 
+
+Мы любим отзывы. Напишите, что вы думаете о нас на info@sololearn.com.
+
+ 
+
+Facebook: https://www.facebook.com/sololearn
+
+ 
+
+Twitter: https://twitter.com/sololearn
+
+ 
+
+Google+: https://plus.google.com/+sololearn
+
+ 
+
+Web: https://www.sololearn.com
+
+ 
+
+Описание для Dcoder, Compiler IDE :Code & Programming on mobile
+
+Dcoder is a mobile coding IDE ( Compiler for mobile ), where one can code and learn algorithms using programming on mobile. Tailored to enhance your coding skills, via the use of code compilation and algorithm solving. Now learn to code anytime anywhere.
+
+ 
+
+ 
+
+Choose any or all languages to work with:
+
+ 
+
+ 
+
+1. C : learn C programming, a powerful general-purpose language.
+
+2. C++ : GCC compiler 6.3
+
+3. Java : best Java Programming ide, JDK 8
+
+4. Python : learn Python 2.7 and Python 3.
+
+5. C# : Mono Compiler 4
+
+6. Php : Php Interpreter 7.0
+
+7. Objective-C : GCC compiler
+
+8. Ruby : Ruby version 1.9
+
+9. Lua : Lua Interpreter 5.2
+
+10. JS/NodeJS : Node.js engine 6.5
+
+11. Go : Go Lang 1.6
+
+ 
+
+12. VB.Net
+
+13. F#
+
+14. Common Lisp
+
+15. R
+
+16. Scala
+
+17. Perl
+
+18. Pascal
+
+19. Swift
+
+20. Tcl
+
+21, Prolog
+
+22. Assembely
+
+23. Haskell
+
+24. Clojure
+
+25. Kotlin
+
+26. Groovy
+
+27. Scheme
+
+28. Rust
+
+29. Bf
+
+30. Html
+
+31. Css
+
+ 
+
+Added bonus: Dcoder uses a Rich Text Editor supporting syntax highlight and packed with the necessary tools to offer you all the edge that an IDE or code compiler is supposed to.
+
+ 
+
+ 
+
+Its the fastest code compiler (IDE), coding and programming app available for android so far.
+
+ 
+
+With Dcoder one can:
+
+ 
+
+Write a program/code in any of the available 33+ Programming Languages.
+
+Code and Debug the code, see compilation results and errors at the same time on the same screen.
+
+Enjoy the power and ease of coding on your favorite Code Editor like Notepad++ or Sublime Text with compilation power, makes it equivalent to a powerful Ide like eclipse.
+
+Test your problem solving skills by solving challenges from the number of algorithm based challenges available in Algo Yo section.
+
+Learn Html,Css, JavaScript, Ruby programming, C Programming, Python and Java in the app along with many more programming languages.
+
+Irrespective of your coding skills be it beginner or expert Dcoder helps you to learn code and improve your skills while in a boring lecture or whenever you feel like.
+
+ 
+
+ 
+
+ 
+
+The main features include:
+
+ 
+
+1. Rich Text Editor with Syntax highlighting.(Code Editor)
+
+2. Line number, Auto indent, Autocomplete Parenthesis.
+
+3. Undo Redo.
+
+4. File Open/Save.
+
+5. Custom Suggestion View.
+
+6. Multiple Language Support.
+
+7. User input for languages like C, C++, Java, Php, JavaScript, Node.js and others.
+
+8. Active debug view for faster access to Output.
+
+9. Thoroughly designed Algorithm problems to improve coding Skills and make programmers industry ready.
+
+10. Leader Board: To know where you stand amongst the vast Dcoder community.
+
+11. Custom Menu Drawer, Custom Code Editor Themes, Editable font Size for Editor and much more!!
+
+ 
+
+ 
+
+ 
+
+Disclaimer: Dcoder uses array of strong cloud based compilers to compile the code and display output, it is the fastest one and has helped to bring app size to ~4 MB, Please don't rate low or demand offline feature that is not possible here. Also instead of rating low, you can write your problems to us at support@dcoder.tech that will let us help you better.
+
+ 
+
+Dcoder is an online compiler, now run, compile and execute your code snippets on your own android mobile devices.
+
+ 
+
+ 
+
+ 
+
+Begin the journey to enhance your skills.
+
+ 
+
+How to solve algorithms?
+
+https://youtu.be/rwzdKkgWKV4
+
+ 
+
+ 
+
+For a brief video:
+
+https://youtu.be/X9lsvumpFGI
+
+ 
+
+ 
+
+Join the Facebook Group
+
+For any help, questions related to Dcoder and challenges and also to opt as a Beta Tester.
+
+https://www.facebook.com/groups/dcodermobile
+
+ 
+
+Loved it? Be a beta tester, for early access to experimental features
+
+https://play.google.com/apps/testing/com.paprbit.dcoder
+
+ 
+
+Keywords: Decoder , code, Compiler, Ide, algorithm, learn to code, learn programming, java, Online Compiler
+
+Ещё
+
+Dcoder, Compiler IDE :Code & Programming on mobile 2.0.32 Обновить
+
+2019-11-11
+
+Experience the complete overhaul in 2.0 with:
+
+- Cloud storage
+
+- Feed from Dcoder's community
+
+- Runtime input terminal
+
+- Dcoder's coding keyboard
+
+- Cross platform support and more
+
+ 
+
+Fix:
+
+- Crash fixes
+
+- Sometimes code getting deleted from editor when app goes in background fixed.
+
+ 
+
+if you love what we do support us by rating 5 stars. If you have a query or feedback for Dcoder 2.0 reach out to us at support@dcoder.tech
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для CPP N-IDE
+
+## Features
+
+- Offline C compiler
+
+- Offline C++ compiler
+
+- Native activity, SDL2 support for GUI
+
+- Build executables file, export your program
+
+- Make 4.0, makefile support, you can build as on your PC
+
+- Static code analysis, it helps you to fix "difficult" bugs:
+
+1. memory leaks
+
+1. mismatching allocation and deallocation
+
+1. uninitialized variables usage
+
+1. array index out of bounds errors
+
+- C/C++ code formatter
+
+- Terminal emulator: full-featured terminal
+
+- Git, svn support (Install by use Intall plugin features)
+
+- Diagnostic utility: auto jump to error position
+
+- Compiler output: See stdout, stderr
+
+- Syntax highlighting: C/C++ language and very more language (only highlight without compile)
+
+- C/C++ examples from https://www.programiz.com/cpp-programming/examples
+
+- File manager
+
+- Multi Tab, new file, open, save, save as, undo/redo, insert some commonly used symbols, etc. Change the typeface and font size. Show line numbers. Regular search, replace or replace all,"Word wrap" switch, Dark/Light Themes
+
+ 
+
+## How to use SDL, NativeActivity?
+
+You need install SDL Plugin for CPP N-IDE and open it once time to install libraries.
+
+The application will be auto detect linker flags (LDFLAGS) for your source file
+
+ 
+
+## How to use makefile?
+
+1. Write your makefile
+
+2. Open terminal and type "make"
+
+ 
+
+## How to install libraries
+
+1. Open drawer then click "Install libraries/Plugin"
+
+2. Find your prebuilt libraries your need
+
+ 
+
+Currently, I supported commom libraries such as curl, CLooG, dropbear, expat, fontconfig, freetype, glib, gmp, isl, conv, pcre, png, uuid, mpc, mpfr, ncurses, openssl, ppl
+
+ 
+
+Report bug on Github https://github.com/tranleduy2000/c_cpp_compiler
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для EASY CODER : Learn to develop & run java programs
+
+Are you enthusiastic about learning coding and programming? Wait no more! “Easy Coder” is the right solution for you. It’s time to learn new skills and expand your skill set. The app allows you to learn how to code, and sharpen your coding skills. It’s the ultimate video e-learning app you have been waiting for.
+
+Learn all the latest technologies and programming using this app. The app offers video tutorials and quizzes related to Java. It teaches all the fundamentals related to a specific technology so you can start coding yourself. The app teaches coding in a fun way so you don’t get bored.
+
+The code learning app is useful for beginners and advance level programmers as well. This app acts as a pocket hand book for programmers who want to have a solid foundation in programming.
+
+Watch video resources, attempt quizzes, interactive activities, and coding challenges to master coding skills at home. It’s the best online learning app that will guide you to become pro at computer science. Become a software developer without needing a degree. The app courses are easy to understand so you don’t need to have prior knowledge to understand and learn coding.
+
+Easy coder gives you opportunity to practice coding and create your own code. Get hands on experience with Easy Coder App.
+
+Top Features
+
+♥ Easy and Pleasant UI and UX
+
+♥ Basic to advance learning
+
+♥ Latest development technologies
+
+♥ Best for home learners
+
+♥ Develop skill sets and start your career
+
+♥ Completely free app
+
+♥ Video tutorials and Quizzes
+
+Learn new skills in 2019! Easy Coder is a must have app. Download NOW!
+
+Скрыть
+
+EASY CODER : Learn to develop & run java programs 1.3 Обновить
+
+2018-10-05
+
+1. There is now a new robust video player that would provide a smoother video watching experience.
+
+2. A dark theme mode is now available for the text editor.
+
+3. Smart auto suggestion / auto complete option is now available for the text editor
+
+ 
+
+Please help make this app a great for you by sharing your comments and suggestions to easycoder@easycoder.io
+
+ 
+
+ 
+
+ 
+
+Описание для Языки программирования
+
+Языки программирования
+
+Уроки по информатике в школе и вузе: какой язык программирования выбрать? Насколько глубоко его изучать и нужно ли вообще в школе изучать языки программирования? Есть мнение, что учащихся нужно знакомить с различными языками и
+
+различными стилями программирования. Видимо, наиболее подходящими учебными языками программирования сегодня являются Форт, Ruby, Python, Си, Паскаль и Java.
+
+Сегодня каждый, кто стремится попасть в IT, задается вопросом — какой язык программирования изучить? Все ищут универсальный ответ, который предопределит головокружительную карьеру. Да, до изобретения интернета и появления мобильных платформ можно было освоить один язык, написать на нем программу и быть востребованным разработчиком. Сегодня реалии таковы, что даже джуниорам предъявляется огромный список требований, среди которых — знание нескольких языков.
+
+Судите сами: для веб-разработки неплохо бы владеть PHP, JavaScript, Python, Ruby, а еще HTML, CSS и JQuery; в мобильной сфере — Swift, Objective-C, Java, C#, Kotlin. Перечень языков для создания десктопных приложений можно даже не начинать — по сути, все будут полезны. С помощью справочника "Языки программирования" Вы легко сможете найти основные особенности языка программирования, сферу его применния, паттерны проектировани и др.
+
+ 
+
+Особенности справочника "Языки программирования":
+
+- Очень быстрый поиск терминов;
+
+- Полный доступ в автономном режиме, без подключения к Интернету (offline);
+
+- Неограниченное количество заметок;
+
+- Совместим со всеми версиями Android устройств;
+
+- Приложение очень простое в использовании, быстрое и с обширным содержанием;
+
+- Автоматические бесплатные обновления каждый раз, когда добавляется новые термины;
+
+- Справочник "Языки программирования" сделан так, что бы занимать как можно меньше памяти.
+
+ 
+
+В справочнике вы сможете найти подробное описание: Клу, JCL, Io, SWI-Prolog, MC Sharp, XUL, Аналитик (язык программирования), Liberty BASIC, F Sharp, Basic, JQuery, Kotlin, Java, Pascal, MVP, MVI, MVVP, OOP, SOLID и др.
+
+Скрыть
+
+ 
+
+ 
+
+ 
+
+Описание для Учим Java
+
+Мы переходим к нашему новому бесплатному приложению Все-в-Одном! Скачать его можно здесь: https://play.google.com/store/apps/details?id=com.sololearn
+
+ 
+
+Изучите Java в улучшенной среде с большим количеством уроков, с возможностью реальной практики и поддержкой сообщества.
+
+ 
+
+Курс SoloLearn Учим Java это полное руководство к одному из самых популярных языков программирования в мире. И самое главное то, что курс Учим Java абсолютно бесплатный!
+
+ 
+
+Уроки в этом курсе ёмкие, несложные и эффективные; приложение позволит вам пройти курс всего за три часа. При этом для его прохождения не требуется опыт в программировании.
+
+ 
+
+С курсом Учим Java, вы изучите объектно-ориентированное программирование на языке Java и будете способны писать чистый и рабочий код за кратчайшие сроки. Не бойтесь сложностей. Приступайте к прохождению нашего курса сегодня и приобретайте новые навыки!
+
+Курс содержит 64 урока по следующим темам:
+
+∙ Основы Java: Переменные, Операторы, и т.д.
+
+∙ Условные Выражения и Циклы
+
+∙ Массивы
+
+∙ Классы и Объекты
+
+∙ Инкапсуляция, Полиморфизм и Наследование
+
+∙ Абстрактные Классы и Интерфейсы
+
+∙ Анонимные и Вложенные Классы
+
+∙ Обработка Исключений
+
+∙ Списки
+
+∙ HashMap
+
+∙ Множества
+
+∙ Потоки
+
+∙ Работа с Файлами
+
+∙ И Многое Другое!
+
+ 
+
+Станьне Java разработчиком – начните курс SoloLearn БЕСПЛАТНО сегодня!!
+
+ 
+
+Открывайте уровни, собирайте очки и соревнуйтесь с вашими коллегами по всему миру.
+
+ 
+
+Учитесь весело с SoloLearn!
+
+Скрыть
+
+Учим Java 3.8.1 Обновить
+
+2019-08-16
+
+* Bug fixes and improvements.
+
+* Check out our new free app with lots of new content: https://play.google.com/store/apps/details?id=com.sololearn
+
+ 
+
+ 
+
+ 
+
+Описание для Pocket Code
+
+Что можно делать в Pocket code? Да всё, что угодно: создавать, редактировать, перемешивать программы Catrobat в лего-среде программирования, а также делиться своими творениями со своими друзьями. Чтобы начать разрабатывать собственные игры, анимацию, интерактивные произведения искусства, музыкальные клипы и другие приложения непосредственно для вашего телефона или планшета, достаточно скачать приложение в Play Market (пока доступна лишь такая мобильная версия) и приступить к делу.
+
+ 
+
+Вдохновившись примером Scratch, разработчики визуального языка программирования Catrobat создали простое и понятное приложение Pocket Code, цель которого не просто развлечь, но и научить пользователей создавать собственные программы с использованием творческих элементов.
+
+ 
+
+У приложения достаточно простой интерфейс, который позволит приблизиться к пониманию программирования даже «чайнику». Чтобы создать собственный интерактивный проект, перейдите в раздел New, где вам предложат все необходимые инструменты: возможность выбрать фон, музыку, дополнительные элементы и настроить скрипты для своей игры, приложения или анимации. Чтобы у вашего Pocket Code было больше возможностей, можно скачать небольшое дополнение Pocket Paint, которое позволит вам корректировать фотографии и дорисовывать необходимые элементы. Всё, что вам может понадобиться в дополнение к такому инструментарию, – творческий подход.
+
+ 
+
+Таким образом, Pocket Code позволяет своим пользователям «выйти из матрицы» неосознанного использования приложений и стать настоящим демиургом, который эти приложения создаёт. Разработать развлекательную игру в стиле MAZE? Легко! Создать полезную интерактивную карту для урока географии? В два счёта!
+
+ 
+
+В глобальном смысле Pocket Code тем и хорош, что позволяет быть нам не потребителями, а созидателями, и от репродуктивной деятельности, которая не оставляет ни в душе, ни в памяти следа, переходить к настоящему творчеству. Да, да, в информатике это тоже реально. Тем более, что возможности различных приложений постоянно расширяются.
+
+ 
+
+Результаты многих наших сопутствующих проектов будут доступны в ближайшие месяцы и годы, например, способность контролировать больше роботов или в увлекательной игровой форме создавать музыку. В настоящее время мы работаем над улучшением Pocket Code. Следующим шагом будет создание физического движка, который облегчит вам задачу создания собственных игр, вроде Maze.
+
+ 
+
+Но и существующая версия вполне подходит для того, чтобы устроить детям на уроке информатики настоящий праздник, предложив им вместо традиционного освоения графических редакторов посоревноваться в создании лучшей игры или приложения на Pocket Code.
+
+Скрыть
+
+Pocket Code 0.9.64 Обновить
+
+2019-08-23
+
+* arctangent2 function (useful for motion)
+
+* 64 bit requirement from Google
+
+* Color picker for pen color, show variable brick and Phiro
+
+* Usability fixes
+
+* Bugfixes
+
+ 
+
+Older:
+
+* New bricks to Read variables from and Write variables on your phone
+
+* New extension for embroidery machines (still works in the Background only)
+
+ 
+
+Thanks to all contributors!
+
+If you want to help as a developer, designer, educator, in marketing or in many other roles, please see https://catrob.at/contributing
+
+
+
+
+
+
+
+
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 
  
 

@@ -4222,6 +4222,845 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 }
 --------------------------------------------------------------------------------------------------------
+jdbc:h2:mem:%s;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+jdbc:derby:memory:%s;create=true
+jdbc:hsqldb:mem:%s
+--------------------------------------------------------------------------------------------------------import org.springframework.cloud.gateway.handler.predicate.AfterRoutePredicateFactory;
+import org.springframework.cloud.gateway.handler.predicate.BeforeRoutePredicateFactory;
+import org.springframework.cloud.gateway.handler.predicate.BetweenRoutePredicateFactory;
+import org.springframework.cloud.gateway.handler.predicate.CookieRoutePredicateFactory;
+import org.springframework.cloud.gateway.handler.predicate.HeaderRoutePredicateFactory;
+import org.springframework.cloud.gateway.handler.predicate.HostRoutePredicateFactory;
+import org.springframework.cloud.gateway.handler.predicate.MethodRoutePredicateFactory;
+import org.springframework.cloud.gateway.handler.predicate.PathRoutePredicateFactory;
+import org.springframework.cloud.gateway.handler.predicate.QueryRoutePredicateFactory;
+import org.springframework.cloud.gateway.handler.predicate.RemoteAddrRoutePredicateFactory;
+import org.springframework.cloud.gateway.route.Route;
+import org.springframework.http.HttpMethod;
+import org.springframework.web.server.ServerWebExchange;
+
+import java.time.ZonedDateTime;
+import java.util.function.Predicate;
+
+public class PredicateSpec extends UriSpec {
+
+	PredicateSpec(Route.Builder routeBuilder, RouteLocatorBuilder.Builder builder) {
+		super(routeBuilder, builder);
+	}
+
+	public PredicateSpec order(int order) {
+		this.routeBuilder.order(order);
+		return this;
+	}
+
+	public BooleanSpec predicate(Predicate<ServerWebExchange> predicate) {
+		this.routeBuilder.predicate(predicate);
+		return createBooleanSpec();
+	}
+
+	protected BooleanSpec createBooleanSpec() {
+		return new BooleanSpec(this.routeBuilder, this.builder);
+	}
+
+	public BooleanSpec after(ZonedDateTime datetime) {
+		return predicate(getBean(AfterRoutePredicateFactory.class).apply(datetime));
+	}
+
+	public BooleanSpec before(ZonedDateTime datetime) {
+		return predicate(getBean(BeforeRoutePredicateFactory.class).apply(datetime));
+	}
+
+	public BooleanSpec between(ZonedDateTime datetime1, ZonedDateTime datetime2) {
+		return predicate(getBean(BetweenRoutePredicateFactory.class).apply(datetime1, datetime2));
+	}
+
+	public BooleanSpec cookie(String name, String regex) {
+		return predicate(getBean(CookieRoutePredicateFactory.class).apply(name, regex));
+	}
+
+	public BooleanSpec header(String header, String regex) {
+		return predicate(getBean(HeaderRoutePredicateFactory.class).apply(header, regex));
+	}
+
+	public BooleanSpec host(String pattern) {
+		return predicate(getBean(HostRoutePredicateFactory.class).apply(pattern));
+	}
+
+	public BooleanSpec method(String method) {
+		return predicate(getBean(MethodRoutePredicateFactory.class).apply(method));
+	}
+
+	public BooleanSpec method(HttpMethod method) {
+		return predicate(getBean(MethodRoutePredicateFactory.class).apply(method));
+	}
+
+	public BooleanSpec path(String pattern) {
+		return predicate(getBean(PathRoutePredicateFactory.class).apply(pattern));
+	}
+
+	public BooleanSpec query(String param, String regex) {
+		return predicate(getBean(QueryRoutePredicateFactory.class).apply(param, regex));
+	}
+
+	public BooleanSpec query(String param) {
+		return predicate(getBean(QueryRoutePredicateFactory.class).apply(param, null));
+	}
+
+	public BooleanSpec remoteAddr(String... addrs) {
+		return predicate(getBean(RemoteAddrRoutePredicateFactory.class).apply(addrs));
+	}
+
+	public BooleanSpec alwaysTrue() {
+		return predicate(exchange -> true);
+	}
+}
+
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
+import org.springframework.cloud.gateway.config.GatewayAutoConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.reactive.DispatcherHandler;
+
+/**
+ * @author Spencer Gibb
+ */
+@Configuration
+@ConditionalOnProperty(name = "spring.cloud.gateway.enabled", matchIfMissing = true)
+@AutoConfigureBefore(GatewayAutoConfiguration.class)
+@ConditionalOnClass({DispatcherHandler.class, DiscoveryClient.class})
+public class GatewayDiscoveryClientAutoConfiguration {
+
+	@Bean
+	@ConditionalOnBean(DiscoveryClient.class)
+	@ConditionalOnProperty(name = "spring.cloud.gateway.discovery.locator.enabled")
+	public DiscoveryClientRouteDefinitionLocator discoveryClientRouteDefinitionLocator(DiscoveryClient discoveryClient) {
+		return new DiscoveryClientRouteDefinitionLocator(discoveryClient);
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+/**
+ * A class that performs some subnet calculations given a network address and a subnet mask.
+ * See original from commons-net org.apache.commons.net.util.SubnetUtils
+ * @see "http://www.faqs.org/rfcs/rfc1519.html"
+ */
+@SuppressWarnings("unused")
+public class SubnetUtils {
+
+	private static final String IP_ADDRESS = "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})";
+	private static final String SLASH_FORMAT = IP_ADDRESS + "/(\\d{1,3})";
+	private static final Pattern addressPattern = Pattern.compile(IP_ADDRESS);
+	private static final Pattern cidrPattern = Pattern.compile(SLASH_FORMAT);
+	private static final int NBITS = 32;
+
+	private int netmask = 0;
+	private int address = 0;
+	private int network = 0;
+	private int broadcast = 0;
+
+	/** Whether the broadcast/network address are included in host count */
+	private boolean inclusiveHostCount = false;
+
+
+	/**
+	 * Constructor that takes a CIDR-notation string, e.g. "192.168.0.1/16"
+	 * @param cidrNotation A CIDR-notation string, e.g. "192.168.0.1/16"
+	 * @throws IllegalArgumentException if the parameter is invalid,
+	 * i.e. does not match n.n.n.n/m where n=1-3 decimal digits, m = 1-3 decimal digits in range 1-32
+	 */
+	public SubnetUtils(String cidrNotation) {
+		calculate(cidrNotation);
+	}
+
+	/**
+	 * Constructor that takes a dotted decimal address and a dotted decimal mask.
+	 * @param address An IP address, e.g. "192.168.0.1"
+	 * @param mask A dotted decimal netmask e.g. "255.255.0.0"
+	 * @throws IllegalArgumentException if the address or mask is invalid,
+	 * i.e. does not match n.n.n.n where n=1-3 decimal digits and the mask is not all zeros
+	 */
+	public SubnetUtils(String address, String mask) {
+		calculate(toCidrNotation(address, mask));
+	}
+
+
+	/**
+	 * Returns <code>true</code> if the return value of {@link SubnetInfo#getAddressCount()}
+	 * includes the network and broadcast addresses.
+	 * @since 2.2
+	 * @return true if the hostcount includes the network and broadcast addresses
+	 */
+	public boolean isInclusiveHostCount() {
+		return inclusiveHostCount;
+	}
+
+	/**
+	 * Set to <code>true</code> if you want the return value of {@link SubnetInfo#getAddressCount()}
+	 * to include the network and broadcast addresses.
+	 * @param inclusiveHostCount true if network and broadcast addresses are to be included
+	 * @since 2.2
+	 */
+	public void setInclusiveHostCount(boolean inclusiveHostCount) {
+		this.inclusiveHostCount = inclusiveHostCount;
+	}
+
+
+
+	/**
+	 * Convenience container for subnet summary information.
+	 *
+	 */
+	public final class SubnetInfo {
+		/* Mask to convert unsigned int to a long (i.e. keep 32 bits) */
+		private static final long UNSIGNED_INT_MASK = 0x0FFFFFFFFL;
+
+		private SubnetInfo() {}
+
+		private int netmask()       { return netmask; }
+		private int network()       { return network; }
+		private int address()       { return address; }
+		private int broadcast()     { return broadcast; }
+
+		// long versions of the values (as unsigned int) which are more suitable for range checking
+		private long networkLong()  { return network &  UNSIGNED_INT_MASK; }
+		private long broadcastLong(){ return broadcast &  UNSIGNED_INT_MASK; }
+
+		private int low() {
+			return (isInclusiveHostCount() ? network() :
+					broadcastLong() - networkLong() > 1 ? network() + 1 : 0);
+		}
+
+		private int high() {
+			return (isInclusiveHostCount() ? broadcast() :
+					broadcastLong() - networkLong() > 1 ? broadcast() -1  : 0);
+		}
+
+		/**
+		 * Returns true if the parameter <code>address</code> is in the
+		 * range of usable endpoint addresses for this subnet. This excludes the
+		 * network and broadcast adresses.
+		 * @param address A dot-delimited IPv4 address, e.g. "192.168.0.1"
+		 * @return True if in range, false otherwise
+		 */
+		public boolean isInRange(String address) {
+			return isInRange(toInteger(address));
+		}
+
+		/**
+		 *
+		 * @param address the address to check
+		 * @return true if it is in range
+		 * @since 3.4 (made public)
+		 */
+		public boolean isInRange(int address) {
+			long addLong = address & UNSIGNED_INT_MASK;
+			long lowLong = low() & UNSIGNED_INT_MASK;
+			long highLong = high() & UNSIGNED_INT_MASK;
+			return addLong >= lowLong && addLong <= highLong;
+		}
+
+		public String getBroadcastAddress() {
+			return format(toArray(broadcast()));
+		}
+
+		public String getNetworkAddress() {
+			return format(toArray(network()));
+		}
+
+		public String getNetmask() {
+			return format(toArray(netmask()));
+		}
+
+		public String getAddress() {
+			return format(toArray(address()));
+		}
+
+		/**
+		 * Return the low address as a dotted IP address.
+		 * Will be zero for CIDR/31 and CIDR/32 if the inclusive flag is false.
+		 *
+		 * @return the IP address in dotted format, may be "0.0.0.0" if there is no valid address
+		 */
+		public String getLowAddress() {
+			return format(toArray(low()));
+		}
+
+		/**
+		 * Return the high address as a dotted IP address.
+		 * Will be zero for CIDR/31 and CIDR/32 if the inclusive flag is false.
+		 *
+		 * @return the IP address in dotted format, may be "0.0.0.0" if there is no valid address
+		 */
+		public String getHighAddress() {
+			return format(toArray(high()));
+		}
+
+		/**
+		 * Get the count of available addresses.
+		 * Will be zero for CIDR/31 and CIDR/32 if the inclusive flag is false.
+		 * @return the count of addresses, may be zero.
+		 * @throws RuntimeException if the correct count is greater than {@code Integer.MAX_VALUE}
+		 * @deprecated (3.4) use {@link #getAddressCountLong()} instead
+		 */
+		@Deprecated
+		public int getAddressCount() {
+			long countLong = getAddressCountLong();
+			if (countLong > Integer.MAX_VALUE) {
+				throw new RuntimeException("Count is larger than an integer: " + countLong);
+			}
+			// N.B. cannot be negative
+			return (int)countLong;
+		}
+
+		/**
+		 * Get the count of available addresses.
+		 * Will be zero for CIDR/31 and CIDR/32 if the inclusive flag is false.
+		 * @return the count of addresses, may be zero.
+		 * @since 3.4
+		 */
+		public long getAddressCountLong() {
+			long b = broadcastLong();
+			long n = networkLong();
+			long count = b - n + (isInclusiveHostCount() ? 1 : -1);
+			return count < 0 ? 0 : count;
+		}
+
+		public int asInteger(String address) {
+			return toInteger(address);
+		}
+
+		public String getCidrSignature() {
+			return toCidrNotation(
+					format(toArray(address())),
+					format(toArray(netmask()))
+			);
+		}
+
+		public String[] getAllAddresses() {
+			int ct = getAddressCount();
+			String[] addresses = new String[ct];
+			if (ct == 0) {
+				return addresses;
+			}
+			for (int add = low(), j=0; add <= high(); ++add, ++j) {
+				addresses[j] = format(toArray(add));
+			}
+			return addresses;
+		}
+
+		/**
+		 * {@inheritDoc}
+		 * @since 2.2
+		 */
+		@Override
+		public String toString() {
+			final StringBuilder buf = new StringBuilder();
+			buf.append("CIDR Signature:\t[").append(getCidrSignature()).append("]")
+					.append(" Netmask: [").append(getNetmask()).append("]\n")
+					.append("Network:\t[").append(getNetworkAddress()).append("]\n")
+					.append("Broadcast:\t[").append(getBroadcastAddress()).append("]\n")
+					.append("First Address:\t[").append(getLowAddress()).append("]\n")
+					.append("Last Address:\t[").append(getHighAddress()).append("]\n")
+					.append("# Addresses:\t[").append(getAddressCount()).append("]\n");
+			return buf.toString();
+		}
+	}
+
+	/**
+	 * Return a {@link SubnetInfo} instance that contains subnet-specific statistics
+	 * @return new instance
+	 */
+	public final SubnetInfo getInfo() { return new SubnetInfo(); }
+
+	/*
+	 * Initialize the internal fields from the supplied CIDR mask
+	 */
+	private void calculate(String mask) {
+		Matcher matcher = cidrPattern.matcher(mask);
+
+		if (matcher.matches()) {
+			address = matchAddress(matcher);
+
+            /* Create a binary netmask from the number of bits specification /x */
+			int cidrPart = rangeCheck(Integer.parseInt(matcher.group(5)), 0, NBITS);
+			for (int j = 0; j < cidrPart; ++j) {
+				netmask |= (1 << 31 - j);
+			}
+
+            /* Calculate base network address */
+			network = (address & netmask);
+
+            /* Calculate broadcast address */
+			broadcast = network | ~(netmask);
+		} else {
+			throw new IllegalArgumentException("Could not parse [" + mask + "]");
+		}
+	}
+
+	/*
+	 * Convert a dotted decimal format address to a packed integer format
+	 */
+	private int toInteger(String address) {
+		Matcher matcher = addressPattern.matcher(address);
+		if (matcher.matches()) {
+			return matchAddress(matcher);
+		} else {
+			throw new IllegalArgumentException("Could not parse [" + address + "]");
+		}
+	}
+
+	/*
+	 * Convenience method to extract the components of a dotted decimal address and
+	 * pack into an integer using a regex match
+	 */
+	private int matchAddress(Matcher matcher) {
+		int addr = 0;
+		for (int i = 1; i <= 4; ++i) {
+			int n = (rangeCheck(Integer.parseInt(matcher.group(i)), 0, 255));
+			addr |= ((n & 0xff) << 8*(4-i));
+		}
+		return addr;
+	}
+
+	/*
+	 * Convert a packed integer address into a 4-element array
+	 */
+	private int[] toArray(int val) {
+		int ret[] = new int[4];
+		for (int j = 3; j >= 0; --j) {
+			ret[j] |= ((val >>> 8*(3-j)) & (0xff));
+		}
+		return ret;
+	}
+
+	/*
+	 * Convert a 4-element array into dotted decimal format
+	 */
+	private String format(int[] octets) {
+		StringBuilder str = new StringBuilder();
+		for (int i =0; i < octets.length; ++i){
+			str.append(octets[i]);
+			if (i != octets.length - 1) {
+				str.append(".");
+			}
+		}
+		return str.toString();
+	}
+
+	/*
+	 * Convenience function to check integer boundaries.
+	 * Checks if a value x is in the range [begin,end].
+	 * Returns x if it is in range, throws an exception otherwise.
+	 */
+	private int rangeCheck(int value, int begin, int end) {
+		if (value >= begin && value <= end) { // (begin,end]
+			return value;
+		}
+
+		throw new IllegalArgumentException("Value [" + value + "] not in range ["+begin+","+end+"]");
+	}
+
+	/*
+	 * Count the number of 1-bits in a 32-bit integer using a divide-and-conquer strategy
+	 * see Hacker's Delight section 5.1
+	 */
+	int pop(int x) {
+		x = x - ((x >>> 1) & 0x55555555);
+		x = (x & 0x33333333) + ((x >>> 2) & 0x33333333);
+		x = (x + (x >>> 4)) & 0x0F0F0F0F;
+		x = x + (x >>> 8);
+		x = x + (x >>> 16);
+		return x & 0x0000003F;
+	}
+
+	/* Convert two dotted decimal addresses to a single xxx.xxx.xxx.xxx/yy format
+	 * by counting the 1-bit population in the mask address. (It may be better to count
+	 * NBITS-#trailing zeroes for this case)
+	 */
+	private String toCidrNotation(String addr, String mask) {
+		return addr + "/" + pop(toInteger(mask));
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration;
+import org.springframework.cloud.gateway.filter.ratelimit.RedisRateLimiter;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
+import org.springframework.data.redis.core.ReactiveRedisTemplate;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.data.redis.core.script.RedisScript;
+import org.springframework.data.redis.serializer.RedisSerializationContext;
+import org.springframework.data.redis.serializer.RedisSerializer;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.scripting.support.ResourceScriptSource;
+import org.springframework.web.reactive.DispatcherHandler;
+
+@Configuration
+@AutoConfigureAfter(RedisReactiveAutoConfiguration.class)
+@AutoConfigureBefore(GatewayAutoConfiguration.class)
+@ConditionalOnBean(ReactiveRedisTemplate.class)
+@ConditionalOnClass({RedisTemplate.class, DispatcherHandler.class})
+class GatewayRedisAutoConfiguration {
+
+	@Bean
+	@SuppressWarnings("unchecked")
+	public RedisScript redisRequestRateLimiterScript() {
+		DefaultRedisScript redisScript = new DefaultRedisScript<>();
+		redisScript.setScriptSource(new ResourceScriptSource(new ClassPathResource("META-INF/scripts/request_rate_limiter.lua")));
+		redisScript.setResultType(List.class);
+		return redisScript;
+	}
+
+	@Bean
+	//TODO: replace with ReactiveStringRedisTemplate in future
+	public ReactiveRedisTemplate<String, String> stringReactiveRedisTemplate(
+			ReactiveRedisConnectionFactory reactiveRedisConnectionFactory,
+			ResourceLoader resourceLoader) {
+		RedisSerializer<String> serializer = new StringRedisSerializer();
+		RedisSerializationContext<String , String> serializationContext = RedisSerializationContext
+				.<String, String>newSerializationContext()
+				.key(serializer)
+				.value(serializer)
+				.hashKey(serializer)
+				.hashValue(serializer)
+				.build();
+		return new ReactiveRedisTemplate<>(reactiveRedisConnectionFactory,
+				serializationContext);
+	}
+
+	@Bean
+	public RedisRateLimiter redisRateLimiter(ReactiveRedisTemplate<String, String> redisTemplate,
+											 @Qualifier("redisRequestRateLimiterScript") RedisScript<List<Long>> redisScript) {
+		return new RedisRateLimiter(redisTemplate, redisScript);
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.core.Ordered;
+import org.springframework.http.server.reactive.ServerHttpResponse;
+import org.springframework.web.reactive.function.BodyExtractors;
+import org.springframework.web.reactive.function.client.ClientResponse;
+import org.springframework.web.server.ServerWebExchange;
+
+import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.CLIENT_RESPONSE_ATTR;
+
+import reactor.core.publisher.Mono;
+
+/**
+ * @author Spencer Gibb
+ */
+public class WebClientWriteResponseFilter implements GlobalFilter, Ordered {
+
+	private static final Log log = LogFactory.getLog(WebClientWriteResponseFilter.class);
+
+	public static final int WRITE_RESPONSE_FILTER_ORDER = -1;
+
+	@Override
+	public int getOrder() {
+		return WRITE_RESPONSE_FILTER_ORDER;
+	}
+
+	@Override
+	public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+		// NOTICE: nothing in "pre" filter stage as CLIENT_RESPONSE_ATTR is not added
+		// until the WebHandler is run
+		return chain.filter(exchange).then(Mono.defer(() -> {
+			ClientResponse clientResponse = exchange.getAttribute(CLIENT_RESPONSE_ATTR);
+			if (clientResponse == null) {
+				return Mono.empty();
+			}
+			log.trace("WebClientWriteResponseFilter start");
+			ServerHttpResponse response = exchange.getResponse();
+
+			return response.writeWith(clientResponse.body(BodyExtractors.toDataBuffers())).log("webClient response");
+		}));
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+import java.net.URI;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.cloud.gateway.route.Route;
+import org.springframework.core.Ordered;
+import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_REQUEST_URL_ATTR;
+import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR;
+import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.containsEncodedQuery;
+
+import reactor.core.publisher.Mono;
+
+/**
+ * @author Spencer Gibb
+ */
+public class RouteToRequestUrlFilter implements GlobalFilter, Ordered {
+
+	private static final Log log = LogFactory.getLog(RouteToRequestUrlFilter.class);
+	public static final int ROUTE_TO_URL_FILTER_ORDER = 10000;
+
+	@Override
+	public int getOrder() {
+		return ROUTE_TO_URL_FILTER_ORDER;
+	}
+
+	@Override
+	public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+		Route route = exchange.getAttribute(GATEWAY_ROUTE_ATTR);
+		if (route == null) {
+			return chain.filter(exchange);
+		}
+		log.trace("RouteToRequestUrlFilter start");
+		URI uri = exchange.getRequest().getURI();
+		boolean encoded = containsEncodedQuery(uri);
+		URI requestUrl = UriComponentsBuilder.fromUri(uri)
+				.uri(route.getUri())
+				.build(encoded)
+				.toUri();
+		exchange.getAttributes().put(GATEWAY_REQUEST_URL_ATTR, requestUrl);
+		return chain.filter(exchange);
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+import org.junit.ClassRule;
+import org.junit.rules.TestRule;
+import org.junit.runner.Description;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
+import org.junit.runners.Suite.SuiteClasses;
+import org.junit.runners.model.Statement;
+import org.springframework.cloud.gateway.filter.RemoveHopByHopHeadersFilterTests;
+import org.springframework.cloud.gateway.filter.factory.AddRequestHeaderGatewayFilterFactoryTests;
+import org.springframework.cloud.gateway.filter.factory.AddRequestParameterGatewayFilterFactoryTests;
+import org.springframework.cloud.gateway.filter.factory.HystrixGatewayFilterFactoryTests;
+import org.springframework.cloud.gateway.filter.factory.PreserveHostHeaderGatewayFilterFactoryTests;
+import org.springframework.cloud.gateway.filter.factory.RedirectToGatewayFilterFactoryTests;
+import org.springframework.cloud.gateway.filter.factory.RemoveNonProxyHeadersGatewayFilterFactoryTests;
+import org.springframework.cloud.gateway.filter.factory.RemoveRequestHeaderGatewayFilterFactoryTests;
+import org.springframework.cloud.gateway.filter.factory.RemoveResponseHeaderGatewayFilterFactoryTests;
+import org.springframework.cloud.gateway.filter.factory.RequestRateLimiterGatewayFilterFactoryTests;
+import org.springframework.cloud.gateway.filter.factory.RewritePathGatewayFilterFactoryIntegrationTests;
+import org.springframework.cloud.gateway.filter.factory.RewritePathGatewayFilterFactoryTests;
+import org.springframework.cloud.gateway.filter.factory.SecureHeadersGatewayFilterFactoryTests;
+import org.springframework.cloud.gateway.filter.factory.SetPathGatewayFilterFactoryIntegrationTests;
+import org.springframework.cloud.gateway.filter.factory.SetPathGatewayFilterFactoryTests;
+import org.springframework.cloud.gateway.filter.factory.SetResponseGatewayFilterFactoryTests;
+import org.springframework.cloud.gateway.filter.factory.SetStatusGatewayFilterFactoryTests;
+import org.springframework.cloud.gateway.filter.ratelimit.PrincipalNameKeyResolverIntegrationTests;
+import org.springframework.cloud.gateway.filter.ratelimit.RedisRateLimiterTests;
+import org.springframework.cloud.gateway.handler.predicate.AfterRoutePredicateFactoryTests;
+import org.springframework.cloud.gateway.handler.predicate.BeforeRoutePredicateFactoryTests;
+import org.springframework.cloud.gateway.handler.predicate.BetweenRoutePredicateFactoryTests;
+import org.springframework.cloud.gateway.handler.predicate.HostRoutePredicateFactoryTests;
+import org.springframework.cloud.gateway.handler.predicate.MethodRoutePredicateFactoryTests;
+import org.springframework.cloud.gateway.handler.predicate.PathRoutePredicateFactoryTests;
+import org.springframework.cloud.gateway.route.RouteDefinitionRouteLocatorTests;
+import org.springframework.cloud.gateway.test.websocket.WebSocketIntegrationTests;
+
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assume.assumeThat;
+
+/**
+ * To run this suite in an IDE, set env var GATEWAY_ADHOC_ENABLED=true in test runner.
+ * @author Spencer Gibb
+ */
+@RunWith(Suite.class)
+@SuiteClasses({
+		WebfluxNotIncludedTests.class,
+		GatewayIntegrationTests.class,
+		FormIntegrationTests.class,
+		HttpStatusTests.class,
+		PostTests.class,
+		ForwardTests.class,
+		WebSocketIntegrationTests.class,
+		RemoveHopByHopHeadersFilterTests.class,
+		// FilterFactory Tests
+		RemoveNonProxyHeadersGatewayFilterFactoryTests.class,
+		RemoveResponseHeaderGatewayFilterFactoryTests.class,
+		HystrixGatewayFilterFactoryTests.class,
+		RewritePathGatewayFilterFactoryIntegrationTests.class,
+		RemoveRequestHeaderGatewayFilterFactoryTests.class,
+		SetPathGatewayFilterFactoryTests.class,
+		RewritePathGatewayFilterFactoryTests.class,
+		SetStatusGatewayFilterFactoryTests.class,
+		RedirectToGatewayFilterFactoryTests.class,
+		AddRequestHeaderGatewayFilterFactoryTests.class,
+		SecureHeadersGatewayFilterFactoryTests.class,
+		RequestRateLimiterGatewayFilterFactoryTests.class,
+		SetPathGatewayFilterFactoryIntegrationTests.class,
+		AddRequestParameterGatewayFilterFactoryTests.class,
+		SetResponseGatewayFilterFactoryTests.class,
+		PrincipalNameKeyResolverIntegrationTests.class,
+		RedisRateLimiterTests.class,
+		RouteDefinitionRouteLocatorTests.class,
+		PreserveHostHeaderGatewayFilterFactoryTests.class,
+		// PredicateFactory Tests
+		MethodRoutePredicateFactoryTests.class,
+		HostRoutePredicateFactoryTests.class,
+		AfterRoutePredicateFactoryTests.class,
+		PathRoutePredicateFactoryTests.class,
+		BetweenRoutePredicateFactoryTests.class,
+		BeforeRoutePredicateFactoryTests.class,
+
+})
+public class AdhocTestSuite {
+
+	@ClassRule
+	public static AdhocEnabled adhocEnabled = new AdhocEnabled();
+
+	static class AdhocEnabled implements TestRule {
+
+		@Override
+		public Statement apply(Statement base, Description description) {
+			assumeThat("Adhoc Tests ignored",
+					System.getenv("GATEWAY_ADHOC_ENABLED"),
+					is(equalTo("true")));
+
+			return base;
+		}
+	}
+}
+--------------------------------------------------------------------------------------------------------
+	static class AdhocEnabled implements TestRule {
+
+		@Override
+		public Statement apply(Statement base, Description description) {
+			assumeThat("Adhoc Tests ignored",
+					System.getenv("GATEWAY_ADHOC_ENABLED"),
+					is(equalTo("true")));
+
+			return base;
+		}
+	}
+--------------------------------------------------------------------------------------------------------
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Collections;
+import java.util.Map;
+
+import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest(webEnvironment = RANDOM_PORT)
+@DirtiesContext
+@SuppressWarnings("unchecked")
+public class ForwardTests {
+	@LocalServerPort
+	protected int port = 0;
+
+	protected WebTestClient client;
+
+	@Before
+	public void setup() {
+		String baseUri = "http://localhost:" + port;
+		this.client = WebTestClient.bindToServer()
+				.baseUrl(baseUri)
+				.build();
+	}
+
+	@Test
+	public void forwardWorks() {
+		this.client.get().uri("/localcontroller")
+				.header(HttpHeaders.HOST, "www.forward.org")
+				.exchange()
+				.expectStatus().isOk()
+				.expectBody().json("{\"from\":\"localcontroller\"}");
+	}
+
+	@EnableAutoConfiguration
+	@SpringBootConfiguration
+	@RestController
+	@Import(PermitAllSecurityConfiguration.class)
+	public static class TestConfig {
+
+		@RequestMapping("/httpbin/localcontroller")
+		public Map<String, String> localController() {
+			return Collections.singletonMap("from", "localcontroller");
+		}
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+	public static ZonedDateTime getZonedDateTime(Object value) {
+		ZonedDateTime dateTime;
+		if (value instanceof ZonedDateTime) {
+			dateTime = ZonedDateTime.class.cast(value);
+		} else {
+			dateTime = parseZonedDateTime(value.toString());
+		}
+		return dateTime;
+	}
+
+	public static ZonedDateTime parseZonedDateTime(String dateString) {
+		ZonedDateTime dateTime;
+		try {
+			long epoch = Long.parseLong(dateString);
+
+			dateTime = Instant.ofEpochMilli(epoch).atOffset(ZoneOffset.ofTotalSeconds(0))
+					.toZonedDateTime();
+		} catch (NumberFormatException e) {
+			// try ZonedDateTime instead
+			dateTime = ZonedDateTime.parse(dateString);
+		}
+
+		return dateTime;
+	}
+--------------------------------------------------------------------------------------------------------
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.cloud.gateway.handler.predicate.RoutePredicateFactory;
+
+/**
+ * @author Spencer Gibb
+ */
+public class RoutePredicateFactoryUtils {
+	private static final Log logger = LogFactory.getLog(RoutePredicateFactory.class);
+
+	public static void traceMatch(String prefix, Object desired, Object actual, boolean match) {
+		if (logger.isTraceEnabled()) {
+			String message = String.format("%s \"%s\" %s against value \"%s\"",
+					prefix, desired, match ? "matches" : "does not match", actual);
+			logger.trace(message);
+		}
+	}
+}
+--------------------------------------------------------------------------------------------------------
 import com.google.common.base.Optional;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
