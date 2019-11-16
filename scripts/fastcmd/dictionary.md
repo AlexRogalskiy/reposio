@@ -43565,6 +43565,34 @@ public class DomainMapperMojo extends AbstractMojo {
 		}
 	}
 --------------------------------------------------------------------------------------------------------
+import com.hantsylabs.restexample.springmvc.domain.User;
+import com.hantsylabs.restexample.springmvc.security.SecurityUtil;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.context.annotation.AdviceMode;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.domain.AuditorAware;
+import org.springframework.data.jpa.convert.threeten.Jsr310JpaConverters;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+
+/**
+ *
+ * @author hantsy
+ */
+@Configuration
+@EnableTransactionManagement(mode = AdviceMode.ASPECTJ)
+@EntityScan(basePackageClasses = {User.class, Jsr310JpaConverters.class})
+@EnableJpaAuditing(auditorAwareRef = "auditor")
+public class JpaConfig {
+
+    @Bean
+    public AuditorAware<User> auditor() {
+        return () -> SecurityUtil.currentUser();
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -64386,6 +64414,466 @@ public class BooleanSpec extends GatewayFilterSpec {
 			return createBooleanSpec();
 		}
 	}
+}
+--------------------------------------------------------------------------------------------------------
+    String outputDir = System.getProperty("io.springfox.staticdocs.outputDir");
+    String snippetsDir = System.getProperty("io.springfox.staticdocs.snippetsOutputDir");
+    String asciidocOutputDir = System.getProperty("generated.asciidoc.directory");
+	
+--------------------------------------------------------------------------------------------------------
+port com.hantsylabs.restexample.springmvc.repository.PostRepository;
+import org.jbehave.core.annotations.Given;
+import org.jbehave.core.annotations.Named;
+import org.jbehave.core.annotations.Then;
+import org.jbehave.core.annotations.When;
+import static org.junit.Assert.assertTrue;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+
+import org.springframework.http.ResponseEntity;
+
+public class PostSteps {
+
+    PostRepository postRepository;
+
+    TestRestTemplate restTemplate;
+
+    String baseUrl;
+
+    public PostSteps(PostRepository postRepository,
+            TestRestTemplate restTemplate,
+            String baseUrl) {
+        this.postRepository = postRepository;
+        this.restTemplate = restTemplate;
+        this.baseUrl = baseUrl;
+    }
+
+    ResponseEntity<String> reponseEntity;
+
+    @Given("post title is $title and content is $content")
+    public void savePost(@Named("title") String title, @Named("content") String content) {
+        postRepository.save(new Post(title, content));
+    }
+
+    @When("GET $path")
+    public void getPost(@Named("path") String path) {
+        reponseEntity = restTemplate.getForEntity(baseUrl + path, String.class);
+    }
+
+    @Then("response status is $code")
+    public void responseCode(@Named("code") int code) {
+        assertTrue(reponseEntity.getStatusCode().value() == code);
+    }
+
+    @Then("response body contains $body")
+    public void responseBody(@Named("body") String body) {
+        assertTrue(reponseEntity.getBody().contains(body));
+    }
+
+}
+
+import com.hantsylabs.restexample.springmvc.repository.PostRepository;
+import com.hantsylabs.restexample.springmvc.test.jbehave.AcceptanceTest;
+import com.hantsylabs.restexample.springmvc.test.jbehave.AbstractSpringJBehaveStory;
+import com.hantsylabs.restexample.springmvc.test.jbehave.steps.PostSteps;
+import javax.inject.Inject;
+import org.junit.Before;
+import org.junit.runner.RunWith;
+import org.springframework.boot.context.embedded.LocalServerPort;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.test.web.client.TestRestTemplate.HttpClientOption;
+
+import org.springframework.test.context.junit4.SpringRunner;
+
+@RunWith(SpringRunner.class)
+@AcceptanceTest
+public class PostStory extends AbstractSpringJBehaveStory {
+
+    @Inject
+    PostRepository postRepository;
+
+    TestRestTemplate restTemplate;
+
+    String baseUrl;
+
+    @LocalServerPort
+    int port;
+
+    @Before
+    public void setup() {
+        clearData();
+        initData();
+        this.baseUrl = "http://localhost:" + port;
+        this.restTemplate = new TestRestTemplate("admin", "test123", new HttpClientOption[]{});
+    }
+
+    @Override
+    public Object[] getSteps() {
+        return new Object[]{new PostSteps(postRepository, restTemplate, baseUrl)};
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+import com.hantsylabs.restexample.springmvc.model.PostForm;
+import com.hantsylabs.restexample.springmvc.repository.PostRepository;
+import com.hantsylabs.restexample.springmvc.test.WebIntegrationTestBase;
+import com.jayway.restassured.RestAssured;
+import com.jayway.restassured.http.ContentType;
+import org.apache.http.HttpStatus;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.jayway.restassured.response.Response;
+import javax.inject.Inject;
+import static org.hamcrest.CoreMatchers.containsString;
+import static com.jayway.restassured.RestAssured.given;
+import lombok.extern.slf4j.Slf4j;
+import static org.hamcrest.CoreMatchers.is;
+import org.junit.runner.RunWith;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.test.context.junit4.SpringRunner;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+@Slf4j
+public class RestAssuredApplicationTest extends WebIntegrationTestBase {
+
+
+    @Before
+    public void beforeTest() {
+        super.setup();
+        RestAssured.port = port;
+    }
+
+    @Test
+    public void testDeletePostNotExisted() {
+        String location = "/api/posts/1000";
+
+        given()
+                .auth().basic(USER_NAME, PASSWORD)
+                .contentType(ContentType.JSON)
+                .when()
+                .delete(location)
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.SC_NOT_FOUND);
+    }
+
+    @Test
+    public void testGetPostNotExisted() {
+        String location = "/api/posts/1000";
+
+        given()
+                .auth().basic(USER_NAME, PASSWORD)
+                .contentType(ContentType.JSON)
+                .when()
+                .get(location)
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.SC_NOT_FOUND);
+    }
+
+    @Test
+    public void testPostFormInValid() {
+        PostForm form = new PostForm();
+
+        given()
+                .auth().basic(USER_NAME, PASSWORD)
+                .body(form)
+                .contentType(ContentType.JSON)
+                .when()
+                .post("/api/posts")
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @Test
+    public void testPostCRUD() {
+        PostForm form = new PostForm();
+        form.setTitle("test title");
+        form.setContent("test content");
+
+        Response response = given()
+                .auth().basic(USER_NAME, PASSWORD)
+                .body(form)
+                .contentType(ContentType.JSON)
+                .when()
+                .post("/api/posts")
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.SC_CREATED)
+                .and()
+                .header("Location", containsString("/api/posts/"))
+                .extract().response();
+
+        String location = response.header("Location");
+
+        log.debug("header location value @" + location);
+
+        given().auth().basic(USER_NAME, PASSWORD)
+                .contentType(ContentType.JSON)
+                .when()
+                .get(location)
+                .then()
+                .assertThat()
+                .body("title", is("test title"))
+                .body("content", is("test content"));
+
+        PostForm updateForm = new PostForm();
+        updateForm.setTitle("test udpate title");
+        updateForm.setContent("test update content");
+
+        given()
+                .auth().basic(USER_NAME, PASSWORD)
+                .body(updateForm)
+                .contentType(ContentType.JSON)
+                .when()
+                .put(location)
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.SC_NO_CONTENT);
+
+        given().auth().basic(USER_NAME, PASSWORD)
+                .contentType(ContentType.JSON)
+                .when()
+                .get(location)
+                .then()
+                .assertThat()
+                .body("title", is("test udpate title"))
+                .body("content", is("test update content"));
+
+        given()
+                .auth().basic(USER_NAME, PASSWORD)
+                .contentType(ContentType.JSON)
+                .when()
+                .delete(location)
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.SC_NO_CONTENT);
+
+        given().auth().basic(USER_NAME, PASSWORD)
+                .contentType(ContentType.JSON)
+                .when()
+                .get(location)
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.SC_NOT_FOUND);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+import com.google.common.collect.Lists;
+import com.hantsylabs.restexample.springmvc.domain.User;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import springfox.bean.validators.configuration.BeanValidatorPluginsConfiguration;
+import springfox.documentation.builders.ApiInfoBuilder;
+import springfox.documentation.builders.AuthorizationScopeBuilder;
+import springfox.documentation.builders.PathSelectors;
+import springfox.documentation.service.ApiInfo;
+import springfox.documentation.service.AuthorizationScope;
+import springfox.documentation.service.BasicAuth;
+import springfox.documentation.service.Contact;
+import springfox.documentation.service.SecurityReference;
+import springfox.documentation.spi.DocumentationType;
+import springfox.documentation.spi.service.contexts.SecurityContext;
+import springfox.documentation.spring.web.plugins.Docket;
+import springfox.documentation.swagger2.annotations.EnableSwagger2;
+
+@Configuration
+@EnableSwagger2
+//@Profile(value = {"dev", "test", "staging"})// Loads the spring beans required by the framework
+@Import(BeanValidatorPluginsConfiguration.class)
+public class SwaggerConfig {
+
+    @Bean
+    public Docket userApi() {
+        AuthorizationScope[] authScopes = new AuthorizationScope[1];
+        authScopes[0] = new AuthorizationScopeBuilder()
+                .scope("read")
+                .description("read access")
+                .build();
+        SecurityReference securityReference = SecurityReference.builder()
+                .reference("test")
+                .scopes(authScopes)
+                .build();
+        ArrayList<SecurityContext> securityContexts = Lists.newArrayList(
+                SecurityContext.builder()
+                        .securityReferences(Lists.newArrayList(securityReference))
+                        .build()
+        );
+        return new Docket(DocumentationType.SWAGGER_2)
+                .directModelSubstitute(LocalDateTime.class, String.class)
+                .ignoredParameterTypes(User.class)
+                .securitySchemes(Lists.newArrayList(new BasicAuth("test")))
+                .securityContexts(securityContexts)
+                .apiInfo(apiInfo())
+                .select()
+                .paths(apiPaths())
+                .build();
+    }
+
+    private Predicate<String> apiPaths() {
+        return Predicates.or(PathSelectors.regex("/api/.*"));
+    }
+
+    //        private Predicate<String> userOnlyEndpoints() {
+    //            return (String input) -> input.contains("user");
+    //        }
+    private ApiInfo apiInfo() {
+        return new ApiInfoBuilder()
+                .title("AngularJS Spring MVC Example API")
+                .description("The online reference documentation for developers")
+                .termsOfServiceUrl("http://hantsy.blogspot.com")
+                .contact(new Contact("Hantsy Bai", "http://hantsy.blogspot.com", "hantsy@gmail.com"))
+                .license("Apache License Version 2.0")
+                .licenseUrl("https://github.com/hantsy/angularjs-springmvc-sample-boot/blob/master/LICENSE")
+                .version("2.0")
+                .build();
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+@API(status = EXPERIMENTAL, since = "5.3")
+public enum ExecutionMode {
+
+	/**
+	 * Force execution in same thread as the parent node.
+	 *
+	 * @see #CONCURRENT
+	 */
+	SAME_THREAD,
+
+	/**
+	 * Allow concurrent execution with any other node.
+	 *
+	 * @see #SAME_THREAD
+	 */
+	CONCURRENT
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Value;
+
+import java.lang.annotation.*;
+
+@Target({ ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER,
+        ElementType.ANNOTATION_TYPE })
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Value("${grpc.port !=0 ? ${grpc.port}:${local.grpc.port}}")
+public @interface LocalRunningGrpcPort {
+}
+--------------------------------------------------------------------------------------------------------
+        Collection<ServerInterceptor> globalInterceptors = getBeanNamesByTypeWithAnnotation(GRpcGlobalInterceptor.class, ServerInterceptor.class)
+                .map(name -> applicationContext.getBeanFactory().getBean(name, ServerInterceptor.class))
+                .collect(Collectors.toList());
+				
+                    GRpcService gRpcServiceAnn = applicationContext.findAnnotationOnBean(name, GRpcService.class);
+                    serviceDefinition = bindInterceptors(serviceDefinition, gRpcServiceAnn, globalInterceptors);
+					
+					        Stream<? extends ServerInterceptor> privateInterceptors = Stream.of(gRpcService.interceptors())
+                .map(interceptorClass -> {
+                    try {
+                        return 0 < applicationContext.getBeanNamesForType(interceptorClass).length ?
+                                applicationContext.getBean(interceptorClass) :
+                                interceptorClass.newInstance();
+                    } catch (Exception e) {
+                        throw new BeanCreationException("Failed to create interceptor instance.", e);
+                    }
+                });
+
+        List<ServerInterceptor> interceptors = Stream.concat(
+                gRpcService.applyGlobalInterceptors() ? globalInterceptors.stream() : Stream.empty(),
+                privateInterceptors)
+                .distinct()
+                .sorted(serverInterceptorOrderComparator())
+                .collect(Collectors.toList());
+        return ServerInterceptors.intercept(serviceDefinition, interceptors);
+--------------------------------------------------------------------------------------------------------
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+import org.springframework.stereotype.Component;
+
+/**
+ * Created by jamessmith on 9/7/16.
+ */
+@Target({ElementType.TYPE,ElementType.METHOD })
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Component
+public @interface GRpcGlobalInterceptor {
+}
+--------------------------------------------------------------------------------------------------------
+@AutoConfigureOrder
+@ConditionalOnBean(annotation = GRpcService.class)
+@EnableConfigurationProperties(GRpcServerProperties.class)
+public class GRpcAutoConfiguration {
+
+    @Autowired
+    private ApplicationContext applicationContext;
+
+    @Autowired
+    private GRpcServerProperties grpcServerProperties;
+
+
+
+    @Bean
+    @ConditionalOnProperty(value = "grpc.enabled", havingValue = "true", matchIfMissing = true)
+    public GRpcServerRunner grpcServerRunner(GRpcServerBuilderConfigurer configurer) {
+        return new GRpcServerRunner(configurer, ServerBuilder.forPort(grpcServerProperties.getPort()));
+    }
+
+    @Bean
+    @ConditionalOnExpression("#{environment.getProperty('grpc.inProcessServerName','')!=''}")
+    public GRpcServerRunner grpcInprocessServerRunner(GRpcServerBuilderConfigurer configurer){
+        return new GRpcServerRunner(configurer, InProcessServerBuilder.forName(grpcServerProperties.getInProcessServerName()));
+    }
+
+
+
+    @Bean
+    public HealthStatusManager healthStatusManager() {
+        return new HealthStatusManager();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(  GRpcServerBuilderConfigurer.class)
+    public GRpcServerBuilderConfigurer serverBuilderConfigurer(){
+        return new GRpcServerBuilderConfigurer();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+import io.grpc.ServerInterceptor;
+import org.springframework.stereotype.Service;
+
+/**
+ *
+ * Marks the annotated class to be registered as grpc-service bean;
+ * @author  Furer Alexander
+ * @since 0.0.1
+ */
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Service
+public @interface GRpcService {
+    Class<? extends ServerInterceptor>[] interceptors() default {};
+    boolean applyGlobalInterceptors() default true;
 }
 --------------------------------------------------------------------------------------------------------
 	/**

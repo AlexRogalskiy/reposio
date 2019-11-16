@@ -5014,7 +5014,1686 @@ public class ForwardTests {
 			return Collections.singletonMap("from", "localcontroller");
 		}
 	}
+}
+--------------------------------------------------------------------------------------------------------
+@Retention(RetentionPolicy.RUNTIME)
+@JacksonAnnotationsInside
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({"name", "id", "dateCreated"})
+public @interface CustomAnnotation {
+}
+--------------------------------------------------------------------------------------------------------
+import com.hantsylabs.restexample.springmvc.domain.User;
+import com.hantsylabs.restexample.springmvc.domain.User_;
+import java.util.ArrayList;
+import java.util.List;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.util.StringUtils;
 
+/**
+ *
+ * @author Hantsy Bai<hantsy@gmail.com>
+ *
+ */
+public class UserSpecifications {
+
+    private UserSpecifications() {}
+
+    public static Specification<User> filterUsersByKeyword(
+            final String keyword,//
+            final String role //
+    ) {
+
+        return (Root<User> root, CriteriaQuery<?> query, CriteriaBuilder cb) -> {
+
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (StringUtils.hasText(keyword)) {
+                predicates.add(
+                        cb.or(
+                                cb.like(root.get(User_.name), "%" + keyword + "%"),
+                                cb.like(root.get(User_.username), "%" + keyword + "%")
+                        ));
+            }
+
+            if (StringUtils.hasText(role) && !"ALL".equals(role)) {
+                predicates.add(cb.equal(root.get(User_.role), role));
+//                ListJoin<User_, String> roleJoin = root.join(User_.roles);
+//                predicates.add(cb.equal(roleJoin, role));
+            }
+
+//            if (StringUtils.hasText(locked)) {
+//                predicates.add(cb.equal(root.get(User_.locked), Boolean.valueOf(locked)));
+//            }
+            return cb.and(predicates.toArray(new Predicate[predicates.size()]));
+        };
+    }
+}
+
+import com.hantsylabs.restexample.springmvc.domain.Post;
+import com.hantsylabs.restexample.springmvc.domain.Post_;
+import java.util.ArrayList;
+import java.util.List;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.util.StringUtils;
+
+/**
+ *
+ * @author Hantsy Bai<hantsy@gmail.com>
+ *
+ */
+public class PostSpecifications {
+
+    private PostSpecifications() {}
+
+    public static Specification<Post> filterByKeywordAndStatus(
+            final String keyword,//
+            final Post.Status status) {
+        return (Root<Post> root, CriteriaQuery<?> query, CriteriaBuilder cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (StringUtils.hasText(keyword)) {
+                predicates.add(
+                        cb.or(cb.like(root.get(Post_.title), "%" + keyword + "%"),
+                                cb.like(root.get(Post_.content), "%" + keyword + "%"))
+                );
+            }
+
+            if (status != null) {
+                predicates.add(cb.equal(root.get(Post_.status), status));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[predicates.size()]));
+        };
+    }
+}
+--------------------------------------------------------------------------------------------------------
+#!/bin/bash
+
+# The environment variables are already set up by the Dockerfile
+java -Djava.security.egd=file:/dev/urandom -Dspring.profiles.active=docker -jar ${APP_JAR_NAME}-${APP_JAR_VERSION}.jar
+--------------------------------------------------------------------------------------------------------
+    @RequestMapping(method = RequestMethod.POST)
+    public String insertData(ModelMap model, 
+                             @ModelAttribute("insertRecord") @Valid Record record,
+                             BindingResult result) {
+        if (!result.hasErrors()) {
+            repository.save(record);
+        }
+        return home(model);
+    }
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
+import org.springframework.cloud.client.loadbalancer.LoadBalanced;
+import org.springframework.cloud.security.oauth2.client.ResourceServerTokenRelayAutoConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.oauth2.client.OAuth2ClientContext;
+import org.springframework.security.oauth2.client.OAuth2RestTemplate;
+import org.springframework.security.oauth2.client.resource.OAuth2ProtectedResourceDetails;
+import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+
+/**
+ * Configuration that sets up the OAuth2 client operation for making calls to
+ * the comments-webservice.<br>
+ * <br>
+ * 
+ * We add a {@link HandlerInterceptor} to add the JWT token relayed by the Zuul
+ * gateway into the OAuth2RestTemplate. This needs to be added manually to the
+ * WebMvc intercepter chain because of an existing bug in Spring boot 1.5.3.
+ * 
+ * @author anilallewar
+ *
+ */
+@Configuration
+@ImportAutoConfiguration(classes = { ResourceServerTokenRelayAutoConfiguration.class })
+public class OAuthClientConfiguration extends WebMvcConfigurerAdapter {
+
+	/**
+	 * Issues with JWT token not getting relayed by the resource server
+	 * {@linkplain https://stackoverflow.com/questions/43566515/spring-security-oauth2-jwt-token-relay-issue}
+	 */
+	@Autowired
+	@Qualifier("tokenRelayRequestInterceptor")
+	HandlerInterceptor tokenRelayHandlerInterceptor;
+
+	/**
+	 * RestTempate that relays the OAuth2 token passed to the task webservice.
+	 * 
+	 * @param oauth2ClientContext
+	 * @return
+	 */
+	@Bean
+	@LoadBalanced
+	public OAuth2RestTemplate restTemplate(OAuth2ProtectedResourceDetails resource, OAuth2ClientContext context) {
+		return new OAuth2RestTemplate(resource, context);
+	}
+
+	@Override
+	public void addInterceptors(InterceptorRegistry registry) {
+		registry.addInterceptor(this.tokenRelayHandlerInterceptor);
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+/**
+ * Inner class to perform the de-serialization of the comments array
+ * 
+ * @author anilallewar
+ *
+ */
+class CommentsCollectionDeserializer extends JsonDeserializer<CommentCollectionResource> {
+	@Override
+	public CommentCollectionResource deserialize(JsonParser jp, DeserializationContext ctxt)
+			throws IOException, JsonProcessingException {
+		CommentCollectionResource commentArrayResource = new CommentCollectionResource();
+		CommentResource commentResource = null;
+
+		JsonNode jsonNode = jp.readValueAsTree();
+
+		for (JsonNode childNode : jsonNode) {
+			if (childNode.has(CommentResource.JP_TASKID)) {
+				commentResource = new CommentResource();
+				commentResource.setTaskId(childNode.get(CommentResource.JP_TASKID).asText());
+				commentResource.setComment(childNode.get(CommentResource.JP_COMMENT).asText());
+				commentResource.setPosted(new Date(childNode.get(CommentResource.JP_POSTED).asLong()));
+
+				commentArrayResource.addComment(commentResource);
+			}
+		}
+		return commentArrayResource;
+
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+import org.springframework.security.test.context.support.WithSecurityContext;
+
+/**
+ * Annotation to help us setup our own security context
+ * @author anilallewar
+ *
+ */
+@Retention(RUNTIME)
+@Target(METHOD)
+@WithSecurityContext(factory = WithOAuth2MockAccessTokenSecurityContextFactory.class)
+public @interface WithMockOAuth2Token {
+
+	// Default OAuth2 scope
+	String[] scopes() default { "openid" };
+
+	// Default roles
+	String[] authorities() default { "ROLE_ADMIN", "ROLE_USER" };
+
+	// Default user name
+	String userName() default "anil";
+
+	// Default password
+	String password() default "password";
+	
+	// Default redirect Url
+	String redirectUrl() default "http://localhost:8765";
+	
+	// Default client id
+	String clientId() default "acme";
+}
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mock.web.MockHttpSession;
+import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.oauth2.client.OAuth2ClientContext;
+import org.springframework.security.oauth2.common.DefaultOAuth2AccessToken;
+import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.security.oauth2.provider.OAuth2Request;
+import org.springframework.security.test.context.support.WithSecurityContextFactory;
+
+/**
+ * Security context factory that will help us in mocking up the OAuth2 workflow
+ * so that we can embed an mock access token in the security context.<br>
+ * <br>
+ * 
+ * @author anilallewar
+ *
+ */
+public class WithOAuth2MockAccessTokenSecurityContextFactory
+		implements WithSecurityContextFactory<WithMockOAuth2Token> {
+
+	// Default OAuth2 access token
+	private static final String TEST_ACCESS_TOKEN = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0OTgwMDA0MDEsInVzZXJfbmFtZSI6ImFuaWwiLCJhdXRob3JpdGllcyI6WyJST0xFX0FETUlOIiwiUk9MRV9VU0VSIl0sImp0aSI6IjkzY2Y3Y2U0LWY2ZDgtNGJkNi04NGE5LWQ4NDViYmEwZGY2ZCIsImNsaWVudF9pZCI6ImFjbWUiLCJzY29wZSI6WyJvcGVuaWQiXX0.NdAHIna-8GCRGmvaDqO5iOGy3gkjaVaAZqXkDvpjKiQqSVrM_1j1xvPBwuy2iWjyD_crkw_zehE_jKfLpcLxw2JLJZPOtLaUeCYs6euUvboOAVKpmg62mi81PgV3tpEBaqSi5MmATtVcerXFf64LgS1ZPnsw8WIogGlqkhziSzOR4yH2tAzY0aIheL7AWxAgxfBe6I7Lej9ld1Fx6xHodIz8TzmSD-wlZ18e40WBpd_0wc7M8VE_uK18f39btM2VS02FxVm9fdxxwwDXzDT-ODJOs0L_NoKHmZx-JF72bjNUmac81ZcH4fU-fVdme5b-oJowFPgfhZZZ4_nKFv71Ww";
+
+	@Autowired
+	MockHttpSession session;
+
+	@Override
+	public SecurityContext createSecurityContext(WithMockOAuth2Token withMockOAuth2Token) {
+		
+		SecurityContext context = SecurityContextHolder.createEmptyContext();
+		Authentication authentication = this.getOauthTestAuthentication(withMockOAuth2Token);
+		context.setAuthentication(authentication);
+
+		this.session.setAttribute("scopedTarget.oauth2ClientContext", this.getOauth2ClientContext());
+		return context;
+	}
+
+	/**
+	 * Create the authentication object that we need to setup in context
+	 * 
+	 * @param withMockOAuth2Token
+	 * @return
+	 */
+	private Authentication getOauthTestAuthentication(WithMockOAuth2Token withMockOAuth2Token) {
+		return new OAuth2Authentication(getOauth2Request(withMockOAuth2Token), getAuthentication(withMockOAuth2Token));
+	}
+
+	/**
+	 * Mock OAuth2Request
+	 * 
+	 * @param withMockOAuth2Token
+	 * @return
+	 */
+	private OAuth2Request getOauth2Request(WithMockOAuth2Token withMockOAuth2Token) {
+		String clientId = withMockOAuth2Token.clientId();
+		Map<String, String> requestParameters = Collections.emptyMap();
+		boolean approved = true;
+		String redirectUrl = withMockOAuth2Token.redirectUrl();
+		Set<String> responseTypes = Collections.emptySet();
+		Set<String> scopes = new HashSet<>(Arrays.asList(withMockOAuth2Token.scopes()));
+		Set<String> resourceIds = Collections.emptySet();
+		Map<String, Serializable> extensionProperties = Collections.emptyMap();
+		List<GrantedAuthority> authorities = AuthorityUtils.createAuthorityList(withMockOAuth2Token.authorities());
+
+		OAuth2Request oAuth2Request = new OAuth2Request(requestParameters, clientId, authorities, approved, scopes,
+				resourceIds, redirectUrl, responseTypes, extensionProperties);
+
+		return oAuth2Request;
+	}
+
+	/**
+	 * Provide the mock user information to be used
+	 * 
+	 * @param withMockOAuth2Token
+	 * @return
+	 */
+	private Authentication getAuthentication(WithMockOAuth2Token withMockOAuth2Token) {
+		List<GrantedAuthority> authorities = AuthorityUtils.createAuthorityList(withMockOAuth2Token.authorities());
+
+		User userPrincipal = new User(withMockOAuth2Token.userName(), withMockOAuth2Token.password(), true, true, true,
+				true, authorities);
+
+		HashMap<String, String> details = new HashMap<String, String>();
+		details.put("user_name", withMockOAuth2Token.userName());
+		details.put("email", "anilallewar@yahoo.co.in");
+		details.put("name", "Anil Allewar");
+
+		TestingAuthenticationToken token = new TestingAuthenticationToken(userPrincipal, null, authorities);
+		token.setAuthenticated(true);
+		token.setDetails(details);
+
+		return token;
+	}
+
+	/**
+	 * Create the mock {@link OAuth2ClientContext} object that will be injected
+	 * into the session associated with the request.<br>
+	 * <br>
+	 * 
+	 * Without this object in the session, Spring security will attempt to make
+	 * a request to obtain the token if the controller object attempts to use it
+	 * (as in our case)
+	 * 
+	 * @return
+	 */
+	private OAuth2ClientContext getOauth2ClientContext() {
+		OAuth2ClientContext mockClient = mock(OAuth2ClientContext.class);
+		when(mockClient.getAccessToken()).thenReturn(new DefaultOAuth2AccessToken(TEST_ACCESS_TOKEN));
+
+		return mockClient;
+	}
+}
+--------------------------------------------------------------------------------------------------------
+mport org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.cloud.contract.stubrunner.spring.AutoConfigureStubRunner;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.junit4.SpringRunner;
+
+import com.anilallewar.microservices.task.apis.CommentsService;
+import com.anilallewar.microservices.task.model.CommentCollectionResource;
+import com.anilallewar.microservices.task.oauth2.config.OAuth2ClientTestConfiguration;
+import com.anilallewar.microservices.task.oauth2.security.WithMockOAuth2Token;
+
+/**
+ * @author anilallewar
+ *
+ */
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = { TaskApplication.class }, webEnvironment = WebEnvironment.MOCK, properties = {
+		"spring.cloud.discovery.enabled=false", "spring.cloud.config.enabled=false",
+		"stubrunner.idsToServiceIds.basic-comments-webservice-stubs=comments-webservice",
+		"spring.zipkin.enabled=false" })
+@Import(OAuth2ClientTestConfiguration.class)
+@AutoConfigureStubRunner(ids = { "anilallewar:basic-comments-webservice-stubs:+:stubs:9083" }, workOffline = true)
+@DirtiesContext
+public class CommentsServiceTests {
+
+	@Autowired
+	private CommentsService commentsService;
+
+	private static final String TEST_TASK_ID = "task11";
+	private static final String REQUEST_TASK_ID = "task12";
+
+	/**
+	 * @throws java.lang.Exception
+	 */
+	@Before
+	public void setUp() throws Exception {
+	}
+
+	/**
+	 * @throws java.lang.Exception
+	 */
+	@After
+	public void tearDown() throws Exception {
+	}
+
+	@Test
+	@WithMockOAuth2Token(userName = "dave")
+	public void testGetCommentsForTask() {
+		CommentCollectionResource comments = this.commentsService.getCommentsForTask(REQUEST_TASK_ID);
+
+		Assert.assertEquals(2, comments.getTaskComments().size());
+		Assert.assertTrue(comments.getTaskComments().get(0).getTaskId().equals(TEST_TASK_ID));
+	}
+}
+
+https://www.programcreek.com/java-api-examples/index.php?project_name=anilallewar%2Fmicroservices-basics-spring-boot#
+--------------------------------------------------------------------------------------------------------
+import com.shawn.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
+import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
+import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
+import org.springframework.security.oauth2.provider.token.DefaultTokenServices;
+import org.springframework.security.oauth2.provider.token.TokenStore;
+import org.springframework.security.oauth2.provider.token.store.InMemoryTokenStore;
+
+/**
+ * @author Xiaoyue Xiao
+ */
+@Configuration
+@EnableAuthorizationServer
+public class AuthorizationServerConfiguration extends AuthorizationServerConfigurerAdapter {
+
+    @Autowired
+    private TokenStore tokenStore;
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private UserService userService;
+
+    @Override
+    public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
+        clients
+            .inMemory()
+                .withClient("client")
+                    .authorizedGrantTypes("password", "refresh_token")
+                    .scopes("read", "write")
+                    .secret("fucksecurity");
+    }
+
+    @Override
+    public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+        endpoints
+            .tokenStore(tokenStore)
+            .authenticationManager(authenticationManager)
+            .userDetailsService(userService);
+    }
+
+    @Bean
+    public TokenStore tokenStore() {
+        return new InMemoryTokenStore();
+    }
+
+    @Bean
+    @Primary
+    public DefaultTokenServices tokenServices() {
+        DefaultTokenServices tokenServices = new DefaultTokenServices();
+        tokenServices.setSupportRefreshToken(true); // support refresh token
+        tokenServices.setTokenStore(tokenStore); // use in-memory token store
+        return tokenServices;
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(book.getId())
+                .toUri();
+--------------------------------------------------------------------------------------------------------
+        <!-- Spring Security Oauth2 -->
+        <dependency>
+            <groupId>org.springframework.security.oauth</groupId>
+            <artifactId>spring-security-oauth2</artifactId>
+        </dependency>
+--------------------------------------------------------------------------------------------------------
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.cloud.config.server.EnableConfigServer;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+@EnableAutoConfiguration
+@EnableDiscoveryClient
+@EnableConfigServer
+public class ConfigServiceApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(ConfigServiceApplication.class, args);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+#!/usr/bin/env sh
+set -x
+
+function setup() {
+    mkdir -p $(pwd -P)/integration-test/aws-volume
+    docker run --rm -ti -v $(pwd -P)/integration-test/aws-volume:/root \
+      --env AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+      --env AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+      --env PROJECT_NAME=$PROJECT_NAME \
+      --env EC2_INSTANCE_TYPE=$EC2_INSTANCE_TYPE \
+      --name=aws kbastani/docker-run-ec2 \
+      sh ./aws-create-instance.sh
+}
+
+function tearDown() {
+    docker run --rm -ti -v $(pwd -P)/integration-test/aws-volume:/root \
+      --env AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+      --env AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+      --env PROJECT_NAME=$PROJECT_NAME \
+      --name=aws kbastani/docker-run-ec2 \
+      sh ./aws-delete-instance.sh
+}
+
+function run() {
+    docker run --rm -ti -v $(pwd -P)/integration-test/aws-volume:/root \
+      --env AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+      --env AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+      --env PROJECT_NAME=$PROJECT_NAME \
+      --env DOCKER_COMMAND="$1" \
+      --name=aws kbastani/docker-run-ec2 \
+      sh ./ssh-docker-run.sh
+
+    # Continue until the health check connection is ready
+    if [ $2 ]; then
+        while [ "$HEALTH_CHECK_READY" = "" ]; do
+          echo "Creating container..."
+          HEALTH_CHECK_READY=$(curl -s "$PUBLIC_IP:$2/$3"; echo);
+          sleep 1
+        done
+    fi
+}
+
+function health_check() {
+    HEALTH_CHECK_READY=
+    while [ "$HEALTH_CHECK_READY" = "" ]; do
+      echo "Creating container..."
+      HEALTH_CHECK_READY=$(curl -s "$PUBLIC_IP:$1/$2"; echo);
+      sleep 1
+    done
+}
+
+function compose() {
+    scp -i $INSTALL_PATH/aws-volume/$PROJECT_NAME.pem -o StrictHostKeyChecking=no $INSTALL_PATH/docker-compose.yml ec2-user@$PUBLIC_IP:/home/ec2-user
+
+    # Run a docker compose command
+    ssh -tt -i $INSTALL_PATH/aws-volume/$PROJECT_NAME.pem -o StrictHostKeyChecking=no ec2-user@$PUBLIC_IP "docker-compose $1"
+}
+
+# Create the EC2 instance
+setup
+
+# Export EC2 public IP
+export PUBLIC_IP="$(cat $(pwd -P)/integration-test/aws-volume/public_ip | sed 's/\( -\)//1')"
+
+compose "up -d"
+
+declare -a ports=("7474" "8761/health" "8888/admin/health")
+# Do health checks on compose services
+for i in "${ports[@]}"
+do
+   health_check "$i"
+done
+
+
+
+#!/usr/bin/env sh
+set -x
+
+function tearDown() {
+    docker run --rm -ti -v $(pwd -P)/integration-test/aws-volume:/root \
+      --env AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+      --env AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+      --env PROJECT_NAME=$PROJECT_NAME \
+      --name=aws kbastani/docker-run-ec2 \
+      sh ./aws-delete-instance.sh
+}
+
+# Export EC2 public IP
+export PUBLIC_IP="$(cat $(pwd -P)/integration-test/aws-volume/public_ip | sed 's/\( -\)//1')"
+
+set -e
+
+export SPRING_NEO4J_HOST=$PUBLIC_IP
+export SPRING_RABBITMQ_HOST=$PUBLIC_IP
+export EUREKA_CLIENT_SERVICEURL_DEFAULTZONE="http://$PUBLIC_IP:8761/eureka/"
+export SPRING_CLOUD_CONFIG_URI="http://$PUBLIC_IP:8888"
+
+# Run tests and tear down
+mvn clean install || tearDown || die "'mvn clean install' failed" 1
+
+tearDown
+--------------------------------------------------------------------------------------------------------
+import org.neo4j.ogm.annotation.*;
+
+/**
+ * This domain class is a Neo4j relationship indicating a directed follows connection between two users.
+ *
+ * @author kbastani
+ */
+@RelationshipEntity(type = "FOLLOWS")
+public class Follows {
+
+    @GraphId
+    private Long relationshipId;
+    @StartNode
+    private User userA;
+    @EndNode
+    private User userB;
+
+    public Follows(User userA, User userB) {
+        this.userA = userA;
+        this.userB = userB;
+    }
+
+    public Follows() {
+    }
+
+    public Long getRelationshipId() {
+        return relationshipId;
+    }
+
+    public void setRelationshipId(Long relationshipId) {
+        this.relationshipId = relationshipId;
+    }
+
+    public User getUserA() {
+        return userA;
+    }
+
+    public void setUserA(User userA) {
+        this.userA = userA;
+    }
+
+    public User getUserB() {
+        return userB;
+    }
+
+    public void setUserB(User userB) {
+        this.userB = userB;
+    }
+
+    @Override
+    public String toString() {
+        return "Follows{" +
+                "relationshipId=" + relationshipId +
+                ", userA=" + userA +
+                ", userB=" + userB +
+                '}';
+    }
+}
+
+
+
+https://www.programcreek.com/java-api-examples/index.php?project_name=kbastani%2Fspring-boot-graph-processing-example#
+--------------------------------------------------------------------------------------------------------
+import org.kbastani.twitter.FollowsRepository;
+import org.kbastani.twitter.UserRepository;
+import org.neo4j.ogm.session.SessionFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.neo4j.config.Neo4jConfiguration;
+import org.springframework.data.neo4j.repository.config.EnableNeo4jRepositories;
+import org.springframework.data.neo4j.server.Neo4jServer;
+import org.springframework.data.neo4j.server.RemoteServer;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+
+/**
+ * Manages the configuration for a Neo4j graph database server
+ *
+ * @author Kenny Bastani
+ */
+@EnableNeo4jRepositories(basePackageClasses = {FollowsRepository.class, UserRepository.class})
+@EnableTransactionManagement
+@Configuration
+public class GraphConfiguration extends Neo4jConfiguration {
+
+    @Value("${spring.neo4j.host}")
+    private String host;
+
+    @Value("${spring.neo4j.port}")
+    private String port;
+
+    @Bean
+    public Neo4jServer neo4jServer() {
+        return new RemoteServer(String.format("http://%s:%s", host, port));
+    }
+
+    @Bean
+    public SessionFactory getSessionFactory() {
+        return new SessionFactory(UserRepository.class.getPackage().getName());
+    }
+
+}
+
+
+
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.neo4j.ogm.session.Neo4jSession;
+import org.neo4j.ogm.session.transaction.Transaction;
+import org.springframework.amqp.core.Queue;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.context.embedded.EmbeddedServletContainerFactory;
+import org.springframework.boot.context.embedded.tomcat.TomcatEmbeddedServletContainerFactory;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.social.twitter.api.Twitter;
+import org.springframework.social.twitter.api.impl.TwitterTemplate;
+
+/**
+ * This configuration defines the setup information for RabbitMQ queues and a command line runner bean
+ * that will ensure that a unique constraint is applied to the connected Neo4j database server
+ *
+ * @author kbastani
+ */
+@Configuration
+public class TwitterCrawlerConfig {
+
+    private final Log logger = LogFactory.getLog(TwitterCrawlerConfig.class);
+
+    @Bean
+    public EmbeddedServletContainerFactory servletContainer() {
+        return new TomcatEmbeddedServletContainerFactory();
+    }
+
+    @Bean
+    Queue follows() {
+        return new Queue("twitter.follows", true, false, false);
+    }
+
+    @Bean
+    Queue followers() {
+        return new Queue("twitter.followers", true, false, false);
+    }
+
+    @Value("${spring.social.twitter.appId}")
+    private String appId;
+
+    @Value("${spring.social.twitter.appSecret}")
+    private String appSecret;
+
+    @Value("${spring.social.twitter.accessToken}")
+    private String accessToken;
+
+    @Value("${spring.social.twitter.accessTokenSecret}")
+    private String accessTokenSecret;
+
+    @Bean
+    Twitter twitter(final @Value("${spring.social.twitter.appId}") String appId,
+                    final @Value("${spring.social.twitter.appSecret}") String appSecret,
+                    final @Value("${spring.social.twitter.accessToken}") String accessToken,
+                    final @Value("${spring.social.twitter.accessTokenSecret}") String accessTokenSecret) {
+        return new TwitterTemplate(appId, appSecret, accessToken, accessTokenSecret);
+    }
+
+
+    Twitter twitters(String appId, String appSecret,
+                     String accessToken, String accessTokenSecret) {
+        return new TwitterTemplate(appId, appSecret, accessToken, accessTokenSecret);
+    }
+
+    @Bean
+    CommandLineRunner commandLineRunner(Neo4jSession neo4jSession) {
+        return (args) -> {
+            // Make sure that a constraint is created on the Neo4j database
+            try {
+                // This constraint ensures that each profileId is unique per user node
+                Transaction tx = neo4jSession.beginTransaction();
+                neo4jSession.execute("CREATE CONSTRAINT ON (user:User) ASSERT user.profileId IS UNIQUE");
+                tx.commit();
+                tx.close();
+            } catch (Exception ex) {
+                // The constraint is already created or the database is not available
+                logger.error(ex);
+            }
+
+        };
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.IntegrationTest;
+import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.boot.test.TestRestTemplate;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+
+@RunWith(SpringJUnit4ClassRunner.class)
+@SpringApplicationConfiguration(classes = ConfigServiceApplication.class)
+@WebAppConfiguration
+@IntegrationTest("server.port=0")
+public class ConfigServiceApplicationTests {
+
+	@Value("${local.server.port}")
+	private int port = 0;
+
+	@Test
+	public void configurationAvailable() {
+		@SuppressWarnings("rawtypes")
+		ResponseEntity<Map> entity = new TestRestTemplate().getForEntity(
+				"http://localhost:" + port + "/app/production", Map.class);
+		assertEquals(HttpStatus.OK, entity.getStatusCode());
+	}
+
+	@Test
+	public void envPostAvailable() {
+		MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+		@SuppressWarnings("rawtypes")
+		ResponseEntity<Map> entity = new TestRestTemplate().postForEntity(
+				"http://localhost:" + port + "/admin/env", form, Map.class);
+		assertEquals(HttpStatus.OK, entity.getStatusCode());
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.boot.autoconfigure.web.DefaultErrorAttributes;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.context.request.RequestAttributes;
+
+/**
+ * The default implementation of {@link ExceptionAttributes}. This
+ * implementation seeks to be similar to the {@link DefaultErrorAttributes}
+ * class, but differs in the source of the attribute data. The
+ * DefaultErrorAttributes class requires the exception to be thrown from the
+ * Controller so that it may gather attribute values from
+ * {@link RequestAttributes}. This class uses the {@link Exception},
+ * {@link HttpServletRequest}, and {@link HttpStatus} values.
+ *
+ * Provides a Map of the following attributes when they are available:
+ * <ul>
+ * <li>timestamp - The time that the exception attributes were processed
+ * <li>status - The HTTP status code in the response
+ * <li>error - The HTTP status reason text
+ * <li>exception - The class name of the Exception
+ * <li>message - The Exception message
+ * <li>path - The HTTP request servlet path when the exception was thrown
+ * </ul>
+ * 
+ * @author Matt Warman
+ * @see ExceptionAttributes
+ *
+ */
+public class DefaultExceptionAttributes implements ExceptionAttributes {
+
+    /**
+     * The timestamp attribute key.
+     */
+    public static final String TIMESTAMP = "timestamp";
+    /**
+     * The status attribute key.
+     */
+    public static final String STATUS = "status";
+    /**
+     * The error attribute key.
+     */
+    public static final String ERROR = "error";
+    /**
+     * The exception attribute key.
+     */
+    public static final String EXCEPTION = "exception";
+    /**
+     * The message attribute key.
+     */
+    public static final String MESSAGE = "message";
+    /**
+     * The path attribute key.
+     */
+    public static final String PATH = "path";
+
+    @Override
+    public Map<String, Object> getExceptionAttributes(Exception exception,
+            HttpServletRequest httpRequest, HttpStatus httpStatus) {
+
+        Map<String, Object> exceptionAttributes = new LinkedHashMap<String, Object>();
+
+        exceptionAttributes.put(TIMESTAMP, new Date());
+        addHttpStatus(exceptionAttributes, httpStatus);
+        addExceptionDetail(exceptionAttributes, exception);
+        addPath(exceptionAttributes, httpRequest);
+
+        return exceptionAttributes;
+    }
+
+    /**
+     * Adds the status and error attribute values from the {@link HttpStatus}
+     * value.
+     * @param exceptionAttributes The Map of exception attributes.
+     * @param httpStatus The HttpStatus enum value.
+     */
+    private void addHttpStatus(Map<String, Object> exceptionAttributes,
+            HttpStatus httpStatus) {
+        exceptionAttributes.put(STATUS, httpStatus.value());
+        exceptionAttributes.put(ERROR, httpStatus.getReasonPhrase());
+    }
+
+    /**
+     * Adds the exception and message attribute values from the
+     * {@link Exception}.
+     * @param exceptionAttributes The Map of exception attributes.
+     * @param exception The Exception object.
+     */
+    private void addExceptionDetail(Map<String, Object> exceptionAttributes,
+            Exception exception) {
+        exceptionAttributes.put(EXCEPTION, exception.getClass().getName());
+        exceptionAttributes.put(MESSAGE, exception.getMessage());
+    }
+
+    /**
+     * Adds the path attribute value from the {@link HttpServletRequest}.
+     * @param exceptionAttributes The Map of exception attributes.
+     * @param httpRequest The HttpServletRequest object.
+     */
+    private void addPath(Map<String, Object> exceptionAttributes,
+            HttpServletRequest httpRequest) {
+        exceptionAttributes.put(PATH, httpRequest.getServletPath());
+    }
+}
+
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+/**
+ * The ExceptionAttributes interface defines the behavioral contract to be
+ * implemented by concrete ExceptionAttributes classes.
+ * 
+ * Provides attributes which describe Exceptions and the context in which they
+ * occurred.
+ * 
+ * @author Matt Warman
+ * @see DefaultExceptionAttributes
+ *
+ */
+public interface ExceptionAttributes {
+
+    /**
+     * Returns a {@link Map} of exception attributes. The Map may be used to
+     * display an error page or serialized into a {@link ResponseBody}.
+     * 
+     * @param exception The Exception reported.
+     * @param httpRequest The HttpServletRequest in which the Exception
+     *        occurred.
+     * @param httpStatus The HttpStatus value that will be used in the
+     *        {@link HttpServletResponse}.
+     * @return A Map of exception attributes.
+     */
+    Map<String, Object> getExceptionAttributes(Exception exception,
+            HttpServletRequest httpRequest, HttpStatus httpStatus);
+
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.Collection;
+
+import javax.persistence.EntityExistsException;
+import javax.persistence.NoResultException;
+
+import org.example.ws.model.Greeting;
+import org.example.ws.repository.GreetingRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.metrics.CounterService;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * The GreetingServiceBean encapsulates all business behaviors operating on the
+ * Greeting entity model object.
+ * 
+ * @author Matt Warman
+ */
+@Service
+@Transactional(
+        propagation = Propagation.SUPPORTS,
+        readOnly = true)
+public class GreetingServiceBean implements GreetingService {
+
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
+
+    /**
+     * The <code>CounterService</code> captures metrics for Spring Actuator.
+     */
+    @Autowired
+    private CounterService counterService;
+
+    /**
+     * The Spring Data repository for Greeting entities.
+     */
+    @Autowired
+    private GreetingRepository greetingRepository;
+
+    @Override
+    public Collection<Greeting> findAll() {
+        logger.info("> findAll");
+
+        counterService.increment("method.invoked.greetingServiceBean.findAll");
+
+        Collection<Greeting> greetings = greetingRepository.findAll();
+
+        logger.info("< findAll");
+        return greetings;
+    }
+
+    @Override
+    @Cacheable(
+            value = "greetings",
+            key = "#id")
+    public Greeting findOne(Long id) {
+        logger.info("> findOne id:{}", id);
+
+        counterService.increment("method.invoked.greetingServiceBean.findOne");
+
+        Greeting greeting = greetingRepository.findOne(id);
+
+        logger.info("< findOne id:{}", id);
+        return greeting;
+    }
+
+    @Override
+    @Transactional(
+            propagation = Propagation.REQUIRED,
+            readOnly = false)
+    @CachePut(
+            value = "greetings",
+            key = "#result.id")
+    public Greeting create(Greeting greeting) {
+        logger.info("> create");
+
+        counterService.increment("method.invoked.greetingServiceBean.create");
+
+        // Ensure the entity object to be created does NOT exist in the
+        // repository. Prevent the default behavior of save() which will update
+        // an existing entity if the entity matching the supplied id exists.
+        if (greeting.getId() != null) {
+            // Cannot create Greeting with specified ID value
+            logger.error(
+                    "Attempted to create a Greeting, but id attribute was not null.");
+            throw new EntityExistsException(
+                    "The id attribute must be null to persist a new entity.");
+        }
+
+        Greeting savedGreeting = greetingRepository.save(greeting);
+
+        logger.info("< create");
+        return savedGreeting;
+    }
+
+    @Override
+    @Transactional(
+            propagation = Propagation.REQUIRED,
+            readOnly = false)
+    @CachePut(
+            value = "greetings",
+            key = "#greeting.id")
+    public Greeting update(Greeting greeting) {
+        logger.info("> update id:{}", greeting.getId());
+
+        counterService.increment("method.invoked.greetingServiceBean.update");
+
+        // Ensure the entity object to be updated exists in the repository to
+        // prevent the default behavior of save() which will persist a new
+        // entity if the entity matching the id does not exist
+        Greeting greetingToUpdate = findOne(greeting.getId());
+        if (greetingToUpdate == null) {
+            // Cannot update Greeting that hasn't been persisted
+            logger.error(
+                    "Attempted to update a Greeting, but the entity does not exist.");
+            throw new NoResultException("Requested entity not found.");
+        }
+
+        greetingToUpdate.setText(greeting.getText());
+        Greeting updatedGreeting = greetingRepository.save(greetingToUpdate);
+
+        logger.info("< update id:{}", greeting.getId());
+        return updatedGreeting;
+    }
+
+    @Override
+    @Transactional(
+            propagation = Propagation.REQUIRED,
+            readOnly = false)
+    @CacheEvict(
+            value = "greetings",
+            key = "#id")
+    public void delete(Long id) {
+        logger.info("> delete id:{}", id);
+
+        counterService.increment("method.invoked.greetingServiceBean.delete");
+
+        greetingRepository.delete(id);
+
+        logger.info("< delete id:{}", id);
+    }
+
+    @Override
+    @CacheEvict(
+            value = "greetings",
+            allEntries = true)
+    public void evictCache() {
+        logger.info("> evictCache");
+        logger.info("< evictCache");
+    }
+}
+
+import java.util.concurrent.Future;
+
+import org.example.ws.model.Greeting;
+import org.example.ws.util.AsyncResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
+
+/**
+ * The EmailServiceBean implements all business behaviors defined by the
+ * EmailService interface.
+ * 
+ * @author Matt Warman
+ */
+@Service
+public class EmailServiceBean implements EmailService {
+
+    /**
+     * The Logger for this class.
+     */
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
+
+    @Override
+    public Boolean send(Greeting greeting) {
+        logger.info("> send");
+
+        Boolean success = Boolean.FALSE;
+
+        // Simulate method execution time
+        long pause = 5000;
+        try {
+            Thread.sleep(pause);
+        } catch (Exception e) {
+            // do nothing
+        }
+        logger.info("Processing time was {} seconds.", pause / 1000);
+
+        success = Boolean.TRUE;
+
+        logger.info("< send");
+        return success;
+    }
+
+    @Async
+    @Override
+    public void sendAsync(Greeting greeting) {
+        logger.info("> sendAsync");
+
+        try {
+            send(greeting);
+        } catch (Exception e) {
+            logger.warn("Exception caught sending asynchronous mail.", e);
+        }
+
+        logger.info("< sendAsync");
+    }
+
+    @Async
+    @Override
+    public Future<Boolean> sendAsyncWithResult(Greeting greeting) {
+        logger.info("> sendAsyncWithResult");
+
+        AsyncResponse<Boolean> response = new AsyncResponse<Boolean>();
+
+        try {
+            Boolean success = send(greeting);
+            response.complete(success);
+        } catch (Exception e) {
+            logger.warn("Exception caught sending asynchronous mail.", e);
+            response.completeExceptionally(e);
+        }
+
+        logger.info("< sendAsyncWithResult");
+        return response;
+    }
+
+}
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.metrics.CounterService;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+/**
+ * The QuoteServiceBean encapsulates all business behaviors operating on the
+ * Quote class.
+ * 
+ * @author Matt Warman
+ */
+@Service
+public class QuoteServiceBean implements QuoteService {
+
+    /**
+     * The Logger for this class.
+     */
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
+
+    /**
+     * The <code>CounterService</code> captures metrics for Spring Actuator.
+     */
+    @Autowired
+    private CounterService counterService;
+
+    /**
+     * The RestTemplate used to retrieve data from the remote Quote API.
+     */
+    private final RestTemplate restTemplate;
+
+    /**
+     * Construct a QuoteServiceBean with a RestTemplateBuilder used to
+     * instantiate the RestTemplate used by this business service.
+     * @param restTemplateBuilder A RestTemplateBuilder injected from the
+     *        ApplicationContext.
+     */
+    public QuoteServiceBean(RestTemplateBuilder restTemplateBuilder) {
+        this.restTemplate = restTemplateBuilder.build();
+    }
+
+    @Override
+    public Quote getDaily(String category) {
+        logger.info("> getDaily");
+
+        counterService.increment("method.invoked.quoteServiceBean.getDaily");
+
+        String quoteCategory = QuoteService.CATEGORY_INSPIRATIONAL;
+        if (category != null && category.trim().length() > 0) {
+            quoteCategory = category.trim();
+        }
+
+        QuoteResponse quoteResponse = this.restTemplate.getForObject(
+                "http://quotes.rest/qod.json?category={cat}",
+                QuoteResponse.class, quoteCategory);
+
+        Quote quote = quoteResponse.getQuote();
+
+        logger.info("< getDaily");
+        return quote;
+    }
+
+}
+--------------------------------------------------------------------------------------------------------import java.util.Collection;
+
+import org.example.ws.model.Greeting;
+import org.example.ws.service.GreetingService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+/**
+ * The GreetingBatchBean contains <code>@Scheduled</code> methods operating on
+ * Greeting entities to perform batch operations.
+ * 
+ * @author Matt Warman
+ */
+@Profile("batch")
+@Component
+public class GreetingBatchBean {
+
+    /**
+     * The Logger for this class.
+     */
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
+
+    /**
+     * The GreetingService business service.
+     */
+    @Autowired
+    private GreetingService greetingService;
+
+    /**
+     * Use a cron expression to execute logic on a schedule.
+     * 
+     * Expression: second minute hour day-of-month month weekday
+     * 
+     * @see http ://docs.spring.io/spring/docs/current/javadoc-api/org/
+     *      springframework /scheduling/support/CronSequenceGenerator.html
+     */
+    @Scheduled(
+            cron = "${batch.greeting.cron}")
+    public void cronJob() {
+        logger.info("> cronJob");
+
+        // Add scheduled logic here
+        Collection<Greeting> greetings = greetingService.findAll();
+        logger.info("There are {} greetings in the data store.",
+                greetings.size());
+
+        logger.info("< cronJob");
+    }
+
+    /**
+     * Execute logic beginning at fixed intervals with a delay after the
+     * application starts. Use the <code>fixedRate</code> element to indicate
+     * how frequently the method is to be invoked. Use the
+     * <code>initialDelay</code> element to indicate how long to wait after
+     * application startup to schedule the first execution.
+     */
+    @Scheduled(
+            initialDelayString = "${batch.greeting.initialdelay}",
+            fixedRateString = "${batch.greeting.fixedrate}")
+    public void fixedRateJobWithInitialDelay() {
+        logger.info("> fixedRateJobWithInitialDelay");
+
+        // Add scheduled logic here
+
+        // Simulate job processing time
+        long pause = 5000;
+        long start = System.currentTimeMillis();
+        do {
+            if (start + pause < System.currentTimeMillis()) {
+                break;
+            }
+        } while (true);
+        logger.info("Processing time was {} seconds.", pause / 1000);
+
+        logger.info("< fixedRateJobWithInitialDelay");
+    }
+
+    /**
+     * Execute logic with a delay between the end of the last execution and the
+     * beginning of the next. Use the <code>fixedDelay</code> element to
+     * indicate the time to wait between executions. Use the
+     * <code>initialDelay</code> element to indicate how long to wait after
+     * application startup to schedule the first execution.
+     */
+    @Scheduled(
+            initialDelayString = "${batch.greeting.initialdelay}",
+            fixedDelayString = "${batch.greeting.fixeddelay}")
+    public void fixedDelayJobWithInitialDelay() {
+        logger.info("> fixedDelayJobWithInitialDelay");
+
+        // Add scheduled logic here
+
+        // Simulate job processing time
+        long pause = 5000;
+        long start = System.currentTimeMillis();
+        do {
+            if (start + pause < System.currentTimeMillis()) {
+                break;
+            }
+        } while (true);
+        logger.info("Processing time was {} seconds.", pause / 1000);
+
+        logger.info("< fixedDelayJobWithInitialDelay");
+    }
+
+}
+import java.util.Collection;
+
+import org.example.ws.model.Greeting;
+import org.example.ws.service.GreetingService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+/**
+ * The GreetingBatchBean contains <code>@Scheduled</code> methods operating on
+ * Greeting entities to perform batch operations.
+ * 
+ * @author Matt Warman
+ */
+@Profile("batch")
+@Component
+public class GreetingBatchBean {
+
+    /**
+     * The Logger for this class.
+     */
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
+
+    /**
+     * The GreetingService business service.
+     */
+    @Autowired
+    private GreetingService greetingService;
+
+    /**
+     * Use a cron expression to execute logic on a schedule.
+     * 
+     * Expression: second minute hour day-of-month month weekday
+     * 
+     * @see http ://docs.spring.io/spring/docs/current/javadoc-api/org/
+     *      springframework /scheduling/support/CronSequenceGenerator.html
+     */
+    @Scheduled(
+            cron = "${batch.greeting.cron}")
+    public void cronJob() {
+        logger.info("> cronJob");
+
+        // Add scheduled logic here
+        Collection<Greeting> greetings = greetingService.findAll();
+        logger.info("There are {} greetings in the data store.",
+                greetings.size());
+
+        logger.info("< cronJob");
+    }
+
+    /**
+     * Execute logic beginning at fixed intervals with a delay after the
+     * application starts. Use the <code>fixedRate</code> element to indicate
+     * how frequently the method is to be invoked. Use the
+     * <code>initialDelay</code> element to indicate how long to wait after
+     * application startup to schedule the first execution.
+     */
+    @Scheduled(
+            initialDelayString = "${batch.greeting.initialdelay}",
+            fixedRateString = "${batch.greeting.fixedrate}")
+    public void fixedRateJobWithInitialDelay() {
+        logger.info("> fixedRateJobWithInitialDelay");
+
+        // Add scheduled logic here
+
+        // Simulate job processing time
+        long pause = 5000;
+        long start = System.currentTimeMillis();
+        do {
+            if (start + pause < System.currentTimeMillis()) {
+                break;
+            }
+        } while (true);
+        logger.info("Processing time was {} seconds.", pause / 1000);
+
+        logger.info("< fixedRateJobWithInitialDelay");
+    }
+
+    /**
+     * Execute logic with a delay between the end of the last execution and the
+     * beginning of the next. Use the <code>fixedDelay</code> element to
+     * indicate the time to wait between executions. Use the
+     * <code>initialDelay</code> element to indicate how long to wait after
+     * application startup to schedule the first execution.
+     */
+    @Scheduled(
+            initialDelayString = "${batch.greeting.initialdelay}",
+            fixedDelayString = "${batch.greeting.fixeddelay}")
+    public void fixedDelayJobWithInitialDelay() {
+        logger.info("> fixedDelayJobWithInitialDelay");
+
+        // Add scheduled logic here
+
+        // Simulate job processing time
+        long pause = 5000;
+        long start = System.currentTimeMillis();
+        do {
+            if (start + pause < System.currentTimeMillis()) {
+                break;
+            }
+        } while (true);
+        logger.info("Processing time was {} seconds.", pause / 1000);
+
+        logger.info("< fixedDelayJobWithInitialDelay");
+    }
+
+}
+
+import com.shawn.model.entity.Book;
+import com.shawn.repository.BookRepository;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
+
+/**
+ * @author Xiaoyue Xiao
+ */
+@Mapper
+public interface BookMapper extends BookRepository {
+
+    @Override
+    List<Book> selectBooksByLowPriceAndHighPrice(@Param("lowPrice") Double lowPrice, @Param("highPrice") Double highPrice);
+
+    @Override
+    List<Book> selectBooksByPage(@Param("offset") Integer offset, @Param("perPage") Integer perPage);
+
+}
+--------------------------------------------------------------------------------------------------------
+    @Bean(name = "dataSource",initMethod = "init", destroyMethod = "close")
+    public DataSource druidDataSource(@Value("${druid.datasource.driverClassName}") String driver,
+                                      @Value("${druid.datasource.url}") String url, @Value("${druid.datasource.username}") String username,
+                                      @Value("${druid.datasource.password}") String password,
+                                      @Value("${druid.datasource.initialSize}") Integer initialSize,
+                                      @Value("${druid.datasource.minIdle}") Integer minIdle,
+                                      @Value("${druid.datasource.maxActive}") Integer maxActive) {
+        DruidDataSource druidDataSource = new DruidDataSource();
+        druidDataSource.setDriverClassName(driver);
+        druidDataSource.setUrl(url);
+        druidDataSource.setUsername(username);
+        druidDataSource.setPassword(password);
+        druidDataSource.setValidationQuery("SELECT * FROM DUAL");
+        druidDataSource.setPoolPreparedStatements(false);
+        try {
+            druidDataSource.setFilters("stat");
+        } catch (SQLException e1) {
+            logger.error("setFilters error", e1);
+        }
+        try {
+            druidDataSource.setFilters("stat, wall");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return druidDataSource;
+    }
+--------------------------------------------------------------------------------------------------------
+package com.bootcwenao.feignserver.kafka.listeners;
+
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.springframework.kafka.annotation.KafkaListener;
+
+import java.util.Optional;
+
+/**
+ * @author cwenao
+ * @version $Id KafkaListeners.java, v 0.1 2017-01-21 21:31 cwenao Exp $$
+ */
+public class KafkaListeners {
+
+    @KafkaListener(topics = {"bootcwenaoTopic"})
+    public void testListener(ConsumerRecord<?, ?> record) {
+
+        Optional<?> messages = Optional.ofNullable(record.value());
+
+        if (messages.isPresent()) {
+            Object msg = messages.get();
+            System.out.println("  this is the testTopic send message: " + msg);
+        }
+
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+import com.bootcwenao.feignserver.servers.impl.FeignServerFactoryImpl;
+import com.bootcwenao.feignserver.servers.impl.FeignServerImpl;
+import org.springframework.cloud.netflix.feign.FeignClient;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+
+/**
+ * @author cwenao
+ * @version $Id FeignServer.java, v 0.1 2017-01-15 13:51 cwenao Exp $$
+ */
+@FeignClient(value = "ribbonserver" , fallbackFactory = FeignServerFactoryImpl.class )
+public interface FeignServer {
+
+    @RequestMapping(value ="/testRealRibbon",method= RequestMethod.GET)
+    String testRealRibbon(@RequestParam("content") String content);
+
+}
+--------------------------------------------------------------------------------------------------------
+	@Configuration
+	@Order(-20)
+	protected static class LoginConfig extends WebSecurityConfigurerAdapter {
+
+		@Autowired
+		private AuthenticationManager authenticationManager;
+
+		@Override
+		protected void configure(HttpSecurity http) throws Exception {
+			// @formatter:off
+			http.formLogin().loginPage("/login").permitAll().and().requestMatchers()
+					.antMatchers("/login", "/oauth/authorize", "/oauth/confirm_access").and().authorizeRequests()
+					.anyRequest().authenticated();
+			// @formatter:on
+		}
+
+		@Override
+		protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+			auth.parentAuthenticationManager(authenticationManager);
+		}
+	}
+--------------------------------------------------------------------------------------------------------
+/**
+ *
+ * @author hantsy
+ */
+@Configuration
+public class Jackson2ObjectMapperConfig {
+        
+    @Bean
+    public Jackson2ObjectMapperBuilder objectMapperBuilder(JsonComponentModule jsonComponentModule) {
+   
+        Jackson2ObjectMapperBuilder builder = new Jackson2ObjectMapperBuilder();
+            builder
+    //                .serializerByType(ZonedDateTime.class, new JsonSerializer<ZonedDateTime>() {
+    //                    @Override
+    //                    public void serialize(ZonedDateTime zonedDateTime, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
+    //                        jsonGenerator.writeString(DateTimeFormatter.ISO_ZONED_DATE_TIME.format(zonedDateTime));
+    //                    }
+    //                })
+                .serializationInclusion(JsonInclude.Include.NON_EMPTY)
+                .featuresToDisable(
+                        SerializationFeature.WRITE_DATES_AS_TIMESTAMPS,
+                        DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES,
+                        DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES
+                )
+                .featuresToEnable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+                .indentOutput(true)
+                .modulesToInstall(jsonComponentModule);
+    
+        return builder;
+    } 
+    
 }
 --------------------------------------------------------------------------------------------------------
 	public static ZonedDateTime getZonedDateTime(Object value) {
