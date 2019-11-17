@@ -6640,6 +6640,4270 @@ public interface FeignServer {
     String testRealRibbon(@RequestParam("content") String content);
 
 }
+
+import com.bootcwenao.feignserver.servers.FeignServer;
+import feign.hystrix.FallbackFactory;
+import org.springframework.stereotype.Component;
+
+/**
+ * @author cwenao
+ * @version $Id FeignServerFactoryImpl.java, v 0.1 2017-01-17 10:40 cwenao Exp $$
+ */
+@Component
+public class FeignServerFactoryImpl implements FallbackFactory<FeignServer> {
+    /**
+     * Returns an instance of the fallback appropriate for the given cause
+     *
+     * @param cause corresponds to {@link AbstractCommand#getFailedExecutionException()}
+     *              often, but not always an instance of {@link FeignException}.
+     */
+    public FeignServer create(Throwable cause) {
+
+        return new FeignServer() {
+            public String testRealRibbon(String content) {
+                return content + ", it's fallback Factory with feign";
+            }
+        };
+    }
+}
+
+mvn install:install-file -Dfile=D:\Downloads2\0.3.0-alpha-0352-ef7813f\0.3.0-alpha-0352-ef7813f\paragon.mailingcontour.commons-0.3.0-alpha-0352-ef7813f.jar -DgroupId=com.paragon.mailingcontour -DartifactId=paragon.mailingcontour.commons -Dversion=0.3.0-alpha-0352-ef7813f -Dpackaging=jar
+--------------------------------------------------------------------------------------------------------
+import java.io.FilterWriter;
+import java.io.IOException;
+import java.io.Writer;
+
+/**
+ * Writer that wraps another writer and passes width-limited and
+ * optionally-prefixed output to its subordinate. When lines are
+ * wrapped they are automatically indented based on the start of the
+ * line.
+ */
+public final class WrappedIndentingWriter extends FilterWriter {
+    /** null-ok; optional prefix for every line */
+    private final String prefix;
+
+    /** &gt; 0; the maximum output width */
+    private final int width;
+
+    /** &gt; 0; the maximum indent */
+    private final int maxIndent;
+
+    /** &gt;= 0; current output column (zero-based) */
+    private int column;
+
+    /** whether indent spaces are currently being collected */
+    private boolean collectingIndent;
+
+    /** &gt;= 0; current indent amount */
+    private int indent;
+
+    /**
+     * Constructs an instance.
+     *
+     * @param out non-null; writer to send final output to
+     * @param width &gt;= 0; the maximum output width (not including
+     * <code>prefix</code>), or <code>0</code> for no maximum
+     * @param prefix non-null; the prefix for each line
+     */
+    public WrappedIndentingWriter(Writer out, int width, String prefix) {
+        super(out);
+
+        if (out == null) {
+            throw new NullPointerException("out == null");
+        }
+
+        if (width < 0) {
+            throw new IllegalArgumentException("width < 0");
+        }
+
+        if (prefix == null) {
+            throw new NullPointerException("prefix == null");
+        }
+
+        this.width = (width != 0) ? width : Integer.MAX_VALUE;
+        this.maxIndent = width >> 1;
+        this.prefix = (prefix.length() == 0) ? null : prefix;
+
+        bol();
+    }
+
+    /**
+     * Constructs a no-prefix instance.
+     *
+     * @param out non-null; writer to send final output to
+     * @param width &gt;= 0; the maximum output width (not including
+     * <code>prefix</code>), or <code>0</code> for no maximum
+     */
+    public WrappedIndentingWriter(Writer out, int width) {
+        this(out, width, "");
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void write(int c) throws IOException {
+        synchronized (lock) {
+            if (collectingIndent) {
+                if (c == ' ') {
+                    indent++;
+                    if (indent >= maxIndent) {
+                        indent = maxIndent;
+                        collectingIndent = false;
+                    }
+                } else {
+                    collectingIndent = false;
+                }
+            }
+
+            if ((column == width) && (c != '\n')) {
+                out.write('\n');
+                column = 0;
+                /*
+                 * Note: No else, so this should fall through to the next
+                 * if statement.
+                 */
+            }
+
+            if (column == 0) {
+                if (prefix != null) {
+                    out.write(prefix);
+                }
+
+                if (!collectingIndent) {
+                    for (int i = 0; i < indent; i++) {
+                        out.write(' ');
+                    }
+                    column = indent;
+                }
+            }
+
+            out.write(c);
+
+            if (c == '\n') {
+                bol();
+            } else {
+                column++;
+            }
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void write(char[] cbuf, int off, int len) throws IOException {
+        synchronized (lock) {
+            while (len > 0) {
+                write(cbuf[off]);
+                off++;
+                len--;
+            }
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void write(String str, int off, int len) throws IOException {
+        synchronized (lock) {
+            while (len > 0) {
+                write(str.charAt(off));
+                off++;
+                len--;
+            }
+        }
+    }
+
+    /**
+     * Indicates that output is at the beginning of a line.
+     */
+    private void bol() {
+        column = 0;
+        collectingIndent = (maxIndent != 0);
+        indent = 0;
+    }
+}
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+/**
+ * Constants of type <code>CONSTANT_Utf8_info</code>.
+ */
+public final class Utf8Utils {
+    /**
+     * Converts a string into its Java-style UTF-8 form. Java-style UTF-8
+     * differs from normal UTF-8 in the handling of character '\0' and
+     * surrogate pairs.
+     *
+     * @param string non-null; the string to convert
+     * @return non-null; the UTF-8 bytes for it
+     */
+    public static byte[] stringToUtf8Bytes(String string) {
+        int len = string.length();
+        byte[] bytes = new byte[len * 3]; // Avoid having to reallocate.
+        int outAt = 0;
+
+        for (int i = 0; i < len; i++) {
+            char c = string.charAt(i);
+            if ((c != 0) && (c < 0x80)) {
+                bytes[outAt] = (byte) c;
+                outAt++;
+            } else if (c < 0x800) {
+                bytes[outAt] = (byte) (((c >> 6) & 0x1f) | 0xc0);
+                bytes[outAt + 1] = (byte) ((c & 0x3f) | 0x80);
+                outAt += 2;
+            } else {
+                bytes[outAt] = (byte) (((c >> 12) & 0x0f) | 0xe0);
+                bytes[outAt + 1] = (byte) (((c >> 6) & 0x3f) | 0x80);
+                bytes[outAt + 2] = (byte) ((c & 0x3f) | 0x80);
+                outAt += 3;
+            }
+        }
+
+        byte[] result = new byte[outAt];
+        System.arraycopy(bytes, 0, result, 0, outAt);
+        return result;
+    }
+
+    private static final ThreadLocal<char[]> localBuffer =
+            new ThreadLocal<char[]> () {
+                @Override protected char[] initialValue() {
+                    // A reasonably sized initial value
+                    return new char[256];
+                }
+            };
+
+    /**
+     * Converts an array of UTF-8 bytes into a string.
+     *
+     * @param bytes non-null; the bytes to convert
+     * @param start the start index of the utf8 string to convert
+     * @param length the length of the utf8 string to convert, not including any null-terminator that might be present
+     * @return non-null; the converted string
+     */
+    public static String utf8BytesToString(byte[] bytes, int start, int length) {
+        char[] chars = localBuffer.get();
+        if (chars == null || chars.length < length) {
+            chars = new char[length];
+            localBuffer.set(chars);
+        }
+        int outAt = 0;
+
+        for (int at = start; length > 0; /*at*/) {
+            int v0 = bytes[at] & 0xFF;
+            char out;
+            switch (v0 >> 4) {
+                case 0x00: case 0x01: case 0x02: case 0x03:
+                case 0x04: case 0x05: case 0x06: case 0x07: {
+                    // 0XXXXXXX -- single-byte encoding
+                    length--;
+                    if (v0 == 0) {
+                        // A single zero byte is illegal.
+                        return throwBadUtf8(v0, at);
+                    }
+                    out = (char) v0;
+                    at++;
+                    break;
+                }
+                case 0x0c: case 0x0d: {
+                    // 110XXXXX -- two-byte encoding
+                    length -= 2;
+                    if (length < 0) {
+                        return throwBadUtf8(v0, at);
+                    }
+                    int v1 = bytes[at + 1] & 0xFF;
+                    if ((v1 & 0xc0) != 0x80) {
+                        return throwBadUtf8(v1, at + 1);
+                    }
+                    int value = ((v0 & 0x1f) << 6) | (v1 & 0x3f);
+                    if ((value != 0) && (value < 0x80)) {
+                        /*
+                         * This should have been represented with
+                         * one-byte encoding.
+                         */
+                        return throwBadUtf8(v1, at + 1);
+                    }
+                    out = (char) value;
+                    at += 2;
+                    break;
+                }
+                case 0x0e: {
+                    // 1110XXXX -- three-byte encoding
+                    length -= 3;
+                    if (length < 0) {
+                        return throwBadUtf8(v0, at);
+                    }
+                    int v1 = bytes[at + 1] & 0xFF;
+                    if ((v1 & 0xc0) != 0x80) {
+                        return throwBadUtf8(v1, at + 1);
+                    }
+                    int v2 = bytes[at + 2] & 0xFF;
+                    if ((v2 & 0xc0) != 0x80) {
+                        return throwBadUtf8(v2, at + 2);
+                    }
+                    int value = ((v0 & 0x0f) << 12) | ((v1 & 0x3f) << 6) |
+                            (v2 & 0x3f);
+                    if (value < 0x800) {
+                        /*
+                         * This should have been represented with one- or
+                         * two-byte encoding.
+                         */
+                        return throwBadUtf8(v2, at + 2);
+                    }
+                    out = (char) value;
+                    at += 3;
+                    break;
+                }
+                default: {
+                    // 10XXXXXX, 1111XXXX -- illegal
+                    return throwBadUtf8(v0, at);
+                }
+            }
+            chars[outAt] = out;
+            outAt++;
+        }
+
+        return new String(chars, 0, outAt);
+    }
+
+    /**
+     * Converts an array of UTF-8 bytes into a string.
+     *
+     * @param bytes non-null; the bytes to convert
+     * @param start the start index of the utf8 string to convert
+     * @param utf16Length the number of utf16 characters in the string to decode
+     * @return non-null; the converted string
+     */
+    public static String utf8BytesWithUtf16LengthToString(@Nonnull byte[] bytes, int start, int utf16Length) {
+        return utf8BytesWithUtf16LengthToString(bytes, start, utf16Length, null);
+    }
+
+    /**
+     * Converts an array of UTF-8 bytes into a string.
+     *
+     * @param bytes non-null; the bytes to convert
+     * @param start the start index of the utf8 string to convert
+     * @param utf16Length the number of utf16 characters in the string to decode
+     * @param readLength If non-null, the first element will contain the number of bytes read after the method exits
+     * @return non-null; the converted string
+     */
+    public static String utf8BytesWithUtf16LengthToString(@Nonnull byte[] bytes, int start, int utf16Length,
+                                                          @Nullable int[] readLength) {
+        char[] chars = localBuffer.get();
+        if (chars == null || chars.length < utf16Length) {
+            chars = new char[utf16Length];
+            localBuffer.set(chars);
+        }
+        int outAt = 0;
+
+        int at = 0;
+        for (at = start; utf16Length > 0; utf16Length--) {
+            int v0 = bytes[at] & 0xFF;
+            char out;
+            switch (v0 >> 4) {
+                case 0x00: case 0x01: case 0x02: case 0x03:
+                case 0x04: case 0x05: case 0x06: case 0x07: {
+                    // 0XXXXXXX -- single-byte encoding
+                    if (v0 == 0) {
+                        // A single zero byte is illegal.
+                        return throwBadUtf8(v0, at);
+                    }
+                    out = (char) v0;
+                    at++;
+                    break;
+                }
+                case 0x0c: case 0x0d: {
+                    // 110XXXXX -- two-byte encoding
+                    int v1 = bytes[at + 1] & 0xFF;
+                    if ((v1 & 0xc0) != 0x80) {
+                        return throwBadUtf8(v1, at + 1);
+                    }
+                    int value = ((v0 & 0x1f) << 6) | (v1 & 0x3f);
+                    if ((value != 0) && (value < 0x80)) {
+                        /*
+                         * This should have been represented with
+                         * one-byte encoding.
+                         */
+                        return throwBadUtf8(v1, at + 1);
+                    }
+                    out = (char) value;
+                    at += 2;
+                    break;
+                }
+                case 0x0e: {
+                    // 1110XXXX -- three-byte encoding
+                    int v1 = bytes[at + 1] & 0xFF;
+                    if ((v1 & 0xc0) != 0x80) {
+                        return throwBadUtf8(v1, at + 1);
+                    }
+                    int v2 = bytes[at + 2] & 0xFF;
+                    if ((v2 & 0xc0) != 0x80) {
+                        return throwBadUtf8(v2, at + 2);
+                    }
+                    int value = ((v0 & 0x0f) << 12) | ((v1 & 0x3f) << 6) |
+                        (v2 & 0x3f);
+                    if (value < 0x800) {
+                        /*
+                         * This should have been represented with one- or
+                         * two-byte encoding.
+                         */
+                        return throwBadUtf8(v2, at + 2);
+                    }
+                    out = (char) value;
+                    at += 3;
+                    break;
+                }
+                default: {
+                    // 10XXXXXX, 1111XXXX -- illegal
+                    return throwBadUtf8(v0, at);
+                }
+            }
+            chars[outAt] = out;
+            outAt++;
+        }
+
+        if (readLength != null && readLength.length > 0) {
+            readLength[0] = at - start;
+            readLength[0] = at - start;
+        }
+        return new String(chars, 0, outAt);
+    }
+
+    /**
+     * Helper for {@link #utf8BytesToString}, which throws the right
+     * exception for a bogus utf-8 byte.
+     *
+     * @param value the byte value
+     * @param offset the file offset
+     * @return never
+     * @throws IllegalArgumentException always thrown
+     */
+    private static String throwBadUtf8(int value, int offset) {
+        throw new IllegalArgumentException("bad utf-8 byte " + Hex.u1(value) +
+                                           " at offset " + Hex.u4(offset));
+    }
+}
+
+import javax.annotation.Nonnull;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+
+/**
+ * Class that takes a combined output destination and provides two
+ * output writers, one of which ends up writing to the left column and
+ * one which goes on the right.
+ */
+public final class TwoColumnOutput {
+    /** non-null; underlying writer for final output */
+    private final Writer out;
+
+    /** &gt; 0; the left column width */
+    private final int leftWidth;
+
+    private final int rightWidth;
+
+    private final String spacer;
+
+    /**
+     * Constructs an instance.
+     *
+     * @param out non-null; writer to send final output to
+     * @param leftWidth &gt; 0; width of the left column, in characters
+     * @param rightWidth &gt; 0; width of the right column, in characters
+     * @param spacer non-null; spacer string to sit between the two columns
+     */
+    public TwoColumnOutput(@Nonnull Writer out, int leftWidth, int rightWidth,
+                           @Nonnull String spacer) {
+
+        if (leftWidth < 1) {
+            throw new IllegalArgumentException("leftWidth < 1");
+        }
+
+        if (rightWidth < 1) {
+            throw new IllegalArgumentException("rightWidth < 1");
+        }
+
+        this.out = out;
+        this.leftWidth = leftWidth;
+        this.rightWidth = rightWidth;
+        this.spacer = spacer;
+    }
+
+    /**
+     * Constructs an instance.
+     *
+     * @param out non-null; stream to send final output to
+     * @param leftWidth &gt;= 1; width of the left column, in characters
+     * @param rightWidth &gt;= 1; width of the right column, in characters
+     * @param spacer non-null; spacer string to sit between the two columns
+     */
+    public TwoColumnOutput(OutputStream out, int leftWidth, int rightWidth,
+                           String spacer) {
+        this(new OutputStreamWriter(out), leftWidth, rightWidth, spacer);
+    }
+
+    private String[] leftLines = null;
+    private String[] rightLines = null;
+    public void write(String left, String right) throws IOException {
+        leftLines = StringWrapper.wrapString(left, leftWidth, leftLines);
+        rightLines = StringWrapper.wrapString(right, rightWidth, rightLines);
+        int leftCount = leftLines.length;
+        int rightCount = rightLines.length;
+
+        for (int i=0; i<leftCount || i <rightCount; i++) {
+            String leftLine = null;
+            String rightLine = null;
+
+            if (i < leftCount) {
+                leftLine = leftLines[i];
+                if (leftLine == null) {
+                    leftCount = i;
+                }
+            }
+
+            if (i < rightCount) {
+                rightLine = rightLines[i];
+                if (rightLine == null) {
+                    rightCount = i;
+                }
+            }
+
+            if (leftLine != null || rightLine != null) {
+                int written = 0;
+                if (leftLine != null) {
+                    out.write(leftLine);
+                    written = leftLine.length();
+                }
+
+                int remaining = leftWidth - written;
+                if (remaining > 0) {
+                    writeSpaces(out, remaining);
+                }
+
+                out.write(spacer);
+
+                if (rightLine != null) {
+                    out.write(rightLine);
+                }
+
+                out.write('\n');
+            }
+        }
+    }
+
+    /**
+     * Writes the given number of spaces to the given writer.
+     *
+     * @param out non-null; where to write
+     * @param amt &gt;= 0; the number of spaces to write
+     */
+    private static void writeSpaces(Writer out, int amt) throws IOException {
+        while (amt > 0) {
+            out.write(' ');
+            amt--;
+        }
+    }
+}
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+public class StringWrapper {
+    /**
+     * Splits the given string into lines using on any embedded newlines, and wrapping the text as needed to conform to
+     * the given maximum line width.
+     *
+     * This uses and assumes unix-style newlines
+     *
+     * @param str The string to split
+     * @param maxWidth The maximum length of any line
+     * @param output If given, try to use this array as the return value. If there are more values than will fit
+     *               into the array, a new array will be allocated and returned, while the given array will be filled
+     *               with as many lines as would fit.
+     * @return The split lines from the original, as an array of Strings. The returned array may be larger than the
+     *         number of lines. If this is the case, the end of the split lines will be denoted by a null entry in the
+     *         array. If there is no null entry, then the size of the array exactly matches the number of lines.
+     *         The returned lines will not contain an ending newline
+     */
+    public static String[] wrapString(@Nonnull String str, int maxWidth, @Nullable String[] output) {
+        if (output == null) {
+            output = new String[(int)((str.length() / maxWidth) * 1.5d + 1)];
+        }
+
+        int lineStart = 0;
+        int arrayIndex = 0;
+        int i;
+        for (i=0; i<str.length(); i++) {
+            char c = str.charAt(i);
+
+            if (c == '\n') {
+                output = addString(output, str.substring(lineStart, i), arrayIndex++);
+                lineStart = i+1;
+            } else if (i - lineStart == maxWidth) {
+                output = addString(output, str.substring(lineStart, i), arrayIndex++);
+                lineStart = i;
+            }
+        }
+        if (lineStart != i || i == 0) {
+            output = addString(output, str.substring(lineStart), arrayIndex++, output.length+1);
+        }
+
+        if (arrayIndex < output.length) {
+            output[arrayIndex] = null;
+        }
+        return output;
+    }
+
+    private static String[] addString(@Nonnull String[] arr, String str, int index) {
+        if (index >= arr.length) {
+            arr = enlargeArray(arr, (int)(Math.ceil((arr.length + 1) * 1.5)));
+        }
+
+        arr[index] = str;
+        return arr;
+    }
+
+    private static String[] addString(@Nonnull String[] arr, String str, int index, int newLength) {
+        if (index >= arr.length) {
+            arr = enlargeArray(arr, newLength);
+        }
+
+        arr[index] = str;
+        return arr;
+    }
+
+    private static String[] enlargeArray(String[] arr, int newLength) {
+        String[] newArr = new String[newLength];
+        System.arraycopy(arr, 0, newArr, 0, arr.length);
+        return newArr;
+    }
+}
+
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+
+import java.io.PrintWriter;
+
+public class SmaliHelpFormatter extends HelpFormatter {
+    public void printHelp(String cmdLineSyntax, String header, Options options, Options debugOptions) {
+        super.printHelp(cmdLineSyntax, header, options, "");
+        if (debugOptions != null) {
+            System.out.println();
+            System.out.println("Debug Options:");
+            PrintWriter pw = new PrintWriter(System.out);
+            super.printOptions(pw, getWidth(), debugOptions, getLeftPadding(), getDescPadding());
+            pw.flush();
+        }
+    }
+}
+
+import javax.annotation.Nonnull;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.RandomAccessFile;
+
+public class RandomAccessFileOutputStream extends OutputStream {
+    private int filePosition;
+    @Nonnull private final RandomAccessFile raf;
+
+    public RandomAccessFileOutputStream(@Nonnull RandomAccessFile raf, int startFilePosition) {
+        this.filePosition = startFilePosition;
+        this.raf = raf;
+    }
+
+    @Override public void write(int b) throws IOException {
+        raf.seek(filePosition);
+        filePosition++;
+        raf.write(b);
+    }
+
+    @Override public void write(byte[] b) throws IOException {
+        raf.seek(filePosition);
+        filePosition += b.length;
+        raf.write(b);
+    }
+
+    @Override public void write(byte[] b, int off, int len) throws IOException {
+        raf.seek(filePosition);
+        filePosition += len;
+        raf.write(b, off, len);
+    }
+}
+
+import javax.annotation.Nonnull;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.RandomAccessFile;
+
+public class RandomAccessFileInputStream extends InputStream {
+    private int filePosition;
+    @Nonnull private final RandomAccessFile raf;
+
+    public RandomAccessFileInputStream(@Nonnull RandomAccessFile raf, int filePosition) {
+        this.filePosition = filePosition;
+        this.raf = raf;
+    }
+
+    @Override public int read() throws IOException {
+        raf.seek(filePosition);
+        filePosition++;
+        return raf.read();
+    }
+
+    @Override public int read(byte[] bytes) throws IOException {
+        raf.seek(filePosition);
+        int bytesRead = raf.read(bytes);
+        filePosition += bytesRead;
+        return bytesRead;
+    }
+
+    @Override public int read(byte[] bytes, int offset, int length) throws IOException {
+        raf.seek(filePosition);
+        int bytesRead = raf.read(bytes, offset, length);
+        filePosition += bytesRead;
+        return bytesRead;
+    }
+
+    @Override public long skip(long l) throws IOException {
+        int skipBytes = Math.min((int)l, available());
+        filePosition += skipBytes;
+        return skipBytes;
+    }
+
+    @Override public int available() throws IOException {
+        return (int)raf.length() - filePosition;
+    }
+
+    @Override public boolean markSupported() {
+        return false;
+    }
+}
+
+
+--------------------------------------------------------------------------------------------------------
+import java.text.DecimalFormat;
+
+public class NumberUtils {
+    private static final int canonicalFloatNaN = Float.floatToRawIntBits(Float.NaN);
+    private static final int maxFloat = Float.floatToRawIntBits(Float.MAX_VALUE);
+    private static final int piFloat = Float.floatToRawIntBits((float)Math.PI);
+    private static final int eFloat = Float.floatToRawIntBits((float)Math.E);
+
+    private static final long canonicalDoubleNaN = Double.doubleToRawLongBits(Double.NaN);
+    private static final long maxDouble = Double.doubleToLongBits(Double.MAX_VALUE);
+    private static final long piDouble = Double.doubleToLongBits(Math.PI);
+    private static final long eDouble = Double.doubleToLongBits(Math.E);
+
+    private static final DecimalFormat format = new DecimalFormat("0.####################E0");
+
+    public static boolean isLikelyFloat(int value) {
+        // Check for some common named float values
+        // We don't check for Float.MIN_VALUE, which has an integer representation of 1
+        if (value == canonicalFloatNaN ||
+                value == maxFloat ||
+                value == piFloat ||
+                value == eFloat) {
+            return true;
+        }
+
+        // Check for some named integer values
+        if (value == Integer.MAX_VALUE || value == Integer.MIN_VALUE) {
+            return false;
+        }
+
+
+        // Check for likely resource id
+        int packageId = value >> 24;
+        int resourceType = value >> 16 & 0xff;
+        int resourceId = value & 0xffff;
+        if ((packageId == 0x7f || packageId == 1) && resourceType < 0x1f && resourceId < 0xfff) {
+            return false;
+        }
+
+        // a non-canocical NaN is more likely to be an integer
+        float floatValue = Float.intBitsToFloat(value);
+        if (Float.isNaN(floatValue)) {
+            return false;
+        }
+
+        // Otherwise, whichever has a shorter scientific notation representation is more likely.
+        // Integer wins the tie
+        String asInt = format.format(value);
+        String asFloat = format.format(floatValue);
+
+        // try to strip off any small imprecision near the end of the mantissa
+        int decimalPoint = asFloat.indexOf('.');
+        int exponent = asFloat.indexOf("E");
+        int zeros = asFloat.indexOf("000");
+        if (zeros > decimalPoint && zeros < exponent) {
+            asFloat = asFloat.substring(0, zeros) + asFloat.substring(exponent);
+        } else {
+            int nines = asFloat.indexOf("999");
+            if (nines > decimalPoint && nines < exponent) {
+                asFloat = asFloat.substring(0, nines) + asFloat.substring(exponent);
+            }
+        }
+
+        return asFloat.length() < asInt.length();
+    }
+
+    public static boolean isLikelyDouble(long value) {
+        // Check for some common named double values
+        // We don't check for Double.MIN_VALUE, which has a long representation of 1
+        if (value == canonicalDoubleNaN ||
+                value == maxDouble ||
+                value == piDouble ||
+                value == eDouble) {
+            return true;
+        }
+
+        // Check for some named long values
+        if (value == Long.MAX_VALUE || value == Long.MIN_VALUE) {
+            return false;
+        }
+
+        // a non-canocical NaN is more likely to be an long
+        double doubleValue = Double.longBitsToDouble(value);
+        if (Double.isNaN(doubleValue)) {
+            return false;
+        }
+
+        // Otherwise, whichever has a shorter scientific notation representation is more likely.
+        // Long wins the tie
+        String asLong = format.format(value);
+        String asDouble = format.format(doubleValue);
+
+        // try to strip off any small imprecision near the end of the mantissa
+        int decimalPoint = asDouble.indexOf('.');
+        int exponent = asDouble.indexOf("E");
+        int zeros = asDouble.indexOf("000");
+        if (zeros > decimalPoint && zeros < exponent) {
+            asDouble = asDouble.substring(0, zeros) + asDouble.substring(exponent);
+        } else {
+            int nines = asDouble.indexOf("999");
+            if (nines > decimalPoint && nines < exponent) {
+                asDouble = asDouble.substring(0, nines) + asDouble.substring(exponent);
+            }
+        }
+
+        return asDouble.length() < asLong.length();
+    }
+}
+
+import java.util.Comparator;
+import java.util.List;
+
+public class LinearSearch {
+    /**
+     * Performs a linear search in a sorted list for key, starting at initialGuess
+     *
+     * @param list The sorted list to search
+     * @param comparator The comparator to use
+     * @param key The key to search for
+     * @param initialGuess An initial guess of the location.
+     * @return If found, the index of the item. If not found, -return + 1 is the index at which the item would be
+     *         inserted
+     */
+    public static <T> int linearSearch(List<? extends T> list, Comparator<T> comparator, T key, int initialGuess) {
+        int guess = initialGuess;
+        if (guess >= list.size()) {
+            guess = list.size()-1;
+        }
+        int comparison = comparator.compare(list.get(guess), key);
+        if (comparison == 0) {
+            return guess;
+        }
+        if (comparison < 0) {
+            guess++;
+            while (guess < list.size()) {
+                comparison = comparator.compare(list.get(guess), key);
+                if (comparison == 0) {
+                    return guess;
+                }
+                if (comparison > 0) {
+                    return -(guess+1);
+                }
+                guess++;
+            }
+            return -(list.size()+1);
+        } else {
+            guess--;
+            while (guess >= 0) {
+                comparison = comparator.compare(list.get(guess), key);
+                if (comparison == 0) {
+                    return guess;
+                }
+                if (comparison < 0) {
+                    return -(guess+2);
+                }
+                guess--;
+            }
+            return -1;
+        }
+    }
+}
+
+
+import java.io.IOException;
+import java.io.Writer;
+
+public class IndentingWriter extends Writer {
+    protected final Writer writer;
+    protected final char[] buffer = new char[24];
+    protected int indentLevel = 0;
+    private boolean beginningOfLine = true;
+    private static final String newLine = System.getProperty("line.separator");
+
+    public IndentingWriter(Writer writer) {
+        this.writer = writer;
+    }
+
+    protected void writeIndent() throws IOException {
+        for (int i=0; i<indentLevel; i++) {
+            writer.write(' ');
+        }
+    }
+
+    @Override
+    public void write(int chr) throws IOException {
+        if (chr == '\n') {
+            writer.write(newLine);
+            beginningOfLine = true;
+        } else {
+            if (beginningOfLine) {
+                writeIndent();
+            }
+            beginningOfLine = false;
+            writer.write(chr);
+        }
+    }
+
+    /**
+     * Writes out a block of text that contains no newlines
+     */
+    private void writeLine(char[] chars, int start, int len) throws IOException {
+        if (beginningOfLine && len > 0) {
+            writeIndent();
+            beginningOfLine = false;
+        }
+        writer.write(chars, start, len);
+    }
+
+
+    /**
+     * Writes out a block of text that contains no newlines
+     */
+    private void writeLine(String str, int start, int len) throws IOException {
+        if (beginningOfLine && len > 0) {
+            writeIndent();
+            beginningOfLine = false;
+        }
+        writer.write(str, start, len);
+    }
+
+    @Override
+    public void write(char[] chars) throws IOException {
+        write(chars, 0, chars.length);
+    }
+
+    @Override
+    public void write(char[] chars, int start, int len) throws IOException {
+        final int end = start+len;
+        int pos = start;
+        while (pos < end) {
+            if (chars[pos] == '\n') {
+                writeLine(chars, start, pos-start);
+
+                writer.write(newLine);
+                beginningOfLine = true;
+                pos++;
+                start = pos;
+            } else {
+                pos++;
+            }
+        }
+        writeLine(chars, start, pos-start);
+    }
+
+    @Override
+    public void write(String s) throws IOException {
+        write(s, 0, s.length());
+    }
+
+    @Override
+    public void write(String str, int start, int len) throws IOException {
+        final int end = start+len;
+        int pos = start;
+        while (pos < end) {
+            pos = str.indexOf('\n', start);
+            if (pos == -1) {
+                writeLine(str, start, end-start);
+                return;
+            } else {
+                writeLine(str, start, pos-start);
+                writer.write(newLine);
+                beginningOfLine = true;
+                start = pos+1;
+            }
+        }
+    }
+
+    @Override
+    public Writer append(CharSequence charSequence) throws IOException {
+        write(charSequence.toString());
+        return this;
+    }
+
+    @Override
+    public Writer append(CharSequence charSequence, int start, int len) throws IOException {
+        write(charSequence.subSequence(start, len).toString());
+        return this;
+    }
+
+    @Override
+    public Writer append(char c) throws IOException {
+        write(c);
+        return this;
+    }
+
+    @Override
+    public void flush() throws IOException {
+        writer.flush();
+    }
+
+    @Override
+    public void close() throws IOException {
+        writer.close();
+    }
+
+    public void indent(int indentAmount) {
+        this.indentLevel += indentAmount;
+        if (indentLevel < 0) {
+            indentLevel = 0;
+        }
+    }
+
+    public void deindent(int indentAmount) {
+        this.indentLevel -= indentAmount;
+        if (indentLevel < 0) {
+            indentLevel = 0;
+        }
+    }
+
+    public void printUnsignedLongAsHex(long value) throws IOException {
+        int bufferIndex = 23;
+        do {
+            int digit = (int)(value & 15);
+            if (digit < 10) {
+                buffer[bufferIndex--] = (char)(digit + '0');
+            } else {
+                buffer[bufferIndex--] = (char)((digit - 10) + 'a');
+            }
+
+            value >>>= 4;
+        } while (value != 0);
+
+        bufferIndex++;
+
+        writeLine(buffer, bufferIndex, 24-bufferIndex);
+    }
+
+    public void printSignedLongAsDec(long value) throws IOException {
+        int bufferIndex = 23;
+
+        if (value < 0) {
+            value *= -1;
+            write('-');
+        }
+
+        do {
+            long digit = value % 10;
+            buffer[bufferIndex--] = (char)(digit + '0');
+
+            value = value / 10;
+        } while (value != 0);
+
+        bufferIndex++;
+
+        writeLine(buffer, bufferIndex, 24-bufferIndex);
+    }
+
+    public void printSignedIntAsDec(int value) throws IOException {
+        int bufferIndex = 15;
+
+        if (value < 0) {
+            value *= -1;
+            write('-');
+        }
+
+        do {
+            int digit = value % 10;
+            buffer[bufferIndex--] = (char)(digit + '0');
+
+            value = value / 10;
+        } while (value != 0);
+
+        bufferIndex++;
+
+        writeLine(buffer, bufferIndex, 16-bufferIndex);
+    }
+
+    public void printUnsignedIntAsDec(int value) throws IOException {
+        int bufferIndex = 15;
+
+        if (value < 0) {
+            printSignedLongAsDec(value & 0xFFFFFFFFL);
+        } else {
+            printSignedIntAsDec(value);
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+/**
+ * Utilities for formatting numbers as hexadecimal.
+ */
+public final class Hex {
+    /**
+     * This class is uninstantiable.
+     */
+    private Hex() {
+        // This space intentionally left blank.
+    }
+
+    /**
+     * Formats a <code>long</code> as an 8-byte unsigned hex value.
+     *
+     * @param v value to format
+     * @return non-null; formatted form
+     */
+    public static String u8(long v) {
+        char[] result = new char[16];
+        for (int i = 0; i < 16; i++) {
+            result[15 - i] = Character.forDigit((int) v & 0x0f, 16);
+            v >>= 4;
+        }
+
+        return new String(result);
+    }
+
+    /**
+     * Formats an <code>int</code> as a 4-byte unsigned hex value.
+     *
+     * @param v value to format
+     * @return non-null; formatted form
+     */
+    public static String u4(int v) {
+        char[] result = new char[8];
+        for (int i = 0; i < 8; i++) {
+            result[7 - i] = Character.forDigit(v & 0x0f, 16);
+            v >>= 4;
+        }
+
+        return new String(result);
+    }
+
+    /**
+     * Formats an <code>int</code> as a 3-byte unsigned hex value.
+     *
+     * @param v value to format
+     * @return non-null; formatted form
+     */
+    public static String u3(int v) {
+        char[] result = new char[6];
+        for (int i = 0; i < 6; i++) {
+            result[5 - i] = Character.forDigit(v & 0x0f, 16);
+            v >>= 4;
+        }
+
+        return new String(result);
+    }
+
+    /**
+     * Formats an <code>int</code> as a 2-byte unsigned hex value.
+     *
+     * @param v value to format
+     * @return non-null; formatted form
+     */
+    public static String u2(int v) {
+        char[] result = new char[4];
+        for (int i = 0; i < 4; i++) {
+            result[3 - i] = Character.forDigit(v & 0x0f, 16);
+            v >>= 4;
+        }
+
+        return new String(result);
+    }
+
+    /**
+     * Formats an <code>int</code> as either a 2-byte unsigned hex value
+     * (if the value is small enough) or a 4-byte unsigned hex value (if
+     * not).
+     *
+     * @param v value to format
+     * @return non-null; formatted form
+     */
+    public static String u2or4(int v) {
+        if (v == (char) v) {
+            return u2(v);
+        } else {
+            return u4(v);
+        }
+    }
+
+    /**
+     * Formats an <code>int</code> as a 1-byte unsigned hex value.
+     *
+     * @param v value to format
+     * @return non-null; formatted form
+     */
+    public static String u1(int v) {
+        char[] result = new char[2];
+        for (int i = 0; i < 2; i++) {
+            result[1 - i] = Character.forDigit(v & 0x0f, 16);
+            v >>= 4;
+        }
+
+        return new String(result);
+    }
+
+    /**
+     * Formats an <code>int</code> as a 4-bit unsigned hex nibble.
+     *
+     * @param v value to format
+     * @return non-null; formatted form
+     */
+    public static String uNibble(int v) {
+        char[] result = new char[1];
+
+        result[0] = Character.forDigit(v & 0x0f, 16);
+        return new String(result);
+    }
+
+    /**
+     * Formats a <code>long</code> as an 8-byte signed hex value.
+     *
+     * @param v value to format
+     * @return non-null; formatted form
+     */
+    public static String s8(long v) {
+        char[] result = new char[17];
+
+        if (v < 0) {
+            result[0] = '-';
+            v = -v;
+        } else {
+            result[0] = '+';
+        }
+
+        for (int i = 0; i < 16; i++) {
+            result[16 - i] = Character.forDigit((int) v & 0x0f, 16);
+            v >>= 4;
+        }
+
+        return new String(result);
+    }
+
+    /**
+     * Formats an <code>int</code> as a 4-byte signed hex value.
+     *
+     * @param v value to format
+     * @return non-null; formatted form
+     */
+    public static String s4(int v) {
+        char[] result = new char[9];
+
+        if (v < 0) {
+            result[0] = '-';
+            v = -v;
+        } else {
+            result[0] = '+';
+        }
+
+        for (int i = 0; i < 8; i++) {
+            result[8 - i] = Character.forDigit(v & 0x0f, 16);
+            v >>= 4;
+        }
+
+        return new String(result);
+    }
+
+    /**
+     * Formats an <code>int</code> as a 2-byte signed hex value.
+     *
+     * @param v value to format
+     * @return non-null; formatted form
+     */
+    public static String s2(int v) {
+        char[] result = new char[5];
+
+        if (v < 0) {
+            result[0] = '-';
+            v = -v;
+        } else {
+            result[0] = '+';
+        }
+
+        for (int i = 0; i < 4; i++) {
+            result[4 - i] = Character.forDigit(v & 0x0f, 16);
+            v >>= 4;
+        }
+
+        return new String(result);
+    }
+
+    /**
+     * Formats an <code>int</code> as a 1-byte signed hex value.
+     *
+     * @param v value to format
+     * @return non-null; formatted form
+     */
+    public static String s1(int v) {
+        char[] result = new char[3];
+
+        if (v < 0) {
+            result[0] = '-';
+            v = -v;
+        } else {
+            result[0] = '+';
+        }
+
+        for (int i = 0; i < 2; i++) {
+            result[2 - i] = Character.forDigit(v & 0x0f, 16);
+            v >>= 4;
+        }
+
+        return new String(result);
+    }
+
+    /**
+     * Formats a hex dump of a portion of a <code>byte[]</code>. The result
+     * is always newline-terminated, unless the passed-in length was zero,
+     * in which case the result is always the empty string (<code>""</code>).
+     *
+     * @param arr non-null; array to format
+     * @param offset &gt;= 0; offset to the part to dump
+     * @param length &gt;= 0; number of bytes to dump
+     * @param outOffset &gt;= 0; first output offset to print
+     * @param bpl &gt;= 0; number of bytes of output per line
+     * @param addressLength {2,4,6,8}; number of characters for each address
+     * header
+     * @return non-null; a string of the dump
+     */
+    public static String dump(byte[] arr, int offset, int length,
+                              int outOffset, int bpl, int addressLength) {
+        int end = offset + length;
+
+        // twos-complement math trick: ((x < 0) || (y < 0)) <=> ((x|y) < 0)
+        if (((offset | length | end) < 0) || (end > arr.length)) {
+            throw new IndexOutOfBoundsException("arr.length " +
+                                                arr.length + "; " +
+                                                offset + "..!" + end);
+        }
+
+        if (outOffset < 0) {
+            throw new IllegalArgumentException("outOffset < 0");
+        }
+
+        if (length == 0) {
+            return "";
+        }
+
+        StringBuffer sb = new StringBuffer(length * 4 + 6);
+        boolean bol = true;
+        int col = 0;
+
+        while (length > 0) {
+            if (col == 0) {
+                String astr;
+                switch (addressLength) {
+                    case 2:  astr = Hex.u1(outOffset); break;
+                    case 4:  astr = Hex.u2(outOffset); break;
+                    case 6:  astr = Hex.u3(outOffset); break;
+                    default: astr = Hex.u4(outOffset); break;
+                }
+                sb.append(astr);
+                sb.append(": ");
+            } else if ((col & 1) == 0) {
+                sb.append(' ');
+            }
+            sb.append(Hex.u1(arr[offset]));
+            outOffset++;
+            offset++;
+            col++;
+            if (col == bpl) {
+                sb.append('\n');
+                col = 0;
+            }
+            length--;
+        }
+
+        if (col != 0) {
+            sb.append('\n');
+        }
+
+        return sb.toString();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.io.PrintStream;
+import java.io.PrintWriter;
+
+/**
+ * Exception which carries around structured context.
+ */
+public class ExceptionWithContext
+        extends RuntimeException {
+    /** non-null; human-oriented context of the exception */
+    private StringBuffer context;
+
+    /**
+     * Augments the given exception with the given context, and return the
+     * result. The result is either the given exception if it was an
+     * {@link ExceptionWithContext}, or a newly-constructed exception if it
+     * was not.
+     *
+     * @param ex non-null; the exception to augment
+     * @param str non-null; context to add
+     * @return non-null; an appropriate instance
+     */
+    public static ExceptionWithContext withContext(Throwable ex, String str, Object... formatArgs) {
+        ExceptionWithContext ewc;
+
+        if (ex instanceof ExceptionWithContext) {
+            ewc = (ExceptionWithContext) ex;
+        } else {
+            ewc = new ExceptionWithContext(ex);
+        }
+
+        ewc.addContext(String.format(str, formatArgs));
+        return ewc;
+    }
+
+    /**
+     * Constructs an instance.
+     *
+     * @param message human-oriented message
+     */
+    public ExceptionWithContext(String message, Object... formatArgs) {
+        this(null, message, formatArgs);
+    }
+
+    /**
+     * Constructs an instance.
+     *
+     * @param cause null-ok; exception that caused this one
+     */
+    public ExceptionWithContext(Throwable cause) {
+        this(cause, null);
+    }
+
+    /**
+     * Constructs an instance.
+     *
+     * @param message human-oriented message
+     * @param cause null-ok; exception that caused this one
+     */
+    public ExceptionWithContext(Throwable cause, String message, Object... formatArgs) {
+        super((message != null) ? formatMessage(message, formatArgs) :
+              (cause != null) ? cause.getMessage() : null,
+              cause);
+
+        if (cause instanceof ExceptionWithContext) {
+            String ctx = ((ExceptionWithContext) cause).context.toString();
+            context = new StringBuffer(ctx.length() + 200);
+            context.append(ctx);
+        } else {
+            context = new StringBuffer(200);
+        }
+    }
+
+    private static String formatMessage(String message, Object... formatArgs) {
+        if (message == null) {
+            return null;
+        }
+        return String.format(message, formatArgs);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void printStackTrace(PrintStream out) {
+        super.printStackTrace(out);
+        out.println(context);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void printStackTrace(PrintWriter out) {
+        super.printStackTrace(out);
+        out.println(context);
+    }
+
+    /**
+     * Adds a line of context to this instance.
+     *
+     * @param str non-null; new context
+     */
+    public void addContext(String str) {
+        if (str == null) {
+            throw new NullPointerException("str == null");
+        }
+
+        context.append(str);
+        if (!str.endsWith("\n")) {
+            context.append('\n');
+        }
+    }
+
+    /**
+     * Gets the context.
+     *
+     * @return non-null; the context
+     */
+    public String getContext() {
+        return context.toString();
+    }
+
+    /**
+     * Prints the message and context.
+     *
+     * @param out non-null; where to print to
+     */
+    public void printContext(PrintStream out) {
+        out.println(getMessage());
+        out.print(context);
+    }
+
+    /**
+     * Prints the message and context.
+     *
+     * @param out non-null; where to print to
+     */
+    public void printContext(PrintWriter out) {
+        out.println(getMessage());
+        out.print(context);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+    @SuppressWarnings("unchecked")
+    private static Class classForName(String className) {
+        try {
+            ClassLoader cl = Thread.currentThread().getContextClassLoader();
+            return Class.forName(className, false, cl);
+        } catch (Throwable ex) {
+            //ignore
+        }
+        return null;
+    }
+--------------------------------------------------------------------------------------------------------
+import javax.servlet.http.HttpServletRequest;
+
+public class RequestUtils {
+
+    static String[] mobileAgents = {"iphone", "android", "phone", "mobile", "wap", "netfront", "java", "opera mobi",
+            "opera mini", "ucweb", "windows ce", "symbian", "series", "webos", "sony", "blackberry", "dopod", "nokia",
+            "samsung", "palmsource", "xda", "pieplus", "meizu", "midp", "cldc", "motorola", "foma", "docomo",
+            "up.browser", "up.link", "blazer", "helio", "hosin", "huawei", "novarra", "coolpad", "webos", "techfaith",
+            "palmsource", "alcatel", "amoi", "ktouch", "nexian", "ericsson", "philips", "sagem", "wellcom", "bunjalloo",
+            "maui", "smartphone", "iemobile", "spice", "bird", "zte-", "longcos", "pantech", "gionee", "portalmmm",
+            "jig browser", "hiptop", "benq", "haier", "^lct", "320x320", "240x320", "176x220", "w3c ", "acs-", "alav",
+            "alca", "amoi", "audi", "avan", "benq", "bird", "blac", "blaz", "brew", "cell", "cldc", "cmd-", "dang",
+            "doco", "eric", "hipt", "inno", "ipaq", "java", "jigs", "kddi", "keji", "leno", "lg-c", "lg-d", "lg-g",
+            "lge-", "maui", "maxo", "midp", "mits", "mmef", "mobi", "mot-", "moto", "mwbp", "nec-", "newt", "noki",
+            "oper", "palm", "pana", "pant", "phil", "play", "port", "prox", "qwap", "sage", "sams", "sany", "sch-",
+            "sec-", "send", "seri", "sgh-", "shar", "sie-", "siem", "smal", "smar", "sony", "sph-", "symb", "t-mo",
+            "teli", "tim-", "tsm-", "upg1", "upsi", "vk-v", "voda", "wap-", "wapa", "wapi", "wapp", "wapr", "webc",
+            "winw", "winw", "xda", "xda-", "googlebot-mobile"};
+
+    public static boolean isAjaxRequest(HttpServletRequest request) {
+        String header = request.getHeader("X-Requested-With");
+        return "XMLHttpRequest".equalsIgnoreCase(header);
+    }
+
+    public static boolean isMultipartRequest(HttpServletRequest request) {
+        String contentType = request.getContentType();
+        return contentType != null && contentType.toLowerCase().indexOf("multipart") != -1;
+    }
+
+    /**
+     * 是否是手机浏览器
+     *
+     * @return
+     */
+    public static boolean isMoblieBrowser(HttpServletRequest request) {
+        String ua = request.getHeader("User-Agent");
+        if (ua == null) {
+            return false;
+        }
+        ua = ua.toLowerCase();
+        for (String mobileAgent : mobileAgents) {
+            if (ua.indexOf(mobileAgent) >= 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 是否是微信浏览器
+     *
+     * @return
+     */
+    public static boolean isWechatBrowser(HttpServletRequest request) {
+        String ua = request.getHeader("User-Agent");
+        if (ua == null) {
+            return false;
+        }
+        ua = ua.toLowerCase();
+        if (ua.indexOf("micromessenger") > 0) {
+            return true;
+        }
+        return false;
+    }
+
+
+    /**
+     * 是否是PC版的微信浏览器
+     *
+     * @param request
+     * @return
+     */
+    public static boolean isWechatPcBrowser(HttpServletRequest request) {
+        String ua = request.getHeader("User-Agent");
+        if (ua == null) {
+            return false;
+        }
+        ua = ua.toLowerCase();
+        if (ua.indexOf("windowswechat") > 0) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 是否是IE浏览器
+     *
+     * @return
+     */
+    public static boolean isIEBrowser(HttpServletRequest request) {
+        String ua = request.getHeader("User-Agent");
+        if (ua == null) {
+            return false;
+        }
+
+        ua = ua.toLowerCase();
+        if (ua.indexOf("msie") > 0) {
+            return true;
+        }
+
+        if (ua.indexOf("gecko") > 0 && ua.indexOf("rv:11") > 0) {
+            return true;
+        }
+        return false;
+    }
+
+    public static String getIpAddress(HttpServletRequest request) {
+
+        String ip = request.getHeader("X-requested-For");
+        if (StringUtils.isBlank(ip) || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Forwarded-For");
+        }
+        if (StringUtils.isBlank(ip) || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("Proxy-Client-IP");
+        }
+        if (StringUtils.isBlank(ip) || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("WL-Proxy-Client-IP");
+        }
+        if (StringUtils.isBlank(ip) || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("HTTP_CLIENT_IP");
+        }
+        if (StringUtils.isBlank(ip) || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("HTTP_X_FORWARDED_FOR");
+        }
+        if (StringUtils.isBlank(ip) || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+
+        if (ip != null && ip.contains(",")) {
+            String[] ips = ip.split(",");
+            for (int index = 0; index < ips.length; index++) {
+                String strIp = ips[index];
+                if (!("unknown".equalsIgnoreCase(strIp))) {
+                    ip = strIp;
+                    break;
+                }
+            }
+        }
+
+        return ip;
+    }
+
+    public static String getUserAgent(HttpServletRequest request) {
+        return request.getHeader("User-Agent");
+    }
+
+
+    public static String getReferer(HttpServletRequest request) {
+        return request.getHeader("Referer");
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
+import com.jfinal.log.Log;
+import io.jboot.Jboot;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * 类实例创建者创建者
+ * Created by michael on 17/3/21.
+ */
+public class ClassKits {
+
+    public static Log log = Log.getLog(ClassKits.class);
+    private static final Map<Class, Object> singletons = new ConcurrentHashMap<>();
+
+
+    /**
+     * 获取单例
+     *
+     * @param clazz
+     * @param <T>
+     * @return
+     */
+    public static <T> T singleton(Class<T> clazz) {
+        Object object = singletons.get(clazz);
+        if (object == null) {
+            synchronized (clazz) {
+                object = singletons.get(clazz);
+                if (object == null) {
+                    object = newInstance(clazz);
+                    if (object != null) {
+                        singletons.put(clazz, object);
+                    } else {
+                        Log.getLog(clazz).error("cannot new newInstance!!!!");
+                    }
+
+                }
+            }
+        }
+
+        return (T) object;
+    }
+
+    /**
+     * 创建新的实例
+     *
+     * @param <T>
+     * @param clazz
+     * @return
+     */
+    public static <T> T newInstance(Class<T> clazz) {
+        return newInstance(clazz, true);
+    }
+
+
+    public static <T> T newInstance(Class<T> clazz, boolean createdByGuice) {
+        if (createdByGuice) {
+            return Jboot.bean(clazz);
+        } else {
+            try {
+                Constructor constructor = clazz.getDeclaredConstructor();
+                constructor.setAccessible(true);
+                return (T) constructor.newInstance();
+            } catch (Exception e) {
+                log.error("can not newInstance class:" + clazz + "\n" + e.toString(), e);
+            }
+
+            return null;
+        }
+    }
+
+    /**
+     * 创建新的实例
+     *
+     * @param <T>
+     * @param clazzName
+     * @return
+     */
+    public static <T> T newInstance(String clazzName) {
+        try {
+            Class<T> clazz = (Class<T>) Class.forName(clazzName, false, Thread.currentThread().getContextClassLoader());
+            return newInstance(clazz);
+        } catch (Exception e) {
+            log.error("can not newInstance class:" + clazzName + "\n" + e.toString(), e);
+        }
+
+        return null;
+    }
+
+
+    public static Class<?> getUsefulClass(Class<?> clazz) {
+        //ControllerTest$ServiceTest$$EnhancerByGuice$$40471411#hello
+        //com.demo.blog.Blog$$EnhancerByCGLIB$$69a17158
+        return clazz.getName().indexOf("$$EnhancerBy") == -1 ? clazz : clazz.getSuperclass();
+    }
+
+
+    /**
+     * 类的set方法缓存，用于减少对类的反射工作
+     */
+    private static Multimap<Class<?>, Method> classMethodsCache = ArrayListMultimap.create();
+
+    /**
+     * 获取 某class 下的所有set 方法
+     *
+     * @param clazz
+     * @return
+     */
+    public static Collection<Method> getClassSetMethods(Class clazz) {
+        Collection<Method> setMethods = classMethodsCache.get(clazz);
+        if (setMethods == null || setMethods.isEmpty()) {
+            Method[] methods = clazz.getMethods();
+            for (Method method : methods) {
+                if (method.getName().startsWith("set")
+                        && method.getName().length() > 3
+                        && method.getParameterCount() == 1) {
+
+                    classMethodsCache.put(clazz, method);
+
+                }
+            }
+        }
+        return setMethods;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+sudo update-rc.d minidlna defaults
+sudo update-rc.d minidlna enable
+update-rc.d service_name defaults
+update-rc.d -f service_name remove
+--------------------------------------------------------------------------------------------------------
+https://medium.com/@benmorel/creating-a-linux-service-with-systemd-611b5c8b91d6
+--------------------------------------------------------------------------------------------------------
+# start lighttpd web server
+start(){
+	echo -n "Starting "
+        $lighttpd -f $conf 
+	[ $? -eq 0 ] && echo " [ OK ] " || echo " [ FAILED ] "
+}
+
+# stop lighttpd web server
+stop(){
+        echo -n $"Stopping $prog "
+        [ -f "$pidfile" ] && read line < "$pidfile"
+        if [ -d "/proc/$line" -a -f $conf ]
+        then
+  	      pkill -KILL -u $user $prog
+              [ $? -eq 0 ] && echo " [ OK ] " || echo " [ FAILED ] "
+              [ -f "$pidfile" ] && rm -f "$pidfile"
+	fi
+}
+--------------------------------------------------------------------------------------------------------
+#!/bin/bash
+#
+# lighttpd     Startup script for the lighttpd server 
+#
+# chkconfig: - 85 15
+# description: Lighttpd web server
+#
+# processname: lighttpd
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+conf="/etc/lighttpd/lighttpd.conf"
+prog=lighttpd
+lighttpd="/usr/sbin/lighttpd"
+pidfile="/var/run/lighttpd.pid"
+user="lighttpd"
+
+# get custome config
+if [ -f /etc/sysconfig/lighttpd ]; then
+        . /etc/sysconfig/lighttpd
+fi
+
+
+start(){
+}
+
+stop(){
+}
+
+reload(){
+}
+
+status(){
+}
+
+case "$1" in
+        start)
+                start 
+                ;;
+        stop)
+                stop 
+                ;;
+        restart)
+                stop
+                start
+                ;;
+        reload)
+                reload
+		;;
+        status)
+                status
+                ;;
+        *)
+                echo $"Usage: $0 {start|stop|restart|reload|status}" 
+esac
+--------------------------------------------------------------------------------------------------------
+import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.fastjson.annotation.JSONField;
+--------------------------------------------------------------------------------------------------------
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.convert.converter.Converter;
+
+import sample.ui.model.Message;
+import sample.ui.repository.InMemoryMessageRespository;
+import sample.ui.repository.MessageRepository;
+
+/**
+ * Initializes Message-related beans.
+ *
+ * @author Arnaldo Piccinelli
+ */
+@Configuration
+public class MessageConfig {
+
+	@Bean
+	public MessageRepository messageRepository() {
+		return new InMemoryMessageRespository();
+	}
+
+	@Bean
+	public Converter<String, Message> messageConverter() {
+		return new Converter<String, Message>() {
+			@Override
+			public Message convert(String id) {
+				return messageRepository().findById(Long.valueOf(id));
+			}
+		};
+	}
+
+}
+import javax.persistence.Column;
+import javax.persistence.MappedSuperclass;
+
+import org.hibernate.validator.constraints.NotEmpty;
+
+/**
+ * Simple JavaBean domain object adds a name property to <code>BaseEntity</code>
+ * . Used as a base class for objects needing these properties.
+ *
+ * @author Ken Krebs
+ * @author Juergen Hoeller
+ */
+@MappedSuperclass
+public class NamedEntity extends BaseEntity {
+
+	private static final long serialVersionUID = -1369326166767704974L;
+
+	@Column(name = "name")
+	@NotEmpty
+	protected String name;
+
+	public NamedEntity() {
+		super();
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getName() {
+		return this.name;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (!super.equals(obj))
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		NamedEntity other = (NamedEntity) obj;
+		if (name == null) {
+			if (other.name != null)
+				return false;
+		} else if (!name.equals(other.name))
+			return false;
+		return true;
+	}
+
+	@Override
+	public String toString() {
+		return this.getName();
+	}
+}
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.ViewResolver;
+import org.springframework.webflow.config.AbstractFlowConfiguration;
+import org.springframework.webflow.definition.registry.FlowDefinitionRegistry;
+import org.springframework.webflow.engine.builder.support.FlowBuilderServices;
+import org.springframework.webflow.executor.FlowExecutor;
+import org.springframework.webflow.mvc.builder.MvcViewFactoryCreator;
+import org.springframework.webflow.security.SecurityFlowExecutionListener;
+
+import sample.ui.flow.UsersFlowHandler;
+
+@Configuration
+public class WebFlowConfig extends AbstractFlowConfiguration {
+
+	@Autowired
+	private WebMvcConfig webMvcConfig;
+
+	@Autowired
+	private List<ViewResolver> viewResolvers;
+
+	// @Autowired
+	// private MvcViewFactoryCreator mvcViewFactoryCreator;
+
+	@Bean
+	public FlowExecutor flowExecutor() {
+		return getFlowExecutorBuilder(flowRegistry()).addFlowExecutionListener(new SecurityFlowExecutionListener(), "*")
+				.build();
+	}
+
+	@Bean
+	public FlowDefinitionRegistry flowRegistry() {
+		return getFlowDefinitionRegistryBuilder(flowBuilderServices()).setBasePath("classpath*:/templates")
+				.addFlowLocationPattern("/**/*-flow.xml").build();
+	}
+
+	@Bean
+	public FlowBuilderServices flowBuilderServices() {
+		return getFlowBuilderServicesBuilder().setViewFactoryCreator(mvcViewFactoryCreator())
+				// .setValidator(validator())
+				.setDevelopmentMode(true).build();
+	}
+
+	@Bean
+	public MvcViewFactoryCreator mvcViewFactoryCreator() {
+		viewResolvers.add(this.webMvcConfig.ajaxThymeleafViewResolver());
+
+		MvcViewFactoryCreator factoryCreator = new MvcViewFactoryCreator();
+		factoryCreator.setViewResolvers(viewResolvers);
+		factoryCreator.setUseSpringBeanBinding(true);
+		return factoryCreator;
+	}
+
+	// @Bean
+	// public LocalValidatorFactoryBean validator() {
+	// return new LocalValidatorFactoryBean();
+	// }
+
+	@Bean(name = "users/createUser")
+	public UsersFlowHandler usersFlowHandler() {
+		return new UsersFlowHandler();
+	}
+}
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.webflow.core.FlowException;
+import org.springframework.webflow.execution.FlowExecutionOutcome;
+import org.springframework.webflow.execution.repository.NoSuchFlowExecutionException;
+import org.springframework.webflow.mvc.servlet.AbstractFlowHandler;
+
+public class UsersFlowHandler extends AbstractFlowHandler {
+
+	private static final String DEFAULT_URL = "/";
+
+	@Override
+	public String handleExecutionOutcome(FlowExecutionOutcome outcome, HttpServletRequest request,
+			HttpServletResponse response) {
+		return DEFAULT_URL;
+	}
+
+	@Override
+	public String handleException(FlowException e, HttpServletRequest request, HttpServletResponse response) {
+		if (e instanceof NoSuchFlowExecutionException) {
+			return DEFAULT_URL;
+		} else {
+			// ModelAndView mav = new ModelAndView();
+			// request.mav.addObject("exception", e);
+			// mav.addObject("timestamp", new Date());
+			// mav.addObject("url", req.getRequestURL());
+			// mav.setViewName("exception");
+			// return mav;
+
+			throw e;
+		}
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import java.io.Serializable;
+
+import org.springframework.context.annotation.Scope;
+import org.springframework.context.annotation.ScopedProxyMode;
+import org.springframework.stereotype.Component;
+
+@Component
+@Scope(proxyMode=ScopedProxyMode.TARGET_CLASS, value="session")
+public class SpringAOPSessionScopedBean implements Serializable {
+	private static final long serialVersionUID = 1L;
+	public int counter=0;
+	
+	public String getCounter() {
+		return String.valueOf(++counter);
+	}
+	
+	public void setCounter(int counter) {
+		this.counter = counter;
+	}
+}
+
+import java.lang.reflect.Field;
+
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.springframework.stereotype.Component;
+
+@Aspect
+@Component
+public class LoggingAspect {
+
+	@Around("execution(public java.lang.String *.getCounter(..))")
+	public Object logBefore(ProceedingJoinPoint joinPoint) throws Throwable {
+		String msg = "(null) -> ";
+		Object target = joinPoint.getTarget();
+		try {
+			Field counterField = target.getClass().getDeclaredField("counter");
+			int counter = (int) counterField.get(target);
+			msg = String.valueOf(counter) + " -> ";
+		} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		String s = (String)joinPoint.proceed();
+		return msg + s;
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+import kafka.consumer.ConsumerConfig;
+import kafka.consumer.ConsumerIterator;
+import kafka.consumer.KafkaStream;
+import kafka.javaapi.consumer.ConsumerConnector;
+import kafka.serializer.StringDecoder;
+import kafka.utils.VerifiableProperties;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
+public class KafkaConsumer {
+
+    public static void main(String[] args) {
+        Properties props = new Properties();
+        props.put("zookeeper.connect", "127.0.0.1:2181");
+        //group 代表一个消费组
+        props.put("group.id", "jd-group");
+        props.put("zookeeper.session.timeout.ms", "4000");
+        props.put("zookeeper.sync.time.ms", "200");
+        props.put("auto.commit.interval.ms", "1000");
+        props.put("auto.offset.reset", "smallest");
+        props.put("serializer.class", "kafka.serializer.StringEncoder");
+
+        ConsumerConfig config = new ConsumerConfig(props);
+
+        ConsumerConnector consumer = kafka.consumer.Consumer.createJavaConsumerConnector(config);
+
+        Map<String, Integer> topicCountMap = new HashMap<String, Integer>();
+        topicCountMap.put("TestTopic", 1);
+
+        StringDecoder keyDecoder = new StringDecoder(new VerifiableProperties());
+        StringDecoder valueDecoder = new StringDecoder(new VerifiableProperties());
+
+//        Map<String, List<KafkaStream<Object, Object>>> consumerMap =
+//                consumer.createMessageStreams(topicCountMap, keyDecoder, valueDecoder);
+//        KafkaStream<Object, Object> stream = consumerMap.get("TestTopic").get(0);
+//        ConsumerIterator<Object, Object> it = stream.iterator();
+//        while (it.hasNext()) {
+//            System.out.println(it.next().message());
+//        }
+        System.out.println("finished");
+    }  
+}
+
+import kafka.javaapi.producer.Producer;
+import kafka.producer.KeyedMessage;
+import kafka.producer.ProducerConfig;
+
+import java.util.Properties;
+
+public class KafkaProducer {
+
+    public static void main(String[] args) {
+        Properties props = new Properties();
+        props.put("metadata.broker.list", "127.0.0.1:9092");
+        props.put("serializer.class", "kafka.serializer.StringEncoder");
+        props.put("key.serializer.class", "kafka.serializer.StringEncoder");
+        props.put("request.required.acks","-1");
+
+        Producer<String, String> producer = new Producer<String, String>(new ProducerConfig(props));
+
+        int messageNo = 100;
+        final int COUNT = 1000;
+        while (messageNo < COUNT) {
+            String key = String.valueOf(messageNo);
+            String data = "hello kafka message " + key;
+            producer.send(new KeyedMessage<String, String>("TestTopic", key ,data));
+            System.out.println(data);
+            messageNo ++;
+        }
+    }  
+}  
+--------------------------------------------------------------------------------------------------------
+import org.hongxi.whatsmars.common.mongo.object.MongoDBConfig;
+import org.hongxi.whatsmars.common.mongo.object.MongoDBCredential;
+import org.hongxi.whatsmars.common.mongo.object.MongoDBDriver;
+import com.mongodb.client.ListCollectionsIterable;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
+import com.mongodb.client.MongoDatabase;
+import org.bson.Document;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Author: qing
+ * Date: 14-10-11
+ */
+public class MongoDBClient {
+
+    protected MongoDBDriver mongoDBDriver;
+
+    protected String databaseName;
+
+    public void setMongoDBDriver(MongoDBDriver mongoDBDriver) {
+        this.mongoDBDriver = mongoDBDriver;
+    }
+
+
+
+    public void setDatabaseName(String databaseName) {
+        this.databaseName = databaseName;
+    }
+
+    public MongoCollection<Document> getCollection(String collectionName) {
+        MongoDatabase db = mongoDBDriver.getDatabase(this.databaseName);
+        return db.getCollection(collectionName);
+    }
+
+    public MongoDatabase getDatabase() {
+        return mongoDBDriver.getDatabase(this.databaseName);
+    }
+
+
+    public static void main(String[] args) throws Exception{
+
+        MongoDBDriver mongoDBDriver = new MongoDBDriver();
+        try{
+            MongoDBConfig mongoDBConfig = new MongoDBConfig();
+            //mongoDBConfig.setAddresses("61.171.123.234:27017");
+            mongoDBConfig.setAddresses("61.171.123.234:27017");
+            List<MongoDBCredential> credentials = new ArrayList<MongoDBCredential>();
+            MongoDBCredential credential = new MongoDBCredential();
+            credential.setDatabaseName("whatsmars-common");
+            credential.setUsername("whatsmars");
+            //credential.setPassword("haodai.com");
+            credential.setPassword("passwordiscommon");
+            credentials.add(credential);
+            mongoDBConfig.setCredentials(credentials);
+            mongoDBDriver.setConfiguration(mongoDBConfig);
+            mongoDBDriver.init();
+            MongoDBClient client = new MongoDBClient();
+            client.setDatabaseName("whatsmars-common");
+            client.setMongoDBDriver(mongoDBDriver);
+            ListCollectionsIterable<Document> documents = client.getDatabase().listCollections();
+            MongoCursor<Document> it = documents.iterator();
+            while (it.hasNext()) {
+                Document item = it.next();
+                System.out.println(item.toJson());
+            }
+            it.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            mongoDBDriver.close();
+        }
+    }
+
+
+}
+
+import org.hongxi.whatsmars.common.mongo.object.MongoDBConfig;
+import org.hongxi.whatsmars.common.ImageSizeEnum;
+import org.hongxi.whatsmars.common.mongo.object.MongoDBCredential;
+import org.hongxi.whatsmars.common.mongo.object.MongoDBDriver;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBCursor;
+import com.mongodb.DBObject;
+import com.mongodb.gridfs.GridFS;
+import com.mongodb.gridfs.GridFSDBFile;
+import com.mongodb.gridfs.GridFSInputFile;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.RandomStringUtils;
+import org.imgscalr.Scalr;
+
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
+import java.awt.image.BufferedImage;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.zip.Adler32;
+
+/**
+ * Author: qing
+ * Date: 14-10-11
+ */
+public class GridFSClient extends MongoDBClient{
+
+    private GridFS _gridFS = null;
+
+    private Object lock = new Object();
+
+    protected static final String[] IMAGE_FORMAT = {"jpg","jpeg","png"};
+
+
+    public void setMongoDBDriver(MongoDBDriver mongoDBDriver) {
+        this.mongoDBDriver = mongoDBDriver;
+    }
+
+    public GridFS getInstance() {
+        if(_gridFS != null) {
+            return _gridFS;
+        }
+        synchronized (lock) {
+            if(_gridFS != null) {
+                return _gridFS;
+            }
+            _gridFS = new GridFS(mongoDBDriver.getDB(this.databaseName));
+            return _gridFS;
+        }
+
+    }
+
+    public void close() {
+        mongoDBDriver.close();
+    }
+
+    /**
+     *
+     * @param inputStream 文件流
+     * @param format 文件格式，“pdf”，“png”等，不包含后缀符号“.”
+     * @return
+     */
+    public String saveFile(InputStream inputStream,String format,String uid) {
+        try {
+            GridFS gridFS = getInstance();
+
+            //随机生成文件名称，多次重试
+            String filename = this.randomFileName();
+            //如果有文件重复，则重新生成filename
+            while (true) {
+                GridFSDBFile _current = gridFS.findOne(filename);
+                //如果文件不存在，则保存操作
+                if (_current == null) {
+                    break;
+                }
+                filename = this.randomFileName();
+            }
+
+            GridFSInputFile file = gridFS.createFile(inputStream, filename);
+            if(format != null) {
+                file.put("format", format);
+            }
+            if(uid != null) {
+                file.put("uid",uid);
+            }
+            file.put("content-type","application/octet-stream");
+            file.save();
+            return concat(filename,format);
+        }catch (Exception e) {
+
+            throw new RuntimeException(e);
+        } finally {
+            try{
+                inputStream.close();
+            }catch (Exception ex) {
+                //
+            }
+        }
+    }
+
+    private String concat(String filename,String format) {
+        if(format == null) {
+            return filename;
+        }
+        if(format.startsWith(".")) {
+            return filename + format;
+        }
+        return filename + "." + format;
+    }
+
+    private String randomFileName() {
+        return RandomStringUtils.random(32, true, true).toLowerCase();
+    }
+
+    public void delete(String filename) {
+        GridFS gridFS = getInstance();
+        gridFS.remove(filename);
+    }
+
+    public InputStream getFile(String filename) {
+        GridFS gridFS = getInstance();
+        GridFSDBFile _current = gridFS.findOne(filename);
+        if(_current == null) {
+            return null;
+        }
+        return _current.getInputStream();
+    }
+
+    public InputStream getImage(String filename,String path) throws Exception{
+        //获取最大边,等比缩放
+        if(ImageSizeEnum.valueOfPath(path) == null) {
+            return null;
+        }
+
+        GridFS gridFS = getInstance();
+        GridFSDBFile _current = gridFS.findOne(filename);
+        if(_current == null) {
+            return null;
+        }
+
+        int size = ImageSizeEnum.valueOfPath(path).size;
+
+        int max = (Integer)_current.get("max");//图片的实际尺寸
+
+        InputStream result = null;
+        //裁剪
+        if(size < max) {
+            InputStream inputStream = _current.getInputStream();
+            BufferedImage image = ImageIO.read(inputStream);
+
+            inputStream.close();
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            BufferedImage thumbnail = Scalr.resize(image, size);//保留最大尺寸
+            String format = (String) _current.get("format");
+            ImageIO.write(thumbnail, format, bos);
+            result = new ByteArrayInputStream(bos.toByteArray());
+        } else {
+            result = _current.getInputStream();
+        }
+
+        return result;
+    }
+
+
+    /**
+     *
+     * @param inputStream 输入流
+     * @return
+     * @throws Exception
+     */
+    public String saveImage(InputStream inputStream,String uid) throws Exception{
+
+        BundleEntry bundleEntry = this.drain(inputStream);
+        if(bundleEntry == null) {
+            throw new RuntimeException("file isn't a image!");
+        }
+
+        ByteArrayInputStream bis = bundleEntry.inputStream;
+
+        String _currentFileName = this.isExistedImage(bundleEntry);
+
+        //如果文件md5已存在
+        if(_currentFileName != null) {
+            return _currentFileName;
+        }
+
+        String format = bundleEntry.format;
+        GridFS gridFS = getInstance();
+        String filename = this.randomFileName();
+        //检测文件名称
+        while(true){
+            GridFSDBFile _current = gridFS.findOne(filename);
+            //如果文件不存在，则保存操作
+            if (_current == null) {
+                break;
+            }
+            //否则，重新生成文件名称
+            filename = randomFileName();
+        }
+        //图片处理
+        bis.reset();
+
+        //保存原图
+        GridFSInputFile _inputFile = gridFS.createFile(bis, filename);
+        if(uid != null) {
+            _inputFile.put("uid", uid);
+        }
+        _inputFile.put("max",bundleEntry.max);
+        _inputFile.put("crc",bundleEntry.crc);
+        _inputFile.put("format",format);
+        _inputFile.put("md5_source",bundleEntry.md5);
+        _inputFile.save();
+
+        return concat(filename,format);
+
+    }
+
+    private String isExistedImage(BundleEntry entry) {
+        GridFS gridFS = getInstance();
+        DBObject query = new BasicDBObject();
+        query.put("crc",entry.crc);
+        query.put("md5_source",entry.md5);
+        GridFSDBFile _current = gridFS.findOne(query);
+        //根据MD5值查询，检测是否存在
+        if(_current == null) {
+            return null;
+        }
+        String format = (String)_current.get("format");
+        if(format.startsWith(".")) {
+            return _current.getFilename() + format;
+        }
+        return _current.getFilename() + "." + format;
+    }
+
+    /**
+     * 因为图片的stream需要reset，所以需要将流全部汲取
+     * @param inputStream
+     * @return
+     * @throws Exception
+     */
+    protected BundleEntry drain(InputStream inputStream) throws Exception{
+        //
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        //计算源文件的md5、crc，以防止图片的重复上传
+        Adler32 crc = new Adler32();
+        try{
+            while(true) {
+                int _c = inputStream.read();
+                if(_c == -1) {
+                    break;
+                }
+                bos.write(_c);
+                crc.update(_c);
+            }
+
+        }catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            inputStream.close();
+        }
+
+        //第一步：图片格式
+        List<String> formats = new ArrayList<String>();//
+        ImageInputStream imageInputStream = ImageIO.createImageInputStream(new ByteArrayInputStream(bos.toByteArray()));
+        imageInputStream.mark();
+        try {
+            Iterator<ImageReader> it = ImageIO.getImageReaders(imageInputStream);
+            while (it.hasNext()) {
+                ImageReader reader = it.next();
+                String format  = reader.getFormatName().toLowerCase();
+                if(ArrayUtils.contains(IMAGE_FORMAT, format)) {
+                    formats.add(format);
+                }
+            }
+        }catch (Exception ex) {
+            //
+        }
+
+        //如果格式不合法，则直接返回
+        if(formats.isEmpty()) {
+            try {
+                imageInputStream.close();
+            } catch (Exception e) {
+                //
+            }
+            return null;
+        }
+
+        String md5 = DigestUtils.md5Hex(bos.toByteArray());//求原始图片的MD5，和crc
+        System.out.println("md5:" + md5);
+        imageInputStream.reset();
+
+        BufferedImage image = ImageIO.read(imageInputStream);
+
+        //获取最大边,等比缩放
+        int max = Math.max(image.getHeight(), image.getWidth());
+
+        bos = new ByteArrayOutputStream();
+        //如果尺寸超过最大值，则resize
+        if(max > ImageSizeEnum.PIXELS_MAX.size) {
+            max = ImageSizeEnum.PIXELS_MAX.size;
+        }
+        String format = formats.get(0);
+        BufferedImage thumbnail = Scalr.resize(image, max);//保留最大尺寸
+        ImageIO.write(thumbnail, format, bos);
+
+        return new BundleEntry(new ByteArrayInputStream(bos.toByteArray()),md5,crc.getValue(),format,max);
+    }
+
+
+    protected class BundleEntry {
+        String md5;
+        long crc;
+        String format;
+        int max;
+        ByteArrayInputStream inputStream;
+        BundleEntry(ByteArrayInputStream inputStream,String md5,long crc,String format,int max) {
+            this.md5 = md5;
+            this.crc = crc;
+            this.inputStream = inputStream;
+            this.format = format;
+            this.max = max;
+        }
+    }
+
+
+
+    public static void main(String[] args) throws Exception{
+
+        MongoDBDriver mongoDBDriver = new MongoDBDriver();
+        try {
+            GridFSClient client = new GridFSClient();
+            MongoDBConfig mongoDBConfig = new MongoDBConfig();
+            //mongoDBConfig.setAddresses("61.172.238.149:27017");
+            mongoDBConfig.setAddresses("61.172.240.58:27017");
+            List<MongoDBCredential> credentials = new ArrayList<MongoDBCredential>();
+            MongoDBCredential credential = new MongoDBCredential();
+            credential.setDatabaseName("whatsmars-fs");
+            credential.setUsername("whatsmars");
+            //credential.setPassword("haodai.com");
+            credential.setPassword("passwordisfs");
+            credentials.add(credential);
+            mongoDBConfig.setCredentials(credentials);
+            mongoDBDriver.setConfiguration(mongoDBConfig);
+            mongoDBDriver.init();
+            client.setDatabaseName("whatsmars-fs");
+            client.setMongoDBDriver(mongoDBDriver);
+            testUpload(client);
+            //testClear(client.getInstance());
+            //testGetImage(client.getInstance(),"xhgcguccxumuyl9hzdombgfvzgriv7rf",null);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            mongoDBDriver.close();
+        }
+
+    }
+
+
+    protected static void testClear(GridFS gridFS) {
+        DBCursor cursor = gridFS.getFileList();
+        while (cursor.hasNext()) {
+            DBObject dbObject = cursor.next();
+            String filename = (String)cursor.next().get("filename");
+            System.out.println(filename);
+            System.out.println(dbObject.toString());
+            gridFS.remove(filename);
+        }
+        cursor.close();
+    }
+
+
+    protected static void testUpload(GridFSClient client) throws Exception{
+        FileInputStream inputStream = new FileInputStream(new File("/data/tmp/222222222.jpg"));
+
+        try {
+
+            String filename = client.saveImage(inputStream, null);
+            System.out.println(filename);
+            String source = filename.substring(0,filename.lastIndexOf("."));
+            System.out.println(source);
+            InputStream result = client.getImage(source, "x4");
+            if(result == null) {
+                System.out.println("not found!");
+            }
+            //vejibw36famkscjyksgke7bugzonnyan
+
+            FileOutputStream outputStream = new FileOutputStream("/data/tmp/" + filename);
+            while (true) {
+                int i = result.read();
+                if( i == -1) {
+                    break;
+                }
+                outputStream.write(i);
+            }
+            outputStream.flush();
+            outputStream.close();
+            result.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            inputStream.close();
+        }
+
+    }
+
+    protected static void testGetImage(GridFS gridFS,String filename,String path) {
+        DBObject query = new BasicDBObject();
+        query.put("md5_source","9e131ae4ed7337d4712650229b827725");
+        GridFSDBFile file = gridFS.findOne(query);
+        if(file != null) {
+            System.out.println(file.getFilename());
+        }
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+
+/**
+ * Created by jenny on 4/15/15.
+ */
+public class ValidateCodeUtils {
+
+    private static final int WIDTH = 85;
+    private static final int HEIGHT = 40;
+
+
+    /**
+     * 生成验证码图片
+     * @return key为code字符串，value位图片
+     */
+    public static Map.Entry<String,BufferedImage> generate() {
+
+        BufferedImage image = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB); //在内存中创建图象
+        Graphics2D g = image.createGraphics(); //获取图形上下文
+
+        //设定背景色
+        g.setColor(getRandColor(200, 250));
+        g.fillRect(0, 0, WIDTH, HEIGHT);
+        g.setFont(new Font("Times New Roman", Font.PLAIN, 18));  //设定字体
+        //随机产生155条干扰线，使图象中的认证码不易被其它程序探测到
+        g.setColor(getRandColor(160, 200));
+
+        Random random = new Random(); //生成随机类
+
+        for (int i = 0; i < 155; i++) {
+            int x = random.nextInt(WIDTH);
+            int y = random.nextInt(HEIGHT);
+            int xl = random.nextInt(12);
+            int yl = random.nextInt(12);
+            g.drawLine(x, y, x + xl, y + yl);
+        }
+
+        StringBuffer sb = new StringBuffer(); //取随机产生的认证码(4位数字)
+
+        for (int i = 0; i < 4; i++) {
+            String code = String.valueOf(random.nextInt(10));
+            sb.append(code);
+            //将认证码显示到图象中
+            g.setColor(new Color(20 + random.nextInt(110), 20 + random.nextInt(110), 20 + random.nextInt(110)));
+            g.drawString(code, 13 * i + 18, 27);
+        }
+
+        Map<String,BufferedImage> map = new HashMap<String, BufferedImage>();
+        map.put(sb.toString(),image);
+
+        return map.entrySet().iterator().next();
+    }
+
+    /*
+     * 给定范围获得随机颜色
+     */
+    private static Color getRandColor(int fc, int bc) {
+        Random random = new Random();
+        if (fc > 255) {
+            fc = 255;
+        }
+        if (bc > 255) {
+            bc = 255;
+        }
+        int r = fc + random.nextInt(bc - fc);
+        int g = fc + random.nextInt(bc - fc);
+        int b = fc + random.nextInt(bc - fc);
+        return new Color(r, g, b);
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+import java.io.IOException;
+import java.io.InputStream;
+
+/**
+ * Created by shenhongxi on 16/4/11.
+ * Extends InputStream to be more efficient reading lines during HTTP header processing.
+ */
+public class SocketInputStream extends InputStream {
+
+    /**
+     * Underlying input stream.
+     */
+    private InputStream input;
+
+    /**
+     * Internal buffer.
+     */
+    protected byte[] buf;
+
+
+    /**
+     * Last valid byte.
+     */
+    protected int count;
+
+
+    /**
+     * Position in the buffer.
+     */
+    protected int pos;
+
+    public SocketInputStream(InputStream input, int bufferSize) {
+        this.input = input;
+        this.buf = new byte[bufferSize];
+    }
+
+    // input => buf => HttpRequestLine
+    public void readRequestLine(HttpRequestLine requestLine) throws IOException {
+        // Recycling check
+        if (requestLine.methodEnd != 0)
+            requestLine.recycle();
+
+        // Checking for a blank line
+
+        // Reading the method name
+
+        // Reading URI
+
+        // Reading protocol
+    }
+
+    // input => buf => HttpHeader
+    public void readHeader(HttpHeader header) throws IOException {
+        // Recycling check
+        if (header.nameEnd != 0)
+            header.recycle();
+
+        // Checking for a blank line
+
+        // Reading the header name
+
+        // Reading the header value (which can be spanned over multiple lines)
+    }
+
+    @Override
+    public int read() throws IOException {
+        if (pos >= count) {
+            fill();
+            if (pos >= count)
+                return -1;
+        }
+        return buf[pos++] & 0xff;
+    }
+
+    /**
+     * Fill the internal buffer using data from the undelying input stream.
+     */
+    protected void fill()
+            throws IOException {
+        pos = 0;
+        count = 0;
+        int nRead = input.read(buf, 0, buf.length);
+        if (nRead > 0) {
+            count = nRead;
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+
+import com.mongodb.Mongo;
+import com.mongodb.WriteConcern;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.data.mongodb.config.AbstractMongoConfiguration;
+import org.springframework.data.mongodb.core.convert.CustomConversions;
+import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
+import org.springframework.transaction.PlatformTransactionManager;
+
+import javax.sql.DataSource;
+import java.util.List;
+
+/**
+ * @author Oliver Gierke
+ */
+@Configuration
+@ComponentScan
+@EnableMongoRepositories
+class ApplicationConfig extends AbstractMongoConfiguration {
+
+	@Autowired
+	private List<Converter<?, ?>> converters;
+
+	/* 
+	 * (non-Javadoc)
+	 * @see org.springframework.data.mongodb.config.AbstractMongoConfiguration#getDatabaseName()
+	 */
+	@Override
+	protected String getDatabaseName() {
+		return "e-store";
+	}
+
+	/* 
+	 * (non-Javadoc)
+	 * @see org.springframework.data.mongodb.config.AbstractMongoConfiguration#mongo()
+	 */
+	@Override
+	public Mongo mongo() throws Exception {
+
+		Mongo mongo = new Mongo();
+		mongo.setWriteConcern(WriteConcern.SAFE);
+
+		return mongo;
+	}
+
+	/* 
+	 * (non-Javadoc)
+	 * @see org.springframework.data.mongodb.config.AbstractMongoConfiguration#customConversions()
+	 */
+	@Override
+	public CustomConversions customConversions() {
+		return new CustomConversions(converters);
+	}
+}
+--------------------------------------------------------------------------------------------------------
+
+#!/bin/sh
+
+app_name="whatsmars-spring-boot"
+app_profiles="dev"
+
+mvn clean package -Dmaven.test.skip=true
+
+nohup java -Xmx1024m -Xms1024m -XX:-PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintHeapAtGC -XX:+PrintTenuringDistribution -XX:+HeapDumpOnOutOfMemoryError -Xloggc:./gc.log -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -jar target/${app_name}.jar --spring.profiles.active=${app_profiles} >./console.log 2>&1 &
+
+
+#!/usr/bin/env bash
+# 此脚本在本地执行
+# 默认发布到测试主机 t1234x.add.bjyz.toutiao.im
+# 传入参数prod，则发布到正式环境的4台主机 "t2001x.add.bjyz.toutiao.im" "t2002x.add.bjyz.toutiao.im" "t2003x.add.bjhc.toutiao.im" "t2004x.add.bjhc.toutiao.im
+
+app_profiles=${1:-"test"}
+app_name=${2:-"whatsmars-spring-boot"}
+remote_deploy_path="/data/toutiao"
+remote_deploy_user=toutiao
+host_file=host_${app_profiles}.txt
+
+if [ ! -e $host_file ]; then
+    echo "host file not exists, path:${host_file}"
+    exit 1
+fi
+
+remote_deploy_hosts=(`cat ${host_file} | tr '\n' ' '`)
+echo "deploy env => $app_profiles, to => ${remote_deploy_hosts[@]}:${remote_deploy_path}"
+
+# 打包
+project_path="$(cd `dirname $0`; pwd)/.."
+cd ${project_path}
+mvn clean package -Dmaven.test.skip=true
+
+# 部署
+now=`date +"%Y%m%d%H%M%S"`
+jar_path="${project_path}/target/${app_name}.jar"
+for host in ${remote_deploy_hosts[@]}; do
+    echo "start deploy ${jar_path} to $host"
+    ssh ${remote_deploy_user}@${host} "${remote_deploy_path}/stop.sh"
+    ssh ${remote_deploy_user}@${host} "mkdir -p ${remote_deploy_path}/deploy_backup; mv ${remote_deploy_path}/${app_name}.jar ${remote_deploy_path}/deploy_backup/${app_name}-${now}.jar"
+    scp ${jar_path} ${remote_deploy_user}@${host}:${remote_deploy_path}/
+    ssh ${remote_deploy_user}@${host} "cd ${remote_deploy_path}/ ; ./start.sh ${app_profiles}"
+    echo "deploy ${host} ok"
+    sleep 10
+done
+echo "done."
+
+
+#!/usr/bin/env bash
+
+echo "restart whatsmars-spring-boot ..."
+cd /data/toutiao
+./stop.sh
+./start.sh
+echo "done."
+
+
+#!/usr/bin/env bash
+
+app_name="whatsmars-spring-boot"
+
+process_no=`ps -ef|grep java|grep ${app_name} | awk '{print $2}'`
+if test -n "${process_no}"
+then
+  kill -SIGTERM ${process_no}
+  sleep 2
+fi
+
+process_no_again=`ps -ef|grep java|grep ${app_name} | awk '{print $2}'`
+if test -n "${process_no_again}"
+then
+  echo "Process ${process_no_again} is still running."
+  kill -9 ${process_no_again}
+  echo "Process ${process_no_again} has been killed.(-9)"
+else
+  echo "Process ${process_no} has been killed."
+fi
+--------------------------------------------------------------------------------------------------------
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
+/**
+ * <p>
+ * The BCryptPasswordEncoderUtil class assists engineers during application construction. It is not intended for use in
+ * a 'live' application.
+ * </p>
+ * <p>
+ * The class uses a BCryptPasswordEncoder to encrypt clear text values using it's native hashing algorithm. This utility
+ * may be used to create encrypted password values in a database initialization script used for unit testing or local
+ * machine development.
+ * </p>
+ * 
+ * @author Matt Warman
+ *
+ */
+public class BCryptPasswordEncoderUtil {
+
+    /**
+     * The Logger for this Class.
+     */
+    private static final Logger logger = LoggerFactory.getLogger(BCryptPasswordEncoderUtil.class);
+
+    /**
+     * The format for encoder messages.
+     */
+    private static final String ENCODED_FORMAT = "Argument: %s \tEncoded: %s \n";
+
+    /**
+     * A Writer for printing messages to the console.
+     */
+    private transient Writer writer;
+
+    /**
+     * Uses a BCryptPasswordEncoder to hash the clear text value.
+     * 
+     * @param clearText A String of clear text to be encrypted.
+     * @return The encrypted (hashed) value.
+     */
+    public String encode(final String clearText) {
+        final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+        return encoder.encode(clearText);
+    }
+
+    /**
+     * Facilitates gathering user input and invoking the class behavior.
+     * 
+     * @param args An array of command line input values. (not used)
+     */
+    public static void main(final String... args) {
+
+        final BCryptPasswordEncoderUtil encoderUtil = new BCryptPasswordEncoderUtil();
+
+        for (final String arg : args) {
+            final String encodedText = encoderUtil.encode(arg);
+            final String message = String.format(ENCODED_FORMAT, arg, encodedText);
+            encoderUtil.write(message);
+        }
+
+        encoderUtil.close();
+
+    }
+
+    /**
+     * Writes a message to the console.
+     * 
+     * @param str A String message value.
+     */
+    private void write(final String str) {
+
+        try {
+            if (writer == null) {
+                writer = new OutputStreamWriter(System.out);
+            }
+            writer.write(str);
+        } catch (IOException ioe) {
+            logger.error("Writer cannot write.", ioe);
+            System.exit(1);
+        }
+    }
+
+    /**
+     * Closes all system resources and prepares for application termination.
+     */
+    private void close() {
+        try {
+            if (writer != null) {
+                writer.close();
+            }
+        } catch (IOException ioe) {
+            logger.error("Problem closing resources.", ioe);
+            System.exit(1);
+        }
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+int next_number(int num){
+
+  int digits[10];
+  int x,y,i;
+  for(i=0; i<10; i++)
+     digits[i]=0;
+
+  int divisor = 10;
+  int multiplier = 1;
+ /* While we have processed all digis of the number */
+  while(num){
+    /* get the rightmost digit in the number */
+     x = num %divisor;
+
+    /* Store it for sorting and finding next higher number than pivot */
+     digits[x]++;
+
+    /* Get the left digit of rightmost digit i.e x */
+     y = (num % (divisor *10))/divisor;
+
+ /* If left digit is less than right one,
+     this digit needs to be swapped */
+     if(y !=0  && y<x){
+         for(i=y; i<10; i++){
+          /* search for number which is least greater than y pivot */
+            if(digits[i] !=0){
+               digits[i]--;
+               digits[y]++;
+               break;
+             }
+          }
+          /* Swap that digit with pivot i.e y */
+          num  =  num /100;
+          num = num *100 + i*10 ;
+          break;
+      }
+      else{
+       /* If left digit is greater than right one, 
+          just remove the last digit and continue. */
+          num = num/divisor;
+          multiplier *= 10;
+      }
+   }
+ /* If all the digits are in sorted order, there is no number possible */
+  if(num == 0)
+       return -1;
+
+  /* Restore the number without digits  after pivot */
+   num = num * multiplier;
+   int temp = 0;
+ /*Calculate the number with digits after pivot in non increasing order */
+   for(i=0;i<10;){
+       while(digits[i] != 0){
+           temp = temp + (i) * multiplier;
+           digits[i]--;
+           multiplier/=10;
+       }
+       i++;
+    }
+    return num + temp;
+} 
+--------------------------------------------------------------------------------------------------------
+import io.netty.bootstrap.Bootstrap;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.boot.autoconfigure.condition.SearchStrategy;
+import org.springframework.boot.autoconfigure.web.EmbeddedServletContainerAutoConfiguration.EmbeddedServletContainerCustomizerBeanPostProcessorRegistrar;
+import org.springframework.boot.context.embedded.EmbeddedServletContainerFactory;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
+
+/**
+ * {@link org.springframework.boot.autoconfigure.EnableAutoConfiguration Auto-configuration} for an embedded servlet containers.
+ *
+ * @author Danny Thomas
+ */
+@Order(Ordered.HIGHEST_PRECEDENCE)
+@Configuration
+@ConditionalOnWebApplication
+@Import(EmbeddedServletContainerCustomizerBeanPostProcessorRegistrar.class)
+public class NettyEmbeddedServletContainerAutoConfiguration {
+    @Configuration
+    @ConditionalOnClass({Bootstrap.class})
+    @ConditionalOnMissingBean(value = EmbeddedServletContainerFactory.class, search = SearchStrategy.CURRENT)
+    public static class EmbeddedNetty {
+        @Bean
+        public NettyEmbeddedServletContainerFactory nettyEmbeddedServletContainerFactory() {
+            return new NettyEmbeddedServletContainerFactory();
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+08:00")
+--------------------------------------------------------------------------------------------------------
+import org.esco.demo.ssc.security.AuthoritiesConstants;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
+import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
+import org.springframework.security.access.vote.RoleHierarchyVoter;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.method.configuration.GlobalMethodSecurityConfiguration;
+
+@Configuration
+@EnableGlobalMethodSecurity(prePostEnabled = true, jsr250Enabled = true)
+public class MethodSecurityConfig extends GlobalMethodSecurityConfiguration {
+
+	@Bean
+	public RoleHierarchyVoter roleHierarchyVoter() {
+		return new RoleHierarchyVoter(roleHierarchy());
+	}
+
+	@Bean
+	public RoleHierarchy roleHierarchy() {
+		RoleHierarchyImpl rhi = new RoleHierarchyImpl();
+		rhi.setHierarchy(AuthoritiesConstants.ADMIN + " > " + AuthoritiesConstants.USER + " "
+				+ AuthoritiesConstants.USER + " > " + AuthoritiesConstants.ANONYMOUS);
+		return rhi;
+	}
+
+	// @Bean
+	// public PermissionEvaluator permissionEvaluator() {
+	// return new CustomPermissionEvaluator();
+	// }
+
+	@Override
+	protected MethodSecurityExpressionHandler createExpressionHandler() {
+		DefaultMethodSecurityExpressionHandler expressionHandler = new DefaultMethodSecurityExpressionHandler();
+		// expressionHandler.setPermissionEvaluator(permissionEvaluator());
+		expressionHandler.setRoleHierarchy(roleHierarchy());
+		return expressionHandler;
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import org.apache.activemq.ActiveMQConnectionFactory;
+import org.apache.activemq.command.ActiveMQQueue;
+import org.apache.activemq.command.ActiveMQTopic;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.jms.annotation.EnableJms;
+import org.springframework.jms.connection.CachingConnectionFactory;
+import org.springframework.jms.core.JmsTemplate;
+import org.springframework.jms.listener.DefaultMessageListenerContainer;
+import org.springside.examples.quickstart.jms.NotifyMessageListener;
+
+import javax.jms.MessageListener;
+import javax.jms.Queue;
+import javax.jms.Topic;
+
+/**
+ * Created by Ivan on 2015/11/25.
+ */
+@Configuration
+@EnableJms
+public class ActiveMQConfiguration {
+    @Value("${spring.activemq.broker-url}")
+    private String brokerURL;
+
+    @Bean
+    public ActiveMQConnectionFactory connectionFactory()
+    {
+        return new ActiveMQConnectionFactory(brokerURL);
+    }
+
+    @Bean
+    public CachingConnectionFactory cachingConnectionFactory()
+    {
+        CachingConnectionFactory cachingConnectionFactory=new CachingConnectionFactory();
+        cachingConnectionFactory.setTargetConnectionFactory(connectionFactory());
+        cachingConnectionFactory.setSessionCacheSize(10);
+        return cachingConnectionFactory;
+    }
+
+    @Bean
+    public JmsTemplate jmsTemplate()
+    {
+        JmsTemplate jmsTemplate=new JmsTemplate();
+        jmsTemplate.setConnectionFactory(cachingConnectionFactory());
+        return jmsTemplate;
+    }
+
+    @Bean(name = "notifyQueue")
+    public Queue queue() {
+        return new ActiveMQQueue("q.notify");
+    }
+
+    @Bean(name = "notifyTopic")
+    public Topic topic() {
+        return new ActiveMQTopic("t.notify");
+    }
+
+    @Bean
+    public DefaultMessageListenerContainer queueContainer() {
+        DefaultMessageListenerContainer queueContainer = new DefaultMessageListenerContainer();
+        queueContainer.setConnectionFactory(connectionFactory());
+        queueContainer.setDestination(queue());
+        queueContainer.setMessageListener(notifyMessageListener());
+        queueContainer.setConcurrentConsumers(10);
+        return queueContainer;
+    }
+
+    @Bean
+    public DefaultMessageListenerContainer topicContainer() {
+        DefaultMessageListenerContainer topicContainer = new DefaultMessageListenerContainer();
+        topicContainer.setConnectionFactory(connectionFactory());
+        topicContainer.setDestination(topic());
+        topicContainer.setMessageListener(notifyMessageListener());
+        return topicContainer;
+    }
+
+    @Bean
+    public MessageListener notifyMessageListener() {
+        return new NotifyMessageListener();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Pointcut;
+import org.aspectj.lang.reflect.MethodSignature;
+import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.web.servlet.ModelAndView;
+import wang.raye.admin.model.AdminUser;
+import wang.raye.admin.model.WebResult;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import java.util.List;
+
+
+/**
+ * 安全认证的aop拦截器
+ * Created by Raye on 2017/3/29.
+ */
+@Aspect
+@Component
+public class SecurityAspect {
+    /** 登录的地址，不对登录进行拦截*/
+    private static final String LOGINURL = "/admin/login";
+    /** 注销的地址，不对注销进行拦截*/
+    private static final String LOGINOUTURL = "/admin/loginout";
+    @Pointcut("execution(public * wang.raye.admin.controller..*.*(..))")
+    public void verification() {
+    }
+
+    @Around("verification()")
+    public Object around(ProceedingJoinPoint pjp) throws Throwable {
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+
+        HttpServletRequest request = attributes.getRequest();
+        HttpSession session = request.getSession();
+
+
+        String uri = request.getRequestURI();
+        if(uri.lastIndexOf("/") == uri.length()-1){
+            uri = uri.substring(0,uri.length()-1);
+        }
+        System.out.println("进入拦截器:"+uri);
+        if(LOGINURL.equals(uri)){
+            //不拦截的
+            return pjp.proceed();
+        }
+        if((session.getAttribute("loginUser") == null || session.getAttribute("authorities") == null) ){
+            Class returnType = ((MethodSignature) pjp.getSignature()).getReturnType();
+            if(returnType == String.class || returnType == ModelAndView.class){
+                //返回到登录页面
+                return "/nologin";
+            }else{
+                //返回没有权限的json
+                return WebResult.noLogin();
+            }
+
+        }
+        AdminUser user = (AdminUser) session.getAttribute("loginUser");
+        //判断是否有权限
+        List<String> authorities = (List<String>) session.getAttribute("authorities");
+        if(authorities.contains(uri) || -1 == user.getId() || LOGINOUTURL.equals(uri)) {
+            return pjp.proceed();
+        }else{
+            Class returnType = ((MethodSignature) pjp.getSignature()).getReturnType();
+            if(returnType == String.class || returnType == ModelAndView.class){
+                //返回到登录页面
+                return "/303";
+            }else{
+                //返回没有权限的json
+                return WebResult.noAuthority();
+            }
+        }
+
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import org.springside.modules.beanvalidator.BeanValidators;
+import org.springside.modules.mapper.JsonMapper;
+import org.springside.modules.web.MediaTypes;
+
+import javax.validation.ConstraintViolationException;
+import java.util.Map;
+
+/**
+ * 自定义ExceptionHandler，专门处理Restful异常.
+ * 
+ * @author calvin
+ */
+// 会被Spring-MVC自动扫描，但又不属于Controller的annotation。
+@ControllerAdvice
+public class RestExceptionHandler extends ResponseEntityExceptionHandler {
+	private JsonMapper jsonMapper = new JsonMapper();
+
+	/**
+	 * 处理RestException.
+	 */
+	@ExceptionHandler(value = { RestException.class })
+	public final ResponseEntity<?> handleException(RestException ex, WebRequest request) {
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.parseMediaType(MediaTypes.TEXT_PLAIN_UTF_8));
+		return handleExceptionInternal(ex, ex.getMessage(), headers, ex.status, request);
+	}
+
+	/**
+	 * 处理JSR311 Validation异常.
+	 */
+	@ExceptionHandler(value = { ConstraintViolationException.class })
+	public final ResponseEntity<?> handleException(ConstraintViolationException ex, WebRequest request) {
+		Map<String, String> errors = BeanValidators.extractPropertyAndMessage(ex.getConstraintViolations());
+		String body = jsonMapper.toJson(errors);
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.parseMediaType(MediaTypes.TEXT_PLAIN_UTF_8));
+		return handleExceptionInternal(ex, body, headers, HttpStatus.BAD_REQUEST, request);
+	}
+}
+--------------------------------------------------------------------------------------------------------
+   @Bean
+    public DefaultAdvisorAutoProxyCreator getDefaultAdvisorAutoProxyCreator() {
+        DefaultAdvisorAutoProxyCreator daap = new DefaultAdvisorAutoProxyCreator();
+        daap.setProxyTargetClass(true);
+        return daap;
+    }
+--------------------------------------------------------------------------------------------------------
+    @Bean
+    MessageListenerAdapter creditApplicationApprovedMessageListener(CreditApplicationApprovedEventReceiver receiver) {
+        MessageListenerAdapter messageListenerAdapter = new MessageListenerAdapter(receiver, "receiveMessage");
+        messageListenerAdapter.setSerializer(new Jackson2JsonRedisSerializer<CreditApplicationApprovedEvent>(CreditApplicationApprovedEvent.class));
+        return messageListenerAdapter;
+    }
+
+    @Bean
+    MessageListenerAdapter creditApplicationDeclinedMessageListener(CreditApplicationDeclinedEventReceiver receiver) {
+        MessageListenerAdapter messageListenerAdapter = new MessageListenerAdapter(receiver, "receiveMessage");
+        messageListenerAdapter.setSerializer(new Jackson2JsonRedisSerializer<CreditApplicationDeclinedEvent>(CreditApplicationDeclinedEvent.class));
+        return messageListenerAdapter;
+    }
+
+    @Bean
+    MessageListenerAdapter customerCreatedMessageListener(CustomerCreatedEventReceiver receiver) {
+        MessageListenerAdapter messageListenerAdapter = new MessageListenerAdapter(receiver, "receiveMessage");
+        messageListenerAdapter.setSerializer(new Jackson2JsonRedisSerializer<CustomerCreatedEvent>(CustomerCreatedEvent.class));
+        return messageListenerAdapter;
+    }
+--------------------------------------------------------------------------------------------------------
+import io.netty.channel.Channel;
+
+import java.net.SocketAddress;
+
+public class NettyUtil {
+
+    /**
+     * 获取Channel的远程IP地址
+     * @param channel
+     * @return
+     */
+    public static String parseChannelRemoteAddr(final Channel channel) {
+        if (null == channel) {
+            return "";
+        }
+        SocketAddress remote = channel.remoteAddress();
+        final String addr = remote != null ? remote.toString() : "";
+
+        if (addr.length() > 0) {
+            int index = addr.lastIndexOf("/");
+            if (index >= 0) {
+                return addr.substring(index + 1);
+            }
+
+            return addr;
+        }
+
+        return "";
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.quark.common.entity.User;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+@CacheConfig(cacheNames = "users")
+public interface UserDao extends JpaRepository<User,Integer> ,JpaSpecificationExecutor {
+
+    User findByUsername(String username);
+
+    User findByEmail(String email);
+
+    @Query(value = "select u.id, u.username , u.icon from quark_user u where DATE_SUB(CURDATE(), INTERVAL 30 DAY) <=DATE(u.init_time) ORDER BY u.id DESC limit 12" ,nativeQuery = true)
+    List<Object> findNewUser();
+
+}
+--------------------------------------------------------------------------------------------------------
+    class Solution {
+        public int solution(final int[] A) {
+            final int N = A.length;
+            final Set<Integer> set = new HashSet<>();
+            for (int a : A) {
+                if (a > 0) {
+                    set.add(a);
+                }
+            }
+            for (int i = 1; i <= N + 1; i++) {
+                if (!set.contains(i)) {
+                    return i;
+                }
+            }
+            return 0;
+        }
+    }
+--------------------------------------------------------------------------------------------------------
+int N = A.length;
+Set<Integer> set = new HashSet<>();
+for (int a : A) {
+    if (a > 0) {
+        set.add(a);
+    }
+}
+for (int i = 1; i <= N + 1; i++) {
+    if (!set.contains(i)) {
+        return i;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.auth0.spring.security.api.JwtWebSecurityConfigurer;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+
+
+@Configuration
+@EnableWebSecurity(debug = true)
+public class AppConfig extends WebSecurityConfigurerAdapter {
+
+    @Value(value = "${auth0.apiAudience}")
+    private String apiAudience;
+    @Value(value = "${auth0.issuer}")
+    private String issuer;
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        JwtWebSecurityConfigurer
+                .forRS256(apiAudience, issuer)
+                .configure(http)
+                .authorizeRequests()
+                .antMatchers(HttpMethod.GET, "/login").permitAll()
+                .antMatchers(HttpMethod.GET, "/photos/**").hasAuthority("read:photos")
+                .antMatchers(HttpMethod.POST, "/photos/**").hasAuthority("create:photos")
+                .antMatchers(HttpMethod.PUT, "/photos/**").hasAuthority("update:photos")
+                .antMatchers(HttpMethod.DELETE, "/photos/**").hasAuthority("delete:photos")
+                .anyRequest().authenticated();
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+import com.embedler.moon.graphql.boot.sample.schema.TodoSchema;
+import com.oembedler.moon.graphql.boot.GraphQLContext;
+import com.oembedler.moon.graphql.engine.relay.RelayNode;
+import com.oembedler.moon.graphql.engine.stereotype.*;
+import org.springframework.beans.factory.annotation.Autowired;
+
+/**
+ * @author <a href="mailto:java.lang.RuntimeException@gmail.com">oEmbedler Inc.</a>
+ */
+@GraphQLObject("Root")
+public class RootObjectType {
+
+    @GraphQLNonNull
+    @GraphQLField("version")
+    @GraphQLDescription("Root query version number")
+    public static final String VERSION = "0.9.0.2";
+
+    @Autowired
+    @GraphQLIgnore
+    private TodoSchema todoSchema;
+
+    @GraphQLField
+    public UserObjectType viewer() {
+        return todoSchema.getTheOnlyUser();
+    }
+
+    @GraphQLField
+    public RelayNode node(@GraphQLID @GraphQLNonNull @GraphQLIn("id") final String id) {
+        return new UserObjectType();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+import org.springframework.boot.autoconfigure.condition.ConditionOutcome;
+import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ConditionContext;
+import org.springframework.context.annotation.ConfigurationCondition;
+import org.springframework.core.type.AnnotatedTypeMetadata;
+import org.springframework.util.StringUtils;
+
+import java.util.Map;
+
+/**
+ * Condition that checks whether the specified bean by placeholder like: ${bean.name:defaultName} exists.
+ * Spring's ConditionalOnMissingBean does not support placeholder resolution.
+ */
+public class OnMissingBeanCondition extends SpringBootCondition implements ConfigurationCondition {
+
+
+    @Override
+    public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata metadata) {
+        Map<String, Object> beanAttributes = metadata.getAnnotationAttributes(Bean.class.getName());
+        String beanName = ((String[]) beanAttributes.get("name"))[0];
+        if(StringUtils.isEmpty(beanName)) {
+            throw new IllegalStateException("OnMissingBeanCondition can't detect bean name!");
+        }
+        boolean missingBean = !context.getBeanFactory().containsBean(context.getEnvironment().resolveRequiredPlaceholders(beanName));
+        return missingBean ? ConditionOutcome.match(beanName + " not found") : ConditionOutcome.noMatch(beanName + " found");
+    }
+
+    @Override
+    public ConfigurationPhase getConfigurationPhase() {
+        return ConfigurationPhase.REGISTER_BEAN;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.web.servlet.HandlerExceptionResolver;
+import org.springframework.web.servlet.ModelAndView;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.net.URLEncoder;
+
+/**
+ * Author: qing
+ * Date: 14-11-7
+ */
+public class ExceptionHandler implements HandlerExceptionResolver {
+
+    @Override
+    public ModelAndView resolveException(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
+        ModelAndView mav = new ModelAndView();
+
+        try{
+            mav.setViewName("redirect:/error.jhtml?messages=" + URLEncoder.encode(ex.getMessage(),"utf-8"));
+        } catch (Exception e) {
+            mav.setViewName("redirect:/error.jhtml");
+        }
+
+        return mav;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+public enum Permission
+{
+	// user role
+	USER("user:*", "user query,view,edit,add,delete"),
+	USER_VIEW("user:view", "user query,view"),
+	ROLE("role:*", "role query,view,edit,add,delete"),
+	ROLE_VIEW("role:view", "role query,view"),
+
+	// license
+	LICENSE("license:setting", "license:setting");
+
+	private String abbreviation;
+
+	private String description;
+
+	private Permission(String abbreviation, String description)
+	{
+
+		this.abbreviation = abbreviation;
+		this.description = description;
+	}
+
+	public String getAbbreviation()
+	{
+
+		return this.abbreviation;
+	}
+
+	public String getDescription()
+	{
+
+		return this.description;
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.Collections;
+
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.embedded.ServletListenerRegistrationBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.authentication.configurers.GlobalAuthenticationConfigurerAdapter;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.JdbcUserDetailsManager;
+import org.springframework.security.web.authentication.RememberMeServices;
+import org.springframework.security.web.authentication.rememberme.InMemoryTokenRepositoryImpl;
+import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
+import org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+
+/**
+ * Class containing all security methods and beans.
+ *
+ * @author Arnaldo Piccinelli
+ */
+@Configuration
+@EnableWebSecurity
+@Order(Ordered.HIGHEST_PRECEDENCE)
+public class MultiHttpSecurityConfig {
+
+	private static final String[] UNSECURED_RESOURCE_LIST = new String[] { "/resources/**", "/assets/**", "/css/**",
+			"/webjars/**", "/images/**", "/dandelion/**", "/js/**" };
+
+	private static final String[] UNAUTHORIZED_RESOURCE_LIST = new String[] { "/test.html", "/", "/unauthorized*",
+			"/error*", "/users*", "/accessDenied" };
+
+	@Configuration
+	@Profile({ "dev" })
+	protected static class InMemoryPersistentTokenRememberMeSetup {
+		@Value("${rememberMeToken}")
+		private String rememberMeToken;
+
+		@Value("${rememberMeParameter}")
+		private String rememberMeParameter;
+
+		@Bean
+		public RememberMeServices getRememberMeServices() {
+			PersistentTokenBasedRememberMeServices services = new PersistentTokenBasedRememberMeServices(
+					rememberMeToken, new BasicRememberMeUserDetailsService(), new InMemoryTokenRepositoryImpl());
+			services.setParameter(rememberMeParameter);
+			return services;
+		}
+
+		public class BasicRememberMeUserDetailsService implements UserDetailsService {
+			@Override
+			public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+				return new User(username, "", Collections.<GrantedAuthority> emptyList());
+			}
+		}
+	}
+
+	@Configuration
+	@Profile({ "test", "live" })
+	protected static class JdbcPersistentTokenRememberMeSetup {
+		@Value("${rememberMeToken}")
+		private String rememberMeToken;
+
+		@Value("${rememberMeParameter}")
+		private String rememberMeParameter;
+
+		@Autowired
+		private DataSource dataSource;
+
+		@Bean
+		public RememberMeServices getRememberMeServices() {
+			JdbcUserDetailsManager jdbcUserDetailsManager = new JdbcUserDetailsManager();
+			jdbcUserDetailsManager.setDataSource(dataSource);
+
+			JdbcTokenRepositoryImpl jdbcTokenRepositoryImpl = new JdbcTokenRepositoryImpl();
+			jdbcTokenRepositoryImpl.setDataSource(dataSource);
+
+			PersistentTokenBasedRememberMeServices services = new PersistentTokenBasedRememberMeServices(
+					rememberMeToken, jdbcUserDetailsManager, jdbcTokenRepositoryImpl);
+			services.setParameter(rememberMeParameter);
+			return services;
+		}
+	}
+
+	@Order(Ordered.HIGHEST_PRECEDENCE)
+	@Configuration
+	protected static class ExternalAuthenticationSecurity extends GlobalAuthenticationConfigurerAdapter {
+		@Autowired
+		private DataSource dataSource;
+
+		@Override
+		public void init(AuthenticationManagerBuilder auth) throws Exception {
+			//@formatter:off
+			String authoritiesByUsernameQuery = "select username, authority from user_authorities " +
+					"inner join users on user_authorities.user_id = users.id " +
+					"inner join authorities on user_authorities.authority_id = authorities.id " +
+					"where username = ?";
+
+			JdbcUserDetailsManager userDetailsService = new JdbcUserDetailsManager();
+			userDetailsService.setDataSource(dataSource);
+			userDetailsService.setAuthoritiesByUsernameQuery(authoritiesByUsernameQuery);
+			PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+			auth
+				.userDetailsService(userDetailsService)
+					.passwordEncoder(passwordEncoder)
+				.and()
+					.jdbcAuthentication()
+						.authoritiesByUsernameQuery(authoritiesByUsernameQuery)
+						.passwordEncoder(passwordEncoder)
+						.dataSource(dataSource)
+			;
+			//@formatter:on
+		}
+	}
+
+	@Configuration
+	@Order(1)
+	@Profile({ "live" })
+	public static class LiveWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapter {
+		@Value("${rememberMeToken}")
+		private String rememberMeToken;
+
+		@Value("${spring.profiles.active}")
+		private String activeProfile;
+
+		@Autowired
+		RememberMeServices rememberMeServices;
+
+		@Override
+		public void configure(WebSecurity web) throws Exception {
+			//@formatter:off
+			web
+				.ignoring()
+					.antMatchers(UNSECURED_RESOURCE_LIST);
+			//@formatter:on
+		}
+
+		@Override
+		protected void configure(HttpSecurity http) throws Exception {
+			//@formatter:off
+			http
+				.headers()
+					.frameOptions()
+						.sameOrigin()
+			.and()
+				.authorizeRequests()
+					.antMatchers(UNAUTHORIZED_RESOURCE_LIST)
+						.permitAll()
+					.antMatchers("/git", "/manage", "/manage/**")
+						.hasRole("ADMIN")
+					.anyRequest()
+						.authenticated()
+			.and()
+				.formLogin()
+					.loginPage("/login")
+					.permitAll()
+			.and()
+				.headers()
+					.cacheControl()
+				.and()
+					.frameOptions()
+						.deny()
+			.and()
+				.exceptionHandling()
+					.accessDeniedPage("/access?error")
+			.and()
+				.rememberMe()
+					.useSecureCookie(true)
+					.tokenValiditySeconds(60 * 60 * 24 * 10) // 10 days
+					.rememberMeServices(rememberMeServices)
+					.key(rememberMeToken)
+			.and()
+				.logout()
+					.logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
+					.logoutSuccessUrl("/?logout")
+			.and()
+				.sessionManagement()
+					.maximumSessions(1)
+					.expiredUrl("/login?expired");
+			// @formatter:on
+		}
+	}
+
+	@Configuration
+	@Order(1)
+	@Profile({ "dev", "test" })
+	public static class NonLiveWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapter {
+		@Value("${rememberMeToken}")
+		private String rememberMeToken;
+
+		@Value("${spring.profiles.active}")
+		private String activeProfile;
+
+		@Autowired
+		RememberMeServices rememberMeServices;
+
+		@Override
+		public void configure(WebSecurity web) throws Exception {
+			//@formatter:off
+			web
+				.ignoring()
+					.antMatchers(UNSECURED_RESOURCE_LIST);
+			//@formatter:on
+		}
+
+		@Override
+		protected void configure(HttpSecurity http) throws Exception {
+			//@formatter:off
+			http
+				.headers()
+					.frameOptions()
+						.sameOrigin()
+			.and()
+				.authorizeRequests()
+					.antMatchers(UNAUTHORIZED_RESOURCE_LIST)
+						.permitAll()
+					.antMatchers("/git", "/manage", "/manage/**")
+						.permitAll()
+					.anyRequest()
+						.authenticated()
+			.and()
+				.formLogin()
+					.loginPage("/login")
+					.permitAll()
+			.and()
+				.headers()
+					.cacheControl()
+				.and()
+					.frameOptions()
+						.deny()
+			.and()
+				.exceptionHandling()
+					.accessDeniedPage("/access?error")
+			.and()
+				.rememberMe()
+					.useSecureCookie(true)
+					.tokenValiditySeconds(60 * 60 * 24 * 10) // 10 days
+					.rememberMeServices(rememberMeServices)
+					.key(rememberMeToken)
+			.and()
+				.logout()
+					.logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
+					.logoutSuccessUrl("/?logout")
+			.and()
+				.sessionManagement()
+					.maximumSessions(1)
+					.expiredUrl("/login?expired");
+			// @formatter:on
+		}
+	}
+
+	// Register HttpSessionEventPublisher
+	@Bean
+	public static ServletListenerRegistrationBean<HttpSessionEventPublisher> httpSessionEventPublisher() {
+		return new ServletListenerRegistrationBean<HttpSessionEventPublisher>(new HttpSessionEventPublisher());
+	}
+}
+--------------------------------------------------------------------------------------------------------
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
+import org.apache.catalina.connector.Connector;
+import org.apache.coyote.http11.Http11NioProtocol;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.embedded.EmbeddedServletContainerFactory;
+import org.springframework.boot.context.embedded.tomcat.TomcatEmbeddedServletContainerFactory;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.util.FileCopyUtils;
+
+/**
+ * Configuration class that allows for Tomcat access via HTTP (test only) and
+ * HTTPS.
+ *
+ * @author Arnaldo Piccinelli
+ */
+@Configuration
+@EnableConfigurationProperties
+public class TomcatConfig {
+
+	@Profile({ "test" })
+	public static class MultiTomcatConfig {
+
+		@Value("${ssl.keystore.file}")
+		private String sslKeystoreFile;
+
+		@Value("${ssl.keystore.password}")
+		private String sslKeystorePassword;
+
+		@Value("${ssl.keystore.type}")
+		private String sslKeystoreType;
+
+		@Value("${ssl.keystore.alias}")
+		private String sslKeystoreAlias;
+
+		@Value("${tls.port}")
+		private int tlsPort;
+
+		@Bean
+		public EmbeddedServletContainerFactory getServletContainer() {
+			TomcatEmbeddedServletContainerFactory tomcat = new TomcatEmbeddedServletContainerFactory();
+			tomcat.addAdditionalTomcatConnectors(createSslConnector());
+			return tomcat;
+		}
+
+		private Connector createSslConnector() {
+			Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
+			Http11NioProtocol protocol = (Http11NioProtocol) connector.getProtocolHandler();
+			try {
+				connector.setScheme("https");
+				connector.setSecure(true);
+				connector.setPort(tlsPort);
+
+				File keystore = getKeyStoreFile();
+				File truststore = keystore;
+
+				protocol.setSSLEnabled(true);
+				protocol.setKeystoreFile(keystore.getAbsolutePath());
+				protocol.setKeystorePass(sslKeystorePassword);
+				protocol.setTruststoreFile(truststore.getAbsolutePath());
+				protocol.setTruststorePass(sslKeystorePassword);
+				protocol.setKeyAlias(sslKeystoreAlias);
+				return connector;
+			} catch (IOException ex) {
+				throw new IllegalStateException(
+						"can't access keystore: [" + "keystore" + "] or truststore: [" + "keystore" + "]", ex);
+			}
+		}
+
+		private File getKeyStoreFile() throws IOException {
+			ClassPathResource resource = new ClassPathResource(sslKeystoreFile);
+			try {
+				return resource.getFile();
+			} catch (Exception ex) {
+				File temp = File.createTempFile("keystore", ".tmp");
+				FileCopyUtils.copy(resource.getInputStream(), new FileOutputStream(temp));
+				return temp;
+			}
+		}
+
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+
+public class JbootRequestContext {
+    private static ThreadLocal<HttpServletRequest> requests = new ThreadLocal<>();
+    private static ThreadLocal<HttpServletResponse> responses = new ThreadLocal<>();
+
+
+    public static void handle(HttpServletRequest req, HttpServletResponse response) {
+        requests.set(req);
+        responses.set(response);
+    }
+
+    public static HttpServletRequest getRequest() {
+        return requests.get();
+    }
+
+    public static HttpServletResponse getResponse() {
+        return responses.get();
+    }
+
+    public static void release() {
+        requests.remove();
+        responses.remove();
+    }
+
+
+    public static <T> T getRequestAttr(String key) {
+        HttpServletRequest request = requests.get();
+        if (request == null) {
+            return null;
+        }
+
+        return (T) request.getAttribute(key);
+    }
+
+    public static void setRequestAttr(String key, Object value) {
+        HttpServletRequest request = requests.get();
+        if (request == null) {
+            return;
+        }
+
+        request.setAttribute(key, value);
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+    public static String escapeHtml(String text) {
+        if (isBlank(text))
+            return text;
+
+        return text.replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#x27;").replace("/", "&#x2F;");
+    }
+--------------------------------------------------------------------------------------------------------
+
+    /**
+     * 是否是手机浏览器
+     *
+     * @return
+     */
+    public static boolean isMoblieBrowser(HttpServletRequest request) {
+        String ua = request.getHeader("User-Agent");
+        if (ua == null) {
+            return false;
+        }
+        ua = ua.toLowerCase();
+        for (String mobileAgent : mobileAgents) {
+            if (ua.indexOf(mobileAgent) >= 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 是否是微信浏览器
+     *
+     * @return
+     */
+    public static boolean isWechatBrowser(HttpServletRequest request) {
+        String ua = request.getHeader("User-Agent");
+        if (ua == null) {
+            return false;
+        }
+        ua = ua.toLowerCase();
+        if (ua.indexOf("micromessenger") > 0) {
+            return true;
+        }
+        return false;
+    }
+--------------------------------------------------------------------------------------------------------
+import io.jboot.config.annotation.PropertyConfig;
+
+
+@PropertyConfig(prefix = "jboot.schedule")
+public class JbooScheduleConfig {
+    private String cron4jFile = "cron4j.properties";
+    private int poolSize = Runtime.getRuntime().availableProcessors() * 8;
+
+
+    public String getCron4jFile() {
+        return cron4jFile;
+    }
+
+    public void setCron4jFile(String cron4jFile) {
+        this.cron4jFile = cron4jFile;
+    }
+
+    public int getPoolSize() {
+        return poolSize;
+    }
+
+    public void setPoolSize(int poolSize) {
+        this.poolSize = poolSize;
+    }
+}
 --------------------------------------------------------------------------------------------------------
 	@Configuration
 	@Order(-20)

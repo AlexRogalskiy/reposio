@@ -43593,6 +43593,1099 @@ public class JpaConfig {
 
 }
 --------------------------------------------------------------------------------------------------------
+#!/bin/bash
+#
+# wifia     Startup script for the wifia server 
+#
+# chkconfig: - 85 15
+# description: wifia web server
+#
+# processname: wifia
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+start_service="/root/documents/start_ap.sh"
+stop_service="/root/documents/stop_ap.sh"
+conf="/etc/wifia/wifia.conf"
+#lighttpd="/usr/sbin/wifia"
+pidfile="/var/run/wifia.pid"
+user="root"
+prog=wifia
+
+start() {
+	echo -n "Starting $prog service ..."
+	sudo $start_service
+	$? -eq 0 ] && echo " [ OK ] " || echo " [ FAILED ] "
+}
+
+stop() {
+	echo -n $"Stopping $prog service ..."
+	[ -f "$pidfile" ] && read line < "$pidfile"
+	sudo $stop_service
+	if [ -d "/proc/$line" -a -f $conf ]
+    then
+  	    pkill -KILL -u $user $prog [ $? -eq 0 ] && echo " [ OK ] " || echo " [ FAILED ] " [ -f "$pidfile" ] && rm -f "$pidfile"
+}
+
+reload() {
+}
+
+case "$1" in
+	start)
+		start
+		;;
+	stop)
+		stop
+		;;
+	restart)
+		stop
+		start
+		;;
+	reload)
+		reload
+		;;
+	status)
+		status
+		;;
+	*)
+		echo $"Usage: $0 {start|stop|restart|reload|status}" 
+--------------------------------------------------------------------------------------------------------
+import io.pivotal.web.service.UserService;
+
+import java.io.IOException;
+import java.util.Enumeration;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.web.authentication.logout.SimpleUrlLogoutSuccessHandler;
+import org.springframework.stereotype.Component;
+
+@Component
+public class LogoutSuccessHandler extends SimpleUrlLogoutSuccessHandler {
+	private static final Logger logger = LoggerFactory
+			.getLogger(LogoutSuccessHandler.class);
+	@Autowired
+	private UserService service;
+
+	public LogoutSuccessHandler() {
+		super();
+	}
+	// Just for setting the default target URL
+	public LogoutSuccessHandler(String defaultTargetURL) {
+		this.setDefaultTargetUrl(defaultTargetURL);
+	}
+
+	@Override
+	public void onLogoutSuccess(HttpServletRequest request,
+			HttpServletResponse response, Authentication authentication)
+			throws IOException, ServletException {
+
+		service.logout(authentication.getPrincipal().toString());
+		super.onLogoutSuccess(request, response, authentication);
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import java.security.MessageDigest;
+
+/**
+ * User: rizenguo
+ * Date: 2014/10/23
+ * Time: 15:43
+ */
+public class MD5 {
+    private final static String[] hexDigits = {"0", "1", "2", "3", "4", "5", "6", "7",
+            "8", "9", "a", "b", "c", "d", "e", "f"};
+
+    /**
+     * 转换字节数组为16进制字串
+     * @param b 字节数组
+     * @return 16进制字串
+     */
+    public static String byteArrayToHexString(byte[] b) {
+        StringBuilder resultSb = new StringBuilder();
+        for (byte aB : b) {
+            resultSb.append(byteToHexString(aB));
+        }
+        return resultSb.toString();
+    }
+
+    /**
+     * 转换byte到16进制
+     * @param b 要转换的byte
+     * @return 16进制格式
+     */
+    private static String byteToHexString(byte b) {
+        int n = b;
+        if (n < 0) {
+            n = 256 + n;
+        }
+        int d1 = n / 16;
+        int d2 = n % 16;
+        return hexDigits[d1] + hexDigits[d2];
+    }
+
+    /**
+     * MD5编码
+     * @param origin 原始字符串
+     * @return 经过MD5加密之后的结果
+     */
+    public static String MD5Encode(String origin) {
+        String resultString = null;
+        try {
+            resultString = origin;
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            resultString = byteArrayToHexString(md.digest(resultString.getBytes()));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return resultString;
+    }
+
+}
+
+import java.security.MessageDigest;
+
+/**
+ * <p>
+ * Title: SHA1算法
+ * </p>
+ */
+public final class SHA1 {
+
+    private static final char[] HEX_DIGITS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+
+    /**
+     * Takes the raw bytes from the digest and formats them correct.
+     *
+     * @param bytes the raw bytes from the digest.
+     * @return the formatted bytes.
+     */
+    private static String getFormattedText(byte[] bytes) {
+        int len = bytes.length;
+        StringBuilder buf = new StringBuilder(len * 2);
+        // 把密文转换成十六进制的字符串形式
+        for (int j = 0; j < len; j++) {
+            buf.append(HEX_DIGITS[(bytes[j] >> 4) & 0x0f]);
+            buf.append(HEX_DIGITS[bytes[j] & 0x0f]);
+        }
+        return buf.toString();
+    }
+
+    public static String encode(String str) {
+        if (str == null) {
+            return null;
+        }
+        try {
+            MessageDigest messageDigest = MessageDigest.getInstance("SHA1");
+            messageDigest.update(str.getBytes());
+            return getFormattedText(messageDigest.digest());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+select 1 from information_schema.system_users;
+--------------------------------------------------------------------------------------------------------
+import com.ldlood.dataobject.ProductCategory;
+import org.apache.ibatis.annotations.*;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Created by Ldlood on 2017/8/15.
+ */
+public interface ProductCategoryMapper {
+
+
+    @Insert("insert into product_category(category_name, category_type) values (#{categoryName, jdbcType=VARCHAR}, #{category_type, jdbcType=INTEGER})")
+    int insertByMap(Map<String, Object> map);
+
+
+    @Insert("insert into product_category(category_name, category_type) values (#{categoryName, jdbcType=VARCHAR}, #{categoryType, jdbcType=INTEGER})")
+    int insertByObject(ProductCategory productCategory);
+
+    @Select("select * from product_category where category_type=#{categoryType} ")
+    @Results({
+            @Result(column = "category_id", property = "categoryId"),
+            @Result(column = "category_name", property = "categoryName"),
+            @Result(column = "category_type", property = "categoryType")
+    })
+    ProductCategory findByCategoryType(Integer categoryType);
+
+
+    @Select("select * from product_category where category_name = #{categoryName}")
+    @Results({
+            @Result(column = "category_id", property = "categoryId"),
+            @Result(column = "category_name", property = "categoryName"),
+            @Result(column = "category_type", property = "categoryType")
+    })
+    List<ProductCategory> findByCategoryName(String categoryName);
+
+    @Update("update product_category set category_name=#{categoryName} where category_type=#{categoryType}")
+    int updateByCategoryType(@Param("categoryName") String categoryName,
+                             @Param("categoryType") Integer categoryType);
+
+    @Update("update product_category set category_name = #{categoryName} where category_type = #{categoryType}")
+    int updateByObject(ProductCategory productCategory);
+
+    @Delete("delete from product_category where category_type = #{categoryType}")
+    int deleteByCategoryType(Integer categoryType);
+
+
+
+    //    xml方式
+    ProductCategory selectByCategoryType(Integer categoryType);
+}
+--------------------------------------------------------------------------------------------------------
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+import javax.websocket.OnClose;
+import javax.websocket.OnMessage;
+import javax.websocket.OnOpen;
+import javax.websocket.Session;
+import javax.websocket.server.ServerEndpoint;
+import java.util.concurrent.CopyOnWriteArraySet;
+
+/**
+ * Created by Ldlood on 2017/8/14.
+ */
+@Component
+@ServerEndpoint("/webSocket")
+@Slf4j
+public class WebSocket {
+
+    private Session session;
+
+    private static CopyOnWriteArraySet<WebSocket> webSockets = new CopyOnWriteArraySet<>();
+
+    @OnOpen
+    public void onOpen(Session session) {
+        this.session = session;
+        webSockets.add(this);
+        log.info("【websocket消息】有新的连接, 总数:{}", webSockets.size());
+    }
+
+
+    @OnClose
+    public void onClose() {
+        webSockets.remove(this);
+        log.info("【websocket消息】连接断开, 总数:{}", webSockets.size());
+    }
+
+    @OnMessage
+    public void onMessage(String message) {
+        log.info("【websocket消息】收到客户端发来的消息:{}", message);
+    }
+
+    public void sendMessage(String message){
+        for (WebSocket webSocket: webSockets) {
+            log.info("【websocket消息】广播消息, message={}", message);
+            try {
+                webSocket.session.getBasicRemote().sendText(message);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
+import java.awt.*;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyEditor;
+
+/**
+ * Used to bind Strings to a {@link org.springframework.security.core.GrantedAuthority} when adding/editing a client.
+ * <p>
+ * Only implements {@link #getAsText()} and {@link #setAsText(String)}.
+ *
+ * @author Moritz Schulze
+ */
+public class AuthorityPropertyEditor implements PropertyEditor {
+    private GrantedAuthority grantedAuthority;
+
+    @Override
+    public void setValue(Object value) {
+        this.grantedAuthority = (GrantedAuthority) value;
+    }
+
+    @Override
+    public Object getValue() {
+        return grantedAuthority;
+    }
+
+    @Override
+    public boolean isPaintable() {
+        return false;
+    }
+
+    @Override
+    public void paintValue(Graphics gfx, Rectangle box) {
+
+    }
+
+    @Override
+    public String getJavaInitializationString() {
+        return null;
+    }
+
+    @Override
+    public String getAsText() {
+        return grantedAuthority.getAuthority();
+    }
+
+    @Override
+    public void setAsText(String text) throws IllegalArgumentException {
+        if (text != null && !text.isEmpty()) {
+            this.grantedAuthority = new SimpleGrantedAuthority(text);
+        }
+    }
+
+    @Override
+    public String[] getTags() {
+        return new String[0];
+    }
+
+    @Override
+    public Component getCustomEditor() {
+        return null;
+    }
+
+    @Override
+    public boolean supportsCustomEditor() {
+        return false;
+    }
+
+    @Override
+    public void addPropertyChangeListener(PropertyChangeListener listener) {
+
+    }
+
+    @Override
+    public void removePropertyChangeListener(PropertyChangeListener listener) {
+
+    }
+}
+--------------------------------------------------------------------------------------------------------
+spring.data.orient:
+  url: memory:orientdb/test1test
+  username: admin
+  password: admin
+--------------------------------------------------------------------------------------------------------
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="30 seconds">
+
+	<contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
+		<resetJUL>true</resetJUL>
+	</contextListener>
+
+	<property name="appname" value="xfqcodetemplate" />
+
+	<!--定义日志文件的存储地址 勿在 LogBack 的配置中使用相对路径 -->
+	<property name="LOG_HOME" value="/xfqcodetemplate" />
+
+	<!-- 按照每天生成日志文件 -->
+	<appender name="file"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!--日志文件输出的文件名 -->
+			<FileNamePattern>${LOG_HOME}/${appname}.log.%d{yyyy-MM-dd}.log
+			</FileNamePattern>
+			<MaxHistory>30</MaxHistory>
+		</rollingPolicy>
+		<layout class="ch.qos.logback.classic.PatternLayout">
+			<!--格式化输出：%d表示日期，%thread表示线程名，%-5level：级别从左显示5个字符宽度%msg：日志消息，%n是换行符 -->
+			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%X{user}] [%thread] %-5level %logger{50} -%msg%n
+			</pattern>
+		</layout>
+		<!--日志文件最大的大小 -->
+		<triggeringPolicy
+			class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+			<MaxFileSize>10MB</MaxFileSize>
+		</triggeringPolicy>
+	</appender>
+
+	<!-- To enable JMX Management -->
+	<jmxConfigurator />
+
+	<appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%X{user}] [%thread] %-5level %logger{36} -%msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<logger name="org.hibernate" level="error" />
+	<logger name="cn.xiaowenjie" level="debug">
+		<!-- wenjie delete <appender-ref ref="file" /> <appender-ref ref="console" 
+			/> -->
+	</logger>
+
+	<!-- 定义错误邮件发送 -->
+	<property name="smtpHost" value="smtp.qq.com" />
+	<property name="smtpPort" value="25" />
+	<property name="username" value="121509092@qq.com" />
+	<property name="password" value="notnull" />
+	<property name="SSL" value="false" />
+	<property name="email_to" value="121509092@qq.com" />
+	<property name="email_from" value="121509092@qq.com" />
+	<property name="email_subject" value="${USERNAME}【Error】: %logger" />
+
+	<appender name="EMAIL" class="ch.qos.logback.classic.net.SMTPAppender">
+		<smtpHost>${smtpHost}</smtpHost>
+		<smtpPort>${smtpPort}</smtpPort>
+		<username>${username}</username>
+		<password>${password}</password>
+		<SSL>${SSL}</SSL>
+		<asynchronousSending>true</asynchronousSending>
+		<to>${email_to}</to>
+		<from>${email_from}</from>
+		<subject>${email_subject}</subject>
+		<layout class="ch.qos.logback.classic.html.HTMLLayout">
+			<pattern>%date%level%thread%logger{0}%line%message</pattern>
+		</layout>
+	</appender>
+
+	<root level="info">
+		<!-- 
+		<appender-ref ref="file" />
+		 -->
+		<appender-ref ref="console" />
+		<appender-ref ref="EMAIL" />
+	</root>
+</configuration>
+--------------------------------------------------------------------------------------------------------
+import org.hibernate.Criteria;
+import org.hibernate.FlushMode;
+import org.hibernate.SessionFactory;
+import org.hibernate.criterion.Order;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.io.Serializable;
+import java.util.Collection;
+
+/**
+ * Generic CRUD Repository class functionality with Hibernate Session Factory
+ *
+ * Created by Y.Kamesh on 8/2/2015.
+ */
+public abstract class BaseHibernateJPARepository<T extends Entity, ID extends Serializable> implements BaseJPARepository<T, ID> {
+    protected @Autowired
+    SessionFactory sessionFactory;
+    protected Class<T> clazz;
+
+
+    @SuppressWarnings("unchecked")
+    public void setupEntityClass(Class clazz) {
+        this.clazz = clazz;
+    }
+
+
+    public void delete(T object) {
+        sessionFactory.getCurrentSession().delete(object);
+    }
+
+
+    @Transactional
+    public T insert(T object) {
+        sessionFactory.getCurrentSession().setFlushMode(FlushMode.AUTO);
+        sessionFactory.getCurrentSession().save(object);
+        sessionFactory.getCurrentSession().flush();
+        return object;
+    }
+
+
+    @Transactional
+    public T update(T object) {
+        sessionFactory.getCurrentSession().setFlushMode(FlushMode.AUTO);
+        sessionFactory.getCurrentSession().update(object);
+        sessionFactory.getCurrentSession().flush();
+        return object;
+    }
+
+
+    @Transactional
+    public T insertOrUpdate(T object) {
+        sessionFactory.getCurrentSession().setFlushMode(FlushMode.AUTO);
+        sessionFactory.getCurrentSession().saveOrUpdate(object);
+        sessionFactory.getCurrentSession().flush();
+        return object;
+    }
+
+
+    @Transactional(readOnly = true)
+    public T findById(ID id) {
+        return (T) sessionFactory.getCurrentSession().get(clazz, id);
+    }
+
+
+    public Collection<T> findAllByPage(int pageNum, int countPerPage, Order order) {
+        Criteria c = sessionFactory.getCurrentSession().createCriteria(clazz);
+        c.setMaxResults(countPerPage);
+        c.setFirstResult(pageNum * countPerPage);
+        return c.list();
+    }
+}
+
+import org.hibernate.criterion.Order;
+
+import java.io.Serializable;
+import java.util.Collection;
+
+/**
+ * Generic JPA Repository protocol with common CRUD operations and some specific find operations
+ *
+ * Created by Y.Kamesh on 8/2/2015.
+ */
+public interface BaseJPARepository<T extends Entity, ID extends Serializable> {
+    /**
+     * Method to setup the class type of the Entity for which
+     * the DAO works
+     *
+     * @param clazz
+     */
+    public void setupEntityClass(Class clazz);
+
+    /**
+     * Method to insert the new row into config.database table
+     *
+     * @param object
+     *         The object entity to be persisted
+     */
+    public T insert(T object);
+
+    /**
+     * Method to update an existing row in the config.database table
+     *
+     * @param object
+     *         The object entity to be updated
+     */
+    public T update(T object);
+
+    /**
+     * Method to insert a new row or update a row if it was
+     * already existing in the system.
+     *
+     * @param object
+     *         The object entity to be updated
+     */
+    public T insertOrUpdate(T object);
+
+    /**
+     * Method to delete an existing row in the config.database table
+     *
+     * @param object
+     *         The object entity to be deleted
+     */
+    public void delete(T object);
+
+    /**
+     * Method to find a database item by id
+     *
+     * @param id
+     *         The id by which the row has to be found
+     */
+    public T findById(ID id);
+
+    /**
+     * Method to find a collection of database entities by pages
+     *
+     * @param pageNum
+     * @param countPerPage
+     * @param order
+     *
+     * @return
+     *
+     * @throws Exception
+     */
+    public Collection<T> findAllByPage(int pageNum, int countPerPage, Order order);
+}
+--------------------------------------------------------------------------------------------------------
+MediaType.parseMediaType("application/json;charset=UTF-8")
+--------------------------------------------------------------------------------------------------------
+    @XmlAccessorType(XmlAccessType.NONE)
+    public static class Text extends WxMessageBody {
+
+        @JsonProperty("content")
+        protected String content;
+
+        public Text(String content) {
+            this.content = content;
+        }
+
+        public Text() {
+        }
+
+        public String getContent() {
+            return content;
+        }
+    }
+--------------------------------------------------------------------------------------------------------
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.annotation.WebFilter;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
+
+import org.springframework.web.util.HtmlUtils;
+
+/**
+ * 防止XSS攻击的过滤器
+ * 
+ * @author wujing
+ */
+@WebFilter(filterName = "webXssFilter", urlPatterns = "/admin/*")
+public class WebXssFilter implements Filter {
+
+	@Override
+	public void init(FilterConfig filterConfig) throws ServletException {
+
+	}
+
+	@Override
+	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+		XssHttpServletRequestWrapper xssRequest = new XssHttpServletRequestWrapper((HttpServletRequest) request);
+		chain.doFilter(xssRequest, response);
+	}
+
+	@Override
+	public void destroy() {
+
+	}
+}
+
+/**
+ * 
+ * @author wujing
+ */
+class XssHttpServletRequestWrapper extends HttpServletRequestWrapper {
+
+	/**
+	 * @param request
+	 */
+	public XssHttpServletRequestWrapper(HttpServletRequest request) {
+		super(request);
+	}
+
+	@Override
+	public String[] getParameterValues(String name) {
+		String[] values = super.getParameterValues(name);
+		if (values != null) {
+			int length = values.length;
+			String[] escapseValues = new String[length];
+			for (int i = 0; i < length; i++) {
+				// 防xss攻击和过滤前后空格
+				escapseValues[i] = HtmlUtils.htmlEscape(values[i]).trim();
+			}
+			return escapseValues;
+		}
+		return super.getParameterValues(name);
+	}
+}
+--------------------------------------------------------------------------------------------------------
+#!/bin/sh
+
+## 自定义
+SERVICE_DIR=/home/roncoo/rc-os/roncoo-jui-springboot/
+SERVICE_NAME=roncoo-jui-springboot
+SPRING_PROFILES_ACTIVE=prod
+
+## java env
+export JAVA_HOME=/opt/jdk1.8
+export JRE_HOME=$JAVA_HOME/jre
+
+case "$1" in 
+	start)
+		procedure=`ps -ef | grep -w "${SERVICE_DIR}/${SERVICE_NAME}" |grep -w "java"| grep -v "grep" | awk '{print $2}'`
+		if [ "${procedure}" = "" ];
+		then
+			echo "start ..."
+			if [ "$2" != "" ];
+			then
+				SPRING_PROFILES_ACTIVE=$2
+			fi
+			echo "spring.profiles.active=${SPRING_PROFILES_ACTIVE}"
+			exec nohup ${JRE_HOME}/bin/java -Xms256m -Xmx256m -jar ${SERVICE_DIR}/${SERVICE_NAME}\.jar --spring.profiles.active=${SPRING_PROFILES_ACTIVE} >/dev/null 2>&1 &
+			echo "start success"
+		else
+			echo "${SERVICE_NAME} is start"
+		fi
+		;;
+		
+	stop)
+		procedure=`ps -ef | grep -w "${SERVICE_DIR}/${SERVICE_NAME}" |grep -w "java"| grep -v "grep" | awk '{print $2}'`
+		if [ "${procedure}" = "" ];
+		then
+			echo "${SERVICE_NAME} is stop"
+		else
+			kill ${procedure}
+			sleep 1
+			argprocedure=`ps -ef | grep -w "${SERVICE_DIR}/${SERVICE_NAME}" |grep -w "java"| grep -v "grep" | awk '{print $2}'`
+			if [ "${argprocedure}" = "" ];
+			then
+				echo "${SERVICE_NAME} stop success"
+			else
+				kill -9 ${argprocedure}
+				echo "${SERVICE_NAME} stop error"
+			fi
+		fi
+		;;
+		
+	restart)
+		$0 stop
+		sleep 1
+		$0 start $2
+		;;  
+		
+	*)
+		$0 stop
+		sleep 1
+		$0 start $2
+		;; 
+esac
+--------------------------------------------------------------------------------------------------------
+@ConditionalOnExpression("'${swagger.enable}' == 'true'")
+--------------------------------------------------------------------------------------------------------
+    @VisibleForTesting
+    protected CustomizableEmailRendererBuilder createCustomizableEmailRendererBuilder() {
+        return CustomizableEmailRenderer.builder();
+    }
+--------------------------------------------------------------------------------------------------------
+import org.springframework.mail.javamail.MimeMessageHelper;
+
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
+
+public class MimeMessageHelperExt extends MimeMessageHelper {
+
+    private static final String HEADER_RETURN_RECEIPT = "Return-Receipt-To";
+
+    private static final String HEADER_DEPOSITION_NOTIFICATION_TO = "Disposition-Notification-To";
+
+    public MimeMessageHelperExt(MimeMessage mimeMessage) {
+        super(mimeMessage);
+    }
+
+    public MimeMessageHelperExt(MimeMessage mimeMessage, String encoding) {
+        super(mimeMessage, encoding);
+    }
+
+    public MimeMessageHelperExt(MimeMessage mimeMessage, boolean multipart) throws MessagingException {
+        super(mimeMessage, multipart);
+    }
+
+    public MimeMessageHelperExt(MimeMessage mimeMessage, boolean multipart, String encoding) throws MessagingException {
+        super(mimeMessage, multipart, encoding);
+    }
+
+    public MimeMessageHelperExt(MimeMessage mimeMessage, int multipartMode) throws MessagingException {
+        super(mimeMessage, multipartMode);
+    }
+
+    public MimeMessageHelperExt(MimeMessage mimeMessage, int multipartMode, String encoding) throws MessagingException {
+        super(mimeMessage, multipartMode, encoding);
+    }
+
+    public void setHeaderReturnReceipt(String emailToNotification) throws MessagingException {
+        getMimeMessage().setHeader(HEADER_RETURN_RECEIPT, emailToNotification);
+    }
+
+    public void setHeaderDepositionNotificationTo(String emailToNotification) throws MessagingException {
+        getMimeMessage().setHeader(HEADER_DEPOSITION_NOTIFICATION_TO, emailToNotification);
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+    private void close() {
+        TimerTask shutdownTask = new TimerTask() {
+            @Override
+            public void run() {
+                ((AbstractApplicationContext) applicationContext).close();
+            }
+        };
+        Timer shutdownTimer = new Timer();
+        shutdownTimer.schedule(shutdownTask, TimeUnit.SECONDS.toMillis(3));
+    }
+--------------------------------------------------------------------------------------------------------
+    Comparator<EmailSchedulingData> DEFAULT_COMPARATOR = (o1, o2) -> {
+        final OffsetDateTime o1ScheduledDateTime = o1.getScheduledDateTime();
+        final OffsetDateTime o2ScheduledDateTime = o2.getScheduledDateTime();
+        if (o1ScheduledDateTime.isBefore(o2ScheduledDateTime)) {
+            return -1;
+        } else if (o1ScheduledDateTime.isAfter(o2ScheduledDateTime)) {
+            return 1;
+        } else {
+            int priorityComparison = Integer.compare(o1.getAssignedPriority(), o2.getAssignedPriority());
+            if (priorityComparison != 0) {
+                return priorityComparison;
+            } else {
+                return o1.getId().compareTo(o2.getId());
+            }
+        }
+    };
+--------------------------------------------------------------------------------------------------------
+public enum Week {
+
+	MONDAY("星期一", "Monday", "Mon.", 1),
+	TUESDAY("星期二", "Tuesday", "Tues.", 2),
+	WEDNESDAY("星期三", "Wednesday", "Wed.", 3),
+	THURSDAY("星期四", "Thursday", "Thur.", 4),
+	FRIDAY("星期五", "Friday", "Fri.", 5),
+	SATURDAY("星期六", "Saturday", "Sat.", 6),
+	SUNDAY("星期日", "Sunday", "Sun.", 7);
+	
+	String name_cn;
+	String name_en;
+	String name_enShort;
+	int number;
+	
+	Week(String name_cn, String name_en, String name_enShort, int number) {
+		this.name_cn = name_cn;
+		this.name_en = name_en;
+		this.name_enShort = name_enShort;
+		this.number = number;
+	}
+	
+	public String getChineseName() {
+		return name_cn;
+	}
+
+	public String getName() {
+		return name_en;
+	}
+
+	public String getShortName() {
+		return name_enShort;
+	}
+
+	public int getNumber() {
+		return number;
+	}
+}
+--------------------------------------------------------------------------------------------------------
+    @XmlJavaTypeAdapter(WxXmlAdapters.CreateTimeAdaptor.class)
+    @XmlElement(name = "CreateTime", required = true)
+    @JsonIgnore
+    protected Date createTime;
+--------------------------------------------------------------------------------------------------------
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+/**
+ * 定时清空cache
+ * 
+ * @author 肖文杰  https://github.com/xwjie
+ */
+@Component
+@EnableScheduling
+public class ClearCacheTask {
+
+	/**
+	 * 定时清空缓存
+	 */
+	@Scheduled(fixedRate = 60 * 60 * 1000L)
+	@CacheEvict(value = { CacheNames.CONFIG }, allEntries = true)
+	public void clearCaches() {
+		System.out.println("\n------------ clear caches ------------\n");
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.orient.commons.repository.config.EnableOrientRepositories;
+import org.springframework.data.orient.object.OrientObjectDatabaseFactory;
+import org.springframework.data.orient.object.repository.support.OrientObjectRepositoryFactoryBean;
+import org.springframework.transaction.annotation.Transactional;
+
+import javax.annotation.PostConstruct;
+
+@Configuration
+@EnableOrientRepositories(basePackages = "com.github.pires.example.repository", repositoryFactoryBeanClass = OrientObjectRepositoryFactoryBean.class)
+public class OrientDbConfiguration {
+
+    @Autowired
+    private OrientObjectDatabaseFactory factory;
+
+    @PostConstruct
+    @Transactional
+    public void registerEntities() {
+        factory.db().getEntityManager().registerEntityClasses("com.github.pires.example.model");
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.embedded.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
+import org.springframework.oxm.jaxb.Jaxb2Marshaller;
+import org.springframework.web.filter.HiddenHttpMethodFilter;
+import org.springframework.web.servlet.ViewResolver;
+import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
+import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+import org.springframework.webflow.mvc.servlet.FlowHandlerAdapter;
+import org.springframework.webflow.mvc.servlet.FlowHandlerMapping;
+import org.thymeleaf.spring4.SpringTemplateEngine;
+import org.thymeleaf.spring4.view.AjaxThymeleafViewResolver;
+import org.thymeleaf.spring4.view.FlowAjaxThymeleafView;
+
+import sample.ui.model.Vets;
+import sample.ui.view.XmlViewResolver;
+
+/**
+ * Configures View-related items.
+ *
+ * @author Arnaldo Piccinelli
+ */
+@Configuration
+public class WebMvcConfig extends WebMvcConfigurerAdapter {
+
+	@Autowired
+	private WebFlowConfig webFlowConfig;
+
+	@Autowired
+	private SpringTemplateEngine springTemplateEngine;
+
+	@Override
+	public void addViewControllers(ViewControllerRegistry registry) {
+		registry.addViewController("/login").setViewName("login");
+		registry.addViewController("/access").setViewName("access");
+		registry.setOrder(Ordered.HIGHEST_PRECEDENCE);
+	}
+
+	@Override
+	public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {
+		configurer.favorPathExtension(true).favorParameter(true);
+	}
+
+	@Bean(name = "marshallingXmlViewResolver")
+	public ViewResolver getMarshallingXmlViewResolver() {
+		Jaxb2Marshaller marshaller = new Jaxb2Marshaller();
+		marshaller.setClassesToBeBound(new Class[] { Vets.class });
+		return new XmlViewResolver(marshaller);
+	}
+
+	@Bean
+	public FilterRegistrationBean hiddenFilterRegistrationBean() {
+		return new FilterRegistrationBean(new HiddenHttpMethodFilter());
+	}
+
+	@Bean
+	public FlowHandlerMapping flowHandlerMapping() {
+		FlowHandlerMapping handlerMapping = new FlowHandlerMapping();
+		handlerMapping.setOrder(-1);
+		handlerMapping.setFlowRegistry(this.webFlowConfig.flowRegistry());
+		return handlerMapping;
+	}
+
+	@Bean
+	public FlowHandlerAdapter flowHandlerAdapter() {
+		FlowHandlerAdapter handlerAdapter = new FlowHandlerAdapter();
+		handlerAdapter.setFlowExecutor(this.webFlowConfig.flowExecutor());
+		handlerAdapter.setSaveOutputToFlashScopeOnRedirect(true);
+		return handlerAdapter;
+	}
+
+	@Bean
+	public AjaxThymeleafViewResolver ajaxThymeleafViewResolver() {
+		AjaxThymeleafViewResolver viewResolver = new AjaxThymeleafViewResolver();
+		viewResolver.setViewClass(FlowAjaxThymeleafView.class);
+		viewResolver.setTemplateEngine(springTemplateEngine);
+		return viewResolver;
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.Map;
+import java.util.concurrent.ThreadPoolExecutor;
+
+import org.slf4j.MDC;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+
+/**
+ * A SLF4J MDC-compatible {@link ThreadPoolExecutor}.
+ * <p>
+ * In general, MDC is used to store diagnostic information (e.g. logfile name) in per-thread variables, to facilitate logging. However, although MDC
+ * data is passed to thread children, this doesn't work when threads are reused in a thread pool. This is a drop-in replacement for
+ * {@link ThreadPoolTaskExecutor} sets MDC data before each task appropriately.
+ * </p>
+ *
+ * @author Dennis Schulte
+ */
+public class MdcThreadPoolTaskExecutor extends ThreadPoolTaskExecutor {
+
+	private static final long serialVersionUID = 1L;
+	private boolean useFixedContext = false;
+	private Map<String, String> fixedContext;
+
+	public MdcThreadPoolTaskExecutor() {
+		super();
+	}
+
+	public MdcThreadPoolTaskExecutor(Map<String, String> fixedContext) {
+		super();
+		this.fixedContext = fixedContext;
+		useFixedContext = (fixedContext != null);
+	}
+
+	private Map<String, String> getContextForTask() {
+		return useFixedContext ? fixedContext : MDC.getCopyOfContextMap();
+	}
+
+	/**
+	 * All executions will have MDC injected. {@code ThreadPoolExecutor}'s submission methods ({@code submit()} etc.)
+	 * all delegate to this.
+	 */
+	@Override
+	public void execute(Runnable command) {
+		super.execute(wrap(command, getContextForTask()));
+	}
+
+	public static Runnable wrap(final Runnable runnable, final Map<String, String> context) {
+		return new Runnable() {
+			@Override
+			public void run() {
+				Map<String, String> previous = MDC.getCopyOfContextMap();
+				if (context == null) {
+					MDC.clear();
+				} else {
+					MDC.setContextMap(context);
+				}
+				try {
+					runnable.run();
+				} finally {
+					if (previous == null) {
+						MDC.clear();
+					} else {
+						MDC.setContextMap(previous);
+					}
+				}
+			}
+		};
+	}
+}
+--------------------------------------------------------------------------------------------------------
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 
