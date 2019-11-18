@@ -44412,6 +44412,209 @@ public class MimeMessageHelperExt extends MimeMessageHelper {
 
 }
 --------------------------------------------------------------------------------------------------------
+package org.artofsolving.jodconverter.util;
+
+public class PlatformUtils {
+
+    private static final String OS_NAME = System.getProperty("os.name").toLowerCase();
+    
+    private PlatformUtils() {
+        throw new AssertionError("utility class must not be instantiated");
+    }
+
+    public static boolean isLinux() {
+        return OS_NAME.startsWith("linux");
+    }
+
+    public static boolean isMac() {
+        return OS_NAME.startsWith("mac");
+    }
+
+    public static boolean isWindows() {
+        return OS_NAME.startsWith("windows");
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+
+import org.hamcrest.Matchers;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+
+/**
+ * @author Abdullah Al Mamun Oronno (www.oneous.com)
+ */
+
+@RunWith(SpringJUnit4ClassRunner.class)
+@WebAppConfiguration
+@ContextConfiguration(locations = {"file:src/main/webapp/WEB-INF/servlet-context.xml", "file:src/main/webapp/WEB-INF/applicationContext-jpa.xml"})
+public class HomeControllerTest {
+
+    @Autowired
+    protected WebApplicationContext wac;
+
+    private MockMvc mockMvc;
+
+    @Before
+    public void setup() {
+        this.mockMvc = MockMvcBuilders.webAppContextSetup(this.wac).build();
+    }
+
+
+    @Test
+    public void getDefaultHomePage() throws Exception {
+        this.mockMvc.perform(get("/"))
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andExpect(view().name(Matchers.containsString("home")));
+    }
+
+    @Test
+    public void viewName() throws Exception {
+        this.mockMvc.perform(get("/home"))
+                .andExpect(view().name(Matchers.containsString("home")));
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+import java.io.IOException;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.cloud.stream.messaging.Sink;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.flowing.retail.inventory.application.InventoryService;
+import io.flowing.retail.inventory.domain.PickOrder;
+
+@Component
+@EnableBinding(Sink.class)
+public class MessageListener {    
+  
+  @Autowired
+  private MessageSender messageSender;
+  
+  @Autowired
+  private InventoryService inventoryService;
+
+  @StreamListener(target = Sink.INPUT, 
+      condition="payload.messageType.toString()=='FetchGoodsCommand'")
+  @Transactional
+  public void retrievePaymentCommandReceived(String messageJson) throws JsonParseException, JsonMappingException, IOException {
+    Message<FetchGoodsCommandPayload> message = new ObjectMapper().readValue(messageJson, new TypeReference<Message<FetchGoodsCommandPayload>>(){});
+    
+    FetchGoodsCommandPayload fetchGoodsCommand = message.getPayload();    
+    String pickId = inventoryService.pickItems( // 
+        fetchGoodsCommand.getItems(), fetchGoodsCommand.getReason(), fetchGoodsCommand.getRefId());
+    
+    messageSender.send( //
+        new Message<GoodsFetchedEventPayload>( //
+            "GoodsFetchedEvent", //
+            message.getTraceId(), //
+            new GoodsFetchedEventPayload() //
+              .setRefId(fetchGoodsCommand.getRefId())
+              .setPickId(pickId)));
+  }
+    
+    
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.Date;
+import java.util.UUID;
+
+public class Message<T> {
+
+  private String messageType;
+  private String id = UUID.randomUUID().toString(); // unique id of this message
+  private String traceId = UUID.randomUUID().toString(); // trace id, default: new unique
+  private String sender = "Checkout"; // for new messages
+  private Date timestamp = new Date();
+
+  private T payload;
+  
+  public Message() {    
+  }
+  
+  public Message(String type, T payload) {
+    this.messageType = type;
+    this.payload = payload;
+    this. traceId = UUID.randomUUID().toString();
+  }
+
+  public String getMessageType() {
+    return messageType;
+  }
+
+  public void setMessageType(String messageType) {
+    this.messageType = messageType;
+  }
+
+  public String getId() {
+    return id;
+  }
+
+  public void setId(String id) {
+    this.id = id;
+  }
+
+  public Date getTimestamp() {
+    return timestamp;
+  }
+
+  public void setTimestamp(Date timestamp) {
+    this.timestamp = timestamp;
+  }
+
+  public T getPayload() {
+    return payload;
+  }
+
+  public void setPayload(T payload) {
+    this.payload = payload;
+  }
+
+  @Override
+  public String toString() {
+    return "Message [messageType=" + messageType + ", id=" + id + ", timestamp=" + timestamp + ", payload=" + payload + "]";
+  }
+
+  public String getTraceId() {
+    return traceId;
+  }
+
+  public void setTraceId(String traceId) {
+    this.traceId = traceId;
+  }
+
+  public String getSender() {
+    return sender;
+  }
+
+  public void setSender(String sender) {
+    this.sender = sender;
+  }
+}
+--------------------------------------------------------------------------------------------------------
     private void close() {
         TimerTask shutdownTask = new TimerTask() {
             @Override
