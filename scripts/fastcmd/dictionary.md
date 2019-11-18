@@ -43565,6 +43565,1330 @@ public class DomainMapperMojo extends AbstractMojo {
 		}
 	}
 --------------------------------------------------------------------------------------------------------
+import com.hantsylabs.restexample.springmvc.domain.User;
+import com.hantsylabs.restexample.springmvc.security.SecurityUtil;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.context.annotation.AdviceMode;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.domain.AuditorAware;
+import org.springframework.data.jpa.convert.threeten.Jsr310JpaConverters;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+
+/**
+ *
+ * @author hantsy
+ */
+@Configuration
+@EnableTransactionManagement(mode = AdviceMode.ASPECTJ)
+@EntityScan(basePackageClasses = {User.class, Jsr310JpaConverters.class})
+@EnableJpaAuditing(auditorAwareRef = "auditor")
+public class JpaConfig {
+
+    @Bean
+    public AuditorAware<User> auditor() {
+        return () -> SecurityUtil.currentUser();
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+#!/bin/bash
+#
+# wifia     Startup script for the wifia server 
+#
+# chkconfig: - 85 15
+# description: wifia web server
+#
+# processname: wifia
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+start_service="/root/documents/start_ap.sh"
+stop_service="/root/documents/stop_ap.sh"
+conf="/etc/wifia/wifia.conf"
+#lighttpd="/usr/sbin/wifia"
+pidfile="/var/run/wifia.pid"
+user="root"
+prog=wifia
+
+start() {
+	echo -n "Starting $prog service ..."
+	sudo $start_service
+	$? -eq 0 ] && echo " [ OK ] " || echo " [ FAILED ] "
+}
+
+stop() {
+	echo -n $"Stopping $prog service ..."
+	[ -f "$pidfile" ] && read line < "$pidfile"
+	sudo $stop_service
+	if [ -d "/proc/$line" -a -f $conf ]
+    then
+  	    pkill -KILL -u $user $prog [ $? -eq 0 ] && echo " [ OK ] " || echo " [ FAILED ] " [ -f "$pidfile" ] && rm -f "$pidfile"
+}
+
+reload() {
+}
+
+case "$1" in
+	start)
+		start
+		;;
+	stop)
+		stop
+		;;
+	restart)
+		stop
+		start
+		;;
+	reload)
+		reload
+		;;
+	status)
+		status
+		;;
+	*)
+		echo $"Usage: $0 {start|stop|restart|reload|status}" 
+--------------------------------------------------------------------------------------------------------
+import io.pivotal.web.service.UserService;
+
+import java.io.IOException;
+import java.util.Enumeration;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.web.authentication.logout.SimpleUrlLogoutSuccessHandler;
+import org.springframework.stereotype.Component;
+
+@Component
+public class LogoutSuccessHandler extends SimpleUrlLogoutSuccessHandler {
+	private static final Logger logger = LoggerFactory
+			.getLogger(LogoutSuccessHandler.class);
+	@Autowired
+	private UserService service;
+
+	public LogoutSuccessHandler() {
+		super();
+	}
+	// Just for setting the default target URL
+	public LogoutSuccessHandler(String defaultTargetURL) {
+		this.setDefaultTargetUrl(defaultTargetURL);
+	}
+
+	@Override
+	public void onLogoutSuccess(HttpServletRequest request,
+			HttpServletResponse response, Authentication authentication)
+			throws IOException, ServletException {
+
+		service.logout(authentication.getPrincipal().toString());
+		super.onLogoutSuccess(request, response, authentication);
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import java.security.MessageDigest;
+
+/**
+ * User: rizenguo
+ * Date: 2014/10/23
+ * Time: 15:43
+ */
+public class MD5 {
+    private final static String[] hexDigits = {"0", "1", "2", "3", "4", "5", "6", "7",
+            "8", "9", "a", "b", "c", "d", "e", "f"};
+
+    /**
+     * 转换字节数组为16进制字串
+     * @param b 字节数组
+     * @return 16进制字串
+     */
+    public static String byteArrayToHexString(byte[] b) {
+        StringBuilder resultSb = new StringBuilder();
+        for (byte aB : b) {
+            resultSb.append(byteToHexString(aB));
+        }
+        return resultSb.toString();
+    }
+
+    /**
+     * 转换byte到16进制
+     * @param b 要转换的byte
+     * @return 16进制格式
+     */
+    private static String byteToHexString(byte b) {
+        int n = b;
+        if (n < 0) {
+            n = 256 + n;
+        }
+        int d1 = n / 16;
+        int d2 = n % 16;
+        return hexDigits[d1] + hexDigits[d2];
+    }
+
+    /**
+     * MD5编码
+     * @param origin 原始字符串
+     * @return 经过MD5加密之后的结果
+     */
+    public static String MD5Encode(String origin) {
+        String resultString = null;
+        try {
+            resultString = origin;
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            resultString = byteArrayToHexString(md.digest(resultString.getBytes()));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return resultString;
+    }
+
+}
+
+import java.security.MessageDigest;
+
+/**
+ * <p>
+ * Title: SHA1算法
+ * </p>
+ */
+public final class SHA1 {
+
+    private static final char[] HEX_DIGITS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+
+    /**
+     * Takes the raw bytes from the digest and formats them correct.
+     *
+     * @param bytes the raw bytes from the digest.
+     * @return the formatted bytes.
+     */
+    private static String getFormattedText(byte[] bytes) {
+        int len = bytes.length;
+        StringBuilder buf = new StringBuilder(len * 2);
+        // 把密文转换成十六进制的字符串形式
+        for (int j = 0; j < len; j++) {
+            buf.append(HEX_DIGITS[(bytes[j] >> 4) & 0x0f]);
+            buf.append(HEX_DIGITS[bytes[j] & 0x0f]);
+        }
+        return buf.toString();
+    }
+
+    public static String encode(String str) {
+        if (str == null) {
+            return null;
+        }
+        try {
+            MessageDigest messageDigest = MessageDigest.getInstance("SHA1");
+            messageDigest.update(str.getBytes());
+            return getFormattedText(messageDigest.digest());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+select 1 from information_schema.system_users;
+--------------------------------------------------------------------------------------------------------
+import com.ldlood.dataobject.ProductCategory;
+import org.apache.ibatis.annotations.*;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Created by Ldlood on 2017/8/15.
+ */
+public interface ProductCategoryMapper {
+
+
+    @Insert("insert into product_category(category_name, category_type) values (#{categoryName, jdbcType=VARCHAR}, #{category_type, jdbcType=INTEGER})")
+    int insertByMap(Map<String, Object> map);
+
+
+    @Insert("insert into product_category(category_name, category_type) values (#{categoryName, jdbcType=VARCHAR}, #{categoryType, jdbcType=INTEGER})")
+    int insertByObject(ProductCategory productCategory);
+
+    @Select("select * from product_category where category_type=#{categoryType} ")
+    @Results({
+            @Result(column = "category_id", property = "categoryId"),
+            @Result(column = "category_name", property = "categoryName"),
+            @Result(column = "category_type", property = "categoryType")
+    })
+    ProductCategory findByCategoryType(Integer categoryType);
+
+
+    @Select("select * from product_category where category_name = #{categoryName}")
+    @Results({
+            @Result(column = "category_id", property = "categoryId"),
+            @Result(column = "category_name", property = "categoryName"),
+            @Result(column = "category_type", property = "categoryType")
+    })
+    List<ProductCategory> findByCategoryName(String categoryName);
+
+    @Update("update product_category set category_name=#{categoryName} where category_type=#{categoryType}")
+    int updateByCategoryType(@Param("categoryName") String categoryName,
+                             @Param("categoryType") Integer categoryType);
+
+    @Update("update product_category set category_name = #{categoryName} where category_type = #{categoryType}")
+    int updateByObject(ProductCategory productCategory);
+
+    @Delete("delete from product_category where category_type = #{categoryType}")
+    int deleteByCategoryType(Integer categoryType);
+
+
+
+    //    xml方式
+    ProductCategory selectByCategoryType(Integer categoryType);
+}
+--------------------------------------------------------------------------------------------------------
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+import javax.websocket.OnClose;
+import javax.websocket.OnMessage;
+import javax.websocket.OnOpen;
+import javax.websocket.Session;
+import javax.websocket.server.ServerEndpoint;
+import java.util.concurrent.CopyOnWriteArraySet;
+
+/**
+ * Created by Ldlood on 2017/8/14.
+ */
+@Component
+@ServerEndpoint("/webSocket")
+@Slf4j
+public class WebSocket {
+
+    private Session session;
+
+    private static CopyOnWriteArraySet<WebSocket> webSockets = new CopyOnWriteArraySet<>();
+
+    @OnOpen
+    public void onOpen(Session session) {
+        this.session = session;
+        webSockets.add(this);
+        log.info("【websocket消息】有新的连接, 总数:{}", webSockets.size());
+    }
+
+
+    @OnClose
+    public void onClose() {
+        webSockets.remove(this);
+        log.info("【websocket消息】连接断开, 总数:{}", webSockets.size());
+    }
+
+    @OnMessage
+    public void onMessage(String message) {
+        log.info("【websocket消息】收到客户端发来的消息:{}", message);
+    }
+
+    public void sendMessage(String message){
+        for (WebSocket webSocket: webSockets) {
+            log.info("【websocket消息】广播消息, message={}", message);
+            try {
+                webSocket.session.getBasicRemote().sendText(message);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
+import java.awt.*;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyEditor;
+
+/**
+ * Used to bind Strings to a {@link org.springframework.security.core.GrantedAuthority} when adding/editing a client.
+ * <p>
+ * Only implements {@link #getAsText()} and {@link #setAsText(String)}.
+ *
+ * @author Moritz Schulze
+ */
+public class AuthorityPropertyEditor implements PropertyEditor {
+    private GrantedAuthority grantedAuthority;
+
+    @Override
+    public void setValue(Object value) {
+        this.grantedAuthority = (GrantedAuthority) value;
+    }
+
+    @Override
+    public Object getValue() {
+        return grantedAuthority;
+    }
+
+    @Override
+    public boolean isPaintable() {
+        return false;
+    }
+
+    @Override
+    public void paintValue(Graphics gfx, Rectangle box) {
+
+    }
+
+    @Override
+    public String getJavaInitializationString() {
+        return null;
+    }
+
+    @Override
+    public String getAsText() {
+        return grantedAuthority.getAuthority();
+    }
+
+    @Override
+    public void setAsText(String text) throws IllegalArgumentException {
+        if (text != null && !text.isEmpty()) {
+            this.grantedAuthority = new SimpleGrantedAuthority(text);
+        }
+    }
+
+    @Override
+    public String[] getTags() {
+        return new String[0];
+    }
+
+    @Override
+    public Component getCustomEditor() {
+        return null;
+    }
+
+    @Override
+    public boolean supportsCustomEditor() {
+        return false;
+    }
+
+    @Override
+    public void addPropertyChangeListener(PropertyChangeListener listener) {
+
+    }
+
+    @Override
+    public void removePropertyChangeListener(PropertyChangeListener listener) {
+
+    }
+}
+--------------------------------------------------------------------------------------------------------
+spring.data.orient:
+  url: memory:orientdb/test1test
+  username: admin
+  password: admin
+--------------------------------------------------------------------------------------------------------
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="30 seconds">
+
+	<contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
+		<resetJUL>true</resetJUL>
+	</contextListener>
+
+	<property name="appname" value="xfqcodetemplate" />
+
+	<!--定义日志文件的存储地址 勿在 LogBack 的配置中使用相对路径 -->
+	<property name="LOG_HOME" value="/xfqcodetemplate" />
+
+	<!-- 按照每天生成日志文件 -->
+	<appender name="file"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!--日志文件输出的文件名 -->
+			<FileNamePattern>${LOG_HOME}/${appname}.log.%d{yyyy-MM-dd}.log
+			</FileNamePattern>
+			<MaxHistory>30</MaxHistory>
+		</rollingPolicy>
+		<layout class="ch.qos.logback.classic.PatternLayout">
+			<!--格式化输出：%d表示日期，%thread表示线程名，%-5level：级别从左显示5个字符宽度%msg：日志消息，%n是换行符 -->
+			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%X{user}] [%thread] %-5level %logger{50} -%msg%n
+			</pattern>
+		</layout>
+		<!--日志文件最大的大小 -->
+		<triggeringPolicy
+			class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+			<MaxFileSize>10MB</MaxFileSize>
+		</triggeringPolicy>
+	</appender>
+
+	<!-- To enable JMX Management -->
+	<jmxConfigurator />
+
+	<appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%X{user}] [%thread] %-5level %logger{36} -%msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<logger name="org.hibernate" level="error" />
+	<logger name="cn.xiaowenjie" level="debug">
+		<!-- wenjie delete <appender-ref ref="file" /> <appender-ref ref="console" 
+			/> -->
+	</logger>
+
+	<!-- 定义错误邮件发送 -->
+	<property name="smtpHost" value="smtp.qq.com" />
+	<property name="smtpPort" value="25" />
+	<property name="username" value="121509092@qq.com" />
+	<property name="password" value="notnull" />
+	<property name="SSL" value="false" />
+	<property name="email_to" value="121509092@qq.com" />
+	<property name="email_from" value="121509092@qq.com" />
+	<property name="email_subject" value="${USERNAME}【Error】: %logger" />
+
+	<appender name="EMAIL" class="ch.qos.logback.classic.net.SMTPAppender">
+		<smtpHost>${smtpHost}</smtpHost>
+		<smtpPort>${smtpPort}</smtpPort>
+		<username>${username}</username>
+		<password>${password}</password>
+		<SSL>${SSL}</SSL>
+		<asynchronousSending>true</asynchronousSending>
+		<to>${email_to}</to>
+		<from>${email_from}</from>
+		<subject>${email_subject}</subject>
+		<layout class="ch.qos.logback.classic.html.HTMLLayout">
+			<pattern>%date%level%thread%logger{0}%line%message</pattern>
+		</layout>
+	</appender>
+
+	<root level="info">
+		<!-- 
+		<appender-ref ref="file" />
+		 -->
+		<appender-ref ref="console" />
+		<appender-ref ref="EMAIL" />
+	</root>
+</configuration>
+--------------------------------------------------------------------------------------------------------
+import org.hibernate.Criteria;
+import org.hibernate.FlushMode;
+import org.hibernate.SessionFactory;
+import org.hibernate.criterion.Order;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.io.Serializable;
+import java.util.Collection;
+
+/**
+ * Generic CRUD Repository class functionality with Hibernate Session Factory
+ *
+ * Created by Y.Kamesh on 8/2/2015.
+ */
+public abstract class BaseHibernateJPARepository<T extends Entity, ID extends Serializable> implements BaseJPARepository<T, ID> {
+    protected @Autowired
+    SessionFactory sessionFactory;
+    protected Class<T> clazz;
+
+
+    @SuppressWarnings("unchecked")
+    public void setupEntityClass(Class clazz) {
+        this.clazz = clazz;
+    }
+
+
+    public void delete(T object) {
+        sessionFactory.getCurrentSession().delete(object);
+    }
+
+
+    @Transactional
+    public T insert(T object) {
+        sessionFactory.getCurrentSession().setFlushMode(FlushMode.AUTO);
+        sessionFactory.getCurrentSession().save(object);
+        sessionFactory.getCurrentSession().flush();
+        return object;
+    }
+
+
+    @Transactional
+    public T update(T object) {
+        sessionFactory.getCurrentSession().setFlushMode(FlushMode.AUTO);
+        sessionFactory.getCurrentSession().update(object);
+        sessionFactory.getCurrentSession().flush();
+        return object;
+    }
+
+
+    @Transactional
+    public T insertOrUpdate(T object) {
+        sessionFactory.getCurrentSession().setFlushMode(FlushMode.AUTO);
+        sessionFactory.getCurrentSession().saveOrUpdate(object);
+        sessionFactory.getCurrentSession().flush();
+        return object;
+    }
+
+
+    @Transactional(readOnly = true)
+    public T findById(ID id) {
+        return (T) sessionFactory.getCurrentSession().get(clazz, id);
+    }
+
+
+    public Collection<T> findAllByPage(int pageNum, int countPerPage, Order order) {
+        Criteria c = sessionFactory.getCurrentSession().createCriteria(clazz);
+        c.setMaxResults(countPerPage);
+        c.setFirstResult(pageNum * countPerPage);
+        return c.list();
+    }
+}
+
+import org.hibernate.criterion.Order;
+
+import java.io.Serializable;
+import java.util.Collection;
+
+/**
+ * Generic JPA Repository protocol with common CRUD operations and some specific find operations
+ *
+ * Created by Y.Kamesh on 8/2/2015.
+ */
+public interface BaseJPARepository<T extends Entity, ID extends Serializable> {
+    /**
+     * Method to setup the class type of the Entity for which
+     * the DAO works
+     *
+     * @param clazz
+     */
+    public void setupEntityClass(Class clazz);
+
+    /**
+     * Method to insert the new row into config.database table
+     *
+     * @param object
+     *         The object entity to be persisted
+     */
+    public T insert(T object);
+
+    /**
+     * Method to update an existing row in the config.database table
+     *
+     * @param object
+     *         The object entity to be updated
+     */
+    public T update(T object);
+
+    /**
+     * Method to insert a new row or update a row if it was
+     * already existing in the system.
+     *
+     * @param object
+     *         The object entity to be updated
+     */
+    public T insertOrUpdate(T object);
+
+    /**
+     * Method to delete an existing row in the config.database table
+     *
+     * @param object
+     *         The object entity to be deleted
+     */
+    public void delete(T object);
+
+    /**
+     * Method to find a database item by id
+     *
+     * @param id
+     *         The id by which the row has to be found
+     */
+    public T findById(ID id);
+
+    /**
+     * Method to find a collection of database entities by pages
+     *
+     * @param pageNum
+     * @param countPerPage
+     * @param order
+     *
+     * @return
+     *
+     * @throws Exception
+     */
+    public Collection<T> findAllByPage(int pageNum, int countPerPage, Order order);
+}
+--------------------------------------------------------------------------------------------------------
+MediaType.parseMediaType("application/json;charset=UTF-8")
+--------------------------------------------------------------------------------------------------------
+    @XmlAccessorType(XmlAccessType.NONE)
+    public static class Text extends WxMessageBody {
+
+        @JsonProperty("content")
+        protected String content;
+
+        public Text(String content) {
+            this.content = content;
+        }
+
+        public Text() {
+        }
+
+        public String getContent() {
+            return content;
+        }
+    }
+--------------------------------------------------------------------------------------------------------
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.annotation.WebFilter;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
+
+import org.springframework.web.util.HtmlUtils;
+
+/**
+ * 防止XSS攻击的过滤器
+ * 
+ * @author wujing
+ */
+@WebFilter(filterName = "webXssFilter", urlPatterns = "/admin/*")
+public class WebXssFilter implements Filter {
+
+	@Override
+	public void init(FilterConfig filterConfig) throws ServletException {
+
+	}
+
+	@Override
+	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+		XssHttpServletRequestWrapper xssRequest = new XssHttpServletRequestWrapper((HttpServletRequest) request);
+		chain.doFilter(xssRequest, response);
+	}
+
+	@Override
+	public void destroy() {
+
+	}
+}
+
+/**
+ * 
+ * @author wujing
+ */
+class XssHttpServletRequestWrapper extends HttpServletRequestWrapper {
+
+	/**
+	 * @param request
+	 */
+	public XssHttpServletRequestWrapper(HttpServletRequest request) {
+		super(request);
+	}
+
+	@Override
+	public String[] getParameterValues(String name) {
+		String[] values = super.getParameterValues(name);
+		if (values != null) {
+			int length = values.length;
+			String[] escapseValues = new String[length];
+			for (int i = 0; i < length; i++) {
+				// 防xss攻击和过滤前后空格
+				escapseValues[i] = HtmlUtils.htmlEscape(values[i]).trim();
+			}
+			return escapseValues;
+		}
+		return super.getParameterValues(name);
+	}
+}
+--------------------------------------------------------------------------------------------------------
+#!/bin/sh
+
+## 自定义
+SERVICE_DIR=/home/roncoo/rc-os/roncoo-jui-springboot/
+SERVICE_NAME=roncoo-jui-springboot
+SPRING_PROFILES_ACTIVE=prod
+
+## java env
+export JAVA_HOME=/opt/jdk1.8
+export JRE_HOME=$JAVA_HOME/jre
+
+case "$1" in 
+	start)
+		procedure=`ps -ef | grep -w "${SERVICE_DIR}/${SERVICE_NAME}" |grep -w "java"| grep -v "grep" | awk '{print $2}'`
+		if [ "${procedure}" = "" ];
+		then
+			echo "start ..."
+			if [ "$2" != "" ];
+			then
+				SPRING_PROFILES_ACTIVE=$2
+			fi
+			echo "spring.profiles.active=${SPRING_PROFILES_ACTIVE}"
+			exec nohup ${JRE_HOME}/bin/java -Xms256m -Xmx256m -jar ${SERVICE_DIR}/${SERVICE_NAME}\.jar --spring.profiles.active=${SPRING_PROFILES_ACTIVE} >/dev/null 2>&1 &
+			echo "start success"
+		else
+			echo "${SERVICE_NAME} is start"
+		fi
+		;;
+		
+	stop)
+		procedure=`ps -ef | grep -w "${SERVICE_DIR}/${SERVICE_NAME}" |grep -w "java"| grep -v "grep" | awk '{print $2}'`
+		if [ "${procedure}" = "" ];
+		then
+			echo "${SERVICE_NAME} is stop"
+		else
+			kill ${procedure}
+			sleep 1
+			argprocedure=`ps -ef | grep -w "${SERVICE_DIR}/${SERVICE_NAME}" |grep -w "java"| grep -v "grep" | awk '{print $2}'`
+			if [ "${argprocedure}" = "" ];
+			then
+				echo "${SERVICE_NAME} stop success"
+			else
+				kill -9 ${argprocedure}
+				echo "${SERVICE_NAME} stop error"
+			fi
+		fi
+		;;
+		
+	restart)
+		$0 stop
+		sleep 1
+		$0 start $2
+		;;  
+		
+	*)
+		$0 stop
+		sleep 1
+		$0 start $2
+		;; 
+esac
+--------------------------------------------------------------------------------------------------------
+@ConditionalOnExpression("'${swagger.enable}' == 'true'")
+--------------------------------------------------------------------------------------------------------
+    @VisibleForTesting
+    protected CustomizableEmailRendererBuilder createCustomizableEmailRendererBuilder() {
+        return CustomizableEmailRenderer.builder();
+    }
+--------------------------------------------------------------------------------------------------------
+import org.springframework.mail.javamail.MimeMessageHelper;
+
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
+
+public class MimeMessageHelperExt extends MimeMessageHelper {
+
+    private static final String HEADER_RETURN_RECEIPT = "Return-Receipt-To";
+
+    private static final String HEADER_DEPOSITION_NOTIFICATION_TO = "Disposition-Notification-To";
+
+    public MimeMessageHelperExt(MimeMessage mimeMessage) {
+        super(mimeMessage);
+    }
+
+    public MimeMessageHelperExt(MimeMessage mimeMessage, String encoding) {
+        super(mimeMessage, encoding);
+    }
+
+    public MimeMessageHelperExt(MimeMessage mimeMessage, boolean multipart) throws MessagingException {
+        super(mimeMessage, multipart);
+    }
+
+    public MimeMessageHelperExt(MimeMessage mimeMessage, boolean multipart, String encoding) throws MessagingException {
+        super(mimeMessage, multipart, encoding);
+    }
+
+    public MimeMessageHelperExt(MimeMessage mimeMessage, int multipartMode) throws MessagingException {
+        super(mimeMessage, multipartMode);
+    }
+
+    public MimeMessageHelperExt(MimeMessage mimeMessage, int multipartMode, String encoding) throws MessagingException {
+        super(mimeMessage, multipartMode, encoding);
+    }
+
+    public void setHeaderReturnReceipt(String emailToNotification) throws MessagingException {
+        getMimeMessage().setHeader(HEADER_RETURN_RECEIPT, emailToNotification);
+    }
+
+    public void setHeaderDepositionNotificationTo(String emailToNotification) throws MessagingException {
+        getMimeMessage().setHeader(HEADER_DEPOSITION_NOTIFICATION_TO, emailToNotification);
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+package org.artofsolving.jodconverter.util;
+
+public class PlatformUtils {
+
+    private static final String OS_NAME = System.getProperty("os.name").toLowerCase();
+    
+    private PlatformUtils() {
+        throw new AssertionError("utility class must not be instantiated");
+    }
+
+    public static boolean isLinux() {
+        return OS_NAME.startsWith("linux");
+    }
+
+    public static boolean isMac() {
+        return OS_NAME.startsWith("mac");
+    }
+
+    public static boolean isWindows() {
+        return OS_NAME.startsWith("windows");
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+
+import org.hamcrest.Matchers;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+
+/**
+ * @author Abdullah Al Mamun Oronno (www.oneous.com)
+ */
+
+@RunWith(SpringJUnit4ClassRunner.class)
+@WebAppConfiguration
+@ContextConfiguration(locations = {"file:src/main/webapp/WEB-INF/servlet-context.xml", "file:src/main/webapp/WEB-INF/applicationContext-jpa.xml"})
+public class HomeControllerTest {
+
+    @Autowired
+    protected WebApplicationContext wac;
+
+    private MockMvc mockMvc;
+
+    @Before
+    public void setup() {
+        this.mockMvc = MockMvcBuilders.webAppContextSetup(this.wac).build();
+    }
+
+
+    @Test
+    public void getDefaultHomePage() throws Exception {
+        this.mockMvc.perform(get("/"))
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andExpect(view().name(Matchers.containsString("home")));
+    }
+
+    @Test
+    public void viewName() throws Exception {
+        this.mockMvc.perform(get("/home"))
+                .andExpect(view().name(Matchers.containsString("home")));
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+import java.io.IOException;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.cloud.stream.messaging.Sink;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.flowing.retail.inventory.application.InventoryService;
+import io.flowing.retail.inventory.domain.PickOrder;
+
+@Component
+@EnableBinding(Sink.class)
+public class MessageListener {    
+  
+  @Autowired
+  private MessageSender messageSender;
+  
+  @Autowired
+  private InventoryService inventoryService;
+
+  @StreamListener(target = Sink.INPUT, 
+      condition="payload.messageType.toString()=='FetchGoodsCommand'")
+  @Transactional
+  public void retrievePaymentCommandReceived(String messageJson) throws JsonParseException, JsonMappingException, IOException {
+    Message<FetchGoodsCommandPayload> message = new ObjectMapper().readValue(messageJson, new TypeReference<Message<FetchGoodsCommandPayload>>(){});
+    
+    FetchGoodsCommandPayload fetchGoodsCommand = message.getPayload();    
+    String pickId = inventoryService.pickItems( // 
+        fetchGoodsCommand.getItems(), fetchGoodsCommand.getReason(), fetchGoodsCommand.getRefId());
+    
+    messageSender.send( //
+        new Message<GoodsFetchedEventPayload>( //
+            "GoodsFetchedEvent", //
+            message.getTraceId(), //
+            new GoodsFetchedEventPayload() //
+              .setRefId(fetchGoodsCommand.getRefId())
+              .setPickId(pickId)));
+  }
+    
+    
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.Date;
+import java.util.UUID;
+
+public class Message<T> {
+
+  private String messageType;
+  private String id = UUID.randomUUID().toString(); // unique id of this message
+  private String traceId = UUID.randomUUID().toString(); // trace id, default: new unique
+  private String sender = "Checkout"; // for new messages
+  private Date timestamp = new Date();
+
+  private T payload;
+  
+  public Message() {    
+  }
+  
+  public Message(String type, T payload) {
+    this.messageType = type;
+    this.payload = payload;
+    this. traceId = UUID.randomUUID().toString();
+  }
+
+  public String getMessageType() {
+    return messageType;
+  }
+
+  public void setMessageType(String messageType) {
+    this.messageType = messageType;
+  }
+
+  public String getId() {
+    return id;
+  }
+
+  public void setId(String id) {
+    this.id = id;
+  }
+
+  public Date getTimestamp() {
+    return timestamp;
+  }
+
+  public void setTimestamp(Date timestamp) {
+    this.timestamp = timestamp;
+  }
+
+  public T getPayload() {
+    return payload;
+  }
+
+  public void setPayload(T payload) {
+    this.payload = payload;
+  }
+
+  @Override
+  public String toString() {
+    return "Message [messageType=" + messageType + ", id=" + id + ", timestamp=" + timestamp + ", payload=" + payload + "]";
+  }
+
+  public String getTraceId() {
+    return traceId;
+  }
+
+  public void setTraceId(String traceId) {
+    this.traceId = traceId;
+  }
+
+  public String getSender() {
+    return sender;
+  }
+
+  public void setSender(String sender) {
+    this.sender = sender;
+  }
+}
+--------------------------------------------------------------------------------------------------------
+    private void close() {
+        TimerTask shutdownTask = new TimerTask() {
+            @Override
+            public void run() {
+                ((AbstractApplicationContext) applicationContext).close();
+            }
+        };
+        Timer shutdownTimer = new Timer();
+        shutdownTimer.schedule(shutdownTask, TimeUnit.SECONDS.toMillis(3));
+    }
+--------------------------------------------------------------------------------------------------------
+    Comparator<EmailSchedulingData> DEFAULT_COMPARATOR = (o1, o2) -> {
+        final OffsetDateTime o1ScheduledDateTime = o1.getScheduledDateTime();
+        final OffsetDateTime o2ScheduledDateTime = o2.getScheduledDateTime();
+        if (o1ScheduledDateTime.isBefore(o2ScheduledDateTime)) {
+            return -1;
+        } else if (o1ScheduledDateTime.isAfter(o2ScheduledDateTime)) {
+            return 1;
+        } else {
+            int priorityComparison = Integer.compare(o1.getAssignedPriority(), o2.getAssignedPriority());
+            if (priorityComparison != 0) {
+                return priorityComparison;
+            } else {
+                return o1.getId().compareTo(o2.getId());
+            }
+        }
+    };
+--------------------------------------------------------------------------------------------------------
+public enum Week {
+
+	MONDAY("星期一", "Monday", "Mon.", 1),
+	TUESDAY("星期二", "Tuesday", "Tues.", 2),
+	WEDNESDAY("星期三", "Wednesday", "Wed.", 3),
+	THURSDAY("星期四", "Thursday", "Thur.", 4),
+	FRIDAY("星期五", "Friday", "Fri.", 5),
+	SATURDAY("星期六", "Saturday", "Sat.", 6),
+	SUNDAY("星期日", "Sunday", "Sun.", 7);
+	
+	String name_cn;
+	String name_en;
+	String name_enShort;
+	int number;
+	
+	Week(String name_cn, String name_en, String name_enShort, int number) {
+		this.name_cn = name_cn;
+		this.name_en = name_en;
+		this.name_enShort = name_enShort;
+		this.number = number;
+	}
+	
+	public String getChineseName() {
+		return name_cn;
+	}
+
+	public String getName() {
+		return name_en;
+	}
+
+	public String getShortName() {
+		return name_enShort;
+	}
+
+	public int getNumber() {
+		return number;
+	}
+}
+--------------------------------------------------------------------------------------------------------
+    @XmlJavaTypeAdapter(WxXmlAdapters.CreateTimeAdaptor.class)
+    @XmlElement(name = "CreateTime", required = true)
+    @JsonIgnore
+    protected Date createTime;
+--------------------------------------------------------------------------------------------------------
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+/**
+ * 定时清空cache
+ * 
+ * @author 肖文杰  https://github.com/xwjie
+ */
+@Component
+@EnableScheduling
+public class ClearCacheTask {
+
+	/**
+	 * 定时清空缓存
+	 */
+	@Scheduled(fixedRate = 60 * 60 * 1000L)
+	@CacheEvict(value = { CacheNames.CONFIG }, allEntries = true)
+	public void clearCaches() {
+		System.out.println("\n------------ clear caches ------------\n");
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.orient.commons.repository.config.EnableOrientRepositories;
+import org.springframework.data.orient.object.OrientObjectDatabaseFactory;
+import org.springframework.data.orient.object.repository.support.OrientObjectRepositoryFactoryBean;
+import org.springframework.transaction.annotation.Transactional;
+
+import javax.annotation.PostConstruct;
+
+@Configuration
+@EnableOrientRepositories(basePackages = "com.github.pires.example.repository", repositoryFactoryBeanClass = OrientObjectRepositoryFactoryBean.class)
+public class OrientDbConfiguration {
+
+    @Autowired
+    private OrientObjectDatabaseFactory factory;
+
+    @PostConstruct
+    @Transactional
+    public void registerEntities() {
+        factory.db().getEntityManager().registerEntityClasses("com.github.pires.example.model");
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.embedded.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
+import org.springframework.oxm.jaxb.Jaxb2Marshaller;
+import org.springframework.web.filter.HiddenHttpMethodFilter;
+import org.springframework.web.servlet.ViewResolver;
+import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
+import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+import org.springframework.webflow.mvc.servlet.FlowHandlerAdapter;
+import org.springframework.webflow.mvc.servlet.FlowHandlerMapping;
+import org.thymeleaf.spring4.SpringTemplateEngine;
+import org.thymeleaf.spring4.view.AjaxThymeleafViewResolver;
+import org.thymeleaf.spring4.view.FlowAjaxThymeleafView;
+
+import sample.ui.model.Vets;
+import sample.ui.view.XmlViewResolver;
+
+/**
+ * Configures View-related items.
+ *
+ * @author Arnaldo Piccinelli
+ */
+@Configuration
+public class WebMvcConfig extends WebMvcConfigurerAdapter {
+
+	@Autowired
+	private WebFlowConfig webFlowConfig;
+
+	@Autowired
+	private SpringTemplateEngine springTemplateEngine;
+
+	@Override
+	public void addViewControllers(ViewControllerRegistry registry) {
+		registry.addViewController("/login").setViewName("login");
+		registry.addViewController("/access").setViewName("access");
+		registry.setOrder(Ordered.HIGHEST_PRECEDENCE);
+	}
+
+	@Override
+	public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {
+		configurer.favorPathExtension(true).favorParameter(true);
+	}
+
+	@Bean(name = "marshallingXmlViewResolver")
+	public ViewResolver getMarshallingXmlViewResolver() {
+		Jaxb2Marshaller marshaller = new Jaxb2Marshaller();
+		marshaller.setClassesToBeBound(new Class[] { Vets.class });
+		return new XmlViewResolver(marshaller);
+	}
+
+	@Bean
+	public FilterRegistrationBean hiddenFilterRegistrationBean() {
+		return new FilterRegistrationBean(new HiddenHttpMethodFilter());
+	}
+
+	@Bean
+	public FlowHandlerMapping flowHandlerMapping() {
+		FlowHandlerMapping handlerMapping = new FlowHandlerMapping();
+		handlerMapping.setOrder(-1);
+		handlerMapping.setFlowRegistry(this.webFlowConfig.flowRegistry());
+		return handlerMapping;
+	}
+
+	@Bean
+	public FlowHandlerAdapter flowHandlerAdapter() {
+		FlowHandlerAdapter handlerAdapter = new FlowHandlerAdapter();
+		handlerAdapter.setFlowExecutor(this.webFlowConfig.flowExecutor());
+		handlerAdapter.setSaveOutputToFlashScopeOnRedirect(true);
+		return handlerAdapter;
+	}
+
+	@Bean
+	public AjaxThymeleafViewResolver ajaxThymeleafViewResolver() {
+		AjaxThymeleafViewResolver viewResolver = new AjaxThymeleafViewResolver();
+		viewResolver.setViewClass(FlowAjaxThymeleafView.class);
+		viewResolver.setTemplateEngine(springTemplateEngine);
+		return viewResolver;
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.Map;
+import java.util.concurrent.ThreadPoolExecutor;
+
+import org.slf4j.MDC;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+
+/**
+ * A SLF4J MDC-compatible {@link ThreadPoolExecutor}.
+ * <p>
+ * In general, MDC is used to store diagnostic information (e.g. logfile name) in per-thread variables, to facilitate logging. However, although MDC
+ * data is passed to thread children, this doesn't work when threads are reused in a thread pool. This is a drop-in replacement for
+ * {@link ThreadPoolTaskExecutor} sets MDC data before each task appropriately.
+ * </p>
+ *
+ * @author Dennis Schulte
+ */
+public class MdcThreadPoolTaskExecutor extends ThreadPoolTaskExecutor {
+
+	private static final long serialVersionUID = 1L;
+	private boolean useFixedContext = false;
+	private Map<String, String> fixedContext;
+
+	public MdcThreadPoolTaskExecutor() {
+		super();
+	}
+
+	public MdcThreadPoolTaskExecutor(Map<String, String> fixedContext) {
+		super();
+		this.fixedContext = fixedContext;
+		useFixedContext = (fixedContext != null);
+	}
+
+	private Map<String, String> getContextForTask() {
+		return useFixedContext ? fixedContext : MDC.getCopyOfContextMap();
+	}
+
+	/**
+	 * All executions will have MDC injected. {@code ThreadPoolExecutor}'s submission methods ({@code submit()} etc.)
+	 * all delegate to this.
+	 */
+	@Override
+	public void execute(Runnable command) {
+		super.execute(wrap(command, getContextForTask()));
+	}
+
+	public static Runnable wrap(final Runnable runnable, final Map<String, String> context) {
+		return new Runnable() {
+			@Override
+			public void run() {
+				Map<String, String> previous = MDC.getCopyOfContextMap();
+				if (context == null) {
+					MDC.clear();
+				} else {
+					MDC.setContextMap(context);
+				}
+				try {
+					runnable.run();
+				} finally {
+					if (previous == null) {
+						MDC.clear();
+					} else {
+						MDC.setContextMap(previous);
+					}
+				}
+			}
+		};
+	}
+}
+--------------------------------------------------------------------------------------------------------
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -64041,6 +65365,857 @@ public class GatewaySampleApplication {
 		SpringApplication.run(GatewaySampleApplication.class, args);
 	}
 }
+--------------------------------------------------------------------------------------------------------
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+import com.siemens.microservices.sonarine.sensors.converter.CoordinatesToGeolocationConverter;
+import com.siemens.microservices.sonarine.sensors.converter.MetricsToRecordConverter;
+import com.siemens.microservices.sonarine.sensors.converter.SensorDataRequestToSensorConverter;
+import com.siemens.microservices.sonarine.sensors.converter.SensorDataRequestToSensorRecordConverter;
+import com.siemens.microservices.sonarine.sensors.repository.SensorMetricsRepository;
+import com.siemens.microservices.sonarine.sensors.repository.SensorRepository;
+import com.siemens.microservices.sonarine.sensors.system.properties.DatabaseProperties;
+import com.siemens.microservices.sonarine.sensors.validation.impl.*;
+import io.r2dbc.postgresql.PostgresqlConnectionConfiguration;
+import io.r2dbc.postgresql.PostgresqlConnectionFactory;
+import io.r2dbc.spi.ConnectionFactory;
+import org.codehaus.jackson.map.DeserializationConfig;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
+import org.springframework.context.MessageSource;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import org.springframework.context.support.ReloadableResourceBundleMessageSource;
+import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.data.r2dbc.dialect.Database;
+import org.springframework.data.r2dbc.function.DatabaseClient;
+import org.springframework.data.r2dbc.function.DefaultReactiveDataAccessStrategy;
+import org.springframework.data.r2dbc.function.ReactiveDataAccessStrategy;
+import org.springframework.data.r2dbc.repository.support.R2dbcRepositoryFactory;
+import org.springframework.data.r2dbc.support.SqlStateR2dbcExceptionTranslator;
+import org.springframework.data.relational.core.mapping.RelationalMappingContext;
+import org.springframework.format.FormatterRegistry;
+import org.springframework.format.datetime.standard.DateTimeFormatterRegistrar;
+import org.springframework.http.codec.ServerCodecConfigurer;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
+import org.springframework.validation.beanvalidation.MethodValidationPostProcessor;
+import org.springframework.web.reactive.config.EnableWebFlux;
+import org.springframework.web.reactive.config.WebFluxConfigurer;
+import org.springframework.web.servlet.LocaleResolver;
+import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
+import org.springframework.web.servlet.i18n.SessionLocaleResolver;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
+
+import javax.validation.ValidatorFactory;
+import java.nio.charset.StandardCharsets;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+import java.util.concurrent.Executor;
+
+import static com.siemens.microservices.sonarine.sensors.utility.DateUtils.DEFAULT_DATETIME_FORMAT;
+import static com.siemens.microservices.sonarine.sensors.utility.DateUtils.DEFAULT_DATE_FORMAT;
+
+/**
+ * Application configuration
+ */
+@Configuration
+@EnableWebFlux
+public class AppConfiguration implements WebFluxConfigurer {
+
+    @Override
+    public void configureHttpMessageCodecs(final ServerCodecConfigurer configurer) {
+        configurer.defaultCodecs().enableLoggingRequestDetails(true);
+    }
+
+    @Override
+    public void addFormatters(final FormatterRegistry registry) {
+        final DateTimeFormatterRegistrar registrar = new DateTimeFormatterRegistrar();
+        registrar.setUseIsoFormat(true);
+        registrar.registerFormatters(registry);
+
+        registry.addConverter(new CoordinatesToGeolocationConverter());
+        registry.addConverter(new MetricsToRecordConverter());
+        registry.addConverter(new SensorDataRequestToSensorConverter());
+        registry.addConverter(new SensorDataRequestToSensorRecordConverter());
+        WebFluxConfigurer.super.addFormatters(registry);
+    }
+
+//    @Bean
+//    @Validated
+//    @ConfigurationProperties(prefix = "spring.datasource", ignoreInvalidFields = true)
+//    public DataSourceProperties dataSourceProperties() {
+//        return new DataSourceProperties();
+//    }
+
+    @Bean
+    public Scheduler jdbcScheduler(final Executor asyncTaskExecutor) {
+        return Schedulers.fromExecutor(asyncTaskExecutor);
+    }
+
+    @Bean
+    public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() {
+        final PropertySourcesPlaceholderConfigurer properties = new PropertySourcesPlaceholderConfigurer();
+        properties.setLocation(new ClassPathResource("application.yml"));
+        properties.setIgnoreResourceNotFound(false);
+        return properties;
+    }
+
+    @Bean(name = "messageSource")
+    public ReloadableResourceBundleMessageSource localizationMessageSource(@Value("${sonarine.i18n.location:'/i18n'}") final String sourceLocation,
+                                                                           @Value("${sonarine.i18n.timeout:3600}") final Integer cacheTimeout) {
+        return this.loadMessageSource(sourceLocation, cacheTimeout);
+    }
+
+    @Bean(name = "validationSource")
+    public ReloadableResourceBundleMessageSource validationMessageSource(@Value("${sonarine.validation.location:'/validation'}") final String sourceLocation,
+                                                                         @Value("${sonarine.validation.timeout:3600}") final Integer cacheTimeout) {
+        return this.loadMessageSource(sourceLocation, cacheTimeout);
+    }
+
+    @Bean
+    public DefaultValidatorRegistry validatorRegistry() {
+        final DefaultValidatorRegistry registry = new DefaultValidatorRegistry();
+        registry.addValidator(new TemperatureValidator());
+        registry.addValidator(new CoordinatesValidator());
+        registry.addValidator(new GeneralRequestValidator());
+        registry.addValidator(new GeneralParamRequestValidator());
+        return registry;
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "spring.jackson.date-format", matchIfMissing = true, havingValue = "none")
+    public Jackson2ObjectMapperBuilderCustomizer jsonCustomizer() {
+        return builder -> {
+            builder.simpleDateFormat(DEFAULT_DATETIME_FORMAT);
+            builder.serializers(new LocalDateSerializer(DateTimeFormatter.ofPattern(DEFAULT_DATE_FORMAT)));
+            builder.serializers(new LocalDateTimeSerializer(DateTimeFormatter.ofPattern(DEFAULT_DATETIME_FORMAT)));
+            builder.featuresToEnable(
+                JsonParser.Feature.ALLOW_SINGLE_QUOTES,
+                JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES,
+                JsonGenerator.Feature.WRITE_NUMBERS_AS_STRINGS,
+                JsonGenerator.Feature.QUOTE_NON_NUMERIC_NUMBERS
+            );
+            builder.featuresToDisable(
+                DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES,
+                DeserializationConfig.Feature.FAIL_ON_NUMBERS_FOR_ENUMS
+            );
+            builder.indentOutput(true);
+            builder.autoDetectFields(true);
+            builder.createXmlMapper(false);
+        };
+    }
+
+    @Bean
+    public ValidatorFactory validator(final MessageSource validationSource) {
+        final LocalValidatorFactoryBean factoryBean = new LocalValidatorFactoryBean();
+        factoryBean.setValidationMessageSource(validationSource);
+        factoryBean.setParameterNameDiscoverer(new LocalVariableTableParameterNameDiscoverer());
+        return factoryBean;
+    }
+
+    @Bean
+    public MethodValidationPostProcessor methodValidationPostProcessor(final ValidatorFactory validator) {
+        final MethodValidationPostProcessor processor = new MethodValidationPostProcessor();
+        processor.setValidatorFactory(validator);
+        return processor;
+    }
+
+    @Bean
+    public LocaleResolver localeResolver() {
+        final SessionLocaleResolver localeResolver = new SessionLocaleResolver();
+        localeResolver.setDefaultLocale(Locale.getDefault());
+        return localeResolver;
+    }
+
+    @Bean
+    public LocaleChangeInterceptor localeChangeInterceptor() {
+        final LocaleChangeInterceptor interceptor = new LocaleChangeInterceptor();
+        interceptor.setParamName("lang");
+        return interceptor;
+    }
+
+    private ReloadableResourceBundleMessageSource loadMessageSource(final String location, final int timeout) {
+        final ReloadableResourceBundleMessageSource resourceBundleMessageSource = new ReloadableResourceBundleMessageSource();
+        resourceBundleMessageSource.setBasename(location);
+        resourceBundleMessageSource.setDefaultEncoding(StandardCharsets.UTF_8.name());
+        resourceBundleMessageSource.setCacheSeconds(timeout);
+        resourceBundleMessageSource.setUseCodeAsDefaultMessage(true);
+        resourceBundleMessageSource.setFallbackToSystemLocale(true);
+        return resourceBundleMessageSource;
+    }
+
+//    @Override
+//    public void addResourceHandlers(final ResourceHandlerRegistry registry) {
+//        registry.addResourceHandler("/swagger-ui.html**").addResourceLocations("classpath:/META-INF/resources/");
+//        registry.addResourceHandler("/webjars/**").addResourceLocations("classpath:/META-INF/resources/webjars/");
+//        registry.addResourceHandler("/resources/**").addResourceLocations("/resources/").setCachePeriod(3600).resourceChain(true).addResolver(new PathResourceResolver());
+//        registry.addResourceHandler("/resources/**").addResourceLocations("/resources/").setCacheControl(CacheControl.maxAge(3600, TimeUnit.MILLISECONDS)).resourceChain(true).addResolver(new PathResourceResolver());
+//        WebFluxConfigurer.super.addResourceHandlers(registry);
+//    }
+
+//    @Override
+//    public void addCorsMappings(final CorsRegistry corsRegistry) {
+//        corsRegistry.addMapping("/**")
+//            .allowedOrigins("localhost")
+//            .allowedMethods("PUT", "GET", "DELETE", "POST")
+//            .allowedHeaders("PEM", "PEM-Exposed")
+//            .maxAge(3600);
+//    }
+
+    @Bean
+    public SensorRepository sensorRepository(final R2dbcRepositoryFactory factory) {
+        return factory.getRepository(SensorRepository.class);
+    }
+
+    @Bean
+    public SensorMetricsRepository sensorMetricsRepository(final R2dbcRepositoryFactory factory) {
+        return factory.getRepository(SensorMetricsRepository.class);
+    }
+
+    @Bean
+    public R2dbcRepositoryFactory factory(final DatabaseClient client) {
+        final RelationalMappingContext context = new RelationalMappingContext();
+        final ReactiveDataAccessStrategy strategy = new DefaultReactiveDataAccessStrategy(Database.POSTGRES.defaultDialect());
+        context.afterPropertiesSet();
+        return new R2dbcRepositoryFactory(client, context, strategy);
+    }
+
+    @Bean
+    public DatabaseClient databaseClient(final ConnectionFactory connectionFactory) {
+        return DatabaseClient.builder()
+            .exceptionTranslator(new SqlStateR2dbcExceptionTranslator())
+            .connectionFactory(connectionFactory)
+            .build();
+    }
+
+    @Bean
+    public PostgresqlConnectionFactory connectionFactory(final DatabaseProperties properties) {
+        final PostgresqlConnectionConfiguration config = PostgresqlConnectionConfiguration.builder()
+            .host(properties.getHost())
+            .port(properties.getPort())
+            .database(properties.getDatabase())
+            .username(properties.getUsername())
+            .password(properties.getPassword())
+            .build();
+        return new PostgresqlConnectionFactory(config);
+    }
+}
+
+--------------------------------------------------------------------------------------------------------
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.springframework.context.event.EventListener;
+import reactor.core.publisher.Flux;
+
+/**
+ * @author Spencer Gibb
+ */
+public class CachingRouteDefinitionLocator implements RouteDefinitionLocator {
+
+	private final RouteDefinitionLocator delegate;
+	private final AtomicReference<List<RouteDefinition>> cachedRoutes = new AtomicReference<>();
+
+	public CachingRouteDefinitionLocator(RouteDefinitionLocator delegate) {
+		this.delegate = delegate;
+		this.cachedRoutes.compareAndSet(null, collectRoutes());
+	}
+
+	@Override
+	public Flux<RouteDefinition> getRouteDefinitions() {
+		return Flux.fromIterable(this.cachedRoutes.get());
+	}
+
+	/**
+	 * Sets the new routes
+	 * @return old routes
+	 */
+	public Flux<RouteDefinition> refresh() {
+		return Flux.fromIterable(this.cachedRoutes.getAndUpdate(
+				routes -> CachingRouteDefinitionLocator.this.collectRoutes()));
+	}
+
+	private List<RouteDefinition> collectRoutes() {
+		return this.delegate.getRouteDefinitions().collectList().block();
+	}
+
+	@EventListener(RefreshRoutesEvent.class)
+    /* for testing */ void handleRefresh() {
+        refresh();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+package org.springframework.cloud.gateway.route.builder;
+
+import org.springframework.cloud.gateway.route.Route;
+import org.springframework.util.Assert;
+import org.springframework.web.server.ServerWebExchange;
+
+import java.util.function.Predicate;
+
+import static org.springframework.cloud.gateway.route.builder.BooleanSpec.Operator.*;
+
+public class BooleanSpec extends GatewayFilterSpec {
+
+	enum Operator { AND, OR, NEGATE }
+
+	final Predicate<ServerWebExchange> predicate;
+
+	public BooleanSpec(Route.Builder routeBuilder, RouteLocatorBuilder.Builder builder) {
+		super(routeBuilder, builder);
+		// save current predicate useful in kotlin dsl
+		predicate = routeBuilder.getPredicate();
+	}
+
+	public BooleanOpSpec and() {
+		return new BooleanOpSpec(routeBuilder, builder, AND);
+	}
+
+	public BooleanOpSpec or() {
+		return new BooleanOpSpec(routeBuilder, builder, OR);
+	}
+
+	public BooleanOpSpec negate() {
+		return new BooleanOpSpec(routeBuilder, builder, NEGATE);
+	}
+
+	public static class BooleanOpSpec extends PredicateSpec {
+
+		private Operator operator;
+
+		BooleanOpSpec(Route.Builder routeBuilder, RouteLocatorBuilder.Builder builder, Operator operator) {
+			super(routeBuilder, builder);
+			Assert.notNull(operator, "operator may not be null");
+			this.operator = operator;
+		}
+
+		@Override
+		public BooleanSpec predicate(Predicate<ServerWebExchange> predicate) {
+			switch (this.operator) {
+				case AND:
+					this.routeBuilder.and(predicate);
+					break;
+				case OR:
+					this.routeBuilder.or(predicate);
+					break;
+				case NEGATE:
+					this.routeBuilder.negate();
+			}
+			return createBooleanSpec();
+		}
+	}
+}
+--------------------------------------------------------------------------------------------------------
+    String outputDir = System.getProperty("io.springfox.staticdocs.outputDir");
+    String snippetsDir = System.getProperty("io.springfox.staticdocs.snippetsOutputDir");
+    String asciidocOutputDir = System.getProperty("generated.asciidoc.directory");
+	
+--------------------------------------------------------------------------------------------------------
+port com.hantsylabs.restexample.springmvc.repository.PostRepository;
+import org.jbehave.core.annotations.Given;
+import org.jbehave.core.annotations.Named;
+import org.jbehave.core.annotations.Then;
+import org.jbehave.core.annotations.When;
+import static org.junit.Assert.assertTrue;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+
+import org.springframework.http.ResponseEntity;
+
+public class PostSteps {
+
+    PostRepository postRepository;
+
+    TestRestTemplate restTemplate;
+
+    String baseUrl;
+
+    public PostSteps(PostRepository postRepository,
+            TestRestTemplate restTemplate,
+            String baseUrl) {
+        this.postRepository = postRepository;
+        this.restTemplate = restTemplate;
+        this.baseUrl = baseUrl;
+    }
+
+    ResponseEntity<String> reponseEntity;
+
+    @Given("post title is $title and content is $content")
+    public void savePost(@Named("title") String title, @Named("content") String content) {
+        postRepository.save(new Post(title, content));
+    }
+
+    @When("GET $path")
+    public void getPost(@Named("path") String path) {
+        reponseEntity = restTemplate.getForEntity(baseUrl + path, String.class);
+    }
+
+    @Then("response status is $code")
+    public void responseCode(@Named("code") int code) {
+        assertTrue(reponseEntity.getStatusCode().value() == code);
+    }
+
+    @Then("response body contains $body")
+    public void responseBody(@Named("body") String body) {
+        assertTrue(reponseEntity.getBody().contains(body));
+    }
+
+}
+
+import com.hantsylabs.restexample.springmvc.repository.PostRepository;
+import com.hantsylabs.restexample.springmvc.test.jbehave.AcceptanceTest;
+import com.hantsylabs.restexample.springmvc.test.jbehave.AbstractSpringJBehaveStory;
+import com.hantsylabs.restexample.springmvc.test.jbehave.steps.PostSteps;
+import javax.inject.Inject;
+import org.junit.Before;
+import org.junit.runner.RunWith;
+import org.springframework.boot.context.embedded.LocalServerPort;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.test.web.client.TestRestTemplate.HttpClientOption;
+
+import org.springframework.test.context.junit4.SpringRunner;
+
+@RunWith(SpringRunner.class)
+@AcceptanceTest
+public class PostStory extends AbstractSpringJBehaveStory {
+
+    @Inject
+    PostRepository postRepository;
+
+    TestRestTemplate restTemplate;
+
+    String baseUrl;
+
+    @LocalServerPort
+    int port;
+
+    @Before
+    public void setup() {
+        clearData();
+        initData();
+        this.baseUrl = "http://localhost:" + port;
+        this.restTemplate = new TestRestTemplate("admin", "test123", new HttpClientOption[]{});
+    }
+
+    @Override
+    public Object[] getSteps() {
+        return new Object[]{new PostSteps(postRepository, restTemplate, baseUrl)};
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+import com.hantsylabs.restexample.springmvc.model.PostForm;
+import com.hantsylabs.restexample.springmvc.repository.PostRepository;
+import com.hantsylabs.restexample.springmvc.test.WebIntegrationTestBase;
+import com.jayway.restassured.RestAssured;
+import com.jayway.restassured.http.ContentType;
+import org.apache.http.HttpStatus;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.jayway.restassured.response.Response;
+import javax.inject.Inject;
+import static org.hamcrest.CoreMatchers.containsString;
+import static com.jayway.restassured.RestAssured.given;
+import lombok.extern.slf4j.Slf4j;
+import static org.hamcrest.CoreMatchers.is;
+import org.junit.runner.RunWith;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.test.context.junit4.SpringRunner;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+@Slf4j
+public class RestAssuredApplicationTest extends WebIntegrationTestBase {
+
+
+    @Before
+    public void beforeTest() {
+        super.setup();
+        RestAssured.port = port;
+    }
+
+    @Test
+    public void testDeletePostNotExisted() {
+        String location = "/api/posts/1000";
+
+        given()
+                .auth().basic(USER_NAME, PASSWORD)
+                .contentType(ContentType.JSON)
+                .when()
+                .delete(location)
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.SC_NOT_FOUND);
+    }
+
+    @Test
+    public void testGetPostNotExisted() {
+        String location = "/api/posts/1000";
+
+        given()
+                .auth().basic(USER_NAME, PASSWORD)
+                .contentType(ContentType.JSON)
+                .when()
+                .get(location)
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.SC_NOT_FOUND);
+    }
+
+    @Test
+    public void testPostFormInValid() {
+        PostForm form = new PostForm();
+
+        given()
+                .auth().basic(USER_NAME, PASSWORD)
+                .body(form)
+                .contentType(ContentType.JSON)
+                .when()
+                .post("/api/posts")
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @Test
+    public void testPostCRUD() {
+        PostForm form = new PostForm();
+        form.setTitle("test title");
+        form.setContent("test content");
+
+        Response response = given()
+                .auth().basic(USER_NAME, PASSWORD)
+                .body(form)
+                .contentType(ContentType.JSON)
+                .when()
+                .post("/api/posts")
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.SC_CREATED)
+                .and()
+                .header("Location", containsString("/api/posts/"))
+                .extract().response();
+
+        String location = response.header("Location");
+
+        log.debug("header location value @" + location);
+
+        given().auth().basic(USER_NAME, PASSWORD)
+                .contentType(ContentType.JSON)
+                .when()
+                .get(location)
+                .then()
+                .assertThat()
+                .body("title", is("test title"))
+                .body("content", is("test content"));
+
+        PostForm updateForm = new PostForm();
+        updateForm.setTitle("test udpate title");
+        updateForm.setContent("test update content");
+
+        given()
+                .auth().basic(USER_NAME, PASSWORD)
+                .body(updateForm)
+                .contentType(ContentType.JSON)
+                .when()
+                .put(location)
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.SC_NO_CONTENT);
+
+        given().auth().basic(USER_NAME, PASSWORD)
+                .contentType(ContentType.JSON)
+                .when()
+                .get(location)
+                .then()
+                .assertThat()
+                .body("title", is("test udpate title"))
+                .body("content", is("test update content"));
+
+        given()
+                .auth().basic(USER_NAME, PASSWORD)
+                .contentType(ContentType.JSON)
+                .when()
+                .delete(location)
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.SC_NO_CONTENT);
+
+        given().auth().basic(USER_NAME, PASSWORD)
+                .contentType(ContentType.JSON)
+                .when()
+                .get(location)
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.SC_NOT_FOUND);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+import com.google.common.collect.Lists;
+import com.hantsylabs.restexample.springmvc.domain.User;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import springfox.bean.validators.configuration.BeanValidatorPluginsConfiguration;
+import springfox.documentation.builders.ApiInfoBuilder;
+import springfox.documentation.builders.AuthorizationScopeBuilder;
+import springfox.documentation.builders.PathSelectors;
+import springfox.documentation.service.ApiInfo;
+import springfox.documentation.service.AuthorizationScope;
+import springfox.documentation.service.BasicAuth;
+import springfox.documentation.service.Contact;
+import springfox.documentation.service.SecurityReference;
+import springfox.documentation.spi.DocumentationType;
+import springfox.documentation.spi.service.contexts.SecurityContext;
+import springfox.documentation.spring.web.plugins.Docket;
+import springfox.documentation.swagger2.annotations.EnableSwagger2;
+
+@Configuration
+@EnableSwagger2
+//@Profile(value = {"dev", "test", "staging"})// Loads the spring beans required by the framework
+@Import(BeanValidatorPluginsConfiguration.class)
+public class SwaggerConfig {
+
+    @Bean
+    public Docket userApi() {
+        AuthorizationScope[] authScopes = new AuthorizationScope[1];
+        authScopes[0] = new AuthorizationScopeBuilder()
+                .scope("read")
+                .description("read access")
+                .build();
+        SecurityReference securityReference = SecurityReference.builder()
+                .reference("test")
+                .scopes(authScopes)
+                .build();
+        ArrayList<SecurityContext> securityContexts = Lists.newArrayList(
+                SecurityContext.builder()
+                        .securityReferences(Lists.newArrayList(securityReference))
+                        .build()
+        );
+        return new Docket(DocumentationType.SWAGGER_2)
+                .directModelSubstitute(LocalDateTime.class, String.class)
+                .ignoredParameterTypes(User.class)
+                .securitySchemes(Lists.newArrayList(new BasicAuth("test")))
+                .securityContexts(securityContexts)
+                .apiInfo(apiInfo())
+                .select()
+                .paths(apiPaths())
+                .build();
+    }
+
+    private Predicate<String> apiPaths() {
+        return Predicates.or(PathSelectors.regex("/api/.*"));
+    }
+
+    //        private Predicate<String> userOnlyEndpoints() {
+    //            return (String input) -> input.contains("user");
+    //        }
+    private ApiInfo apiInfo() {
+        return new ApiInfoBuilder()
+                .title("AngularJS Spring MVC Example API")
+                .description("The online reference documentation for developers")
+                .termsOfServiceUrl("http://hantsy.blogspot.com")
+                .contact(new Contact("Hantsy Bai", "http://hantsy.blogspot.com", "hantsy@gmail.com"))
+                .license("Apache License Version 2.0")
+                .licenseUrl("https://github.com/hantsy/angularjs-springmvc-sample-boot/blob/master/LICENSE")
+                .version("2.0")
+                .build();
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+@API(status = EXPERIMENTAL, since = "5.3")
+public enum ExecutionMode {
+
+	/**
+	 * Force execution in same thread as the parent node.
+	 *
+	 * @see #CONCURRENT
+	 */
+	SAME_THREAD,
+
+	/**
+	 * Allow concurrent execution with any other node.
+	 *
+	 * @see #SAME_THREAD
+	 */
+	CONCURRENT
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Value;
+
+import java.lang.annotation.*;
+
+@Target({ ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER,
+        ElementType.ANNOTATION_TYPE })
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Value("${grpc.port !=0 ? ${grpc.port}:${local.grpc.port}}")
+public @interface LocalRunningGrpcPort {
+}
+--------------------------------------------------------------------------------------------------------
+        Collection<ServerInterceptor> globalInterceptors = getBeanNamesByTypeWithAnnotation(GRpcGlobalInterceptor.class, ServerInterceptor.class)
+                .map(name -> applicationContext.getBeanFactory().getBean(name, ServerInterceptor.class))
+                .collect(Collectors.toList());
+				
+                    GRpcService gRpcServiceAnn = applicationContext.findAnnotationOnBean(name, GRpcService.class);
+                    serviceDefinition = bindInterceptors(serviceDefinition, gRpcServiceAnn, globalInterceptors);
+					
+					        Stream<? extends ServerInterceptor> privateInterceptors = Stream.of(gRpcService.interceptors())
+                .map(interceptorClass -> {
+                    try {
+                        return 0 < applicationContext.getBeanNamesForType(interceptorClass).length ?
+                                applicationContext.getBean(interceptorClass) :
+                                interceptorClass.newInstance();
+                    } catch (Exception e) {
+                        throw new BeanCreationException("Failed to create interceptor instance.", e);
+                    }
+                });
+
+        List<ServerInterceptor> interceptors = Stream.concat(
+                gRpcService.applyGlobalInterceptors() ? globalInterceptors.stream() : Stream.empty(),
+                privateInterceptors)
+                .distinct()
+                .sorted(serverInterceptorOrderComparator())
+                .collect(Collectors.toList());
+        return ServerInterceptors.intercept(serviceDefinition, interceptors);
+--------------------------------------------------------------------------------------------------------
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+import org.springframework.stereotype.Component;
+
+/**
+ * Created by jamessmith on 9/7/16.
+ */
+@Target({ElementType.TYPE,ElementType.METHOD })
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Component
+public @interface GRpcGlobalInterceptor {
+}
+--------------------------------------------------------------------------------------------------------
+@AutoConfigureOrder
+@ConditionalOnBean(annotation = GRpcService.class)
+@EnableConfigurationProperties(GRpcServerProperties.class)
+public class GRpcAutoConfiguration {
+
+    @Autowired
+    private ApplicationContext applicationContext;
+
+    @Autowired
+    private GRpcServerProperties grpcServerProperties;
+
+
+
+    @Bean
+    @ConditionalOnProperty(value = "grpc.enabled", havingValue = "true", matchIfMissing = true)
+    public GRpcServerRunner grpcServerRunner(GRpcServerBuilderConfigurer configurer) {
+        return new GRpcServerRunner(configurer, ServerBuilder.forPort(grpcServerProperties.getPort()));
+    }
+
+    @Bean
+    @ConditionalOnExpression("#{environment.getProperty('grpc.inProcessServerName','')!=''}")
+    public GRpcServerRunner grpcInprocessServerRunner(GRpcServerBuilderConfigurer configurer){
+        return new GRpcServerRunner(configurer, InProcessServerBuilder.forName(grpcServerProperties.getInProcessServerName()));
+    }
+
+
+
+    @Bean
+    public HealthStatusManager healthStatusManager() {
+        return new HealthStatusManager();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(  GRpcServerBuilderConfigurer.class)
+    public GRpcServerBuilderConfigurer serverBuilderConfigurer(){
+        return new GRpcServerBuilderConfigurer();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+import io.grpc.ServerInterceptor;
+import org.springframework.stereotype.Service;
+
+/**
+ *
+ * Marks the annotated class to be registered as grpc-service bean;
+ * @author  Furer Alexander
+ * @since 0.0.1
+ */
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Service
+public @interface GRpcService {
+    Class<? extends ServerInterceptor>[] interceptors() default {};
+    boolean applyGlobalInterceptors() default true;
+}
+--------------------------------------------------------------------------------------------------------
+	/**
+	 * Common message code formats.
+	 * @see MessageCodeFormatter
+	 * @see DefaultMessageCodesResolver#setMessageCodeFormatter(MessageCodeFormatter)
+	 */
+	public enum Format implements MessageCodeFormatter {
+
+		/**
+		 * Prefix the error code at the beginning of the generated message code. e.g.:
+		 * {@code errorCode + "." + object name + "." + field}
+		 */
+		PREFIX_ERROR_CODE {
+			@Override
+			public String format(String errorCode, @Nullable String objectName, @Nullable String field) {
+				return toDelimitedString(errorCode, objectName, field);
+			}
+		},
+
+		/**
+		 * Postfix the error code at the end of the generated message code. e.g.:
+		 * {@code object name + "." + field + "." + errorCode}
+		 */
+		POSTFIX_ERROR_CODE {
+			@Override
+			public String format(String errorCode, @Nullable String objectName, @Nullable String field) {
+				return toDelimitedString(objectName, field, errorCode);
+			}
+		};
+
+		/**
+		 * Concatenate the given elements, delimiting each with
+		 * {@link DefaultMessageCodesResolver#CODE_SEPARATOR}, skipping zero-length or
+		 * null elements altogether.
+		 */
+		public static String toDelimitedString(String... elements) {
+			StringJoiner rtn = new StringJoiner(CODE_SEPARATOR);
+			for (String element : elements) {
+				if (StringUtils.hasLength(element)) {
+					rtn.add(element);
+				}
+			}
+			return rtn.toString();
+		}
+	}
 --------------------------------------------------------------------------------------------------------
 import java.math.BigDecimal;
 import java.util.concurrent.*;

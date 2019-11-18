@@ -16191,6 +16191,5789 @@ Detailed and Accurate Weather
 - Fancy weather and clock widgets on home screen
 
  
+ 
+ 
+ 
+ 
+ 
+  
+
+Описание для G-MoN
+
+Now LTE ready! Fieldtest shows LTE RSRP and RSRQ.
+
+ 
+
+A permanent RXL level of -115dBm on some Samsung phones is a Samsung bug! Only Samsung is able to fix that.
+
+ 
+
+Powerful WarDriving scanner and GSM / CDMA / EVDO / UMTS and LTE Netmonitor and drive test tool with voice notifications. It scans for all WiFi networks in range & saves the data with GPS coordinates into a file on your sd card. You can create a kml file for Google Earth. It shows you the encrytion, channel an signal strength. It shows all APs in range in a live map.
+
+ 
+
+G-MoN is a Wardriving scanner to collect and map all received wifi access points. It is also a 2G/3G netmonitor and field test drive tool for radio planning engineers. Needs enabled GPS for correct position in map!
+
+ 
+
+To import a V3.0 (decimal cell data and coordinates without characters) CLF file, remove all comment lines, rename it to import.clf and copy it to /sdcard/gmon/ then start import CLF from menu.
+
+ 
+
+You can log GSM or UMTS RX levels into a kml file for Google Earth or a csv file. There are 5 color groups for different levels. These levels can be defined by the user in the settings menue. This file is saved into the gmon folder on the sdcard or external memory. When the log is running, the G-MoN Notification Icon changes color to red. 2G/3G logging does not work when the screen is off!
+
+Скрыть
+
+ 
+
+ 
+
+ 
+
+Описание для Wifi Tracker
+
+Этот сканер использует GPS и Wi-Fi в комбинации для поиска горячих точек Wi-Fi, а затем сохраняет их расположение на файл, который вы можете экспортировать файл KML для Google Планета Земля или использовать в реальном времени Сети закачки! Отлично подходит для Сети и сканировать много "горячих точек"
+
+Wifi Tracker 1.2.122 Обновить
+
+2018-01-16
+
+* Back button now quits app, press home to leave running in background
+
+* Add some more icons to describe access point types and also improve the detection of them
+
+* Map now has an initial tilt
+
+* Fixed a couple of crash/hang bugs
+
+* Update to fix security issue in file exporter
+
+* Couple of hang fixes
+
+Wifi Tracker Tags
+
+ 
+
+ 
+
+ 
+
+Описание для G-MoN Pro
+
+This app will be constantly developed and improved. There are still many features missing, which are replenished over time. In case of crashes please press the feedback button. The developer likes to receive requests for new functions by e-mail.
+
+ 
+
+If the displayed values doesn't seem to be correct, please try different api settings for each value. You will find them in the calibration settings.
+
+ 
+
+With G-MoN Pro, all available cell data and measured values in GSM, UMTS and LTE mobile networks can be clearly displayed and graphically displayed. The details of this data depend on the smartphone manufacturer and the Android version.
+
+ 
+
+The new cell list file format clf v4 is supported. Please follow the link below for details:
+
+https://sites.google.com/site/clfgmon/clf4
+
+ 
+
+The Cell Compass always points to the Best Server cell when moving (GPS) if it is included in the CLF. With a tap on the arrow, the seat direction can be changed to the direction of travel, e.g. when you sit in a train. In addition to the direction, the distance to the cell as well as the current speed and the GSM accuracy are displayed.
+
+ 
+
+Dual sim phones are supported. In the overview tab you can quickly switch between the two active SIM cards with a tap of the network and cell data.
+
+Скрыть
+
+G-MoN Pro 1.0.0 Обновить
+
+2018-12-27
+
+Join the new G-MoN Pro user group on Facebook
+
+* some bug fixes for dual sim support
+
+* tap on network and cell data to switch quickly between 2 active sim cards
+
+ 
+
+ 
+
+ 
+
+Описание для Mozilla Stumbler
+
+Mozilla is a nonprofit project and global community building a better internet. Mozilla Stumbler is an open-source wireless network scanner that collects GPS data for the Mozilla Location Service, our crowd-sourced location database. As you move around, the app "stumbles" upon new Wi-Fi networks and cell towers. The Mozilla Location Service combines these wireless network measurements to provide geolocation services for Firefox and other open source projects. For more information, visit our project page:
+
+∙ https://location.services.mozilla.com
+
+ 
+
+How to use Mozilla Stumbler
+
+∙ The app stops/pauses automatically when you are not moving or your battery is low. (This feature works better on newer devices as they have better sensors).
+
+∙ Go to un-stumbled areas (not covered in blue) to fill in the coverage map: https://location.services.mozilla.com/map
+
+∙ Improve the accuracy of the service by stumbling in the blue areas.
+
+∙ Try walking, biking, or driving new routes with Mozilla Stumbler every day!
+
+∙ Start with major streets and intersections, then explore smaller streets.
+
+∙ Your contributions will take a day to show up on the coverage map.
+
+ 
+
+ 
+
+Feedback
+
+ 
+
+∙ Please report bugs on GitHub: https://github.com/mozilla/MozStumbler/issues
+
+∙ or the #geo IRC channel on https://wiki.mozilla.org/IRC
+
+ 
+
+To conserve cellular data usage, the Stumbler's map view only shows high resolution map tiles on Wi-Fi. In the Settings, you can change this to always show the high resolution maps,
+
+ 
+
+License
+
+ 
+
+∙ Mozilla Stumbler is open-source software. The code is available on GitHub: https://github.com/mozilla/MozStumbler
+
+Скрыть
+
+ 
+
+ 
+
+ 
+
+Описание для WPSPIN. WPS Wireless Scanner.
+
+WPSPIN. WPS Wireless Scanner.
+
+ 
+
+Wireless Wi-Fi Network Scanner with WPS filter types and the access to open networks.
+
+ 
+
+The main features are the wireless Wi-Fi network scanner with WPS filter types and the access to wireless open networks.
+
+ 
+
+The scanner basic functionality are autoscan fast and slow, normal scan on demand, turbo scan, looking for types of networks, search for WPS, search for WPS WPA, search for WPS WPA2, a network connection status and a description of wireless networks.
+
+ 
+
+In order to connected to open Wireles Wi-Fi networks click on the open network, for other Wireless Wi-Fi networks invoke to setup Wireless Wi-Fi.
+
+ 
+
+Simple way to check the WPS WiFi-Access Points.
+
+ 
+
+The Google Play Store version does NOT contain any functionality to perform criminal acts of intrusion on protected Wireless Wi-Fi networks. This is NOT a hacker app.
+
+ 
+
+Disclaimer
+
+ 
+
+The use of this product wireless analysis software should be a basic tool for professionals and individuals who are eager to know the security level of wireless facilities is strictly forbidden to use it to commit criminal acts of intrusion on wireless networks of which we do not own or do not have permissions to analyze their security.
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для BSSID Logger
+
+Do you know which APs does a Wi-Fi client connect to as it moves from one place to the other in a venue that has full Wi-Fi coverage?
+
+ 
+
+Do you want to know the RSSI measured, channel used and data rate established by the phone in real time?
+
+ 
+
+This tool can help you.
+
+ 
+
+It logs the BSSID of the connected AP, RSSI, channel and data rate every second. Logging continues when the app runs at background. With this information, you can tell:
+
+ 
+
+- whether the client is connected to the best AP at its location or not
+
+- whether the client roams to the expected APs as it moves from one location to the other or not
+
+- the RSSI measured by the client right before it performs roaming
+
+- whether bad experience on an app is caused by poor roaming behavior
+
+ 
+
+With information captured by this tool, you can fine tune your Wi-Fi infrastructure to provide better roaming experience.
+
+ 
+
+Note:
+
+- Although the logging area is updated once per second, the update frequency of the RSSI, channel and data rate readings depends on the underlying OS. All of the devices I used for testing show new data every 3 seconds.
+
+Скрыть
+
+ 
+
+ 
+
+Описание для Plunder Bug - Smart LAN Tap
+
+* Requires root
+
+ 
+
+The Plunder Bug by Hak5 is a pocket-sized LAN tap that lets you "bug" Ethernet connections with USB-C convenience. Requires root permission.
+
+ 
+
+- Device detection -- Automatically detects when the Plunder Bug is connected and ready to use.
+
+- Packet capture -- Captures live network traffic and records it in standard pcap format.
+
+- Share -- Exports your packet capture (pcap) files for packet analysis.
+
+ 
+
+* Some devices are not supported
+
+ 
+
+ 
+
+ 
+
+Описание для Wifi Radar
+
+The Wifi Radar is an application which can display the physical location of wireless networks on a map.
+
+The application uses your device's gps and sensors like digital compass, accelerometer and gyroscope for determining the location of each network and display it on a map.
+
+ 
+
+See the wireless networks around you, recover your default passwords for your wifi router, analyze signals and find the best channel for your Access Point.
+
+ 
+
+Features:
+
+- Visualize and pinpoint wifi networks on a map.
+
+- 360° Radar Scan with compass visualization.
+
+- Recover default passwords for your wifi network with keygen (a lot of common routers are supported).
+
+- Signal strength graph analyzer.
+
+- Channel analyzer.
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+The application is currently in beta, please feel free to send suggestions, report bugs and errors.
+
+ 
+
+*** Additional Info:
+
+All used keygen algorithms are from public domain/open source code.
+
+ 
+
+ 
+
+ 
+
+Описание для PilferShush Jammer
+
+PilferShush Jammer blocks other apps attempting to utilise the microphone without your knowledge. Some apps use hidden processes to record tracking audio in the background that is either generated by nearby beacons, television commercials, streamed music services or websites. This tracking audio is transmitted between 18 kHz and 22 kHz (near ultra high frequency) which is beyond the range of typical human hearing but within the recording range of a typical Android phone.
+
+ 
+
+To block unwanted use of the microphone by hidden app processes, PilferShush Jammer requests use of the hardware microphone from the Android system and holds it. This technique locks up the microphone from any other apps attempting to gain access to it. This technique has been tested only on user apps, not system apps. The Android system should halt PilferShush Jammer from blocking the microphone whenever a phone call is received or made.
+
+ 
+
+When the jamming technique is running and the microphone is locked up, PilferShush Jammer posts a notification to keep the user informed that it is running. Tests have shown that it uses 0% CPU, 0% network and 43.6mb RAM when running for over an hour.
+
+ 
+
+This is an experimental app made as part of research into audio counter-surveillance methods within the Android and IoT world.
+
+ 
+
+It requires RECORD_AUDIO permission so that it may access and lock up the microphone.
+
+ 
+
+It does NOT record or listen to any audio.
+
+It does NOT connect to the internet.
+
+ 
+
+Version 2.0 Active Jammer addition:
+
+ 
+
+Tones can be emitted with a carrier frequency and a drift limit with rate all constrained to NUHF of 18 kHz to 24 kHz depending on the device capabilities. For instance 20000 Hz carrier, drift limit 1000 Hz and rate slow - will output random frequency between 19 kHz and 21 kHz approximately every second.
+
+ 
+
+Version 3.0 Jammers run as a service:
+
+ 
+
+Both the active and passive jammers now run as a (foreground) service that should accurately indicate whether they are running or not. This is dependent on both the Android OS (power management) and any App Managers that may destroy running services.
+
+ 
+
+As this app seeks to block microphone use it is important to NOT dismiss or hide the notification otherwise you may forget it is running.
+
+ 
+
+Also includes a scanner to check user installed apps for NUHF and Audio Content Recognition (ACR) SDKs as well as any services or receivers.
+
+ 
+
+Version 4.0 Redesign
+
+Major overhaul of the design to make information clearer and to simplify typical uses of the app
+
+ 
+
+Notes:
+
+The next release will investigate removing the audible artifacts (popping and clicking) present during the active jamming tones.
+
+ 
+
+White noise output may not be very effective at blocking and is a somewhat annoying sound.
+
+ 
+
+The speaker output may not have enough amplitude to block unwanted NUHF signals - testing will determine.
+
+ 
+
+ 
+
+Source code is available here: https://github.com/kaputnikGo/PilferShushJammer
+
+Research and Project webpage : https://www.cityfreqs.com.au/pilfer.php
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для пароль wifi wpa3
+
+Это приложение позволит вам защитить себя от хакеров.
+
+Он содержит случайный буквенно-цифровой алгоритм, способный генерировать надежные пароли против взлома.
+
+С помощью этого приложения вы можете управлять различными функциями вашей сети Wi-Fi.
+
+ 
+
+Основные характеристики:
+
+ 
+
+* Генерация ключей аутентификации высокого уровня wep, wpa, wpa2, wpa3.
+
+* Скопируйте и вставьте пароль.
+
+* Показать точки Wi-Fi с большим покрытием вокруг вас.
+
+* Просмотр IP, MAC-адрес, т. Д.
+
+* Страница конфигурации администратора роутера.
+
+* Найти пароль по умолчанию для вашего роутера.
+
+* Посмотрите, кто на моем Wi-Fi.
+
+* Тест скорости интернет-соединения.
+
+ 
+
+Оптимизировано для устройств Android.
+
+ 
+
+ВАЖНЫЙ
+
+Это приложение не взломать любой вид пароля Wi-Fi.
+
+Скрыть
+
+пароль wifi wpa3 5.6.0 Обновить
+
+2019-10-21
+
+* New design
+
+* Added, default router password finder
+
+* Compatible with Android 10
+
+* Updated libraries
+
+* Bugs fixed
+
+ 
+
+ 
+
+ 
+
+Описание для G-NetWiFi
+
+G-NetWiFi is a WiFi network monitor and drive test tool for Android OS devices. It allows monitoring and logging of WiFi network parameters without using special equipment. It's a tool and it's a toy. It can be used by professionals to get better insight on the network or by radio enthusiasts to learn more about WiFi networks.
+
+ 
+
+G-NetWifi can be used in outdoor and in indoor environment with loading of floorplans.
+
+ 
+
+The main features of G-NetWiFi are:
+
+- measuring of WiFi network parameters
+
+- logging of measured values in text and kml files
+
+- displaying measured values on map view
+
+- auto connect to best configured WiFi - in Settings - Other
+
+ 
+
+The app uses runtime permissions. Grant needed permissions in Menu - App permissions in order to use all app features.
+
+ 
+
+Get G-NetWiFi Pro version:
+
+Google Play: http://play.google.com/store/apps/details?id=com.gyokovsolutions.gnetwifipro
+
+ 
+
+G-NetWiFi Pro - additional features:
+
+ 
+
+- WiFi scan logging
+
+- Data test (ping, upload, download)
+
+- Data sequence
+
+- loading of cellfile and displaying WiFi access points and serving cell line on map view
+
+- Scan only configured WiFi
+
+- Change WiFi AP color
+
+- Extended kml export
+
+- Predefined routes load
+
+- Auto add new WiFi AP to cellfile
+
+- Import/export app settings
+
+- Extended text logging
+
+- Change app folder
+
+- Log reduction factor
+
+ 
+
+ 
+
+2. Tabs
+
+ 
+
+2.1. WIFI Tab
+
+WIFI tab shows network and geographical information.
+
+ 
+
+2.2 SCAN Tab
+
+SCAN tab shows information about neighbor WIFI AP measurements. It consists of two tables:
+
+You can change the chart to show all WiFi or only configured WiFi via the button under the chart.
+
+ 
+
+2.3 MAP tab
+
+MAP tab shows geographical view of the measurements and WiFi access points
+
+ 
+
+2.4 INFO tab
+
+The INFO tab provides miscellaneous information.
+
+ 
+
+2.5 DRIVE tab
+
+DRIVE tab represent the main serving AP information in comfortable format with big font letters
+
+ 
+
+ 
+
+Cellfile
+
+Create cellfile and put it into folder G_NetWiFi_Logs/cellfile.
+
+Here is a sample cellfile: http://www.gyokovsolutions.com/downloads/G-NetWiFi/cellfile.txt
+
+ 
+
+ 
+
+INDOOR MODE
+
+How to use indoor mode:
+
+ 
+
+1. Go to Settings and activate INDOOR MODE
+
+2. On Map the button [Set Point] and center point will appear
+
+3. Point your current location on the map center and press [Set Point] - a marker will appear on the map
+
+4. Move to the next point. Center map on it and press [Set Point] - several new markers (one for each second) will appear connecting previous and current location
+
+5. Go through the route putting points when you change direction.
+
+6. You can clear the markers using [CLR] button
+
+ 
+
+AUTO INDOOR mode allows auto filling of measurement points when the GPS fix is not available like in tunnels or on places with bad GPS reception.
+
+ 
+
+AUTO INDOOR mode works only when the log is active.
+
+If INDOOR mode is selected AUTO INDOOR mode is not activated.
+
+ 
+
+How to use it:
+
+1. Enable AUTO INDOOR mode in Settings.
+
+2. Choose threshold for GPS validity
+
+3. Start log.
+
+4. When you enter the tunnel and lose GPS fix the GPS writing on upper right corner of MAP tab will color in blue which means that AUTO INDOOR mode is active and measurements are collected.
+
+5. When you go out of the tunnel and GPS fix is valid the values for GPS accuracy and time are colored in green, the exiting point is auto set and the missing measurements between entering and exiting point are shown on the map and filled in the log.
+
+ 
+
+ 
+
+Floorplans
+
+ 
+
+How to load floorplans:
+
+1. In folder G_NetWiFi_Logs/floorplan put the floorplan images and create text index file (index.txt) with rows for each image and following content (tab delimited)
+
+imagename longitudeSW latitudeSW longitudeNE latitudeNE
+
+where SW and NE are South - West corner and North - East corner.
+
+ 
+
+2. Go to Menu - Load Floorplan. The floorplans will be shown on map and you can change the floor with the help of the Floor button - next to CLR button
+
+ 
+
+Here you can download floorplan sample: http://www.gyokovsolutions.com/downloads/G-NetTrack/floorplan.rar
+
+Скрыть
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для RF Analyzer
+
+Use an OTG (on-the-go) USB cable to connect your HackRF/RTL-SDR to an Android phone/tablet and this app will visualize the RF spectrum (frequency magnitude and waterfall plot)!
+
+Browse through the frequency spectrum just by using scroll and zoom touch gestures. Additional features as of today are:
+
+- Many settings: FFT size, averaging, peak holding, color scheme, ...
+
+- read samples from a file (generated by hackrf_transfer tool or by rtl_sdr)
+
+- AM/FM/SSB audio demodulation
+
+- adjust squelch and channel width
+
+- Record to a raw IQ file compatible with hackrf_transfer, ...
+
+- Bookmarks
+
+- rad1o support
+
+ 
+
+Read the manual for more details: https://github.com/demantz/RFAnalyzer/blob/master/doc/rf_analyzer_manual.md
+
+ 
+
+Due to time constraints the app is currently not actively developed anymore.
+
+I also try to keep the app stable and as bug-free as possible. Bug reports are always welcome and I try to find the time to fix them! Note that there is a logging feature in the settings which helps a lot with trouble shooting any errors.
+
+ 
+
+Interested in the latest updates? Join the beta program: https://play.google.com/apps/testing/com.mantz_it.rfanalyzer
+
+ 
+
+PERMISSIONS:
+
+This app uses the INTERNET permission only to connect to the local rtl_tcp instance used by the RTL2832U driver. The WRITE_EXTERNAL STORAGE permission is only used to write log files to the SD card (disabled by default).
+
+ 
+
+ 
+
+WHAT YOU NEED:
+
+In order to use this app you will need:
+
+- A HackRF or an RTL-SDR dongle (this is obvious xD)
+
+- An Android device that either supports USB OTG (please google if your device supports OTG!) or has an USB host port
+
+- An USB OTG cable (costs about 3$) to connect the HackRF/RTL-SDR to your Android device (not needed if your device has a full size USB host port)
+
+- Only for RTL-SDR: The free RTL2832U driver from Martin Marinov (https://play.google.com/store/apps/details?id=marto.rtl_tcp_andro)
+
+ 
+
+ 
+
+IMPORTANT:
+
+The HackRF/RTL-SDR is powered by the Android phone/tablet. Some phones or tablets might not deliver enough power on their USB port to power the HackRF/RTL-SDR (power issues are often caused by low quality USB cables or OTG adapters). Also notice that doing the necessary digital signal processing is very CPU intensive and though I did my best to optimize the algorithms the app still needs a decent device (I recommend 2 CPU cores or more) to run fluently. Please use the 2-hour refund period provided for every Google Play app to test functionality and refund the app if it does not work for your device!
+
+ 
+
+Here is a list of already tested and working devices (may be incomplete):
+
+- Nexus 7 2012
+
+- Nexus 7 2013
+
+- Nexus 5
+
+- Moto G
+
+- Moto G 4G
+
+- Acer A500
+
+- Samsung S3 LTE
+
+- Samsung S4
+
+- Samsung S4 LTE
+
+- Samsung S5
+
+- Samsung Note 3
+
+- Samsung Galaxy Tap S 8.4 & 10.5
+
+- HTC M7
+
+- HTC M8
+
+- LG G2
+
+- LG G3
+
+- Motorola Xoom M601
+
+- Dragon Touch A1X
+
+ 
+
+If the app is working for you and your device is not in this list, please include your phone type in a short rating
+
+and share the good news with other users ;)
+
+ 
+
+Here is a list of devices that were reported NOT to work with this app (may be incomplete):
+
+- Sony Xperia Pro + HackRF (because USB output power is too low -.-)
+
+- Nexus 4 (works only with Y cable and custom ROM to enable OTG support)
+
+- Nexus 9 (Not a power issue, I am still investigating on this)
+
+ 
+
+ 
+
+LICENSE:
+
+This application is released under the GNU General Public License v2. It is free software and the source code is
+
+available on GitHub: https://github.com/demantz/RFAnalyzer
+
+ 
+
+The APK package is also available in the git repository and you can download and install it from there. But keep in mind: by downloading the app from the store you will get automatic updates!
+
+ 
+
+ 
+
+LEGAL ISSUES
+
+Please note that I am not responsible for any legal issues caused by the usage of this application. Be responsible and comply with your local law!
+
+Скрыть
+
+ 
+
+ 
+
+ 
+
+Описание для WiFiman
+
+WiFiman идеально подходит для анализа Wi-Fi сетей, устройств Bluetooth LE, обнаружение новых устройств в сети и измерения скорости. Эти возможности доступны в удобном и элегантном интерфейсе пользователя, разработанным Ubiquiti Networks. WiFiman не содержит рекламы и является бесплатным.
+
+ 
+
+WiFiman поможет вам найти свободный канал для вашей Wi-Fi точки доступа. WiFiman отображает список каналов Wi-Fi и устройств Bluetooth LE которые используются неподалеку и предоставляет их детальную информацию о них.
+
+ 
+
+С помощью приложения вы с легкостью сможете обнаружить и анализировать устройства подключенные к вашей сети. WiFiman анализирует всю подсеть и отображает все доступные устройства и сервисы, используя протоколы Bonjour, SNMP, NetBIOS и UBNT.
+
+ 
+
+Еще одна главная особенность приложения это измерение скорости. Вы сможете, проверить скорость своего подключения к сети Интернет, сохранить результаты для дальнейшего сравнения и быстро ими поделиться.
+
+Скрыть
+
+ 
+
+ 
+
+ 
+
+Описание для Catch the Man-in-the-Middle
+
+Is your HTTPS traffic being spied on?
+
+ 
+
+Is there a hacker near you? Is your employer watching your traffic?
+
+ 
+
+This is the fastest way to check.
+
+ 
+
+This app will check the SHA fingerprint of the SSL certificate as seen by the Android device and will compare it to the fingerprint of the same website as seen on an external network. It will catch a case of a Man-in-the-Middle (MITM) listening in to your HTTPS encrypted browsing.
+
+ 
+
+This convenient tool does not require you to record certificate fingerprints. It handles everything for you including checking on a different network. You get an immediate answer to the question of spying.
+
+ 
+
+A Brax.Me Cybersecurity Tool created by Rob Braxman.
+
+Скрыть
+
+ 
+
+ 
+
+ 
+
+Описание для [root] Указатель паролей Wi-Fi
+
+Наша современная легкая в управлении программа не содержащая никаких реклам, с открытыми исходными кодами (Open Source).
+
+ 
+
+Вам необходимо знать следующее:
+
+ 
+
+Для этой программы вам необходим "root".
+
+ 
+
+Для того чтобы правильно и без проблем применить "root" на вашем приборе, вам необходимо в первую очередь использовать Информацию в Интернете.
+
+ 
+
+Только после получения Информации в Интернете вы можете скачать программу и оценить её.
+
+ 
+
+Эта программа показывает все сохранённые пароли Wi-Fi и к ним пренадлежащие имена, вашего прибора системы Android.
+
+ 
+
+В нашей программе можно использоватъ следующие Профили:
+
+ 
+
+- WEP (включительно кодовый номер)
+
+- WPA / WPA2 PSK
+
+- 802.1x (включительно ваше входное имя и пароль)
+
+ 
+
+Исходный Код: https://github.com/evait-security/android-wifi-key-view
+
+Скрыть
+
+[root] Указатель паролей Wi-Fi 1.7 Обновить
+
+2018-12-23
+
+merge community maintenance
+
+ 
+
+- code optimizing
+
+- shrink app size
+
+- app speed increased
+
+[root] Указатель паролей Wi-Fi Tags
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для Покрытие
+
+Coverage создает собственную карту покрытия сотовой сети и сети Wi-Fi, основанную на показаниях уровня сигнала на телефоне.
+
+ 
+
+Узнайте, где для вашего устройства уровень сигнала более высокий, а где оно попадает в мертвые зоны. Проверьте заявления своего оператора мобильной связи, создав собственную карту покрытия и выполнив тесты скорости.
+
+ 
+
+Тестирование производительности сети
+
+- Создание карты покрытия мобильной сети и сети Wi-Fi
+
+- Поддержка сетей GSM, CDMA, UMTS и LTE
+
+- Использование точных показаний телефона для определения уровня сигнала сетей Wi-Fi и сотовой связи
+
+- Поиск мертвых зон на маршруте
+
+- Проверка скорости соединения
+
+- Меняйте SIM-карты и сравнивайте покрытие для разных операторов связи
+
+ 
+
+Множество интересной статистики о сетях Wi-Fi и сотовой связи, а также о телефоне
+
+- Средняя сила сигнала LTE
+
+- Сколько новых ячеек обнаружено сегодня
+
+- Сколько времени телефон подключен к сети Wi-Fi
+
+- Сколько времени телефон подключен к сети LTE
+
+- Средняя сила сигнала Wi-Fi
+
+- А также многое другое
+
+ 
+
+ 
+
+ 
+
+Описание для Wi-Fi Бесплатный поиск Открыть
+
+Найти быстро и сразу все беспроводные сети без открытых пароль и бесплатно, где можно подключиться с вашего смартфона.
+
+С помощью этого приложения вы не должны будете искать среди сотен близлежащих беспроводных сетей, к которым вы можете подключиться без пароля. С помощью всего лишь одним щелчком вы можете увидеть его и подключите бесплатно.
+
+Кроме того, вы можете увидеть в деталях сетевые параметры, выбрать. Если, кроме того, что открытая беспроводная сеть твое,приложение позволит вам создавать надежный пароль и PIN WPS, если вы решите, чтобы блокировать потенциальные атаки хакеров.
+
+ 
+
+Приложение позволяет также увидеть остальную часть доступных беспроводных сетей, со всеми возможными имеющихся данных, таких как SSID, MAC, шифрование (WEP, WPA, WPA2 / WPS), частота, мощность сигнала Wi-Fi получены иканал на который вы работаете.
+
+Он содержит рекламу от других приложений, которые могут представлять интерес.
+
+ 
+
+ 
+
+ 
+
+Описание для WiEye
+
+WiEye - это БЕСПЛАТНЫЙ анализатор WiFi 802.11 для Android. WiEye можно использовать для инженерной съёмки беспроводного участка, сканирования wifi и обнаружения беспроводной связи. Он сообщает имя, BSSID, мощность сигнала (дБм), канал и частоту всех точек доступа в диапазоне. Он также представляет данные в графической форме, чтобы можно было посмотреть плотность WiFi-трафика по каждому доступному каналу.
+
+ 
+
+Используя WiFi-сканер, вы помогаете в поддержке группы по исследованию беспроводных технологий университета Southern Methodist University в изучении используемых в настоящее время беспроводных сигналов по всему миру и разработке более эффективных протоколов и алгоритмов.
+
+Мы надеемся, что WiEye окажется полезным приложением для ваших нужд в беспроводном сканировании. Вдобавок к приложению мы собираем статистику использования от добровольных участников, которая используется анонимно для оценки ЭТХ беспроводных сетей во многих городах мира, а также в контексте пользователя (за рулём, сидя, стоя, и т.п.) при выполнении анализа трафика. Данные внесут свой вклад в глобальную картину беспроводных сетей и их ЭТХ. Мы предлагаем WiEye в надежде, что образуется большая пользовательская база для проведения исследования. Ваша конфиденциальность очень важна для нас.
+
+Соответственно, мы разработали политику конфиденциальности для того, чтобы помочь вам понять, как мы собираем, используем, передаём и обнародуем и применяем статистику использования. Далее описываются основные принципы нашей политики конфиденциальности.
+
+ 
+
+- Перед началом или во время сбора статистики пользования мы отделяем измеряемые данные от персональной идентификации пользователя.
+
+ 
+
+- Мы собираем и применяем статистику использования с единственной целью выполнения тех задач, которые были определены нами и для других непротиворечивых целей за исключением случаев получения согласия изучаемого лица или согласно требованиям закона.
+
+ 
+
+- Мы храним статистику использования только на тот период, который необходим для выполнения этих задач.
+
+ 
+
+- Мы собираем статистику использования законными и справедливыми средствами и, в случае необходимости, с уведомлением или получении согласия исследуемого лица.
+
+ 
+
+- Место расположения пользователя должно быть значимым для поставленных целей использования и, в степени, необходимой для достижения этих целей, должно быть точным, полным и актуальным вне зависимости от идентификации лица.
+
+ 
+
+- Мы защищаем персональную информацию разумными средствами обеспечения безопасности от утери или кражи, а также от несанкционированного доступа, обнародования, копирования, использования или видоизменения.
+
+ 
+
+- Мы по первому требованию предоставляем клиентам информацию о нашей политике и практике работы, относящейся к администрированию персональных данных.
+
+ 
+
+Пожалуйста, укажите, согласны ли вы принять участие в исследовании пользователей.
+
+Скрыть
+
+ 
+
+ 
+
+ 
+
+Описание для Wifi Analyzer 2018
+
+Shows the Wi-Fi channels around you. Helps you to find a less crowded channel for your wireless router.
+
+ 
+
+Optimize your WiFi network using WiFi Analyzer 2018 by examining surrounding WiFi networks, measuring their signal strength as well as identifying crowded channels.
+
+ 
+
+Users' privacy and security is a huge concern these days and WiFi Analyzer 2018 is designed to use as few permissions as possible. It asks for just enough to perform the analysis. Plus, it is all open source so nothing is hidden! Most notably, this application does not require access to internet, so you can be sure it does not send any personal/device information to any other source and it does not receive any information from other sources.
+
+ 
+
+WiFi Analyzer 2018 is under active development by volunteers.
+
+WiFi Analyzer 2018 is free, has no-ads and does not collect any personal information.
+
+WiFi Analyzer 2018 is not a WiFi password cracking or phishing tool.
+
+ 
+
+Features:
+
+- Identify nearby Access Points
+
+- Graph channels signal strength
+
+- Graph Access Point signal strength over time
+
+- Analyze WiFi networks to rate channels
+
+- HT/VHT Detection - 40/80/160MHz (Requires Android OS 6+)
+
+- Access Point view complete or compact
+
+- Estimated Distance to the Access Points
+
+- Export access points details
+
+- Dark or Light theme available
+
+- Pause/Resume scanning
+
+- Available filters: WiFi band, Signal strength, Security and SSID
+
+- Vendor/OUI Database Lookup
+
+ 
+
+Usage Tips:
+
+- Tap the title bar to switch between 2.4 and 5 GHz WiFi band.
+
+- Swipe to manually refresh screen content.
+
+- Swipe left/right at the bottom of the screen to navigate to the next/previous screen
+
+- SSID with (***) means it is hidden.
+
+ 
+
+ 
+
+ 
+
+Описание для Locater GO (GPS-WiFi position)
+
+With this application you can save all the places you want. Locater allows you to save the position where you are or find one on the map.
+
+ 
+
+Optimized for phones, tablets and car screens with landscape system.
+
+ 
+
+You can save your current location quickly and easily. The positions will be stored only on your device and so no one will have any access to them.
+
+ 
+
+You may find positions from the browser to add from anywhere.
+
+ 
+
+Then you can select a place of the position list to guide you to the destiny or choose another application-navigator you prefer.
+
+ 
+
+HOW DOES IT WORK:
+
+· Pressing the symbol position you will save your current position with a custom icon and description.
+
+· On the position list you will have all your positions you have saved earlier and here, you can choose one to view it or navigate to the appropriate destination.
+
+· To save a new position on the map screen, hold the place you want to save, and press the option "save position".
+
+· In the map screen you can choose between 3 different tracking modes:
+
+    - AUTO MODE: The zoom between your current position and the destination is automatic and positioning map is synchronized by the device compass.
+
+   - SEMI MODE: The zoom is automatic but the map is not oriented according to the compass.
+
+   - MANU MODE: You can set the zoom and the map will be centered on your current position.
+
+ 
+
+· With the search option you can locate any point or address you want to save.
+
+· Options:
+
+   - You can delete the entire list of positions.
+
+   - In Advanced Options you can choose the accuracy level of the GPS or to show the distance to the destination and / or the altitude at which you are.
+
+ 
+
+Locater can use either the "high accuracy" mode or the "energy saving" mode of your device to make the location.
+
+Скрыть
+
+Locater GO (GPS-WiFi position) 2.3 Обновить
+
+2016-06-05
+
+V 2.3
+
+Corrections for Android 6.0
+
+V 2.2
+
+Corrections on compass orientation
+
+ 
+
+V 2.0
+
+New icons available
+
+ 
+
+Satellite Map
+
+ 
+
+New visualization options
+
+ 
+
+ 
+
+ 
+
+Описание для Pockethernet
+
+App for the Pockethernet cable and network tester hardware device.
+
+ 
+
+Pockethernet is a tool for computer network professionals.
+
+It's a smartphone connected cable and network analyzer that helps you in the installation and maintenance of Ethernet networks.
+
+ 
+
+The app enables you to make measurements with the Pockethernet device, remote control every function and generate a report of your findings.
+
+Pockethernet 28 Обновить
+
+2017-08-11
+
+- Link info and CDP/LLDP correctly displays on 10/100Mbits
+
+- TDR accuracy improved in <30m range
+
+- Updated TDR calibration algorithm
+
+- App version displayed in info section
+
+ 
+
+Описание для Deeps Network Utility
+
+Ever got annoyed on the fact that you lost your data connectivity and didn't realize it for a long period of time causing delayed message and email delivery ?
+
+Do you always switch ON and OFF your WiFi each and every time you enter and leave your configured WiFi range and wondered why can't I have a Smart WiFi controller on a Smart Phone to save power ?
+
+Here is a simple solution for both the above questions - Deeps Network Utility.
+
+This simple, configurable and low on battery utility helps you to get notified when your device lose all type of data connectivity (cellular, WiFi etc) and when your device is connected back to any one of those available data connection.
+
+This utility also has a Smart WiFi function that helps you to turn off your WiFi when you are out of range and periodically checks for any available connection when it is automatically switched off. This feature helps you save battery when you are out of WiFi range and helps you to connect back to WiFi when you are back to a pre-configured WiFi range.
+
+Configuring the app
+
+The settings page is opened when the app is first time installed and launched on a device. It can also be activated by tapping on the settings icon or by selecting Settings from the menu.
+
+There are two portions in the settings namely: Network Status Monitor (notifications) and WiFi Auto Switcher (Smart WiFi).
+
+ 
+
+The Network Status Monitor is to enable the notifications, select the notification sounds and enable saving/logging of connection lost/restored events. Enable and set unique notification sounds for the notifications so that you can quickly recognise the event without looking at the screen. If no notification sound is selected or selected sound becomes unavailable, the default notification sound from the system settings will be used.
+
+ 
+
+The Smart WiFi settings allows you to configure the app for auto switch off and auto scan of the device WiFi.
+
+Enable the auto switch off and set a wait time (recommended 2 minutes) to switch off WiFi. This setting allows the device WiFi to be active until the specified time before automatically switching it off. This wait time allows the device to connect back to the WiFi immediately if the device was briefly out of range for a short period.
+
+Enable auto scan and set the scan interval (recommended between 10 and 15 minutes). This setting allows the device to briefly turn on the WiFi at the end of each scan interval to check if any of the pre-configured WiFi signal is available for connection. If nothing is available the WiFi is switched off to save power.
+
+Please note that setting a too short scan interval (like 1 minute) might not really help to save power. However, an interval of 10 or 15 minutes would do so as the total time the device WiFi is enabled during each hour is much much less than that of keeping the WiFi always on or setting a one minute interval.
+
+ 
+
+How this app helps you ?
+
+The network status monitor helps you to get notified immediately when your data connectivity is totally lost. You can immediately take next course of action by checking your device and doing a restart or a toggle between airplane mode to reconnect the data. Saving the event log helps you to see how many times these events are occurring each day and other details.
+
+The Smart WiFi helps you to automatically switch off and on your WiFi when configured correctly. This takes away the pain of doing it manually every time when you leave your home or office and returns. You can configure the app and forget about switching on and off the device WiFi manually.
+
+ 
+
+Notes:
+
+There might be some delay in notification compared to the actual time the event occurs. This is because of the delay in the system when the event information was relayed to the app.
+
+After enabling and configuring the timing for WiFi auto switch off and auto scan, if the device WiFi was manually switched off, the auto scan will not turn it on again until the device is restarted or the WiFi is enabled manually again.
+
+ 
+
+Скрыть
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для Zakus WiFi Profiles
+
+----
+
+Note:
+
+Only android below 3.0 version supported. Sorry for that.
+
+Starting from Android Honeycomb, API was changed, and part of app functionality already provided
+
+by operation system.
+
+----
+
+If you work often with different WiFi networks, and these networks require static IP, you need each time manually configure network settings. This can be very hard and boring.
+
+ 
+
+This utility application allows you to store different network (WiFi) settings (devices IP-address, gateway IP-address etc.), and switch from one settings to another with only two clicks. In other words, application allows to create and manage WiFi profiles.
+
+ 
+
+THIS SOFTWARE IS PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND
+
+ 
+
+Features:
+
+- list of profiles with predefined IP, Mask, Gateway, DNS, allow you to switch network configurations with few clicks
+
+- widget (with different styles) to show info about current WiFi status and provide fast access to list of profiles
+
+- automatic profiles switch according to name of access point
+
+- backup profiles to storage device (SD card)
+
+ 
+
+Known issues:
+
+Please avoid to press 'back' button or some how to close widget configuration activity. There is issue with android OS (not only in my application, but in all application with configurable widgets), and because of this issue, if you cancel widget configuration - widget will not be added to screen but still be present in device memory. And the only way to remove these 'zombie widgets' is to reinstall application from what this widgets come.
+
+ 
+
+I know, this suck, but there nothing i can do (without enormous efforts). Just don't cancel, add widget and then remove manually from screen.
+
+ 
+
+See details here:
+
+http://code.google.com/p/android/issues/detail?id=2539
+
+ 
+
+Be aware (but don't worry =)):
+
+Application process will start(in background) every time when you turn on, or off WiFi, or when access point is changed, because app need to react on these events. But application will be active only few seconds (to update widget or check name of new access point). So don't worry about performance or power usage.
+
+ 
+
+If you have some problems with app - DON'T PANIC!
+
+Try to describe carefully, what your problem, and what you was trying to do. If i will understand problem, i will try to fix it.
+
+ 
+
+Don't forget to rate app!
+
+ 
+
+Скрыть
+
+Zakus WiFi Profiles 0.3 Обновить
+
+2016-01-02
+
+- UI fixes for low and high DPI devices
+
+- added widget to display WiFi status
+
+- easy access (by click on widget) menu with profiles
+
+- automatic profile switch, according to access point name (disabled by default - see menu -> settings)
+
+- backup (and restore) profiles to (from) storage device (SD card)
+
+ 
+
+ 
+
+ 
+
+Описание для Network Log
+
+Requires rooted devices.
+
+ 
+
+ATTENTION: Some versions of Android, especially on Samsung stock ROMs, may have restrictive SELinux policies that may prevent this app from working. We are working hard to resolve or provide workarounds for this.
+
+ 
+
+In the meantime, if you find this app is not working due to permission denied errors when you in fact do have root, it is likely due to a prohibitive SELinux policy being enforced. You can disable SELinux enforcing by executing 'setenforce 0' in a root shell.
+
+ 
+
+Please do not leave a bad rating/review due to the decision of some device ROMs to enforce restrictive SELinux policies. As mentioned, we are working hard to resolve/workaround these issues. Feel free to use the in-app 'Report Bug/Feedback' option to provide useful information to help us out.
+
+ 
+
+ 
+
+Please do not use the reviews to request features or report issues. If you have a request for Language Translations, features or want to report a bug, use the in-app Report Bug/Feedback option or send e-mail to pragma78@gmail.com.
+
+ 
+
+ 
+
+Wondering when and to where your Android apps are connecting across the Internet? Look no further! Network Log is for you!
+
+ 
+
+Network Log monitors iptables-logging to display a real-time list of which apps are making network connections, and provides statistics about those app connections.
+
+ 
+
+★ Real-time log display
+
+ 
+
+The log tab shows the network packets being transmitted and their details such as:
+
+ 
+
+* source and destination addresses/ports
+
+* network protocol and interface
+
+* bytes transmitted
+
+* timestamp
+
+ 
+
+★ Real-time network usage statistics
+
+ 
+
+The Apps tab lists installed applications along with network usage statistics such as:
+
+ 
+
+* total packets and bytes sent
+
+* active network throughput speed in Bps/Kbps/Mbps
+
+* timestamp of last connection
+
+* list of all the unique connections made by each app
+
+* sortable and filterable packets/bytes counters
+
+ 
+
+★ Real-time connection notifications
+
+ 
+
+The statusbar icon's up/down arrows will highlight when upload/download traffic occurs, and the notification drop-down shade displays the connection throughput speed in Kbps.
+
+ 
+
+You can also configure toast pop-up notifications on a per-app basis that will pop-up a temporary notification containing connection details no matter which app you are in.
+
+ 
+
+★ Graphs
+
+ 
+
+Click an app in either tab to see time-lines of its connections.
+
+ 
+
+Select the 'Apps Timeline' menu item to see an over-all time-line of all apps.
+
+ 
+
+Adjustable interval from 1 ms to 48 hours for summing data:
+
+ 
+
+* to see each packet, set to 1 ms
+
+* for Kbps, set to 1 second
+
+* for Kb-per-hour, set to 1 hour; etc
+
+ 
+
+Adjustable pinch-zoomable and scrollable graphs.
+
+ 
+
+ 
+
+Note: While the app itself is designed to use minimal CPU/battery, you can further reduce the CPU/battery use by exiting the app after starting the logging service.
+
+ 
+
+ 
+
+Full source code available at https://github.com/pragma-/networklog.
+
+ 
+
+ 
+
+Requires rooted devices.
+
+ 
+
+Скрыть
+
+Network Log 2.25.1 Обновить
+
+2015-08-07
+
+Improve German translations (thanks CHEF-KOCH!)
+
+ 
+
+ 
+
+ 
+
+Описание для Wifi Password Free Generator
+
+Wifi Password Free Generator - это приложение, которое поможет вам увеличить вашу сеть или офисную сеть Wi-Fi, создавая для вас длинные случайные пароли wifi.
+
+ 
+
+Также содержит функцию проверки безопасности вашего Wi-Fi. После проверки вы получите, если ваша безопасность будет нормальной или опасной.
+
+ 
+
+Еще одна функция этого бесплатного приложения wifi - получить некоторые важные данные о сетях Wi-Fi вокруг вас, как SSID, тип безопасности, например, WEP WPA WPS или получить идентификатор mac
+
+ 
+
+Если вы пользуетесь этим бесплатным приложением для wifi-паролей, пожалуйста, оцените его или оставьте комментарий!
+
+Скрыть
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для WiFi Widgets
+
+Monitor your WiFi connection with these widgets. You can quickly turn on / off your WiFi (double tap) with these widgets from your home / lock screen. THREE WiFi WIDGETS, Simple, Basic & Pro, all in one pack! And all for free!
+
+ 
+
+GESTURES
+
+~~~~~~~~~~
+
+In all the widgets,
+
+Double Tap - Toggles WiFi state i.e. turns it on / off.
+
+Triple Tap - Opens WiFi Settings page
+
+ 
+
+ 
+
+ 
+
+WIDGET TYPES
+
+~~~~~~~~~~~~~
+
+ 
+
+1. WiFi WIDGET - SIMPLE
+
+*******************************
+
+Just want to see a visual indicator of your WiFi strength? Then this is the WiFi widget for you! Beautifully shows your WiFi signal strength in a small widget. Also, shows the network you are connected to.
+
+ 
+
+2. WiFi WIDGET - BASIC
+
+*****************************
+
+Ah! So, just the strength as a visual icon wouldn't do with you? You need to know the network link speed and possibly the strength in dBm unit also? Then, this is the widget for you. Not as simple as widget 'Simple', but not too advanced as the next one 'Advanced'.
+
+ 
+
+3. WiFi WIDGET - ADVANCED
+
+************************************
+
+So, you are that real techie WiFi guy who wants to know detailed info on the WiFi signal (i.e. SSID) you are connected to? Then, this is the one built with you in mind! Check it out!
+
+ 
+
+ 
+
+ 
+
+HOW TO USE THE WIDGET?
+
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Check this out: https://www.google.com/search?q=how+to+install+a+widget
+
+You should see these widgets listed as
+
+1. [WiFi Widget] - Simple
+
+2. [WiFi Widget] - Basic
+
+3. [WiFi Widget] - Advanced
+
+ 
+
+ 
+
+QUESTIONS?
+
+~~~~~~~~~~~
+
+Keep your feedback & questions coming to freetools-support@manageengine.com ! We are all ears!
+
+ 
+
+ 
+
+Описание для WiFi Analyzer
+
+WiFi Analyzer application used to optimise wifi Networks by scanning signal strength, Crowded signal, Channel rating, Estimated distance And much More.
+
+ 
+
+Features:
+
+ 
+
+- Network SSID
+
+- Signal strength
+
+- Network security
+
+- MAC address of access point
+
+- WiFi Device Vendor ID
+
+- Network frequency,
+
+- Channel Rating And Much More
+
+ 
+
+Usage Tips
+
+ 
+
+- Tap the title bar to switch between 2.4 and 5 GHz WiFi band.
+
+- Swipe to manually refresh screen content.
+
+- SSID with (***) means it is hidden.
+
+- Distance to the Access Point is estimated.
+
+ 
+
+Note: Application is designed to use as few permission as Possible. Application only required wifi permission to read wifi data,
+
+For users has a OS above Marshmallo(M) That is 6.0 may required Location permission in order to work properly (Application not required location permission but some users are experts say that it may be an issue of Operating syatem.)
+
+Скрыть
+
+WiFi Analyzer 1.1 Обновить
+
+2018-08-20
+
+Added Option to Remove Ads
+
+and UI Improvement
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Описание для SoloLearn
+
+SoloLearn - это крупнейшая коллекция БЕСПЛАТНЫХ материалов по изучению программирования для новичков и профессионалов! Тысячи аспектов программирования помогут вам освоить азы, отточить навыки или просто быть в курсе последних тенденций.
+
+ 
+
+Встречайте самое дружелюбное сообщество программистов, где все помогают друг другу учиться и развиваться. Каждый день наше сообщество создает новые учебные материалы, чтобы вы могли быстро и эффективно оттачивать свои навыки.
+
+ 
+
+Миллионы программистов помогут вам освоить несметное множество тем и заданий из любой точки мира, в любое время. Пишите и запускайте реальный код в мобильном редакторе для Android, черпайте вдохновение из реальных примеров кода или просто общайтесь!
+
+ 
+
+∙ Лучшее приложение Facebook FbStart 2017 года
+
+ 
+
+∙ Упоминалось в TechCrunch, Forbes, ProductHunt, Lifehacker и др. изданиях
+
+ 
+
+НОВЫЙ СВЕЖИЙ КОНТЕНТ КАЖДЫЙ ДЕНЬ:
+
+∙ Веб-разработка, включая HTML5, CSS3, JavaScript, JQuery
+
+∙ Python
+
+∙ Java
+
+∙ Kotlin
+
+∙ C++
+
+∙ C
+
+∙ C#
+
+∙ PHP
+
+∙ SQL
+
+∙ Алгоритмы и структуры данных
+
+∙ Ruby
+
+∙ Машинное обучение
+
+∙ Swift
+
+∙ Git
+
+∙ и множество других тем, которые вы не найдете больше нигде.
+
+ 
+
+ПЕРСОНАЛИЗАЦИЯ. Представление содержимого на основе ваших предпочтений и самых последних тенденций, с учетом вашего прогресса․
+
+ 
+
+БЕСПЛАТНАЯ ПОДДЕРЖКА СООБЩЕСТВА 24 ЧАСА В СУТКИ. Непрерывная поддержка сообщества и уведомления в реальном времени - все для того, чтобы учиться программированию было как можно проще и приятнее.
+
+ 
+
+БЕСПЛАТНЫЙ ОБМЕН ЗНАНИЯМИ. Создайте уроки по своей специализации и станьте экспертом сообщества, на которого будут равняться миллионы. Улучшайте профиль и инвестируйте в свое будущее шаг за шагом.
+
+ 
+
+БЕСПЛАТНЫЙ МОБИЛЬНЫЙ РЕДАКТОР КОДА. Пишите, запускайте и публикуйте реальный код прямо на мобильном устройстве без всяких дополнительных установок и настроек.
+
+ 
+
+Мы любим отзывы. Напишите, что вы думаете о нас на info@sololearn.com.
+
+ 
+
+Facebook: https://www.facebook.com/sololearn
+
+ 
+
+Twitter: https://twitter.com/sololearn
+
+ 
+
+Google+: https://plus.google.com/+sololearn
+
+ 
+
+Web: https://www.sololearn.com
+
+ 
+
+Описание для Dcoder, Compiler IDE :Code & Programming on mobile
+
+Dcoder is a mobile coding IDE ( Compiler for mobile ), where one can code and learn algorithms using programming on mobile. Tailored to enhance your coding skills, via the use of code compilation and algorithm solving. Now learn to code anytime anywhere.
+
+ 
+
+ 
+
+Choose any or all languages to work with:
+
+ 
+
+ 
+
+1. C : learn C programming, a powerful general-purpose language.
+
+2. C++ : GCC compiler 6.3
+
+3. Java : best Java Programming ide, JDK 8
+
+4. Python : learn Python 2.7 and Python 3.
+
+5. C# : Mono Compiler 4
+
+6. Php : Php Interpreter 7.0
+
+7. Objective-C : GCC compiler
+
+8. Ruby : Ruby version 1.9
+
+9. Lua : Lua Interpreter 5.2
+
+10. JS/NodeJS : Node.js engine 6.5
+
+11. Go : Go Lang 1.6
+
+ 
+
+12. VB.Net
+
+13. F#
+
+14. Common Lisp
+
+15. R
+
+16. Scala
+
+17. Perl
+
+18. Pascal
+
+19. Swift
+
+20. Tcl
+
+21, Prolog
+
+22. Assembely
+
+23. Haskell
+
+24. Clojure
+
+25. Kotlin
+
+26. Groovy
+
+27. Scheme
+
+28. Rust
+
+29. Bf
+
+30. Html
+
+31. Css
+
+ 
+
+Added bonus: Dcoder uses a Rich Text Editor supporting syntax highlight and packed with the necessary tools to offer you all the edge that an IDE or code compiler is supposed to.
+
+ 
+
+ 
+
+Its the fastest code compiler (IDE), coding and programming app available for android so far.
+
+ 
+
+With Dcoder one can:
+
+ 
+
+Write a program/code in any of the available 33+ Programming Languages.
+
+Code and Debug the code, see compilation results and errors at the same time on the same screen.
+
+Enjoy the power and ease of coding on your favorite Code Editor like Notepad++ or Sublime Text with compilation power, makes it equivalent to a powerful Ide like eclipse.
+
+Test your problem solving skills by solving challenges from the number of algorithm based challenges available in Algo Yo section.
+
+Learn Html,Css, JavaScript, Ruby programming, C Programming, Python and Java in the app along with many more programming languages.
+
+Irrespective of your coding skills be it beginner or expert Dcoder helps you to learn code and improve your skills while in a boring lecture or whenever you feel like.
+
+ 
+
+ 
+
+ 
+
+The main features include:
+
+ 
+
+1. Rich Text Editor with Syntax highlighting.(Code Editor)
+
+2. Line number, Auto indent, Autocomplete Parenthesis.
+
+3. Undo Redo.
+
+4. File Open/Save.
+
+5. Custom Suggestion View.
+
+6. Multiple Language Support.
+
+7. User input for languages like C, C++, Java, Php, JavaScript, Node.js and others.
+
+8. Active debug view for faster access to Output.
+
+9. Thoroughly designed Algorithm problems to improve coding Skills and make programmers industry ready.
+
+10. Leader Board: To know where you stand amongst the vast Dcoder community.
+
+11. Custom Menu Drawer, Custom Code Editor Themes, Editable font Size for Editor and much more!!
+
+ 
+
+ 
+
+ 
+
+Disclaimer: Dcoder uses array of strong cloud based compilers to compile the code and display output, it is the fastest one and has helped to bring app size to ~4 MB, Please don't rate low or demand offline feature that is not possible here. Also instead of rating low, you can write your problems to us at support@dcoder.tech that will let us help you better.
+
+ 
+
+Dcoder is an online compiler, now run, compile and execute your code snippets on your own android mobile devices.
+
+ 
+
+ 
+
+ 
+
+Begin the journey to enhance your skills.
+
+ 
+
+How to solve algorithms?
+
+https://youtu.be/rwzdKkgWKV4
+
+ 
+
+ 
+
+For a brief video:
+
+https://youtu.be/X9lsvumpFGI
+
+ 
+
+ 
+
+Join the Facebook Group
+
+For any help, questions related to Dcoder and challenges and also to opt as a Beta Tester.
+
+https://www.facebook.com/groups/dcodermobile
+
+ 
+
+Loved it? Be a beta tester, for early access to experimental features
+
+https://play.google.com/apps/testing/com.paprbit.dcoder
+
+ 
+
+Keywords: Decoder , code, Compiler, Ide, algorithm, learn to code, learn programming, java, Online Compiler
+
+Ещё
+
+Dcoder, Compiler IDE :Code & Programming on mobile 2.0.32 Обновить
+
+2019-11-11
+
+Experience the complete overhaul in 2.0 with:
+
+- Cloud storage
+
+- Feed from Dcoder's community
+
+- Runtime input terminal
+
+- Dcoder's coding keyboard
+
+- Cross platform support and more
+
+ 
+
+Fix:
+
+- Crash fixes
+
+- Sometimes code getting deleted from editor when app goes in background fixed.
+
+ 
+
+if you love what we do support us by rating 5 stars. If you have a query or feedback for Dcoder 2.0 reach out to us at support@dcoder.tech
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для CPP N-IDE
+
+## Features
+
+- Offline C compiler
+
+- Offline C++ compiler
+
+- Native activity, SDL2 support for GUI
+
+- Build executables file, export your program
+
+- Make 4.0, makefile support, you can build as on your PC
+
+- Static code analysis, it helps you to fix "difficult" bugs:
+
+1. memory leaks
+
+1. mismatching allocation and deallocation
+
+1. uninitialized variables usage
+
+1. array index out of bounds errors
+
+- C/C++ code formatter
+
+- Terminal emulator: full-featured terminal
+
+- Git, svn support (Install by use Intall plugin features)
+
+- Diagnostic utility: auto jump to error position
+
+- Compiler output: See stdout, stderr
+
+- Syntax highlighting: C/C++ language and very more language (only highlight without compile)
+
+- C/C++ examples from https://www.programiz.com/cpp-programming/examples
+
+- File manager
+
+- Multi Tab, new file, open, save, save as, undo/redo, insert some commonly used symbols, etc. Change the typeface and font size. Show line numbers. Regular search, replace or replace all,"Word wrap" switch, Dark/Light Themes
+
+ 
+
+## How to use SDL, NativeActivity?
+
+You need install SDL Plugin for CPP N-IDE and open it once time to install libraries.
+
+The application will be auto detect linker flags (LDFLAGS) for your source file
+
+ 
+
+## How to use makefile?
+
+1. Write your makefile
+
+2. Open terminal and type "make"
+
+ 
+
+## How to install libraries
+
+1. Open drawer then click "Install libraries/Plugin"
+
+2. Find your prebuilt libraries your need
+
+ 
+
+Currently, I supported commom libraries such as curl, CLooG, dropbear, expat, fontconfig, freetype, glib, gmp, isl, conv, pcre, png, uuid, mpc, mpfr, ncurses, openssl, ppl
+
+ 
+
+Report bug on Github https://github.com/tranleduy2000/c_cpp_compiler
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для EASY CODER : Learn to develop & run java programs
+
+Are you enthusiastic about learning coding and programming? Wait no more! “Easy Coder” is the right solution for you. It’s time to learn new skills and expand your skill set. The app allows you to learn how to code, and sharpen your coding skills. It’s the ultimate video e-learning app you have been waiting for.
+
+Learn all the latest technologies and programming using this app. The app offers video tutorials and quizzes related to Java. It teaches all the fundamentals related to a specific technology so you can start coding yourself. The app teaches coding in a fun way so you don’t get bored.
+
+The code learning app is useful for beginners and advance level programmers as well. This app acts as a pocket hand book for programmers who want to have a solid foundation in programming.
+
+Watch video resources, attempt quizzes, interactive activities, and coding challenges to master coding skills at home. It’s the best online learning app that will guide you to become pro at computer science. Become a software developer without needing a degree. The app courses are easy to understand so you don’t need to have prior knowledge to understand and learn coding.
+
+Easy coder gives you opportunity to practice coding and create your own code. Get hands on experience with Easy Coder App.
+
+Top Features
+
+♥ Easy and Pleasant UI and UX
+
+♥ Basic to advance learning
+
+♥ Latest development technologies
+
+♥ Best for home learners
+
+♥ Develop skill sets and start your career
+
+♥ Completely free app
+
+♥ Video tutorials and Quizzes
+
+Learn new skills in 2019! Easy Coder is a must have app. Download NOW!
+
+Скрыть
+
+EASY CODER : Learn to develop & run java programs 1.3 Обновить
+
+2018-10-05
+
+1. There is now a new robust video player that would provide a smoother video watching experience.
+
+2. A dark theme mode is now available for the text editor.
+
+3. Smart auto suggestion / auto complete option is now available for the text editor
+
+ 
+
+Please help make this app a great for you by sharing your comments and suggestions to easycoder@easycoder.io
+
+ 
+
+ 
+
+ 
+
+Описание для Языки программирования
+
+Языки программирования
+
+Уроки по информатике в школе и вузе: какой язык программирования выбрать? Насколько глубоко его изучать и нужно ли вообще в школе изучать языки программирования? Есть мнение, что учащихся нужно знакомить с различными языками и
+
+различными стилями программирования. Видимо, наиболее подходящими учебными языками программирования сегодня являются Форт, Ruby, Python, Си, Паскаль и Java.
+
+Сегодня каждый, кто стремится попасть в IT, задается вопросом — какой язык программирования изучить? Все ищут универсальный ответ, который предопределит головокружительную карьеру. Да, до изобретения интернета и появления мобильных платформ можно было освоить один язык, написать на нем программу и быть востребованным разработчиком. Сегодня реалии таковы, что даже джуниорам предъявляется огромный список требований, среди которых — знание нескольких языков.
+
+Судите сами: для веб-разработки неплохо бы владеть PHP, JavaScript, Python, Ruby, а еще HTML, CSS и JQuery; в мобильной сфере — Swift, Objective-C, Java, C#, Kotlin. Перечень языков для создания десктопных приложений можно даже не начинать — по сути, все будут полезны. С помощью справочника "Языки программирования" Вы легко сможете найти основные особенности языка программирования, сферу его применния, паттерны проектировани и др.
+
+ 
+
+Особенности справочника "Языки программирования":
+
+- Очень быстрый поиск терминов;
+
+- Полный доступ в автономном режиме, без подключения к Интернету (offline);
+
+- Неограниченное количество заметок;
+
+- Совместим со всеми версиями Android устройств;
+
+- Приложение очень простое в использовании, быстрое и с обширным содержанием;
+
+- Автоматические бесплатные обновления каждый раз, когда добавляется новые термины;
+
+- Справочник "Языки программирования" сделан так, что бы занимать как можно меньше памяти.
+
+ 
+
+В справочнике вы сможете найти подробное описание: Клу, JCL, Io, SWI-Prolog, MC Sharp, XUL, Аналитик (язык программирования), Liberty BASIC, F Sharp, Basic, JQuery, Kotlin, Java, Pascal, MVP, MVI, MVVP, OOP, SOLID и др.
+
+Скрыть
+
+ 
+
+ 
+
+ 
+
+Описание для Учим Java
+
+Мы переходим к нашему новому бесплатному приложению Все-в-Одном! Скачать его можно здесь: https://play.google.com/store/apps/details?id=com.sololearn
+
+ 
+
+Изучите Java в улучшенной среде с большим количеством уроков, с возможностью реальной практики и поддержкой сообщества.
+
+ 
+
+Курс SoloLearn Учим Java это полное руководство к одному из самых популярных языков программирования в мире. И самое главное то, что курс Учим Java абсолютно бесплатный!
+
+ 
+
+Уроки в этом курсе ёмкие, несложные и эффективные; приложение позволит вам пройти курс всего за три часа. При этом для его прохождения не требуется опыт в программировании.
+
+ 
+
+С курсом Учим Java, вы изучите объектно-ориентированное программирование на языке Java и будете способны писать чистый и рабочий код за кратчайшие сроки. Не бойтесь сложностей. Приступайте к прохождению нашего курса сегодня и приобретайте новые навыки!
+
+Курс содержит 64 урока по следующим темам:
+
+∙ Основы Java: Переменные, Операторы, и т.д.
+
+∙ Условные Выражения и Циклы
+
+∙ Массивы
+
+∙ Классы и Объекты
+
+∙ Инкапсуляция, Полиморфизм и Наследование
+
+∙ Абстрактные Классы и Интерфейсы
+
+∙ Анонимные и Вложенные Классы
+
+∙ Обработка Исключений
+
+∙ Списки
+
+∙ HashMap
+
+∙ Множества
+
+∙ Потоки
+
+∙ Работа с Файлами
+
+∙ И Многое Другое!
+
+ 
+
+Станьне Java разработчиком – начните курс SoloLearn БЕСПЛАТНО сегодня!!
+
+ 
+
+Открывайте уровни, собирайте очки и соревнуйтесь с вашими коллегами по всему миру.
+
+ 
+
+Учитесь весело с SoloLearn!
+
+Скрыть
+
+Учим Java 3.8.1 Обновить
+
+2019-08-16
+
+* Bug fixes and improvements.
+
+* Check out our new free app with lots of new content: https://play.google.com/store/apps/details?id=com.sololearn
+
+ 
+
+ 
+
+ 
+
+Описание для Pocket Code
+
+Что можно делать в Pocket code? Да всё, что угодно: создавать, редактировать, перемешивать программы Catrobat в лего-среде программирования, а также делиться своими творениями со своими друзьями. Чтобы начать разрабатывать собственные игры, анимацию, интерактивные произведения искусства, музыкальные клипы и другие приложения непосредственно для вашего телефона или планшета, достаточно скачать приложение в Play Market (пока доступна лишь такая мобильная версия) и приступить к делу.
+
+ 
+
+Вдохновившись примером Scratch, разработчики визуального языка программирования Catrobat создали простое и понятное приложение Pocket Code, цель которого не просто развлечь, но и научить пользователей создавать собственные программы с использованием творческих элементов.
+
+ 
+
+У приложения достаточно простой интерфейс, который позволит приблизиться к пониманию программирования даже «чайнику». Чтобы создать собственный интерактивный проект, перейдите в раздел New, где вам предложат все необходимые инструменты: возможность выбрать фон, музыку, дополнительные элементы и настроить скрипты для своей игры, приложения или анимации. Чтобы у вашего Pocket Code было больше возможностей, можно скачать небольшое дополнение Pocket Paint, которое позволит вам корректировать фотографии и дорисовывать необходимые элементы. Всё, что вам может понадобиться в дополнение к такому инструментарию, – творческий подход.
+
+ 
+
+Таким образом, Pocket Code позволяет своим пользователям «выйти из матрицы» неосознанного использования приложений и стать настоящим демиургом, который эти приложения создаёт. Разработать развлекательную игру в стиле MAZE? Легко! Создать полезную интерактивную карту для урока географии? В два счёта!
+
+ 
+
+В глобальном смысле Pocket Code тем и хорош, что позволяет быть нам не потребителями, а созидателями, и от репродуктивной деятельности, которая не оставляет ни в душе, ни в памяти следа, переходить к настоящему творчеству. Да, да, в информатике это тоже реально. Тем более, что возможности различных приложений постоянно расширяются.
+
+ 
+
+Результаты многих наших сопутствующих проектов будут доступны в ближайшие месяцы и годы, например, способность контролировать больше роботов или в увлекательной игровой форме создавать музыку. В настоящее время мы работаем над улучшением Pocket Code. Следующим шагом будет создание физического движка, который облегчит вам задачу создания собственных игр, вроде Maze.
+
+ 
+
+Но и существующая версия вполне подходит для того, чтобы устроить детям на уроке информатики настоящий праздник, предложив им вместо традиционного освоения графических редакторов посоревноваться в создании лучшей игры или приложения на Pocket Code.
+
+Скрыть
+
+Pocket Code 0.9.64 Обновить
+
+2019-08-23
+
+* arctangent2 function (useful for motion)
+
+* 64 bit requirement from Google
+
+* Color picker for pen color, show variable brick and Phiro
+
+* Usability fixes
+
+* Bugfixes
+
+ 
+
+Older:
+
+* New bricks to Read variables from and Write variables on your phone
+
+* New extension for embroidery machines (still works in the Background only)
+
+ 
+
+Thanks to all contributors!
+
+If you want to help as a developer, designer, educator, in marketing or in many other roles, please see https://catrob.at/contributing
+
+
+
+
+
+
+
+Описание для CamScanner
+
+Интеллектуальное управление документами
+
+ 
+
+CamScanner – интеллектуальное решение для управления документами для частных лиц, малого бизнеса, организаций, государственных учреждений и школ. Оно идеально подходит для тех, кто хочет оцифровать, синхронизировать, делиться и управлять множеством файлов на всех устройствах.
+
+ 
+
+Выбор 40 миллионов пользователей мобильных устройств по всему миру
+
+“The application employs its own image cropping and enhancing algorithm that leads to clearer images.” – Makeuseof.com
+
+“CamScanner may just be the best deal for scanning documents on your iPhone.” – CNET.com
+
+Top Developer – Google Play Store
+
+ 
+
+Бесплатная версия поставляется с рекламой, и файлы создаются с водяным знаком. Облачные Free version is an ad-supported version and files generated are with watermark. Облачное хранилище данных - Evernote, SkyDrive доступны в течение 7 дней.
+
+ 
+
+Возможности:
+
+*Быстро сканируйте документы
+
+Используйте камеру своего телефона для СКАНИРОВАНИЯ (фотографирования) любых видов бумажных документов, all kinds of paper documents: чеков, записок, счетов, досок обсуждений, визиток, сертификатов, и т.п. Пакетный режим сканирования экономит Вам больше времени.
+
+ 
+
+*Оптимизируйте качество сканирования
+
+Интеллектуальная обрезка и автоматическое улучшение делают CamScanner уникальным. Это обеспечивает чистоту и резкость текстов и изображений в сканах с превосходными цветами и разрешениями.
+
+ 
+
+*Легкий поиск документов
+
+Ищите любые файлы в считанные секунды. В процессе поиска некоторых документов, мощный инструмент “OCR для поиска” распознает текст в PDF документах.
+
+ 
+
+*Интеллектуальное управление документами
+
+Интеллектуальное управление документами на мобильных устройствах! Вы можете распределять документы по группам, сортировать по Дате, тэгам, просматривать в виде Листа/Плитки и т.д. Устанавливайте пароли для секретных документов во избежание утечки информации.
+
+*Регистрируйтесь и синхронизируйте документы
+
+Регистрируйтесь в CamScanner и сохраняйте/синхронизируйте документы на ходу. Просто залогиньтесь и получите доступ к редактированию и синхронизации документов на смартфонах, планшетах, ПК и через облачные сервисы.
+
+ 
+
+*Делись и загружай
+
+Выгружайте сканы в облачные хранилища; Посылайте сканированные документы факсом; Делитесь файлами между мобильными устройствами и компьютерами через iTunes/WiFi.
+
+ 
+
+CamScanner позволяет сканировать:
+
+* Счета, накладные, контракты, налоги, визитки…
+
+* Надписи, записки, рукописи, письма…
+
+* Заметки, презентации, книги, статьи…
+
+* Удостоверения, сертификаты…
+
+...
+
+Поддержка облачных сервисов хранения:
+
+Google Drive, Dropbox, Box.com,
+
+Примечание: В бесплатной версии Evernote, SkyDrive доступны в течение 7 дней
+
+ 
+
+Другие приложения от IntSig:
+
+CamCard - Business Card Reader
+
+CamDictionary - Snap Translator
+
+ 
+
+Мы с удовольствием узнаем Ваше мнение по поводу приложений: asupport@intsig.com
+
+Читайте наш Twitter: @CamScanner
+
+Добавляйтесь в Facebook: CamScanner
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для Сканер QR и штрих-кодов
+
+Данное приложение совершенно бесплатно (без рекламы) можно найти по ссылке: https://play.google.com/store/apps/details?id=com.gamma.scan
+
+ 
+
+«Сканер QR и штрих-кодов» - это самый быстрый сканер штрих-кодов и QR- кодов среди аналогов.
+
+«Сканер QR и штрих-кодов» является одним из важнейших приложений для каждого Android устройства.
+
+ 
+
+«Сканер QR и штрих-кодов» чрезвычайно прост в использовании; просто направьте камеру на QR-код или штрих-код, который вы хотите сканировать, и приложение автоматически обнаружит и отсканирует его.
+
+Нет необходимости нажимать какие-либо кнопки, делать фотографии или изменять масштаб!
+
+ 
+
+«Сканер QR и штрих-кодов» может считывать все типы QR-кодов / штрих-кодов, включая: текст, URL, ISBN, продукт, контакты, события календаря, адреса и сообщения электронной почты, местоположение, Wi-Fi и многие другие форматы.
+
+ 
+
+После сканирования и автоматического декодирования QR-кода или штрих-кода, пользователю предоставляются варианты различных опций для дальнейшей работы с декодированными кодами.
+
+ 
+
+Вы даже можете использовать «Сканер QR и штрих-кодов» для сканирования кодов на купонах для получения скидок, таким образом экономить деньги.
+
+ 
+
+Сканируй штрих-коды продуктов со «Сканер QR и штрих-кодов» в магазинах и сравнивай цены онлайн на данные продукты в других магазинах, чтобы сэкономить деньги.
+
+Приложение «Сканер QR и штрих-кодов» является единственным сканером штрих-кодов и QR- кодов, которое Вам необходимо!
+
+Скрыть
+
+Сканер QR и штрих-кодов 1.6.2 Обновить
+
+2019-11-02
+
+Благодарим Вас за загрузку нашего приложения! Мы регулярно выпускаем обновления, постоянно повышая удобство работы, производительность, надежность и исправляя выявленные ошибки.
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для Notebloc
+
+Download our scanner app to scan, save & share your notes, sketches, drawings, and other documents. You can export the documents to PDF or JPEG files.
+
+ 
+
+∙ Notebloc® is a 100% free scanner app supporting unlimited usage, developed by a notebook company in Barcelona.
+
+∙ You can scan any type of notes, paper documents, receipts, drawings, sketches, photos or images.
+
+∙ Use our batch scan feature to scan multiple pages at once.
+
+∙ You can create single or multi page documents and organize them in folders and subfolders.
+
+∙ It includes OCR for typed texts in 18 different languages (English, Spanish, French, Italian, Danish, Catalan, Dutch, German, Finnish, Hungarian, Latin, Norwegian, Polish, Portuguese, Romanian, Swedish, Tagalog and Turkish).
+
+∙ The app will automatically detect the corners and correct the perspective of the image. Making it appear as if it was taken with a 90 degrees angle.
+
+∙ Any shadows or similar will disappear.
+
+∙ You can crop a document or image directly inside the app.
+
+∙ Your scanned documents can be saved or shared through email / Whatsapp / Dropbox, etc.
+
+ 
+
+With the Notebloc® app:
+
+We correct the perspective of your captured piece of paper: Notebloc geometrically fits your photos (see example above), making that the image on the screen completely straight, as if you had taken the picture in a perfect 90 degree angle.
+
+ 
+
+We eliminate any trace of shade in your photos: Imagine you could have the perfect light intensity to digitize your notes in any circumstance, time and place. That may seem impossible, but with the Notebloc app your digitized notes will look perfect, clean, without any imperfection due to light and shadow. In your digital image you will only get what there is written or drawn on a completely white background.
+
+ 
+
+Within the application you can:
+
+- Create documents and save them as PDF or JPG.
+
+- Share documents online: e-mail, instant messaging, social networks, etc.
+
+- Rename documents.
+
+- Classify documents by date of creation or edition.
+
+- Choose in what size of PDF you want to keep your notes.
+
+- Digitize images / other documents that you may want to save along with your Notebloc notes.
+
+- Add, copy and order pages within the same document.
+
+- Create folders to better organize your files.
+
+ 
+
+When used in conjunction with our Notebloc® notebooks, you get optimal results. The gridlines and background of our paper will magically disappear.
+
+ 
+
+------------------
+
+About Notebloc®:
+
+Notebloc is a brand of digitizable paper notebooks, born in Barcelona in 2013. All Notebloc products are compatible with our mobile app that allows your ideas, notes, drawings and sketches from your Notebloc to be converted to digital.
+
+ 
+
+About Notebloc Scanner app:
+
+The Notebloc app is the only document scanner app developed by professionals in the notebook industry. At Notebloc, we care about the needs of all professionals and students who search for the best scanning and document organization tools.
+
+Скрыть
+
+Notebloc 3.9.0 Обновить
+
+2019-09-30
+
+What's new:
+
+- Batch scan (multi-page scan): One of the most highly requested features by our users, which will help you save time by scanning several images at once.
+
+(This feature requires that you accept a new camera permission to use the custom camera. If you prefer to use the native camera, simply choose this in the Settings in the Notebloc App)
+
+- Bug corrections
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для Сканер QR и штрих-кодов – Сканер QR-кодов
+
+Оно очень простое в использовании, не нужно нажимать кнопки и настраивать масштаб, просто откройте его и наведите на QR-код. Приложение автоматически распознает, отсканирует и дешифрует QR-код. После сканирования предлагаются несколько вариантов: можно искать продукты в Интернете, посетить веб-сайты и даже подключиться к Wi-Fi ✅ без ввода пароля...
+
+ 
+
+Считыватель QR-кодов может сканировать и распознавать все виды QR- и штрихкодов, включая контакты, продукты, URL, Wi-Fi, текст, книги, электронную почту, геолокацию, календарь и др. Он также часто используется для сканирования промокодов и кодов купонов 💰 на скидки в магазинах.
+
+ 
+
+Особенности:
+
+*Безопасное и простое приложение сканера
+
+*Мгновенное сканирование
+
+*Конфиденциальность, достаточно разрешений только на камеру
+
+*Сканер цен
+
+*Сканирование QR- и штрихкодов из галереи
+
+*Сохранение истории сканирования
+
+*Поддержка вспышки
+
+*Автоматическое масштабирование
+
+*Не требуется подключение к Интернету
+
+ 
+
+Использование:
+
+1. Откройте сканер.
+
+2. Наведите камеру на QR-код или штрихкод.
+
+3. Приложение автоматически распознает, отсканирует и дешифрует код.
+
+4. Получите результаты и варианты действий.
+
+ 
+
+Поддержка всех форматов QR- и штрихкодов
+
+QR-код, Data Matrix, MaxiCode, Code 39, Code 93, Codabar, UPC-A, EAN-8...
+
+ 
+
+Сохранение истории сканирования
+
+Вся история сканирования сохраняется для мгновенного просмотра в любое время.
+
+ 
+
+Сканер цен
+
+Вы можете сканировать штрихкоды продуктов и сравнивать цены в Интернете.
+
+ 
+
+Автоматическое масштабирование
+
+Не требуется настраивать масштаб, можно четко сканировать удаленные🔍/мелкие QR-коды и штрихкоды.
+
+ 
+
+Поддержка вспышки
+
+Легкое сканирование QR- и штрихкодов в темноте.
+
+ 
+
+ 
+
+Лучший сканер штрих кодов
+
+Хотите бесплатный сканер штрих кодов для сканирования штрих-кода и QR-код? Попробуйте этот лучший сканер штрих кодов в Google Play!
+
+ 
+
+qr сканер
+
+Вы можете легко сканировать штрих-код и QR-код с помощью этого мощного qr сканер. Загрузите этот qr сканер прямо сейчас!
+
+ 
+
+Штрих код сканер
+
+Простой и удобный в использовании штрих код сканер! Мгновенное сканирование штрих-кода и QR-код с лучшим штрих код сканер!
+
+ 
+
+сканер qr кодов
+
+Хотите QR-сканер и считыватель QR-кодов? Ищете сканер qr кодов? Не устраивает сканер qr кодов? Попробуйте лучший QR-сканер и считыватель QR-кодов!
+
+ 
+
+штрих код сканер и цена на русском
+
+Ищете точный штрих код сканер и цена на русском? Это лучший, который вы можете найти. Штрих код сканер и цена на русском поддерживает все QR-код и штрих-код.
+
+ 
+
+QR код
+
+Нужен сканер QR код для сканирования всех типов QR код? Попробуйте этот мощный сканер.
+
+ 
+
+штрих код сканер алкоголь, штрих код алкоголя, штрих код алкоголь, сканер алкогольной продукции, qr сканер алкоголь
+
+Если вы ищете сканер штрих-кода для сканирования алкоголя, попробуйте "штрих код сканер алкоголь, штрих код алкоголя, штрих код алкоголь, сканер алкогольной продукции, qr сканер алкоголь".
+
+Скачайте "штрих код сканер алкоголь, штрих код алкоголя, штрих код алкоголь, сканер алкогольной продукции, qr сканер алкоголь" сейчас, и вы не пожалеете об этом.
+
+ 
+
+qr сканер штрих-кода
+
+Хотите QR-сканер и считыватель QR-кодов? Ищете qr сканер штрих-кода? Этот qr сканер штрих-кода действительно стоит попробовать.
+
+ 
+
+Сканер штрих-кода
+
+Простой в использовании сканер штрих-кода! Легко и безопасно сканировать штрих-коды и QR-коды с лучшим сканер штрих-кода!
+
+ 
+
+сканер qr и штрих-кодов
+
+Этот сканер qr и штрих-кодов позволяет сканировать все типы штрих-кода. Это лучший сканер qr и штрих-кодов.
+
+ 
+
+штрих код сканер и цена товара
+
+Нужен сканер qr для сканирования цен на продукцию?штрих код сканер и цена товара соответствует вашим потребностям. С помощью этого штрих код сканер и цена товара вы можете сканировать товары и сравнивать цены онлайн.
+
+Скрыть
+
+ 
+
+ 
+
+ 
+
+Описание для Barcode Scanner
+
+Сканирование штрих-кодов на продукции, то посмотреть цены и отзывы . Вы также можете сканировать матрица данных и QR-коды , содержащие URL-адреса, контакты и т.д.
+
+ 
+
+Почти каждый вопрос и отрицательный отзыв комментарий адресован одним из следующих. Пожалуйста, сохраните всем время , читая эти первые :
+
+ 
+
+Никто не крадет вашу информацию. Приложение позволяет обмениваться контактами , приложения и закладки в QR-коде . Поэтому контакты разрешения необходимы. См. " Посетить веб-сайт разработчика " ниже ( https://github.com/zxing/zxing/wiki/Frequently-Asked-Questions ) .
+
+ 
+
+Если ваше устройство не выполняется , попробуйте сначала обходные пути для ошибок устройств в настройках. Включить все из них , а затем попробуйте отключить по одному , чтобы определить, что необходимо . Если это не помогает , попробуйте очистить кэш и настройки устройства из настроек Android.
+
+ 
+
+Если они по-прежнему не работают, и Вы считаете, что это проблема приложение , отправить сообщение со следующей информацией . Сообщения без этой информации не может быть выполнена, так игнорируются.
+
+ 
+
+- Тип устройства
+
+- Основной описание того, что не работает : сбой ? не сканирует ? выглядит странно ?
+
+- Подтверждение того, что вы пытались вышеуказанные первые шаги
+
+-Захват журнала устройство от того, когда он начинает
+
+ 
+
+ 
+
+Описание для быстрое сканирование: свободный документ сканер HD
+
+Быстрое сканирование: бесплатный сканер документов HD, PDF Scanning - это создатель PDF из документов и фотографий. Приложение для сканирования документов представляет собой оригинальный сканер бумаги для сохранения описательных данных в формальный файл PDF. Удобный сканер обеспечивает четкое сканирование и обнаружение границ документов. Каждый документ можно сканировать, и Free Document Scanner HD - это гениальная камера для чтения квитанций, визитных карточек и других ценных документов. сканер делает шаг вперед для конвертации из картинки в PDF. Публичное беспокойство по поводу сохранения документов и бумажных данных разрешается с помощью процесса цифрового сканирования, чтобы иметь реальные файлы в мягком виде. Сканирование с помощью камеры заменило тяжелый настольный сканер и закодировал сканер как атрибуты в телефоне Android с помощью стационарной мобильной камеры. Free Document Scanner HD развивает вывод PDF и PNG с помощью входов камеры. Недоступные лучшие документы сканируются для подачи в облако документов Fast Scan. PDF Maker представляет собой виртуальный сканер для высококачественных PDF-документов, бумаги и изображений, а также автоматически определяет границы документа. PDF ス キ ャ ナ содержит множество фильтров изображений для превосходного результата документа и правильных данных, содержащих совершенство.
+
+Быстрое сканирование: бесплатный сканер документов HD, PDF Scanning является обладателем технологии оптического распознавания текста, которая может поддерживать отснятый материал, изображения и картинки для их хранения и составления оригинала отсканированного документа. PDF документ сканер и композитор предназначен для четкой копии жесткого файла в электронном виде. сканер документов для всех страниц контента, пригодных для использования карт и вывода JPEG. Сделайте заметный снимок для сканирования камеры и получите подлинный файл формата PDF и документ. Сканер фотофона делает быстрые снимки писем, письменных приложений, любой фотографии или учебного документа и в конечном итоге обновляет их в мобильном приложении.
+
+Free Document Scanner HD является гибким и колеблется в диапазоне от максимального до минимального размера, не затрагивая качество печати и совершенство сканирования. Во-вторых, лучшее, что может сканировать документы - это резервные копии и ориентированные на синхронизацию. Электронная подпись дополнение к новым аксессуарам документов. Быстрое сканирование: бесплатный сканер документов HD, сканирование PDF не ограничивается захватом представленного изображения, однако, оно позволяет проводить различные эксперименты по созданию PDF и составлению документов. Вы можете добавить цифровые электрические подписи к соответствующему файлу с помощью новых знаков или получить его из другого материала.
+
+ 
+
+ 
+
+Особенности для быстрого сканирования
+
+∙ Приложение для сканирования документов, чеков, изображений и визитных карточек.
+
+∙ Авто обрезка для подгонки границ и размера страницы
+
+∙ Множество фотофильтров для достижения совершенства и превосходного просмотра.
+
+∙ Высококачественный вывод PDF или JPEG
+
+∙ Конвертер изображений в форму PDF, генератор OCR PDF
+
+∙ Резервное копирование и синхронизация документов в облаке формирования
+
+∙ Позволяет выводить живой текст
+
+∙ Папки и подпапки, чтобы впоследствии упорядочить все документы
+
+∙ Редактирование и вырезание ... после сохранения файла удалить или добавить данные, извлечение текста для PDF
+
+∙ и перенос изображений в текст и документ
+
+∙ Оптическое распознавание символов преобразования и передачи изображений
+
+∙ ввод электронной подписи
+
+ 
+
+Как сканировать и редактировать
+
+∙ Сканирование документа на вход камеры и сохранение его в форматах PDF или JPEG.
+
+∙ Редактирование файла дает возможность добавлять и удалять целевые данные
+
+∙ OCR (оптическое распознавание символов) извлекает данные, чтобы приспособить ввод изображения в вывод PDF
+
+∙ Отсканированный текст готов к передаче через камеру сканирования на различных платформах.
+
+Скрыть
+
+ 
+
+ 
+
+ 
+
+Описание для Молния QR-сканер
+
+Только разрешение камеры, самый безопасный QR-код читателя
+
+ 
+
+QR-код читателя бесплатно оптимизирован для QR-кода / декодирования штрих-кода. QR-код читателя является конечной сканер штрих-кода приложение для любого Android устройства. Наслаждайтесь все выгоды путем сканирования QR-кода / штрих-кода со всех сторон, чтобы получить доступ поощрения и купон.
+
+ 
+
+QR-код читателя был разработан с камерой только разрешения предоставляются. Если вы очень беспокойство по поводу личной жизни, это правильно QR-код сканер приложение вам нужно. Это безопасно и полностью совместим с Android 4.x или выше.
+
+ 
+
+QR-код readeer широко используется для декодирования QR-кодов и штрих-кодов типов, таких как ISBN, EAN, UPC, матрицы данных и другие.
+
+ 
+
+QR-код читателя с функцией масштабирования, легко расшифровать небольшой или далеко QR-код.
+
+ 
+
+Если вы касаются безопасности, это освещение сканер QR-код только один QR-код читателя вам нужно. не только просто, но и бесплатно.
+
+ 
+
+Ключевой особенностью :
+
+- Крепкая скорость декодирования.
+
+   Переместить камеру, чтобы сосредоточиться на QR-код объекта / Штрих-код является только то, чтобы сделать.
+
+ 
+
+- Принять соответствующие меры.
+
+    Декодирование QR-код, вы можете найти информацию о продукте или просмотреть веб-сайт, даже подключить Wi-Fi без пароля печатать на машинке.
+
+ 
+
+- История
+
+   Вы можете экспортировать все ссылки по электронной почте или использовать ссылку.
+
+ 
+
+- фонарик
+
+   Тьма? Не волнуйтесь. Просто включите фонарик функции
+
+ 
+
+QR-код читателя дизайн для Android смартфон и планшет Android бесплатно.
+
+Скрыть
+
+
+
+
+https://www.kissmetricshq.com/
+ 
+ 
+мой основной конкурент
+ 
+но я хочу сделать для иота
+ 
+ 
+сколько устройств вот уже набрал
+ 
+вот если их можно соединить в конвергентные сети - т.е. пишешь по блютус - а абонент получает через другую сети нарпимер чере вифи - типа через релейные сети - т.е. их так объеднить
+ 
+да тот же лораван - вот смотри lwcom.ru - очень уж больно похоже...
+ 
+т.е. сделать их общими независимо от физики и частоты...
+ 
+wigle.net
+
+
+
+
+
+
+
+Описание для AmpliFi
+
+Home Wi-Fi of the Future.
+
+ 
+
+A Simple, Powerful App. Simple Setup, Powerful Features, Perfected User Experience.
+
+Setup in Seconds. With easy setup and configuration, your network is up and running in no time.
+
+ 
+
+Automatic Updates.
+
+Future features and performance updates will be coming soon.
+
+ 
+
+Always Know Who Is Using Your network.
+
+The app keeps track of which devices are connected, and for how long.
+
+ 
+
+Track ISP and System Performance.
+
+Get throughput readings and test your ISP speed at any time.
+
+ 
+
+Guest Access, Simplified.
+
+AmpliFi guest access uses an "open time window" to allow instant guest on-boarding without sharing your password. No security compromise or inconvenience.
+
+ 
+
+ 
+
+ 
+
+Описание для Вифи анализер
+
+Вифи анализер дает Вам возможность обнаружить информацию о беспроводной сети вокруг Вас.
+
+ 
+
+- помогает Вам найти лучшее место для местоположения вифи приемника
+
+- покажет Вам детальную информацию о каждом найденном вифи сигнале
+
+- покажет Вам развитие силы сигнала во времени
+
+- помогает Вам найти самый удобный канал при образованию новой вифи точки доступа
+
+- Информация о ширене канала (20/40/80МГц - только для Android 6+)
+
+ 
+
+Версия без рекламы доступна по адресу: https://play.google.com/store/apps/details?id=info.wifianalyzer.pro
+
+ 
+
+Прим.:Android 6+ (Marshmallow) требует разрешение на использование геоданных, и включения определения местоположения. Причина указана на официальном web-сайте android.com:
+
+http://developer.android.com/about/versions/marshmallow/android-6.0-changes.html#behavior-hardware-id
+
+Скрыть
+
+ 
+
+ 
+
+Описание для WiFi гвардии - WiFi Анализатор и WiFi блокатор
+
+WiFi гвардии - WiFi Анализатор и WiFi блокатор является полезным WiFi инструменты, такие как Wi-Fi детектор, WiFi анализатор, Обнаружение кто использует мой WiFi, WiFi сигнала метр, WiFi сигнала и Wi-Fi канал оценки и т.д.
+
+ 
+
+WiFi гвардии - WiFi Анализатор и WiFi блокатор является мощным WiFi протектор для обнаружения кто находится на моем WiFi и блокировать странные устройства для защиты моего WiFi безопасности.
+
+ 
+
+WiFi гвардии - WiFi Анализатор и WiFi блокатор является супер и бесплатный Wi-Fi блокатор и Wi-Fi анализатор инструмент.
+
+ 
+
+WiFi гвардии - WiFi Анализатор и WiFi блокатор особенности:
+
+★ WiFi детектор (кто на моем WiFi) ★
+
+WiFi гвардии - WiFi Анализатор и WiFi блокатор может легко сканировать мой WiFi и найти все устройства, подключенные к моей WiFi сети.
+
+WiFi гвардии - WiFi Анализатор и WiFi блокатор может помочь вам блокировать странные устройства для защиты моего WiFi безопасности или вы можете проверить устройство и отметить знакомые устройства, как известно..
+
+ 
+
+★ WiFi Анализатор
+
+WiFi гвардии - WiFi Анализатор и WiFi блокатор помогает проверить сеть Wi-Fi, изучая окружающие сети Wi-Fi, измеряя их силу сигнала, а также идентифицируя переполненные каналы.
+
+ 
+
+★ WiFi сила сигнала
+
+WiFi гвардии - WiFi Анализатор и WiFi блокатор может сказать вам Wi-Fi сила сигнала вокруг вас и посмотреть, какой сигнал Wi-Fi лучше.
+
+ 
+
+★ Оценка канала WiFi
+
+WiFi гвардии - WiFi Анализатор и WiFi блокатор показывает Wi-Fi каналы вокруг вас.
+
+WiFi гвардии - WiFi Анализатор и WiFi блокатор может помочь вам найти менее переполненный канал для вашего WiFi маршрутизатора.
+
+ 
+
+★ WiFi сигнала метр силы
+
+WiFi гвардии - WiFi Анализатор и WiFi блокатор может обнаружить сигнал WiFi сила вокруг вас в реальное временя.
+
+WiFi гвардии - WiFi Анализатор и WiFi блокатор может быстро проверить ваш WiFi прочность, чтобы помочь вам найти лучшее место.
+
+ 
+
+★ Пароли маршрутизатора
+
+WiFi гвардии - WiFi Анализатор и WiFi блокатор может помочь вам обнаружить ключи по умолчанию и пароли вашего WiFi маршрутизатора.
+
+ 
+
+Вы хотите знать, повысить ваш WiFi легко? Вам просто нужно начать WiFi гвардии - WiFi Анализатор и WiFi блокатор, и это поможет вам!
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для WiFi Magic
+
+WiFi Magic is a social network for public WiFi passwords.
+
+ 
+
+So what are public WiFi passwords? WiFi passwords are the ones required to access public WiFi networks at restaurants, hotels, cafes, etc. where you typically have to ask for a password before using the network.
+
+ 
+
+WiFi Magic relies on the collaboration between users, who help each other by updating the system with new public WiFi networks and their passwords, thus allowing other users to automatically fetch them. WiFi Magic has no direct access to your passwords or your router.
+
+ 
+
+WiFi Magic is present in locations around the world, including remote and isolated places such as Greenland, Patagonia or central Africa.
+
+ 
+
+Advantages of using WiFi Magic:
+
+ 
+
+Data plan savings. Nowadays most of our data resides in the Cloud, photos, email, games, etc., resulting in a need for more expensive data plans. WiFi Magic helps you minimize the use of your data plan.
+
+ 
+
+Roaming savings. It is well known that roaming charges are usually incredibly high. WiFi Magic allows you to find the closest WiFi hotspot, thus avoiding the use of expensive roaming during trips abroad.
+
+ 
+
+Battering savings. Cellular 3G and 4G technologies for data are known to consume more battery than WiFi connectivity.
+
+ 
+
+NOTE: WIFI MAGIC IS RESTRICTED TO PUBLIC NETWORKS. IT DOES NOT HANDLE ANY SORT OF PRIVATE OR RESIDENTIAL NETWORKS.
+
+Скрыть
+
+WiFi Magic 3.9.13 Обновить
+
+2019-11-07
+
+∙ Minor corrections.
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для #OpenWifi
+
+Присоединяйтесь к самому крупному сообществу #OpenWifi!
+
+ 
+
+С легкостью настраивайте свой домашний маршрутизатор, чтобы безопасно поделиться подключением к Интернету через выделенную гостевую сеть.
+
+ 
+
+Гостевая сеть изолирована от вашей домашней сети — у гостей не будет доступа к вашему компьютеру или другим устройствам, подключенным к домашней сети.
+
+ 
+
+Этому приложению требуется маршрутизатор под управлением поддерживаемой операционной системы.
+
+ 
+
+Электронная почта поддержки: android-support@openwifiapp.com
+
+ 
+
+ 
+
+ 
+
+Описание для Найти Бесплатный Вай Фай Интернет точка доступа
+
+Приложение находит и автоматически подключается к бесплатным или плохо защищенным точкам доступа в Интернет.
+
+ 
+
+Вам не обязательно быть хакером для использования этого приложения, он очень прост в использовании, не требует дополнительных настроек, позволяет анализировать и тестировать сеть вай фай вокруг, вы будете уведомлены, когда сможете подключиться к Интернету. Карта силы сигнала позволит вам быстро найти лучшее место для серфинга, скачать файлы, играть в игры, смотреть онлайн тв или слушать радио без лимит по данным. Расширенный интернет скорость тест показывает фактическую скорость, с которой вы можете просматривать веб-страницы и трансфер файлы.
+
+ 
+
+Есть много открытых точек доступа в Интернет, их можно найти почти везде, на улице, в школе, в торговых центрах, возле гостиниц и ресторанов, в метро, ​​возможно, даже у ваших соседей есть незащищенная сеть вай фай. Используя открытые вай фай-сети, вам не нужно впн, чтобы просматривать интернет-инкогнито.
+
+ 
+
+Мы заботимся о вашей конфиденциальности, это приложение не крадет пароли или любую другую личную информацию. Это легко и быстро, совершенно бесплатно, это больше, чем гаджет, это будет ваш лучший друг за пределами дома.
+
+Скрыть
+
+ 
+
+ 
+
+ 
+
+Описание для WiFi Key Connector: Free Password and WiFi Map
+
+WiFi Key Connector is a FREE application for anyone who wants to connect their nearest Free WiFi.
+
+1、Connect Free WiFi
+
+Users can easily, simply by searching on the integrated WiFi map.
+
+2、Speed Test
+
+Users can test their connecting speed range so they can gain secure and flexible access the Internet.
+
+3、Hotspot Sharing
+
+ 
+
+===== Key Features =====
+
+ 
+
+Free WiFi Connection
+
+No matter where you are, WiFi Connector is an all-inclusive WiFi Finder app that can detect the nearest WiFi signal available to you, allowing you to tap onto free WiFi networks and surf the net as you wish for FREE. What’s more, that particular WiFi connection will be stored on your mobile device for future use if you are out and about.
+
+ 
+
+WiFi Speed Test
+
+Once connected to WiFi, users are able to do a simple test of how strong or weak that connection is. You will be able to see metrics such as download and upload speeds for that connected network, and WiFi Connector is also smart enough to recommend options to you based on the online activities you can currently do on a particular network e.g. messaging, gaming, or video streaming.
+
+ 
+
+Hotspot Sharing
+
+An extra feature releated to this is the Hotspot Sharing function. This is where you can use your mobile data connection as a WiFi hotspot, and invite your friends to connect to it if they have no other way of getting online. And, to make sure you stay in control, you can even set a limit on how much data they can use while tethered to your connection.
+
+ 
+
+Stay Up To Date
+
+With the Discovery page, you can enjoy instant access to all the latest news, including the hottest stories from the world of sport and entertainment. Simply connect using the WiFi app to stay up to date, wherever you are.
+
+ 
+
+ 
+
+Stay Tuned
+
+Email: smartech.mywifi@gmail.com
+
+Facebook: https://www.facebook.com/smartech.mywifi/
+
+ 
+
+Join our core users group
+
+Meet our product manager and offer your suggestions to WiFi Connector.
+
+https://goo.gl/JeVDQR
+
+Скрыть
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для WiEye
+
+WiEye - это БЕСПЛАТНЫЙ анализатор WiFi 802.11 для Android. WiEye можно использовать для инженерной съёмки беспроводного участка, сканирования wifi и обнаружения беспроводной связи. Он сообщает имя, BSSID, мощность сигнала (дБм), канал и частоту всех точек доступа в диапазоне. Он также представляет данные в графической форме, чтобы можно было посмотреть плотность WiFi-трафика по каждому доступному каналу.
+
+ 
+
+Используя WiFi-сканер, вы помогаете в поддержке группы по исследованию беспроводных технологий университета Southern Methodist University в изучении используемых в настоящее время беспроводных сигналов по всему миру и разработке более эффективных протоколов и алгоритмов.
+
+Мы надеемся, что WiEye окажется полезным приложением для ваших нужд в беспроводном сканировании. Вдобавок к приложению мы собираем статистику использования от добровольных участников, которая используется анонимно для оценки ЭТХ беспроводных сетей во многих городах мира, а также в контексте пользователя (за рулём, сидя, стоя, и т.п.) при выполнении анализа трафика. Данные внесут свой вклад в глобальную картину беспроводных сетей и их ЭТХ. Мы предлагаем WiEye в надежде, что образуется большая пользовательская база для проведения исследования. Ваша конфиденциальность очень важна для нас.
+
+Соответственно, мы разработали политику конфиденциальности для того, чтобы помочь вам понять, как мы собираем, используем, передаём и обнародуем и применяем статистику использования. Далее описываются основные принципы нашей политики конфиденциальности.
+
+ 
+
+- Перед началом или во время сбора статистики пользования мы отделяем измеряемые данные от персональной идентификации пользователя.
+
+ 
+
+- Мы собираем и применяем статистику использования с единственной целью выполнения тех задач, которые были определены нами и для других непротиворечивых целей за исключением случаев получения согласия изучаемого лица или согласно требованиям закона.
+
+ 
+
+- Мы храним статистику использования только на тот период, который необходим для выполнения этих задач.
+
+ 
+
+- Мы собираем статистику использования законными и справедливыми средствами и, в случае необходимости, с уведомлением или получении согласия исследуемого лица.
+
+ 
+
+- Место расположения пользователя должно быть значимым для поставленных целей использования и, в степени, необходимой для достижения этих целей, должно быть точным, полным и актуальным вне зависимости от идентификации лица.
+
+ 
+
+- Мы защищаем персональную информацию разумными средствами обеспечения безопасности от утери или кражи, а также от несанкционированного доступа, обнародования, копирования, использования или видоизменения.
+
+ 
+
+- Мы по первому требованию предоставляем клиентам информацию о нашей политике и практике работы, относящейся к администрированию персональных данных.
+
+ 
+
+Пожалуйста, укажите, согласны ли вы принять участие в исследовании пользователей.
+
+ 
+
+ 
+
+ 
+
+Описание для Карты 3G 4G Wifi связи
+
+В ваших руках практическое решение проблем плохой сотовой связи и оборвавшихся звонков, поддерживаемое всеми пользователями приложения. Компас направит Вас к месту лучшей связи, а карты покрытия помогут Вам определить лучшего оператора (особенно полезно, если Вы хотите его поменять). Карта точек Wifi позволяет Вам узнать о где ближайший бесплатный интернет.
+
+ 
+
+Приложение включает:
+
+ 
+
+✓ Компас, который показывает откуда идет ваша сотовая связь
+
+✓ Карту сотовых вышек и точек Wifi
+
+✓ Тест скорости скачивания, загрузки, и пинга
+
+✓ Карты покрытия уточняют лучшие - и худшие - места 2G, 3G, и 4G связи
+
+✓ Независимое сравнение скорости каждого оператора
+
+ 
+
+Приложение бесплатное и без рекламы.
+
+ 
+
+ 
+
+Оно также включает:
+
+✓ Виджет
+
+✓ Возможность делиться вашими результатами и сравнивать их с друзьями
+
+✓ Личную статистику качества вашей связи
+
+✓ Установку фона, который меняется с уровнем связи (инструкция на http://opnsg.nl/signal-wallpaper)
+
+✓ Возможность сохранять данные на SD карте
+
+ 
+
+Тест скорости связи измеряет и сотовую, и стационарную связь через Wifi. Тест пинга идет через обычные серверы и страницы (Google и Facebook). Тесты скачивания и загрузки идут через те же серверы, по которым идет интернет.
+
+ 
+
+Страница “Статистика" позволяет Вам следить за расходом трафика, и Вы не превышаете голосового и интернетного лимита. (Чтобы помочь Вам в этом, приложение нуждается в информации о звонках и СМСках. Они нужны для подсчета, но никогда не читаются и не прослушиваются - убедитесь с помощью packet-sniffer).
+
+ 
+
+Карты используют Google, но если Вы не можете смотреть карты Google на вашем телефоне, свяжитесь с нами. Карты не обновляются в реальном времени, но мы вносим все данные, которые Вы присылаете для улучшения карт и информации об операторах.
+
+ 
+
+ 
+
+Обратите внимание:
+
+- Не все сотовые вышки и точки Wifi есть у нас на картах, но мы работаем над этим!
+
+- Если ваша связь проходит по сети CDMA, приложение покажет, что Вы связаны только с одной вышкой.
+
+- Приближение к вышке не всегда улучшает связь (это зависит от рельефа местности).
+
+ 
+
+Приглашаем Вас в программу бета-тестирования: https://plus.google.com/u/0/communities/116285694850770498902
+
+ 
+
+Это приложение раньше называлось OpenSignalMaps.
+
+Скрыть
+
+Карты 3G 4G Wifi связи 6.0.7-1 Обновить
+
+2019-10-31
+
+Super-exciting changes in OpenSignal! We now give you the option to understand how your network impacts your video experience with our brand-new video test. See load time, buffering and smooth playback metrics, and review the tests you’ve run in the history tab now showing your video results alongside your speed history
+
+ 
+
+ 
+
+ 
+
+Описание для Бесплатный Wi-Fi Connection Anywhere Network Map C
+
+⚡️ Превращает ваш телефон в диспетчере разъем Wi-Fi для подключения к Интернету !! ⚡️
+
+ 
+
+Подключение к Находке, подключение, управлять беспроводными сетями. Улучшение качества связи сигнала с помощью графического канала радара. Откройте для себя открытые сети вокруг. Мониторинг сетевых инструментов и анализатор Wi-Fi
+
+ 
+
+Показывает Wi-Fi каналов вокруг вас. Помогает найти менее переполненный канал для беспроводного маршрутизатора.
+
+контролирует уровень сигнала, график канала и помеху канала все доступного анализатора беспроводной сети.
+
+ 
+
+Подключение к Wi-Fi пароли для свободного доступа в Интернет во всем мире! и Wi-Fi подключение к сети
+
+ 
+
+Бесплатный Wi-Fi Connect Internet обеспечивает миллиарды общих Wi-Fi пароль, охватывающий каждый уголок мира. На основании вашего местоположения, Покажу Wi-Fi точку доступа на карте и анализатор бесплатного Wi-Fi в любом месте поможет найти бесплатный Wi-Fi подключение без пароля бойко выбрать общий Wi-Fi точку доступа для вас бесплатного Wi-Fi, призывающего с разъемом WiFi. Все WiFi пароли являются общими по инициативе пользователя, и благодаря интеллектуальному тестирования для обеспечения доступно.
+
+ 
+
+ОСОБЕННОСТЬ
+
+★ Автоматически присоединиться к искателю бесплатным беспроводные и обмен государственного и частный анализатору сети WiFi.
+
+★ Список поиска только вокруг соединения Wi-Fi.
+
+★ Оптимизация Tablet & Поддержка мобильных устройств.
+
+★ Сортировка по имени или WiFi силы сигнала.
+
+★ Подключение ко всем бесплатным Wi-Fi точки доступа или точки доступа.
+
+★ Показать SSID и WIFI пароль.
+
+★ Соответствующие данные, такие как IP-адрес, производитель, имя устройства и MACADDRESS и IP-адрес.
+
+★ Сканирование беспроводной сети для точек доступа.
+
+★ Сигнальный истории уровень График доступных сетей
+
+★ Включение / выключение подключения радара менеджера, если вы хотите сбросить устройство.
+
+ 
+
+Wi-Fi Бесплатное подключение в любом месте является лучшим Wi-Fi сканер, менеджер. Когда вы смотрите на текущее соединение Wi-Fi, вы увидите некоторые из информации, упомянутой выше, но и IP-адрес устройства, MAC-адрес и скорость передачи данных сети.
+
+.Вы можете сохранить данные об использовании и легко этим приложением. В настоящее время доступны по всему приложению мира, свободный Wi-Fi точки доступа для андроида
+
+ 
+
+Представляем новый Feature SpeedTest Plus (SpeedTest +)!
+
+Интернет-тест скорости может проверить скорость для Wi-Fi, GPRS, 2G, 3G, 4G, DSL и ADSL.
+
+С помощью всего лишь одним нажатием теперь вы можете ускорить проверить, измеритель скорости Интернет, наиболее точный доклад, тесты скорости WiFi в считанные секунды! Он поддерживает тест скорости WiFi точек доступа и GPRS (2G, 3G, 4G). С тестом скорости WiFi и тестом скорости Интернет, что делает вас получить результаты испытаний быстро, этот мастер-версия облегченная.!
+
+ 
+
+ОСОБЕННОСТЬ
+
+★ Откройте для себя скачать, загрузить, и Ping.
+
+★ Тесты скорости загрузки (нисходящей линии связи).
+
+★ скорость загрузки тестов (восходящей линии связи).
+
+★ Проверьте скорость пинг WiFi горячих точек на DSL, ADSL, кабель Wi-Fi соединения.
+
+★ История рекорд скорости Результаты испытаний показывают время скорость загрузки пинг загрузки. Следите за ваши тесты в ваших личных результатах. Это включает в себя загрузку и скорость загрузки, пинг.
+
+★ Поддержка Mbps / KBPS.
+
+★ дисплей показывать IP-адрес.
+
+★ Легко поделиться своими результатами.
+
+★ помочь сделать найти бесплатный портативный Wi-Fi Hotspot, который один лучше тестирование с подключением к быстрой сети Wi-Fi.
+
+★ Сравните ваши различные GPRS, 2G, 3G, 4G, LTE тесты скорости клеток.
+
+ 
+
+Проверка скорости закачки и и пинг WiFi горячих точек на DSL, ADSL, кабельных соединений. Интернет Тест скорости проверит вашу скорость интернета через тысячи серверов по всему миру сеть Wi-Fi подключаться.
+
+ 
+
+широковещательная сеть Wi-Fi HotSpot на портативных мобильных телефонов горячих точек, работающих под управлением операционной системы Android могут получить Wi-Fi на мобильном телефоне сигнала точки доступа из этого приложения. Создать портативный
+
+Скрыть
+
+Бесплатный Wi-Fi Connection Anywhere Network Map C 1.19 Обновить
+
+2019-08-05
+
+Version 1.19 :
+
+- Hotspot function now supports Android 8 (Oreo) and Android 9 (Pie) devices
+
+- Bug fixed
+
+📢📢 Thank you all you guys for support us! Every feedback we are working on it to improve bug fixes and updated features as soon as possible.
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для Network Cell Info Lite
+
+Network Cell Info показывает местонахождение сот на карте и измеряет силу сигнала обслуживающей соты и соседних сот. Оно поддерживает все стандарты сотовых сетей, включая LTE, HSPA+, HSPA, WCDMA, EDGE, GSM, CDMA, EVDO.
+
+ 
+
+Особенности:
+
+------------
+
+* Местоположение сот в сетях стандартов LTE, UMTS и GSM взято из Mozilla Location Service (MLS), наряду с точностью расчёта локаций http://location.services.mozilla.com
+
+* 2 датчиков измерения уровня сигнала для обслуживающей (зарегистрированной) соты и соседних сот
+
+* Отображение 2 показателей мощностей сигнала (дБм) с временным графиком для обслуживающей и соседних сот
+
+* Сохранение полученных измерений о соте в отдельный файл (во вкладке Карта)
+
+* Настройка расстояний (0м, 5м, 10м, ...) между последовательными измерениями во вкладке КАРТА (если сеть остаётся постоянной)
+
+* Установка ограничений на точность местоположения для проведения измерений
+
+* Датчик движения с выбором вариантов чувствительности (применительно к измерениям)
+
+* Данные измерений в удобном формате для экспорта: MLS Geosubmit v.2, CLF v.3, OpenCellID csv, (и наш собственный) CMWF
+
+* Тест-драйв сети: цветовая окраска маршрута (во вкладке карты) в зависимости от силы сигнала и расстановка маркеров с местоположением сигнала и информацией о нём
+
+* Статистика подключений: % (столбчатая диаграмма) 2G/3G/4G с сотовыми данными Вкл / Выкл
+
+* Уведомления о доступе к типам сетей 2G/2.5G/3G/3.5G/4G в зоне уведомлений
+
+* Одновременный просмотр карты и данных об уровне сигнала
+
+* Варианты отображения карты: Нормальный, Спутник, Местность, Гибрид
+
+* Просмотр подробных необработанных данных о сигнале сети и самой сети, включая мощность сигнала, информацию об обслуживающей соте и ВСЕХ соседних сотах
+
+* Сотовые данные вкл/выкл и показатели Роуминга вкл/выкл
+
+* Информация о SIM-карте и устройстве
+
+* Возможность отключать Датчики выборочно, чтобы освободить CPU устройства от лишней нагрузки
+
+* Для пользователей Android M запросы на разрешение определения местоположение
+
+* [BETA] Ограниченная поддержка устройств с двумя SIM-картами
+
+ 
+
+ 
+
+* Мануал:
+
+ 
+
+Пожалуйста, ознакомьтесь с ним здесь: https://m2catalyst.com/apps/network-cell-info/manual
+
+ 
+
+ 
+
+* Проблемы с телефоном:
+
+ 
+
+Пожалуйста, посмотрите материалы: https://m2catalyst.com/apps/network-cell-info/android-issues
+
+ 
+
+ 
+
+* Вопросы по работе с двумя SIM-картами:
+
+ 
+
+[BETA] Убедитесь, что эта опция включена в настройках приложения.
+
+Информацию по возникающим вопросам можно найти здесь: https://m2catalyst.com/apps/network-cell-info/dual-sim-issues
+
+ 
+
+* GPS:
+
+ 
+
+Рекомендуем выбрать режим "высокой точности" для работы GPS-модуля в настройках вашего устройства.
+
+ 
+
+* КАРТА местоположения вышек сотовой связи:
+
+ 
+
+У нас нет собственной базы данных о местоположении сот. В настоящее время мы используем данные MLS (смотрите ниже), где возвращаются не точные координаты размещения сотовых вышек, но примерное указание на их местоположение.
+
+ 
+
+* MLS:
+
+ 
+
+Данные о местоположении сот сетей LTE, UMTS и GSM мы получаем от сервиса Mozilla Location Service (MLS) - http://location.services.mozilla.com - и показываем на карте в виде антенн. Это не настоящее физическое положение сотовых вышек, но указание на их примерное размещение (если на карте не указано ни одной соты, это значит, что в MLS нет данных для вашего региона).
+
+ 
+
+** MLS больше не поддерживает сети CDMA
+
+** Если приложение не показывает местоположения сот или если вы хотите внести свой вклад / обновить информацию об этом, вы можете воспользоваться приложением Mozilla Stumbler ( https://goo.gl/sysSNQ ) для восполнения пробелов в данных MLS.
+
+ 
+
+* Данные измерений:
+
+ 
+
+Измерения, которые вы проводите во вкладке КАРТА, могут быть локально сохранены на вашем устройстве (смотрите раздел ЧаВо внутри приложения)
+
+ 
+
+ 
+
+Благодарим за обратную связь!
+
+ 
+
+** Network Cell Info доступно только в Google Play Store **
+
+Скрыть
+
+Network Cell Info Lite 4.21.3 Обновить
+
+2019-11-14
+
+Release 4.21.3
+
+ 
+
+* Added Best Signal Finder
+
+* Bug fixes
+
+ 
+
+* Manual v3 (for paid/pro): https://m2catalyst.com/apps/network-cell-info/manual
+
+* Features: https://m2catalyst.com/apps/network-cell-info/features
+
+* FAQ: https://m2catalyst.com/apps/network-cell-info/faq
+
+* BETA app testing: https://m2catalyst.com/apps/network-cell-info/beta-testing
+
+* Check out our Ad-Free Network Cell Info: https://play.google.com/store/apps/details?id=com.wilysis.cellinfo
+
+* Distributed only on Google Play
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для Network Scanner
+
+Программа отобразит IP и MAC адреса, а так же имена хостов, находящихся в одной локальной сети с вашим устройством. Так же присутствует встроенный сканер портов(tcp) и небольшие вспомогательные программы.
+
+ 
+
+Основные возможности:
+
+-Прозвон хостов по всему диапазону возможных адресов в сети.
+
+-Функция vendor by mac lookup отобразит производителя сетевого оборудования.
+
+-Гибкая настройка количества проходов и таймаутов сетевого сканера, для достижения балланса между скоростью работы и надежностью отображения.
+
+-Возможность ручной настройки резолвера имен.
+
+-Полученные IP, MAC адреса и имена хостов можно копировать в буфер обмена.
+
+-Вы можете задать диапазон номеров портов, проверяемых сканером портов.
+
+-Сканер портов распознает все зарегистрированные службы.
+
+-Функция умного сканирования в сканере портов(перебор только зарегистрированных портов).
+
+-Полная база номеров портов и их описаний.
+
+ 
+
+Дополнительные возможности:
+
+-Встроенный IP calculator
+
+-Встроенные DNS resolver
+
+ 
+
+ 
+
+Описание для Network Connections
+
+Powerful tool that displays and monitors (tracks) all inbound and outbound connection from and to your Android device. A low-level connections capture module ensures best performance with a minimal battery usage. Works on NO ROOT phones too.
+
+ 
+
+A must have for every Android aficionado, Network Connections is the perfect addition to the Anti Spy Mobile app that will reveal the 'secrets' of your apps.
+
+ 
+
+KEY FEATURES:
+
+ 
+
+- Monitors all internet connections from and to your Android device
+
+- Displays notification when hidden apps are connecting to remote servers
+
+- Displays detailed IP information for each connection - IP address, reverse resolving (PTR), AS number, Abuse RBL data, administrative information, etc.
+
+- Gets detailed info about each app that connects to remote servers and network connections used by it - permissions granted to each captured package and all IP addresses used by it.
+
+- Real-time sort by most active, latest connections or by package name.
+
+- Log and export the captured data.
+
+ 
+
+NOTE: The app is a FREE-Trial and some features (including period of connections capture, export of captured connections (limited to first 10), and number of IP address resolve/information) are limited to certain amount of tries. If you like it and want to use it, please download the Unlock key for it.
+
+ 
+
+ 
+
+Connections Used by The App:
+
+Google IPs - Statistics and Maps
+
+RIPE, ARIN - IP information
+
+ 
+
+ 
+
+ 
+
+Описание для PingTools
+
+В состав программы входят утилиты:
+
+ 
+
+∙ Info экран, где вы сможете увидеть текущее состояние сети, IP адрес роутера, внешний IP адрес, информацию о провайдере и многое другое. Так же тут отображаются графики качества Wi-Fi сигнала и текущего использования сети. Вы сможете легко определить какое приложение использует сеть в данный момент.
+
+ 
+
+∙ Мониторинг – выполняет проверку сетевых ресурсов по расписанию. Мониторинг сообщит если состояние ресурса изменилось, это позволит Вам всегда быть в курсе любых проблем как дома так и на работе.
+
+ 
+
+∙ Локальная сеть – ищет другие устройства локальной сети. Вы всегда будете в курсе того, кто подключен к Вашей сети, сможете определить производителя оборудования, а так же какие службы запущены на этих устройствах.
+
+ 
+
+∙ Ping – знакомая всем команда. С помощью ping можно проверить связь с удаленным сервером, узнать о задержках соединения и многое другое. Поддерживается весь набор стандартных параметров, а так же ряд дополнительных функций: TCP и HTTP\HTTPS пинг.
+
+ 
+
+∙ GeoPing – проверка доступности ресурса по всему миру. Всего за один клик Вы сможете узнать доступен ли ваш сайт, например, в Сингапуре. Сможете проанализировать время отклика и другие параметры.
+
+ 
+
+∙ Traceroute - незаменимая утилита для системных администраторов. Показывает маршрут, по которому идут пакеты, от Вашего устройства к серверу назначения. Visual Traceroute использует карту, чтобы показать Вам геопозицию узлов, которые проходят данные, чтобы достичь заданного пункта назначения.
+
+ 
+
+∙ iPerf - утилита для анализа пропускной способности сети. Базируется на iperf3 и поддерживает работу как в режиме сервера, так и клиента.
+
+ 
+
+∙ Сканер портов – мощный многопоточный сканер открытых TCP портов. С помощью данной утилиты Вы сможете получить список открытых портов на удаленном устройстве, а так же узнать какие программы их используют.
+
+ 
+
+∙ Whois - утилита которая показывает информацию о домене или IP адресе. С помощью Whois Вы сможете узнать дату регистрации домена, сведения об организации, контактную информацию и т.д.
+
+ 
+
+∙ Сканер UPnP – сканер UPnP устройств в Вашей локальной сети. С помощью UPnP сканера Вы сможете узнать IP адрес Вашего роутера, игровой консоли Xbox или PlayStation, медиа сервера и другого совместимого оборудования. Поддерживаются телевизоры и медиабоксы совместимые с DLNA (Samsung AllShare, LG SmartShare).
+
+ 
+
+∙ Bonjour браузер - утилита для просмотра Bonjour (ZeroConf, Avahi) сервисов в сети. Bonjour встроен в операционные системы Apple OS X и iOS, так что Вы можете использовать эту утилиту для поиска сетевого адреса iPhone\iPod и других устройств.
+
+ 
+
+∙ Wi-Fi сканер - покажет список точек доступа поблизости, производителя устройства, уровень сигнала. С помощью графика можно оценить все это визуально. Поддерживаются как 2.4 так и 5 GHz сети.
+
+ 
+
+∙ Сканер подсети - эта утилита поможет найти другие устройства в Вашей сети. Сканер проверяет подсеть с помощью Ping, а так же по диапазону TCP портов. К примеру, Вы сможете легко узнать где запущен Web сервер, выполнив сканирование на 80 порт. В дополнительных настройках можно указать диапазон IP адресов, список портов, количество потоков и другие параметры.
+
+ 
+
+∙ DNS Lookup - инструмент для выполнения запросов к системе разрешения доменных имен. DNS Lookup может быть полезен для выявления сетевых проблем или для простого определения IP адресов домена, адресов почтовых серверов и другой полезной информации. Обратный DNS так же поддерживается.
+
+ 
+
+∙ Wake on LAN - утилита для включения удаленного компьютера. WoL просто незаменим, когда Вы не имеете физического доступа к компьютеру, который внезапно выключился
+
+ 
+
+∙ IP Калькулятор - пригодится при настройке сетевого оборудования. Поможет рассчитать параметры сети, определить диапазон IP адресов, маску подсети.
+
+Скрыть
+
+ 
+
+ 
+
+Описание для просмотр сети
+
+Network Browser это простая утилита файловый менеджер / браузер для просмотра файлов в сети Windows. Он может подключаться к стандартным акций Windows, или Samba. С его помощью можно просматривать файлы на ваших акций Samba , просматривать фотографии, играть в сетевые музыку, смотреть видео , которые вы в сети и т.д.
+
+ 
+
+В настоящее время сеть Браузер должен иметь возможность подключиться к большей Microsoft Windows или Linux и Mac OSX SMB самба сети общие папки . Вы должны знать IP -адрес сетевого сервера , который вы пытаетесь подключиться. Вы можете подключить в качестве гостя , или ввести свой логин и пароль.
+
+ 
+
+Вы также можете открывать файлы , которые вы найдете в сети. Нажатие на файл будет открыть его в редакторе по умолчанию на вашем Android системы . В настоящее время сохранения и загрузки не поддерживается , но если есть интерес к проекту , я , безусловно, может работать , чтобы добавить эти функции.
+
+ 
+
+По некоторым причинам, есть проблема с библиотекой кого-л , что делает подключение и время загрузки длиться вечно , если имя пользователя или пароль содержит символ @ . Я еще не знаю, как решить эту проблему , но ради удобства , вы будете иметь , как 500 раз более высокую производительность , если вы можете сделать имя пользователя и пароль на сервере , который не имеет символ @ .
+
+ 
+
+Браузер сети является для вас, ребята , так что если есть какой-либо интерес в этом проекте , я буду добавлять любые функции, которые вы хотите или запрос . С течением времени и усилий это может быть полностью функциональной сети файловый менеджер и сетей Windows приложение , но если нет интерес к проекту , то я не буду поставить время в нее. Просто дайте мне знать !
+
+Скрыть
+
+просмотр сети 2.7.9 Обновить
+
+2019-11-03
+
+bug fixes
+
+ 
+
+ 
+
+Описание для Network Info II
+
+2.1+ version of "Network Info"
+
+Donate version available, buy me a coffee :)
+
+ 
+
+Shows info about the phone and the current network, Bluetooth, IPv6 and Cell connection.
+
+ 
+
+It also shows your public/external IP & hostname.
+
+ 
+
+Only goes on-line to get and resolve the public IP via my own server http://aschillings.co.uk/myscripts/getip.php and to remotely resolve it (see notes below). Initially the application was also using whatismyip.org but, as the server seems to be constantly down it was removed.
+
+ 
+
+No ads.
+
+ 
+
+>> Information shown <<
+
+∙Device IP and hostname, both private and public.
+
+ 
+
+∙Current mobile Cell and any neighbours, along with their signal strength, location info and type.
+
+ 
+
+∙IMSI/ IMEI.
+
+ 
+
+∙Information about the current mobile provider (MCC+MNC, current connection, etc.)
+
+ 
+
+∙The Android device unique ID.
+
+ 
+
+∙Full information regarding the WiFi connection (MAC, current SSID and BSSID, link speed, IP/Netmask, Gateway, DNS and DHCP servers, etc.)
+
+ 
+
+∙Your current location according to Android based on your network neighbours. No GPS is needed or used.
+
+ 
+
+∙Information regarding Bluetooth status, the current Bluetooth connection(s) and info about past pairings.
+
+ 
+
+∙IPv6 device and router IP addresses for all device interfaces (see notes, this should now work for everyone).
+
+ 
+
+>> Notes <<
+
+∙This is an expansion of the 'Network Info' application, to support more phones based on the 2.1 Android API.
+
+ 
+
+∙I only have a GSM/UMTS phone. If anything funny happens on any other phone type, email me and I will try to fix it.
+
+ 
+
+∙This application will connect to the network only to fetch your external IP/Hostname (using http://aschillings.co.uk/myscripts/getip.php and http://aschillings.co.uk/myscripts/gethostname.php). No other information is sent (my policy is located below).
+
+ 
+
+∙Please email me about any bugs or features you want. I cannot see all market comments and I am not notified when someone does comment.
+
+ 
+
+∙The IPv6 part should now work for everyone. If that is not the case for you, please email me (aschillings.dev@gmail.com) so I can try to fix it. If possible, download 'Under the hood' from the market and send me the results via export.
+
+ 
+
+∙If you want to show the Vendor which owns a MAC address, download 'MAC (OUI) Database' from the market (it is one of my applications) and use it to download a copy of the OUI database.
+
+ 
+
+∙In version v0.5.2 I added remote hostname resolution which is your public hostname as is resolved by my server. It should be the same as your external hostname, unless there is a record propagation delay or your DNS server is lying (like some home routers which resolve their external address as a local hostname). My server is hosted by 1and1 so this will be unreliable if you use the same DNS servers.
+
+ 
+
+∙'Ext. Hostname (L)' is the hostname your device resolves your external IP (local resolve).\n
+
+ 
+
+∙'Ext. Hostname (R)' is the hostname my server resolves your external IP (remote resolve).
+
+ 
+
+∙'Field Test' is a hidden application which comes installed in HTC phones. The menu item will only appear if the 'Field Test' is installed in your phone.
+
+ 
+
+>> Known Issues <<
+
+Samsung devices do not display Neighbouring Cells. This is a problem in Samsung's Android implementation and there is nothing I can do.
+
+ 
+
+>> Privacy Statement <<
+
+I do not collect any information which can directly and uniquely identify and/or bind a user to a device or any other personal information. When you retrieve your external IP address, my server will log a standard website “hit” which is the same as if you browsed a page on my server using a browser. No other information is logged or kept.
+
+ 
+
+***
+
+Please email me with any bugs/problems/feature requests. I cannot reply to market comments which can make debugging difficult.
+
+***
+
+Скрыть
+
+ 
+
+ 
+
+Описание для he.net - Network Tools
+
+IMPORTANT: Camera permissions are required for the implementation of the one time password QR Code reader. This app does not use the camera at any other time.
+
+ 
+
+he.net's Network Tools by Hurricane Electric.
+
+ 
+
+This suite of networks tools implements most of the network diagnostics that you need as a Network Engineer or System Administrator. This is our first version, please help us improve it by giving us feedback.
+
+ 
+
++ Interface Information: Get information regarding your devices current network state.
+
++ ARP / NDP: Resolve either IPv4 or IPv6 network layer addresses into link layer addresses.
+
++ Bonjour Browser: Browser mDNS/ZeroConf services on your Network.
+
++ Device Manager: Lookup local devices' MAC, NETBIOS, IP, and other information.
+
++ DNS lookup: Search for a servers DNS zone records such as SOA, NS, A, AAAA, MX, TXT, and rDNS.
+
++ IP Calculator: Calculate the Netmask, Wildcard, Network, Host range, and Broadcast for a given subnet.
+
++ Iperf (v2 and v3): Run TCP and UDP performance tests.
+
++ MAC Browser: Lookup the vendor name and address of an OUI.
+
++ One Time Password: Add HOTP and TOTP two factor authentication accounts.
+
++ Ping: Send ICMP packets to a single IPv6/v4 address.
+
++ Ping Sweep: Send ICMP packets to an entire subnet range.
+
++ Traceroute: Find the route packets take to reach your IPv6/v4 destination.
+
++ Progressive Traceroute: Get detailed statistics for a given IPv6/v4 route.
+
++ Port Scan: Scan a list of custom or pre-defined TCP ports on any IPv6/v4 server.
+
++ SSL/TLS Analyzer: Inspect SSL/TLS certificates of domain names.
+
++ Whois: Get information regarding domain registration, ASN, IP allocations and more.
+
++ NO ADS!
+
+ 
+
+he.net's Network Tools are also available on IOS
+
+ 
+
+The feature graphic is a derivative of "West Texas Lightning Storm" [https://www.flickr.com/photos/jeffk/24820923] by jeffk, used under CC BY 2.0 [https://creativecommons.org/licenses/by/2.0/legalcode].
+
+Скрыть
+
+he.net - Network Tools 0.6.4 Обновить
+
+2015-11-03
+
+Version 0.6.4:
+
+Fixed QR Code crashes. Camera permissions requested when using QR Code reader on API 23+
+
+ 
+
+ 
+
+ 
+
+Описание для 2G 3G 4G LTE Network Monitor
+
+Бесплатное приложение, которое показывает, какая технология (LTE, UMTS, EDGE и т.д.) используется для подключения к Интернету, а также позволяет быстро переключаться между сетью 2G / 3G.
+
+ 
+
+ 
+
+★ Основные характеристики
+
+∙ мониторинг текущего состояния сети и использование сети шоу в виде графиков и таблиц
+
+∙ виджет для переключения / режим сети 2G 3G / 4G - это ярлык, потому что блокирование доступа Google, чтобы изменить его напрямую
+
+∙ виджет для переключения мобильных данных, синхронизация, Wi-Fi, Wi-Fi фал / Wi-Fi точки доступа
+
+∙ уведомление о потери сигнала
+
+∙ 5 цветовых схем
+
+∙ Нет рекламы
+
+ 
+
+★ Применение обнаружить следующие сети
+
+2G (GPRS), 2G (EDGE), 3G (UMTS), 3G (HSDPA), 3G (HSPA), 3G (HSUPA), 3G (EHRPD), 3G (HSPAP), 4G (LTE), CDMA (RTT), CDMA, CDMA (EVDO 0), CDMA (EVDO А), CDMA (EVDO В), иден.
+
+ 
+
+ 
+
+★ Внимание!
+
+∙ Если вы используете Task Killer, поместить это приложение в список игнорирования!
+
+∙ Всегда держите приложение обновляется, чтобы избежать каких-либо проблем.
+
+ 
+
+ 
+
+★ Помогите мне улучшить приложение
+
+∙ дайте мне знать ваши идеи с интегрированной опцией обратной связи
+
+∙ помочь мне перевести или правильный текст
+
+∙ применение Поделиться с друзьями
+
+∙ поддержка для поддержки дальнейшего развития
+
+ 
+
+ 
+
+★ Виджет для переключения Wi-Fi / привязанную Wi-Fi точки доступа одним нажатием кнопки!
+
+Эта функция не поддерживается на многих устройствах, но она должна работать на многих из них. Пожалуйста, не ставку это приложение плохо, если он не работает для вас. Там может быть много причин, почему это не работает (ваш оператор не поддерживает Wi-Fi привязывать, он блокируется, ваша система была изменена производителем и т.д.). Я пытаюсь сделать его проще для вас, но я не могу обещать вам, что он будет работать на всех устройствах!
+
+Скрыть
+
+2G 3G 4G LTE Network Monitor 3.0.9 Обновить
+
+2019-05-24
+
+Bug fixes and improvements
+
+ 
+
+ 
+
+ 
+
+Описание для Покрытие
+
+Coverage создает собственную карту покрытия сотовой сети и сети Wi-Fi, основанную на показаниях уровня сигнала на телефоне.
+
+ 
+
+Узнайте, где для вашего устройства уровень сигнала более высокий, а где оно попадает в мертвые зоны. Проверьте заявления своего оператора мобильной связи, создав собственную карту покрытия и выполнив тесты скорости.
+
+ 
+
+Тестирование производительности сети
+
+- Создание карты покрытия мобильной сети и сети Wi-Fi
+
+- Поддержка сетей GSM, CDMA, UMTS и LTE
+
+- Использование точных показаний телефона для определения уровня сигнала сетей Wi-Fi и сотовой связи
+
+- Поиск мертвых зон на маршруте
+
+- Проверка скорости соединения
+
+- Меняйте SIM-карты и сравнивайте покрытие для разных операторов связи
+
+ 
+
+Множество интересной статистики о сетях Wi-Fi и сотовой связи, а также о телефоне
+
+- Средняя сила сигнала LTE
+
+- Сколько новых ячеек обнаружено сегодня
+
+- Сколько времени телефон подключен к сети Wi-Fi
+
+- Сколько времени телефон подключен к сети LTE
+
+- Средняя сила сигнала Wi-Fi
+
+- А также многое другое
+
+ 
+
+ 
+
+ 
+
+Описание для Mobile Network Settings
+
+Shortcut to Mobile Network in Wireless & network settings.
+
+Set options for roaming networks, APNs.
+
+ 
+
+https://github.com/diewland/mobile-network-settings
+
+ 
+
+ 
+
+Описание для Усилитель Сигнала Сети
+
+Вы устали от слабого сотового сигнала? Вам трудно найти прием сигнала и сетевое подключение? Скачайте БЕСПЛАТНО Усилитель Сигнала Сети и Вы сразу же получите лучший уровень сигнала и сетевое подключение!
+
+Усилитель Сигнала Сети - это утилита для усиления сигнала, которая поможет Вам улучшить уровень Вашего сотового сигнала и сетевого подключения. Наше приложение для усиления сигнала использует расширенные настройки, которые улучшают уровень подачи сигнала. Просто установите наше приложение для усиления сигнала и почувствуйте разницу! С нашим Усилителем Сигнала Сети Вы сможете улучшить производительность Вашего телефона! Существует множество приложений, для которых требуется надежное подключение к интернету или сигналу сети, а некоторые являются необходимыми в Вашей повседневной жизни. Представьте, что вы не можете получить доступ к Картам, вызвать такси или позвонить в скорую помощь. Мы создали это приложение для усиления сигнала, чтобы помочь Вам БЕСПЛАТНО решить все проблемы, связанные с приемом сети, чтобы Вы всегда могли быть подключены к сети.
+
+--------------------- ОСОБЕННОСТИ УСИЛИТЕЛЯ СИГНАЛА СЕТИ: ----------------
+
+∙ БЕСПЛАТНОЕ использование. Скачайте наше приложение для улучшения сигнала и пользуйтесь им уже сейчас!
+
+∙ Эффективный процесс. Почувствуйте разницу в мощности сигнала после обновления подключения к сети с помощью нашего приложения.
+
+∙ Легкость в использовании. Просто откройте наше приложение для усиления сигнала сети и выполните активацию.
+
+∙ Круглосуточная поддержка. Если наше приложение для улучшения сигнала не работает, просим Вас связаться с нами по электронной почте, Facebook, или Twitter.
+
+Как работает наше приложение для усиления сигнала сети? Наш Усилитель Сигнала Сети обновляет Вашу текущую сеть. Это телефонное приложение временно выключает Вашу сеть и включает ее назад, чтобы повысить уровень Вашего сотового сигнала. Наш простой процесс показывает значительное повышение уровня сигнала и скорости связи для большинства мобильных телефонов на базе Android.
+
+Просим Вас связаться с нами, если у Вас возникли проблемы с использованием Усилителя Сигнала Сети. Мы сделаем все возможное, чтобы помочь Вам.
+
+Скрыть
+
+Усилитель Сигнала Сети 7.6 Обновить
+
+2019-09-25
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для Network Signal Speed Booster
+
+The Pioneer, Original, Best Network Signal Speed Booster for Android OS!
+
+Hello Friends, here's the new version, hope it helps support more devices this time!
+
+ 
+
+Oh add my Twitter: @mcstealthapps
+
+I'm always just a DM away!
+
+ 
+
+ 
+
+- MCStealth -
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для Network Scanner
+
+Network scanner help you find out which devices are connected to your WiFi.
+
+ 
+
+What is the use for scan IP allocation and port ?
+
+ 
+
+● Are there suspicious vulnerabilities or security issues within the network.
+
+● Assist in understanding the use of your network.
+
+● Generate report for result.
+
+● Auto save the result of scan.
+
+● Backup/Restore result to your own web storage.
+
+● Tools for Wake on LAN ( WoL ), PING, Traceroute.
+
+● Your personal handy WiFi network tool.
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для IP Tools
+
+IP Tools представляет собой мощный набор сетевых утилит для настройки и диагностики сетей, позволяющий быстро узнать ip адрес и выявить любые проблемы в компьютерных сетях ускорив их работу. Незаменимое приложение для IT специалистов и сетевых администраторов.
+
+Программа включает в себя самые распространенные сетевые утилиты, которые вы можете встретить в настольных ПК. Они помогут легко устранить проблему в вашей сети или оптимизировать ее при этом находясь за сотни километров (а значит не на работе).
+
+IP Tools обладает простым, интуитивно понятным интерфейсом, благодаря которому вы в считанные секунды получите полную информацию о сети, к которой вы подключены, сможете узнать внутренний и внешний IP (с помощью функции "Мой ip"), SSID, BSSID, broadcast адрес, gateway, маску сети, страну, регион, город, географические координаты провайдера (широты и долготу), whois и другую базовую информацию.
+
+Приложение IP Tools обеспечивает доступ к наиболее востребованным сетевым утилитам, которые администраторы и обычные пользователи часто используют на своих компьютерах.
+
+ 
+
+Выбирая IP Tools, вы получаете в свое распоряжение следующий набор сетевых инструментов:
+
+∙ Пинг (Ping)
+
+∙ Сканер Сети (LAN Scanner)
+
+∙ Сканер Портов
+
+∙ DNS Lookup
+
+∙ Получение данных о сайте и его владельце (Whois)
+
+∙ Страница Настройки Роутера (Router Setup Page)
+
+∙ Трассировка Маршрута (Traceroute)
+
+∙ WiFi Анализатор (WiFi Analyzer)
+
+∙ Функция "Мой ip" (My IP)
+
+∙ Лог Соединений
+
+∙ IP Калькулятор
+
+∙ IP & Host Конвертер
+
+∙ И многое другое…
+
+ 
+
+Все эти WiFi инструменты позволят вам получить максимально полную и ясную картину о состоянии вашей компьютерной сети. Диагностика и оптимизация с приложением IP Tools осуществляется быстро, легко, с максимальным комфортом. Приложение постоянно совершенствуется, разработчики учитывают отзывы клиентов и меняют свой продукт, предлагая новые, более удобные и функциональные версии.
+
+ 
+
+Выше перечислены далеко не все достоинства приложения, но и этих пунктов вполне достаточно для того, чтобы отбросить последние сомнения, скачать сетевые инструменты, объединенные в приложении IP Tools на свой смартфон и прямо сейчас оценить преимущества их использования лично.
+
+ 
+
+Внимание:
+
+Разрешения ACCESS_COARSE_LOCATION и ACCESS_FINE_LOCATION
+
+НЕОБХОДИМЫ для WiFi анализатора и определения SSID
+
+Это требование Android OS.
+
+ 
+
+ 
+
+ 
+
+Описание для WiFi | Mobile Network Speed
+
+WiFi & Mobile Network Speed
+
+Veloxity WiFi & Mobile Network Speed is your personal assistant for Network Quality and Data Utilization.
+
+ 
+
+With Veloxity, you can:
+
+ 
+
+- Measure App Speed in Real Time.
+
+- Find the best Public WiFi connection.
+
+- Clean your Home WiFi channel.
+
+- Compare WiFi vs. Cellular Net App Speed. Choose the best network.
+
+- Control your Data Expenses! Never exceed your data quota again.
+
+ 
+
+First major feature of WiFi & Mobile Network Speed is to show your WiFi network quality, not only by signal strength but also by interference and by network load. You will be able to solve interference issues by switching to the best channel suggested. If you see INTERFERED in your Wi-Fi status, use one of the free channels we recommend, and you will have a much higher speed. If you see WiFi FAR notification, you will experience lower data speeds. So it is time to choose a closer spot to use your WiFi or get a repeater if you cannot change your router location.
+
+ 
+
+Measure your Network Speed, in real time. This is our WiFi & Mobile Network Speed App's second major feature. The way we test your network speed is different than all speed test tools in the market. Actually we do not test it, we show the speed you really experience. Regular speed test tools downloads and uploads an anonymous file through their own server. So what they really measure is the performance of and the route to their server as well as your own WiFi or Cellular radio link. This type of test will not tell if your TV App or YouTube will show the same performance. What Veloxity measures instead is the Network Speed of each and every single App in your device. So you will see how YouTube, Facebook or your favorite Game performs in your network.
+
+ 
+
+While we measure your Apps Speed and Clean your Network Quality, we did not forget about your quota. Clean links mean faster data speeds. Faster data speeds mean more data consumption. While most of WiFi subscriptions data quota are large enough, most of the Mobile subscriptions are still very limited. Exceeding your quota will result in high number in your monthly bill. Veloxity will keep a track of your total data usage per App, so that you can easily manage your quota, see which Apps you spend most of your money on.
+
+ 
+
+We also prepared a small Game for you if you want to share your network experience with your friends.
+
+ 
+
+Your network quality is a personal matter for us. Please enjoy our utility at no cost.
+
+ 
+
+Veloxity Inc.
+
+ 
+
+Скрыть
+
+WiFi | Mobile Network Speed 1.1.4 Обновить
+
+2016-06-13
+
+1.1.4
+
+- Bug fixes.
+
+1.1.3
+
+- Application usage bug is fixed.
+
+ 
+
+1.1.2
+
+- Application usage crash is fixed for Android M devices.
+
+ 
+
+1.1.1
+
+- Application usage bug is fixed.
+
+- Notification bar styles are improved.
+
+ 
+
+1.1.0
+
+- Application usage problem is fixed for 4.2+ devices.
+
+- Improved Gauge functionality for high resolution devices.
+
+- LTE network improvements are added.
+
+ 
+
+1.0.158:
+
+- Notification Bar related issue for OS version lower than HONEYCOMB fixed.
+
+ 
+
+ 
+
+ 
+
+Описание для 4G LTE/3G Network Secret Setting
+
+No more auto switching between 4G/3G. Finally, an app to help you configure to 4G/3G/2G network.
+
+4G LTE Network Mode Only is built in such a way that anyone can open the network settings and change to any desired network they want and stay in that network.
+
+ 
+
+Main Features :
+
+1) Change Network to 4G Network
+
+2) Test the Internet Speed through Ping test
+
+3) Check Your Battery Information.
+
+4) Check your Phone Usage statistics
+
+5) Check your WLAN information
+
+6) Shows Battery health and status
+
+7) Set High and Low Battery Alarm
+
+8) Troubleshoot or verify the speed you are getting
+
+9) Easily share your results
+
+ 
+
+The above features depend on your phone configurations. Please don't rate us low for not supporting a few phones.
+
+We are constantly improving to keep the users happy. A 5-star rating will really do wonders encouraging us to build more.
+
+Скрыть
+
+4G LTE/3G Network Secret Setting 2.2 Обновить
+
+2019-10-15
+
+Bug fix and Features upgraded
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для Кто на моем WiFi? - сканер сети и WiFi сканер
+
+Кто на моем WiFi? - сканер сети и WiFi сканер является супер WiFi протектор и сканер сети для обнаружения кто находится на моем WiFi и защитить мою WiFi безопасности.
+
+ 
+
+Кто на моем WiFi? - сканер сети и WiFi сканер является простейшим сетевым сканером, IP сканером и WiFi сканером, который позволяет обнаружить, кто находится на моем WiFi, и вы можете заблокировать устройство вора в настройках маршрутизатора от моего WiFi.
+
+ 
+
+Кто на моем WiFi? - сканер сети и WiFi сканер поможет вам найти, кто крадет мою скорость WiFi сети.
+
+ 
+
+Кто на моем WiFi? - сканер сети и WiFi сканер сказать вам, кто находится на моем WiFi и беспроводной сети без вашего разрешения.
+
+ 
+
+Кто на моем WiFi? - сканер сети и WiFi сканер может легко сканировать мой WiFi и посмотреть, сколько устройств, подключенных к моей WiFi маршрутизатор сети.
+
+ 
+
+Вы хотите знать, кто на моем WiFi? Вам просто нужно, чтобы начать Кто на моем WiFi? - сканер сети и WiFi сканер и это поможет вам!
+
+Скрыть
+
+ 
+
+ 
+
+ 
+
+Описание для Network Signal Refresher - Network Booster
+
+Are you getting too much afraid with slow network..?
+
+ 
+
+Try our Network Signal Refresher - Network Booster application and boost your current network and connect with the fastest network to tap on the mobile screen.
+
+ 
+
+Network Signal Refresher - Network Booster application which allows users to keep connecting with the fastest network. Connect fast network and Boost the network and Signal. Many time you may be facing slow internet speed or poor mobile network, refreshing your network and mobile data with our application and app can solve 90% of your problems.
+
+ 
+
+Network Signal Refresher - Network Booster is a simple application which has convenient User Interface You just turn on and tap on Reset Network button we will increase the bandwidth and filter the frequency so the signal gets clearer, as well as the network signal will booster.
+
+ 
+
+You have the choice to control
+
+ 
+
+_Automatic Signal Reset (Whenever network reset needed)
+
+_Smart Reset (When signal require reconnection)
+
+_Automatic Reset (Reset every 24 hours automatic)
+
+ 
+
+Features of Network Signal Resetter - Network Speed Booster.
+
+ 
+
+# Connect with the fast network within minutes
+
+# Refresh in one click.
+
+# Simple to use.
+
+# Easy to connect with fast work.
+
+# Instant refresh of mobile signal, and Network
+
+# Optimize the performance of your network speed.
+
+# Connect the best network available.
+
+# Find nearest all networks strength.
+
+# Easy to use application
+
+# Convenient User Interface to use application
+
+Скрыть
+
+ 
+
+ 
+
+ 
+
+Описание для Deeps Network Utility
+
+Ever got annoyed on the fact that you lost your data connectivity and didn't realize it for a long period of time causing delayed message and email delivery ?
+
+Do you always switch ON and OFF your WiFi each and every time you enter and leave your configured WiFi range and wondered why can't I have a Smart WiFi controller on a Smart Phone to save power ?
+
+Here is a simple solution for both the above questions - Deeps Network Utility.
+
+This simple, configurable and low on battery utility helps you to get notified when your device lose all type of data connectivity (cellular, WiFi etc) and when your device is connected back to any one of those available data connection.
+
+This utility also has a Smart WiFi function that helps you to turn off your WiFi when you are out of range and periodically checks for any available connection when it is automatically switched off. This feature helps you save battery when you are out of WiFi range and helps you to connect back to WiFi when you are back to a pre-configured WiFi range.
+
+Configuring the app
+
+The settings page is opened when the app is first time installed and launched on a device. It can also be activated by tapping on the settings icon or by selecting Settings from the menu.
+
+There are two portions in the settings namely: Network Status Monitor (notifications) and WiFi Auto Switcher (Smart WiFi).
+
+ 
+
+The Network Status Monitor is to enable the notifications, select the notification sounds and enable saving/logging of connection lost/restored events. Enable and set unique notification sounds for the notifications so that you can quickly recognise the event without looking at the screen. If no notification sound is selected or selected sound becomes unavailable, the default notification sound from the system settings will be used.
+
+ 
+
+The Smart WiFi settings allows you to configure the app for auto switch off and auto scan of the device WiFi.
+
+Enable the auto switch off and set a wait time (recommended 2 minutes) to switch off WiFi. This setting allows the device WiFi to be active until the specified time before automatically switching it off. This wait time allows the device to connect back to the WiFi immediately if the device was briefly out of range for a short period.
+
+Enable auto scan and set the scan interval (recommended between 10 and 15 minutes). This setting allows the device to briefly turn on the WiFi at the end of each scan interval to check if any of the pre-configured WiFi signal is available for connection. If nothing is available the WiFi is switched off to save power.
+
+Please note that setting a too short scan interval (like 1 minute) might not really help to save power. However, an interval of 10 or 15 minutes would do so as the total time the device WiFi is enabled during each hour is much much less than that of keeping the WiFi always on or setting a one minute interval.
+
+ 
+
+How this app helps you ?
+
+The network status monitor helps you to get notified immediately when your data connectivity is totally lost. You can immediately take next course of action by checking your device and doing a restart or a toggle between airplane mode to reconnect the data. Saving the event log helps you to see how many times these events are occurring each day and other details.
+
+The Smart WiFi helps you to automatically switch off and on your WiFi when configured correctly. This takes away the pain of doing it manually every time when you leave your home or office and returns. You can configure the app and forget about switching on and off the device WiFi manually.
+
+ 
+
+Notes:
+
+There might be some delay in notification compared to the actual time the event occurs. This is because of the delay in the system when the event information was relayed to the app.
+
+After enabling and configuring the timing for WiFi auto switch off and auto scan, if the device WiFi was manually switched off, the auto scan will not turn it on again until the device is restarted or the WiFi is enabled manually again.
+
+ 
+
+ 
+
+ 
+
+Описание для Network Monitor
+
+Network Monitor is a diagnostic tool which periodically tests your network connection and logs the results to a database on the phone. The goal of the app is to identify which cell towers around you may have connection problems.
+
+ 
+
+It tests the connection by retrieving the main Google page (http://www.google.com) in two different ways:
+
+* An HTTP connection (the type of connection used by the browser and other web apps)
+
+* A basic socket connection (a type of connection used by other apps)
+
+ 
+
+It also logs other information about your device and connection status, such as:
+
+* The network type (WiFi, mobile/EDGE, mobile/HSPA, etc)
+
+* The WiFi SSID or APN
+
+* The device's location (latitude, longitude)
+
+* The cell tower's ids
+
+* The signal strength (from 0 to 4)
+
+* Other information...
+
+ 
+
+You can send yourself a report of the collected data, in several formats (Excel, CSV, HTML, KML, Gnuplot, the raw database). The report will also contain a summary of the success rate of the connection tests, per cell tower.
+
+ 
+
+----
+
+*** BEFORE RATING THE APP ***
+
+ 
+
+This app does *not* show the CELL radio frequency, channel, TX or RX. If you're looking for this, good luck :) On a Samsung device, dial *#0011#. On other devices, let me know! :)
+
+ 
+
+If you would like to see some additional fields in the app, please do let me know (c@rmen.ca) and I'll see what I can do to add these fields. Please give me a chance to add the fields you'd like before giving the app a bad score. Thanks :)
+
+----
+
+ 
+
+This was developed in collaboration with BoD: http://jraf.org
+
+ 
+
+This app is open source. The code is available on GitHub: https://github.com/caarmen/network-monitor
+
+ 
+
+NOTE 1: This app has not been tested on CDMA devices. If your operator uses CDMA (ex: Verizon Wireless, Sprint, etc), please contact me with any issues before rating the app. I'd be happy to have your feedback :)
+
+ 
+
+NOTE 2: This app is a diagnostic/debugging app which may use a lot of battery and data.
+
+Скрыть
+
+Network Monitor 1.31.1 Обновить
+
+2019-03-15
+
+1.31.1: Bug fixes: 1) Fix bug where you had to re-enter the main screen, after toggling on the service, for the service to actually start. 2) Fix "http connection test" on Android P (https is required now)
+
+ 
+
+1.31.0: Target Android Pie. Remove dependency on Google Play Services. Remove feature to search the Play Store for speed test apps. Maintenance.
+
+ 
+
+1.30.1: Add adaptive launcher icon.
+
+ 
+
+1.30.0: Add help tip for download and upload speed columns.
+
+ 
+
+1.29.2: Add fields for LTE cell ids.
+
+ 
+
+ 
+
+Описание для Тест скорости 4G, 5G, WiFi, карта покрытия сети
+
+Не только простой измеритель скорости (speed test), но и инструмент, позволяющий наилучшим образом получить полную характеристику качества сети на скоростях вплоть до 1Гб/сек!
+
+ 
+
+Полный QoS тест: В считанные секунды определяет битрейт (или по-другому) скорость соединения (скорость), задержки (латентность), скорость интернет сёрфинга и качество потокового видео на вашем мобильном устройстве.
+
+Функция сравнения: Сравнивает в режиме реального времени результаты вашего теста с результатами тестов других пользователей с указанием провайдера.
+
+Интерактивная карта: Показывает зону покрытия и возможную скорость соединения сети вашей зоны.
+
+Монитор сети: В режиме реального времени показывает в верхней части экрана (статус бар) скорость соединения и использованный траффик
+
+ 
+
+Раскрывающееся меню в левом верхнем углу позволяет запускать каждый тест отдельно:
+
+- Тест скорости — speed test (входящая, исходящая скорости в абсолютных значениях (мб/с) и задержка в микросекундах)
+
+- Тест сёрфинга — скорость загрузки вэб-страниц
+
+- Тест стриминга
+
+ 
+
+Все результаты ваших тестов сохраняются в Истории с привязкой к месту на карте. Имеется возможность легко поделиться в соцсетях итоговой картинкой своего теста nPerf. При этом, в настройках приложения можно выбрать тему оформления по-вкусу.
+
+ 
+
+nPerf использует собственные алгоритмы тестов и использует в работе распределённый пул высокоскоростных серверов, расположенных по всему миру, что даёт более точные измерения скорости соединения. С nPerf Вы легче избежите перерасхода траффика по тарифному плану, т.к. приложение требует для тестов в два раза меньше данных, чем конкурирующие приложения. Индикатор траффика проинформирует Вас о достижении предварительно выставленного в настройках значения использованного траффика из расчёта на месяц.
+
+ 
+
+Все типы соединений могут быть протестированы на скоростях до 1 Гб/сек включительно!
+
+Поддерживаются сети для теста скорости: 2G, 3G, 4G, 5G, Wimax, WiFi и Ethernet.
+
+Поддерживаемые протоколы WiFi: 802.11 a/b/g/ac dual-band, tri-band и quadri-band
+
+Поддерживаемые протоколы LTE: LTE, LTE Advanced dual-band, tri-band и more
+
+ 
+
+Тестируй своё соединение, диагностируй проблемы и не позволяй твоему Провайдеру лениться :)
+
+ 
+
+Разрешения
+
+Доступ к Фото/мультимедиа/файлам, медиафайлам производится через обязательный кэш в Google Maps. Доступ к иным файлам отсутствует.
+
+Идентификатор устройства о СИМ-карте используются для генерации кода UUID для обезличенной идентификации устройства. Персональные данные при этом не используются. IMEI также используется для генерации UUID, но нигде не хранится и никуда не передаётся.
+
+ 
+
+ТЫ НУЖЕН НАМ
+
+Требуются серверы для участия в наших тестах.
+
+Если Вы хостер или компания по предоставлению Интернет услуг и хотите поддержать проект nPerf, разместив тест скорости у себя — свяжитесь с нами...
+
+Скрыть
+
+Тест скорости 4G, 5G, WiFi, карта покрытия сети 2.4.11 Обновить
+
+2019-07-25
+
+2.4.11 :
+
+- Added 5G on Active Mapping & Coverage Maps
+
+- Added Danish, Finnish & Khmer translations
+
+- Updated other translations
+
+- Fixed Widget network information
+
+ 
+
+ 
+
+ 
+
+Описание для Domotz Pro: Network Monitoring
+
+Domotz is the premier Remote Monitoring and Management platform for IoT. We offer powerful network management software for MSP's, Integrators, Security Professionals, and Business Owners. We offer the complete solution to cost-effectively manage and monitor your customers’ networks with plug and play setup, a friendly UX, and a comprehensive feature set, accessible from any desktop browser or mobile device.
+
+ 
+
+PLEASE NOTE: This app REQUIRES the Domotz Agent to be installed on a network via the Domotz Box or via self-install on Raspberry Pi or NAS (Synology, ReadyNAS or QNAP).
+
+ 
+
+ 
+
+∙ NETWORK MONITORING: Get a full inventory of all IP devices connected to a network in seconds. Monitoring performed via MAC address and device heartbeat checked every 30 seconds.
+
+ 
+
+∙ REMOTE DEVICE ACCESS: Supports Web, Remote Desktop and Console Access (http/s, RDP, SSH, Telnet).
+
+ 
+
+∙ REMOTE POWER MANAGEMENT: Manage device power remotely (On/Off/Reboot). Supports most popular IP controllable power plugs.
+
+ 
+
+∙ NETWORK MAPPING/PoE/SNMP MONITORING: Automatic detection of which devices are connected to individual ports of a managed switch. Monitor the data traffic of individual ports and shut down individual ports.
+
+ 
+
+∙ ALERTS: Email and push notification alerts for network down, device down and new device joined the network.
+
+ 
+
+∙ NETWORK DIAGNOSTICS: Bandwidth analysis and speed tests.
+
+ 
+
+∙ MULTI-VLAN: Monitoring of multiple VLANs
+
+ 
+
+∙ COLLABORATION: Securely invite someone onto the network or access an external network remotely.
+
+ 
+
+∙ DASHBOARD: A dashboard to troubleshoot and monitor all live agents installed across various networks. Easily troubleshoot and identify issues across multiple networks.
+
+Скрыть
+
+Domotz Pro: Network Monitoring 2.0.3 Обновить
+
+2019-08-08
+
+∙ Improved Network interfaces mapping
+
+∙ Enhanced device discovery
+
+∙ Bug fixing
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для Анализатор WiFi
+
+Анализатор WiFi - анализатор сети, используемый для оптимизации сетей Wi-Fi при сканировании сигнала, переполненном сигнале и рейтинге канала WiFi.
+
+ 
+
+Анализатор WiFi - анализатор сети Показывает каналы Wi-Fi вокруг вас.
+
+ 
+
+Анализатор WiFi - анализатор сети Поможет вам найти менее переполненный канал для вашего WiFi маршрутизатора.
+
+ 
+
+аналиЗатор Анализатор WiFi - анализатор сети помогает оптимизировать вашу сеть WiFi путем изучать окружающие сети WiFi, измеряя их прочность сигнала также, как выявляя переполненные каналы.
+
+ 
+
+Анализатор WiFi - анализатор сети Рекомендует лучший канал для вашей сети.
+
+ 
+
+Анализатор WiFi - анализатор сети дает вам наиболее полезную информацию по оптимизации, чтобы помочь уменьшить помехи и увеличить скорость и стабильность соединения.
+
+ 
+
+Анализатор WiFi - анализатор сети предоставляет полезную информацию о беспроводных сигналов вокруг вас. Анализатор WiFi-анализатор сети поддерживает 2,4 ГГц и 5 ГГц.
+
+ 
+
+аналиЗатор Анализатор WiFi - анализатор сети помогает увеличить производительность сети через анализ и мониторинг вашей сети Wi-Fi!
+
+ 
+
+Анализатор WiFi - анализатор сети анализатора:
+
+-WiFi оптимизатор для проблем с помехами
+
+-WiFi канал анализатор для близлежащих APS
+
+-Поддержка 2,4 ГГц/5 ГГц
+
+-Wi-Fi канальный оптимизатор
+
+-Анализатор WiFi - анализатор сети предоставляет вам информацию индивидуально по WiFi каналам
+
+-Анализатор WiFi - анализатор сети показывает силу сигнала в графике истории
+
+-Анализатор WiFi - анализатор сети рекомендует лучшие каналы WiFi
+
+-Информация о ширине канала WiFi (20/40/80 МГц)
+
+-Аналитика WiFi
+
+Скрыть
+
+Анализатор WiFi 1.0.32 Обновить
+
+2019-04-10
+
+- Lots of updates for this release:
+
+- Add WiFi Analyzer
+
+- Add WiFi Signal Strength
+
+- Add WiFi Channel
+
+- Add fastest WiFi around you
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для IP Network Calculator
+
+This is a network/subnet/IP address calculator for setting up routers and addresses on IP networks. Real-time updating and copy/paste support is included!
+
+A single slider acts as a selector for the CIDR, the netmask, and to scale the # of hosts needed in your subnet network.
+
+ 
+
+The application is useful for subnetting a router in tandem with an Android web browser or just for educational purposes. Education is emphasized by real time updating of network, broadcast, netmask, first and last address of the subnet, and the number of usable IPs in several different formats (dotted-decimal, hexadecimal, octal, decimal, binary and decimal). Also there are basic notes.
+
+ 
+
+There is real time updating of output as you change values and move the slider to change the netmask/mask bit. Touching the output will cycle through several different formats. Long presses will enable menus for copying to the clipboard.
+
+ 
+
+IPv4 functionality is finished.
+
+ 
+
+No ads nor special permissions required! Also, this subnet calculator does not suffer from the common "there's no dot on my number keyboard" problem.
+
+ 
+
+Please email me at: android@orbitingpluto.net
+
+ 
+
+Описание для SIM Card Info and Network Cell Info(LTE-4G/3G/2G)
+
+SIM card info & Network cell (LTE-4G/3G/2G) info is simple light, small size android application developed aiming to provide details SIM card info and network cell info (LTE-4G/3G/2G). It is freely available in Play store. Application has basically three components SIM card details info, Voice mail information & Network cell info details so this application provided all details about your SIM card and current cell network so you can call it SIM Toolkit too.
+
+ 
+
+SIM Toolkit application gives you following SIM info and Network Cell info
+
+- SIM Country Information
+
+- Network Operator Information
+
+- Network Operator Name
+
+- SIM Serial Number
+
+- SIM IMEI
+
+- SIM Subscriber Id
+
+- Software Version
+
+-Network Type (LTE-4G/3G/2G)
+
+ 
+
+SIM Toolkit gives you following Voice Mail information
+
+- Voice Mail Name
+
+- Voice Mail Number
+
+ 
+
+SIM card info & Network Cell info provides following device information
+
+- Manufacture
+
+- Brand
+
+- Model
+
+- Version
+
+- Serial Number
+
+- Build Id
+
+-Device Type
+
+- Fingerprint Information
+
+- Device Display Information
+
+- Device Product Information
+
+ 
+
+SIM Toolkit application also provides your current contact information such as contact name and contact number.
+
+ 
+
+For any feedback about SIM card info and Network cell info application please leave a mail at chapssanto8@gmail.com
+
+ 
+
+ 
+
+ 
+
+Описание для NetMonster
+
+NetMonster is an network monitoring app which shows information about mobile networks.
+
+ 
+
+It delivers all the data that your smartphone provides. And even it's AD free!
+
+Thanks to cell hunters who live all over the world you can download list of cells with their location and use it.
+
+You just got lost? Here's NetMonster! This feature is available only is some countries where lists exist.
+
+ 
+
+And here's what NetMonster can show you:
+
+- 2G - CID, LAC, RXL, TA, BSIC, ARFCN, Band + neighbouring cells (CID, LAC, BSIC, RXL, ARFCN)
+
+- 3G - CI, RNC, CID, LAC, PSC, RSCP, UARFCN, Band + neighbouring cells (PSC, RSCP, UARFCN)
+
+- 4G - CI, eNB, CID, TAC, PCI, RSSI, RSRP, RSRQ, SNR, CQI, TA, EARFCN, Band + neighbouring cells (PCI, RSRP, RSRQ, SNR)
+
+- CDMA - BID, SID, NID, LAT, LON, RSSI, EC/IO, SNR
+
+ 
+
+Every phone reports different cell details. If any of those items is not showing on your device, it means that manufacturer has not implemented it properly.
+
+ 
+
+If you have Android 4.3 (or newer) Netmonster can show you data about cell you are currently logged on while you are in area where your network provider doesn't have a coverage. Monitoring also works if you don't have a SIM card in your phone.
+
+ 
+
+Loving being beta tester? Feel free to join -> https://play.google.com/apps/testing/cz.mroczis.netmonster
+
+Скрыть
+
+NetMonster 2.10.4 Обновить
+
+2019-04-20
+
+Spring cleanup is here!
+
+ 
+
+ 
+
+ 
+
+Описание для PortDroid
+
+Network analysis app with several useful tools including ping, traceroute, port scanner and local network discovery. This app is highly configurable and in active development, so feature requests and bug reports are appreciated!
+
+ 
+
+Portscanner - Scans and ip for open TCP ports, optionally it will use Banner Grabbing on with each port in order to gain more information or discover a web service. When a service is found on a port external applications will be offered to deal with certain protocols (ssh, telnet, http, https, ftp, smb etc.)
+
+ 
+
+Local Network Information - Shows device and connection information and finds devices on the same network (wifi only). From here you can probe further and open the portscanner on any devices found.
+
+ 
+
+Ping – Ping Hostname / IPs
+
+ 
+
+Traceroute - Perform a traceroute and geo-locate IPs to view on map
+
+ 
+
+Wake-On-Lan - Wake compatible WOL devices.
+
+ 
+
+Permissions Required
+
+Internet - Needed for remote connections (ping, port scan etc)
+
+Wifi Connections - Needed to analyse wifi connections
+
+Network Connections - Needed to analyse non-wifi network connections
+
+In-App Purchases - To upgrade to pro version to receive additional features
+
+Скрыть
+
+PortDroid 0.4.20 Обновить
+
+2019-10-22
+
+Minor update to fix a few bugs and improve the UI slightly. If anyone has any feature requests for the next version, please let me know!
+
+-- Fixed google maps crashing bug --
+
+-- Fixed crash with latest android version --
+
+ 
+
+ 
+
+ 
+
+Описание для 4G LTE Network Switch - Speed Test & SIM Card Info
+
+Переключатель 4G LTE позволяет переключаться в режим только LTE, открывая скрытое меню настроек. Он включает в себя 4G Internet Speed ​​Test, информацию о SIM-карте, информацию о телефоне и многое другое. Это приложение очень полезно, если ваше устройство не имеет режима 4G / LTE только в настройках телефона.
+
+ 
+
+Особенности:
+
+∙ Переключитесь на 4g только сетевой режим
+
+∙ Блокировка телефона в 4G / 3G / 2G стабильный сигнал сети
+
+∙ Включить VoLTE на поддерживаемом устройстве
+
+∙ Расширенные настройки сети
+
+∙ Проверьте свой интернет-тест скорости
+
+∙ SIM-карта и информация о телефоне
+
+∙ Открыть журнал уведомлений
+
+∙ Открытая батарея, информация о Wi-Fi и статика использования
+
+ 
+
+Он также имеет тест скорости интернета, который поможет вам проверить скорость интернета в широком диапазоне мобильных сетей (2G, 3G, 4G, Wi-Fi, LTE), проверить состояние соединения во времени. Проведите экспертный тест скорости интернета одним щелчком мыши и получите всю информацию о вашем соединении.
+
+ 
+
+Он предоставляет информацию о SIM-карте SIM-карты вашего устройства и информацию о телефоне. Это позволяет вам быстро получить доступ к информации о сим-картах вашего устройства, состоянии сети, информации об устройстве и данных, хранящихся на основной сим-карте.
+
+ 
+
+Также это приложение позволяет открывать другие скрытые настройки, такие как журнал уведомлений, информация об аккумуляторе, статистика использования и информация о Wi-Fi. Он стремится быть чистым и простым в использовании и предоставляет множество информации.
+
+ 
+
+Приложение постоянно обновляется новыми функциями. Так что оставайтесь в курсе новых выпусков приложений.
+
+Скрыть
+
+
+
+
+
+
+Описание для AmpliFi
+
+Home Wi-Fi of the Future.
+
+ 
+
+A Simple, Powerful App. Simple Setup, Powerful Features, Perfected User Experience.
+
+Setup in Seconds. With easy setup and configuration, your network is up and running in no time.
+
+ 
+
+Automatic Updates.
+
+Future features and performance updates will be coming soon.
+
+ 
+
+Always Know Who Is Using Your network.
+
+The app keeps track of which devices are connected, and for how long.
+
+ 
+
+Track ISP and System Performance.
+
+Get throughput readings and test your ISP speed at any time.
+
+ 
+
+Guest Access, Simplified.
+
+AmpliFi guest access uses an "open time window" to allow instant guest on-boarding without sharing your password. No security compromise or inconvenience.
+
+ 
+
+ 
+
+ 
+
+Описание для Вифи анализер
+
+Вифи анализер дает Вам возможность обнаружить информацию о беспроводной сети вокруг Вас.
+
+ 
+
+- помогает Вам найти лучшее место для местоположения вифи приемника
+
+- покажет Вам детальную информацию о каждом найденном вифи сигнале
+
+- покажет Вам развитие силы сигнала во времени
+
+- помогает Вам найти самый удобный канал при образованию новой вифи точки доступа
+
+- Информация о ширене канала (20/40/80МГц - только для Android 6+)
+
+ 
+
+Версия без рекламы доступна по адресу: https://play.google.com/store/apps/details?id=info.wifianalyzer.pro
+
+ 
+
+Прим.:Android 6+ (Marshmallow) требует разрешение на использование геоданных, и включения определения местоположения. Причина указана на официальном web-сайте android.com:
+
+http://developer.android.com/about/versions/marshmallow/android-6.0-changes.html#behavior-hardware-id
+
+Скрыть
+
+ 
+
+ 
+
+Описание для WiFi гвардии - WiFi Анализатор и WiFi блокатор
+
+WiFi гвардии - WiFi Анализатор и WiFi блокатор является полезным WiFi инструменты, такие как Wi-Fi детектор, WiFi анализатор, Обнаружение кто использует мой WiFi, WiFi сигнала метр, WiFi сигнала и Wi-Fi канал оценки и т.д.
+
+ 
+
+WiFi гвардии - WiFi Анализатор и WiFi блокатор является мощным WiFi протектор для обнаружения кто находится на моем WiFi и блокировать странные устройства для защиты моего WiFi безопасности.
+
+ 
+
+WiFi гвардии - WiFi Анализатор и WiFi блокатор является супер и бесплатный Wi-Fi блокатор и Wi-Fi анализатор инструмент.
+
+ 
+
+WiFi гвардии - WiFi Анализатор и WiFi блокатор особенности:
+
+★ WiFi детектор (кто на моем WiFi) ★
+
+WiFi гвардии - WiFi Анализатор и WiFi блокатор может легко сканировать мой WiFi и найти все устройства, подключенные к моей WiFi сети.
+
+WiFi гвардии - WiFi Анализатор и WiFi блокатор может помочь вам блокировать странные устройства для защиты моего WiFi безопасности или вы можете проверить устройство и отметить знакомые устройства, как известно..
+
+ 
+
+★ WiFi Анализатор
+
+WiFi гвардии - WiFi Анализатор и WiFi блокатор помогает проверить сеть Wi-Fi, изучая окружающие сети Wi-Fi, измеряя их силу сигнала, а также идентифицируя переполненные каналы.
+
+ 
+
+★ WiFi сила сигнала
+
+WiFi гвардии - WiFi Анализатор и WiFi блокатор может сказать вам Wi-Fi сила сигнала вокруг вас и посмотреть, какой сигнал Wi-Fi лучше.
+
+ 
+
+★ Оценка канала WiFi
+
+WiFi гвардии - WiFi Анализатор и WiFi блокатор показывает Wi-Fi каналы вокруг вас.
+
+WiFi гвардии - WiFi Анализатор и WiFi блокатор может помочь вам найти менее переполненный канал для вашего WiFi маршрутизатора.
+
+ 
+
+★ WiFi сигнала метр силы
+
+WiFi гвардии - WiFi Анализатор и WiFi блокатор может обнаружить сигнал WiFi сила вокруг вас в реальное временя.
+
+WiFi гвардии - WiFi Анализатор и WiFi блокатор может быстро проверить ваш WiFi прочность, чтобы помочь вам найти лучшее место.
+
+ 
+
+★ Пароли маршрутизатора
+
+WiFi гвардии - WiFi Анализатор и WiFi блокатор может помочь вам обнаружить ключи по умолчанию и пароли вашего WiFi маршрутизатора.
+
+ 
+
+Вы хотите знать, повысить ваш WiFi легко? Вам просто нужно начать WiFi гвардии - WiFi Анализатор и WiFi блокатор, и это поможет вам!
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для WiFi Magic
+
+WiFi Magic is a social network for public WiFi passwords.
+
+ 
+
+So what are public WiFi passwords? WiFi passwords are the ones required to access public WiFi networks at restaurants, hotels, cafes, etc. where you typically have to ask for a password before using the network.
+
+ 
+
+WiFi Magic relies on the collaboration between users, who help each other by updating the system with new public WiFi networks and their passwords, thus allowing other users to automatically fetch them. WiFi Magic has no direct access to your passwords or your router.
+
+ 
+
+WiFi Magic is present in locations around the world, including remote and isolated places such as Greenland, Patagonia or central Africa.
+
+ 
+
+Advantages of using WiFi Magic:
+
+ 
+
+Data plan savings. Nowadays most of our data resides in the Cloud, photos, email, games, etc., resulting in a need for more expensive data plans. WiFi Magic helps you minimize the use of your data plan.
+
+ 
+
+Roaming savings. It is well known that roaming charges are usually incredibly high. WiFi Magic allows you to find the closest WiFi hotspot, thus avoiding the use of expensive roaming during trips abroad.
+
+ 
+
+Battering savings. Cellular 3G and 4G technologies for data are known to consume more battery than WiFi connectivity.
+
+ 
+
+NOTE: WIFI MAGIC IS RESTRICTED TO PUBLIC NETWORKS. IT DOES NOT HANDLE ANY SORT OF PRIVATE OR RESIDENTIAL NETWORKS.
+
+Скрыть
+
+WiFi Magic 3.9.13 Обновить
+
+2019-11-07
+
+∙ Minor corrections.
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для #OpenWifi
+
+Присоединяйтесь к самому крупному сообществу #OpenWifi!
+
+ 
+
+С легкостью настраивайте свой домашний маршрутизатор, чтобы безопасно поделиться подключением к Интернету через выделенную гостевую сеть.
+
+ 
+
+Гостевая сеть изолирована от вашей домашней сети — у гостей не будет доступа к вашему компьютеру или другим устройствам, подключенным к домашней сети.
+
+ 
+
+Этому приложению требуется маршрутизатор под управлением поддерживаемой операционной системы.
+
+ 
+
+Электронная почта поддержки: android-support@openwifiapp.com
+
+ 
+
+ 
+
+ 
+
+Описание для Найти Бесплатный Вай Фай Интернет точка доступа
+
+Приложение находит и автоматически подключается к бесплатным или плохо защищенным точкам доступа в Интернет.
+
+ 
+
+Вам не обязательно быть хакером для использования этого приложения, он очень прост в использовании, не требует дополнительных настроек, позволяет анализировать и тестировать сеть вай фай вокруг, вы будете уведомлены, когда сможете подключиться к Интернету. Карта силы сигнала позволит вам быстро найти лучшее место для серфинга, скачать файлы, играть в игры, смотреть онлайн тв или слушать радио без лимит по данным. Расширенный интернет скорость тест показывает фактическую скорость, с которой вы можете просматривать веб-страницы и трансфер файлы.
+
+ 
+
+Есть много открытых точек доступа в Интернет, их можно найти почти везде, на улице, в школе, в торговых центрах, возле гостиниц и ресторанов, в метро, ​​возможно, даже у ваших соседей есть незащищенная сеть вай фай. Используя открытые вай фай-сети, вам не нужно впн, чтобы просматривать интернет-инкогнито.
+
+ 
+
+Мы заботимся о вашей конфиденциальности, это приложение не крадет пароли или любую другую личную информацию. Это легко и быстро, совершенно бесплатно, это больше, чем гаджет, это будет ваш лучший друг за пределами дома.
+
+Скрыть
+
+ 
+
+ 
+
+ 
+
+Описание для WiFi Key Connector: Free Password and WiFi Map
+
+WiFi Key Connector is a FREE application for anyone who wants to connect their nearest Free WiFi.
+
+1、Connect Free WiFi
+
+Users can easily, simply by searching on the integrated WiFi map.
+
+2、Speed Test
+
+Users can test their connecting speed range so they can gain secure and flexible access the Internet.
+
+3、Hotspot Sharing
+
+ 
+
+===== Key Features =====
+
+ 
+
+Free WiFi Connection
+
+No matter where you are, WiFi Connector is an all-inclusive WiFi Finder app that can detect the nearest WiFi signal available to you, allowing you to tap onto free WiFi networks and surf the net as you wish for FREE. What’s more, that particular WiFi connection will be stored on your mobile device for future use if you are out and about.
+
+ 
+
+WiFi Speed Test
+
+Once connected to WiFi, users are able to do a simple test of how strong or weak that connection is. You will be able to see metrics such as download and upload speeds for that connected network, and WiFi Connector is also smart enough to recommend options to you based on the online activities you can currently do on a particular network e.g. messaging, gaming, or video streaming.
+
+ 
+
+Hotspot Sharing
+
+An extra feature releated to this is the Hotspot Sharing function. This is where you can use your mobile data connection as a WiFi hotspot, and invite your friends to connect to it if they have no other way of getting online. And, to make sure you stay in control, you can even set a limit on how much data they can use while tethered to your connection.
+
+ 
+
+Stay Up To Date
+
+With the Discovery page, you can enjoy instant access to all the latest news, including the hottest stories from the world of sport and entertainment. Simply connect using the WiFi app to stay up to date, wherever you are.
+
+ 
+
+ 
+
+Stay Tuned
+
+Email: smartech.mywifi@gmail.com
+
+Facebook: https://www.facebook.com/smartech.mywifi/
+
+ 
+
+Join our core users group
+
+Meet our product manager and offer your suggestions to WiFi Connector.
+
+https://goo.gl/JeVDQR
+
+Скрыть
+
+ 
+
+ 
+
+ 
+
+ 
+
+Описание для WiEye
+
+WiEye - это БЕСПЛАТНЫЙ анализатор WiFi 802.11 для Android. WiEye можно использовать для инженерной съёмки беспроводного участка, сканирования wifi и обнаружения беспроводной связи. Он сообщает имя, BSSID, мощность сигнала (дБм), канал и частоту всех точек доступа в диапазоне. Он также представляет данные в графической форме, чтобы можно было посмотреть плотность WiFi-трафика по каждому доступному каналу.
+
+ 
+
+Используя WiFi-сканер, вы помогаете в поддержке группы по исследованию беспроводных технологий университета Southern Methodist University в изучении используемых в настоящее время беспроводных сигналов по всему миру и разработке более эффективных протоколов и алгоритмов.
+
+Мы надеемся, что WiEye окажется полезным приложением для ваших нужд в беспроводном сканировании. Вдобавок к приложению мы собираем статистику использования от добровольных участников, которая используется анонимно для оценки ЭТХ беспроводных сетей во многих городах мира, а также в контексте пользователя (за рулём, сидя, стоя, и т.п.) при выполнении анализа трафика. Данные внесут свой вклад в глобальную картину беспроводных сетей и их ЭТХ. Мы предлагаем WiEye в надежде, что образуется большая пользовательская база для проведения исследования. Ваша конфиденциальность очень важна для нас.
+
+Соответственно, мы разработали политику конфиденциальности для того, чтобы помочь вам понять, как мы собираем, используем, передаём и обнародуем и применяем статистику использования. Далее описываются основные принципы нашей политики конфиденциальности.
+
+ 
+
+- Перед началом или во время сбора статистики пользования мы отделяем измеряемые данные от персональной идентификации пользователя.
+
+ 
+
+- Мы собираем и применяем статистику использования с единственной целью выполнения тех задач, которые были определены нами и для других непротиворечивых целей за исключением случаев получения согласия изучаемого лица или согласно требованиям закона.
+
+ 
+
+- Мы храним статистику использования только на тот период, который необходим для выполнения этих задач.
+
+ 
+
+- Мы собираем статистику использования законными и справедливыми средствами и, в случае необходимости, с уведомлением или получении согласия исследуемого лица.
+
+ 
+
+- Место расположения пользователя должно быть значимым для поставленных целей использования и, в степени, необходимой для достижения этих целей, должно быть точным, полным и актуальным вне зависимости от идентификации лица.
+
+ 
+
+- Мы защищаем персональную информацию разумными средствами обеспечения безопасности от утери или кражи, а также от несанкционированного доступа, обнародования, копирования, использования или видоизменения.
+
+ 
+
+- Мы по первому требованию предоставляем клиентам информацию о нашей политике и практике работы, относящейся к администрированию персональных данных.
+
+ 
+
+Пожалуйста, укажите, согласны ли вы принять участие в исследовании пользователей.
+
+ 
+
+ 
+
+ 
+
+Описание для Карты 3G 4G Wifi связи
+
+В ваших руках практическое решение проблем плохой сотовой связи и оборвавшихся звонков, поддерживаемое всеми пользователями приложения. Компас направит Вас к месту лучшей связи, а карты покрытия помогут Вам определить лучшего оператора (особенно полезно, если Вы хотите его поменять). Карта точек Wifi позволяет Вам узнать о где ближайший бесплатный интернет.
+
+ 
+
+Приложение включает:
+
+ 
+
+✓ Компас, который показывает откуда идет ваша сотовая связь
+
+✓ Карту сотовых вышек и точек Wifi
+
+✓ Тест скорости скачивания, загрузки, и пинга
+
+✓ Карты покрытия уточняют лучшие - и худшие - места 2G, 3G, и 4G связи
+
+✓ Независимое сравнение скорости каждого оператора
+
+ 
+
+Приложение бесплатное и без рекламы.
+
+ 
+
+ 
+
+Оно также включает:
+
+✓ Виджет
+
+✓ Возможность делиться вашими результатами и сравнивать их с друзьями
+
+✓ Личную статистику качества вашей связи
+
+✓ Установку фона, который меняется с уровнем связи (инструкция на http://opnsg.nl/signal-wallpaper)
+
+✓ Возможность сохранять данные на SD карте
+
+ 
+
+Тест скорости связи измеряет и сотовую, и стационарную связь через Wifi. Тест пинга идет через обычные серверы и страницы (Google и Facebook). Тесты скачивания и загрузки идут через те же серверы, по которым идет интернет.
+
+ 
+
+Страница “Статистика" позволяет Вам следить за расходом трафика, и Вы не превышаете голосового и интернетного лимита. (Чтобы помочь Вам в этом, приложение нуждается в информации о звонках и СМСках. Они нужны для подсчета, но никогда не читаются и не прослушиваются - убедитесь с помощью packet-sniffer).
+
+ 
+
+Карты используют Google, но если Вы не можете смотреть карты Google на вашем телефоне, свяжитесь с нами. Карты не обновляются в реальном времени, но мы вносим все данные, которые Вы присылаете для улучшения карт и информации об операторах.
+
+ 
+
+ 
+
+Обратите внимание:
+
+- Не все сотовые вышки и точки Wifi есть у нас на картах, но мы работаем над этим!
+
+- Если ваша связь проходит по сети CDMA, приложение покажет, что Вы связаны только с одной вышкой.
+
+- Приближение к вышке не всегда улучшает связь (это зависит от рельефа местности).
+
+ 
+
+Приглашаем Вас в программу бета-тестирования: https://plus.google.com/u/0/communities/116285694850770498902
+
+ 
+
+Это приложение раньше называлось OpenSignalMaps.
+
+Скрыть
+
+Карты 3G 4G Wifi связи 6.0.7-1 Обновить
+
+2019-10-31
+
+Super-exciting changes in OpenSignal! We now give you the option to understand how your network impacts your video experience with our brand-new video test. See load time, buffering and smooth playback metrics, and review the tests you’ve run in the history tab now showing your video results alongside your speed history
+
+ 
+
+ 
+
+ 
+
+Описание для Бесплатный Wi-Fi Connection Anywhere Network Map C
+
+⚡️ Превращает ваш телефон в диспетчере разъем Wi-Fi для подключения к Интернету !! ⚡️
+
+ 
+
+Подключение к Находке, подключение, управлять беспроводными сетями. Улучшение качества связи сигнала с помощью графического канала радара. Откройте для себя открытые сети вокруг. Мониторинг сетевых инструментов и анализатор Wi-Fi
+
+ 
+
+Показывает Wi-Fi каналов вокруг вас. Помогает найти менее переполненный канал для беспроводного маршрутизатора.
+
+контролирует уровень сигнала, график канала и помеху канала все доступного анализатора беспроводной сети.
+
+ 
+
+Подключение к Wi-Fi пароли для свободного доступа в Интернет во всем мире! и Wi-Fi подключение к сети
+
+ 
+
+Бесплатный Wi-Fi Connect Internet обеспечивает миллиарды общих Wi-Fi пароль, охватывающий каждый уголок мира. На основании вашего местоположения, Покажу Wi-Fi точку доступа на карте и анализатор бесплатного Wi-Fi в любом месте поможет найти бесплатный Wi-Fi подключение без пароля бойко выбрать общий Wi-Fi точку доступа для вас бесплатного Wi-Fi, призывающего с разъемом WiFi. Все WiFi пароли являются общими по инициативе пользователя, и благодаря интеллектуальному тестирования для обеспечения доступно.
+
+ 
+
+ОСОБЕННОСТЬ
+
+★ Автоматически присоединиться к искателю бесплатным беспроводные и обмен государственного и частный анализатору сети WiFi.
+
+★ Список поиска только вокруг соединения Wi-Fi.
+
+★ Оптимизация Tablet & Поддержка мобильных устройств.
+
+★ Сортировка по имени или WiFi силы сигнала.
+
+★ Подключение ко всем бесплатным Wi-Fi точки доступа или точки доступа.
+
+★ Показать SSID и WIFI пароль.
+
+★ Соответствующие данные, такие как IP-адрес, производитель, имя устройства и MACADDRESS и IP-адрес.
+
+★ Сканирование беспроводной сети для точек доступа.
+
+★ Сигнальный истории уровень График доступных сетей
+
+★ Включение / выключение подключения радара менеджера, если вы хотите сбросить устройство.
+
+ 
+
+Wi-Fi Бесплатное подключение в любом месте является лучшим Wi-Fi сканер, менеджер. Когда вы смотрите на текущее соединение Wi-Fi, вы увидите некоторые из информации, упомянутой выше, но и IP-адрес устройства, MAC-адрес и скорость передачи данных сети.
+
+.Вы можете сохранить данные об использовании и легко этим приложением. В настоящее время доступны по всему приложению мира, свободный Wi-Fi точки доступа для андроида
+
+ 
+
+Представляем новый Feature SpeedTest Plus (SpeedTest +)!
+
+Интернет-тест скорости может проверить скорость для Wi-Fi, GPRS, 2G, 3G, 4G, DSL и ADSL.
+
+С помощью всего лишь одним нажатием теперь вы можете ускорить проверить, измеритель скорости Интернет, наиболее точный доклад, тесты скорости WiFi в считанные секунды! Он поддерживает тест скорости WiFi точек доступа и GPRS (2G, 3G, 4G). С тестом скорости WiFi и тестом скорости Интернет, что делает вас получить результаты испытаний быстро, этот мастер-версия облегченная.!
+
+ 
+
+ОСОБЕННОСТЬ
+
+★ Откройте для себя скачать, загрузить, и Ping.
+
+★ Тесты скорости загрузки (нисходящей линии связи).
+
+★ скорость загрузки тестов (восходящей линии связи).
+
+★ Проверьте скорость пинг WiFi горячих точек на DSL, ADSL, кабель Wi-Fi соединения.
+
+★ История рекорд скорости Результаты испытаний показывают время скорость загрузки пинг загрузки. Следите за ваши тесты в ваших личных результатах. Это включает в себя загрузку и скорость загрузки, пинг.
+
+★ Поддержка Mbps / KBPS.
+
+★ дисплей показывать IP-адрес.
+
+★ Легко поделиться своими результатами.
+
+★ помочь сделать найти бесплатный портативный Wi-Fi Hotspot, который один лучше тестирование с подключением к быстрой сети Wi-Fi.
+
+★ Сравните ваши различные GPRS, 2G, 3G, 4G, LTE тесты скорости клеток.
+
+ 
+
+Проверка скорости закачки и и пинг WiFi горячих точек на DSL, ADSL, кабельных соединений. Интернет Тест скорости проверит вашу скорость интернета через тысячи серверов по всему миру сеть Wi-Fi подключаться.
+
+
+http://mulliner.org/bluetooth/
+https://github.com/mikeryan/crackle/
+https://github.com/conorpp/btproxy
+https://github.com/virtualabs/btlejack
+https://github.com/thierryzoller/BTcrack-Bluetooth-PIN-Cracker-
+https://github.com/mikeryan/btcrack
+http://bluescanner.sourceforge.net/#contacto
+https://github.com/binarymaster/3WiFi
+http://www.digifail.com/projects/bt_rng.shtml
+https://github.com/olivo/BluPhish
+
+широковещательная сеть Wi-Fi HotSpot на портативных мобильных телефонов горячих точек, работающих под управлением операционной системы Android могут получить Wi-Fi на мобильном телефоне сигнала точки доступа из этого приложения. Создать портативный
+
+Скрыть
+
+Бесплатный Wi-Fi Connection Anywhere Network Map C 1.19 Обновить
+
+2019-08-05
+
+Version 1.19 :
+
+- Hotspot function now supports Android 8 (Oreo) and Android 9 (Pie) devices
+
+- Bug fixed
+
+📢📢 Thank you all you guys for support us! Every feedback we are working on it to improve bug fixes and updated features as soon as possible.
+
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 
  
 
