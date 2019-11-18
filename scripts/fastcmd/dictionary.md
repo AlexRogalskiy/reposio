@@ -87439,6 +87439,8 @@ public class CubaValidationTimeProvider implements ClockProvider {
     }
 }
 --------------------------------------------------------------------------------------------------------
+mvn <args> -rf :paragon.mailingcontour.commons
+--------------------------------------------------------------------------------------------------------
 import com.haulmont.cuba.core.global.*;
 import com.haulmont.cuba.core.sys.validation.CubaValidationMessagesInterpolator;
 import com.haulmont.cuba.core.sys.validation.CubaValidationTimeProvider;
