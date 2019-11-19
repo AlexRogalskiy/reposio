@@ -87374,6 +87374,307 @@ public class CubaValidationMessagesInterpolator implements MessageInterpolator {
     }
 }
 --------------------------------------------------------------------------------------------------------
+@Test
+//Note the try/finally is to ensure that the server is shutdown so other tests do not have to
+//provide auth information
+public void testAuth() throws Exception {
+ 
+  RedisServer server = RedisServer.builder().port(6381).setting("requirepass foobar").build();
+  server.start();
+  RedisOptions job = new RedisOptions()
+    .setHost("localhost")
+    .setPort(6381);
+  RedisClient rdx = RedisClient.create(vertx, job);
+ 
+  rdx.auth("barfoo", reply -> {
+    assertFalse(reply.succeeded());
+    rdx.auth("foobar", reply2 -> {
+      assertTrue(reply2.succeeded());
+      try {
+        server.stop();
+      } catch (Exception ignore) {
+      }
+      testComplete();
+    });
+  });
+  await();
+}
+--------------------------------------------------------------------------------------------------------
+@Test
+public void testDebugSegfault() throws Exception {
+ 
+  RedisServer server = RedisServer.builder().port(6381).build();
+  server.start();
+  RedisOptions job = new RedisOptions()
+    .setHost("localhost")
+    .setPort(6381);
+  RedisClient rdx = RedisClient.create(vertx, job);
+ 
+  rdx.debugSegfault(reply -> {
+    // this should fail, since we crashed the server on purpose
+    assertTrue(reply.failed());
+    rdx.info(reply2 -> {
+      assertFalse(reply2.succeeded());
+      server.stop();
+      testComplete();
+    });
+  });
+  await();
+}
+
+public RedisServerResource(int port, String password) {
+    this.port = port;
+    try {
+        RedisExecProvider redisExecProvider = RedisExecProvider.defaultProvider();
+        this.redisServer = RedisServer
+                .builder()
+                .redisExecProvider(redisExecProvider)
+                .port(port)
+                .setting("requirepass " + password)
+                .build();
+    } catch (Throwable error) {
+        String message = String.format("failed creating Redis server (port=%d)", port);
+        throw new RuntimeException(message, error);
+    }
+}
+
+@Before
+public void before() throws Exception {
+  mockTracer.reset();
+ 
+  redisServer = RedisServer.builder().setting("bind 127.0.0.1").build();
+  redisServer.start();
+} 
+
+private void startServer(TestContext testContext) {
+    EmbeddedRedis embeddedRedis = AnnotationUtils.findAnnotation(testContext.getTestClass(), EmbeddedRedis.class);
+    int port = embeddedRedis.port();
+ 
+    try {
+        server = new RedisServer(port);
+        server.start();
+    } catch (IOException e) {
+        if (logger.isErrorEnabled()) {
+            logger.error(e.getMessage(), e);
+        }
+    }
+}
+
+private RedisServer createRedisServer() {
+    final RedisServerBuilder redisServerBuilder = RedisServer.builder()
+            .port(redisPort)
+            .setting("appendonly yes")
+            .setting("appendfsync everysec");
+    settings.stream().forEach(s -> redisServerBuilder.setting(s));
+ 
+    final RedisServer redisServer = redisServerBuilder.build();
+    return redisServer;
+}
+--------------------------------------------------------------------------------------------------------
+sudo lsof -i:8983
+--------------------------------------------------------------------------------------------------------
+@Bean
+	public RedisConnectionFactory redisConnectionFactory() {
+		RedisStandaloneConfiguration configuration = new RedisStandaloneConfiguration("127.0.0.1", 6379);
+		LettuceConnectionFactory lettuceConnectionFactory = new LettuceConnectionFactory(configuration);
+		return lettuceConnectionFactory;
+	}
+
+@Bean
+	public RedisTemplate<String, Bean> redisTemplate(RedisConnectionFactory connectionFactory) {
+		RedisTemplate<String, Bean> redisTemplate = new RedisTemplate<>();
+		redisTemplate.setConnectionFactory(connectionFactory);
+		return redisTemplate;
+	}
+
+@Bean
+	public Subscription listener(TestStreamListener streamListener, RedisConnectionFactory redisConnectionFactory)
+			throws InterruptedException {
+		StreamMessageListenerContainerOptions<String, ObjectRecord<String, String>> containerOptions = StreamMessageListenerContainerOptions
+				.builder().serializer(RedisSerializer.string()).errorHandler(e -> e.printStackTrace())
+				.keySerializer(RedisSerializer.string()).targetType(String.class).build();
+
+		StreamMessageListenerContainer<String, ObjectRecord<String, String>> container = StreamMessageListenerContainer
+				.create(redisConnectionFactory, containerOptions);
+
+		Subscription subscription = container.receive(Consumer.from("group-1", "consumer-1"),
+				StreamOffset.fromStart("streamx"), a -> {
+					System.out.println(a.getValue());
+				});
+		container.start();
+		while (!subscription.isActive())
+			;
+		System.out.println("The subscriber is active: "+subscription.isActive());
+		return subscription;
+	}
+--------------------------------------------------------------------------------------------------------
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import org.junit.Test;
+import org.springframework.mock.web.MockHttpSession;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+
+import eu.ubicon.webapp.test.WebappTestEnvironment;
+
+public class Test extends WebappTestEnvironment {
+
+    public static class MockSecurityContext implements SecurityContext {
+
+        private static final long serialVersionUID = -1386535243513362694L;
+
+        private Authentication authentication;
+
+        public MockSecurityContext(Authentication authentication) {
+            this.authentication = authentication;
+        }
+
+        @Override
+        public Authentication getAuthentication() {
+            return this.authentication;
+        }
+
+        @Override
+        public void setAuthentication(Authentication authentication) {
+            this.authentication = authentication;
+        }
+    }
+
+    @Test
+    public void signedIn() throws Exception {
+
+        UsernamePasswordAuthenticationToken principal = 
+                this.getPrincipal("test1");
+
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute(
+                HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, 
+                new MockSecurityContext(principal));
+
+
+        super.mockMvc
+            .perform(
+                    get("/api/v1/resource/test")
+                    .session(session))
+            .andExpect(status().isOk());
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@Bean
+	public RedisConnectionFactory redisConnectionFactory() {
+		RedisStandaloneConfiguration configuration = new RedisStandaloneConfiguration("127.0.0.1", 6379);
+		LettuceConnectionFactory lettuceConnectionFactory = new LettuceConnectionFactory(configuration);
+		return lettuceConnectionFactory;
+	}
+
+@Bean
+	public RedisTemplate<String, Bean> redisTemplate(RedisConnectionFactory connectionFactory) {
+		RedisTemplate<String, Bean> redisTemplate = new RedisTemplate<>();
+		redisTemplate.setConnectionFactory(connectionFactory);
+		return redisTemplate;
+	}
+
+@Bean
+	public Subscription listener(TestStreamListener streamListener, RedisConnectionFactory redisConnectionFactory)
+			throws InterruptedException {
+		StreamMessageListenerContainerOptions<String, ObjectRecord<String, String>> containerOptions = StreamMessageListenerContainerOptions
+				.builder().serializer(RedisSerializer.string()).errorHandler(e -> e.printStackTrace())
+				.keySerializer(RedisSerializer.string()).targetType(String.class).build();
+
+		StreamMessageListenerContainer<String, ObjectRecord<String, String>> container = StreamMessageListenerContainer
+				.create(redisConnectionFactory, containerOptions);
+
+		Subscription subscription = container.receive(Consumer.from("group-1", "consumer-1"),
+				StreamOffset.fromStart("streamx"), a -> {
+					System.out.println(a.getValue());
+				});
+		container.start();
+		while (!subscription.isActive())
+			;
+		System.out.println("The subscriber is active: "+subscription.isActive());
+		return subscription;
+	}
+--------------------------------------------------------------------------------------------------------
+@Component
+class JsonAuthenticationFilter extends AbstractAuthenticationProcessingFilter {
+
+
+    private static final RequestMatcher MATCHER = new AndRequestMatcher( Arrays.asList(
+        new AntPathRequestMatcher( Routes.AUTH_PASS, HttpMethod.POST.name() ),
+        new MediaTypeRequestMatcher( new ContentTypeContentNegotiationStrategy(),
+            MediaType.APPLICATION_JSON, MediaType.APPLICATION_JSON_UTF8 )
+    ) );
+
+    private final ObjectMapper objectMapper;
+    private final Validator validator;
+
+    protected JsonAuthenticationFilter( ObjectMapper objectMapper, Validator validator ) {
+        super( MATCHER );
+        this.objectMapper = objectMapper;
+        this.validator = validator;
+    }
+
+    @Override
+    public Authentication attemptAuthentication( HttpServletRequest request, HttpServletResponse response )
+        throws AuthenticationException, IOException {
+
+        PasswordCredential credentials = objectMapper.readValue( request.getReader(), PasswordCredential.class );
+
+        try {
+            DataBinder dataBinder = new DataBinder( credentials );
+            dataBinder.setBindingErrorProcessor( new DefaultBindingErrorProcessor() );
+            dataBinder.setValidator( validator );
+            dataBinder.validate();
+            dataBinder.close();
+        }
+        catch ( BindException e ) {
+            throw new BadRequestException( "field errors", e );
+        }
+
+        AbstractAuthenticationToken authRequest = credentials.toAuthenticationToken();
+
+        setDetails( request, authRequest );
+
+        return this.getAuthenticationManager().authenticate( authRequest );
+    }
+
+    private void setDetails( HttpServletRequest request, AbstractAuthenticationToken authRequest ) {
+        authRequest.setDetails( authenticationDetailsSource.buildDetails( request ) );
+    }
+
+    @Override
+    @Autowired( required = false )
+    public void setRememberMeServices( RememberMeServices rememberMeServices ) {
+        super.setRememberMeServices( rememberMeServices );
+    }
+
+    @Override
+    @Autowired
+    public void setAuthenticationManager( AuthenticationManager authenticationManager ) {
+        super.setAuthenticationManager( authenticationManager );
+    }
+}
+--------------------------------------------------------------------------------------------------------
+spring.cloud.consul.discovery.heartbeat.enabled: blah2
+ribbon.client.name: application2
+spring:
+  cloud:
+    service-registry:
+      auto-registration:
+        enabled: false
+    consul:
+      host: localhost
+      port: 8500
+      config.enabled: false
+        ribbon:
+      enabled: true
+        discovery:
+          register: false
+          heartbeat:
+#                    enabled: true
+--------------------------------------------------------------------------------------------------------
 import com.haulmont.cuba.core.global.EntityStates;
 import com.haulmont.cuba.core.global.Metadata;
 import org.slf4j.Logger;
@@ -87419,6 +87720,18 @@ public class CubaValidationTraversableResolver implements TraversableResolver {
         return true;
     }
 }
+--------------------------------------------------------------------------------------------------------
+RedisCluster.builder()
+                .sentinelPorts(redisSentinels) //btw, order counts here, if you set ports after setting replication groups
+                .serverPorts(redisHosts) //you will get different ports. Go figure
+                .withServerBuilder(new CustomClusterRedisServerBuilder().setting("maxmemory 128").setting("maxheap 128M")) //same goes for settings
+                .withSentinelBuilder(RedisSentinel.builder().setting("maxmemory 128").setting("maxheap 128M"))
+                .sentinelCount(3)
+                .quorumSize(2)
+                .replicationGroup("master1", 1)
+                .replicationGroup("master2", 1)
+                .replicationGroup("master3", 1)
+                .build()
 --------------------------------------------------------------------------------------------------------
 import javax.validation.ClockProvider;
 import java.time.Clock;
