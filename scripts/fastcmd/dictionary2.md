@@ -6667,7 +6667,237 @@ public class FeignServerFactoryImpl implements FallbackFactory<FeignServer> {
     }
 }
 
-mvn install:install-file -Dfile=D:\Downloads2\0.3.0-alpha-0352-ef7813f\0.3.0-alpha-0352-ef7813f\paragon.mailingcontour.commons-0.3.0-alpha-0352-ef7813f.jar -DgroupId=com.paragon.mailingcontour -DartifactId=paragon.mailingcontour.commons -Dversion=0.3.0-alpha-0352-ef7813f -Dpackaging=jar
+mvn install:install-file -Dfile=D:\Downloads2\0.3.0-alpha-0352-ef7813f\0.3.0-alpha-0352-ef7813f\paragon.mailingcontour.commons-0.3.0-alpha-0352-ef7813f.pom -DgroupId=com.paragon.mailingcontour -DartifactId=paragon.mailingcontour.commons -Dversion=0.3.0-alpha-0352-ef7813f -Dpackaging=pom
+--------------------------------------------------------------------------------------------------------
+mvn dependency:tree -X
+--------------------------------------------------------------------------------------------------------
+import java.security.SecureRandom;
+import java.util.Calendar;
+
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.commons.lang3.StringUtils;
+
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.JWSHeader;
+import com.nimbusds.jose.JWSObject;
+import com.nimbusds.jose.JWSSigner;
+import com.nimbusds.jose.JWSVerifier;
+import com.nimbusds.jose.Payload;
+import com.nimbusds.jose.crypto.MACSigner;
+import com.nimbusds.jose.crypto.MACVerifier;
+
+/**
+ * json web token 工具类 Created by mazhyb on 2016-01-25.
+ */
+public final class JWT {
+
+	private JWT() {
+	}
+
+	/**
+	 * api请求时
+	 */
+	public static final String API_TOKEN_KEY = "api-access-token";
+
+	public static final byte[] SHARED_SECRET;
+
+	static {
+		SHARED_SECRET = new byte[32];
+		SecureRandom random = new SecureRandom();
+		random.nextBytes(SHARED_SECRET);
+	}
+
+	public static String newToken(JWTUser user) throws JOSEException {
+		return newJWSObject(user).serialize();
+	}
+
+	public static JWSObject newJWSObject(JWTUser user) throws JOSEException {
+		JWSSigner signer = new MACSigner(JWT.SHARED_SECRET);
+		JWSObject jwsObject = new JWSObject(new JWSHeader(JWSAlgorithm.HS256), new Payload(user));
+		jwsObject.sign(signer);
+		return jwsObject;
+	}
+
+	public static boolean verify(JWSObject jwsObject) throws JOSEException {
+		JWSVerifier verifier = new MACVerifier(JWT.SHARED_SECRET);
+		return jwsObject.verify(verifier);
+	}
+
+	/**
+	 * token有效期最大是默认24*3600秒（1天）
+	 */
+	public static final int EXP_TIMEOUT_SECOND = 86400;
+
+	public static long newExp() {
+		return newExp(EXP_TIMEOUT_SECOND);
+	}
+
+	/**
+	 * 生成新的有效期
+	 * 
+	 * @param timeout
+	 *            有效期多长时间，单位是秒
+	 * @return
+	 */
+	public static long newExp(int timeout) {
+		Calendar newexp = Calendar.getInstance();
+		newexp.add(Calendar.SECOND, timeout);
+		return newexp.getTimeInMillis();
+	}
+
+	public static JWTUser getJWTUser(String token) throws JWTException {
+		if (StringUtils.isEmpty(token)) {
+			throw new JWTException("没有找到token信息！");
+		}
+		try {
+			JWSObject jwsObject = JWSObject.parse(token);
+			if (JWT.verify(jwsObject)) {
+				// 判断有效期，不在有效期内则直接抛出错误
+				JWTUser user = new JWTUser(jwsObject.getPayload().toJSONObject());
+				if (user.getExp() >= Calendar.getInstance().getTimeInMillis()) {
+					return user;
+				} else {
+					throw new JWTException("token已经超过有效期！");
+				}
+			} else {
+				throw new JWTException("token校验失败！");
+			}
+		} catch (Exception e) {
+			throw new JWTException(e);
+		}
+	}
+
+	public static JWTUser getJWTUser(HttpServletRequest request) throws JWTException {
+		// 1. 从parameter中取
+		String token = request.getParameter(API_TOKEN_KEY);
+		if (StringUtils.isEmpty(token)) {
+			// 2. 从header中取
+			token = request.getHeader(API_TOKEN_KEY);
+		}
+		if (StringUtils.isEmpty(token)) {
+			// 3. 从cookie中取
+			Cookie[] cookies = request.getCookies();
+			for (Cookie cookie : cookies) {
+				if (API_TOKEN_KEY.equals(cookie.getName())) {
+					token = cookie.getValue();
+				}
+			}
+		}
+		return getJWTUser(token);
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.alibaba.fastjson.JSONObject;
+
+import seed.config.APIProperties;
+import seed.consts.CodeConsts;
+import seed.utils.RequestUtil;
+import seed.utils.ResponseUtil;
+
+
+public class JWTTokenInterceptor implements HandlerInterceptor {
+
+    private static final Logger logger = LoggerFactory.getLogger(JWTTokenInterceptor.class);
+
+    private APIProperties props;
+    
+    public APIProperties getProps() {
+		return props;
+	}
+    
+    public void setProps(APIProperties props) {
+		this.props = props;
+	}
+    
+    /**
+     * 如果是api的请求，做过滤，否则不做过滤
+     * @param request
+     * @param response
+     * @param handler
+     * @return
+     * @throws Exception
+     */
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        final String url = request.getRequestURI();
+        //路径没有以/api作前缀，则直接返回
+        if(!url.startsWith(props.getPrefix())){
+            return true;
+        }
+        //路径是否为不需要处理的路径
+        for(String uri : this.props.getExcludeUrls()){
+            if(url.startsWith(uri)){
+                return true;
+            }
+        }
+        try {
+            JWTUser user = JWT.getJWTUser(request);
+            if(user!=null){
+                return true;
+            }
+        }catch(JWTException e){
+            logger.error("校验token失败!",e);
+        }
+        JSONObject result = new JSONObject();
+        result.put(CodeConsts.CODE_KEY, CodeConsts.CODE_UNLOGIN);
+        result.put(CodeConsts.MSG_KEY, "未登陆！");
+        ResponseUtil.json(response, RequestUtil.getJsonContentType(request), result);
+        return false;
+    }
+
+    @Override
+    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
+
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+netsh wlan show profile <profile> key=clear
+--------------------------------------------------------------------------------------------------------
+while pgrep &>/dev/null -f Tool-X; do sleep 60; done; shutdown -h now
+--------------------------------------------------------------------------------------------------------
+			return "ie7";
+		} else if (agent.indexOf("msie 8") > 0) {
+			return "ie8";
+		} else if (agent.indexOf("msie 9") > 0) {
+			return "ie9";
+		} else if (agent.indexOf("msie 10") > 0) {
+			return "ie10";
+		} else if (agent.indexOf("msie") > 0) {
+			return "ie";
+		} else if (agent.indexOf("opera") > 0) {
+			return "opera";
+		} else if (agent.indexOf("opera") > 0) {
+			return "opera";
+		} else if (agent.indexOf("firefox") > 0) {
+			return "firefox";
+		} else if (agent.indexOf("webkit") > 0) {
+			return "webkit";
+		} else if (agent.indexOf("gecko") > 0 && agent.indexOf("rv:11") > 0) {
+			return "ie11";
+		} else {
+			return "Others";
+		}
+	}
 --------------------------------------------------------------------------------------------------------
 import java.io.FilterWriter;
 import java.io.IOException;
@@ -10096,6 +10326,910 @@ public class SecurityAspect {
         }
     }
 }
+--------------------------------------------------------------------------------------------------------
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class LiteralTools
+{
+    public static byte parseByte(String byteLiteral)
+            throws NumberFormatException {
+        if (byteLiteral == null) {
+            throw new NumberFormatException("string is null");
+        }
+        if (byteLiteral.length() == 0) {
+            throw new NumberFormatException("string is blank");
+        }
+
+        char[] byteChars;
+        if (byteLiteral.toUpperCase().endsWith("T")) {
+            byteChars = byteLiteral.substring(0, byteLiteral.length()-1).toCharArray();
+        } else {
+            byteChars = byteLiteral.toCharArray();
+        }
+
+        int position = 0;
+        int radix = 10;
+        boolean negative = false;
+        if (byteChars[position] == '-') {
+            position++;
+            negative = true;
+        }
+
+        if (byteChars[position] == '0') {
+            position++;
+            if (position == byteChars.length) {
+                return 0;
+            } else if (byteChars[position] == 'x' || byteChars[position] == 'X') {
+                radix = 16;
+                position++;
+            } else if (Character.digit(byteChars[position], 8) >= 0) {
+                radix = 8;
+            }
+        }
+
+        byte result = 0;
+        byte shiftedResult;
+        int digit;
+        byte maxValue = (byte)(Byte.MAX_VALUE / (radix / 2));
+
+        while (position < byteChars.length) {
+            digit = Character.digit(byteChars[position], radix);
+            if (digit < 0) {
+                throw new NumberFormatException("The string contains invalid an digit - '" + byteChars[position] + "'");
+            }
+            shiftedResult = (byte)(result * radix);
+            if (result > maxValue) {
+                throw new NumberFormatException(byteLiteral + " cannot fit into a byte");
+            }
+            if (shiftedResult < 0 && shiftedResult >= -digit) {
+                throw new NumberFormatException(byteLiteral + " cannot fit into a byte");
+            }
+            result = (byte)(shiftedResult + digit);
+            position++;
+        }
+
+        if (negative) {
+            //allow -0x80, which is = 0x80
+            if (result == Byte.MIN_VALUE) {
+                return result;
+            } else if (result < 0) {
+                throw new NumberFormatException(byteLiteral + " cannot fit into a byte");
+            }
+            return (byte)(result * -1);
+        } else {
+            return result;
+        }
+    }
+
+    public static short parseShort(String shortLiteral)
+            throws NumberFormatException {
+        if (shortLiteral == null) {
+            throw new NumberFormatException("string is null");
+        }
+        if (shortLiteral.length() == 0) {
+            throw new NumberFormatException("string is blank");
+        }
+
+        char[] shortChars;
+        if (shortLiteral.toUpperCase().endsWith("S")) {
+            shortChars = shortLiteral.substring(0, shortLiteral.length()-1).toCharArray();
+        } else {
+            shortChars = shortLiteral.toCharArray();
+        }
+
+        int position = 0;
+        int radix = 10;
+        boolean negative = false;
+        if (shortChars[position] == '-') {
+            position++;
+            negative = true;
+        }
+
+        if (shortChars[position] == '0') {
+            position++;
+            if (position == shortChars.length) {
+                return 0;
+            } else if (shortChars[position] == 'x' || shortChars[position] == 'X') {
+                radix = 16;
+                position++;
+            } else if (Character.digit(shortChars[position], 8) >= 0) {
+                radix = 8;
+            }
+        }
+
+        short result = 0;
+        short shiftedResult;
+        int digit;
+        short maxValue = (short)(Short.MAX_VALUE / (radix / 2));
+
+        while (position < shortChars.length) {
+            digit = Character.digit(shortChars[position], radix);
+            if (digit < 0) {
+                throw new NumberFormatException("The string contains invalid an digit - '" + shortChars[position] + "'");
+            }
+            shiftedResult = (short)(result * radix);
+            if (result > maxValue) {
+                throw new NumberFormatException(shortLiteral + " cannot fit into a short");
+            }
+            if (shiftedResult < 0 && shiftedResult >= -digit) {
+                throw new NumberFormatException(shortLiteral + " cannot fit into a short");
+            }
+            result = (short)(shiftedResult + digit);
+            position++;
+        }
+
+        if (negative) {
+            //allow -0x8000, which is = 0x8000
+            if (result == Short.MIN_VALUE) {
+                return result;
+            } else if (result < 0) {
+                throw new NumberFormatException(shortLiteral + " cannot fit into a short");
+            }
+            return (short)(result * -1);
+        } else {
+            return result;
+        }
+    }
+
+    public static int parseInt(String intLiteral)
+            throws NumberFormatException {
+        if (intLiteral == null) {
+            throw new NumberFormatException("string is null");
+        }
+        if (intLiteral.length() == 0) {
+            throw new NumberFormatException("string is blank");
+        }
+
+        char[] intChars = intLiteral.toCharArray();
+        int position = 0;
+        int radix = 10;
+        boolean negative = false;
+        if (intChars[position] == '-') {
+            position++;
+            negative = true;
+        }
+
+        if (intChars[position] == '0') {
+            position++;
+            if (position == intChars.length) {
+                return 0;
+            } else if (intChars[position] == 'x' || intChars[position] == 'X') {
+                radix = 16;
+                position++;
+            } else if (Character.digit(intChars[position], 8) >= 0) {
+                radix = 8;
+            }
+        }
+
+        int result = 0;
+        int shiftedResult;
+        int digit;
+        int maxValue = Integer.MAX_VALUE / (radix / 2);
+
+        while (position < intChars.length) {
+            digit = Character.digit(intChars[position], radix);
+            if (digit < 0) {
+                throw new NumberFormatException("The string contains an invalid digit - '" + intChars[position] + "'");
+            }
+            shiftedResult = result * radix;
+            if (result > maxValue) {
+                throw new NumberFormatException(intLiteral + " cannot fit into an int");
+            }
+            if (shiftedResult < 0 && shiftedResult >= -digit) {
+                throw new NumberFormatException(intLiteral + " cannot fit into an int");
+            }
+            result = shiftedResult + digit;
+            position++;
+        }
+
+        if (negative) {
+            //allow -0x80000000, which is = 0x80000000
+            if (result == Integer.MIN_VALUE) {
+                return result;
+            } else if (result < 0) {
+                throw new NumberFormatException(intLiteral + " cannot fit into an int");
+            }
+            return result * -1;
+        } else {
+            return result;
+        }
+    }
+
+    public static long parseLong(String longLiteral)
+            throws NumberFormatException {
+        if (longLiteral == null) {
+            throw new NumberFormatException("string is null");
+        }
+        if (longLiteral.length() == 0) {
+            throw new NumberFormatException("string is blank");
+        }
+
+        char[] longChars;
+        if (longLiteral.toUpperCase().endsWith("L")) {
+            longChars = longLiteral.substring(0, longLiteral.length()-1).toCharArray();
+        } else {
+            longChars = longLiteral.toCharArray();
+        }
+
+        int position = 0;
+        int radix = 10;
+        boolean negative = false;
+        if (longChars[position] == '-') {
+            position++;
+            negative = true;
+        }
+
+        if (longChars[position] == '0') {
+            position++;
+            if (position == longChars.length) {
+                return 0;
+            } else if (longChars[position] == 'x' || longChars[position] == 'X') {
+                radix = 16;
+                position++;
+            } else if (Character.digit(longChars[position], 8) >= 0) {
+                radix = 8;
+            }
+        }
+
+        long result = 0;
+        long shiftedResult;
+        int digit;
+        long maxValue = Long.MAX_VALUE / (radix / 2);
+
+        while (position < longChars.length) {
+            digit = Character.digit(longChars[position], radix);
+            if (digit < 0) {
+                throw new NumberFormatException("The string contains an invalid digit - '" + longChars[position] + "'");
+            }
+            shiftedResult = result * radix;
+            if (result > maxValue) {
+                throw new NumberFormatException(longLiteral + " cannot fit into a long");
+            }
+            if (shiftedResult < 0 && shiftedResult >= -digit) {
+                throw new NumberFormatException(longLiteral + " cannot fit into a long");
+            }
+            result = shiftedResult + digit;
+            position++;
+        }
+
+        if (negative) {
+            //allow -0x8000000000000000, which is = 0x8000000000000000
+            if (result == Long.MIN_VALUE) {
+                return result;
+            } else if (result < 0) {
+                throw new NumberFormatException(longLiteral + " cannot fit into a long");
+            }
+            return result * -1;
+        } else {
+            return result;
+        }
+    }
+
+    private static Pattern specialFloatRegex = Pattern.compile("((-)?infinityf)|(nanf)", Pattern.CASE_INSENSITIVE);
+    public static float parseFloat(String floatString) {
+        Matcher m = specialFloatRegex.matcher(floatString);
+        if (m.matches()) {
+            //got an infinity
+            if (m.start(1) != -1) {
+                if (m.start(2) != -1) {
+                    return Float.NEGATIVE_INFINITY;
+                } else {
+                    return Float.POSITIVE_INFINITY;
+                }
+            } else {
+                return Float.NaN;
+            }
+        }
+        return Float.parseFloat(floatString);
+    }
+
+    private static Pattern specialDoubleRegex = Pattern.compile("((-)?infinityd?)|(nand?)", Pattern.CASE_INSENSITIVE);
+    public static double parseDouble(String doubleString) {
+        Matcher m = specialDoubleRegex.matcher(doubleString);
+        if (m.matches()) {
+            //got an infinity
+            if (m.start(1) != -1) {
+                if (m.start(2) != -1) {
+                    return Double.NEGATIVE_INFINITY;
+                } else {
+                    return Double.POSITIVE_INFINITY;
+                }
+            } else {
+                return Double.NaN;
+            }
+        }
+        return Double.parseDouble(doubleString);
+    }
+
+    public static byte[] longToBytes(long value) {
+        byte[] bytes = new byte[8];
+
+        for (int i=0; value != 0; i++) {
+            bytes[i] = (byte)value;
+            value = value >>> 8;
+        }
+        return bytes;
+    }
+
+    public static byte[] intToBytes(int value) {
+        byte[] bytes = new byte[4];
+
+        for (int i=0; value != 0; i++) {
+            bytes[i] = (byte)value;
+            value = value >>> 8;
+        }
+        return bytes;
+    }
+
+    public static byte[] shortToBytes(short value) {
+        byte[] bytes = new byte[2];
+
+        bytes[0] = (byte)value;
+        bytes[1] = (byte)(value >>> 8);
+        return bytes;
+    }
+
+    public static byte[] floatToBytes(float value) {
+        return intToBytes(Float.floatToRawIntBits(value));
+    }
+
+    public static byte[] doubleToBytes(double value) {
+        return longToBytes(Double.doubleToRawLongBits(value));
+    }
+
+    public static byte[] charToBytes(char value) {
+        return shortToBytes((short)value);
+    }
+
+    public static byte[] boolToBytes(boolean value) {
+        if (value) {
+            return new byte[] { 0x01 };
+        } else {
+            return new byte[] { 0x00 };
+        }
+    }
+
+    public static void checkInt(long value) {
+        if (value > 0xFFFFFFFF || value < -0x80000000) {
+            throw new NumberFormatException(Long.toString(value) + " cannot fit into an int");
+        }
+    }
+
+    public static void checkShort(long value) {
+        if (value > 0xFFFF | value < -0x8000) {
+            throw new NumberFormatException(Long.toString(value) + " cannot fit into a short");
+        }
+    }
+
+    public static void checkByte(long value) {
+        if (value > 0xFF | value < -0x80) {
+            throw new NumberFormatException(Long.toString(value) + " cannot fit into a byte");
+        }
+    }
+
+    public static void checkNibble(long value) {
+        if (value > 0x0F | value < -0x08) {
+            throw new NumberFormatException(Long.toString(value) + " cannot fit into a nibble");
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+git commit --allow-empty -m "$p"
+--------------------------------------------------------------------------------------------------------
+/** 
+ * Calculates and stores prime integers for quick and inexpensive lookups.
+ *
+ * Running times:
+ *  - Looking up pre-calculated prime:            O(1)
+ *  - Calculating the next prime in the sequence: O(N)
+ *  - Calculating a prime out of sequence:        O(N^2)
+ *
+ * Memory usage:
+ *  - 1/2 bit for each digit
+ *  - Example: Memory to store all primes up to the number 64 costs 32 bits (1 int)
+ * 
+ * TODO Convert all ints to longs, overload methods to receive ints.
+ * 
+ * @author derv
+ */
+public class Primes {
+	
+	/** 
+	 * Size of an integer in Java.
+	 * Standard on all JVMs, but put here for explicitness.
+	 */
+	private final int INT_SIZE = 32;
+	
+	/**
+	 * The most-recently-calculated prime (in sequence)
+	 * All numbers equal to or less than currentPrime are already in the bitmap.
+	 */
+	private long currentPrime = 1;
+	
+	/** 
+	 * Bitmap tracking which integers are prime.
+	 * We know even numbers will not be prime (excluding 2).
+	 *
+	 * Example:
+	 * First element's 7 (LSBs): ...  1   1   1   0   1    1    0
+	 * These bits translate to:  ... [3] [5] [7] [9] [11] [13] [15]
+	 * 1 indicates number is prime, 0 means number is not prime.
+	 * We can easily check if a number is a prime by ANDing with the appropriate bit.
+	 */
+	private int[] oddBitmap;
+	
+	/** Initializes bitmap. */
+	public Primes() { 
+		oddBitmap = new int[1];
+	}
+
+	/** 
+	 * Initializes bitmap to contain all primes up to capcity.
+	 * @param capacity The highest prime to pre-calculate.
+	 */
+	public Primes(long capacity) {
+		// Initialize array to hold all the incoming bits.
+		// Code will resize the bitmap on the fly, but this prevents that slow-down.
+		int bitmapSize = (int) ((capacity - 3) / 64) + 1;
+		oddBitmap = new int[bitmapSize];
+		// Generate bitmap for primes up (and possibly beyond) to the given number
+		isPrime(capacity);
+	}
+	/**
+	 * Initializes bitmap to contain all primes up to capacity.
+	 * @param capacity The highest prime to pre-calculate.
+	 */
+	public Primes(int capacity) { 
+		this( (long) capacity);
+	}
+
+	
+	/** 
+	 * Calculates the next prime in sequence and adds to bitmap.
+	 * @return The next prime in the sequence.
+	 */
+	public long nextPrime() {
+		// First prime must be 2. This requires some ugly hacking.
+		if (currentPrime < 2) {
+			currentPrime += 2;
+			return 2;
+		} else if (currentPrime == 3) {
+			currentPrime -= 2; // isPrime will increase currentPrime by 2.
+		}
+		while (!isPrime(currentPrime));
+		return currentPrime - 2;
+	}
+	
+	/** 
+	 * Adds a number (prime or not) to the bitmap.
+	 * Doubles bitmap size as needed.
+	 * @param n The number to add.
+	 * @param prime True if n is prime, false otherwise.
+	 */
+	private void addNumber(long n, boolean prime) {
+		long oddIndex = ((n - 3) / 2); // '3' is the first bit, ignore evens.
+		int row = (int) (oddIndex / 32);
+		int col = (int) (oddIndex % 32);
+		if (row >= oddBitmap.length) {
+			// We need to increase the size of the bitmap
+			// Increase by 2x current size
+			int[] newBitmap = new int[oddBitmap.length * 2];
+			System.arraycopy(oddBitmap, 0, newBitmap, 0, oddBitmap.length);
+			for (int i = oddBitmap.length; i < newBitmap.length; i++) {
+				newBitmap[i] = 0;
+			}
+			oddBitmap = newBitmap;
+		}
+		int i = (prime ? 1 : 0);
+		i = i << col;
+		oddBitmap[row] = (oddBitmap[row] | i);
+	}
+
+	/** 
+	 * Performs the O(n) computation to see if a number is prime.
+	 * @param n The number to check if prime or not.
+	 * @return True if n is prime, false otherwise.
+	 */
+	private boolean calculatePrime(long n) {
+		// Ignore multiples of 2 (except 2).
+		if (n < 2)      return false;
+		if (n == 2)     return true;
+		if (n % 2 == 0) return false;
+		long maxFactor = (long) Math.sqrt(n); // Highest unique factor of n
+		// Only check odd factors.
+		for (long i = 3; i <= maxFactor; i += 2) {
+			// If is a factor, then n is not prime.
+			if (n % i == 0) return false;
+		}
+		return true;
+	}
+
+	/** Array of all single bit masks. */
+	public static final int[] BIT_MASKS = {
+		2 ^ 0,  2 ^ 1,  2 ^ 2,  2 ^ 3,  2 ^ 4, 
+		2 ^ 5,  2 ^ 6,  2 ^ 7,  2 ^ 8,  2 ^ 9, 
+		2 ^ 10, 2 ^ 11, 2 ^ 12, 2 ^ 13, 2 ^ 14, 
+		2 ^ 15, 2 ^ 16, 2 ^ 17, 2 ^ 18, 2 ^ 19, 
+		2 ^ 20, 2 ^ 21, 2 ^ 22, 2 ^ 23, 2 ^ 24, 
+		2 ^ 25, 2 ^ 26, 2 ^ 27, 2 ^ 28, 2 ^ 29,
+		2 ^ 30, 2 ^ 31
+	};
+	
+	/** 
+	 * Performs the O(n) computation to see if a number is prime.
+	 * Only checks prime factors, ignores non-prime factors.
+	 * @param n The number to check if prime or not.
+	 * @return True if n is prime, false otherwise.
+	 */
+	private boolean newcalculatePrime(int n) {
+		// Ignore multiples of 2 (except 2).
+		if (n < 2)      return false;
+		if (n == 2)     return true;
+		if (n % 2 == 0) return false;
+		long maxFactor = (long) Math.sqrt(n); // Highest possible factor of n.
+		long current = 1;
+		int currentRow = 0, currentCol = 0;
+		while (current <= maxFactor) {
+			current += 2;
+			if (currentCol >= INT_SIZE) {
+				currentRow++;
+				currentCol = 0;
+			}
+			if ( (oddBitmap[currentRow] & BIT_MASKS[currentCol]) == 0) {
+				currentCol++;
+				continue;
+			}
+			if (n % current == 0) return false;
+		}
+		return true;
+	}
+	
+	/** 
+	 * Checks if n is a prime. 
+	 * Calculates all primes up to n if they haven't been calculated yet.
+	 * @param n The number to check for primality.
+	 * @return True if number is prime, false otherwise.
+	 */
+	public boolean isPrime(long n) {
+		// Fill bitmap with all primes up to n (if needed)
+		while (currentPrime <= n) {
+			currentPrime += 2;
+			addNumber(currentPrime, calculatePrime(currentPrime));
+		}
+		// Check for even numbers
+		if (n < 2)      return false;
+		if (n == 2)     return true;
+		if (n % 2 == 0) return false;
+		// Find prime in bitmap
+		long oddIndex = (n - 3) / 2; // '3' is the first bit, ignore evens.
+		int row = (int) (oddIndex / 32);
+		int col = (int) (oddIndex % 32);
+		int i = 1 << col; // Create bitmask for current col index
+		return (oddBitmap[row] & i) > 0;
+	}
+	/** 
+	 * Checks if n is a prime. 
+	 * Calculates all primes up to n if they haven't been calculated yet.
+	 * @param n The number to check for primality.
+	 * @return True if number is prime, false otherwise.
+	 */
+	public boolean isPrime(int n) {
+		return isPrime( (long) n );
+	}
+
+	/** Displays bitmap. */
+	public void printBitmap() {
+		// Highest row that may contain at least 1 bit.
+		long maxRow = (((currentPrime - 1) / 2) / 32);
+		System.out.print("Bitmap of odd primes (from 3 to " + (currentPrime - 2) + "):\n\t");
+		// Iterate over every row in bitmap (except non-calculated rows)
+		for (int row = 0; row < oddBitmap.length && row <= maxRow; row++) {
+			int temp = 1; // Will be shifted to check for bits in bitmap
+			// Iterate over every bit in this row
+			for (int i = 0; i < INT_SIZE; i++) {
+				boolean prime = (temp & oddBitmap[row]) > 0;
+				System.out.print( prime ? "1" : "0" );
+				temp = temp << 1; // Shift to next bit
+			}
+			System.out.print("\n\t");
+		}
+		System.out.println();
+	}
+}
+--------------------------------------------------------------------------------------------------------
+#!/usr/bin/python
+
+import math
+
+def get_period(n):
+	s = math.sqrt(n)
+	result = []
+	temp = s
+	for i in xrange(0, 17):
+		next_fract = int(temp)
+		result.append(next_fract)
+		temp = 1 / (temp - int(temp))
+	result = result[:find_repeats(result[1:])]
+	print "sqrt(%d)=[%d;(%s)]" % (n, result[0], ','.join(str(x) for x in result[1:]))
+	return result[1:]
+
+def find_repeats(l):
+	for i in xrange(1, len(l) / 2):
+		if equal(l[:i], l[i:i+i]):
+			if is_repeating(l, l[:i]):
+				return i + 1
+	return -1
+
+def is_repeating(l, subl):
+	for i, value in enumerate(l):
+		if value != subl[i % len(subl)]: return False
+		if i > len(subl) * 3: break
+	return True
+		
+def equal(one, two):
+	for i, value in enumerate(one):
+		if i >= len(two): break
+		if value != two[i]: return False
+	return True
+	
+
+count = 0
+n = 1
+ncount = 0
+while True:
+	n += 1
+	if math.sqrt(n) == int(math.sqrt(n)): continue
+	ncount += 1
+	if ncount > 10000: break
+	if len(get_period(n)) % 2 != 0:
+		count += 1
+print count
+
+--------------------------------------------------------------------------------------------------------
+#!/usr/bin/python
+
+from sys import stdout
+import math
+
+"""
+	Yields next decimal place of a division
+	Keeps track of leading zeros and current place.
+	
+	Ignores leading whole integers; only
+	cares about what's after the decimal point
+"""
+class DecimalDiv:
+	"""
+		Strips leading integers (ensures x < y)
+		Counts leading zeros. Initializes place.
+	"""
+	def __init__(self, numerator, denom, subtract = True):
+		self.x = numerator
+		self.y = denom
+		self.subtract = subtract
+		
+		while self.x >= self.y:
+			self.x -= self.y
+		self.leading_zeros = self.count_zeros()
+		self.place = self.leading_zeros
+	
+	"""
+		Returns number of leading zeros in decimal
+	"""
+	def count_zeros(self):
+		# log is unreliable (e.g. when n = 13)
+		# return math.floor(math.log(self.y, self.x))
+		zeros = 0
+		while self.x * 10 < self.y:
+			self.x *= 10
+			zeros += 1
+		return zeros
+	
+	"""
+		Returns next decimal (by diving num/denom).
+		Returns None when there is nothing 
+		left to divide (numerator is 0)
+	"""
+	def next(self):
+		if self.x == 0:
+			return None
+		
+		quotient = 0
+		if self.x < self.y:
+			self.x *= 10
+		
+		# The actual division happens here
+		while self.x >= self.y:
+			quotient += 1
+			self.x -= self.y
+		
+		self.place += 1
+		return quotient
+
+
+"""
+	Not exactly a "test", simply calculates atan(1/5)
+	at the 6th step of the series.  This is for error-checking
+	and to ensure the number of zeros in the decimal are correct
+"""
+def test():
+	n = 11
+	d = DecimalDiv(16, n * pow(5, n))
+	x = d.next()
+	while x != None:
+		stdout.write(str(x))
+		stdout.flush()
+		x = d.next()
+	print '',
+
+if __name__ == '__main__':
+	test()
+--------------------------------------------------------------------------------------------------------
+#!/usr/bin/python
+
+from div import DecimalDiv
+from sys import stdout
+
+# Number of digits to keep held in cache before printing
+CACHE_SIZE = 7
+
+class Pi:
+	def __init__(self):
+		# Lists contain DecimalDiv objects. These objects give individual
+		# decimals for the atan(1/5) and atan(1/239) calculations.
+		self.atan5   = []
+		self.atan239 = []
+
+		# The current step in the atan series.  The series adds
+		# and subtracts from "n", which increases by 2 every step
+		# i.e. 1/5, 3/5^3, 5/5^5, etc..
+		self.atan5step   = 1
+		self.atan239step = 1
+		
+		# List of last X digits calculated. This acts as a cache
+		# of the most-recently calculated digits of PI. These digits
+		# are subject to change due to left-to-right addition
+		self.lastX = []
+		
+		# Current depth (current decimal place being calculated)
+		self.place = 0
+		
+		# Create the atan(1/5) generator
+		d = DecimalDiv(16, self.atan5step * pow(5, self.atan5step), subtract=False)
+		self.atan5.append(d)
+		
+		# Create the atan(1/239) generator
+		d = DecimalDiv(4, self.atan239step * pow(239, self.atan239step), subtract=True)
+		self.atan239.append(d)
+	
+	
+	"""
+		Adds up all digits current in place at self.place,
+		uses the DecimalDiv objects in the given "lst"
+		Returns this resulting total.
+		Also, creates new DecimalDiv objects as needed.
+	"""
+	def add_list(self, lst, atan = 5):
+		to_remove = []
+		result = 0
+		# Iterate over every item in the list
+		# Each item represents a piece of the atan(1/5) or 
+		# atan(1/239) series. The items are is decreasing order
+		for i, div in enumerate(lst):
+			# We only care if the calculation is currently at the 
+			# decimal place we are calculating
+			if div.place == self.place:
+				# Get the next digit, add to result
+				# Remove DecimalDiv if it no longer produces digits (numerator became 0 and next() returned None)
+				dec = div.next()
+				if dec == None:
+					to_remove.append(div)
+				elif div.subtract:
+					result -= dec
+				else:
+					result += dec
+				
+				# If this is the last item in the list, we need to 
+				# create a new DecimalDiv to generate future digits
+				if i == len(lst) - 1:
+					if atan == 5:
+						self.atan5step += 2
+						step = self.atan5step
+						mult = 16
+					elif atan == 239:
+						self.atan239step += 2
+						step = self.atan239step
+						mult = 4
+					d = DecimalDiv(mult, 
+								step * pow(atan, step),
+								subtract = not div.subtract)
+					lst.append(d)
+				
+		# Remove "dead" DecimalDivs (no longer generating digits)
+		# For example, 1/5 will generate 0.2 and that's it,
+		# whereas 1/3 will generate 0.3333 infinitely
+		for remove in to_remove:
+			lst.remove(remove)
+		return result
+
+	"""
+		Returns the next digit of PI
+		Does not include the leading "3.", starts at "14159..."
+	"""
+	def next(self):
+		# We will use lastX to hold the last X digits calculated
+		# This is required as we are doing left-to-right addition
+		# and previously-computed digits are subject to change
+		# Example: first digit is 2 ("3.2") and next digit is (-5)
+		# By propigating the -5, we end up with "3.15", and the 2
+		# ended up changing.
+		while len(self.lastX) <= CACHE_SIZE:
+			# Add everything in the atan(1/5) and atan(1/239) series
+			# Only adds decimals from these series that are currently
+			# at the same place we are calculating.
+			current  = self.add_list(self.atan5, atan=5)
+			current += self.add_list(self.atan239, atan=239)
+			self.lastX.insert(0, current)
+			self.place += 1
+		
+		# Digits should be between 0 and 9.
+		# It's possible the addition of digits are negative or >10
+		# So we have to propigate the carry-over down the cache.
+		for i in xrange(0, len(self.lastX) - 1):
+			# If number is greater than 10, propigation increases
+			# the previous digit
+			while self.lastX[i] >= 10:
+				self.lastX[i+1] += 1
+				self.lastX[i] -= 10
+			# If number is negative, propigation decreases the
+			# previous digit
+			while self.lastX[i] < 0:
+				self.lastX[i+1] -= 1
+				self.lastX[i] += 10
+		
+		# Once the cache is full, remove the last item (FIFO)
+		last = self.lastX.pop(-1)
+		return last
+
+
+########
+# TEST #
+########
+
+# Open file containing first 100k digits of pi, for comparison
+f = open('test.txt', 'r')
+test = f.read()
+f.close()
+
+# Create Pi object which will generate the digits
+pi = Pi()
+pistr = '3.'
+stdout.write('3.')
+
+try:
+	i = 0
+	while True:
+		# Get the next digit
+		pistr = str(pi.next())
+		# Print it
+		stdout.write(pistr)
+		stdout.flush()
+		# Compare with the precomputed 100k digits to ensure 
+		# we are calculating the correct digits
+		if len(test) > i - 3 and pistr != test[i + 2]:
+			# If inconsistent, show digit number and display info
+			print "\nmismatched at character %d, %s should be %s" % (i + 1, pistr, test[i + 2])
+			break
+		i += 1
+except KeyboardInterrupt:
+	print '\n\nCalculated %d digits' % (pi.place + 1)
+
+print ''
+exit(0)
+
+--------------------------------------------------------------------------------------------------------
+https://www.kitploit.com/2018/05/reverseapk-quickly-analyze-and-reverse.html
 --------------------------------------------------------------------------------------------------------
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
