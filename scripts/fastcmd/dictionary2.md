@@ -6871,6 +6871,114 @@ public class JWTTokenInterceptor implements HandlerInterceptor {
 
 }
 --------------------------------------------------------------------------------------------------------
+
+package de.otto.edison.metrics.configuration;
+
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Slf4jReporter;
+import com.ryantenney.metrics.spring.config.annotation.EnableMetrics;
+import com.ryantenney.metrics.spring.config.annotation.MetricsConfigurerAdapter;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
+
+import static com.codahale.metrics.Slf4jReporter.LoggingLevel.INFO;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static org.slf4j.LoggerFactory.getLogger;
+
+@Configuration
+@EnableMetrics
+@EnableConfigurationProperties(MetricsProperties.class)
+@ConditionalOnProperty(name = "edison.metrics.slf4j.logger")
+public class Slf4JReporterConfiguration extends MetricsConfigurerAdapter {
+
+    private final MetricsProperties.Slf4j slf4jProperties;
+
+    @Autowired
+    public Slf4JReporterConfiguration(final MetricsProperties metricsProperties) {
+        this.slf4jProperties = metricsProperties.getSlf4j();
+    }
+
+    @Override
+    public void configureReporters(final MetricRegistry metricRegistry) {
+        Slf4jReporter
+                .forRegistry(metricRegistry)
+                .outputTo(getLogger(slf4jProperties.getLogger()))
+                .withLoggingLevel(INFO)
+                .build()
+                .start(slf4jProperties.getPeriod(), MINUTES);
+    }
+import java.util.Arrays;
+
+@Configuration
+@EnableConfigurationProperties(LoggingProperties.class)
+public class LoggingConfiguration {
+
+    @Bean
+    @ConditionalOnProperty(prefix = "edison.logging", name = "header.enabled")
+    public LogHeadersToMDCFilter logHeadersToMDCFilter(final LoggingProperties properties) {
+        return new LogHeadersToMDCFilter(Arrays.asList(properties.getHeader().getNames().split(",")));
+    }
+}
+
+
+
+@JsonSerialize(using = ToStringSerializer.class)
+
+}--------------------------------------------------------------------------------------------------------
+import de.otto.edison.annotations.Beta;
+
+/**
+ * Non-functional requirements regarding the performance of something this service is depending on.
+ *
+ */
+@Beta
+public enum Performance {
+    /**
+     * Depending on your overall requirements, this might be something like &lt; 10ms in the 99 percentile:
+     */
+    VERY_HIGH,
+    /**
+     * Depending on your overall requirements, this might be something like &lt; 50ms in the 99 percentile:
+     */
+    HIGH,
+    /**
+     * Depending on your overall requirements, this might be something like &lt; 100ms in the 99 percentile:
+     */
+    MEDIUM,
+    /**
+     * Depending on your overall requirements, this might be something like &lt; 1000ms in the 99 percentile:
+     */
+    LOW,
+    /** Default value if no performance requirements where specified. */
+    NOT_SPECIFIED
+}
+}--------------------------------------------------------------------------------------------------------
+  @Bean
+    @ConditionalOnMissingBean(CodecRegistry.class)
+    public CodecRegistry codecRegistry() {
+        return MongoClient.getDefaultCodecRegistry();
+    }
+
+    @Bean
+    @Primary
+    @ConditionalOnMissingBean(name = "mongoClient", value = MongoClient.class)
+    public MongoClient mongoClient(final MongoProperties mongoProperties) {
+        LOG.info("Creating MongoClient");
+        return new MongoClient(mongoProperties.getServers(), getMongoCredentials(mongoProperties),
+                mongoProperties.toMongoClientOptions(codecRegistry()));
+    }
+
+    @Bean
+    @Primary
+    @ConditionalOnMissingBean(name = "mongoDatabase", value = MongoDatabase.class)
+    public MongoDatabase mongoDatabase(final MongoClient mongoClient, final MongoProperties mongoProperties) {
+        return mongoClient.getDatabase(mongoProperties.getDb());
+    }
+	
+	https://www.programcreek.com/java-api-examples/index.php?project_name=otto-de%2Fedison-microservice#
+--------------------------------------------------------------------------------------------------------
 netsh wlan show profile <profile> key=clear
 --------------------------------------------------------------------------------------------------------
 while pgrep &>/dev/null -f Tool-X; do sleep 60; done; shutdown -h now
