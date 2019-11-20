@@ -1,0 +1,127 @@
+TicketMessagePublisherTest
+TicketInternalControllerIT
+testMockMvcEnabled
+test save TicketInternalController EndPoint With Success Status
+test save TicketInternalController EndPoint whenPassed Bad TicketRequest
+test save TicketInternalController EndPoint whenPassed Get TicketRequest
+test save TicketInternalController EndPoint whenPassed Invalid TicketRequest
+
+
+
+KafkaConsumerPropertyTest.test_KafkaConsumerProperty_with_empty_TopicProperty_Constraint:210 expected: <true> but was: <false>
+[15:52:54][msbuild]   [ERROR]   TransactionSupportAsyncJobServiceTest.test_simple_async_job_execute:155
+[15:52:54][msbuild]   Expected: a collection with size <0>
+[15:52:54][msbuild]        but: collection size was <1>
+
+
+status = {Integer@16851} 404
+error = "Not Found"
+message = null
+timestamp = {Date@16853} "Tue Nov 19 16:58:38 MSK 2019"
+
+
+http://localhost:24040/api/v0/links/execute/404154c1-a0bf-47e4-8e33-707e454d7c97
+
+{
+	"callbackTopicName": "1",
+	"callbackMessageType": "2",
+	"details": ""
+}
+
+AuthenticatedUser(userId=57d4e1d8-45d8-4662-523b-08d72616e82d, ownerId=876eaf44-7523-4b13-8a2a-70eaed458902, role=admin)
+
+
+TicketControllerIT.test_execute_TicketController_EndPoint_whenPassed_Unauthorized_TicketRequest
+TicketControllerIT.test_execute_TicketController_EndPoint_whenPassed_Invalid_TicketRequest
+
+
+
+test_Receive_BounceMessage_With_Rfc822_Headers_from_DataBus
+test_Receive_BounceMessage_With_FullDeliveryStatus_from_DataBus
+
+
+
+
+
+test shouldRemoveKeyFromInnerObject
+test shouldRemoveKeyFromTopLevel
+
+
+
+
+{dto.ticket-request.user-id.or.token.mandatory}
+
+
+
+
+model.data-bus.confirmation-reject-message.user-id.notBlank
+
+
+
+
+
+ConfirmationRequest.uid.value=Confirmation request user identifier
+ConfirmationRequest.cid.value=Confirmation request confirmation identifier
+
+
+
+
+
+lifecycleProcessor
+
+
+AbstractApplicationContext
+
+
+
+package org.springframework.context.support;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.BeanFactoryAware;
+import org.springframework.beans.factory.BeanFactoryUtils;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.context.ApplicationContextException;
+import org.springframework.context.Lifecycle;
+import org.springframework.context.LifecycleProcessor;
+import org.springframework.context.Phased;
+import org.springframework.context.SmartLifecycle;
+import org.springframework.lang.Nullable;
+import org.springframework.util.Assert;
+
+/**
+ * Default implementation of the {@link LifecycleProcessor} strategy.
+ *
+ * @author Mark Fisher
+ * @author Juergen Hoeller
+ * @since 3.0
+ */
+public class DefaultLifecycleProcessor implements LifecycleProcessor, BeanFactoryAware {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
