@@ -73445,6 +73445,181 @@ https://docs.spring.io/spring/docs/current/spring-framework-reference/testing.ht
 --------------------------------------------------------------------------------------------------------
 docker run -d --name axonserver -p 8024:8024 -p 8124:8124 axoniq/axonserver
 --------------------------------------------------------------------------------------------------------
+test {
+    systemProperty 'java.util.logging.manager', 'org.apache.logging.log4j.jul.LogManager'
+}
+--------------------------------------------------------------------------------------------------------
+public class SwingEdtInterceptor implements InvocationInterceptor {
+
+    @Override
+    public void interceptTestMethod(Invocation<Void> invocation,
+            ReflectiveInvocationContext<Method> invocationContext,
+            ExtensionContext extensionContext) throws Throwable {
+
+        AtomicReference<Throwable> throwable = new AtomicReference<>();
+
+        SwingUtilities.invokeAndWait(() -> {
+            try {
+                invocation.proceed();
+            }
+            catch (Throwable t) {
+                throwable.set(t);
+            }
+        });
+        Throwable t = throwable.get();
+        if (t != null) {
+            throw t;
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import static example.util.StringUtils.isPalindrome;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
+import static org.junit.jupiter.api.DynamicTest.dynamicTest;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Random;
+import java.util.function.Function;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+import example.util.Calculator;
+
+import org.junit.jupiter.api.DynamicNode;
+import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.api.function.ThrowingConsumer;
+
+class DynamicTestsDemo {
+
+    private final Calculator calculator = new Calculator();
+
+    // This will result in a JUnitException!
+    @TestFactory
+    List<String> dynamicTestsWithInvalidReturnType() {
+        return Arrays.asList("Hello");
+    }
+
+    @TestFactory
+    Collection<DynamicTest> dynamicTestsFromCollection() {
+        return Arrays.asList(
+            dynamicTest("1st dynamic test", () -> assertTrue(isPalindrome("madam"))),
+            dynamicTest("2nd dynamic test", () -> assertEquals(4, calculator.multiply(2, 2)))
+        );
+    }
+
+    @TestFactory
+    Iterable<DynamicTest> dynamicTestsFromIterable() {
+        return Arrays.asList(
+            dynamicTest("3rd dynamic test", () -> assertTrue(isPalindrome("madam"))),
+            dynamicTest("4th dynamic test", () -> assertEquals(4, calculator.multiply(2, 2)))
+        );
+    }
+
+    @TestFactory
+    Iterator<DynamicTest> dynamicTestsFromIterator() {
+        return Arrays.asList(
+            dynamicTest("5th dynamic test", () -> assertTrue(isPalindrome("madam"))),
+            dynamicTest("6th dynamic test", () -> assertEquals(4, calculator.multiply(2, 2)))
+        ).iterator();
+    }
+
+    @TestFactory
+    DynamicTest[] dynamicTestsFromArray() {
+        return new DynamicTest[] {
+            dynamicTest("7th dynamic test", () -> assertTrue(isPalindrome("madam"))),
+            dynamicTest("8th dynamic test", () -> assertEquals(4, calculator.multiply(2, 2)))
+        };
+    }
+
+    @TestFactory
+    Stream<DynamicTest> dynamicTestsFromStream() {
+        return Stream.of("racecar", "radar", "mom", "dad")
+            .map(text -> dynamicTest(text, () -> assertTrue(isPalindrome(text))));
+    }
+
+    @TestFactory
+    Stream<DynamicTest> dynamicTestsFromIntStream() {
+        // Generates tests for the first 10 even integers.
+        return IntStream.iterate(0, n -> n + 2).limit(10)
+            .mapToObj(n -> dynamicTest("test" + n, () -> assertTrue(n % 2 == 0)));
+    }
+
+    @TestFactory
+    Stream<DynamicTest> generateRandomNumberOfTests() {
+
+        // Generates random positive integers between 0 and 100 until
+        // a number evenly divisible by 7 is encountered.
+        Iterator<Integer> inputGenerator = new Iterator<Integer>() {
+
+            Random random = new Random();
+            int current;
+
+            @Override
+            public boolean hasNext() {
+                current = random.nextInt(100);
+                return current % 7 != 0;
+            }
+
+            @Override
+            public Integer next() {
+                return current;
+            }
+        };
+
+        // Generates display names like: input:5, input:37, input:85, etc.
+        Function<Integer, String> displayNameGenerator = (input) -> "input:" + input;
+
+        // Executes tests based on the current input value.
+        ThrowingConsumer<Integer> testExecutor = (input) -> assertTrue(input % 7 != 0);
+
+        // Returns a stream of dynamic tests.
+        return DynamicTest.stream(inputGenerator, displayNameGenerator, testExecutor);
+    }
+
+    @TestFactory
+    Stream<DynamicNode> dynamicTestsWithContainers() {
+        return Stream.of("A", "B", "C")
+            .map(input -> dynamicContainer("Container " + input, Stream.of(
+                dynamicTest("not null", () -> assertNotNull(input)),
+                dynamicContainer("properties", Stream.of(
+                    dynamicTest("length > 0", () -> assertTrue(input.length() > 0)),
+                    dynamicTest("not empty", () -> assertFalse(input.isEmpty()))
+                ))
+            )));
+    }
+
+    @TestFactory
+    DynamicNode dynamicNodeSingleTest() {
+        return dynamicTest("'pop' is a palindrome", () -> assertTrue(isPalindrome("pop")));
+    }
+
+    @TestFactory
+    DynamicNode dynamicNodeSingleContainer() {
+        return dynamicContainer("palindromes",
+            Stream.of("racecar", "radar", "mom", "dad")
+                .map(text -> dynamicTest(text, () -> assertTrue(isPalindrome(text)))
+        ));
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+@ParameterizedTest
+@EnumSource(ChronoUnit.class)
+void testWithExplicitArgumentConversion(
+        @ConvertWith(ToStringArgumentConverter.class) String argument) {
+
+    assertNotNull(ChronoUnit.valueOf(argument));
+}
+--------------------------------------------------------------------------------------------------------
 @Configuration
 @Profile("default")
 public class DefaultDataConfig {
@@ -87569,6 +87744,224 @@ class DisplayNameGeneratorDemo {
             return name.replace('_', ' ') + '.';
         }
 
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+package com.paragon.microservices.mailer.model.domain;
+
+import com.fasterxml.jackson.annotation.*;
+import com.paragon.mailingcontour.commons.system.constraint.annotation.NullOrNotEmpty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.UtilityClass;
+import org.springframework.validation.annotation.Validated;
+
+import javax.validation.Valid;
+import javax.validation.constraints.Email;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+import java.util.List;
+
+import static com.paragon.microservices.mailer.model.domain.MailMessage.Info.*;
+
+@Data
+@Builder
+@Validated
+@NoArgsConstructor
+@AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+@JsonRootName(value = MODEL_DTO_NAME, namespace = "mailer")
+public class MailMessage {
+    /**
+     * Email address of sender.
+     */
+    @JsonProperty(FROM_FIELD_NAME)
+    @Email(message = "{model.domain.mail-message.from.invalidEmail}")
+    @NotBlank(message = "{model.domain.mail-message.from.notBlank}")
+    private String from;
+
+    /**
+     * Email address of the person to receive record.
+     */
+    @JsonProperty(TO_FIELD_NAME)
+    @Email(message = "{model.domain.mail-message.to.notValid}")
+    @NotBlank(message = "{model.domain.mail-message.to.notBlank}")
+    private String to;
+
+    /**
+     * Optional email address or list of addresses to Carbon Copy record.
+     */
+    @Valid
+    @JsonProperty(CC_FIELD_NAME)
+    @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+    @NullOrNotEmpty(message = "{model.domain.mail-message.cc.nullOrNotEmpty}")
+    private List<@Email @NotBlank String> cc;
+
+    /**
+     * Optional email address or list of addresses to Blind Carbon Copy record.
+     */
+    @Valid
+    @JsonProperty(BCC_FIELD_NAME)
+    @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+    @NullOrNotEmpty(message = "{model.domain.mail-message.bcc.nullOrNotEmpty}")
+    private List<@Email @NotBlank String> bcc;
+
+    /**
+     * Subject of the record.
+     */
+    @JsonProperty(SUBJECT_FIELD_NAME)
+    private String subject;
+
+    /**
+     * Content of the record.
+     */
+    @JsonProperty(TEXT_FIELD_NAME)
+    private String text;
+
+    /**
+     * Does record contain HTML or plain text.
+     */
+    @JsonProperty(IS_HTML_FIELD_NAME)
+    private boolean isHtml;
+
+    /**
+     * Optional attachment or list of attachments. See {@link MailMessageAttachment}
+     */
+    @Valid
+    @JsonProperty(ATTACHMENTS_FIELD_NAME)
+    @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+    @NullOrNotEmpty(message = "{model.domain.mail-message.attachments.nullOrNotEmpty}")
+    private List<@NotNull MailMessageAttachment> attachments;
+
+    @UtilityClass
+    static final class Info {
+        /**
+         * Default model DTO name
+         */
+        static final String MODEL_DTO_NAME = "MailMessage";
+        /**
+         * Default field names
+         */
+        static final String FROM_FIELD_NAME = "from";
+        static final String TO_FIELD_NAME = "to";
+        static final String CC_FIELD_NAME = "cc";
+        static final String BCC_FIELD_NAME = "bcc";
+        static final String SUBJECT_FIELD_NAME = "subject";
+        static final String TEXT_FIELD_NAME = "text";
+        static final String IS_HTML_FIELD_NAME = "isHtml";
+        static final String ATTACHMENTS_FIELD_NAME = "attachments";
+    }
+}
+
+
+package com.paragon.microservices.mailer.model.domain;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRootName;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.UtilityClass;
+import org.springframework.core.io.InputStreamSource;
+import org.springframework.validation.annotation.Validated;
+
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+
+import static com.paragon.microservices.mailer.model.domain.MailMessageAttachment.Info.*;
+
+@Data
+@Builder
+@Validated
+@NoArgsConstructor
+@AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+@JsonRootName(value = MODEL_DTO_NAME, namespace = "mailer")
+public class MailMessageAttachment {
+    /**
+     * Name of the attachment.
+     */
+    @JsonProperty(NAME_FIELD_NAME)
+    @NotBlank(message = "{model.domain.mail-message-attachment.name.notBlank}")
+    private String name;
+
+    /**
+     * Optional MIME-type of the attachment.
+     */
+    @JsonProperty(MIME_TYPE_FIELD_NAME)
+    @NotBlank(message = "{model.domain.mail-message-attachment.mime-type.notBlank}")
+    private String mimeType;
+
+    @JsonProperty(CONTENT_FIELD_NAME)
+    @NotNull(message = "{model.domain.mail-message-attachment.content.notNull}")
+    private InputStreamSource content;
+
+    @UtilityClass
+    static final class Info {
+        /**
+         * Default model DTO name
+         */
+        static final String MODEL_DTO_NAME = "MailMessageAttachment";
+        /**
+         * Default field names
+         */
+        static final String NAME_FIELD_NAME = "name";
+        static final String MIME_TYPE_FIELD_NAME = "mimeType";
+        static final String CONTENT_FIELD_NAME = "content";
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.junit.Ignore;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.migrationsupport.EnableJUnit4MigrationSupport;
+
+// @ExtendWith(IgnoreCondition.class)
+@EnableJUnit4MigrationSupport
+class IgnoredTestsDemo {
+
+    @Ignore
+    @Test
+    void testWillBeIgnored() {
+    }
+
+    @Test
+    void testWillBeExecuted() {
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+    @RegisterExtension
+    static WebServerExtension server = WebServerExtension.builder()
+        .enableSecurity(false)
+        .build();
+
+    @Test
+    void getProductList() {
+        WebClient webClient = new WebClient();
+        String serverUrl = server.getServerUrl();
+        // Use WebClient to connect to web server using serverUrl and verify response
+        assertEquals(200, webClient.get(serverUrl + "/products").getResponseStatus());
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+// Register handlers for @Test, @BeforeEach, @AfterEach as well as @BeforeAll and @AfterAll
+@ExtendWith(ThirdExecutedHandler.class)
+class MultipleHandlersTestCase {
+
+    // Register handlers for @Test, @BeforeEach, @AfterEach only
+    @ExtendWith(SecondExecutedHandler.class)
+    @ExtendWith(FirstExecutedHandler.class)
+    @Test
+    void testMethod() {
     }
 
 }
