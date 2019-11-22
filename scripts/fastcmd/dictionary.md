@@ -54724,6 +54724,100 @@ nuget install docfx.console -o .build\docfx -x
 	
 	@SuppressWarnings("SpringJavaAutowiringInspection")
 -------------------------------------------------------------------------------------------------------
+      <!-- Kubernetes library dependencies -->
+        <dependency>
+            <groupId>io.dekorate</groupId>
+            <artifactId>kubernetes-annotations</artifactId>
+            <version>${dekorate.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.dekorate</groupId>
+            <artifactId>dekorate-spring-boot</artifactId>
+            <version>${dekorate.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.dekorate</groupId>
+            <artifactId>kubernetes-spring-starter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.dekorate</groupId>
+            <artifactId>dekorate-core</artifactId>
+            <version>${dekorate.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.dekorate</groupId>
+            <artifactId>option-annotations</artifactId>
+            <version>${dekorate.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.dekorate</groupId>
+            <artifactId>core-junit</artifactId>
+            <version>${dekorate.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.dekorate</groupId>
+            <artifactId>kubernetes-junit</artifactId>
+            <version>${dekorate.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.dekorate</groupId>
+            <artifactId>prometheus-annotations</artifactId>
+            <version>${dekorate.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.dekorate</groupId>
+            <artifactId>jaeger-annotations</artifactId>
+            <version>${dekorate.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+            <version>1.0.9</version>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+            <version>1.0.9</version>
+        </dependency>
+-------------------------------------------------------------------------------------------------------
+@RunWith(SpringRunner.class)
+@ActiveProfiles("test")
+@Transactional
+@DataJpaTest
+@AutoConfigureTestDatabase(replace=Replace.NONE)
+public class IssueRepositoryIntegrationTests 
+
+@EnableAutoConfiguration(exclude=AutoConfigureTestDatabase.class)
+-------------------------------------------------------------------------------------------------------
+
+	private static final Pattern PUNCTATION_PATTERN = Pattern.compile(".*((?![._])[\\p{Punct}|\\s])");
+-------------------------------------------------------------------------------------------------------
+     <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler-plugin.version}</version>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>${mapstruct.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.dekorate</groupId>
+                            <artifactId>kubernetes-annotations</artifactId>
+                            <version>${project.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin> 
+-------------------------------------------------------------------------------------------------------
     @Bean
     public DataSource dataSource() {
         EmbeddedDatabaseBuilder builder = new EmbeddedDatabaseBuilder();
@@ -54734,6 +54828,36 @@ nuget install docfx.console -o .build\docfx -x
 
         return datasource;
     }
+-------------------------------------------------------------------------------------------------------
+java org.h2.tools.Server
+    -tcp -tcpPort 9101
+    -baseDir server1
+	
+java org.h2.tools.CreateCluster
+    -urlSource jdbc:h2:tcp://localhost:9101/~/test
+    -urlTarget jdbc:h2:tcp://localhost:9102/~/test
+    -user sa
+    -serverList localhost:9101,localhost:9102
+	
+java -cp h2*.jar org.h2.tools.Server
+
+using System;
+using java.sql;
+
+class Test
+{
+    static public void Main()
+    {
+        org.h2.Driver.load();
+        Connection conn = DriverManager.getConnection("jdbc:h2:~/test", "sa", "sa");
+        Statement stat = conn.createStatement();
+        ResultSet rs = stat.executeQuery("SELECT 'Hello World'");
+        while (rs.next())
+        {
+            Console.WriteLine(rs.getString(1));
+        }
+    }
+}
 -------------------------------------------------------------------------------------------------------
 import java.util.UUID;
 import org.dozer.BeanFactory;
