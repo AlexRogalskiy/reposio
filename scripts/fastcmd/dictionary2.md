@@ -6667,9 +6667,277 @@ public class FeignServerFactoryImpl implements FallbackFactory<FeignServer> {
     }
 }
 
-mvn install:install-file -Dfile=D:\Downloads2\0.3.0-alpha-0352-ef7813f\0.3.0-alpha-0352-ef7813f\paragon.mailingcontour.commons-0.3.0-alpha-0352-ef7813f.pom -DgroupId=com.paragon.mailingcontour -DartifactId=paragon.mailingcontour.commons -Dversion=0.3.0-alpha-0352-ef7813f -Dpackaging=pom
+mvn install:install-file -Dfile=D:\Downloads2\mailingcontour\paragon.mailingcontour\0.3.0-alpha-0352-ef7813f\paragon.mailingcontour-0.3.0-alpha-0352-ef7813f.pom -DgroupId=com.paragon.mailingcontour -DartifactId=paragon.mailingcontour -Dversion=0.3.0-alpha-0352-ef7813f -Dpackaging=pom
+
+mvn install:install-file -Dfile=D:\Downloads2\mailingcontour\paragon.mailingcontour.commons\0.3.0-alpha-0352-ef7813f\paragon.mailingcontour.commons-0.3.0-alpha-0352-ef7813f.pom -DgroupId=com.paragon.mailingcontour -DartifactId=paragon.mailingcontour.commons -Dversion=0.3.0-alpha-0352-ef7813f -Dpackaging=pom
 --------------------------------------------------------------------------------------------------------
 mvn dependency:tree -X
+--------------------------------------------------------------------------------------------------------
+
+import org.junit.Test;
+
+import java.io.IOException;
+
+import static de.otto.edison.acceptance.api.FeatureTogglesApi.internal_toggles_is_retrieved_as;
+import static de.otto.edison.acceptance.api.FeatureTogglesApi.the_returned_json;
+import static de.otto.edison.testsupport.dsl.Then.assertThat;
+import static de.otto.edison.testsupport.dsl.Then.then;
+import static de.otto.edison.testsupport.dsl.When.when;
+import static org.hamcrest.Matchers.is;
+
+public class FeatureTogglesControllerAcceptanceTest {
+
+    @Test
+    public void shouldTogglesAsJson() throws IOException {
+        when(
+                internal_toggles_is_retrieved_as("application/json")
+        );
+
+        then(
+                assertThat(the_returned_json().at("/features/TEST_FEATURE/description").asText(), is("a test feature toggle")),
+                assertThat(the_returned_json().at("/features/TEST_FEATURE/enabled").asBoolean(), is(true)),
+                assertThat(the_returned_json().at("/features/TEST_FEATURE_2/description").asText(), is("TEST_FEATURE_2")),
+                assertThat(the_returned_json().at("/features/TEST_FEATURE_2/enabled").asBoolean(), is(true))
+        );
+
+    }
+
+}
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import de.otto.edison.testsupport.applicationdriver.SpringTestBase;
+import de.otto.edison.testsupport.dsl.When;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
+
+import java.io.IOException;
+import java.util.Optional;
+
+import static java.util.Arrays.asList;
+import static java.util.Optional.of;
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.MediaType.parseMediaType;
+
+public class FeatureTogglesApi extends SpringTestBase {
+
+    private final static RestTemplate restTemplate = new RestTemplate();
+    private final static ObjectMapper objectMapper = new ObjectMapper();
+    private static String content = null;
+    private static HttpStatus statusCode;
+
+    public static When internal_toggles_is_retrieved_as(final String mediaType) throws IOException {
+        getResource("http://localhost:8085/togglztest/internal/toggles", of(mediaType));
+        return When.INSTANCE;
+    }
+
+    public static HttpStatus the_status_code() {
+        return statusCode;
+    }
+
+    public static String the_returned_content() {
+        return content;
+    }
+
+    public static JsonNode the_returned_json() {
+        try {
+            return objectMapper.readTree(content);
+        } catch (IOException e) {
+            throw new IllegalStateException(e.getMessage(), e);
+        }
+    }
+
+    private static void getResource(final String url, final Optional<String> mediaType) throws IOException {
+        final HttpHeaders headers = new HttpHeaders();
+        if (mediaType.isPresent()) {
+            headers.setAccept(asList(parseMediaType(mediaType.get())));
+        }
+
+        final ResponseEntity<String> responseEntity = restTemplate.exchange(
+                url,
+                GET,
+                new HttpEntity<>("parameters", headers), String.class
+        );
+        content = responseEntity.getBody();
+        statusCode = responseEntity.getStatusCode();
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+    @Test
+    void dependentAssertions() {
+        // Within a code block, if an assertion fails the
+        // subsequent code in the same block will be skipped.
+        assertAll("properties",
+            () -> {
+                String firstName = person.getFirstName();
+                assertNotNull(firstName);
+
+                // Executed only if the previous assertion is valid.
+                assertAll("first name",
+                    () -> assertTrue(firstName.startsWith("J")),
+                    () -> assertTrue(firstName.endsWith("e"))
+                );
+            },
+            () -> {
+                // Grouped assertion, so processed independently
+                // of results of first name assertions.
+                String lastName = person.getLastName();
+                assertNotNull(lastName);
+
+                // Executed only if the previous assertion is valid.
+                assertAll("last name",
+                    () -> assertTrue(lastName.startsWith("D")),
+                    () -> assertTrue(lastName.endsWith("e"))
+                );
+            }
+        );
+    }
+--------------------------------------------------------------------------------------------------------
+import static java.time.Duration.ofMillis;
+import static java.time.Duration.ofMinutes;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTimeout;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.concurrent.CountDownLatch;
+
+import example.domain.Person;
+import example.util.Calculator;
+
+import org.junit.jupiter.api.Test;
+
+class AssertionsDemo {
+
+    private final Calculator calculator = new Calculator();
+
+    private final Person person = new Person("Jane", "Doe");
+
+    @Test
+    void standardAssertions() {
+        assertEquals(2, calculator.add(1, 1));
+        assertEquals(4, calculator.multiply(2, 2),
+                "The optional failure message is now the last parameter");
+        assertTrue('a' < 'b', () -> "Assertion messages can be lazily evaluated -- "
+                + "to avoid constructing complex messages unnecessarily.");
+    }
+
+    @Test
+    void groupedAssertions() {
+        // In a grouped assertion all assertions are executed, and all
+        // failures will be reported together.
+        assertAll("person",
+            () -> assertEquals("Jane", person.getFirstName()),
+            () -> assertEquals("Doe", person.getLastName())
+        );
+    }
+
+    @Test
+    void dependentAssertions() {
+        // Within a code block, if an assertion fails the
+        // subsequent code in the same block will be skipped.
+        assertAll("properties",
+            () -> {
+                String firstName = person.getFirstName();
+                assertNotNull(firstName);
+
+                // Executed only if the previous assertion is valid.
+                assertAll("first name",
+                    () -> assertTrue(firstName.startsWith("J")),
+                    () -> assertTrue(firstName.endsWith("e"))
+                );
+            },
+            () -> {
+                // Grouped assertion, so processed independently
+                // of results of first name assertions.
+                String lastName = person.getLastName();
+                assertNotNull(lastName);
+
+                // Executed only if the previous assertion is valid.
+                assertAll("last name",
+                    () -> assertTrue(lastName.startsWith("D")),
+                    () -> assertTrue(lastName.endsWith("e"))
+                );
+            }
+        );
+    }
+
+    @Test
+    void exceptionTesting() {
+        Exception exception = assertThrows(ArithmeticException.class, () ->
+            calculator.divide(1, 0));
+        assertEquals("/ by zero", exception.getMessage());
+    }
+
+    @Test
+    void timeoutNotExceeded() {
+        // The following assertion succeeds.
+        assertTimeout(ofMinutes(2), () -> {
+            // Perform task that takes less than 2 minutes.
+        });
+    }
+
+    @Test
+    void timeoutNotExceededWithResult() {
+        // The following assertion succeeds, and returns the supplied object.
+        String actualResult = assertTimeout(ofMinutes(2), () -> {
+            return "a result";
+        });
+        assertEquals("a result", actualResult);
+    }
+
+    @Test
+    void timeoutNotExceededWithMethod() {
+        // The following assertion invokes a method reference and returns an object.
+        String actualGreeting = assertTimeout(ofMinutes(2), AssertionsDemo::greeting);
+        assertEquals("Hello, World!", actualGreeting);
+    }
+
+    @Test
+    void timeoutExceeded() {
+        // The following assertion fails with an error message similar to:
+        // execution exceeded timeout of 10 ms by 91 ms
+        assertTimeout(ofMillis(10), () -> {
+            // Simulate task that takes more than 10 ms.
+            Thread.sleep(100);
+        });
+    }
+
+    @Test
+    void timeoutExceededWithPreemptiveTermination() {
+        // The following assertion fails with an error message similar to:
+        // execution timed out after 10 ms
+        assertTimeoutPreemptively(ofMillis(10), () -> {
+            // Simulate task that takes more than 10 ms.
+            new CountDownLatch(1).await();
+        });
+    }
+
+    private static String greeting() {
+        return "Hello, World!";
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+    @Test
+    void testInAllEnvironments() {
+        assumingThat("CI".equals(System.getenv("ENV")),
+            () -> {
+                // perform these assertions only on the CI server
+                assertEquals(2, calculator.divide(4, 2));
+            });
+
+        // perform these assertions in all environments
+        assertEquals(42, calculator.multiply(6, 7));
+    }
 --------------------------------------------------------------------------------------------------------
 import java.security.SecureRandom;
 import java.util.Calendar;
@@ -6788,6 +7056,935 @@ public final class JWT {
 		}
 		return getJWTUser(token);
 	}
+
+}
+--------------------------------------------------------------------------------------------------------
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+
+@DisplayName("TestInfo Demo")
+class TestInfoDemo {
+
+    TestInfoDemo(TestInfo testInfo) {
+        assertEquals("TestInfo Demo", testInfo.getDisplayName());
+    }
+
+    @BeforeEach
+    void init(TestInfo testInfo) {
+        String displayName = testInfo.getDisplayName();
+        assertTrue(displayName.equals("TEST 1") || displayName.equals("test2()"));
+    }
+
+    @Test
+    @DisplayName("TEST 1")
+    @Tag("my-tag")
+    void test1(TestInfo testInfo) {
+        assertEquals("TEST 1", testInfo.getDisplayName());
+        assertTrue(testInfo.getTags().contains("my-tag"));
+    }
+
+    @Test
+    void test2() {
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+class TestReporterDemo {
+
+    @Test
+    void reportSingleValue(TestReporter testReporter) {
+        testReporter.publishEntry("a status message");
+    }
+
+    @Test
+    void reportKeyValuePair(TestReporter testReporter) {
+        testReporter.publishEntry("a key", "a value");
+    }
+
+    @Test
+    void reportMultipleKeyValuePairs(TestReporter testReporter) {
+        Map<String, String> values = new HashMap<>();
+        values.put("user name", "dk38");
+        values.put("award year", "1974");
+
+        testReporter.publishEntry(values);
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+@ExtendWith(RandomParametersExtension.class)
+class MyRandomParametersTest {
+
+    @Test
+    void injectsInteger(@Random int i, @Random int j) {
+        assertNotEquals(i, j);
+    }
+
+    @Test
+    void injectsDouble(@Random double d) {
+        assertEquals(0.0, d, 1.0);
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+@ParameterizedTest
+@NullSource
+@EmptySource
+@ValueSource(strings = { " ", "   ", "\t", "\n" })
+void nullEmptyAndBlankStrings(String text) {
+    assertTrue(text == null || text.trim().isEmpty());
+}
+--------------------------------------------------------------------------------------------------------
+@ParameterizedTest
+@NullAndEmptySource
+@ValueSource(strings = { " ", "   ", "\t", "\n" })
+void nullEmptyAndBlankStrings(String text) {
+    assertTrue(text == null || text.trim().isEmpty());
+}
+
+@ParameterizedTest
+@EnumSource(ChronoUnit.class)
+void testWithEnumSource(TemporalUnit unit) {
+    assertNotNull(unit);
+}
+
+@ParameterizedTest
+@EnumSource
+void testWithEnumSourceWithAutoDetection(ChronoUnit unit) {
+    assertNotNull(unit);
+}
+
+
+--------------------------------------------------------------------------------------------------------
+@ParameterizedTest
+@EnumSource(mode = EXCLUDE, names = { "ERAS", "FOREVER" })
+void testWithEnumSourceExclude(ChronoUnit unit) {
+    assertFalse(EnumSet.of(ChronoUnit.ERAS, ChronoUnit.FOREVER).contains(unit));
+}
+@ParameterizedTest
+@EnumSource(mode = MATCH_ALL, names = "^.*DAYS$")
+void testWithEnumSourceRegex(ChronoUnit unit) {
+    assertTrue(unit.name().endsWith("DAYS"));
+}
+
+@ParameterizedTest
+@MethodSource("range")
+void testWithRangeMethodSource(int argument) {
+    assertNotEquals(9, argument);
+}
+
+static IntStream range() {
+    return IntStream.range(0, 20).skip(10);
+}
+
+@ParameterizedTest
+@MethodSource
+void testWithDefaultLocalMethodSource(String argument) {
+    assertNotNull(argument);
+}
+
+static Stream<String> testWithDefaultLocalMethodSource() {
+    return Stream.of("apple", "banana");
+}
+
+@ParameterizedTest
+@MethodSource("stringIntAndListProvider")
+void testWithMultiArgMethodSource(String str, int num, List<String> list) {
+    assertEquals(5, str.length());
+    assertTrue(num >=1 && num <=2);
+    assertEquals(2, list.size());
+}
+
+static Stream<Arguments> stringIntAndListProvider() {
+    return Stream.of(
+        arguments("apple", 1, Arrays.asList("a", "b")),
+        arguments("lemon", 2, Arrays.asList("x", "y"))
+    );
+}
+
+
+import java.util.stream.Stream;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+class ExternalMethodSourceDemo {
+
+    @ParameterizedTest
+    @MethodSource("example.StringsProviders#tinyStrings")
+    void testWithExternalMethodSource(String tinyString) {
+        // test with tiny string
+    }
+}
+
+class StringsProviders {
+
+    static Stream<String> tinyStrings() {
+        return Stream.of(".", "oo", "OOO");
+    }
+}
+
+
+
+@ParameterizedTest
+@ArgumentsSource(MyArgumentsProvider.class)
+void testWithArgumentsSource(String argument) {
+    assertNotNull(argument);
+}
+public class MyArgumentsProvider implements ArgumentsProvider {
+
+    @Override
+    public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
+        return Stream.of("apple", "banana").map(Arguments::of);
+    }
+}
+
+
+@ParameterizedTest
+@ValueSource(strings = "SECONDS")
+void testWithImplicitArgumentConversion(ChronoUnit argument) {
+    assertNotNull(argument.name());
+}
+
+
+@ParameterizedTest
+@ValueSource(strings = { "01.01.2017", "31.12.2017" })
+void testWithExplicitJavaTimeConverter(
+        @JavaTimeConversionPattern("dd.MM.yyyy") LocalDate argument) {
+
+    assertEquals(2017, argument.getYear());
+}
+
+
+@DisplayName("Display name of container")
+@ParameterizedTest(name = "{index} ==> fruit=''{0}'', rank={1}")
+@CsvSource({ "apple, 1", "banana, 2", "'lemon, lime', 3" })
+void testWithCustomDisplayNames(String fruit, int rank) {
+}
+
+
+--------------------------------------------------------------------------------------------------------
+import static example.util.StringUtils.isPalindrome;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
+import static org.junit.jupiter.api.DynamicTest.dynamicTest;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Random;
+import java.util.function.Function;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+import example.util.Calculator;
+
+import org.junit.jupiter.api.DynamicNode;
+import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.api.function.ThrowingConsumer;
+
+class DynamicTestsDemo {
+
+    private final Calculator calculator = new Calculator();
+
+    // This will result in a JUnitException!
+    @TestFactory
+    List<String> dynamicTestsWithInvalidReturnType() {
+        return Arrays.asList("Hello");
+    }
+
+    @TestFactory
+    Collection<DynamicTest> dynamicTestsFromCollection() {
+        return Arrays.asList(
+            dynamicTest("1st dynamic test", () -> assertTrue(isPalindrome("madam"))),
+            dynamicTest("2nd dynamic test", () -> assertEquals(4, calculator.multiply(2, 2)))
+        );
+    }
+
+    @TestFactory
+    Iterable<DynamicTest> dynamicTestsFromIterable() {
+        return Arrays.asList(
+            dynamicTest("3rd dynamic test", () -> assertTrue(isPalindrome("madam"))),
+            dynamicTest("4th dynamic test", () -> assertEquals(4, calculator.multiply(2, 2)))
+        );
+    }
+
+    @TestFactory
+    Iterator<DynamicTest> dynamicTestsFromIterator() {
+        return Arrays.asList(
+            dynamicTest("5th dynamic test", () -> assertTrue(isPalindrome("madam"))),
+            dynamicTest("6th dynamic test", () -> assertEquals(4, calculator.multiply(2, 2)))
+        ).iterator();
+    }
+
+    @TestFactory
+    DynamicTest[] dynamicTestsFromArray() {
+        return new DynamicTest[] {
+            dynamicTest("7th dynamic test", () -> assertTrue(isPalindrome("madam"))),
+            dynamicTest("8th dynamic test", () -> assertEquals(4, calculator.multiply(2, 2)))
+        };
+    }
+
+    @TestFactory
+    Stream<DynamicTest> dynamicTestsFromStream() {
+        return Stream.of("racecar", "radar", "mom", "dad")
+            .map(text -> dynamicTest(text, () -> assertTrue(isPalindrome(text))));
+    }
+
+    @TestFactory
+    Stream<DynamicTest> dynamicTestsFromIntStream() {
+        // Generates tests for the first 10 even integers.
+        return IntStream.iterate(0, n -> n + 2).limit(10)
+            .mapToObj(n -> dynamicTest("test" + n, () -> assertTrue(n % 2 == 0)));
+    }
+
+    @TestFactory
+    Stream<DynamicTest> generateRandomNumberOfTests() {
+
+        // Generates random positive integers between 0 and 100 until
+        // a number evenly divisible by 7 is encountered.
+        Iterator<Integer> inputGenerator = new Iterator<Integer>() {
+
+            Random random = new Random();
+            int current;
+
+            @Override
+            public boolean hasNext() {
+                current = random.nextInt(100);
+                return current % 7 != 0;
+            }
+
+            @Override
+            public Integer next() {
+                return current;
+            }
+        };
+
+        // Generates display names like: input:5, input:37, input:85, etc.
+        Function<Integer, String> displayNameGenerator = (input) -> "input:" + input;
+
+        // Executes tests based on the current input value.
+        ThrowingConsumer<Integer> testExecutor = (input) -> assertTrue(input % 7 != 0);
+
+        // Returns a stream of dynamic tests.
+        return DynamicTest.stream(inputGenerator, displayNameGenerator, testExecutor);
+    }
+
+    @TestFactory
+    Stream<DynamicNode> dynamicTestsWithContainers() {
+        return Stream.of("A", "B", "C")
+            .map(input -> dynamicContainer("Container " + input, Stream.of(
+                dynamicTest("not null", () -> assertNotNull(input)),
+                dynamicContainer("properties", Stream.of(
+                    dynamicTest("length > 0", () -> assertTrue(input.length() > 0)),
+                    dynamicTest("not empty", () -> assertFalse(input.isEmpty()))
+                ))
+            )));
+    }
+
+    @TestFactory
+    DynamicNode dynamicNodeSingleTest() {
+        return dynamicTest("'pop' is a palindrome", () -> assertTrue(isPalindrome("pop")));
+    }
+
+    @TestFactory
+    DynamicNode dynamicNodeSingleContainer() {
+        return dynamicContainer("palindromes",
+            Stream.of("racecar", "radar", "mom", "dad")
+                .map(text -> dynamicTest(text, () -> assertTrue(isPalindrome(text)))
+        ));
+    }
+}
+
+@Test
+@Timeout(5) // Poll at most 5 seconds
+void pollUntil() throws InterruptedException {
+    while (asynchronousResultNotAvailable()) {
+        Thread.sleep(250); // custom poll interval
+    }
+    // Obtain the asynchronous result and perform assertions
+}
+
+
+--------------------------------------------------------------------------------------------------------
+@Execution(CONCURRENT)
+class SharedResourcesDemo {
+
+    private Properties backup;
+
+    @BeforeEach
+    void backup() {
+        backup = new Properties();
+        backup.putAll(System.getProperties());
+    }
+
+    @AfterEach
+    void restore() {
+        System.setProperties(backup);
+    }
+
+    @Test
+    @ResourceLock(value = SYSTEM_PROPERTIES, mode = READ)
+    void customPropertyIsNotSetByDefault() {
+        assertNull(System.getProperty("my.prop"));
+    }
+
+    @Test
+    @ResourceLock(value = SYSTEM_PROPERTIES, mode = READ_WRITE)
+    void canSetCustomPropertyToApple() {
+        System.setProperty("my.prop", "apple");
+        assertEquals("apple", System.getProperty("my.prop"));
+    }
+
+    @Test
+    @ResourceLock(value = SYSTEM_PROPERTIES, mode = READ_WRITE)
+    void canSetCustomPropertyToBanana() {
+        System.setProperty("my.prop", "banana");
+        assertEquals("banana", System.getProperty("my.prop"));
+    }
+}
+--------------------------------------------------------------------------------------------------------
+# Setting Hystrix timeout for the chain in 900ms (we have 3 more chained service calls).
+hystrix.command.default.execution.isolation.thread.timeoutInMilliseconds=900
+# This property sets the minimum number of requests in a rolling window that will trip the circuit.
+hystrix.command.default.circuitBreaker.requestVolumeThreshold=5
+--------------------------------------------------------------------------------------------------------
+import feign.RequestLine;
+
+import java.util.List;
+
+public interface HolaService {
+
+	@RequestLine("GET /api/hola-chaining")
+	public List<String> hola();
+
+}
+
+import org.springframework.boot.context.embedded.ServletRegistrationBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import com.netflix.hystrix.contrib.metrics.eventstream.HystrixMetricsStreamServlet;
+
+@Configuration
+public class HystrixServletConfiguration {
+
+    @Bean
+    public ServletRegistrationBean jerseyServlet() {
+        ServletRegistrationBean registration = new ServletRegistrationBean(new HystrixMetricsStreamServlet(), "/hystrix.stream");
+        return registration;
+    }
+}
+
+https://www.keycloak.org/extensions.html
+https://www.keycloak.org/
+
+		<!-- OpenTracing -->
+		<dependency>
+			<groupId>io.opentracing</groupId>
+			<artifactId>opentracing-noop</artifactId>
+			<version>${io.opentracing.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.opentracing.contrib</groupId>
+			<artifactId>opentracing-spring-web-autoconfigure</artifactId>
+			<version>${io.opentracing.contrib.spring.autoconfigure.version}</version>
+		</dependency>
+				<!-- OpenTracing implementation - Jaeger -->
+		<dependency>
+			<groupId>com.uber.jaeger</groupId>
+			<artifactId>jaeger-core</artifactId>
+			<version>${version.jaeger}</version>
+		</dependency>
+		
+https://www.programcreek.com/java-api-examples/index.php?project_name=redhat-helloworld-msa%2Fola#
+
+	<!-- feign -->
+		<dependency>
+			<groupId>io.github.openfeign.opentracing</groupId>
+			<artifactId>feign-hystrix-opentracing</artifactId>
+			<version>${openfeign.opentracing.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.github.openfeign</groupId>
+			<artifactId>feign-jackson</artifactId>
+			<version>${openfeign.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.github.openfeign</groupId>
+			<artifactId>feign-httpclient</artifactId>
+			<version>${openfeign.version}</version>
+		</dependency>
+--------------------------------------------------------------------------------------------------------
+<dependency>
+    <groupId>com.h2database</groupId>
+    <artifactId>h2</artifactId>
+    <version>1.4.196</version>
+</dependency>
+--------------------------------------------------------------------------------------------------------
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import com.baeldung.extensions.EmployeeDatabaseSetupExtension;
+
+public class MultipleExtensionsUnitTest {
+
+    @Order(1)
+    @RegisterExtension
+    static EmployeeDatabaseSetupExtension SECOND_DB =
+      new EmployeeDatabaseSetupExtension("jdbc:h2:mem:DbTwo;DB_CLOSE_DELAY=-1", "org.h2.Driver", "sa", "");
+
+    @Order(0)
+    @RegisterExtension
+    static EmployeeDatabaseSetupExtension FIRST_DB =
+      new EmployeeDatabaseSetupExtension("jdbc:h2:mem:DbOne;DB_CLOSE_DELAY=-1", "org.h2.Driver", "sa", "");
+
+    @RegisterExtension
+    static EmployeeDatabaseSetupExtension LAST_DB =
+      new EmployeeDatabaseSetupExtension("jdbc:h2:mem:DbLast;DB_CLOSE_DELAY=-1", "org.h2.Driver", "sa", "");
+
+    @Test
+    public void justDemonstratingTheIdea() {
+        // empty test
+    }
+}
+
+
+import java.sql.SQLException;
+
+import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+
+import com.baeldung.extensions.EmployeeDaoParameterResolver;
+import com.baeldung.extensions.EmployeeDatabaseSetupExtension;
+import com.baeldung.extensions.EnvironmentExtension;
+import com.baeldung.extensions.IgnoreFileNotFoundExceptionExtension;
+import com.baeldung.extensions.LoggingExtension;
+import com.baeldung.helpers.Employee;
+import com.baeldung.helpers.EmployeeJdbcDao;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@ExtendWith({ EnvironmentExtension.class, EmployeeDatabaseSetupExtension.class, EmployeeDaoParameterResolver.class })
+@ExtendWith(LoggingExtension.class)
+@ExtendWith(IgnoreFileNotFoundExceptionExtension.class)
+public class EmployeesUnitTest {
+
+    private EmployeeJdbcDao employeeDao;
+
+    private Logger logger;
+
+    public EmployeesUnitTest(EmployeeJdbcDao employeeDao) {
+        this.employeeDao = employeeDao;
+    }
+
+    @Test
+    public void whenAddEmployee_thenGetEmployee() throws SQLException {
+        Employee emp = new Employee(1, "john");
+        employeeDao.add(emp);
+        assertEquals(1, employeeDao.findAll()
+            .size());
+    }
+
+    @Test
+    public void whenGetEmployees_thenEmptyList() throws SQLException {
+        assertEquals(0, employeeDao.findAll()
+            .size());
+    }
+
+    public void setLogger(Logger logger) {
+        this.logger = logger;
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+package com.baeldung.extensions;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Savepoint;
+
+import org.junit.jupiter.api.extension.AfterAllCallback;
+import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
+
+import com.baeldung.helpers.EmployeeJdbcDao;
+import com.baeldung.helpers.JdbcConnectionUtil;
+
+public class EmployeeDatabaseSetupExtension implements BeforeAllCallback, AfterAllCallback, BeforeEachCallback, AfterEachCallback {
+
+    private Connection con;
+    private EmployeeJdbcDao employeeDao;
+    private Savepoint savepoint;
+
+    public EmployeeDatabaseSetupExtension() {
+        con = JdbcConnectionUtil.getConnection();
+        employeeDao = new EmployeeJdbcDao(con);
+    }
+
+    public EmployeeDatabaseSetupExtension(String jdbcUrl, String driver, String username, String password) {
+        con = JdbcConnectionUtil.getConnection(jdbcUrl, driver, username, password);
+        employeeDao = new EmployeeJdbcDao(con);
+    }
+
+    @Override
+    public void afterAll(ExtensionContext context) throws SQLException {
+        if (con != null) {
+            con.close();
+        }
+    }
+
+    @Override
+    public void beforeAll(ExtensionContext context) throws SQLException {
+        employeeDao.createTable();
+
+    }
+
+    @Override
+    public void afterEach(ExtensionContext context) throws SQLException {
+        con.rollback(savepoint);
+    }
+
+    @Override
+    public void beforeEach(ExtensionContext context) throws SQLException {
+        con.setAutoCommit(false);
+        savepoint = con.setSavepoint("before");
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+#h2 db
+jdbc.driver=org.h2.Driver
+jdbc.url=jdbc:h2:mem:myDb;DB_CLOSE_DELAY=-1
+jdbc.user=sa
+jdbc.password=
+
+jdbc.properties
+
+import org.junit.platform.launcher.LauncherDiscoveryRequest;
+import org.junit.platform.launcher.TestExecutionListener;
+import org.junit.platform.launcher.TestPlan;
+import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
+import org.junit.platform.launcher.core.LauncherFactory;
+import org.junit.platform.launcher.listeners.SummaryGeneratingListener;
+
+import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
+
+import java.io.PrintWriter;
+
+import org.junit.platform.launcher.Launcher;
+
+public class TestLauncher {
+    public static void main(String[] args) {
+
+        //@formatter:off
+        LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
+                .selectors(selectClass("com.baeldung.EmployeesUnitTest"))
+                .configurationParameter("junit.conditions.deactivate", "com.baeldung.extensions.*")
+                .configurationParameter("junit.jupiter.extensions.autodetection.enabled", "true")
+                .build();
+        
+        //@formatter:on
+
+        TestPlan plan = LauncherFactory.create().discover(request);
+        Launcher launcher = LauncherFactory.create();
+        SummaryGeneratingListener summaryGeneratingListener = new SummaryGeneratingListener();
+        launcher.execute(request, new TestExecutionListener[] { summaryGeneratingListener });
+        launcher.execute(request);
+
+        summaryGeneratingListener.getSummary()
+            .printTo(new PrintWriter(System.out));
+
+    }
+}
+
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.0.0-M4</version>
+        <configuration>
+          <argLine>-Djava.security.manager -Djava.security.policy=${basedir}/src/test/resources/java.policy</argLine>
+        </configuration>
+      </plugin>
+	  
+	  https://maven.apache.org/surefire/maven-surefire-plugin/examples/junit.html
+
+https://dzone.com/articles/junit-listener
+-Djunit.conditions.deactivate=<pattern>
+
+If we want to register an extension for all tests in our application, we can do so by adding the fully qualified name to the /META-INF/services/org.junit.jupiter.api.extension.Extension file:
+
+com.baeldung.extensions.LoggingExtension
+
+https://www.baeldung.com/junit-5-extensions
+
+For this mechanism to be enabled, we also need to set the junit.jupiter.extensions.autodetection.enabled configuration key to true. This can be done by starting the JVM with the –Djunit.jupiter.extensions.autodetection.enabled=true property, or by adding a configuration parameter to LauncherDiscoveryRequest:
+
+      <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-module-junit4</artifactId>
+            <version>${powermock.version}</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>junit</groupId>
+                    <artifactId>junit</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+		
+		      <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-api-mockito2</artifactId>
+            <version>${powermock.version}</version>
+            <scope>test</scope>
+        </dependency>
+--------------------------------------------------------------------------------------------------------
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.ParameterContext;
+import org.junit.jupiter.api.extension.ParameterResolutionException;
+import org.junit.jupiter.api.extension.ParameterResolver;
+
+import com.baeldung.helpers.EmployeeJdbcDao;
+import com.baeldung.helpers.JdbcConnectionUtil;
+
+public class EmployeeDaoParameterResolver implements ParameterResolver {
+
+    @Override
+    public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
+        return parameterContext.getParameter()
+            .getType()
+            .equals(EmployeeJdbcDao.class);
+    }
+
+    @Override
+    public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
+        return new EmployeeJdbcDao(JdbcConnectionUtil.getConnection());
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+import static org.junit.Assert.assertEquals;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+
+@TestMethodOrder(OrderAnnotation.class)
+public class OrderAnnotationUnitTest {
+    private static StringBuilder output = new StringBuilder("");
+    
+    @Test
+    @Order(1)    
+    public void firstTest() {
+        output.append("a");
+    }
+    
+    @Test
+    @Order(2)    
+    public void secondTest() {
+        output.append("b");
+    }
+ 
+    @Test
+    @Order(3)    
+    public void thirdTest() {
+        output.append("c");
+    }
+ 
+    @AfterAll
+    public static void assertOutput() {
+        assertEquals(output.toString(), "abc");
+    }
+}
+
+import org.junit.jupiter.api.MethodDescriptor;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.MethodOrdererContext;
+
+public class CustomOrder implements MethodOrderer{
+    @Override
+    public void orderMethods(MethodOrdererContext context) {
+        context.getMethodDescriptors().sort((MethodDescriptor m1, MethodDescriptor m2)->m1.getMethod().getName().compareToIgnoreCase(m2.getMethod().getName()));
+    }
+}
+--------------------------------------------------------------------------------------------------------
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.reflect.Whitebox;
+
+public class AbstractInstanceFieldsUnitTest {
+
+    @Test
+    public void givenProtectedInstanceField_whenMockClassCountGt5_thenTestNonAbstractMethod() {
+
+        // mock
+        AbstractInstanceFields instClass = Mockito.mock(AbstractInstanceFields.class);
+        Mockito
+          .doCallRealMethod()
+          .when(instClass)
+          .testFunc();
+
+        // set counter greater than 5
+        instClass.count = 7;
+
+        // compare the result
+        Assertions.assertEquals("Overflow", instClass.testFunc());
+    }
+
+    @Test
+    public void givenNonAbstractMethodAndPrivateField_whenPowerMockitoAndActiveFieldTrue_thenCorrectBehaviour() {
+
+        AbstractInstanceFields instClass = PowerMockito.mock(AbstractInstanceFields.class);
+        PowerMockito
+          .doCallRealMethod()
+          .when(instClass)
+          .testFunc();
+        Whitebox.setInternalState(instClass, "active", true);
+
+        // compare the expected result with actual
+        Assertions.assertEquals("Added", instClass.testFunc());
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.runner.RunWith;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+import java.time.LocalDateTime;
+
+/**
+ * Providing custom values for private methods using powermock
+ *
+ */
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(AbstractPrivateMethods.class)
+public class AbstractPrivateMethodsUnitTest {
+
+    @Test
+    public void givenNonAbstractMethodAndCallPrivateMethod_whenMockPrivateMethod_thenVerifyBehaviour() throws Exception {
+        AbstractPrivateMethods mockClass = PowerMockito.mock(AbstractPrivateMethods.class);
+
+        String dateTime = LocalDateTime
+          .now()
+          .toString();
+        PowerMockito
+          .doCallRealMethod()
+          .when(mockClass)
+          .defaultImpl();
+        PowerMockito
+          .doReturn(dateTime)
+          .when(mockClass, "getCurrentDateTime");// .thenReturn(dateTime);
+        String actual = mockClass.defaultImpl();
+        Assertions.assertEquals(dateTime + "DEFAULT-1", actual);
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+public class EmployeeDaoParameterResolver implements ParameterResolver {
+ 
+    @Override
+    public boolean supportsParameter(ParameterContext parameterContext, 
+      ExtensionContext extensionContext) throws ParameterResolutionException {
+        return parameterContext.getParameter().getType()
+          .equals(EmployeeJdbcDao.class);
+    }
+ 
+    @Override
+    public Object resolveParameter(ParameterContext parameterContext, 
+      ExtensionContext extensionContext) throws ParameterResolutionException {
+        return new EmployeeJdbcDao();
+    }
+}
+--------------------------------------------------------------------------------------------------------
+    /**
+     *
+     * This is were the "magic" happens: it creates a Feign, which is a proxy interface for remote calling a
+     * REST endpoint with Hystrix fallback support.
+     */
+    @Bean
+    public HolaService holaService(Tracer tracer) {
+        // bind current span to Hystrix thread
+        TracingConcurrencyStrategy.register();
+
+        return HystrixFeign.builder()
+                .client(new TracingClient(new ApacheHttpClient(HttpClientBuilder.create().build()), tracer))
+                .logger(new Logger.ErrorLogger()).logLevel(Logger.Level.BASIC)
+                .decoder(new JacksonDecoder())
+                .target(HolaService.class, "http://hola:8080/",
+                        () -> Collections.singletonList("Hola response (fallback)"));
+    }
+--------------------------------------------------------------------------------------------------------
+import org.junit.platform.runner.JUnitPlatform;
+import org.junit.platform.suite.api.SelectPackages;
+import org.junit.platform.suite.api.SuiteDisplayName;
+import org.junit.runner.RunWith;
+
+@RunWith(JUnitPlatform.class)
+@SuiteDisplayName("JUnit Platform Suite Demo")
+@SelectPackages("example")
+public class JUnitPlatformSuiteDemo {
+}
+--------------------------------------------------------------------------------------------------------
+   <plugins>
+        <plugin>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>2.22.2</version>
+            <configuration>
+                <groups>acceptance | !feature-a</groups>
+                <excludedGroups>integration, regression</excludedGroups>
+            </configuration>
+        </plugin>
+    </plugins>
+--------------------------------------------------------------------------------------------------------
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+
+@TestMethodOrder(OrderAnnotation.class)
+class OrderedTestsDemo {
+
+    @Test
+    @Order(1)
+    void nullValues() {
+        // perform assertions against null values
+    }
+
+    @Test
+    @Order(2)
+    void emptyValues() {
+        // perform assertions against empty values
+    }
+
+    @Test
+    @Order(3)
+    void validValues() {
+        // perform assertions against valid values
+    }
 
 }
 --------------------------------------------------------------------------------------------------------
@@ -6925,36 +8122,91 @@ public class LoggingConfiguration {
 
 
 @JsonSerialize(using = ToStringSerializer.class)
+--------------------------------------------------------------------------------------------------------
+https://www.programcreek.com/java-api-examples/index.php?project_name=otto-de%2Fedison-microservice#
+--------------------------------------------------------------------------------------------------------
+./kafka-consumer-groups.sh --bootstrap-server localhost:9092 --list
 
-}--------------------------------------------------------------------------------------------------------
-import de.otto.edison.annotations.Beta;
+./kafka-consumer-groups.sh --bootstrap-server localhost:9092 --group <your group name> --describe
 
-/**
- * Non-functional requirements regarding the performance of something this service is depending on.
- *
- */
-@Beta
-public enum Performance {
-    /**
-     * Depending on your overall requirements, this might be something like &lt; 10ms in the 99 percentile:
-     */
-    VERY_HIGH,
-    /**
-     * Depending on your overall requirements, this might be something like &lt; 50ms in the 99 percentile:
-     */
-    HIGH,
-    /**
-     * Depending on your overall requirements, this might be something like &lt; 100ms in the 99 percentile:
-     */
-    MEDIUM,
-    /**
-     * Depending on your overall requirements, this might be something like &lt; 1000ms in the 99 percentile:
-     */
-    LOW,
-    /** Default value if no performance requirements where specified. */
-    NOT_SPECIFIED
-}
-}--------------------------------------------------------------------------------------------------------
+kafka-consumer-offset-checker.bat --group group-1 --topic testing-1 --zookeeper localhost:2181
+--------------------------------------------------------------------------------------------------------
+public class SimpleProducer {
+public static void main(String[] args) throws InterruptedException {
+    Properties props = new Properties();
+    props.put("bootstrap.servers", "localhost:9094");
+    props.put("acks", "all");
+    props.put("retries", 0);
+    props.put("batch.size", 16384);
+    props.put("linger.ms", 1);
+    props.put("buffer.memory", 33554432);
+    props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+    props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+
+    Producer<String, String> producer = new KafkaProducer<>(props);
+    for(int i = 0; i < 10; i++)
+        producer.send(new ProducerRecord<String, String>("topic3", Integer.toString(i), Integer.toString(i)));
+
+    producer.close();
+
+}}
+
+public class SimpleConsumer {
+
+public static void main(String[] args) {
+    Properties props = new Properties();
+    props.put("bootstrap.servers", "localhost:9094");
+    props.put("group.id", "test");
+    props.put("zookeeper.connect", "localhost:2181");
+    props.put("enable.auto.commit", "true");
+    props.put("auto.commit.interval.ms", "1000");
+    props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+    props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+    KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props);
+    consumer.subscribe(Arrays.asList("topic3", "topic2"));
+    while (true) {
+        ConsumerRecords<String, String> records = consumer.poll(100);
+        for (ConsumerRecord<String, String> record : records)
+            System.out.printf("offset = %d, key = %s, value = %s%n", record.offset(), record.key(), record.value());
+    }
+}}
+--------------------------------------------------------------------------------------------------------
+com.sun.security.auth.module.Krb5LoginModule required
+useTicketCache=false
+useKeyTab=true
+storeKey=true
+keyTab="path to the file.keytab"
+principal="kafka/ip-10-197-17-69.eu-west-1.compute.internal@DOMAIN"
+
+And try to change the consumer config:
+
+security.protocol=SASL_PLAINTEXT
+sasl.mechanism=GSSAPI
+sasl.kerberos.service.name=kafka
+
+
+
+cat >/root/client.properties<<EOF
+security.protocol=SASL_SSL
+sasl.kerberos.service.name=kafka
+ssl.client.auth=none
+ssl.truststore.location=/etc/cdep-ssl-conf/CA_STANDARD/truststore.jks
+ssl.truststore.password=cloudera
+EOF
+
+cat >/root/jaas.conf<<EOF
+KafkaClient {
+com.sun.security.auth.module.Krb5LoginModule required
+useKeyTab=true
+storeKey=false
+useTicketCache=true
+keyTab="/cdep/keytabs/kafka.keytab"
+principal="kafka@EXAMPLE.CLOUDERA.COM";
+};
+EOF
+
+KAFKA_OPTS="-Djava.security.auth.login.config=/root/jaas.conf" kafka-console-producer --broker-list ${HOSTNAME}:9093 --topic test --producer.config /root/client.properties
+--------------------------------------------------------------------------------------------------------
   @Bean
     @ConditionalOnMissingBean(CodecRegistry.class)
     public CodecRegistry codecRegistry() {
