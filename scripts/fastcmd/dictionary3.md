@@ -10,6 +10,8 @@ Type ipconfig /release and press Enter.
 Type ipconfig /renew and press Enter.
 Type ipconfig /flushdns and press Enter.
 -----------------------------------------------------------------------------------------
+@HypermediaDisabled
+-----------------------------------------------------------------------------------------
 sudo systemctl restart NetworkManager.service
 
 
@@ -33,6 +35,395 @@ start Brackets.exe %*
 
 -----------------------------------------------------------------------------------------
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
+-----------------------------------------------------------------------------------------
+ftp.server.ip=129.9.100.10
+ftp.server.port=21
+ftp.client.name=read
+ftp.client.password=readpdf
+ftp.client.name.canwrite=capital
+ftp.client.password.canwrite=capitalpass
+
+https://www.programcreek.com/java-api-examples/index.php?project_name=kbastani%2Fspring-boot-starter-amazon-s3#
+-----------------------------------------------------------------------------------------
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.http.client.ClientHttpResponse;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.web.client.DefaultResponseErrorHandler;
+import org.springframework.web.client.RestOperations;
+import org.springframework.web.client.RestTemplate;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.Proxy;
+import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+
+
+@SpringBootApplication
+public class RouteServiceApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(RouteServiceApplication.class, args);
+    }
+
+    @Bean
+    RestOperations restOperations() {
+        RestTemplate restTemplate = new RestTemplate(new TrustEverythingClientHttpRequestFactory());
+        restTemplate.setErrorHandler(new NoErrorsResponseErrorHandler());
+        return restTemplate;
+    }
+
+    private static final class NoErrorsResponseErrorHandler extends DefaultResponseErrorHandler {
+
+        @Override
+        public boolean hasError(ClientHttpResponse response) throws IOException {
+            return false;
+        }
+
+    }
+
+    private static final class TrustEverythingClientHttpRequestFactory extends SimpleClientHttpRequestFactory {
+
+        @Override
+        protected HttpURLConnection openConnection(URL url, Proxy proxy) throws IOException {
+            HttpURLConnection connection = super.openConnection(url, proxy);
+
+            if (connection instanceof HttpsURLConnection) {
+                HttpsURLConnection httpsConnection = (HttpsURLConnection) connection;
+
+                httpsConnection.setSSLSocketFactory(getSslContext(new TrustEverythingTrustManager()).getSocketFactory());
+                httpsConnection.setHostnameVerifier(new TrustEverythingHostNameVerifier());
+            }
+
+            return connection;
+        }
+
+        private static SSLContext getSslContext(TrustManager trustManager) {
+            try {
+                SSLContext sslContext = SSLContext.getInstance("SSL");
+                sslContext.init(null, new TrustManager[]{trustManager}, null);
+                return sslContext;
+            } catch (KeyManagementException | NoSuchAlgorithmException e) {
+                throw new RuntimeException(e);
+
+            }
+
+        }
+    }
+
+    private static final class TrustEverythingHostNameVerifier implements HostnameVerifier {
+
+        @Override
+        public boolean verify(String s, SSLSession sslSession) {
+            return true;
+        }
+
+    }
+
+    private static final class TrustEverythingTrustManager implements X509TrustManager {
+
+        @Override
+        public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+        }
+
+        @Override
+        public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+        }
+
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+            return new X509Certificate[0];
+        }
+
+    }
+
+}
+-----------------------------------------------------------------------------------------
+import java.util.UUID;
+
+/**
+ * Created by alex on 2017/10/27.
+ */
+public class NonceUtils {
+    public static String nonce() {
+        return UUID.randomUUID().toString().replace("-", "").toLowerCase();
+    }
+}
+-----------------------------------------------------------------------------------------
+import org.apache.commons.codec.binary.Base64;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import java.nio.ByteBuffer;
+import java.security.*;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ * Created by alex on 2017/10/22.
+ */
+public class DefaultCipherHelper implements CipherHelper {
+
+    private final String ALGORITHM = "RSA";
+    private final String CIPHER_ALGORITHM = "RSA/ECB/PKCS1Padding";
+    private final String SIGN_ALGORITHMS = "SHA1WithRSA";
+
+    private final String publicKey;
+    private final String privateKey;
+
+    public DefaultCipherHelper(String publicKey, String privateKey) {
+        this.publicKey = publicKey;
+        this.privateKey = privateKey;
+    }
+
+    public byte[] encrypt(byte[] plaintext) {
+        try {
+            // 使用默认RSA
+            RSAPublicKey publicKey = createPublicKey(this.publicKey);
+            Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
+
+            cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+
+            int bitLengthOfPuk = publicKey.getModulus().bitLength() / 8;
+            int blockSize = bitLengthOfPuk - 11;
+            if (plaintext.length > blockSize) {
+                List<byte[]> blocks = block(plaintext, blockSize);
+                ByteBuffer buffer = ByteBuffer.allocate(blocks.size() * bitLengthOfPuk);
+                for (byte[] block : blocks) {
+                    buffer.put(cipher.doFinal(block));
+                }
+                return buffer.array();
+            } else {
+                return cipher.doFinal(plaintext);
+            }
+
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("无此加密算法");
+        } catch (NoSuchPaddingException e) {
+            throw new RuntimeException("padding算法不存在");
+        } catch (InvalidKeyException e) {
+            throw new RuntimeException("加密公钥非法,请检查");
+        } catch (IllegalBlockSizeException e) {
+            throw new RuntimeException("明文长度非法");
+        } catch (BadPaddingException e) {
+            throw new RuntimeException("明文数据已损坏");
+        }
+    }
+
+    public byte[] decrypt(byte[] ciphertext) {
+        try {
+            // 使用默认RSA
+            RSAPrivateKey privateKey = createPrivateKey(this.privateKey);
+            Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
+
+            cipher.init(Cipher.DECRYPT_MODE, privateKey);
+
+            int blockSize = privateKey.getModulus().bitLength() / 8;
+            if (ciphertext.length > blockSize) {
+                List<byte[]> blocks = block(ciphertext, blockSize);
+                ByteBuffer buffer = ByteBuffer.allocate(blocks.size() * blockSize);
+                for (byte[] block : blocks) {
+                    buffer.put(cipher.doFinal(block));
+                }
+
+                buffer.flip();
+                byte[] result = new byte[buffer.limit()];
+                buffer.get(result);
+                return result;
+            } else {
+                return cipher.doFinal(ciphertext);
+            }
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("无此加密算法");
+        } catch (NoSuchPaddingException e) {
+            throw new RuntimeException("padding算法不存在");
+        } catch (InvalidKeyException e) {
+            throw new RuntimeException("加密公钥非法,请检查");
+        } catch (IllegalBlockSizeException e) {
+            throw new RuntimeException("明文长度非法");
+        } catch (BadPaddingException e) {
+            throw new RuntimeException("明文数据已损坏");
+        }
+    }
+
+
+    public byte[] sign(byte[] data, byte[] nonce) {
+        try {
+            PrivateKey privateKey = createPrivateKey(this.privateKey);
+            Signature signature = Signature.getInstance(SIGN_ALGORITHMS);
+            signature.initSign(privateKey);
+
+            byte[] withSalt = concat(data, nonce);
+
+            signature.update(withSalt);
+            return signature.sign();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("无此加密算法");
+        } catch (InvalidKeyException e) {
+            throw new RuntimeException("加密公钥非法,请检查");
+        } catch (SignatureException e) {
+            throw new RuntimeException("签名异常");
+        }
+    }
+
+    public boolean verify(byte[] data, byte[] nonce, byte[] signature) {
+        try {
+            PublicKey publicKey = createPublicKey(this.publicKey);
+            Signature instance = Signature.getInstance(SIGN_ALGORITHMS);
+            instance.initVerify(publicKey);
+            byte[] withSalt = concat(data, nonce);
+            instance.update(withSalt);
+            return instance.verify(signature);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("无此加密算法");
+        } catch (InvalidKeyException e) {
+            throw new RuntimeException("加密公钥非法,请检查");
+        } catch (SignatureException e) {
+            throw new RuntimeException("签名异常");
+        }
+    }
+
+
+    private RSAPublicKey createPublicKey(String puk) {
+        try {
+            byte[] buffer = Base64.decodeBase64(puk);
+            KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM);
+            KeySpec keySpec = new X509EncodedKeySpec(buffer);
+            return (RSAPublicKey) keyFactory.generatePublic(keySpec);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("无此算法");
+        } catch (InvalidKeySpecException e) {
+            throw new RuntimeException("公钥非法");
+        } catch (NullPointerException e) {
+            throw new RuntimeException("公钥数据为空");
+        }
+    }
+
+    private RSAPrivateKey createPrivateKey(String prk) {
+        try {
+            byte[] buffer = Base64.decodeBase64(prk);
+            KeySpec keySpec = new PKCS8EncodedKeySpec(buffer);
+            KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM);
+            return (RSAPrivateKey) keyFactory.generatePrivate(keySpec);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("无此算法");
+        } catch (InvalidKeySpecException e) {
+            throw new RuntimeException("私钥非法");
+        } catch (NullPointerException e) {
+            throw new RuntimeException("私钥数据为空");
+        }
+    }
+
+    private byte[] concat(byte[] b1, byte[] b2) {
+        byte[] withSalt = new byte[b1.length + b2.length];
+        System.arraycopy(b1, 0, withSalt, 0, b1.length);
+        System.arraycopy(b2, 0, withSalt, b1.length, b2.length);
+        return withSalt;
+    }
+
+    private List<byte[]> block(byte[] src, int blockSize) {
+        int group;
+        if (src.length % blockSize == 0) {
+            group = src.length / blockSize;
+        } else {
+            group = src.length / blockSize + 1;
+        }
+
+        List<byte[]> blocks = new ArrayList<byte[]>();
+        for (int i = 0; i < group; i++) {
+            int from = i * blockSize;
+            int to = Math.min(src.length, (i + 1) * blockSize);
+
+            byte[] block = Arrays.copyOfRange(src, from, to);
+
+            blocks.add(block);
+        }
+        return blocks;
+    }
+
+}
+-----------------------------------------------------------------------------------------
+/**
+ * Tiles configuration.
+ * 
+ * References: http://docs.spring.io/spring/docs/4.0.6.RELEASE/spring-framework-reference/html/view.html#view-tiles-integrate
+ * 
+ * @author Mark Meany
+ */
+@Configuration
+public class ConfigurationForTiles {
+
+    /**
+     * Initialise Tiles on application startup and identify the location of the tiles configuration file, tiles.xml.
+     * 
+     * @return tiles configurer
+     */
+    @Bean
+    public TilesConfigurer tilesConfigurer() {
+        final TilesConfigurer configurer = new TilesConfigurer();
+        configurer.setDefinitions(new String[] { "WEB-INF/tiles/tiles.xml" });
+        configurer.setCheckRefresh(true);
+        return configurer;
+    }
+
+    /**
+     * Introduce a Tiles view resolver, this is a convenience implementation that extends URLBasedViewResolver.
+     * 
+     * @return tiles view resolver
+     */
+    @Bean
+    public TilesViewResolver tilesViewResolver() {
+        final TilesViewResolver resolver = new TilesViewResolver();
+        resolver.setViewClass(TilesView.class);
+        return resolver;
+    }
+}
+-----------------------------------------------------------------------------------------
+spring.jpa.database-platform=org.hibernate.dialect.MySQL5Dialect
+
+################### DATASOURCE :  数据库 mysql 用于生产中 ##########################
+# 默认使用  Tomcat pooling，数据源可以 通过 spring.datasource 进一步设置
+spring.datasource.url=jdbc:mysql://localhost:3306/ztree?autoReconnect=true&useSSL=false
+spring.datasource.username=ztree
+spring.datasource.password=ztree
+#spring.datasource.driver-class-name=com.mysql.jdbc.Driver 可以不指定,spring boot 可以自动从 url 分析得到
+#
+spring.datasource.max-active= 20
+spring.datasource.max-idle= 1
+spring.datasource.max-wait= 1
+spring.datasource.min-idle=1
+#  min-evictable-idle-time-millis :配置一个连接在池中最小生存的时间，单位是毫秒
+spring.datasource.min-evictable-idle-time-millis= 300000
+# time-between-eviction-runs-millis : 配置间隔多久才进行一次检测需要关闭的空闲连接，单位是毫秒
+spring.datasource.time-between-eviction-runs-millis= 60000
+spring.datasource.test-on-borrow= false
+spring.datasource.test-on-return= false
+spring.datasource.test-while-idle= true
+#默认用的 tomcat jdbc poll,其中 validation-query=
+#mysql:  SELECT 1
+#oracle : select 1 from dual
+#MS Sql Server : SELECT 1
+spring.datasource.validation-query=SELECT 1
 -----------------------------------------------------------------------------------------
 
 import com.igormaznitsa.meta.annotation.Weight;

@@ -551,8 +551,6 @@ public class ProductDAO {
         this.price = price;
     }
 }
-
-
 --------------------------------------------------------------------------------------------------------
 	String fileName = "C:/Users/eo903e/contentModerator-master/ContentModeratorAPI/src/main/resources/objectionable_content.txt";
 		Path path = Paths.get(fileName);
@@ -5706,6 +5704,14 @@ public class Follows {
 
 https://www.programcreek.com/java-api-examples/index.php?project_name=kbastani%2Fspring-boot-graph-processing-example#
 --------------------------------------------------------------------------------------------------------
+    @Bean
+    public HttpMessageConverters customConverters() {
+        Collection<HttpMessageConverter<?>> messageConverters = new ArrayList<>();
+        JsonbHttpMessageConverter jsonbHttpMessageConverter = new JsonbHttpMessageConverter();
+        messageConverters.add(jsonbHttpMessageConverter);
+        return new HttpMessageConverters(true, messageConverters);
+    }
+--------------------------------------------------------------------------------------------------------
 import org.kbastani.twitter.FollowsRepository;
 import org.kbastani.twitter.UserRepository;
 import org.neo4j.ogm.session.SessionFactory;
@@ -7904,6 +7910,1016 @@ public class AbstractPrivateMethodsUnitTest {
     }
 
 }
+--------------------------------------------------------------------------------------------------------
+hystrix:
+  command:
+    default:
+      # Setting Hystrix timeout for the chain in 900ms (we have 3 more chained service calls).
+      execution.isolation.thread.timeoutInMilliseconds: 900
+      # This property sets the minimum number of requests in a rolling window that will trip the circuit.
+      circuitBreaker.requestVolumeThreshold: 5
+
+hystrix.command.default.execution.isolation.thread.timeoutInMilliseconds Maximum 5 seconds？
+No more than 5 seconds。
+For example：
+hystrix.command.default.execution.isolation.thread.timeoutInMilliseconds=10000
+but It's only 5 seconds;
+
+hystrix.command.default.execution.isolation.thread.timeoutInMilliseconds: 10000
+ribbon:
+  ConnectTimeout: 3000
+  ReadTimeout: 10000
+  
+hystrix:
+   metrics:
+     enabled: foo
+     polling-interval-ms: foo
+--------------------------------------------------------------------------------------------------------
+@KubernetesApplication(
+        livenessProbe = @Probe(httpActionPath = "/actuator/info"),
+        readinessProbe = @Probe(httpActionPath = "/actuator/health")
+)
+@EnableServiceMonitor(path = "/prometheus", interval = 20)
+@EnableJaegerAgent(operatorEnabled = true)
+
+ 
+
+ 
+
+ 
+
+# my global config
+global:
+  scrape_interval:     15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
+  evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
+  # scrape_timeout is set to the global default (10s).
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+# - "first_rules.yml"
+# - "second_rules.yml"
+
+# A scrape configuration containing exactly one endpoint to scrape:
+# Here it's Prometheus itself.
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: 'prometheus'
+    # metrics_path defaults to '/metrics'
+    # scheme defaults to 'http'.
+    static_configs:
+      - targets: ['127.0.0.1:9090']
+
+  - job_name: 'spring-actuator'
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['HOST_IP:8080']
+ 
+
+ 
+
+ 
+
+<!-- Kubernetes library dependencies -->
+<dependency>
+    <groupId>io.dekorate</groupId>
+    <artifactId>kubernetes-annotations</artifactId>
+    <version>${dekorate.version}</version>
+</dependency>
+<dependency>
+    <groupId>io.dekorate</groupId>
+    <artifactId>dekorate-spring-boot</artifactId>
+    <version>${dekorate.version}</version>
+</dependency>
+<dependency>
+    <groupId>io.dekorate</groupId>
+    <artifactId>kubernetes-spring-starter</artifactId>
+    <version>${dekorate.version}</version>
+</dependency>
+<dependency>
+    <groupId>io.dekorate</groupId>
+    <artifactId>dekorate-core</artifactId>
+    <version>${dekorate.version}</version>
+</dependency>
+<dependency>
+    <groupId>io.dekorate</groupId>
+    <artifactId>option-annotations</artifactId>
+    <version>${dekorate.version}</version>
+</dependency>
+<dependency>
+    <groupId>io.dekorate</groupId>
+    <artifactId>core-junit</artifactId>
+    <version>${dekorate.version}</version>
+</dependency>
+<dependency>
+    <groupId>io.dekorate</groupId>
+    <artifactId>kubernetes-junit</artifactId>
+    <version>${dekorate.version}</version>
+</dependency>
+<dependency>
+    <groupId>io.dekorate</groupId>
+    <artifactId>prometheus-annotations</artifactId>
+    <version>${dekorate.version}</version>
+</dependency>
+<dependency>
+    <groupId>io.dekorate</groupId>
+    <artifactId>jaeger-annotations</artifactId>
+    <version>${dekorate.version}</version>
+</dependency>
+<dependency>
+    <groupId>io.micrometer</groupId>
+    <artifactId>micrometer-registry-prometheus</artifactId>
+    <version>1.0.9</version>
+</dependency>
+<dependency>
+    <groupId>io.micrometer</groupId>
+    <artifactId>micrometer-registry-prometheus</artifactId>
+    <version>1.0.9</version>
+</dependency>
+
+<!-- Testing -->
+<dependency>
+    <groupId>io.dekorate</groupId>
+    <artifactId>kubernetes-junit-starter</artifactId>
+    <version>${dekorate.version}</version>
+    <scope>test</scope>
+</dependency>
+--------------------------------------------------------------------------------------------------------
+    @Bean
+    public Tracer tracer() {
+        return io.jaegertracing.Configuration.fromEnv(applicationName)
+                .withSampler(
+                        io.jaegertracing.Configuration.SamplerConfiguration.fromEnv()
+                                .withType(ConstSampler.TYPE)
+                                .withParam(1))
+                .withReporter(
+                        io.jaegertracing.Configuration.ReporterConfiguration.fromEnv()
+                                .withLogSpans(true)
+                                .withFlushInterval(1000)
+                                .withMaxQueueSize(10000)
+                                .withSender(
+                                        new KafkaSenderConfiguration(bootstrapServers, tracingTopic)
+                                ))
+                .getTracer();
+    }
+
+    @PostConstruct
+    public void registerToGlobalTracer() {
+        if (!GlobalTracer.isRegistered()) {
+            GlobalTracer.registerIfAbsent(tracer());
+        }
+    }
+
+    @PostConstruct
+    public void setClientSupplierForStreams() {
+        streamsBuilderFactory.setClientSupplier(new TracingKafkaClientSupplier(tracer()));
+    }
+--------------------------------------------------------------------------------------------------------
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+/**
+ * A filter that records some metrics:
+ * - Counting http requests for different methods and status
+ * - Measuring response rates and times for different methods
+ *
+ * Created by guido on 08.06.16.
+ * @since 0.60.0
+ */
+@Component
+public class HttpMetricsFilter implements Filter {
+
+    private final MetricRegistry metricRegistry;
+
+    @Autowired
+    public HttpMetricsFilter(final MetricRegistry metricRegistry) {
+        this.metricRegistry = metricRegistry;
+    }
+
+    @Override
+    public void init(final FilterConfig filterConfig) throws ServletException {
+    }
+
+    @Override
+    public void doFilter(final ServletRequest request, final ServletResponse response, FilterChain chain) throws IOException, ServletException {
+        final String method = ((HttpServletRequest) request).getMethod().toLowerCase();
+        final Timer.Context context = metricRegistry.timer("timer.http." + method).time();
+        try {
+            chain.doFilter(request, response);
+        } finally {
+            if (response != null) {
+                final int status = ((HttpServletResponse) response).getStatus();
+                metricRegistry.counter("counter.http." + method + "." + status).inc();
+                context.stop();
+            }
+        }
+    }
+
+    @Override
+    public void destroy() {
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+@ConditionalOnProperty(
+        prefix = "edison.metrics.graphite",
+        name = {"host", "port", "prefix"})
+--------------------------------------------------------------------------------------------------------https://www.programcreek.com/java-api-examples/index.php?project_name=snicoll-scratches%2Fspring-boot-daemon#
+--------------------------------------------------------------------------------------------------------
+import io.jmnarloch.spring.boot.rxjava.async.ObservableDeferredResult;
+import org.springframework.core.MethodParameter;
+import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.context.request.async.WebAsyncUtils;
+import org.springframework.web.method.support.AsyncHandlerMethodReturnValueHandler;
+import org.springframework.web.method.support.ModelAndViewContainer;
+import io.reactivex.Observable;
+
+/**
+ * A specialized {@link AsyncHandlerMethodReturnValueHandler} that handles {@link Observable} return types.
+ *
+ * @author Jakub Narloch
+ * @see ObservableDeferredResult
+ */
+public class ObservableReturnValueHandler implements AsyncHandlerMethodReturnValueHandler {
+
+    @Override
+    public boolean isAsyncReturnValue(Object returnValue, MethodParameter returnType) {
+        return returnValue != null && supportsReturnType(returnType);
+    }
+
+    @Override
+    public boolean supportsReturnType(MethodParameter returnType) {
+        return Observable.class.isAssignableFrom(returnType.getParameterType());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void handleReturnValue(Object returnValue, MethodParameter returnType, ModelAndViewContainer mavContainer, NativeWebRequest webRequest) throws Exception {
+
+        if (returnValue == null) {
+            mavContainer.setRequestHandled(true);
+            return;
+        }
+
+        final Observable<?> observable = Observable.class.cast(returnValue);
+        WebAsyncUtils.getAsyncManager(webRequest)
+                .startDeferredResultProcessing(new ObservableDeferredResult(observable), mavContainer);
+    }
+}
+
+import io.reactivex.Observable;
+import io.reactivex.observers.DisposableObserver;
+import org.springframework.web.context.request.async.DeferredResult;
+
+/**
+ * A subscriber that sets the single value produced by the {@link Observable} on the {@link DeferredResult}.
+ *
+ * @author Jakub Narloch
+ * @author Robert Danci
+ * @see DeferredResult
+ */
+class DeferredResultObserver<T> extends DisposableObserver<T> implements Runnable {
+
+    private final DeferredResult<T> deferredResult;
+
+    public DeferredResultObserver(Observable<T> observable, DeferredResult<T> deferredResult) {
+        this.deferredResult = deferredResult;
+        this.deferredResult.onTimeout(this);
+        this.deferredResult.onCompletion(this);
+        observable.subscribe(this);
+    }
+
+    @Override
+    public void onNext(T value) {
+        deferredResult.setResult(value);
+    }
+
+    @Override
+    public void onError(Throwable e) {
+        deferredResult.setErrorResult(e);
+    }
+
+    @Override
+    public void onComplete() {
+    }
+
+    @Override
+    public void run() {
+        this.dispose();
+    }
+}
+
+import org.springframework.util.Assert;
+import org.springframework.web.context.request.async.DeferredResult;
+import io.reactivex.Single;
+
+/**
+ * A specialized {@link DeferredResult} that handles {@link Single} return type.
+ *
+ * @author Jakub Narloch
+ * @see DeferredResult
+ */
+public class SingleDeferredResult<T> extends DeferredResult<T> {
+
+    private static final Object EMPTY_RESULT = new Object();
+
+    private final DeferredResultObserver<T> observer;
+
+    public SingleDeferredResult(Single<T> single) {
+        this(null, EMPTY_RESULT, single);
+    }
+
+    public SingleDeferredResult(long timeout, Single<T> single) {
+        this(timeout, EMPTY_RESULT, single);
+    }
+
+    public SingleDeferredResult(Long timeout, Object timeoutResult, Single<T> single) {
+        super(timeout, timeoutResult);
+        Assert.notNull(single, "single can not be null");
+
+        observer = new DeferredResultObserver<T>(single.toObservable(), this);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class GetHashMac {
+    public static final String MAC_REGEX = "([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}";
+    public static final String MAC_REGEX_ZERO = "([0]{2}[:-]){5}[0]{2}";
+    public static final String HASHED_MAC_REGEX = "[0-9a-f]{64}";
+
+    private GetHashMac() {
+        super();
+    }
+
+    public static boolean isValidHashMacFormat(String hashMac) {
+        if (hashMac == null || hashMac.isEmpty()) {
+            return false;
+        }
+
+        final Pattern hashedMacPattern = Pattern.compile(HASHED_MAC_REGEX);
+        final Matcher matcher = hashedMacPattern.matcher(hashMac);
+        return matcher.matches();
+    }
+
+    public static String getHashMac() {
+        final String rawMac = getRawMac();
+        if (rawMac == null || rawMac.isEmpty()) {
+            return null;
+        }
+
+        final Pattern pattern = Pattern.compile(MAC_REGEX);
+        final Pattern patternZero = Pattern.compile(MAC_REGEX_ZERO);
+        final Matcher matcher = pattern.matcher(rawMac);
+        String mac = "";
+        while (matcher.find()) {
+            mac = matcher.group(0);
+            if (!patternZero.matcher(mac).matches()) {
+                break;
+            }
+        }
+
+        return hash(mac);
+    }
+
+    private static String getRawMac() {
+        final StringBuilder ret = new StringBuilder();
+
+        final String os = System.getProperty("os.name");
+        String[] command = {"ifconfig", "-a"};
+        if (os != null && !os.isEmpty() && os.toLowerCase().startsWith("win")) {
+            command = new String[]{"getmac"};
+        }
+
+        try {
+            final ProcessBuilder builder = new ProcessBuilder(command);
+            final Process process = builder.start();
+            try (final InputStream inputStream = process.getInputStream();
+                 final InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+                 final BufferedReader br = new BufferedReader(inputStreamReader)) {
+                String tmp;
+                while ((tmp = br.readLine()) != null) {
+                    ret.append(tmp);
+                }
+
+            }
+        } catch (IOException e) {
+            return null;
+        }
+
+        return ret.toString();
+    }
+
+    private static String hash(String mac) {
+        if (mac == null || mac.isEmpty()) {
+            return null;
+        }
+
+        final String ret;
+        try {
+            final MessageDigest md = MessageDigest.getInstance("SHA-256");
+            final byte[] bytes = mac.getBytes("UTF-8");
+            md.update(bytes);
+            final byte[] bytesAfterDigest = md.digest();
+            final StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < bytesAfterDigest.length; i++) {
+                sb.append(Integer.toString((bytesAfterDigest[i] & 0xff) + 0x100, 16).substring(1));
+            }
+
+            ret = sb.toString();
+        } catch (NoSuchAlgorithmException | UnsupportedEncodingException ex) {
+            return null;
+        }
+
+        return ret;
+    }
+}
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.env.EnvironmentPostProcessor;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.util.ClassUtils;
+
+public class KeyVaultEnvironmentPostProcessor implements EnvironmentPostProcessor {
+
+    @Override
+    public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
+
+        if (isKeyVaultEnabled(environment)) {
+            final KeyVaultEnvironmentPostProcessorHelper helper =
+                    new KeyVaultEnvironmentPostProcessorHelper(environment);
+            helper.addKeyVaultPropertySource();
+        }
+    }
+
+    private boolean isKeyVaultEnabled(ConfigurableEnvironment environment){
+        if (environment.getProperty(Constants.AZURE_CLIENTID) == null) {
+            // User doesn't want to enable Key Vault property initializer.
+            return false;
+        }
+        return environment.getProperty(Constants.AZURE_KEYVAULT_ENABLED, Boolean.class, true)
+                && isKeyVaultClientAvailable();
+    }
+
+    private boolean isKeyVaultClientAvailable(){
+        return ClassUtils.isPresent("com.microsoft.azure.keyvault.KeyVaultClient",
+                KeyVaultEnvironmentPostProcessor.class.getClassLoader());
+    }
+}
+
+
+import javax.servlet.MultipartConfigElement;
+
+import org.springframework.boot.web.servlet.MultipartConfigFactory;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class MultipartConfig {
+
+    @Bean
+    public MultipartConfigElement multipartConfigElement(){
+        MultipartConfigFactory factory = new MultipartConfigFactory();
+        factory.setMaxFileSize("10MB");
+        factory.setMaxRequestSize("10MB");
+        return factory.createMultipartConfig();
+    }
+
+}
+
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.HandlerExceptionResolver;
+import org.springframework.web.servlet.ModelAndView;
+
+/**
+ * 全局异常处理配置
+ * @author ZSX
+ */
+@Configuration
+public class MyExceptionHandler implements HandlerExceptionResolver {
+	
+	private final static Log logger = LogFactory.getLog(MyExceptionHandler.class);
+
+	/**
+	 * 重写解析异常的处理
+	 */
+	@Override
+	public ModelAndView resolveException(HttpServletRequest request, HttpServletResponse response, Object handler,
+			Exception ex) {
+		Map<String, Object> model = new HashMap<String, Object>();  
+        model.put("ex", ex);  
+        
+        System.out.println(ex);
+        
+        response.setStatus(601); // 统一做跳转到登录页的处理
+        // 根据不同错误转向不同页面  
+        if(ex instanceof NumberFormatException) { 
+        	logger.error("监听到了NumberFormat异常");
+            return new ModelAndView("/login", model);  
+        }else if(ex instanceof NullPointerException) {  
+        	logger.error("监听到了空指针异常");
+            return new ModelAndView("/login", model);  
+        } else {  
+        	logger.error("监听到了 other");
+            return new ModelAndView("/login", model);  
+        }
+	}
+}
+
+import java.util.Map;
+
+import org.springframework.http.server.ServerHttpRequest;
+import org.springframework.http.server.ServerHttpResponse;
+import org.springframework.web.socket.WebSocketHandler;
+import org.springframework.web.socket.server.HandshakeInterceptor;
+
+public class WebSocketHandshakeInterceptor implements HandshakeInterceptor {
+	@Override
+	public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse shr1, WebSocketHandler wsh,
+			Map<String, Object> attributes) throws Exception {
+		// 此处可以做一些权限认证的事情或者其他
+		return true;
+	}
+
+	@Override
+	public void afterHandshake(ServerHttpRequest shr, ServerHttpResponse shr1, WebSocketHandler wsh, Exception excptn) {
+
+	}
+}
+
+
+    private Specification<User> whereSpec(final User sample){
+        return (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (sample.getId()!=null){
+                predicates.add(cb.equal(root.<Long>get("id"), sample.getId()));
+            }
+
+            if (StringUtils.hasLength(sample.getUsername())){
+                predicates.add(cb.equal(root.<String>get("username"),sample.getUsername()));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[predicates.size()]));
+        };
+    }
+	
+	import com.fasterxml.jackson.annotation.JsonInclude;
+
+/**
+ * Created by kaenry on 2016/9/20.
+ * RestResult
+ */
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class RestResult<T> {
+
+    private boolean result;
+
+    private String message;
+
+    private T data;
+
+    private RestResult() {}
+
+    public static <T> RestResult<T> newInstance() {
+        return new RestResult<>();
+    }
+
+    public boolean isResult() {
+        return result;
+    }
+
+    public void setResult(boolean result) {
+        this.result = result;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public T getData() {
+        return data;
+    }
+
+    public void setData(T data) {
+        this.data = data;
+    }
+
+    @Override
+    public String toString() {
+        return "RestResult{" +
+                "result=" + result +
+                ", message='" + message + '\'' +
+                ", data=" + data +
+                '}';
+    }
+}
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.mongodb.MongoDbFactory;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.SimpleMongoDbFactory;
+import org.springframework.util.StringUtils;
+
+import com.mongodb.MongoClient;
+import com.mongodb.MongoClientURI;
+
+/**
+ * mongodb 配置类
+ * 
+ * @author leftso
+ *
+ */
+@Configuration
+public class MongoDBConfig {
+	@Autowired
+	MongoProperty mongoProperties;
+
+	/**
+	 * 注入mongodb的工厂类
+	 * 
+	 * @return
+	 */
+	@Bean
+	public MongoDbFactory mongoDbFactory() {
+		// uri格式mongodb://[username:password@]host1[:port1][,host2[:port2],...[,hostN[:portN]]][/[database][?options]]
+		String mongoURI = "mongodb://" + mongoProperties.getHost();
+		if (!StringUtils.isEmpty(mongoProperties.getUser())) {
+			mongoURI = "mongodb://" + mongoProperties.getUser() + ":" + mongoProperties.getPwd() + "@"
+					+ mongoProperties.getHost();
+		}
+		// 为了方便实现mongodb多数据库和数据库的负债均衡这里使用url方式创建工厂
+		MongoClientURI mongoClientURI = new MongoClientURI(mongoURI);
+		MongoClient mongoClient = new MongoClient(mongoClientURI);
+		MongoDbFactory mongoDbFactory = new SimpleMongoDbFactory(mongoClient, mongoProperties.getName());
+		// 注意:以下构造函数已经弃用:
+		// SimpleMongoDbFactory(com.mongodb.Mongo mongo, String databaseName);
+		// 弃用版本1.7
+		// SimpleMongoDbFactory(com.mongodb.Mongo mongo, String databaseName,
+		// UserCredentials credentials);弃用版本1.7
+		// SimpleMongoDbFactory(com.mongodb.Mongo mongo, String databaseName,
+		// UserCredentials credentials, String
+		// authenticationDatabaseName);弃用版本1.7
+		// SimpleMongoDbFactory(com.mongodb.MongoURI uri);弃用版本1.7
+		return mongoDbFactory;
+	}
+
+	/**
+	 * 获取操作实例
+	 * 
+	 * @param mongoDbFactory
+	 * @return
+	 */
+	@Bean
+	public MongoTemplate mongoTemplate(MongoDbFactory mongoDbFactory) {
+		return new MongoTemplate(mongoDbFactory);
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
+import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
+import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
+import org.springframework.security.oauth2.provider.token.DefaultTokenServices;
+import org.springframework.security.oauth2.provider.token.ResourceServerTokenServices;
+import org.springframework.security.oauth2.provider.token.TokenStore;
+import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
+import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
+import org.springframework.security.web.util.matcher.RequestMatcher;
+
+/**
+ * 资源服务端
+ * 
+ * @author leftso
+ *
+ */
+@Configuration
+@EnableResourceServer
+public class ResourceServerConfiguration extends ResourceServerConfigurerAdapter {
+
+	@Value("${resource.id:spring-boot-application}")
+	private String resourceId;
+
+	@Override
+	public void configure(ResourceServerSecurityConfigurer resources) {
+		// @formatter:off
+		resources.resourceId(resourceId);
+		resources.tokenServices(defaultTokenServices());
+		// @formatter:on
+	}
+
+	@Override
+	public void configure(HttpSecurity http) throws Exception {
+		// @formatter:off
+		http.requestMatcher(new OAuthRequestedMatcher()).authorizeRequests().antMatchers(HttpMethod.OPTIONS).permitAll()
+				.anyRequest().authenticated();
+		// @formatter:on
+	}
+
+	private static class OAuthRequestedMatcher implements RequestMatcher {
+		public boolean matches(HttpServletRequest request) {
+			String auth = request.getHeader("Authorization");
+			// Determine if the client request contained an OAuth Authorization
+			boolean haveOauth2Token = (auth != null) && auth.startsWith("Bearer");
+			boolean haveAccessToken = request.getParameter("access_token") != null;
+			return haveOauth2Token || haveAccessToken;
+		}
+	}
+
+	// ===================================================以下代码与认证服务器一致=========================================
+	/**
+	 * token存储,这里使用jwt方式存储
+	 * 
+	 * @param accessTokenConverter
+	 * @return
+	 */
+	@Bean
+	public TokenStore tokenStore() {
+		TokenStore tokenStore = new JwtTokenStore(accessTokenConverter());
+		return tokenStore;
+	}
+
+	/**
+	 * Token转换器必须与认证服务一致
+	 * 
+	 * @return
+	 */
+	@Bean
+	public JwtAccessTokenConverter accessTokenConverter() {
+		JwtAccessTokenConverter accessTokenConverter = new JwtAccessTokenConverter() {
+//			/***
+//			 * 重写增强token方法,用于自定义一些token返回的信息
+//			 */
+//			@Override
+//			public OAuth2AccessToken enhance(OAuth2AccessToken accessToken, OAuth2Authentication authentication) {
+//				String userName = authentication.getUserAuthentication().getName();
+//				User user = (User) authentication.getUserAuthentication().getPrincipal();// 与登录时候放进去的UserDetail实现类一直查看link{SecurityConfiguration}
+//				/** 自定义一些token属性 ***/
+//				final Map<String, Object> additionalInformation = new HashMap<>();
+//				additionalInformation.put("userName", userName);
+//				additionalInformation.put("roles", user.getAuthorities());
+//				((DefaultOAuth2AccessToken) accessToken).setAdditionalInformation(additionalInformation);
+//				OAuth2AccessToken enhancedToken = super.enhance(accessToken, authentication);
+//				return enhancedToken;
+//			}
+
+		};
+		accessTokenConverter.setSigningKey("123");// 测试用,授权服务使用相同的字符达到一个对称加密的效果,生产时候使用RSA非对称加密方式
+		return accessTokenConverter;
+	}
+
+	/**
+	 * 创建一个默认的资源服务token
+	 * 
+	 * @return
+	 */
+	@Bean
+	public ResourceServerTokenServices defaultTokenServices() {
+		final DefaultTokenServices defaultTokenServices = new DefaultTokenServices();
+		defaultTokenServices.setTokenEnhancer(accessTokenConverter());
+		defaultTokenServices.setTokenStore(tokenStore());
+		return defaultTokenServices;
+	}
+	// ===================================================以上代码与认证服务器一致=========================================
+}
+--------------------------------------------------------------------------------------------------------
+server.port=18080
+
+spring.datasource.url=jdbc:sqlite:demo.db
+spring.datasource.driverClassName=org.sqlite.JDBC
+#spring.jpa.database=SQLite
+
+spring.jpa.database-platform=SQLite
+spring.jpa.show-sql=true
+spring.jpa.generate-ddl=true
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.hibernate.naming-strategy=org.hibernate.cfg.ImprovedNamingStrategy
+spring.jpa.properties.hibernate.dialect=com.enigmabridge.hibernate.dialect.SQLiteDialect
+--------------------------------------------------------------------------------------------------------
+import javax.jms.ConnectionFactory;
+import javax.jms.JMSException;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.boot.actuate.health.Status;
+import org.springframework.stereotype.Component;
+
+@Component
+public class ActiveMQHealth implements HealthIndicator {
+
+	private ConnectionFactory factory;
+
+	@Autowired
+	public ActiveMQHealth(ConnectionFactory factory) {
+		this.factory = factory;
+	}
+
+	@Override
+	public Health health() {
+		try {
+			factory.createConnection();
+		} catch (JMSException e) {
+			return new Health.Builder()
+					.down(e)
+					.build();
+		}
+		return new Health.Builder()
+				.status(Status.UP + ": Successfully connected to the broker")
+				.build();
+	}
+}
+--------------------------------------------------------------------------------------------------------
+case 22 :
+				return "ssh";
+			case 23 :
+				return "telnet";
+			case 25 :
+				return "smtp";
+			case 80 :
+				return "http-get /";
+			case 110 :
+				return "pop3";
+			case 119 :
+				return "nntp";
+			case 143 :
+				return "imap";
+			case 194 :
+				return "irc";
+			case 220 :
+				return "imap";
+			case 443 :
+				return "https-get /";
+			case 445 :
+				return "smb";
+			case 2401 :
+				return "cvs";
+			case 3050 :
+				return "firebird";
+			case 3306 :
+				return "mysql";
+			case 3690 :
+				return "svn";
+			case 5222 :
+				return "xmpp";
+			case 5269 :
+				return "xmpp";
+			case 5432 :
+				return "postgres";
+			case 8010 :
+				return "xmpp";
+			case 8080 :
+				return "http-get /";
+			default :
+				//return "http-get /";
+				return null;
+--------------------------------------------------------------------------------------------------------
+
+import javax.servlet.annotation.WebInitParam;
+import javax.servlet.annotation.WebServlet;
+
+import com.alibaba.druid.support.http.StatViewServlet;
+
+/**
+ * Druid的Servlet
+ * @author Raye
+ * @since 2016年10月7日14:13:39
+ */
+@SuppressWarnings("serial")
+@WebServlet(urlPatterns = "/druid/*", 
+initParams={
+        @WebInitParam(name="allow",value="127.0.0.1,192.168.1.126"),// IP白名单 (没有配置或者为空，则允许所有访问)
+        @WebInitParam(name="loginUsername",value="Raye"),// 用户名
+        @WebInitParam(name="loginPassword",value="123456"),// 密码
+        @WebInitParam(name="resetEnable",value="false")// 禁用HTML页面上的“Reset All”功能
+})
+public class DruidStatViewServlet extends StatViewServlet {
+
+
+}
+--------------------------------------------------------------------------------------------------------
+cd file-source
+
+curl -X POST -H "Content-Type: application/json" --data @file-source.json http://localhost:8083/connectors
+
+kafka-console-consumer --bootstrap-server localhost:9092 --topic first-topic --from-beginning
+
+curl http://localhost:8083/connectors
+--------------------------------------------------------------------------------------------------------
+adb -s 7f1c864e shell
+-d - Direct an adb command to the only attached USB device. Returns an error when more than one USB device is attached.
+
+-e - Direct an adb command to the only running emulator. Returns an error when more than one emulator is running.
+
+adb kill-server
+adb devices
+
+adb devices | while read line
+do
+if [ ! "$line" = "" ] && [ `echo $line | awk '{print $2}'` = "device" ]
+then
+    device=`echo $line | awk '{print $1}'`
+    echo "$device $@ ..."
+    adb -s $device $@
+fi
+--------------------------------------------------------------------------------------------------------
+buildscript {
+    ext {
+        springBootVersion = '2.0.4.RELEASE'
+    }
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+
+group = 'com.github.burkaa01'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '1.8'
+
+repositories {
+    mavenCentral()
+    maven {
+        url "http://packages.confluent.io/maven/"
+    }
+}
+
+dependencies {
+    // spring
+    implementation 'org.springframework.boot:spring-boot-starter'
+
+    // kafka
+    implementation 'org.springframework.kafka:spring-kafka'
+    implementation "org.apache.kafka:kafka-clients:2.1.0"
+    implementation "org.apache.kafka:kafka-streams:2.1.0"
+    implementation 'io.opentracing.contrib:opentracing-kafka-client:0.0.16'
+    implementation 'io.opentracing.contrib:opentracing-kafka-streams:0.0.16'
+    implementation 'io.opentracing.contrib:opentracing-kafka-spring:0.0.16'
+
+    // jaeger
+    implementation 'io.jaegertracing:jaeger-client:0.33.1'
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.LinkedList;
+import java.util.List;
+
+public class Exceptions {
+    private Exceptions() {
+    }
+
+    /**
+     * Throws the argument, return-type is RuntimeException so the caller can use a throw statement break out of the method
+     */
+    public static RuntimeException sneakyThrow(Throwable t) {
+        return Exceptions.<RuntimeException>doThrow(t);
+    }
+
+    private static <T extends Throwable> T doThrow(Throwable ex) throws T {
+        throw (T) ex;
+    }
+}
+
 --------------------------------------------------------------------------------------------------------
 public class EmployeeDaoParameterResolver implements ParameterResolver {
  
@@ -26154,6 +27170,313 @@ public class CassandraHealthIndicator extends AbstractHealthIndicator {
             builder.down(e);
         }
     }
+}
+--------------------------------------------------------------------------------------------------------
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
+
+/**
+ * To be independent from Springs annotation this annotation was introduced
+ * which is a replacement for the {@link Component} annotation.
+ * 
+ * In future you may introduce different configuration options.
+ * 
+ * @author Marc Giffing
+ *
+ */
+@Configuration
+@Target({ ElementType.TYPE })
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Inherited
+@Order(ApplicationInitExtension.DEFAULT_PRECEDENCE)
+public @interface ApplicationInitExtension {
+
+	int HIGHEST_PRECEDENCE = Integer.MIN_VALUE;
+	
+	int DEFAULT_PRECEDENCE = Integer.MAX_VALUE / 2;
+
+	int LOWEST_PRECEDENCE = Integer.MAX_VALUE;
+
+	String value() default "";
+}
+--------------------------------------------------------------------------------------------------------
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+import org.springframework.context.annotation.Conditional;
+
+/**
+ * Conditional annotation to pre-check if an extension should be picked for autoconfiguration. 
+ * 
+ * You can define the major Wicket version on which the extension
+ * should or should not be executed.
+ * 
+ * @author Marc Giffing
+ */
+@Target({ ElementType.TYPE, ElementType.METHOD })
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Conditional(WicketSettingsCondition.class)
+public @interface ConditionalOnWicket {
+	
+	/**
+	 * @return The major java version to check with the current value 
+	 */
+	int value();
+	
+	/**
+	 * @return Defines how the given major version should be checked with the current version
+	 */
+	Range range() default Range.EQUALS_OR_HIGHER;
+
+	
+
+	
+	enum Range {
+		/**
+		 * The Wicket major version equals the 
+		 */
+		EQUALS,
+		/**
+		 * The Wicket major version equals or is newer
+		 */
+		EQUALS_OR_HIGHER,
+		
+		/**
+		 * The Wicket major version equals or is lower
+		 */
+		EQUALS_OR_LOWER,
+
+	}
+}
+
+
+import java.util.Map;
+
+import org.apache.wicket.settings.FrameworkSettings;
+import org.springframework.boot.autoconfigure.condition.ConditionOutcome;
+import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
+import org.springframework.context.annotation.ConditionContext;
+import org.springframework.core.type.AnnotatedTypeMetadata;
+
+import com.giffing.wicket.spring.boot.context.condition.ConditionalOnWicket.Range;
+
+/**
+ * Retrieves the current major Wicket Version from the classpath and matches it against
+ * the given conditional value in the {@link ConditionalOnWicket} annotation.
+ * 
+ * @author Marc Giffing
+ *
+ */
+public class WicketSettingsCondition extends SpringBootCondition {
+
+	@Override
+	public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata metadata) {
+		String implVersion = null;
+		String wicketVersion = retrieveWicketVersion(implVersion);
+		
+		Map<String, Object> attributes = metadata
+				.getAnnotationAttributes(ConditionalOnWicket.class.getName());
+		Range range = (Range) attributes.get("range");
+		int expectedVersion = (int) attributes.get("value");
+		String[] splittedWicketVersion = wicketVersion.split("\\.");
+		int majorWicketVersion = Integer.valueOf(splittedWicketVersion[0]);
+		return getMatchOutcome(range, majorWicketVersion, expectedVersion);
+	}
+
+	protected ConditionOutcome getMatchOutcome(Range range, int runningVersion,
+			int expectedVersion) {
+		boolean match = matches(range, expectedVersion, runningVersion);
+		return new ConditionOutcome(match, getMessage(match, range, runningVersion, expectedVersion));
+	}
+
+	private boolean matches(Range range, int expectedVersion, int runningVersion) {
+		switch(range){
+		case EQUALS:
+			return runningVersion == expectedVersion;
+		case EQUALS_OR_LOWER:
+			return runningVersion <= expectedVersion;
+		case EQUALS_OR_HIGHER:
+			return runningVersion >= expectedVersion;
+		default:
+			return false;
+		
+		}
+	}
+
+	private String getMessage(boolean matches, Range range, int runningVersion,
+			int expectedVersion) {
+		if(matches){
+			return "Wicket version matches current: " + runningVersion + " " + range + " expected: " + expectedVersion;
+		}else {
+			return "Wicket version does not match current: " + runningVersion + " " + range + " expected: " +  expectedVersion;
+		}
+	}
+	
+	private String retrieveWicketVersion(String implVersion) {
+		
+		Package pkg = FrameworkSettings.class.getPackage();
+		if (pkg != null)
+		{
+			implVersion = pkg.getImplementationVersion();
+		}
+		String wicketVersion = isEmpty(implVersion) ? "0" : implVersion;
+		return wicketVersion;
+	}
+	
+	private boolean isEmpty(String stringToCheck){
+		if(stringToCheck == null || stringToCheck.length() == 0){
+			return true;
+		}
+		return false;
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Set;
+
+import javax.annotation.PostConstruct;
+
+import org.apache.wicket.Page;
+import org.apache.wicket.markup.html.WebPage;
+import org.springframework.beans.factory.BeanClassLoaderAware;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.core.type.filter.AnnotationTypeFilter;
+import org.springframework.util.ClassUtils;
+import org.springframework.util.StringUtils;
+
+import com.giffing.wicket.spring.boot.context.scan.WicketAccessDeniedPage;
+import com.giffing.wicket.spring.boot.context.scan.WicketExpiredPage;
+import com.giffing.wicket.spring.boot.context.scan.WicketHomePage;
+import com.giffing.wicket.spring.boot.context.scan.WicketInternalErrorPage;
+import com.giffing.wicket.spring.boot.context.scan.WicketSignInPage;
+import com.giffing.wicket.spring.boot.starter.app.classscanner.candidates.WicketClassCandidate;
+import com.giffing.wicket.spring.boot.starter.app.classscanner.candidates.WicketClassCandidatesHolder;
+
+/**
+ * The candidate class scanner is used to find class with special annotations.
+ * 
+ * @author Marc Giffing
+ *
+ */
+@Configuration
+public class ClassCandidateScanner implements BeanClassLoaderAware {
+	
+	@Autowired
+	private Environment environment;
+
+	@Autowired
+	private ResourceLoader resourceLoader;
+
+	@Autowired
+	private BeanFactory beanFactory;
+	
+	private ClassLoader classLoader;
+
+	@Override
+	public void setBeanClassLoader(ClassLoader classLoader) {
+		this.classLoader = classLoader;
+	}
+	
+	@Bean
+	public WicketClassCandidatesHolder pageCandidates() {
+		return new WicketClassCandidatesHolder();
+	}
+	
+	@PostConstruct
+	public void postConstruct() {
+		ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(
+				false);
+		scanner.setEnvironment(this.environment);
+		scanner.setResourceLoader(this.resourceLoader);
+		scanner.addIncludeFilter(new AnnotationTypeFilter(WicketHomePage.class));
+		scanner.addIncludeFilter(new AnnotationTypeFilter(WicketSignInPage.class));
+	    scanner.addIncludeFilter(new AnnotationTypeFilter(WicketAccessDeniedPage.class));
+	    scanner.addIncludeFilter(new AnnotationTypeFilter(WicketExpiredPage.class));
+	    scanner.addIncludeFilter(new AnnotationTypeFilter(WicketInternalErrorPage.class));
+	    for (String basePackage : getMappingBasePackages(beanFactory)) {
+			if (StringUtils.hasText(basePackage)) {
+				pageCandidates().getBasePackages().add(basePackage);
+				Set<BeanDefinition> beanDefinitions = scanner.findCandidateComponents(basePackage);
+				for (BeanDefinition beanDefinition : beanDefinitions) {
+					Class<?> beanClass;
+					try {
+						beanClass = ClassUtils.forName(beanDefinition.getBeanClassName(), classLoader);
+					} catch (ClassNotFoundException e) {
+						throw new IllegalStateException(e);
+					}
+					if(beanClass.isAnnotationPresent(WicketHomePage.class)){
+						pageCandidates().getHomePageCandidates().add(new WicketClassCandidate<Page>((Class<Page>) beanClass));
+					}
+					if(beanClass.isAnnotationPresent(WicketSignInPage.class)){
+						pageCandidates().getSignInPageCandidates().add(new WicketClassCandidate<WebPage>((Class<WebPage>) beanClass));
+					}
+					if(beanClass.isAnnotationPresent(WicketAccessDeniedPage.class)){
+						pageCandidates().getAccessDeniedPageCandidates().add(new WicketClassCandidate<Page>((Class<Page>) beanClass));
+					}
+					if(beanClass.isAnnotationPresent(WicketExpiredPage.class)){
+						pageCandidates().getExpiredPageCandidates().add(new WicketClassCandidate<Page>((Class<Page>) beanClass));
+					}
+					if(beanClass.isAnnotationPresent(WicketInternalErrorPage.class)){
+						pageCandidates().getInternalErrorPageCandidates().add(new WicketClassCandidate<Page>((Class<Page>) beanClass));
+					}
+				}
+				
+			}
+	    }
+	}
+	
+	private static Collection<String> getMappingBasePackages(BeanFactory beanFactory) {
+		try {
+			return AutoConfigurationPackages.get(beanFactory);
+		}
+		catch (IllegalStateException ex) {
+			// no auto-configuration package registered yet
+			return Collections.emptyList();
+		}
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import java.lang.ref.WeakReference;
+
+/**
+ * @author Marc Giffing
+ *
+ * @param <T> candidate class type
+ */
+public class WicketClassCandidate<T> {
+
+	private WeakReference<Class<T>> candidate;
+	
+	public WicketClassCandidate(Class<T> candidate) {
+		this.candidate = new WeakReference<Class<T>>(candidate);
+	}
+
+	public Class<T> getCandidate() {
+		return candidate.get();
+	}
 }
 --------------------------------------------------------------------------------------------------------
 import java.io.IOException;
