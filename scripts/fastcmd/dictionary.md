@@ -54756,6 +54756,162 @@ nuget install docfx.console -o .build\docfx -x
                 //.orElseThrow(() -> throwResourceNotFound(this.getMessageSource(), ERROR_RESOURCE_BY_REQUEST_NOT_FOUND_MESSAGE_TEMPLATE, fileSearchParameters));
     }
 -------------------------------------------------------------------------------------------------------
+@Test
+void additionTest() {
+    Calculator calc = new Calculator();
+    assertAll(
+        () -> assertEquals(100, calc.add(1,1), "Doesn't add two positive numbers properly"),
+        () -> assertEquals(100, calc.add(-1,1), "Doesn't add a negative and a positive number properly"),
+        () -> assertNotNull(calc, "The calc variable should be initialized")
+    );
+}
+-------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------
+<build>
+    <plugins>
+        <plugin>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>2.22.2</version>
+            <configuration>
+                <groups>acceptance | !feature-a</groups>
+                <excludedGroups>integration, regression</excludedGroups>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+-------------------------------------------------------------------------------------------------------
+spring:
+  application:
+    name: Spring Boot Rest API
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    url: "jdbc:h2:mem:test-api;INIT=CREATE SCHEMA IF NOT EXISTS dbo\\;CREATE SCHEMA IF NOT EXISTS definitions;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=false;MODE=MSSQLServer"
+    name:
+    password:
+    username:
+    initialization-mode: never
+    hikari:
+      schema: dbo
+  jpa:
+    database: H2
+    database-platform: org.hibernate.dialect.H2Dialect
+    show-sql: true
+    hibernate:
+      ddl-auto: create-drop
+  test:
+    database:
+      replace: none
+-------------------------------------------------------------------------------------------------------
+public static int safeLongToInt(long l) {
+    if (l < Integer.MIN_VALUE || l > Integer.MAX_VALUE) {
+        throw new IllegalArgumentException
+            (l + " cannot be cast to int without changing its value.");
+    }
+    return (int) l;
+}
+-------------------------------------------------------------------------------------------------------
+To include tags or tag expressions, use groups.
+To exclude tags or tag expressions, use excludedGroups
+
+...
+<build>
+    <plugins>
+        ...
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>3.0.0-M4</version>
+            <configuration>
+                <groups>acceptance | !feature-a</groups>
+                <excludedGroups>integration, regression</excludedGroups>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+-------------------------------------------------------------------------------------------------------
+	<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.7.0</version>
+			</plugin>
+			<plugin>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.22.1</version>
+				<configuration>
+					<excludedGroups>database</excludedGroups>
+					<properties>
+						<!--<configurationParameters>-->
+							<!--junit.jupiter.conditions.deactivate=*-->
+						<!--</configurationParameters>-->
+					</properties>
+				</configuration>
+			</plugin>
+-------------------------------------------------------------------------------------------------------
+@Test
+@EnabledOnOs({ LINUX, SOLARIS }) // disabled on all but Linux, Solaris
+@DisabledOnJre(JAVA_8)           // disabled on Java 8
+@EnabledIfSystemProperty(        // disabled on all but 64bit OS
+	named = "os.arch", matches = ".*64.*")
+@EnabledIfEnvironmentVariable(   // disabled unless `ENV` is `ci`
+	named = "ENV", matches = "ci")
+void test() {
+	// doesn't run on Linux with Java 10 because `@EnabledOnOs` doesn't
+	// rellay _enable_ the test as much as _not disable_ it
+}
+-------------------------------------------------------------------------------------------------------
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+ 
+@Disabled
+public class AppTest {
+     
+    @Test
+    void testOnDev() 
+    {
+        System.setProperty("ENV", "DEV");
+        Assumptions.assumeFalse("DEV".equals(System.getProperty("ENV")));
+    }
+     
+    @Test
+    void testOnProd() 
+    {
+        System.setProperty("ENV", "PROD");
+        Assumptions.assumeFalse("DEV".equals(System.getProperty("ENV")));
+    }
+}
+-------------------------------------------------------------------------------------------------------
+import org.hibernate.annotations.Type
+import java.util.UUID
+import javax.persistence.Column
+import javax.persistence.GeneratedValue
+import javax.persistence.Id
+
+@Id @GeneratedValue
+@Type(type = "uuid-char") @Column(length = 36)
+private UUID id;
+
+@Id
+@GeneratedValue(generator = "uuid2")
+@GenericGenerator(name = "uuid2", strategy = "uuid2")
+@Column(name = "uuid", columnDefinition = "BINARY(16)")
+public UUID getId()
+{
+    return id;
+}
+
+public void setId(UUID i)
+{
+    id = i;
+}
+
+@Id
+@GeneratedValue(generator="system-uuid")
+@GenericGenerator(name="system-uuid", strategy = "uuid")
+@Column(name = "uuid", unique = true)
+private String uuid;
+
+
+-------------------------------------------------------------------------------------------------------
 //        final FullTextEntityManager fullTextEntityManager = this.getFullTextEntityManager();
 //        final QueryBuilder querybuilder = this.getFullTextQueryBuilder(fullTextEntityManager, FileEntity.class);
 //        final Query filePlatformQuery = querybuilder
