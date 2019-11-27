@@ -91006,6 +91006,16 @@ public void whenFileToStream_thenGetStream() throws IOException {
     assertThat(str, contains("refer", "level"));
 }
 --------------------------------------------------------------------------------------------------------
+    /**
+     * Returns {@link Map} collection of items {@code T} by input {@link GeneralParamRequest} request
+     *
+     * @param <T>     type of {@link Map} key value
+     * @param request - initial input {@link GeneralParamRequest} request
+     * @return {@link Map} collection of items
+     */
+    public static <T> Map<String, T> getItemsMap(@NonNull final GeneralParamRequest<T> request) {
+        return Optional.ofNullable(request.getItems()).orElseGet(Collections::emptyList).stream().collect(HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()), HashMap::putAll);
+    }
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
