@@ -492,6 +492,571 @@ public class RemoteWebDriverAspect {
 		}
 	}
 -----------------------------------------------------------------------------------------
+import io.prometheus.client.Summary;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Pointcut;
+import org.aspectj.lang.reflect.MethodSignature;
+import org.springframework.context.annotation.Scope;
+import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.util.ReflectionUtils;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+/**
+ * This class automatically times (via aspectj) the execution of annotated methods, if it's been enabled via {@link EnablePrometheusTiming},
+ * for methods annotated with {@link PrometheusTimeMethod}
+ *
+ * @author Andrew Stuart
+ */
+@Aspect("pertarget(io.prometheus.client.spring.web.MethodTimer.timeable())")
+@Scope("prototype")
+@ControllerAdvice
+public class MethodTimer {
+    private final ReadWriteLock summaryLock = new ReentrantReadWriteLock();
+    private final HashMap<String, Summary> summaries = new HashMap<String, Summary>();
+
+    @Pointcut("@annotation(io.prometheus.client.spring.web.PrometheusTimeMethod)")
+    public void annotatedMethod() {}
+
+    @Pointcut("annotatedMethod()")
+    public void timeable() {}
+
+    private PrometheusTimeMethod getAnnotation(ProceedingJoinPoint pjp) throws NoSuchMethodException {
+        assert(pjp.getSignature() instanceof MethodSignature);
+        MethodSignature signature = (MethodSignature) pjp.getSignature();
+
+        PrometheusTimeMethod annot = AnnotationUtils.findAnnotation(pjp.getTarget().getClass(), PrometheusTimeMethod.class);
+        if (annot != null) {
+            return annot;
+        }
+
+        // When target is an AOP interface proxy but annotation is on class method (rather than Interface method).
+        final String name = signature.getName();
+        final Class[] parameterTypes = signature.getParameterTypes();
+        Method method = ReflectionUtils.findMethod(pjp.getTarget().getClass(), name, parameterTypes);
+        return AnnotationUtils.findAnnotation(method, PrometheusTimeMethod.class);
+    }
+
+    private Summary ensureSummary(ProceedingJoinPoint pjp, String key) throws IllegalStateException {
+        PrometheusTimeMethod annot;
+        try {
+            annot = getAnnotation(pjp);
+        } catch (NoSuchMethodException e) {
+            throw new IllegalStateException("Annotation could not be found for pjp \"" + pjp.toShortString() +"\"", e);
+        } catch (NullPointerException e) {
+            throw new IllegalStateException("Annotation could not be found for pjp \"" + pjp.toShortString() +"\"", e);
+        }
+
+        assert(annot != null);
+
+        Summary summary;
+
+        // We use a writeLock here to guarantee no concurrent reads.
+        final Lock writeLock = summaryLock.writeLock();
+        writeLock.lock();
+        try {
+            // Check one last time with full mutual exclusion in case multiple readers got null before creation.
+            summary = summaries.get(key);
+            if (summary != null) {
+                return summary;
+            }
+
+            // Now we know for sure that we have never before registered.
+            summary = Summary.build()
+                    .name(annot.name())
+                    .help(annot.help())
+                    .register();
+
+            // Even a rehash of the underlying table will not cause issues as we mutually exclude readers while we
+            // perform our updates.
+            summaries.put(key, summary);
+
+            return summary;
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    @Around("timeable()")
+    public Object timeMethod(ProceedingJoinPoint pjp) throws Throwable {
+        String key = pjp.getSignature().toLongString();
+
+        Summary summary;
+        final Lock r = summaryLock.readLock();
+        r.lock();
+        try {
+            summary = summaries.get(key);
+        } finally {
+            r.unlock();
+        }
+
+        if (summary == null) {
+            summary = ensureSummary(pjp, key);
+        }
+
+        final Summary.Timer t = summary.startTimer();
+
+        try {
+            return pjp.proceed();
+        } finally {
+            t.observeDuration();
+        }
+    }
+}
+-----------------------------------------------------------------------------------------
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+
+import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
+
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.commons.configuration.tree.xpath.XPathExpressionEngine;
+
+/**
+ * @author Chirag Jayswal
+ *
+ */
+public class XPathUtils {
+
+	/**
+	 * 
+	 * @param xmlFile
+	 * @return
+	 * @throws IOException
+	 */
+	public static XMLConfiguration read(File xmlFile) throws IOException{
+		String xmlsrc = FileUtil.readFileToString(xmlFile, "UTF-8");
+		return read(xmlsrc);
+	}
+	
+	/**
+	 * 
+	 * @param src
+	 * @return
+	 */
+	public static XMLConfiguration read(String src) {
+		try {
+			// remove all namespaces from xml
+			src = removeNSAndPreamble(src);
+			XMLConfiguration config = new XMLConfiguration();
+			config.setDelimiterParsingDisabled(true);
+			config.load(new ByteArrayInputStream(src.getBytes()));
+			config.setExpressionEngine(new XPathExpressionEngine());
+			return config;
+
+		} catch (ConfigurationException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * 
+	 * @param xmlStr
+	 * @return
+	 */
+	private static String removeNSAndPreamble(String xmlStr) {
+		String xsltString = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><xsl:stylesheet version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\"><xsl:output method=\"xml\" indent=\"yes\" encoding=\"UTF-8\"/><xsl:template match=\"/\"><xsl:copy><xsl:apply-templates/></xsl:copy></xsl:template><xsl:template match=\"@*\"><xsl:attribute name=\"{local-name()}\"><xsl:value-of select=\"current()\"/></xsl:attribute></xsl:template><xsl:template match=\"*\"><xsl:element name=\"{local-name()}\"><xsl:apply-templates select=\"@* | * | text()\"/></xsl:element></xsl:template><xsl:template match=\"text()\"><xsl:copy><xsl:value-of select=\"current()\"/></xsl:copy></xsl:template></xsl:stylesheet>";
+		try (ByteArrayOutputStream bo = new ByteArrayOutputStream()) {
+			TransformerFactory factory = TransformerFactory.newInstance();
+			Source xslt = new StreamSource(new ByteArrayInputStream(xsltString.getBytes()));
+			Transformer transformer = factory.newTransformer(xslt);
+
+			Source xmlSrc = new StreamSource(new ByteArrayInputStream(xmlStr.getBytes()));
+			transformer.transform(xmlSrc, new StreamResult(bo));
+			return bo.toString();
+		} catch (TransformerException e) {
+			System.err.println(e.getMessage());
+		} catch (IOException e1) {
+			System.err.println(e1.getMessage());
+		}
+
+		System.err.println("Unable to clean Namespace and Preamble from xml source, will use unmodified xml.");
+		return xmlStr;
+	}
+}
+-----------------------------------------------------------------------------------------
+import java.lang.reflect.Method;
+import java.util.regex.Pattern;
+
+public abstract class StringMatcher {
+	protected String stringToMatch;
+
+	public StringMatcher(String stringToMatch) {
+		this.stringToMatch = stringToMatch;
+	}
+
+	@Override
+	public String toString() {
+		return this.getClass().getSimpleName() + ":" + stringToMatch;
+	}
+
+	abstract public boolean match(String target);
+
+	/**
+	 * provision for define matcher in external data file, that can be converted
+	 * to actual one in code!
+	 * 
+	 * @param type
+	 * @param stringToMatch
+	 * @return
+	 */
+	public static StringMatcher get(String type, String stringToMatch) {
+		try {
+			Method m = ClassUtil.getMethod(StringMatcher.class, type);
+			return (StringMatcher) m.invoke(null, stringToMatch);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	public static StringMatcher exact(String stringToMatch) {
+		return new Exact(stringToMatch);
+	}
+
+	public static StringMatcher exactIgnoringCase(String stringToMatch) {
+		return new ExactIgnoringCase(stringToMatch);
+	}
+
+	public static StringMatcher startsWith(String stringToMatch) {
+		return new StartsWith(stringToMatch);
+	}
+
+	public static StringMatcher startsWithIgnoringCase(String stringToMatch) {
+		return new StartsWithIgnoringCase(stringToMatch);
+	}
+
+	public static StringMatcher endsWith(String stringToMatch) {
+		return new EndsWith(stringToMatch);
+	}
+
+	public static StringMatcher endsWithIgnoringCase(String stringToMatch) {
+		return new EndsWithIgnoringCase(stringToMatch);
+	}
+
+	public static StringMatcher contains(String stringToMatch) {
+		return new Contains(stringToMatch);
+	}
+
+	public static StringMatcher containsIgnoringCase(String stringToMatch) {
+		return new ContainsIgnoringCase(stringToMatch);
+	}
+
+	/**
+	 * @param stringToMatch
+	 *            : valid regular expression
+	 * @return
+	 */
+	public static StringMatcher like(String stringToMatch) {
+		return new Like(stringToMatch);
+	}
+
+	/**
+	 * @param stringToMatch
+	 *            : valid regular expression
+	 * @return
+	 */
+	public static StringMatcher likeIgnoringCase(String stringToMatch) {
+		return new LikeIgnoringCase(stringToMatch);
+	}
+
+	/**
+	 * Numeric greater then
+	 * 
+	 * @param stringToMatch
+	 * @return
+	 */
+	public static StringMatcher gt(String stringToMatch) {
+		return new GT(stringToMatch);
+	}
+
+	/**
+	 * Numeric greater then equal
+	 * 
+	 * @param stringToMatch
+	 * @return
+	 */
+	public static StringMatcher gte(String stringToMatch) {
+		return new GTE(stringToMatch);
+	}
+
+	/**
+	 * Numeric less then
+	 * 
+	 * @param stringToMatch
+	 * @return
+	 */
+	public static StringMatcher lt(String stringToMatch) {
+		return new LT(stringToMatch);
+	}
+
+	/**
+	 * Numeric less then equal
+	 * 
+	 * @param stringToMatch
+	 * @return
+	 */
+	public static StringMatcher lte(String stringToMatch) {
+		return new LTE(stringToMatch);
+	}
+
+	/**
+	 * Numeric equal
+	 * 
+	 * @param stringToMatch
+	 * @return
+	 */
+	public static StringMatcher eq(String stringToMatch) {
+		return new EQ(stringToMatch);
+	}
+
+	private static class Exact extends StringMatcher {
+
+		Exact(String stringToMatch) {
+			super(stringToMatch);
+		}
+
+		@Override
+		public boolean match(String target) {
+			return stringToMatch.equals(target);
+		}
+
+	}
+
+	private static class ExactIgnoringCase extends StringMatcher {
+		ExactIgnoringCase(String stringToMatch) {
+			super(stringToMatch);
+		}
+
+		@Override
+		public boolean match(String target) {
+			return stringToMatch.equalsIgnoreCase(target);
+		}
+
+	}
+
+	private static class StartsWithIgnoringCase extends StringMatcher {
+		StartsWithIgnoringCase(String stringToMatch) {
+			super(stringToMatch);
+		}
+
+		@Override
+		public boolean match(String target) {
+			return target.toUpperCase().startsWith(stringToMatch.toUpperCase());
+		}
+	}
+
+	private static class StartsWith extends StringMatcher {
+		StartsWith(String stringToMatch) {
+			super(stringToMatch);
+		}
+
+		@Override
+		public boolean match(String target) {
+			return target.startsWith(stringToMatch);
+		}
+	}
+
+	private static class EndsWithIgnoringCase extends StringMatcher {
+		EndsWithIgnoringCase(String stringToMatch) {
+			super(stringToMatch);
+		}
+
+		@Override
+		public boolean match(String target) {
+			return target.toUpperCase().endsWith(stringToMatch.toUpperCase());
+		}
+	}
+
+	private static class EndsWith extends StringMatcher {
+		EndsWith(String stringToMatch) {
+			super(stringToMatch);
+		}
+
+		@Override
+		public boolean match(String target) {
+			return target.endsWith(stringToMatch);
+		}
+	}
+
+	private static class ContainsIgnoringCase extends StringMatcher {
+		ContainsIgnoringCase(String stringToMatch) {
+			super(stringToMatch);
+		}
+
+		@Override
+		public boolean match(String target) {
+			return target.toUpperCase().contains(stringToMatch.toUpperCase());
+		}
+	}
+
+	private static class Contains extends StringMatcher {
+		Contains(String stringToMatch) {
+			super(stringToMatch);
+		}
+
+		@Override
+		public boolean match(String target) {
+			return target.contains(stringToMatch);
+		}
+	}
+
+	private static class LikeIgnoringCase extends StringMatcher {
+		LikeIgnoringCase(String stringToMatch) {
+			super(stringToMatch);
+		}
+
+		@Override
+		public boolean match(String target) {
+			Pattern p = Pattern.compile(stringToMatch, Pattern.CASE_INSENSITIVE);
+			return p.matcher(target).matches();
+		}
+	}
+
+	private static class Like extends StringMatcher {
+		Like(String stringToMatch) {
+			super(stringToMatch);
+		}
+
+		@Override
+		public boolean match(String target) {
+			return Pattern.matches(stringToMatch, target);
+		}
+	}
+
+	private static class EQ extends StringMatcher {
+		EQ(String stringToMatch) {
+			super(stringToMatch);
+		}
+
+		@Override
+		public boolean match(String target) {
+			try {
+				double expected = Double.parseDouble(stringToMatch);
+				double actual = Double.parseDouble(target);
+
+				return actual == expected;
+			} catch (Exception e) {
+				return false;
+			}
+		}
+	}
+
+	private static class LT extends StringMatcher {
+		LT(String stringToMatch) {
+			super(stringToMatch);
+		}
+
+		@Override
+		public boolean match(String target) {
+			try {
+				double expected = Double.parseDouble(stringToMatch);
+				double actual = Double.parseDouble(target);
+
+				return actual < expected;
+			} catch (Exception e) {
+				return false;
+			}
+		}
+	}
+
+	private static class LTE extends StringMatcher {
+		LTE(String stringToMatch) {
+			super(stringToMatch);
+		}
+
+		@Override
+		public boolean match(String target) {
+			try {
+				double expected = Double.parseDouble(stringToMatch);
+				double actual = Double.parseDouble(target);
+
+				return actual <= expected;
+			} catch (Exception e) {
+				return false;
+			}
+		}
+	}
+
+	private static class GT extends StringMatcher {
+		GT(String stringToMatch) {
+			super(stringToMatch);
+		}
+
+		@Override
+		public boolean match(String target) {
+			try {
+				double expected = Double.parseDouble(stringToMatch);
+				double actual = Double.parseDouble(target);
+
+				return actual > expected;
+			} catch (Exception e) {
+				return false;
+			}
+		}
+	}
+
+	private static class GTE extends StringMatcher {
+		GTE(String stringToMatch) {
+			super(stringToMatch);
+		}
+
+		@Override
+		public boolean match(String target) {
+			try {
+				double expected = Double.parseDouble(stringToMatch);
+				double actual = Double.parseDouble(target);
+
+				return actual >= expected;
+			} catch (Exception e) {
+				return false;
+			}
+		}
+	}
+
+}
+-----------------------------------------------------------------------------------------
+	/**
+	 * 
+	 * @param expression
+	 * @return
+	 * @throws ScriptException
+	 */
+	public static <T> T eval(String expression) throws ScriptException {
+		return eval(expression, new HashMap<String, Object>());
+	}
+
+	/**
+	 * 
+	 * @param expression
+	 * @param context
+	 * @return
+	 * @throws ScriptException
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T> T eval(String expression, Map<? extends String, ? extends Object> context)
+			throws ScriptException {
+		ScriptEngineManager engineManager = new ScriptEngineManager();
+		ScriptEngine jsEngine = engineManager.getEngineByName("JavaScript");
+		jsEngine.getBindings(ScriptContext.ENGINE_SCOPE).putAll(context);
+		return (T) jsEngine.eval(expression);
+	}
+-----------------------------------------------------------------------------------------
 /**
  * Tiles configuration.
  * 
