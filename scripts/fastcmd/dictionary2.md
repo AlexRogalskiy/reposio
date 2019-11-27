@@ -15571,6 +15571,182 @@ public LocalContainerEntityManagerFactoryBean customerEntityManagerFactory(
             .build();
 }
 --------------------------------------------------------------------------------------------------------
+/**
+ * 
+ */
+package com.quantum.steps;
+
+import com.qmetry.qaf.automation.step.QAFTestStepProvider;
+import com.qmetry.qaf.automation.ui.WebDriverTestBase;
+import com.qmetry.qaf.automation.ui.webdriver.QAFExtendedWebElement;
+import com.qmetry.qaf.automation.util.StringUtil;
+import com.quantum.utils.*;
+import cucumber.api.java.en.Then;
+import cucumber.api.java.en.When;
+import io.appium.java_client.android.AndroidDriver;
+import io.appium.java_client.ios.IOSDriver;
+
+
+/**
+ * @author chirag.jayswal
+ *
+ */
+@QAFTestStepProvider
+public class CalcStepsDefs {
+
+	@When("clear Calculator")
+	public void clearCalculator() {
+
+		new QAFExtendedWebElement("btn.clear").click();
+	}
+
+
+	@When("add \"(.+)\" to \"(.+)\"")
+	public void addInto(long l1, long l2) {
+
+		DriverUtils.getAppiumDriver().findElementByAccessibilityId(String.valueOf(l1)).click();
+		new QAFExtendedWebElement("btn.plus").click();
+		DriverUtils.getAppiumDriver().findElementByAccessibilityId(String.valueOf(l2)).click();
+		new QAFExtendedWebElement("btn.equal").click();;
+
+
+	}
+
+
+
+	@Then("result should be \"(.+)\"")
+	public void resultShouldBe(long l1) {
+		new QAFExtendedWebElement("input.box").verifyText("in:" + String.valueOf(l1));
+	}
+
+	@Then("I switch to frame \"(.*?)\"")
+	public static void switchToFrame(String nameOrIndex) {
+		if (StringUtil.isNumeric(nameOrIndex)) {
+			int index = Integer.parseInt(nameOrIndex);
+			new WebDriverTestBase().getDriver().switchTo().frame(index);
+		} else {
+			new WebDriverTestBase().getDriver().switchTo().frame(nameOrIndex);
+		}
+	}
+
+	@Then("I switch to \"(.*?)\" frame by element")
+	public static void switchToFrameByElement(String loc) {
+		new WebDriverTestBase().getDriver().switchTo().frame(new QAFExtendedWebElement(loc));
+	}
+
+	@When("I am using an AppiumDriver")
+	public void testForAppiumDriver() {
+		if (ConfigurationUtils.getBaseBundle().getPropertyValue("driver.name").contains("Remote"))
+			ConsoleUtils.logWarningBlocks("Driver is an instance of QAFExtendedWebDriver");
+		else if (AppiumUtils.getAppiumDriver() instanceof IOSDriver)
+			ConsoleUtils.logWarningBlocks("Driver is an instance of IOSDriver");
+		else if (AppiumUtils.getAppiumDriver() instanceof AndroidDriver)
+			ConsoleUtils.logWarningBlocks("Driver is an instance of AndroidDriver");
+	}
+
+}
+
+import java.util.List;
+
+import org.openqa.selenium.JavascriptExecutor;
+
+import com.qmetry.qaf.automation.step.QAFTestStepProvider;
+import com.qmetry.qaf.automation.ui.WebDriverTestBase;
+import com.qmetry.qaf.automation.ui.webdriver.QAFExtendedWebElement;
+import com.quantum.utils.DeviceUtils;
+
+import cucumber.api.java.en.Given;
+import cucumber.api.java.en.Then;
+import cucumber.api.java.en.When;
+
+@QAFTestStepProvider
+public class GoogleStepDefs {
+	@Given("^I am on Google Search Page$")
+	public void I_am_on_Google_Search_Page() throws Throwable {
+		new WebDriverTestBase().getDriver().get("http://www.google.com/");
+	}
+
+	@When("^I search for \"([^\"]*)\"$")
+	public void I_search_for(String searchKey) throws Throwable {
+		QAFExtendedWebElement searchBoxElement = new QAFExtendedWebElement("search.text.box");
+		QAFExtendedWebElement searchBtnElement = new QAFExtendedWebElement("search.button");
+
+		searchBoxElement.clear();
+		searchBoxElement.sendKeys(searchKey);
+		// Web and mobile elements are sometimes different so we have done two things we
+		// used multiple/alternate locator strategy for finding the element.
+		// We also used Javascript click because the element was getting hidden in
+		// Desktop Web due to suggestions and was not clickable. This java script click
+		// will work for both desktop and mobile in this case.
+		JavascriptExecutor js = (JavascriptExecutor) DeviceUtils.getQAFDriver();
+		js.executeScript("arguments[0].click();", searchBtnElement);
+
+	}
+
+	@Then("^it should have \"([^\"]*)\" in search results$")
+	public void it_should_have_in_search_results(String result) throws Throwable {
+		QAFExtendedWebElement searchResultElement = new QAFExtendedWebElement("partialLink=" + result);
+		searchResultElement.verifyPresent(result);
+	}
+
+	@Then("^it should have following search results:$")
+	public void it_should_have_all_in_search_results(List<String> results) {
+		QAFExtendedWebElement searchResultElement;
+		for (String result : results) {
+			searchResultElement = new QAFExtendedWebElement("partialLink=" + result);
+			searchResultElement.verifyPresent(result);
+		}
+	}
+}
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+sudo: true
+language: java
+dist: trusty
+before_install:
+  - cat /etc/hosts # optionally check the content *before*
+  - sudo hostname "$(hostname | cut -c1-63)"
+  - sed -e "s/^\\(127\\.0\\.0\\.1.*\\)/\\1 $(hostname | cut -c1-63)/" /etc/hosts > /tmp/hosts
+  - sudo mv /tmp/hosts /etc/hosts
+  - cat /etc/hosts # optionally check the content *after*
+  - sudo ant download-ivy -Dskip.download=false
+  - "export DISPLAY=:99.0"
+  - "sh -e /etc/init.d/xvfb start"
+script: ant test -Dskip.download=true
+jdk:
+  - oraclejdk8
+ #- oraclejdk7 #  Jdk7 broken on container based trusty travis-ci#7019 
+  - openjdk7
+  - openjdk8
+ # - oraclejdk9
+ # - oraclejdk11
+--------------------------------------------------------------------------------------------------------
+<repository>
+			<releases>
+				<updatePolicy>always</updatePolicy>
+				<checksumPolicy>ignore</checksumPolicy>
+			</releases>
+			<id>ps</id>
+			<url>https://github.com/Project-Quantum/mvn/raw/master/repository</url>
+		</repository>
+--------------------------------------------------------------------------------------------------------
+		<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.19.1</version>
+				<configuration>
+					<argLine>-Dfile.encoding=${project.build.sourceEncoding}</argLine>
+					<systemPropertyVariables>
+						<application.properties.file>resources/application.properties</application.properties.file>
+					</systemPropertyVariables>
+
+					<suiteXmlFiles>
+						<suiteXmlFile>${testngXmlDir}/${testngXmlFile}</suiteXmlFile>
+					</suiteXmlFiles>
+
+				</configuration>
+			</plugin>
+--------------------------------------------------------------------------------------------------------
 @Configuration(proxyBeanMethods = false)
 public class HibernateSecondLevelCacheExample {
 

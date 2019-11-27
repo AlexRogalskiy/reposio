@@ -363,11 +363,134 @@ public class DefaultCipherHelper implements CipherHelper {
 
 }
 -----------------------------------------------------------------------------------------
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
 
+@Aspect
+public class RemoteWebDriverAspect {
 
+    @Before("call(org.openqa.selenium.remote.RemoteWebDriver+.new(..))")
+    @SuppressWarnings("PMD.AvoidCatchingThrowable")
+    public void remoteWebDriverBeforeAspect(JoinPoint joinPoint) throws Throwable {
+        System.out.println("Before Creating driver...");
+    }
 
+    @Around("call(org.openqa.selenium.remote.RemoteWebDriver+.new(..))")
+    @SuppressWarnings("PMD.AvoidCatchingThrowable")
+    public Object remoteWebDriverAspect(ProceedingJoinPoint point) throws Throwable {
 
+        //Code to run before creating the driver
+        long startTime = System.currentTimeMillis();
+        System.out.println("\n[" + elapsedTime(startTime) + "] Trying to create a Remote Web Driver");
+        Object driver = null;
+        int numOfRetries = 0;
+        while (driver == null & numOfRetries < Constants.MaxTimesToRetry) {
+            try {
+                System.out.println("[" + elapsedTime(startTime) + "] Try number : " + numOfRetries);
+                driver = point.proceed();
+            } catch (Throwable throwable) {
+                System.out.println("[" + elapsedTime(startTime) + "] Device allocation failed");
+                String message = throwable.getMessage();
+                System.out.println(message);
+                numOfRetries++;
+                Thread.sleep(Constants.WaitOnRetry);
+            }
+        }
 
+        if (driver != null) {
+            //Code to run after successfully creating a driver
+            System.out.println("[" + elapsedTime(startTime) + "] Remote Web Driver initialized successfully");
+        }
+
+        else {
+            //Code to run when used up retries with no success
+            System.out.println("[" + elapsedTime(startTime) + "] Failed to initialize a Remote Web Driver");
+            //Throw exception?
+        }
+
+        return driver;
+    }
+
+    private long elapsedTime(long startTime){
+        return (System.currentTimeMillis() - startTime) / 1000;
+    }
+}
+-----------------------------------------------------------------------------------------
+	private static void handleError(HttpURLConnection connection) throws IOException {
+		String msg = "Failed to upload media.";
+		InputStream errorStream = connection.getErrorStream();
+		if (errorStream != null) {
+			InputStreamReader inputStreamReader = new InputStreamReader(errorStream, UTF_8);
+			BufferedReader bufferReader = new BufferedReader(inputStreamReader);
+			try {
+				StringBuilder builder = new StringBuilder();
+				String outputString;
+				while ((outputString = bufferReader.readLine()) != null) {
+					if (builder.length() != 0) {
+						builder.append("\n");
+					}
+					builder.append(outputString);
+				}
+				String response = builder.toString();
+				msg += "Response: " + response;
+			}
+			finally {
+				bufferReader.close();
+			}
+		}
+		throw new RuntimeException(msg);
+	}
+
+	private static byte[] readFile(File path) throws FileNotFoundException, IOException {
+		int length = (int)path.length();
+		byte[] content = new byte[length];
+		InputStream inStream = new FileInputStream(path);
+		try {
+			inStream.read(content);
+		}
+		finally {
+			inStream.close();
+		}
+		return content;
+	}
+
+	private static byte[] readURL(URL url) throws IOException {
+		HttpURLConnection connection = (HttpURLConnection)url.openConnection();
+		connection.setDoOutput(true);
+		int code = connection.getResponseCode();
+		if (code > HttpURLConnection.HTTP_OK) {
+			handleError(connection);
+		}
+		InputStream stream = connection.getInputStream();
+
+		if (stream == null) {
+			throw new RuntimeException("Failed to get content from url " + url + " - no response stream");
+		}
+		byte[] content = read(stream);
+		return content;
+	}
+
+	private static byte[] read(InputStream input) throws IOException {
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		try {
+			byte[] buffer = new byte[1024];
+			int nBytes = 0;
+			while ((nBytes = input.read(buffer)) > 0) {
+				output.write(buffer, 0, nBytes);
+			}
+			byte[] result = output.toByteArray();
+			return result;
+		} finally {
+			try{
+				input.close();
+			} catch (IOException e){
+
+			}
+		}
+	}
 -----------------------------------------------------------------------------------------
 /**
  * Tiles configuration.
