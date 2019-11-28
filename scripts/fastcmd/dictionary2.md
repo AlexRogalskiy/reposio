@@ -15699,6 +15699,90 @@ public class GoogleStepDefs {
 	}
 }
 --------------------------------------------------------------------------------------------------------
+import java.util.List;
+
+import org.springframework.cloud.skipper.domain.Repository;
+import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.data.repository.query.Param;
+import org.springframework.data.rest.core.annotation.RepositoryRestResource;
+import org.springframework.data.rest.core.annotation.RestResource;
+
+/**
+ * @author Mark Pollack
+ * @author Ilayaperumal Gopinathan
+ */
+@RepositoryRestResource(path = "repositories", collectionResourceRel = "repositories")
+public interface RepositoryRepository extends PagingAndSortingRepository<Repository, Long> {
+
+	Repository findByName(@Param("name") String name);
+
+	/**
+	 * Get all the repositories with their repository order in descending order.
+	 *
+	 * @return the list of repositories
+	 */
+	@RestResource(exported = false)
+	List<Repository> findAllByOrderByRepoOrderDesc();
+
+	@Override
+	@RestResource(exported = false)
+	Repository save(Repository repository);
+
+	@Override
+	@RestResource(exported = false)
+	void delete(Long id);
+
+	@Override
+	@RestResource(exported = false)
+	void delete(Repository deployer);
+
+	@Override
+	@RestResource(exported = false)
+	void deleteAll();
+
+}
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * @author Mark Pollack
+ */
+public class LogTestNameRule extends TestWatcher {
+
+	private final static Logger log = LoggerFactory.getLogger("junit.logTestName");
+
+	@Override
+	protected void starting(Description description) {
+		log.info("Starting Test {}", description.getMethodName());
+	}
+
+	@Override
+	protected void finished(Description description) {
+		log.info("Finished Test {}", description.getMethodName());
+	}
+}
+--------------------------------------------------------------------------------------------------------
+mvn org.apache.maven.plugins:maven-dependency-plugin:2.6:get -Dartifact=groupId:artifactId:version
+
+<dependency>
+  <groupId>org.apache.maven.plugins</groupId>
+  <artifactId>maven-install-plugin</artifactId>
+  <version>3.0.0-M1</version>
+  <type>maven-plugin</type>
+</dependency>
+
+http://www.ibiblio.org/
+--------------------------------------------------------------------------------------------------------
+	@Configuration
+	@ImportAutoConfiguration(classes = { JacksonAutoConfiguration.class, EmbeddedDataSourceConfiguration.class,
+			HibernateJpaAutoConfiguration.class, StateMachineJpaRepositoriesAutoConfiguration.class,
+			SkipperServerPlatformConfiguration.class })
+	@Import(SkipperServerConfiguration.class)
+	@EnableWebMvc
+	static class TestConfig {
+	}
 --------------------------------------------------------------------------------------------------------
 sudo: true
 language: java

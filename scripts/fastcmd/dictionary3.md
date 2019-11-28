@@ -1031,6 +1031,18 @@ public abstract class StringMatcher {
 
 }
 -----------------------------------------------------------------------------------------
+"OAuth2": {
+  "type": "oauth2",
+  "flow": "accessCode",
+  "authorizationUrl": "https://your-auth-domain.com/oauth/authorize",
+  "tokenUrl": "https://your-auth-domain.com/oauth/token",
+  "scopes": {
+    "read": "Grants read access to user resources",
+    "write": "Grants write access to user resources",
+    "admin": "Grants read and write access to administrative information"
+  }
+}
+-----------------------------------------------------------------------------------------
 	/**
 	 * 
 	 * @param expression
