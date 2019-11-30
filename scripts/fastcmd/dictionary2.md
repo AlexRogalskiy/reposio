@@ -15764,6 +15764,38 @@ public class LogTestNameRule extends TestWatcher {
 	}
 }
 --------------------------------------------------------------------------------------------------------
+@Info(category = Category.MISC,
+	description = "Automatically steals everything from all chests you\n"
+		+ "open.",
+	name = "AutoSteal")
+--------------------------------------------------------------------------------------------------------
+<plugin>
+   <groupId>org.apache.maven.plugins</groupId>
+   <artifactId>maven-install-plugin</artifactId>
+   <version>2.5.1</version>
+   <configuration>
+      <groupId>org.somegroup</groupId>
+      <artifactId>someartifact</artifactId>
+      <version>1.0</version>
+      <packaging>jar</packaging>
+      <file>${basedir}/dependencies/someartifact-1.0.jar</file>
+      <generatePom>true</generatePom>
+   </configuration>
+   <executions>
+      <execution>
+         <id>install-jar-lib</id>
+         <goals>
+            <goal>install-file</goal>
+         </goals>
+         <phase>validate</phase>
+      </execution>
+   </executions>
+</plugin>
+
+
+<generatePom>false</generatePom>
+<pomFile>${basedir}/dependencies/someartifact-1.0.pom</pomFile>
+--------------------------------------------------------------------------------------------------------
 mvn org.apache.maven.plugins:maven-dependency-plugin:2.6:get -Dartifact=groupId:artifactId:version
 
 <dependency>
