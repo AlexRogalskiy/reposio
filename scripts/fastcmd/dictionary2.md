@@ -15769,6 +15769,401 @@ public class LogTestNameRule extends TestWatcher {
 		+ "open.",
 	name = "AutoSteal")
 --------------------------------------------------------------------------------------------------------
+package com.paragon.mailingcontour.commons.actuator.configuration;
+
+import com.paragon.mailingcontour.commons.actuator.property.ApiStatusProperty;
+import com.paragon.mailingcontour.commons.actuator.property.GracefulShutdownProperty;
+import com.paragon.mailingcontour.commons.annotation.UnitTest;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.opentracing.contrib.spring.tracer.configuration.TracerRegisterAutoConfiguration;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.autoconfigure.cache.CachesEndpointAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.health.HealthContributorAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.metrics.MetricsAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.metrics.cache.CacheMetricsAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.metrics.web.servlet.WebMvcMetricsAutoConfiguration;
+import org.springframework.boot.actuate.health.HealthEndpoint;
+import org.springframework.boot.actuate.metrics.MetricsEndpoint;
+import org.springframework.boot.autoconfigure.cache.CacheAutoConfiguration;
+import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
+import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
+import org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration;
+import org.springframework.boot.autoconfigure.data.web.SpringDataWebAutoConfiguration;
+import org.springframework.boot.autoconfigure.integration.IntegrationAutoConfiguration;
+import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
+import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
+import org.springframework.boot.autoconfigure.task.TaskExecutionAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.client.RestTemplateAutoConfiguration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.lang.NonNull;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.reset;
+
+@UnitTest(
+        classes = {
+                ApiStatusConfigurationTest.TestConfiguration.class,
+                ApiStatusConfiguration.class,
+                MetricsEndpoint.class,
+                SimpleMeterRegistry.class
+        },
+        classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD,
+        exclude = {
+                IntegrationAutoConfiguration.class,
+                KafkaAutoConfiguration.class,
+                DataSourceAutoConfiguration.class,
+                JpaRepositoriesAutoConfiguration.class,
+                TaskExecutionAutoConfiguration.class,
+                RedisAutoConfiguration.class,
+                RedisRepositoriesAutoConfiguration.class,
+                SpringDataWebAutoConfiguration.class,
+                MetricsAutoConfiguration.class,
+                WebMvcMetricsAutoConfiguration.class,
+                UserDetailsServiceAutoConfiguration.class,
+                RestTemplateAutoConfiguration.class,
+                DataSourceTransactionManagerAutoConfiguration.class,
+                HibernateJpaAutoConfiguration.class,
+                JacksonAutoConfiguration.class,
+                CacheAutoConfiguration.class,
+                CacheMetricsAutoConfiguration.class,
+                CachesEndpointAutoConfiguration.class,
+                HealthContributorAutoConfiguration.class,
+                TracerRegisterAutoConfiguration.class
+        }
+)
+class ApiStatusConfigurationTest {
+
+    @MockBean
+    private HealthEndpoint healthEndpoint;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.initMocks(this);
+    }
+
+    @AfterEach
+    void close() {
+        reset(this.healthEndpoint);
+    }
+
+    @Nested
+    @TestPropertySource(
+            properties = {
+                    "mailing-contour.api-status.shutdown.enabled=true"
+            }
+    )
+    //@ContextConfiguration(initializers = EnableApiStatusConfigurationTest.DefaultApplicationContextInitializer.class)
+    public class EnableApiStatusConfigurationTest {
+
+        @Autowired
+        private ApplicationContext context;
+
+        @Test
+        void test_shouldRegister_gracefulShutdownHealthIndicator() {
+            // then
+            assertThat(this.context.containsBean("gracefulShutdownHealthIndicator"), is(true));
+        }
+
+        @Test
+        void test_shouldNotRegister_gracefulShutdownHealthIndicator_IfDisabled() {
+            // given
+//        this.context.registerBean(HealthEndpoint.class, this.healthContributorRegistry, this.healthEndpointGroups);
+//
+//        this.context.registerBean(ApiStatusProperty.class, this::getApiStatusProperty);
+//        this.context.registerBean(GracefulShutdownProperty.class, () -> new GracefulShutdownProperty().setEnabled(false));
+//
+//        this.context.register(ApiStatusConfiguration.class);
+//        this.context.register(MetricsEndpoint.class);
+//        this.context.register(SimpleMeterRegistry.class);
+//        this.context.register(MockClock.class);
+
+            // when
+//        TestPropertyValues.of("api-status.shutdown.enabled=false").applyTo(this.context);
+//        this.context.refresh();
+
+            // then
+            assertThat(this.context.containsBean("gracefulShutdownHealthIndicator"), is(false));
+        }
+
+//        /**
+//         * Default {@link ApplicationContextInitializer} implementation
+//         */
+//        public class DefaultApplicationContextInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+//            /**
+//             * {@inheritDoc}
+//             *
+//             * @see ApplicationContextInitializer
+//             */
+//            @Override
+//            public void initialize(@NonNull final ConfigurableApplicationContext applicationContext) {
+//                applicationContext.getEnvironment().getSystemProperties().put("mailing-contour.api-status.shutdown.enabled", "true");
+//            }
+//        }
+    }
+
+    @EnableConfigurationProperties({
+            ApiStatusProperty.class,
+            GracefulShutdownProperty.class
+    })
+    public static class TestConfiguration {
+    }
+}
+--------------------------------------------------------------------------------------------------------
+Importing: `pgp < KEYS` or `gpg --import KEYS`
+--------------------------------------------------------------------------------------------------------
+#!/usr/bin/env bash
+
+readonly checksum_directory='documentation/build/checksum'
+readonly current="${checksum_directory}/current-checksum.txt"
+readonly published="${checksum_directory}/published-checksum.txt"
+readonly github_pages_url='https://raw.githubusercontent.com/junit-team/junit5/gh-pages/docs/snapshot/published-checksum.txt'
+
+#
+# always generate current sums
+#
+echo "Generating checksum file ${current}..."
+mkdir --parents "${checksum_directory}"
+md5sum documentation/documentation.gradle.kts > "${current}"
+md5sum $(find documentation/src -type f) >> "${current}"
+# skip module junit-bom because it doesn't contain relevant documentation
+md5sum $(find junit-jupiter-api -wholename '**/src/main/java/*.java') >> "${current}"
+md5sum $(find junit-jupiter-engine -wholename '**/src/main/java/*.java') >> "${current}"
+md5sum $(find junit-jupiter-migrationsupport -wholename '**/src/main/java/*.java') >> "${current}"
+md5sum $(find junit-jupiter-params -wholename '**/src/main/java/*.java') >> "${current}"
+md5sum $(find junit-platform-commons -wholename '**/src/main/java/*.java') >> "${current}"
+md5sum $(find junit-platform-console -wholename '**/src/main/java/*.java') >> "${current}"
+# skip module junit-platform-console-standalone because it doesn't contain relevant documentation
+md5sum $(find junit-platform-engine -wholename '**/src/main/java/*.java') >> "${current}"
+md5sum $(find junit-platform-launcher -wholename '**/src/main/java/*.java') >> "${current}"
+md5sum $(find junit-platform-runner -wholename '**/src/main/java/*.java') >> "${current}"
+md5sum $(find junit-platform-suite-api -wholename '**/src/main/java/*.java') >> "${current}"
+md5sum $(find junit-platform-testkit -wholename '**/src/main/java/*.java') >> "${current}"
+md5sum $(find junit-vintage-engine -wholename '**/src/main/java/*.java') >> "${current}"
+# skip module platform-tests because it doesn't contain relevant documentation
+# skip module platform-tooling-support-tests because it doesn't contain relevant documentation
+sort --output "${current}" "${current}"
+echo
+md5sum "${current}"
+
+#
+# compare current with published sums
+#
+curl --silent --output "${published}" "${github_pages_url}"
+md5sum "${published}"
+if cmp --silent "${current}" "${published}" ; then
+  #
+  # no changes detected: we're done
+  #
+  echo
+  echo "Already published documentation with same source checksum."
+  echo
+else
+  #
+  # update checksum file and trigger new documentation build and upload
+  #
+  echo
+  echo "Creating and publishing documentation..."
+  echo
+  cp --force "${current}" "${published}"
+  ./gradlew --scan gitPublishPush
+fi
+--------------------------------------------------------------------------------------------------------
+@Bean
+public WebMvcConfigurer initializrWebMvcConfigurer() {
+    return new WebMvcConfigurer() {
+        @Override
+        public void addViewControllers(ViewControllerRegistry registry) {
+            registry.addRedirectViewController("/info", "/actuator/info");
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@Configuration
+@ConfigurationProperties(prefix="test", locations = "classpath:SettingsTest.properties")
+public class TestSettings {
+
+    private String property;
+
+    public String getProperty() {
+        return property;
+    }
+
+    public void setProperty(String property) {
+        this.property = property;
+    }
+}
+SettingsTest.java (in test package)
+
+@TestPropertySource(locations="classpath:SettingsTest.properties")
+@RunWith(SpringJUnit4ClassRunner.class)
+@SpringApplicationConfiguration(classes = TestConfigurationNew.class)
+public class SettingsTest {
+
+    @Autowired
+    TestSettings settings;
+
+    @Test
+    public void testConfig(){
+        Assert.assertEquals("TEST_PROPERTY", settings.getProperty());
+    }
+}
+TestConfigurationNew.java (in test package):
+
+@EnableAutoConfiguration
+@ComponentScan(basePackages = { "my.package.main" })
+@Configuration
+public class TestConfigurationNew {
+}
+--------------------------------------------------------------------------------------------------------
+@Test
+void lambdaExpressions() {
+    assertTrue(Stream.of(1, 2, 3)
+      .stream()
+      .mapToInt(i -> i)
+      .sum() > 5, () -> "Sum should be greater than 5");
+}
+
+@Test
+void groupAssertions() {
+    int[] numbers = {0, 1, 2, 3, 4};
+    assertAll("numbers",
+        () -> assertEquals(numbers[0], 1),
+        () -> assertEquals(numbers[3], 3),
+        () -> assertEquals(numbers[4], 1)
+    );
+}
+
+@Test
+void trueAssumption() {
+    assumeTrue(5 > 1);
+    assertEquals(5 + 2, 7);
+}
+ 
+@Test
+void falseAssumption() {
+    assumeFalse(5 < 1);
+    assertEquals(5 + 2, 7);
+}
+ 
+@Test
+void assumptionThat() {
+    String someString = "Just a string";
+    assumingThat(
+        someString.equals("Just a string"),
+        () -> assertEquals(2 + 2, 4)
+    );
+}
+
+
+@TestFactory
+public Stream<DynamicTest> translateDynamicTestsFromStream() {
+    return in.stream()
+      .map(word ->
+          DynamicTest.dynamicTest("Test translate " + word, () -> {
+            int id = in.indexOf(word);
+            assertEquals(out.get(id), translate(word));
+          })
+    );
+}
+--------------------------------------------------------------------------------------------------------
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.22.0</version>
+                <configuration>
+                    <argLine>
+                        --illegal-access=permit
+                    </argLine>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>2.22.0</version>
+                <configuration>
+                    <argLine>
+                        --illegal-access=permit
+                    </argLine>
+                </configuration>
+            </plugin>
+        </plugins>
+--------------------------------------------------------------------------------------------------------
+        this.context.registerBean(HealthEndpoint.class, this.healthContributorRegistry, this.healthEndpointGroups);
+//
+//        this.context.registerBean(ApiStatusProperty.class, this::getApiStatusProperty);
+//        this.context.registerBean(GracefulShutdownProperty.class, () -> new GracefulShutdownProperty().setEnabled(false));
+//
+//        this.context.register(ApiStatusConfiguration.class);
+//        this.context.register(MetricsEndpoint.class);
+//        this.context.register(SimpleMeterRegistry.class);
+//        this.context.register(MockClock.class);
+
+        // when
+//        TestPropertyValues.of("api-status.shutdown.enabled=false").applyTo(this.context);
+//        this.context.refresh();
+--------------------------------------------------------------------------------------------------------
+import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.autoconfigure.RefreshAutoConfiguration;
+import org.springframework.cloud.context.refresh.ContextRefresher;    
+// your other imports
+
+
+@WebAppConfiguration
+@ContextConfiguration(locations = {"/web/WEB-INF/spring.xml"}, classes = RefreshAutoConfiguration.class)
+@ActiveProfiles(resolver = BaseActiveProfilesResolverTest.class)
+public class ControllerTest extends AbstractTestNGSpringContextTests {
+
+    @Autowired
+    private ContextRefresher contextRefresher;
+
+    @Test
+    public void test() throws Exception {
+        // doSmth before
+        contextRefresher.refresh();
+        // context is refreshed - continue testing
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+<build>
+    <plugins>
+        ...
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>3.0.0-M4</version>
+            <configuration>
+                <groups>acceptance | !feature-a</groups>
+                <excludedGroups>integration, regression</excludedGroups>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+--------------------------------------------------------------------------------------------------------
 <plugin>
    <groupId>org.apache.maven.plugins</groupId>
    <artifactId>maven-install-plugin</artifactId>
