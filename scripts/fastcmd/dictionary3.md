@@ -30,6 +30,54 @@ sudo -i
 
 nmcli nm enable false eth0 && nmcli nm enable true eth0
 -----------------------------------------------------------------------------------------
+public class <T extends Self<T>> Self<T> {
+    public T someMethodThatReturnsSelf() {
+        return (T) this; //yeah, this ugly and generates warnings, but it does work.
+    }
+}
+-----------------------------------------------------------------------------------------
+public interface HasContactInformation {
+ 
+    String getFirstName();
+    void setFirstName(String firstName);
+ 
+    String getFullName();
+ 
+    String getLastName();
+    void setLastName(String lastName);
+ 
+    String getPhoneNr();
+    void setPhoneNr(String phoneNr);
+ 
+}
+And now an adapter as a support class:
+
+@Data
+public class ContactInformationSupport implements HasContactInformation {
+ 
+    private String firstName;
+    private String lastName;
+    private String phoneNr;
+ 
+    @Override
+    public String getFullName() {
+        return getFirstName() + " " + getLastName();
+    }
+}
+The interesting part comes now, see how easy it is to now compose contact information into both model classes:
+
+public class User implements HasContactInformation {
+ 
+    // Whichever other User-specific attributes
+ 
+    @Delegate(types = {HasContactInformation.class})
+    private final ContactInformationSupport contactInformation =
+            new ContactInformationSupport();
+ 
+    // User itself will implement all contact information by delegation
+     
+}
+-----------------------------------------------------------------------------------------
 @echo off
 start Brackets.exe %*
 
