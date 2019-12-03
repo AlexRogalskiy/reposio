@@ -36,6 +36,121 @@ public class <T extends Self<T>> Self<T> {
     }
 }
 -----------------------------------------------------------------------------------------
+https://github.com/yildirimabdullah/spring-kafka-test
+https://mguenther.github.io/kafka-junit/
+-----------------------------------------------------------------------------------------
+public class JwtAuthenticationFilter extends AbstractAuthenticationProcessingFilter {
+
+    public JwtAuthenticationFilter(AuthenticationManager authenticationManager) {
+        super("/api/**");
+        this.setAuthenticationManager(authenticationManager);
+    }
+
+    @Override
+    protected boolean requiresAuthentication(HttpServletRequest request, HttpServletResponse response) {
+        return super.requiresAuthentication(request, response);
+    }
+-----------------------------------------------------------------------------------------
+@RestController
+//@EnablePrometheusEndpoint
+public class DemoApplication {
+    private static final Counter requestTotal = Counter.build()
+            .name("sample_counter")
+            .labelNames("status")
+            .help("A simple Counter to illustrate custom Counters in Spring Boot and Prometheus").register();
+
+    @GetMapping("/test")
+    public String testRequestMetrics() {
+        final Random random = new Random(System.currentTimeMillis());
+        if (random.nextInt(2) > 0) {
+            requestTotal.labels("success").inc();
+        } else {
+            requestTotal.labels("error").inc();
+        }
+        return "Welcome to my world!";
+    }
+}
+-----------------------------------------------------------------------------------------
+public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.authorizeRequests()
+                .antMatchers("/web/admin/**").hasAnyRole(ADMIN.toString(), GUEST.toString())
+                .anyRequest().permitAll()
+                .and()
+                .formLogin().loginPage("/web/login").permitAll()
+                .and()
+                .csrf().ignoringAntMatchers("/contact-email")
+                .and()
+                .logout().logoutUrl("/web/logout").logoutSuccessUrl("/web/").permitAll();
+    }
+
+    @Autowired
+    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
+        auth.inMemoryAuthentication()
+                .withUser("admin").password("admin").roles(ADMIN.toString())
+                .and()
+                .withUser("guest").password("guest").roles(GUEST.toString());
+    }
+
+}
+-----------------------------------------------------------------------------------------
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import javax.servlet.Filter;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletResponse;
+import javax.servlet.ServletRequest;
+import javax.servlet.FilterChain;
+import javax.servlet.annotation.WebFilter;
+import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+@WebFilter(urlPatterns = "/api/count")
+public class ExampleFilter implements Filter{
+    private static final Logger logger = LoggerFactory.getLogger(ExampleFilter.class);
+    @Override
+    public void init(FilterConfig filterConfig) throws ServletException {
+    }
+    @Override
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+        logger.info("filter:"+ ((HttpServletRequest)servletRequest).getRequestURL());
+        filterChain.doFilter(servletRequest, servletResponse);
+    }
+    @Override
+    public void destroy() {
+    }
+
+-----------------------------------------------------------------------------------------
+<project>
+  ...
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>3.0.0</version>
+        <executions>
+          <execution>
+            <id>timestamp-property</id>
+            <goals>
+              <goal>timestamp-property</goal>
+            </goals>
+            <configuration>
+              <name>next.year</name>
+              <pattern>yyyy</pattern>
+              <unit>year</unit>
+              <offset>+1</offset>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+  ...
+</project>
+-----------------------------------------------------------------------------------------
 public interface HasContactInformation {
  
     String getFirstName();
