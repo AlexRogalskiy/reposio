@@ -15985,6 +15985,326 @@ else
   ./gradlew --scan gitPublishPush
 fi
 --------------------------------------------------------------------------------------------------------
+import com.github.ralfstuckert.junit.jupiter.spring.ticket.Ticket;
+import com.github.ralfstuckert.junit.jupiter.spring.ticket.TicketRepository;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import com.github.ralfstuckert.junit.jupiter.extension.mongo.MongoCleanup;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+
+@MongoCleanup(Ticket.class)
+@ExtendWith(SpringExtension.class)
+@SpringBootTest
+public class TicketRepositoryIT {
+
+	@Autowired
+	private TicketRepository repository;
+	@Autowired
+	private MongoTemplate mongoTemplate;
+
+	@Test
+    @DisplayName("Test the findsByTicketId() method")
+	public void testSaveAndFindTicket() throws Exception {
+		Ticket ticket1 = new Ticket("1", "blabla");
+		repository.save(ticket1);
+		Ticket ticket2 = new Ticket("2", "hihi");
+		repository.save(ticket2);
+
+		assertEquals(ticket1, repository.findByTicketId("1"));
+		assertEquals(ticket2, repository.findByTicketId("2"));
+		assertNull(repository.findByTicketId("3"));
+	}
+
+	@Test
+    @DisplayName("Ensure that there is a unique index on the ticket ID")
+	public void testSaveNewTicketWithExistingTicketId() throws Exception {
+        repository.save(new Ticket("1", "blabla"));
+	    assertThrows(DuplicateKeyException.class, () -> {
+            repository.save(new Ticket("1", "hihi"));
+        });
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+import java.io.IOException;
+import java.io.InputStream;
+
+import org.springframework.core.io.AbstractResource;
+
+/**
+ * {@link org.springframework.core.io.Resource} implementation to create an operating
+ * system process process and capture its output.
+ *
+ * @author Mike Heath
+ */
+public class ProcessOutputResource extends AbstractResource {
+
+	private final ProcessBuilder processBuilder;
+
+	public ProcessOutputResource(String... command) {
+		processBuilder = new ProcessBuilder(command);
+	}
+
+	@Override
+	public String getDescription() {
+		return processBuilder.toString();
+	}
+
+	@Override
+	public InputStream getInputStream() throws IOException {
+		return processBuilder.start().getInputStream();
+	}
+
+	@Override
+	public String toString() {
+		return getDescription();
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.Charset;
+
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.Yaml;
+import org.zeroturnaround.zip.ZipUtil;
+
+import org.springframework.cloud.skipper.domain.Package;
+import org.springframework.cloud.skipper.domain.PackageMetadata;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
+import org.springframework.util.FileSystemUtils;
+import org.springframework.util.StreamUtils;
+import org.springframework.util.StringUtils;
+
+/**
+ * @author Mark Pollack
+ * @author Ilayaperumal Gopinathan
+ */
+public class DefaultPackageWriter implements PackageWriter {
+
+	private Yaml yaml;
+
+	public DefaultPackageWriter() {
+		DumperOptions dumperOptions = new DumperOptions();
+		dumperOptions.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+		dumperOptions.setPrettyFlow(true);
+		this.yaml = new Yaml(dumperOptions);
+	}
+
+	@Override
+	public File write(Package pkg, File targetDirectory) {
+		PackageMetadata packageMetadata = pkg.getMetadata();
+		File tmpDir = TempFileUtils.createTempDirectory("skipper" + packageMetadata.getName()).toFile();
+		File rootPackageDir = new File(tmpDir,
+				String.format("%s-%s", packageMetadata.getName(), packageMetadata.getVersion()));
+		rootPackageDir.mkdir();
+		writePackage(pkg, rootPackageDir);
+		if (!pkg.getDependencies().isEmpty()) {
+			File packagesDir = new File(rootPackageDir, "packages");
+			packagesDir.mkdir();
+			for (Package dependencyPkg : pkg.getDependencies()) {
+				File packageDir = new File(packagesDir, dependencyPkg.getMetadata().getName());
+				packageDir.mkdir();
+				writePackage(dependencyPkg, packageDir);
+			}
+		}
+		File targetZipFile = PackageFileUtils.calculatePackageZipFile(pkg.getMetadata(), targetDirectory);
+		ZipUtil.pack(rootPackageDir, targetZipFile, true);
+		FileSystemUtils.deleteRecursively(tmpDir);
+		return targetZipFile;
+	}
+
+	private void writePackage(Package pkg, File directory) {
+		String packageMetadata = generatePackageMetadata(pkg.getMetadata());
+		writeText(new File(directory, "package.yml"), packageMetadata);
+		if (pkg.getConfigValues() != null && StringUtils.hasText(pkg.getConfigValues().getRaw())) {
+			writeText(new File(directory, "values.yml"), pkg.getConfigValues().getRaw());
+		}
+		if (!pkg.getTemplates().isEmpty()) {
+			File templateDir = new File(directory, "templates/");
+			templateDir.mkdirs();
+			File templateFile = new File(templateDir, pkg.getMetadata().getName() + ".yml");
+			writeText(templateFile, getDefaultTemplate());
+		}
+	}
+
+	private String getDefaultTemplate() {
+		Resource resource = new ClassPathResource("/org/springframework/cloud/skipper/io/generic-template.yml");
+		String genericTempateData = null;
+		try {
+			genericTempateData = StreamUtils.copyToString(resource.getInputStream(), Charset.defaultCharset());
+		}
+		catch (IOException e) {
+			throw new IllegalArgumentException("Can't load generic template", e);
+		}
+		return genericTempateData;
+	}
+
+	private void writeText(File target, String body) {
+		try (OutputStream stream = new FileOutputStream(target)) {
+			StreamUtils.copy(body, Charset.forName("UTF-8"), stream);
+		}
+		catch (Exception e) {
+			throw new IllegalStateException("Cannot write file " + target, e);
+		}
+	}
+
+	private String generatePackageMetadata(PackageMetadata packageMetadata) {
+		return yaml.dump(packageMetadata);
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+ void findAnnotations() {
+        final ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(false);
+        scanner.addIncludeFilter(new AnnotationTypeFilter(ExceptionType.class));
+        for (final BeanDefinition bd : scanner.findCandidateComponents("com.paragon.mailingcontour.commons")) {
+            System.out.println(bd.getBeanClassName());
+        }
+    }
+--------------------------------------------------------------------------------------------------------
+AnnotationsScanner scanner = AnnotationsScanner.createScanner()
+        .includeSources(ExampleApplication.class)
+        .build();
+
+AnnotationsScannerProcess process = scanner.createWorker()
+        .addDefaultProjectFilters("net.dzikoysk")
+        .fetch();
+
+Set<Class<?>> classes = process.createSelector()
+        .selectTypesAnnotatedWith(AnnotationTest.class);
+--------------------------------------------------------------------------------------------------------
+package com.farenda.java.lang;
+ 
+import org.reflections.Reflections;
+ 
+public class ReflectionAnnotatedClasses {
+ 
+    public static void main(String[] args) {
+        System.out.println("Scanning using Reflections:");
+ 
+        Reflections ref = new Reflections("com.farenda.java.lang");
+        for (Class<?> cl : ref.getTypesAnnotatedWith(Findable.class)) {
+            Findable findable = cl.getAnnotation(Findable.class);
+            System.out.printf("Found class: %s, with meta name: %s%n",
+                    cl.getSimpleName(), findable.name());
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@KeySpace("deployer")
+
+import org.springframework.hateoas.ResourceSupport;
+
+/**
+ * Provides meta-information about the Spring Cloud Skipper server.
+ *
+ * @author Janne Valkealahti
+ *
+ */
+public class AboutResource extends ResourceSupport {
+
+	private VersionInfo versionInfo = new VersionInfo();
+
+	/**
+	 * Default constructor for serialization frameworks.
+	 */
+	public AboutResource() {
+	}
+
+	public VersionInfo getVersionInfo() {
+		return versionInfo;
+	}
+
+	public void setVersionInfo(VersionInfo versionInfo) {
+		this.versionInfo = versionInfo;
+	}
+
+	@Override
+	public String toString() {
+		return getVersionInfo().getServer().getName() + " v" + getVersionInfo().getServer().getVersion();
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.WebClientAutoConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.test.context.junit4.SpringRunner;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.cloud.skipper.client.SkipperClientConfigurationTests.TestConfig;
+
+/**
+ * Tests for {@link SkipperClientConfiguration}.
+ *
+ * @author Janne Valkealahti
+ *
+ */
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = TestConfig.class)
+public class SkipperClientConfigurationTests {
+
+	@Autowired
+	private ApplicationContext context;
+
+	@Test
+	public void testDefaultRestTemplateBeanName() {
+		assertThat(context.containsBean(SkipperClientConfiguration.SKIPPERCLIENT_RESTTEMPLATE_BEAN_NAME)).isTrue();
+	}
+
+	@Configuration
+	@ImportAutoConfiguration(classes = { WebClientAutoConfiguration.class, SkipperClientConfiguration.class })
+	static class TestConfig {
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.mongodb.config.AbstractMongoConfiguration;
+
+import com.mongodb.Mongo;
+import com.mongodb.MongoClient;
+import com.mongodb.MongoClientURI;
+
+@Configuration
+public class PersistenceConfig extends AbstractMongoConfiguration {
+
+	@Value("${mongo.url}")
+	private String dbUri;
+	@Value("${db.name}")
+	private String dbName;
+
+	@Override
+	public MongoClient mongoClient() {
+		return new MongoClient(new MongoClientURI(this.dbUri));
+	}
+
+	@Override
+	protected String getDatabaseName() {
+		return this.dbName;
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
 @Bean
 public WebMvcConfigurer initializrWebMvcConfigurer() {
     return new WebMvcConfigurer() {
