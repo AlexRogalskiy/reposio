@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------------------------------
 String pricePayload = JacksonJsonHelper.serialize(request.getCurrent_price());
 --------------------------------------------------------------------------------------------------------
+@Test
+public void massIndexation() throws InterruptedException {
+    EntityManager em = Persistence.createEntityManagerFactory("studentPu").createEntityManager();
+    org.hibernate.Session hibernateSession = (Session)em.getDelegate();
+    FullTextSession fullTextSession = Search.getFullTextSession(hibernateSession);
+    fullTextSession.createIndexer().startAndWait();
+} 
+--------------------------------------------------------------------------------------------------------
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.UnknownHostException;
