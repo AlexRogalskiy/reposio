@@ -71020,6 +71020,32 @@ public class HomeController {
 Помогите пожалуйста, сильно не критикуйте, мой первый web проект и я много чего не знаю(
 Ответ: Это мой первый пр
 --------------------------------------------------------------------------------------------------------
+java -jar lombok.jar config -g --verbose
+--------------------------------------------------------------------------------------------------------
+.kite--grid {
+  $unit: 12;
+  $gutter: 10px;
+  > .kite__item {
+    @for $i from 1 through $unit { 
+      &.is-#{$i}of#{$unit} {
+        width: percentage($i / $unit);
+      }
+    }
+  }
+  &.has-gutter {
+    display: block;
+    width: auto;
+    margin-left: -$gutter;
+    margin-right: -$gutter;
+    > .kite__item {
+      padding-left: $gutter;
+      padding-right: $gutter;
+    }
+  }
+}
+
+https://github.com/1000ch/antennas
+--------------------------------------------------------------------------------------------------------
 FROM java:8-jdk-alpine
 VOLUME /tmp
 ARG DEPENDENCY=./target/modules

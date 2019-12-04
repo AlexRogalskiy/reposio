@@ -16168,6 +16168,1477 @@ public class DefaultPackageWriter implements PackageWriter {
 
 }
 --------------------------------------------------------------------------------------------------------
+<dependency>
+    <groupId>org.jbehave</groupId>
+    <artifactId>jbehave-core</artifactId>
+    <version>4.1</version>
+    <scope>test</scope>
+</dependency>
+
+public class IncreaseSteps {
+    private int counter;
+    private int previousValue;
+ 
+    @Given("a counter")
+    public void aCounter() {
+    }
+ 
+    @Given("the counter has any integral value")
+    public void counterHasAnyIntegralValue() {
+        counter = new Random().nextInt();
+        previousValue = counter;
+    }
+ 
+    @When("the user increases the counter")
+    public void increasesTheCounter() {
+        counter++;
+    }
+ 
+    @Then("the value of the counter must be 1 greater than previous value")
+    public void theValueOfTheCounterMustBe1Greater() {
+        assertTrue(1 == counter - previousValue);
+    }
+}
+
+Scenario: when a user increases a counter, its value is increased by 1
+ 
+Given a counter
+And the counter has any integral value
+When the user increases the counter
+Then the value of the counter must be 1 greater than previous value
+
+
+public class IncreaseStoryLiveTest extends JUnitStories {
+ 
+    @Override
+    public Configuration configuration() {
+        return new MostUsefulConfiguration()
+          .useStoryLoader(new LoadFromClasspath(this.getClass()))
+          .useStoryReporterBuilder(new StoryReporterBuilder()
+            .withCodeLocation(codeLocationFromClass(this.getClass()))
+            .withFormats(CONSOLE));
+    }
+ 
+    @Override
+    public InjectableStepsFactory stepsFactory() {
+        return new InstanceStepsFactory(configuration(), new IncreaseSteps());
+    }
+ 
+    @Override
+    protected List<String> storyPaths() {
+        return Arrays.asList("increase.story");
+    }
+ 
+}
+--------------------------------------------------------------------------------------------------------
+import org.panda_lang.framework.design.architecture.Application;
+import org.panda_lang.framework.language.interpreter.messenger.PandaMessenger;
+import org.panda_lang.panda.Panda;
+import org.panda_lang.panda.PandaConstants;
+import org.panda_lang.panda.PandaFactory;
+import org.panda_lang.panda.manager.ModuleManager;
+import org.panda_lang.panda.shell.PandaShell;
+import org.panda_lang.utilities.commons.function.ThrowingRunnable;
+import org.tinylog.configuration.Configuration;
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
+
+import java.io.File;
+import java.util.Optional;
+
+@Command(name = "panda", version = "Panda " + PandaConstants.VERSION)
+public final class PandaCommand implements ThrowingRunnable {
+
+    private final PandaShell shell;
+
+    @Parameters(index = "0", paramLabel = "<script>", description = "script to load")
+    private File script;
+
+    @Option(names = { "--version", "-V" }, versionHelp = true, description = "display current version of panda")
+    private boolean versionInfoRequested;
+
+    @Option(names = { "--help", "-H" }, usageHelp = true, description = "display help message")
+    private boolean usageHelpRequested;
+
+    @Option(names = { "--level", "-L" }, description = "set level of logging", paramLabel="<level>")
+    private String level;
+
+    public PandaCommand(PandaShell shell) {
+        this.shell = shell;
+    }
+
+    @Override
+    public void run() throws Exception {
+        CommandLine commandLine = new CommandLine(this);
+
+        if (level != null) {
+            Configuration.set("level", level);
+        }
+
+        if (usageHelpRequested) {
+            CommandLine.usage(this, System.out);
+        }
+
+        if (versionInfoRequested) {
+            commandLine.printVersionHelp(System.out);
+        }
+
+        if (script == null) {
+            return;
+        }
+
+        if (script.getName().endsWith("panda.hjson")) {
+            ModuleManager moduleManager = new ModuleManager(new PandaMessenger(shell.getLogger()), script.getParentFile());
+            moduleManager.install(script);
+            moduleManager.run(script);
+            return;
+        }
+
+        Panda panda = new PandaFactory().createPanda(shell.getLogger());
+        Optional<Application> application = panda.getLoader().load(script, script.getParentFile());
+
+        if (!application.isPresent()) {
+            shell.getLogger().error("Cannot load application");
+            return;
+        }
+
+        application.get().launch();
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Enumeration;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
+/**
+ * {@code ZipFileIterator} is used to iterate over all entries in a given {@code zip} or
+ * {@code jar} file and returning the {@link InputStream} of these entries.
+ * <p>
+ * It is possible to specify an (optional) entry name filter.
+ * <p>
+ * The most efficient way of iterating is used, see benchmark in test classes.
+ *
+ * @author <a href="mailto:rmuller@xiam.nl">Ronald K. Muller</a>
+ * @since annotation-detector 3.0.0
+ */
+final class ZipFileIterator {
+
+    private final ZipFile zipFile;
+    private final String[] entryNameFilter;
+    private final Enumeration<? extends ZipEntry> entries;
+
+    private ZipEntry current;
+
+    /**
+     * Create a new {@code ZipFileIterator} instance.
+     * 
+     * @param zipFile The ZIP file used to iterate over all entries
+     * @param entryNameFilter (optional) file name filter. Only entry names starting with
+     * one of the specified names in the filter are returned
+     */
+    ZipFileIterator(final ZipFile zipFile, final String[] entryNameFilter) throws IOException {
+        this.zipFile = zipFile;
+        this.entryNameFilter = entryNameFilter;
+
+        this.entries = zipFile.entries();
+    }
+
+    public ZipEntry getEntry() {
+        return current;
+    }
+
+    @SuppressWarnings("emptyblock")
+    public InputStream next() throws IOException {
+        while (entries.hasMoreElements()) {
+            current = entries.nextElement();
+            if (accept(current)) {
+                return zipFile.getInputStream(current);
+            }
+        }
+        // no more entries in this ZipFile, so close ZipFile
+        try {
+            // zipFile is never null here
+            zipFile.close();
+        } catch (IOException ex) {
+            // suppress IOException, otherwise close() is called twice
+        }
+        return null;
+    }
+
+    private boolean accept(final ZipEntry entry) {
+        if (entry.isDirectory()) {
+            return false;
+        }
+        if (entryNameFilter == null) {
+            return true;
+        }
+        for (final String filter : entryNameFilter) {
+            if (entry.getName().startsWith(filter)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+/**
+ * Represents the size of thumb nails that the API can return.
+ *
+ * @author Original Author is Dropbox
+ * @since infomas-asl 3.0.2
+ */
+public enum ThumbSize {
+
+    /**
+     * Will have at most a 32 width or 32 height, maintaining its original aspect ratio.
+     */
+    ICON_32x32("small"),
+
+    /**
+     * 64 width or 64 height, with original aspect ratio.
+     */
+    ICON_64x64("medium"),
+
+    /**
+     * 128 width or 128 height, with original aspect ratio.
+     */
+    ICON_128x128("large"),
+
+    /**
+     * 256 width or 256 height, with original aspect ratio.
+     */
+    ICON_256x256("256x256"),
+
+    /**
+     * Will either fit within a 320 x 240 rectangle or a 240 x 320 rectangle, whichever
+     * results in a larger image.
+     */
+    BESTFIT_320x240("320x240_bestfit"),
+
+    /**
+     * Fits within 480x320 or 320x480.
+     */
+    BESTFIT_480x320("480x320_bestfit"),
+
+    /**
+     * Fits within 640x480 or 480x640.
+     */
+    BESTFIT_640x480("640x480_bestfit"),
+
+    /**
+     * Fits within 960x640 or 640x960.
+     */
+    BESTFIT_960x640("960x640_bestfit"),
+
+    /**
+     * Fits within 1024x768 or 768x1024.
+     */
+    BESTFIT_1024x768("1024x768_bestfit");
+
+    private final String size;
+
+    private ThumbSize(final String size) {
+        this.size = size;
+    }
+
+    /**
+     * Return the identifier if this size, used in the REST API Request.
+     */
+    public String toAPISize() {
+        return size;
+    }
+}
+
+/**
+ * Represents the image format of thumbnails that the API can return.
+ *
+ * @author Original Author is Dropbox
+ * @author <a href="mailto:rmuller@xiam.nl">Ronald K. Muller</a> (refactoring)
+ * @since infomas-asl 3.0.2
+ */
+public enum ThumbFormat {
+
+    /**
+     * The PNG Image format.
+     */
+    PNG("image/png", ".png"),
+
+    /**
+     * The JPEG Image format.
+     */
+    JPEG("image/jpeg", ".jpg");
+
+    private final String mimeType;
+    private final String extension;
+
+    private ThumbFormat(final String mimeType, final String extension) {
+        this.mimeType = mimeType;
+        this.extension = extension;
+    }
+
+    /**
+     * Return the <a href="http://en.wikipedia.org/wiki/Internet_media_type">MIME Type</a>
+     * of this image format.
+     */
+    public String getMimeType() {
+        return mimeType;
+    }
+
+    /**
+     * Return the default file extension of this image format.
+     */
+    public String getDefaultExtension() {
+        return extension;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.io.FilterInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
+/**
+ * {@code ChunkedInputStream}.
+ * <p>
+ * Usage:
+ * <pre>
+ * final ChunkedInputStream chunked = new ChunkedInputStream((in), chunkSize);
+ * while (chunked.nextChunk()) {
+ *     // read and process chunked input stream as a normal input stream, any close()
+ *     // operation is ignored
+ * }
+ * // do not need to close the chunked input stream (closed by instance itself)
+ * </pre>
+ * 
+ * @author <a href="mailto:rmuller@xiam.nl">Ronald K. Muller</a>
+ * @since infomas-asl 3.0.2
+ */
+final class ChunkedInputStream extends FilterInputStream {
+
+    private final int chunkSize;
+    private int remaining;
+    private boolean closed;
+    
+    /**
+     * Create a new {@code ChunkedInputStream} instance.
+     * 
+     * @param in The underlying input stream
+     * @param chunkSize The chunk size in bytes
+     */
+    ChunkedInputStream(final InputStream in, final int chunkSize) {
+        super(in);
+        this.chunkSize = chunkSize;
+    }
+
+    /**
+     * Return {@code true} if the next chunk of data can be read. If {@code false}
+     * the underlying input stream is read fully and automatically closed by this
+     * {@code ChunkedInputStream}.
+     */
+    public boolean nextChunk() throws IOException {
+        if (closed) {
+            return false;
+        } else {
+            remaining = chunkSize;
+            return true;
+        }
+    }
+    
+    @Override
+    public int read() throws IOException {
+        if (remaining == 0) {
+            return -1;
+        }
+        final int c = super.read();
+        if (c < 0) {
+            closeSource();
+            return -1;
+        } else {
+            --remaining;
+            return c;
+        }
+    }
+
+    @Override
+    public int read(final byte[] buffer, final int offset, final int length) 
+        throws IOException {
+        
+        if (remaining == 0) {
+            return -1;
+        }
+        final int max = Math.min(remaining, length);
+        final int actual = super.read(buffer, offset, max);
+        if (actual < 0) {
+            closeSource();
+        } else {
+            remaining -= actual;
+        }
+        return actual;
+    }
+
+    @Override
+    public void close() throws IOException {
+        // do NOT close underlying stream! This is done by closeSource()
+    }
+
+    // private
+    
+    private void closeSource() throws IOException {
+        try {
+            in.close();
+        } finally {
+            closed = true;
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+   mvn dependency:sources
+    mvn dependency:resolve -Dclassifier=javadoc
+--------------------------------------------------------------------------------------------------------
+/**
+ * Class for timing stuff...
+ * 
+ * Uses System.nanoTime for precision, but returnes values in miliseconds.
+ * 
+ * @author Eugen
+ */
+public class StopWatch {
+
+	protected long ini, end;
+
+	/**
+	 * Constrcucts and sets the stopwatch to current time.
+	 */
+	public StopWatch() {
+		reset();
+	}
+
+	/**
+	 * Sets the stopwatch to current time
+	 */
+	public void reset() {
+		ini = end = System.nanoTime();
+	}
+
+	/**
+	 * Marks the end of measuring with the current time
+	 */
+	public void stop() {
+		end = System.nanoTime();
+	}
+
+	/**
+	 * Gets the difference between last reset and last stop, in miliseconds.
+	 */
+	public long getMeasure() {
+		return (end - ini) / 1000000;
+	}
+
+	/**
+	 * Calls stop() then getMeasure()
+	 */
+	public long stopAndGet() {
+		stop();
+		return getMeasure();
+	}
+
+	/**
+	 * Call stop and then returnes the measure as a nice string
+	 */
+	public String stopAndShow() {
+		stop();
+		return toString();
+	}
+
+	@Override
+	public String toString() {
+		return usToString(getMeasure());
+	}
+
+	private String usToString(long us) {
+		long totalSecs = us / 1000000;
+		int hours = (int) (totalSecs / 3600);
+		int mins = (int) (totalSecs / 60) % 60;
+		int secs = (int) (totalSecs % 60);
+		int ms = (int) (us % 1000000) / 1000;
+		us = us % 1000;
+
+		StringBuilder out = new StringBuilder();
+		if (hours > 0) {
+			out.append(hours).append(" hour ");
+		}
+		if (mins > 0) {
+			out.append(mins).append(" min ");
+		}
+		if (secs > 0) {
+			out.append(secs).append(" sec ");
+		}
+		if (ms > 0) {
+			out.append(ms).append(" ms ");
+		}
+		if (us > 0) {
+			out.append(us).append(" us ");
+		}
+		return out.toString().trim();
+	}
+
+}
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+
+/**
+ * A class that writes to a file if the logging flag is set and/or to the stdout
+ * if the testing flag is set.
+ * 
+ * @author Eugen
+ * 
+ */
+public class LogWriter {
+
+	private BufferedWriter log;
+	public static final String DATE_FORMAT_NOW = "dd.MM.yyyy HH:mm:ss";
+
+	private boolean logging;
+	private boolean testing;
+
+	/**
+	 * Constructor
+	 * 
+	 * @param filename
+	 *            name of file where to write log.
+	 */
+	public LogWriter(String filename, boolean logging, boolean testing) {
+		this.logging = logging;
+		this.testing = testing;
+		if (logging) {
+			try {
+				File folder = new File("log");
+				folder.mkdir();
+				log = new BufferedWriter(new FileWriter("log/" + filename));
+				writeToLog("Log file: " + folder.getCanonicalPath()
+						+ File.separator + filename);
+			} catch (Exception e) {
+				throw new RuntimeException("Faild to make the log file...", e);
+			}
+		}
+	}
+
+	/**
+	 * Writes string to log.
+	 * 
+	 * @param text
+	 *            Input text for writing
+	 */
+	public void writeToLog(String text, boolean forceToScreen) {
+		if (logging) {
+			try {
+				log.write(now() + " " + text + "\n");
+				log.flush();
+			} catch (IOException e) {
+				// logging error... so what xD
+			}
+		}
+		if (testing || forceToScreen) {
+			System.out.println(text);
+		}
+	}
+
+	public void writeToLog(String text) {
+		writeToLog(text, false);
+	}
+
+	/**
+	 * Adds "ERROR: " in front of the given string and forces the output to
+	 * screen [calls writeToLog("ERROR: "+error, true)]
+	 * 
+	 * @param error
+	 *            Msn to print/log
+	 */
+	public void error(String error) {
+		writeToLog("ERROR: " + error, true);
+	}
+
+	/**
+	 * 
+	 * This method returns current time in format set by DATE_FORMAT_NOW
+	 */
+	public static String now() {
+		Calendar cal = Calendar.getInstance();
+		SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT_NOW);
+		return sdf.format(cal.getTime());
+
+	}
+
+	/**
+	 * Closes log
+	 */
+	public void close() {
+		try {
+			log.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+}
+--------------------------------------------------------------------------------------------------------
+
+import com.ubirch.protocol.ProtocolException;
+import com.ubirch.protocol.ProtocolMessage;
+import com.ubirch.protocol.ProtocolSigner;
+
+import java.security.SignatureException;
+
+/**
+ * Protocol encoder interface.
+ *
+ * @param <T> the target type to encode to
+ * @author Matthias L. Jugel
+ */
+abstract class ProtocolEncoder<T> {
+    /**
+     * Encode a protocol message into the target type.
+     *
+     * @param pm     the protocol message to encode from
+     * @param signer a protocol signer taking care of the crypto operations to sign the final message
+     * @return the encoded and signed message
+     * @throws ProtocolException  if the encoding fails for some reason
+     * @throws SignatureException if the signature cannot be created
+     */
+    abstract T encode(ProtocolMessage pm, ProtocolSigner signer) throws ProtocolException, SignatureException;
+
+    /**
+     * Re-assemble the protocol message into the target type.
+     *
+     * @param pm the protocol message to encode from
+     * @return the encoded message with the existing signature
+     * @throws ProtocolException if the message cannot be encoded from the input
+     */
+    abstract T encode(ProtocolMessage pm) throws ProtocolException;
+
+    void checkProtocolMessage(ProtocolMessage pm) throws ProtocolException {
+        if (pm.getSignature() == null) {
+            throw new ProtocolException("missing signature");
+        }
+        if (pm.getSigned() == null) {
+            throw new ProtocolException("missing signed data");
+        }
+
+        int protocolVersion = pm.getVersion();
+        if (protocolVersion != ProtocolMessage.SIGNED && protocolVersion != ProtocolMessage.CHAINED) {
+            throw new ProtocolException(String.format("unknown protocol version: 0x%x", pm.getVersion()));
+        }
+    }
+}
+import com.ubirch.protocol.ProtocolException;
+import com.ubirch.protocol.ProtocolMessage;
+import com.ubirch.protocol.ProtocolVerifier;
+
+import java.security.InvalidKeyException;
+import java.security.SignatureException;
+
+/**
+ * Protocol decoder interface is the basis for protocol decoders.
+ * Generally they will decode to a {@link ProtocolMessage}, but in case of a verification, may also
+ * return a special envelope type with extra information.
+ *
+ * @param <T> the type of the source message
+ * @author Matthias L. Jugel
+ */
+abstract class ProtocolDecoder<T> {
+    /**
+     * Decode and verify this message.
+     *
+     * @param message  the message to decode
+     * @param verifier a {@link ProtocolVerifier} that takes care of cryptographically verifying the message signature
+     * @return the decoded and verified data as an envelope type
+     * @throws ProtocolException  if some json processing issue occurs, or the crypto functions fail (no signature verification)
+     * @throws SignatureException if the signature verification cannot be done for some reason
+     */
+    public ProtocolMessage decode(T message, ProtocolVerifier verifier) throws ProtocolException, SignatureException {
+        ProtocolMessage pm = decode(message);
+        try {
+            if (!verifier.verify(pm.getUUID(), pm.getSigned(), 0, pm.getSigned().length, pm.getSignature())) {
+                throw new SignatureException(String.format("signature verification failed: %s", pm));
+            }
+            return pm;
+        } catch (InvalidKeyException e) {
+            throw new ProtocolException("invalid key", e);
+        }
+    }
+
+    /**
+     * Decode a protocol messsage without decoding, just taking the pieces apart.
+     *
+     * @param message the message to decode
+     * @return the decoded message as a {@link ProtocolMessage}
+     * @throws ProtocolException if json decoding fails
+     */
+    abstract ProtocolMessage decode(T message) throws ProtocolException;
+}
+
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ubirch.protocol.ProtocolException;
+import com.ubirch.protocol.ProtocolMessage;
+import com.ubirch.protocol.ProtocolSigner;
+import org.msgpack.core.MessagePack;
+import org.msgpack.core.MessagePacker;
+import org.msgpack.jackson.dataformat.MessagePackFactory;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.SignatureException;
+
+/**
+ * The default msgpack protocol encoder.
+ *
+ * @author Matthias L. Jugel
+ */
+public class MsgPackProtocolEncoder extends ProtocolEncoder<byte[]> {
+    private static MessagePack.PackerConfig config = new MessagePack.PackerConfig().withStr8FormatSupport(false);
+    private static MsgPackProtocolEncoder instance = new MsgPackProtocolEncoder();
+
+    public static MsgPackProtocolEncoder getEncoder() {
+        return instance;
+    }
+
+    /**
+     * Encodes this protocol message into the msgpack format. Modifies the given ProtocolMessage, filling
+     * in the signature and encoded bytes.
+     *
+     * @param pm     the protocol message to encode and sign
+     * @param signer the protocol signer
+     * @return the msgpack encoded message as bytes
+     * \
+     */
+    @Override
+    public byte[] encode(ProtocolMessage pm, ProtocolSigner signer) throws ProtocolException, SignatureException {
+        if (pm == null || signer == null) {
+            throw new IllegalArgumentException("message or signer null");
+        }
+
+        try {
+            ByteArrayOutputStream out = new ByteArrayOutputStream(255);
+            MessagePacker packer = config.newPacker(out);
+
+            packer.packArrayHeader(5 + (pm.getVersion() & 0x0f) - 2);
+            packer.packInt(pm.getVersion());
+            packer.packBinaryHeader(16).addPayload(UUIDUtil.uuidToBytes(pm.getUUID()));
+            switch (pm.getVersion()) {
+                case ProtocolMessage.CHAINED:
+                    packer.packBinaryHeader(64);
+                    byte[] chainSignature = pm.getChain();
+                    if (chainSignature == null) {
+                        packer.addPayload(new byte[64]);
+                    } else {
+                        packer.addPayload(chainSignature);
+                    }
+                    break;
+                case ProtocolMessage.SIGNED:
+                    break;
+                default:
+                    throw new ProtocolException(String.format("unknown protocol version: 0x%x", pm.getVersion()));
+            }
+            packer.packInt(pm.getHint());
+            packer.flush(); // make sure everything is in the byte buffer
+
+            // write the payload
+            ObjectMapper mapper = new ObjectMapper(new MessagePackFactory());
+            mapper.writeValue(out, pm.getPayload());
+            packer.close(); // also closes out
+
+            // sign the message
+            byte[] dataToSign = out.toByteArray();
+            byte[] signature = signer.sign(pm.getUUID(), dataToSign, 0, dataToSign.length);
+            pm.setSigned(dataToSign);
+            pm.setSignature(signature);
+
+            return encode(pm);
+        } catch (InvalidKeyException e) {
+            throw new ProtocolException("invalid key", e);
+        } catch (IOException e) {
+            throw new ProtocolException("msgpack encoding failed", e);
+        } catch (NullPointerException e) {
+            throw new ProtocolException("msgpack encoding failed: field null?", e);
+        }
+    }
+
+    public byte[] encode(ProtocolMessage pm) throws ProtocolException {
+        checkProtocolMessage(pm);
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream(255);
+        MessagePacker packer = config.newPacker(out);
+
+        try {
+            packer.writePayload(pm.getSigned());
+            if (pm.getVersion() == 1) {
+                packer.packRawStringHeader(pm.getSignature().length);
+            } else {
+                packer.packBinaryHeader(pm.getSignature().length);
+            }
+            packer.writePayload(pm.getSignature());
+
+            packer.flush();
+            packer.close();
+        } catch (IOException e) {
+            throw new ProtocolException("msgpack encoding failed", e);
+        }
+
+        return out.toByteArray();
+    }
+}
+
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.*;
+import com.ubirch.protocol.ProtocolException;
+import com.ubirch.protocol.ProtocolMessage;
+import org.msgpack.core.*;
+import org.msgpack.jackson.dataformat.MessagePackFactory;
+import org.msgpack.value.*;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.*;
+
+/**
+ * The default msgpack ubirch protocol decoder.
+ *
+ * @author Matthias L. Jugel
+ */
+public class MsgPackProtocolDecoder extends ProtocolDecoder<byte[]> {
+    private static final int PAYLOAD_OFFSET = 2;
+    private final static MsgPackProtocolDecoder instance = new MsgPackProtocolDecoder();
+
+    public static MsgPackProtocolDecoder getDecoder() {
+        return instance;
+    }
+
+    private ObjectMapper mapper;
+
+    @SuppressWarnings("WeakerAccess")
+    MsgPackProtocolDecoder() {
+        mapper = new ObjectMapper(new MessagePackFactory());
+        mapper.configure(DeserializationFeature.USE_BIG_INTEGER_FOR_INTS, true);
+    }
+
+    /**
+     * Decode a a protocol message from it's raw data.
+     *
+     * @param message the raw protocol message in msgpack format
+     * @return the decoded protocol message
+     * @throws ProtocolException if the decoding failed
+     */
+    @SuppressWarnings("checkstyle:FallThrough")
+    @Override
+    public ProtocolMessage decode(byte[] message) throws ProtocolException {
+        boolean legacyPayloadDecoding = false;
+        ByteArrayInputStream in = new ByteArrayInputStream(message);
+
+        MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(in);
+        ProtocolMessage pm = new ProtocolMessage();
+        try {
+            ValueType envelopeType = unpacker.getNextFormat().getValueType();
+            int envelopeLength = unpacker.unpackArrayHeader();
+            if (envelopeLength > 4 && envelopeLength < 7) {
+                pm.setVersion(unpacker.unpackInt());
+
+                int protocolVersion = pm.getVersion() >> 4;
+                switch (protocolVersion) {
+                    case 1:
+                        legacyPayloadDecoding = true;
+                    case ProtocolMessage.ubirchProtocolVersion:
+                        break;
+                    default:
+                        throw new ProtocolException(String.format("unknown protocol version: %d", protocolVersion));
+                }
+
+                pm.setUUID(UUIDUtil.bytesToUUID(unpacker.readPayload(unpacker.unpackRawStringHeader())));
+                switch (pm.getVersion() & 0x0F) {
+                    case ProtocolMessage.CHAINED & 0x0F:
+                        pm.setChain(unpacker.readPayload(unpacker.unpackRawStringHeader()));
+                        break;
+                    case ProtocolMessage.SIGNED & 0x0F:
+                        break;
+                    default:
+                        throw new ProtocolException(String.format("unknown protocol type: 0x%04x", pm.getVersion() & 0x0F));
+                }
+                pm.setHint(unpacker.unpackInt());
+                if (!legacyPayloadDecoding) {
+                    pm.setPayload(mapper.readTree(message).get(envelopeLength - PAYLOAD_OFFSET));
+                    unpacker.skipValue();
+                } else {
+                    pm.setPayload(decodePayload(unpacker));
+                }
+
+                // finally store the signed data and signature for later verification
+                pm.setSigned(Arrays.copyOfRange(message, 0, (int) unpacker.getTotalReadBytes()));
+                pm.setSignature(unpacker.readPayload(unpacker.unpackRawStringHeader()));
+
+                return pm;
+            } else {
+                throw new ProtocolException(String.format("unknown msgpack envelope format: %s[%d]", envelopeType.name(), envelopeLength));
+            }
+        } catch (MessagePackException e) {
+            throw new ProtocolException("msgpack decoding failed", e);
+        } catch (IOException e) {
+            throw new ProtocolException(String.format("msgpack data corrupt at position %d", unpacker.getTotalReadBytes()), e);
+        }
+    }
+
+    private JsonNode decodePayload(MessageUnpacker unpacker) throws IOException {
+        MessageFormat mf = unpacker.getNextFormat();
+        switch (mf.getValueType()) {
+            case NIL:
+                unpacker.unpackNil();
+                return NullNode.getInstance();
+            case BOOLEAN:
+                return BooleanNode.valueOf(unpacker.unpackBoolean());
+            case INTEGER:
+                if (mf == MessageFormat.UINT64) {
+                    return BigIntegerNode.valueOf(unpacker.unpackBigInteger());
+                }
+                return LongNode.valueOf(unpacker.unpackLong());
+            case FLOAT:
+                return DoubleNode.valueOf(unpacker.unpackDouble());
+            case STRING: {
+                int length = unpacker.unpackRawStringHeader();
+                ImmutableStringValue stringValue = ValueFactory.newString(unpacker.readPayload(length), true);
+                if (stringValue.isRawValue()) {
+                    return BinaryNode.valueOf(stringValue.asRawValue().asByteArray());
+                } else {
+                    return TextNode.valueOf(stringValue.asString());
+                }
+            }
+            case BINARY: {
+                int length = unpacker.unpackBinaryHeader();
+                return BinaryNode.valueOf(unpacker.readPayload(length));
+            }
+            case ARRAY: {
+                int size = unpacker.unpackArrayHeader();
+                List<JsonNode> array = new ArrayList<>(size);
+                for (int i = 0; i < size; i++) {
+                    array.add(decodePayload(unpacker));
+                }
+                return new ArrayNode(null, array);
+            }
+            case MAP: {
+                int size = unpacker.unpackMapHeader();
+                Map<String, JsonNode> kvs = new HashMap<>(size);
+                for (int i = 0; i < size; i++) {
+                    JsonNode kn = decodePayload(unpacker);
+                    String key = kn.isBinary() ? new String(kn.binaryValue()) : kn.asText();
+                    kvs.put(key, decodePayload(unpacker));
+                }
+                return new ObjectNode(null, kvs);
+            }
+            case EXTENSION: {
+                ExtensionTypeHeader extHeader = unpacker.unpackExtensionTypeHeader();
+                return BinaryNode.valueOf(unpacker.readPayload(extHeader.getLength()));
+            }
+            default:
+                throw new MessageNeverUsedFormatException("Unknown value type");
+        }
+    }
+}
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.ubirch.protocol.ProtocolException;
+import com.ubirch.protocol.ProtocolMessage;
+import com.ubirch.protocol.ProtocolMessageViews;
+import com.ubirch.protocol.ProtocolSigner;
+
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.SignatureException;
+
+/**
+ * Simpe JSON protocol encoder.
+ *
+ * @author Matthias L. Jugel
+ */
+@SuppressWarnings("WeakerAccess")
+public class JSONProtocolEncoder extends ProtocolEncoder<String> {
+    private static JSONProtocolEncoder instance = new JSONProtocolEncoder();
+    private ObjectMapper mapper = new ObjectMapper();
+
+    public JSONProtocolEncoder() {
+        mapper.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);
+        mapper.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
+        mapper.configure(MapperFeature.DEFAULT_VIEW_INCLUSION, false);
+        mapper.setConfig(mapper.getSerializationConfig().withView(ProtocolMessageViews.Default.class));
+    }
+
+    public static JSONProtocolEncoder getEncoder() {
+        return instance;
+    }
+
+    @Override
+    public String encode(ProtocolMessage pm, ProtocolSigner signer) throws ProtocolException, SignatureException {
+        if (pm == null || signer == null) {
+            throw new IllegalArgumentException("message or signer null");
+        }
+
+        try {
+            pm.setSigned(mapper.writeValueAsBytes(pm.getPayload()));
+            pm.setSignature(signer.sign(pm.getUUID(), pm.getSigned(), 0, pm.getSigned().length));
+            return encode(pm);
+        } catch (InvalidKeyException e) {
+            throw new ProtocolException("invalid key", e);
+        } catch (JsonProcessingException e) {
+            throw new ProtocolException("json encoding failed", e);
+        }
+    }
+
+    @Override
+    public String encode(ProtocolMessage pm) throws ProtocolException {
+        checkProtocolMessage(pm);
+
+        try {
+            pm.setSignature(pm.getSignature());
+            return new String(mapper.writeValueAsBytes(pm), StandardCharsets.UTF_8);
+        } catch (JsonProcessingException e) {
+            throw new ProtocolException("json encoding failed", e);
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+
+/**
+ * Collection of Utilities.
+ */
+class Utils {
+    /**
+     * Create a temporary directory on disk that will be cleaned up when the process terminates.
+     * @return Absolute path to the temporary directory.
+     */
+    static File createTempDirectory() {
+        // Create temp path to store logs
+        final Path logDir;
+        try {
+            logDir = Files.createTempDirectory("kafka-unit");
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        // Ensure its removed on termination by recursively removing all files under the temp directory.
+        Utils.recursiveDeleteOnShutdownHook(logDir);
+
+        // Return as a File
+        return logDir.toFile();
+    }
+
+    /**
+     * Registers a shutdown hook to recursively cleanup/delete a directory and all of it's contents.
+     * @param path the Path to remove.
+     */
+    private static void recursiveDeleteOnShutdownHook(final Path path) {
+        Runtime.getRuntime().addShutdownHook(new Thread(
+            () -> {
+                try {
+                    Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+                        @Override
+                        public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
+                            Files.delete(file);
+                            return FileVisitResult.CONTINUE;
+                        }
+
+                        @Override
+                        public FileVisitResult postVisitDirectory(final Path dir, final IOException exception) throws IOException {
+                            if (exception == null) {
+                                Files.delete(dir);
+                                return FileVisitResult.CONTINUE;
+                            }
+                            // directory iteration failed
+                            throw exception;
+                        }
+                    });
+                } catch (final IOException exception) {
+                    throw new RuntimeException("Failed to delete " + path, exception);
+                }
+            }
+        ));
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.annotation.EnableKafka;
+import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.support.converter.StringJsonMessageConverter;
+
+@Configuration
+@EnableKafka
+public class ReceiverConfig {
+
+  @Value("${kafka.bootstrap-servers}")
+  private String bootstrapServers;
+
+  @Bean
+  public Map<String, Object> consumerConfigs() {
+    Map<String, Object> props = new HashMap<>();
+    props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+    props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+    props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+    props.put(ConsumerConfig.GROUP_ID_CONFIG, "json");
+
+    return props;
+  }
+
+  @Bean
+  public ConsumerFactory<String, String> consumerFactory() {
+    return new DefaultKafkaConsumerFactory<>(consumerConfigs(), new StringDeserializer(),
+        new StringDeserializer());
+  }
+
+  @Bean
+  public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory() {
+    ConcurrentKafkaListenerContainerFactory<String, String> factory =
+        new ConcurrentKafkaListenerContainerFactory<>();
+    factory.setConsumerFactory(consumerFactory());
+    factory.setMessageConverter(new StringJsonMessageConverter());
+
+    return factory;
+  }
+
+  @Bean
+  public Receiver receiver() {
+    return new Receiver();
+  }
+}
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.support.converter.StringJsonMessageConverter;
+
+@Configuration
+public class SenderConfig {
+
+  @Value("${kafka.bootstrap-servers}")
+  private String bootstrapServers;
+
+  @Bean
+  public Map<String, Object> producerConfigs() {
+    Map<String, Object> props = new HashMap<>();
+    props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+    props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+    props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+
+    return props;
+  }
+
+  @Bean
+  public ProducerFactory<String, String> producerFactory() {
+    return new DefaultKafkaProducerFactory<>(producerConfigs());
+  }
+
+  @Bean
+  public KafkaTemplate<String, String> kafkaTemplate() {
+    KafkaTemplate<String, String> template = new KafkaTemplate<>(producerFactory());
+    template.setMessageConverter(new StringJsonMessageConverter());
+
+    return template;
+  }
+
+  @Bean
+  public Sender sender() {
+    return new Sender();
+  }
+}
+--------------------------------------------------------------------------------------------------------
+    <!-- spring-integration -->
+    <dependency>
+      <groupId>org.springframework.integration</groupId>
+      <artifactId>spring-integration-kafka</artifactId>
+      <version>${spring-integration-kafka.version}</version>
+    </dependency>
+    <!-- spring-kafka -->
+    <dependency>
+      <groupId>org.springframework.kafka</groupId>
+      <artifactId>spring-kafka</artifactId>
+      <version>${spring-kafka.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.kafka</groupId>
+      <artifactId>spring-kafka-test</artifactId>
+      <version>${spring-kafka.version}</version>
+      <scope>test</scope>
+    </dependency>
+	
+	https://github.com/code-not-found/spring-kafka/blob/master/spring-kafka-spring-integration-helloworld/pom.xml
+--------------------------------------------------------------------------------------------------------
+import java.nio.ByteBuffer;
+import java.util.UUID;
+
+/**
+ * Utility class for handling UUID and bytes
+ *
+ * @author Matthias L. Jugel
+ */
+@SuppressWarnings("WeakerAccess")
+public class UUIDUtil {
+    private UUIDUtil() {
+    }
+
+    public static byte[] uuidToBytes(UUID uuid) {
+        ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
+        bb.putLong(uuid.getMostSignificantBits());
+        bb.putLong(uuid.getLeastSignificantBits());
+        return bb.array();
+    }
+
+    public static UUID bytesToUUID(byte[] bytes) {
+        ByteBuffer bb = ByteBuffer.wrap(bytes);
+        long high = bb.getLong();
+        long low = bb.getLong();
+        return new UUID(high, low);
+    }
+}
+--------------------------------------------------------------------------------------------------------
+       <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>2.5.3</version>
+                <configuration>
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
+                    <useReleaseProfile>false</useReleaseProfile>
+                    <releaseProfiles>release</releaseProfiles>
+                    <goals>deploy</goals>
+                </configuration>
+            </plugin>
+			          <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.5</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <keyname>7a672196888951a7cccdc200810233050cd1c9f0</keyname>
+                        </configuration>
+                    </plugin>
+--------------------------------------------------------------------------------------------------------
+anguage: java
+jdk:
+  - oraclejdk8
+script:
+  - if [ "$TRAVIS_BRANCH" = "master" ]; then gradle clean build bintrayUpload -PbintrayUser=$bintrayUser -PbintrayKey=$bintrayKey -PdryRun=$dryRun; fi
+  - if [ "$TRAVIS_BRANCH" = "develop" ]; then gradle clean build; fi
+branches:
+  only:
+    - master
+    - develop
+cache:
+  directories:
+    - '$HOME/.m2/repository'
+    - '$HOME/.gradle'
+    - '.gradle'
+--------------------------------------------------------------------------------------------------------
+@XmlAccessorType(XmlAccessType.FIELD)
+@XmlType(name = "")
+@XmlRootElement(name = "variable")
+public class Variable {
+
+    @XmlAttribute(name = "name", required = true)
+    @XmlJavaTypeAdapter(CollapsedStringAdapter.class)
+    @XmlSchemaType(name = "NMTOKEN")
+    protected String name;
+
+    /**
+     * Gets the value of the name property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * Sets the value of the name property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setName(String value) {
+        this.name = value;
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+cnpm install matricss-decls 
+https://github.com/1000ch/x-grd
+npm install grd
+
+$ npm install rog
+$ npm install rog-plugin-title
+https://github.com/1000ch/lazyload-image
+https://github.com/1000ch/slide
+npm install -g polymer-cli
+npm i -g preact-cli
+https://github.com/1000ch/preact-cli
+
+https://github.com/1000ch/hugo-boilerplate
+
+https://github.com/1000ch/is-sqlite
+https://github.com/1000ch/d3-sandbox
+https://github.com/1000ch/react-jest-example
+--------------------------------------------------------------------------------------------------------
+    /**
+     *
+     * @param localeObject
+     * @return the {@link Locale} derived from the given locale object or
+     *         <code>null</code>
+     */
+    public static Locale getLocale(Object localeObject) {
+        if (localeObject != null) {
+            if (localeObject instanceof Locale) {
+                return (Locale) localeObject;
+            } else {
+                return Locale.forLanguageTag(localeObject.toString());
+            }
+        }
+        return null;
+    }
+--------------------------------------------------------------------------------------------------------
+import java.util.ArrayList;
+import java.util.Collection;
+
+public class InterceptorData {
+
+    private final Collection<Object> context;
+
+    public InterceptorData() {
+        this.context = new ArrayList<>();
+    }
+
+    public void addElement(Object element) {
+        context.add(element);
+    }
+
+    @SuppressWarnings("unchecked")
+    public @Nullable <T> T getValue(Class<T> type) {
+        for (Object datum : context) {
+            if (datum == null) {
+                continue;
+            }
+
+            if (type.isAssignableFrom(datum.getClass())) {
+                return (T) datum;
+            }
+        }
+
+        return null;
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+enum InstallStatus {
+
+    INSTALLED("+"),
+    SKIPPED("~"),
+    REMOVED("-");
+
+    private final String symbol;
+
+    InstallStatus(String symbol) {
+        this.symbol = symbol;
+    }
+
+    protected String getSymbol() {
+        return symbol;
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+  
+language: java
+sudo: true
+
+jdk:
+  - openjdk8
+  - openjdk12
+
+install:
+  - mvn test-compile -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+
+script:
+  - mvn test jacoco:report
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+  - mvn coveralls:report
+
+notifications:
+  email: false
+--------------------------------------------------------------------------------------------------------
+mvn exec:java -Dexec.mainClass="ss7fw.SS7Firewall"
+mvn exec:java -Dexec.mainClass="ss7fw.SS7ClientLiveInput"
+mvn exec:java -Dexec.mainClass="ss7fw.SS7Server"
+
+cd ./input
+mkfifo pipe
+tshark -T ek -x -j "" -r ./input/sigtran.pcap > sigtran.json
+cat ./input/sigtran.json > pipe
+--------------------------------------------------------------------------------------------------------
+Отключить TSX на Windows-ПК можно через следующие настройки реестра:
+
+reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\Kernel" /v DisableTsx /t REG_DWORD /d 1 /f.
+
+При необходимости TSX можно снова включить:
+
+reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\Kernel" /v DisableTsx /t REG_DWORD /d 0 /f.
+--------------------------------------------------------------------------------------------------------
  void findAnnotations() {
         final ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(false);
         scanner.addIncludeFilter(new AnnotationTypeFilter(ExceptionType.class));
