@@ -17386,6 +17386,28 @@ public class SenderConfig {
   }
 }
 --------------------------------------------------------------------------------------------------------
+https://www.baeldung.com/java-file-mime-type
+https://www.rgagnon.com/javadetails/java-0487.html
+
+@Test
+public void whenUsingMimeTypesFileTypeMap_thenSuccess() {
+    File file = new File("product.png");
+    MimetypesFileTypeMap fileTypeMap = new MimetypesFileTypeMap();
+    String mimeType = fileTypeMap.getContentType(file.getName());
+  
+    assertEquals(mimeType, "image/png");
+}
+Here, we can either pass the name of the file or the File instance itself as the parameter to the function. However, the function with File instance as the parameter internally calls the overloaded method that accepts the filename as the parameter.
+
+Internally, this method looks up a file called mime.types for the type resolution. It's very important to note that the method searches for the file in a specific order:
+
+Programmatically added entries to the MimetypesFileTypeMap instance
+.mime.types in the user's home directory
+<java.home>/lib/mime.types
+resources named META-INF/mime.types
+resource named META-INF/mimetypes.default (usually found only in the activation.jar file)
+However, if no file is found, it will return application/octet-stream as the response.
+--------------------------------------------------------------------------------------------------------
     <!-- spring-integration -->
     <dependency>
       <groupId>org.springframework.integration</groupId>

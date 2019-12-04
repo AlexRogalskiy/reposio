@@ -71022,6 +71022,78 @@ public class HomeController {
 --------------------------------------------------------------------------------------------------------
 java -jar lombok.jar config -g --verbose
 --------------------------------------------------------------------------------------------------------
+import java.io.IOException;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.function.Function;
+
+/**
+* Resource handler implementation
+*
+* @param <T> type of configurable resource
+*/
+public class ResourceExceptionHandler<T extends AutoCloseable> {
+
+    /**
+     * Functional resource interface declaration
+     *
+     * @param <R> type of configurable resource
+     * @param <I> type of configurable input resource identifier
+     * @param <O> type of configurable output resource identifier
+     */
+    public interface FunctionWithResource<R extends AutoCloseable, I, O> {
+        O apply(final R resource, final I value) throws IOException;
+    }
+
+    /**
+     * Resource creator interface declaration
+     *
+     * @param <R> type of configurable resource
+     */
+    public interface ResourceCreator<R extends AutoCloseable> {
+        R create() throws IOException;
+    }
+
+    private final ResourceCreator<T> init;
+    private final ConcurrentMap<Object, Exception> exceptions = new ConcurrentSkipListMap<>();
+
+    public ResourceExceptionHandler(final ResourceCreator<T> init) {
+        ValidationUtils.checkNotNull(init, "Resource initializer (initialization code for resource) should not be null");
+        this.init = init;
+    }
+
+    public Map<Object, Exception> getExceptions() {
+        return this.exceptions;
+    }
+
+    public Function<Integer, Optional<Integer>> map(final FunctionWithResource<T, Integer, Integer> function) {
+        return i -> {
+            try (final T resource = this.init.create()) {
+                return Optional.of(function.apply(resource, i));
+            } catch (Exception e) {
+                this.exceptions.put(i, e);
+                return Optional.empty();
+            }
+        };
+    }
+}
+--------------------------------------------------------------------------------------------------------
+/**
+* This implementation throws IllegalStateException if attempting to
+* read the underlying stream multiple times.
+*/
+@Override
+public InputStream getInputStream() throws IOException, IllegalStateException {
+   if (this.read) {
+      throw new IllegalStateException("InputStream has already been read - " +
+            "do not use InputStreamResource if a stream needs to be read multiple times");
+   }
+   this.read = true;
+   return this.inputStream;
+}
+--------------------------------------------------------------------------------------------------------
 .kite--grid {
   $unit: 12;
   $gutter: 10px;
