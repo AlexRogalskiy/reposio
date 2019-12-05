@@ -1194,6 +1194,509 @@ public abstract class StringMatcher {
 
 }
 -----------------------------------------------------------------------------------------
+import java.io.InputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.BufferedInputStream;
+import java.net.URLConnection;
+import java.net.URL;
+
+/**
+ * Created by IntelliJ IDEA.
+ * User: pdoubleya
+ * Date: May 15, 2009
+ * Time: 11:56:03 AM
+ * To change this template use File | Settings | File Templates.
+ */
+public class StreamResource {
+    private final String _uri;
+    private URLConnection _conn;
+    private int _slen;
+    private InputStream _inputStream;
+
+    public StreamResource(final String uri) {
+        _uri = uri;
+    }
+
+    public void connect() {
+        try {
+            _conn = new URL(_uri).openConnection();
+
+            // If using Java 5+ you can set timeouts for the URL connection--useful if the remote
+            // server is down etc.; the default timeout is pretty long
+            //
+            //uc.setConnectTimeout(10 * 1000);
+            //uc.setReadTimeout(30 * 1000);
+            //
+            // TODO:CLEAN-JDK1.4
+            // Since we target 1.4, we use a couple of system properties--note these are only supported
+            // in the Sun JDK implementation--see the Net properties guide in the JDK
+            // e.g. file:///usr/java/j2sdk1.4.2_17/docs/guide/net/properties.html
+            System.setProperty("sun.net.client.defaultConnectTimeout", String.valueOf(10 * 1000));
+            System.setProperty("sun.net.client.defaultReadTimeout", String.valueOf(30 * 1000));
+
+            _conn.connect();
+            _slen = _conn.getContentLength();
+        } catch (java.net.MalformedURLException e) {
+            XRLog.exception("bad URL given: " + _uri, e);
+        } catch (FileNotFoundException e) {
+            XRLog.exception("item at URI " + _uri + " not found");
+        } catch (IOException e) {
+            XRLog.exception("IO problem for " + _uri, e);
+        }
+    }
+
+    public boolean hasStreamLength() {
+        return _slen >= 0;
+    }
+
+    public int streamLength() {
+        return _slen;
+    }
+
+    public BufferedInputStream bufferedStream() throws IOException {
+        _inputStream = _conn.getInputStream();
+        return new BufferedInputStream(_inputStream);
+    }
+
+    public void close() {
+        if (_inputStream != null) {
+            try {
+                _inputStream.close();
+            } catch (IOException e) {
+                // swallow
+            }
+        }
+    }
+}
+-----------------------------------------------------------------------------------------
+import java.io.FileOutputStream;
+import java.io.PrintWriter;
+
+/**
+ * Created by IntelliJ IDEA.
+ * User: tobe
+ * Date: 2005-jan-05
+ * Time: 09:21:10
+ * To change this template use File | Settings | File Templates.
+ */
+public class GenerateBigFile {
+    public static void main(String[] args) {
+        if (args.length < 1) {
+            System.out.println("Usage:");
+            System.out.println("GenerateBigFile output-file");
+            System.exit(1);
+        }
+        PrintWriter out = null;
+        try {
+            out = new PrintWriter(new FileOutputStream(args[0]));
+            out.println("<html xmlns=\"http://www.w3.org/1999/xhtml\"><head><title>Big test file</title></head><body>");
+            for (int i = 0; i < 10000; i++) {
+                //style: 10pt Times #000000;
+                String[] styles = {"10pt", "12pt", "14pt", "18pt", "24pt"};
+                String[] fonts = {"Times", "Helvetica", "Courier"};
+                String style = styles[(int) Math.floor(Math.random() * styles.length)];
+                String font = fonts[(int) Math.floor(Math.random() * fonts.length)];
+                String colour = Integer.toHexString((int) Math.floor(Math.random() * 256)) + Integer.toHexString((int) Math.floor(Math.random() * 256)) + Integer.toHexString((int) Math.floor(Math.random() * 256));
+                out.println("<p style=\"font: " + style + " " + font + "; color: #" + colour + "\">Some Styled text to see how we can handle it</p>");
+            }
+            out.println("</body></html>");
+        } catch (Exception e) {//I know, never do this :-)
+            e.printStackTrace();
+        } finally {
+            out.close();
+        }
+    }
+}
+-----------------------------------------------------------------------------------------
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.logging.Formatter;
+import java.util.logging.LogRecord;
+
+/**
+ * A variant of the default Java logging SimpleFormatter, not being so messy
+ * @author rkrell
+ */
+public class LogFormatter extends Formatter
+{
+    private final String lineSeparator = System.getProperty("line.separator");
+
+    /**
+     * Format the given LogRecord.
+     *
+     * @param record the log record to be formatted.
+     * @return a formatted log record
+     */
+    @Override
+    public synchronized String format(LogRecord record)
+    {
+        StringBuilder sb = new StringBuilder();
+        if (Debug.isDEBUG())
+        {
+            if (record.getSourceClassName() != null)
+            {
+                sb.append(record.getSourceClassName());
+            }
+            else
+            {
+                sb.append(record.getLoggerName());
+            }
+            if (record.getSourceMethodName() != null)
+            {
+                sb.append(" ");
+                sb.append(record.getSourceMethodName());
+            }
+
+            sb.append(lineSeparator);
+            sb.append(record.getLevel().getLocalizedName());
+            sb.append(": ");
+        }
+
+        // Append log message
+        String message = formatMessage(record);
+        sb.append(message);
+
+        // Append stacktrace
+        if (Debug.isSTACKTRACE() && (record.getThrown() != null))
+        {
+            sb.append(lineSeparator);
+            try
+            {
+                StringWriter sw = new StringWriter();
+                PrintWriter pw = new PrintWriter(sw);
+                record.getThrown().printStackTrace(pw);
+                pw.close();
+                sb.append(sw.toString());
+            }
+            catch (Exception ignored) {}
+        }
+
+        sb.append(lineSeparator);
+
+        return sb.toString();
+    }
+}
+-----------------------------------------------------------------------------------------
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.handler.annotation.Header;
+
+public class Receiver {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(Receiver.class);
+
+  public static final int COUNT = 20;
+
+  private CountDownLatch latch = new CountDownLatch(COUNT);
+
+  public CountDownLatch getLatch() {
+    return latch;
+  }
+
+  @KafkaListener(id = "batch-listener", topics = "${kafka.topic.batch}")
+  public void receive(List<String> data,
+      @Header(KafkaHeaders.RECEIVED_PARTITION_ID) List<Integer> partitions,
+      @Header(KafkaHeaders.OFFSET) List<Long> offsets) {
+    LOGGER.info("start of batch receive");
+    for (int i = 0; i < data.size(); i++) {
+      LOGGER.info("received message='{}' with partition-offset='{}'", data.get(i),
+          partitions.get(i) + "-" + offsets.get(i));
+      // handle message
+
+      latch.countDown();
+    }
+    LOGGER.info("end of batch receive");
+  }
+}
+-----------------------------------------------------------------------------------------
+import javax.imageio.IIOImage;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageOutputStream;
+import java.awt.image.BufferedImage;
+import java.io.*;
+import java.util.Iterator;
+
+/**
+ * <p>Writes out BufferedImages to some outputstream, like a file. Allows image writer parameters to be specified and
+ * thus controlled. Uses the java ImageIO libraries--see {@link javax.imageio.ImageIO} and related classes,
+ * especially {@link javax.imageio.ImageWriter}.</p>
+ * <p/>
+ * By default, FSImageWriter writes BufferedImages out in PNG format. The simplest possible usage is
+ * <pre>
+ * FSImageWriter writer = new FSImageWriter();
+ * writer.write(img, new File("image.png"));
+ * </pre>
+ * <p/>
+ * <p>You can set the image format in the constructore ({@link org.xhtmlrenderer.util.FSImageWriter#FSImageWriter(String)},
+ * and can set compression settings using various setters; this lets you create writer to reuse across a number
+ * of images, all output at the same compression level. Note that not all image formats support compression. For
+ * those that do, you may need to set more than one compression setting, in combination, for it to work. For JPG,
+ * it might look like this</p>
+ * <pre>
+ *      writer = new FSImageWriter("jpg");
+ * 		writer.setWriteCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+ * 		writer.setWriteCompressionType("JPEG");
+ * 		writer.setWriteCompressionQuality(.75f);
+ * </pre>
+ * <p>The method {@link #newJpegWriter(float)} creates a writer for JPG images; you just need to specify the
+ * output quality. Note that for the JPG format, your image or BufferedImage shouldn't be ARGB.</p>
+ */
+public class FSImageWriter {
+    private String imageFormat;
+    private float writeCompressionQuality;
+    private int writeCompressionMode;
+    private String writeCompressionType;
+    public static final String DEFAULT_IMAGE_FORMAT = "png";
+
+
+    /**
+     * New image writer for the PNG image format
+     */
+    public FSImageWriter() {
+        this("png");
+    }
+
+    /**
+     * New writer for a given image format, using the informal format name.
+     *
+     * @param imageFormat Informal image format name, e.g. "jpg", "png", "bmp"; usually the part that appears
+     *                    as the file extension.
+     */
+    public FSImageWriter(String imageFormat) {
+        this.imageFormat = imageFormat;
+        this.writeCompressionMode = ImageWriteParam.MODE_COPY_FROM_METADATA;
+        this.writeCompressionType = null;
+        this.writeCompressionQuality = 1.0f;
+    }
+
+    /**
+     * Convenience method for initializing a writer for the JPEG image format.
+     *
+     * @param quality level of compression, between 0 and 1; 0 is lowest, 1 is highest quality.
+     * @return a writer for JPEG images
+     */
+    public static FSImageWriter newJpegWriter(float quality) {
+        FSImageWriter writer = new FSImageWriter("jpg");
+        writer.setWriteCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+        writer.setWriteCompressionType("JPEG");
+        writer.setWriteCompressionQuality(quality);
+        return writer;
+    }
+
+    /**
+     * Writes the image out to the target file, creating the file if necessary, or overwriting if it already
+     * exists.
+     *
+     * @param bimg     Image to write.
+     * @param filePath Path for file to write. The extension for the file name is not changed; it is up to the
+     *                 caller to make sure this corresponds to the image format.
+     * @throws IOException If the file could not be written.
+     */
+    public void write(BufferedImage bimg, String filePath) throws IOException {
+        File file = new File(filePath);
+        if (file.exists()) {
+            if (!file.delete()) {
+                throw new IOException("File " + filePath + " exists already, and call to .delete() failed " +
+                        "unexpectedly");
+            }
+        } else {
+            if (!file.createNewFile()) {
+                throw new IOException("Unable to create file at path " + filePath + ", call to .createNewFile() " +
+                        "failed unexpectedly.");
+            }
+        }
+
+        OutputStream fos = new BufferedOutputStream(new FileOutputStream(file));
+        try {
+            write(bimg, fos);
+        } finally {
+            try {
+                fos.close();
+            } catch (IOException e) {
+                // ignore
+            }
+        }
+    }
+
+    /**
+     * Writes the image out to the target file, creating the file if necessary, or overwriting if it already
+     * exists.
+     *
+     * @param bimg     Image to write.
+     * @param os outputstream to write to
+     * @throws IOException If the file could not be written.
+     */
+    public void write(BufferedImage bimg, OutputStream os) throws IOException {
+        ImageWriter writer = null;
+        ImageOutputStream ios = null;
+        try {
+            writer = lookupImageWriterForFormat(imageFormat);
+            ios = ImageIO.createImageOutputStream(os);
+            writer.setOutput(ios);
+            ImageWriteParam iwparam = getImageWriteParameters(writer);
+
+            writer.write(null, new IIOImage(bimg, null, null), iwparam);
+        } finally {
+            if (ios != null) {
+                try {
+                    ios.flush();
+                } catch (IOException e) {
+                    // ignore
+                }
+                try {
+                    ios.close();
+                } catch (IOException e) {
+                    // ignore
+                }
+            }
+            if (writer != null) {
+                writer.dispose();
+            }
+        }
+    }
+
+    /**
+     * Returns the image output parameters to control the output image quality, compression, etc. By default
+     * this uses the compression values set in this class. Override this method to get full control over the
+     * ImageWriteParam used in image output.
+     *
+     * @param writer The ImageWriter we are going to use for image output.
+     * @return ImageWriteParam configured for image output.
+     */
+    protected ImageWriteParam getImageWriteParameters(ImageWriter writer) {
+        ImageWriteParam param = writer.getDefaultWriteParam();
+        if (param.canWriteCompressed()) {
+            if (writeCompressionMode != ImageWriteParam.MODE_COPY_FROM_METADATA) {
+                param.setCompressionMode(writeCompressionMode);
+
+                // see docs for IWP--only allowed to set type and quality if mode is EXPLICIT
+                if (writeCompressionMode == ImageWriteParam.MODE_EXPLICIT) {
+                    param.setCompressionType(writeCompressionType);
+                    param.setCompressionQuality(writeCompressionQuality);
+                }
+
+            }
+        }
+
+        return param;
+    }
+
+    /**
+     * Compression quality for images to be generated from this writer. See
+     * {@link javax.imageio.ImageWriteParam#setCompressionQuality(float)} for a description of what this means
+     * and valid range of values.
+     *
+     * @param q Compression quality for image output.
+     */
+    public void setWriteCompressionQuality(float q) {
+        writeCompressionQuality = q;
+    }
+
+    /**
+     * Compression mode for images to be generated from this writer. See
+     * {@link javax.imageio.ImageWriteParam#setCompressionMode(int)}  for a description of what this means
+     * and valid range of values.
+     *
+     * @param mode Compression mode for image output.
+     */
+    public void setWriteCompressionMode(int mode) {
+        this.writeCompressionMode = mode;
+    }
+
+    /**
+     * Compression type for images to be generated from this writer. See
+     * {@link javax.imageio.ImageWriteParam#setCompressionType(String)} for a description of what this means
+     * and valid range of values.
+     *
+     * @param type Type of compression for image output.
+     */
+    public void setWriteCompressionType(String type) {
+        this.writeCompressionType = type;
+    }
+
+    /**
+     * Utility method to find an imagewriter.
+     *
+     * @param imageFormat String informal format name, "jpg"
+     * @return ImageWriter corresponding to that format, null if not found.
+     */
+    private ImageWriter lookupImageWriterForFormat(String imageFormat) {
+        ImageWriter writer = null;
+        Iterator iter = ImageIO.getImageWritersByFormatName(imageFormat);
+		if (iter.hasNext()) {
+			writer = (ImageWriter) iter.next();
+		}
+		return writer;
+	}
+}
+-----------------------------------------------------------------------------------------
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.sql.ResultSet;
+
+public class TrimmingResultSetInvocationHandler implements InvocationHandler {
+
+	private final ResultSet resultSet;
+	
+	public TrimmingResultSetInvocationHandler(ResultSet resultSet) {
+		this.resultSet = resultSet;
+	}
+	@Override
+	public Object invoke(Object proxy, Method method, Object[] args)
+			throws Throwable {
+		Object retValue = method.invoke(resultSet, args);
+		return retValue instanceof String?((String)retValue).trim():retValue;
+	}
+
+}
+-----------------------------------------------------------------------------------------
+import java.io.File;
+import java.io.StringReader;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
+
+/**
+ * Booch utility class for XML processing using DOM
+ */
+public class XMLUtil {
+
+    public static Document documentFromString(final String documentContents)
+        throws Exception {
+
+        return createDocumentBuilder().parse(new InputSource(new StringReader(documentContents)));
+    }
+
+    public static Document documentFromFile(final String filename)
+        throws Exception {
+
+        return createDocumentBuilder().parse(new File(filename).toURI().toURL().openStream());
+    }
+
+    private static DocumentBuilder createDocumentBuilder()
+        throws ParserConfigurationException {
+
+        DocumentBuilderFactory fact = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = fact.newDocumentBuilder();
+
+        builder.setErrorHandler( null );
+
+        return builder;
+    }
+}
+-----------------------------------------------------------------------------------------
 "OAuth2": {
   "type": "oauth2",
   "flow": "accessCode",

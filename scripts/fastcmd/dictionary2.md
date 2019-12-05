@@ -17386,6 +17386,441 @@ public class SenderConfig {
   }
 }
 --------------------------------------------------------------------------------------------------------
+/** Instance of Tika facade class with default configuration. */
+private final Tika defaultTika = new Tika();
+/** Instance of Tika facade class with MimeTypes detector. */
+private final Tika mimeTika = new Tika(new MimeTypes());
+his is 
+/** Instance of Tika facade class with Type detector. */
+private final Tika typeTika = new Tika(new TypeDetector());
+--------------------------------------------------------------------------------------------------------
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Map;
+
+import javax.xml.bind.DatatypeConverter;
+
+import org.apache.avro.generic.GenericDatumWriter;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.io.BinaryEncoder;
+import org.apache.avro.io.DatumWriter;
+import org.apache.avro.io.EncoderFactory;
+import org.apache.avro.specific.SpecificRecordBase;
+import org.apache.kafka.common.errors.SerializationException;
+import org.apache.kafka.common.serialization.Serializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class AvroSerializer<T extends SpecificRecordBase> implements Serializer<T> {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(AvroSerializer.class);
+
+  @Override
+  public void close() {
+    // No-op
+  }
+
+  @Override
+  public void configure(Map<String, ?> arg0, boolean arg1) {
+    // No-op
+  }
+
+  @Override
+  public byte[] serialize(String topic, T data) {
+    try {
+      byte[] result = null;
+
+      if (data != null) {
+        LOGGER.debug("data='{}'", data);
+
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        BinaryEncoder binaryEncoder =
+            EncoderFactory.get().binaryEncoder(byteArrayOutputStream, null);
+
+        DatumWriter<GenericRecord> datumWriter = new GenericDatumWriter<>(data.getSchema());
+        datumWriter.write(data, binaryEncoder);
+
+        binaryEncoder.flush();
+        byteArrayOutputStream.close();
+
+        result = byteArrayOutputStream.toByteArray();
+        LOGGER.debug("serialized data='{}'", DatatypeConverter.printHexBinary(result));
+      }
+      return result;
+    } catch (IOException ex) {
+      throw new SerializationException(
+          "Can't serialize data='" + data + "' for topic='" + topic + "'", ex);
+    }
+  }
+}
+import java.util.Arrays;
+import java.util.Map;
+
+import javax.xml.bind.DatatypeConverter;
+
+import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.io.DatumReader;
+import org.apache.avro.io.Decoder;
+import org.apache.avro.io.DecoderFactory;
+import org.apache.avro.specific.SpecificDatumReader;
+import org.apache.avro.specific.SpecificRecordBase;
+import org.apache.kafka.common.errors.SerializationException;
+import org.apache.kafka.common.serialization.Deserializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class AvroDeserializer<T extends SpecificRecordBase> implements Deserializer<T> {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(AvroDeserializer.class);
+
+  protected final Class<T> targetType;
+
+  public AvroDeserializer(Class<T> targetType) {
+    this.targetType = targetType;
+  }
+
+  @Override
+  public void close() {
+    // No-op
+  }
+
+  @Override
+  public void configure(Map<String, ?> arg0, boolean arg1) {
+    // No-op
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public T deserialize(String topic, byte[] data) {
+    try {
+      T result = null;
+
+      if (data != null) {
+        LOGGER.debug("data='{}'", DatatypeConverter.printHexBinary(data));
+
+        DatumReader<GenericRecord> datumReader =
+            new SpecificDatumReader<>(targetType.newInstance().getSchema());
+        Decoder decoder = DecoderFactory.get().binaryDecoder(data, null);
+
+        result = (T) datumReader.read(null, decoder);
+        LOGGER.debug("deserialized data='{}'", result);
+      }
+      return result;
+    } catch (Exception ex) {
+      throw new SerializationException(
+          "Can't deserialize data '" + Arrays.toString(data) + "' from topic '" + topic + "'", ex);
+    }
+  }
+}
+
+import java.util.Arrays;
+import java.util.Map;
+
+import javax.xml.bind.DatatypeConverter;
+
+import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.specific.SpecificData;
+import org.apache.avro.specific.SpecificRecordBase;
+import org.apache.kafka.common.errors.SerializationException;
+import org.apache.kafka.common.serialization.Deserializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.twitter.bijection.Injection;
+import com.twitter.bijection.avro.GenericAvroCodecs;
+
+public class AvroDeserializer<T extends SpecificRecordBase> implements Deserializer<T> {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(AvroDeserializer.class);
+
+  protected final Class<T> targetType;
+
+  public AvroDeserializer(Class<T> targetType) {
+    this.targetType = targetType;
+  }
+
+  @Override
+  public void close() {
+    // No-op
+  }
+
+  @Override
+  public void configure(Map<String, ?> arg0, boolean arg1) {
+    // No-op
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public T deserialize(String topic, byte[] data) {
+    LOGGER.debug("data to deserialize='{}'", DatatypeConverter.printHexBinary(data));
+    try {
+      // get the schema
+      Schema schema = targetType.newInstance().getSchema();
+
+      Injection<GenericRecord, byte[]> genericRecordInjection = GenericAvroCodecs.toBinary(schema);
+      GenericRecord genericRecord = genericRecordInjection.invert((byte[]) data).get();
+      T result = (T) SpecificData.get().deepCopy(schema, genericRecord);
+
+      LOGGER.debug("data='{}'", result);
+      return result;
+    } catch (Exception e) {
+      throw new SerializationException(
+          "Can't deserialize data [" + Arrays.toString(data) + "] from topic [" + topic + "]", e);
+    }
+  }
+}
+import java.util.Map;
+
+import javax.xml.bind.DatatypeConverter;
+
+import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.specific.SpecificRecordBase;
+import org.apache.kafka.common.serialization.Serializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.twitter.bijection.Injection;
+import com.twitter.bijection.avro.GenericAvroCodecs;
+
+public class AvroSerializer<T extends SpecificRecordBase> implements Serializer<T> {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(AvroSerializer.class);
+
+  @Override
+  public void close() {
+    // No-op
+  }
+
+  @Override
+  public void configure(Map<String, ?> arg0, boolean arg1) {
+    // No-op
+  }
+
+  @Override
+  public byte[] serialize(String topic, T data) {
+    LOGGER.debug("data to serialize='{}'", data);
+
+    Injection<GenericRecord, byte[]> genericRecordInjection =
+        GenericAvroCodecs.toBinary(data.getSchema());
+    byte[] result = genericRecordInjection.apply(data);
+
+    LOGGER.debug("serialized data='{}'", DatatypeConverter.printHexBinary(result));
+    return result;
+  }
+}
+
+i*10
+--------------------------------------------------------------------------------------------------------
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.jms.support.converter.MessageConverter;
+import org.springframework.stereotype.Component;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+@Component
+public class PersonMessageConverter implements MessageConverter {
+
+  private static final Logger LOGGER =
+      LoggerFactory.getLogger(PersonMessageConverter.class);
+
+  ObjectMapper mapper;
+
+  public PersonMessageConverter() {
+    mapper = new ObjectMapper();
+  }
+
+  @Override
+  public Message toMessage(Object object, Session session)
+      throws JMSException {
+    Person person = (Person) object;
+    String payload = null;
+    try {
+      payload = mapper.writeValueAsString(person);
+      LOGGER.info("outbound json='{}'", payload);
+    } catch (JsonProcessingException e) {
+      LOGGER.error("error converting form person", e);
+    }
+
+    TextMessage message = session.createTextMessage();
+    message.setText(payload);
+
+    return message;
+  }
+
+  @Override
+  public Object fromMessage(Message message) throws JMSException {
+    TextMessage textMessage = (TextMessage) message;
+    String payload = textMessage.getText();
+    LOGGER.info("inbound json='{}'", payload);
+
+    Person person = null;
+    try {
+      person = mapper.readValue(payload, Person.class);
+    } catch (Exception e) {
+      LOGGER.error("error converting to person", e);
+    }
+
+    return person;
+  }
+}
+--------------------------------------------------------------------------------------------------------
+import com.netflix.hystrix.*;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import javax.annotation.PostConstruct;
+
+@Component
+@Aspect
+public class HystrixAspect {
+
+    private HystrixCommand.Setter config;
+    private HystrixCommandProperties.Setter commandProperties;
+    private HystrixThreadPoolProperties.Setter threadPoolProperties;
+
+    @Value("${remoteservice.command.execution.timeout}")
+    private int executionTimeout;
+
+    @Value("${remoteservice.command.sleepwindow}")
+    private int sleepWindow;
+
+    @Value("${remoteservice.command.threadpool.maxsize}")
+    private int maxThreadCount;
+
+    @Value("${remoteservice.command.threadpool.coresize}")
+    private int coreThreadCount;
+
+    @Value("${remoteservice.command.task.queue.size}")
+    private int queueCount;
+
+    @Value("${remoteservice.command.group.key}")
+    private String groupKey;
+
+    @Value("${remoteservice.command.key}")
+    private String key;
+
+
+    @Around("@annotation(com.baeldung.hystrix.HystrixCircuitBreaker)")
+    public Object circuitBreakerAround(final ProceedingJoinPoint aJoinPoint) {
+        return new RemoteServiceCommand(config, aJoinPoint).execute();
+    }
+
+    @PostConstruct
+    private void setup() {
+        this.config = HystrixCommand.Setter.withGroupKey(HystrixCommandGroupKey.Factory.asKey(groupKey));
+        this.config = config.andCommandKey(HystrixCommandKey.Factory.asKey(key));
+
+        this.commandProperties = HystrixCommandProperties.Setter();
+        this.commandProperties.withExecutionTimeoutInMilliseconds(executionTimeout);
+        this.commandProperties.withCircuitBreakerSleepWindowInMilliseconds(sleepWindow);
+
+        this.threadPoolProperties = HystrixThreadPoolProperties.Setter();
+        this.threadPoolProperties.withMaxQueueSize(maxThreadCount).withCoreSize(coreThreadCount).withMaxQueueSize(queueCount);
+
+        this.config.andCommandPropertiesDefaults(commandProperties);
+        this.config.andThreadPoolPropertiesDefaults(threadPoolProperties);
+    }
+
+    private static class RemoteServiceCommand extends HystrixCommand<String> {
+
+        private final ProceedingJoinPoint joinPoint;
+
+        RemoteServiceCommand(final Setter config, final ProceedingJoinPoint joinPoint) {
+            super(config);
+            this.joinPoint = joinPoint;
+        }
+
+        @Override
+        protected String run() throws Exception {
+            try {
+                return (String) joinPoint.proceed();
+            } catch (final Throwable th) {
+                throw new Exception(th);
+            }
+
+        }
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+import com.baeldung.feign.models.Book;
+import com.baeldung.feign.models.BookResource;
+import feign.Headers;
+import feign.Param;
+import feign.RequestLine;
+
+import java.util.List;
+
+public interface BookClient {
+    @RequestLine("GET /{isbn}")
+    BookResource findByIsbn(@Param("isbn") String isbn);
+
+    @RequestLine("GET")
+    List<BookResource> findAll();
+
+    @RequestLine("POST")
+    @Headers("Content-Type: application/json")
+    void create(Book book);
+}
+
+    private static <T> T createClient(Class<T> type, String uri) {
+        return Feign.builder()
+            .client(new OkHttpClient())
+            .encoder(new GsonEncoder())
+            .decoder(new GsonDecoder())
+            .logger(new Slf4jLogger(type))
+            .logLevel(Logger.Level.FULL)
+            .target(type, uri);
+    }
+--------------------------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import com.codenotfound.model.Greeting;
+import com.codenotfound.repository.GreetingRepository;
+import com.coxautodev.graphql.tools.GraphQLMutationResolver;
+
+@Component
+public class GreetingMutation implements GraphQLMutationResolver {
+
+  @Autowired
+  private GreetingRepository greetingRepository;
+
+  public Greeting newGreeting(String message) {
+    Greeting greeting = new Greeting();
+    greeting.setMessage(message);
+
+    return greetingRepository.save(greeting);
+  }
+}
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import com.codenotfound.model.Greeting;
+import com.codenotfound.repository.GreetingRepository;
+import com.coxautodev.graphql.tools.GraphQLQueryResolver;
+
+@Component
+public class GreetingQuery implements GraphQLQueryResolver {
+
+  @Autowired
+  private GreetingRepository greetingRepository;
+
+  public Greeting getGreeting(String id) {
+    return greetingRepository.find(id);
+  }
+}
+--------------------------------------------------------------------------------------------------------
 https://www.baeldung.com/java-file-mime-type
 https://www.rgagnon.com/javadetails/java-0487.html
 
