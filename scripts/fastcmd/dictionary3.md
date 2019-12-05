@@ -71,6 +71,18 @@ public class DemoApplication {
     }
 }
 -----------------------------------------------------------------------------------------
+@Bean
+public RestTemplate restTemplate() {
+    return new RestTemplate(clientHttpRequestFactory());
+}
+
+private ClientHttpRequestFactory clientHttpRequestFactory() {
+    HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
+    factory.setReadTimeout(2000);
+    factory.setConnectTimeout(2000);
+    return factory;
+}}
+-----------------------------------------------------------------------------------------
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override

@@ -44490,6 +44490,102 @@ public class HomeControllerTest {
 
 }
 --------------------------------------------------------------------------------------------------------
+@Aspect("pertarget(io.prometheus.client.spring.web.MethodTimer.timeable())")
+@Scope("prototype")
+@ControllerAdvice
+public class MethodTimer {
+    private final ReadWriteLock summaryLock = new ReentrantReadWriteLock();
+    private final HashMap<String, Summary> summaries = new HashMap();
+
+    public MethodTimer() {
+    }
+
+    @Pointcut("@annotation(io.prometheus.client.spring.web.PrometheusTimeMethod)")
+    public void annotatedMethod() {
+    }
+
+    @Pointcut("annotatedMethod()")
+    public void timeable() {
+    }
+
+    private PrometheusTimeMethod getAnnotation(ProceedingJoinPoint pjp) throws NoSuchMethodException {
+        assert pjp.getSignature() instanceof MethodSignature;
+
+        MethodSignature signature = (MethodSignature)pjp.getSignature();
+        PrometheusTimeMethod annot = (PrometheusTimeMethod)AnnotationUtils.findAnnotation(pjp.getTarget().getClass(), PrometheusTimeMethod.class);
+        if (annot != null) {
+            return annot;
+        } else {
+            String name = signature.getName();
+            Class[] parameterTypes = signature.getParameterTypes();
+            Method method = ReflectionUtils.findMethod(pjp.getTarget().getClass(), name, parameterTypes);
+            return (PrometheusTimeMethod)AnnotationUtils.findAnnotation(method, PrometheusTimeMethod.class);
+        }
+    }
+
+    private Summary ensureSummary(ProceedingJoinPoint pjp, String key) throws IllegalStateException {
+        PrometheusTimeMethod annot;
+        try {
+            annot = this.getAnnotation(pjp);
+        } catch (NoSuchMethodException var11) {
+            throw new IllegalStateException("Annotation could not be found for pjp \"" + pjp.toShortString() + "\"", var11);
+        } catch (NullPointerException var12) {
+            throw new IllegalStateException("Annotation could not be found for pjp \"" + pjp.toShortString() + "\"", var12);
+        }
+
+        assert annot != null;
+
+        Lock writeLock = this.summaryLock.writeLock();
+        writeLock.lock();
+
+        Summary var6;
+        try {
+            Summary summary = (Summary)this.summaries.get(key);
+            if (summary != null) {
+                var6 = summary;
+                return var6;
+            }
+
+            summary = (Summary)((Builder)((Builder)Summary.build().name(annot.name())).help(annot.help())).register();
+            this.summaries.put(key, summary);
+            var6 = summary;
+        } finally {
+            writeLock.unlock();
+        }
+
+        return var6;
+    }
+
+    @Around("timeable()")
+    public Object timeMethod(ProceedingJoinPoint pjp) throws Throwable {
+        String key = pjp.getSignature().toLongString();
+        Lock r = this.summaryLock.readLock();
+        r.lock();
+
+        Summary summary;
+        try {
+            summary = (Summary)this.summaries.get(key);
+        } finally {
+            r.unlock();
+        }
+
+        if (summary == null) {
+            summary = this.ensureSummary(pjp, key);
+        }
+
+        Timer t = summary.startTimer();
+
+        Object var6;
+        try {
+            var6 = pjp.proceed();
+        } finally {
+            t.observeDuration();
+        }
+
+        return var6;
+    }
+}
+--------------------------------------------------------------------------------------------------------
 import java.io.IOException;
 
 import org.springframework.beans.factory.annotation.Autowired;
