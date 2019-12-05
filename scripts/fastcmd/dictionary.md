@@ -44586,6 +44586,15 @@ public class MethodTimer {
     }
 }
 --------------------------------------------------------------------------------------------------------
+@BeforeClass
+public static void setUpBeforeClass() {
+    System.setProperty("spring.kafka.bootstrap-servers", embeddedKafka.getBrokersAsString());
+    System.setProperty("spring.cloud.stream.kafka.binder.zkNodes", embeddedKafka.getZookeeperConnectionString());
+}
+--------------------------------------------------------------------------------------------------------
+//    @Autowired
+//    private EmbeddedKafkaBroker embeddedKafka;
+--------------------------------------------------------------------------------------------------------
 import java.io.IOException;
 
 import org.springframework.beans.factory.annotation.Autowired;

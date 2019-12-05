@@ -9,6 +9,607 @@ public void massIndexation() throws InterruptedException {
     fullTextSession.createIndexer().startAndWait();
 } 
 --------------------------------------------------------------------------------------------------------
+language: java
+
+sudo: false
+dist: trusty
+
+install: echo "Disabled Travis CI 'install' stage by default"
+
+env:
+  global:
+  - # ossrhUsername
+  - secure: GwuNkNkV6QUnThmV+ZsiPuR+M50sVN+7qT+Ca9qRiXAhbUJpV0kcQz+NSV/gDE9UmsdzKfPzsSaKPjtIbKN9gFzFsOCd99TXGD1n3Kkya//Pw1ziDOtZFI9EMjO/8qPIEIR+Cfk7niqpyET/ypC7aklxv8raiCVrPDXJ8TJWsYM=
+  - # ossrhPassword
+  - secure: i+gbt9z+eCnGV1TadNWPrkOgxmeTYUvfkQYOvVQ01cqkTeNL5YKoWx3cpoidEvx4Bj00XkNqXXvMEBViEgnVlA4Xqm8n/05WcVr6uJ/HFq1hkBTiVl5LJEvXH4NBVoEZJTY4h9B7ulMHqvhM9U/vTBYbjK+L+9OC6B+U/IJe2Ho=
+
+matrix:
+  include:
+  - jdk: oraclejdk8
+  - jdk: oraclejdk9
+  - jdk: openjdk10
+  - jdk: openjdk11
+    env: DEPLOY=true
+  - jdk: openjdk12
+  - jdk: openjdk-13
+  - jdk: openjdk-ea
+  allow_failures:
+  - jdk: openjdk-13
+  - jdk: openjdk-ea
+
+before_cache:
+- rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+- rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+cache:
+  directories:
+  - "$HOME/.gradle/caches/"
+  - "$HOME/.gradle/wrapper/"
+
+before_install:
+- export GRADLE_JAVA_HOME="$JAVA_HOME"
+- unset _JAVA_OPTIONS
+
+script:
+- ./gradlew check --info -Dorg.gradle.java.home="$GRADLE_JAVA_HOME"
+- if [ -n "$(git status -su src-gen)" ]; then exit 1; fi
+
+after_success:
+- if [[ -n $DEPLOY ]]; then bash <(curl -s https://codecov.io/bash); fi
+- if [[ -n $DEPLOY ]] && [ "$TRAVIS_REPO_SLUG" == "vavr-io/vavr" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_BRANCH" == "master" ]; then ./gradlew uploadArchives -PossrhUsername="$ossrhUsername" -PossrhPassword="$ossrhPassword"; fi
+--------------------------------------------------------------------------------------------------------
+/* ____  ______________  ________________________  __________
+ * \   \/   /      \   \/   /   __/   /      \   \/   /      \
+ *  \______/___/\___\______/___/_____/___/\___\______/___/\___\
+ *
+ * Copyright 2019 Vavr, http://vavr.io
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.vavr;
+
+/*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*\
+   G E N E R A T O R   C R A F T E D
+\*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*/
+
+
+
+import io.vavr.collection.List;
+import io.vavr.collection.Seq;
+import java.io.Serializable;
+import java.util.Comparator;
+import java.util.Objects;
+import java.util.function.Function;
+
+/**
+ * A tuple of three elements which can be seen as cartesian product of three components.
+ *
+ * @param <T1> type of the 1st element
+ * @param <T2> type of the 2nd element
+ * @param <T3> type of the 3rd element
+ */
+public final class Tuple3<T1, T2, T3> implements Tuple, Comparable<Tuple3<T1, T2, T3>>, Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * The 1st element of this tuple.
+     */
+    public final T1 _1;
+
+    /**
+     * The 2nd element of this tuple.
+     */
+    public final T2 _2;
+
+    /**
+     * The 3rd element of this tuple.
+     */
+    public final T3 _3;
+
+    /**
+     * Constructs a tuple of three elements.
+     *
+     * @param t1 the 1st element
+     * @param t2 the 2nd element
+     * @param t3 the 3rd element
+     */
+    public Tuple3(T1 t1, T2 t2, T3 t3) {
+        this._1 = t1;
+        this._2 = t2;
+        this._3 = t3;
+    }
+
+    public static <T1, T2, T3> Comparator<Tuple3<T1, T2, T3>> comparator(Comparator<? super T1> t1Comp, Comparator<? super T2> t2Comp, Comparator<? super T3> t3Comp) {
+        return (Comparator<Tuple3<T1, T2, T3>> & Serializable) (t1, t2) -> {
+            final int check1 = t1Comp.compare(t1._1, t2._1);
+            if (check1 != 0) {
+                return check1;
+            }
+
+            final int check2 = t2Comp.compare(t1._2, t2._2);
+            if (check2 != 0) {
+                return check2;
+            }
+
+            final int check3 = t3Comp.compare(t1._3, t2._3);
+            if (check3 != 0) {
+                return check3;
+            }
+
+            // all components are equal
+            return 0;
+        };
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <U1 extends Comparable<? super U1>, U2 extends Comparable<? super U2>, U3 extends Comparable<? super U3>> int compareTo(Tuple3<?, ?, ?> o1, Tuple3<?, ?, ?> o2) {
+        final Tuple3<U1, U2, U3> t1 = (Tuple3<U1, U2, U3>) o1;
+        final Tuple3<U1, U2, U3> t2 = (Tuple3<U1, U2, U3>) o2;
+
+        final int check1 = t1._1.compareTo(t2._1);
+        if (check1 != 0) {
+            return check1;
+        }
+
+        final int check2 = t1._2.compareTo(t2._2);
+        if (check2 != 0) {
+            return check2;
+        }
+
+        final int check3 = t1._3.compareTo(t2._3);
+        if (check3 != 0) {
+            return check3;
+        }
+
+        // all components are equal
+        return 0;
+    }
+
+    @Override
+    public int arity() {
+        return 3;
+    }
+
+    @Override
+    public int compareTo(Tuple3<T1, T2, T3> that) {
+        return Tuple3.compareTo(this, that);
+    }
+
+    /**
+     * Getter of the 1st element of this tuple.
+     *
+     * @return the 1st element of this Tuple.
+     */
+    public T1 _1() {
+        return _1;
+    }
+
+    /**
+     * Sets the 1st element of this tuple to the given {@code value}.
+     *
+     * @param value the new value
+     * @return a copy of this tuple with a new value for the 1st element of this Tuple.
+     */
+    public Tuple3<T1, T2, T3> update1(T1 value) {
+        return new Tuple3<>(value, _2, _3);
+    }
+
+    /**
+     * Getter of the 2nd element of this tuple.
+     *
+     * @return the 2nd element of this Tuple.
+     */
+    public T2 _2() {
+        return _2;
+    }
+
+    /**
+     * Sets the 2nd element of this tuple to the given {@code value}.
+     *
+     * @param value the new value
+     * @return a copy of this tuple with a new value for the 2nd element of this Tuple.
+     */
+    public Tuple3<T1, T2, T3> update2(T2 value) {
+        return new Tuple3<>(_1, value, _3);
+    }
+
+    /**
+     * Getter of the 3rd element of this tuple.
+     *
+     * @return the 3rd element of this Tuple.
+     */
+    public T3 _3() {
+        return _3;
+    }
+
+    /**
+     * Sets the 3rd element of this tuple to the given {@code value}.
+     *
+     * @param value the new value
+     * @return a copy of this tuple with a new value for the 3rd element of this Tuple.
+     */
+    public Tuple3<T1, T2, T3> update3(T3 value) {
+        return new Tuple3<>(_1, _2, value);
+    }
+
+
+    /**
+     * Maps the components of this tuple using a mapper function.
+     *
+     * @param mapper the mapper function
+     * @param <U1> new type of the 1st component
+     * @param <U2> new type of the 2nd component
+     * @param <U3> new type of the 3rd component
+     * @return A new Tuple of same arity.
+     * @throws NullPointerException if {@code mapper} is null
+     */
+    public <U1, U2, U3> Tuple3<U1, U2, U3> map(Function3<? super T1, ? super T2, ? super T3, Tuple3<U1, U2, U3>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        return mapper.apply(_1, _2, _3);
+    }
+
+    /**
+     * Maps the components of this tuple using a mapper function for each component.
+     *
+     * @param f1 the mapper function of the 1st component
+     * @param f2 the mapper function of the 2nd component
+     * @param f3 the mapper function of the 3rd component
+     * @param <U1> new type of the 1st component
+     * @param <U2> new type of the 2nd component
+     * @param <U3> new type of the 3rd component
+     * @return A new Tuple of same arity.
+     * @throws NullPointerException if one of the arguments is null
+     */
+    public <U1, U2, U3> Tuple3<U1, U2, U3> map(Function<? super T1, ? extends U1> f1, Function<? super T2, ? extends U2> f2, Function<? super T3, ? extends U3> f3) {
+        Objects.requireNonNull(f1, "f1 is null");
+        Objects.requireNonNull(f2, "f2 is null");
+        Objects.requireNonNull(f3, "f3 is null");
+        return Tuple.of(f1.apply(_1), f2.apply(_2), f3.apply(_3));
+    }
+
+    /**
+     * Maps the 1st component of this tuple to a new value.
+     *
+     * @param <U> new type of the 1st component
+     * @param mapper A mapping function
+     * @return a new tuple based on this tuple and substituted 1st component
+     */
+    public <U> Tuple3<U, T2, T3> map1(Function<? super T1, ? extends U> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        final U u = mapper.apply(_1);
+        return Tuple.of(u, _2, _3);
+    }
+
+    /**
+     * Maps the 2nd component of this tuple to a new value.
+     *
+     * @param <U> new type of the 2nd component
+     * @param mapper A mapping function
+     * @return a new tuple based on this tuple and substituted 2nd component
+     */
+    public <U> Tuple3<T1, U, T3> map2(Function<? super T2, ? extends U> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        final U u = mapper.apply(_2);
+        return Tuple.of(_1, u, _3);
+    }
+
+    /**
+     * Maps the 3rd component of this tuple to a new value.
+     *
+     * @param <U> new type of the 3rd component
+     * @param mapper A mapping function
+     * @return a new tuple based on this tuple and substituted 3rd component
+     */
+    public <U> Tuple3<T1, T2, U> map3(Function<? super T3, ? extends U> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        final U u = mapper.apply(_3);
+        return Tuple.of(_1, _2, u);
+    }
+
+    /**
+     * Transforms this tuple to an object of type U.
+     *
+     * @param f Transformation which creates a new object of type U based on this tuple's contents.
+     * @param <U> type of the transformation result
+     * @return An object of type U
+     * @throws NullPointerException if {@code f} is null
+     */
+    public <U> U apply(Function3<? super T1, ? super T2, ? super T3, ? extends U> f) {
+        Objects.requireNonNull(f, "f is null");
+        return f.apply(_1, _2, _3);
+    }
+
+    @Override
+    public Seq<?> toSeq() {
+        return List.of(_1, _2, _3);
+    }
+
+    /**
+     * Append a value to this tuple.
+     *
+     * @param <T4> type of the value to append
+     * @param t4 the value to append
+     * @return a new Tuple with the value appended
+     */
+    public <T4> Tuple4<T1, T2, T3, T4> append(T4 t4) {
+        return Tuple.of(_1, _2, _3, t4);
+    }
+
+    /**
+     * Concat a tuple's values to this tuple.
+     *
+     * @param <T4> the type of the 4th value in the tuple
+     * @param tuple the tuple to concat
+     * @return a new Tuple with the tuple values appended
+     * @throws NullPointerException if {@code tuple} is null
+     */
+    public <T4> Tuple4<T1, T2, T3, T4> concat(Tuple1<T4> tuple) {
+        Objects.requireNonNull(tuple, "tuple is null");
+        return Tuple.of(_1, _2, _3, tuple._1);
+    }
+
+    /**
+     * Concat a tuple's values to this tuple.
+     *
+     * @param <T4> the type of the 4th value in the tuple
+     * @param <T5> the type of the 5th value in the tuple
+     * @param tuple the tuple to concat
+     * @return a new Tuple with the tuple values appended
+     * @throws NullPointerException if {@code tuple} is null
+     */
+    public <T4, T5> Tuple5<T1, T2, T3, T4, T5> concat(Tuple2<T4, T5> tuple) {
+        Objects.requireNonNull(tuple, "tuple is null");
+        return Tuple.of(_1, _2, _3, tuple._1, tuple._2);
+    }
+
+    /**
+     * Concat a tuple's values to this tuple.
+     *
+     * @param <T4> the type of the 4th value in the tuple
+     * @param <T5> the type of the 5th value in the tuple
+     * @param <T6> the type of the 6th value in the tuple
+     * @param tuple the tuple to concat
+     * @return a new Tuple with the tuple values appended
+     * @throws NullPointerException if {@code tuple} is null
+     */
+    public <T4, T5, T6> Tuple6<T1, T2, T3, T4, T5, T6> concat(Tuple3<T4, T5, T6> tuple) {
+        Objects.requireNonNull(tuple, "tuple is null");
+        return Tuple.of(_1, _2, _3, tuple._1, tuple._2, tuple._3);
+    }
+
+    /**
+     * Concat a tuple's values to this tuple.
+     *
+     * @param <T4> the type of the 4th value in the tuple
+     * @param <T5> the type of the 5th value in the tuple
+     * @param <T6> the type of the 6th value in the tuple
+     * @param <T7> the type of the 7th value in the tuple
+     * @param tuple the tuple to concat
+     * @return a new Tuple with the tuple values appended
+     * @throws NullPointerException if {@code tuple} is null
+     */
+    public <T4, T5, T6, T7> Tuple7<T1, T2, T3, T4, T5, T6, T7> concat(Tuple4<T4, T5, T6, T7> tuple) {
+        Objects.requireNonNull(tuple, "tuple is null");
+        return Tuple.of(_1, _2, _3, tuple._1, tuple._2, tuple._3, tuple._4);
+    }
+
+    /**
+     * Concat a tuple's values to this tuple.
+     *
+     * @param <T4> the type of the 4th value in the tuple
+     * @param <T5> the type of the 5th value in the tuple
+     * @param <T6> the type of the 6th value in the tuple
+     * @param <T7> the type of the 7th value in the tuple
+     * @param <T8> the type of the 8th value in the tuple
+     * @param tuple the tuple to concat
+     * @return a new Tuple with the tuple values appended
+     * @throws NullPointerException if {@code tuple} is null
+     */
+    public <T4, T5, T6, T7, T8> Tuple8<T1, T2, T3, T4, T5, T6, T7, T8> concat(Tuple5<T4, T5, T6, T7, T8> tuple) {
+        Objects.requireNonNull(tuple, "tuple is null");
+        return Tuple.of(_1, _2, _3, tuple._1, tuple._2, tuple._3, tuple._4, tuple._5);
+    }
+
+    // -- Object
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        } else if (!(o instanceof Tuple3)) {
+            return false;
+        } else {
+            final Tuple3<?, ?, ?> that = (Tuple3<?, ?, ?>) o;
+            return Objects.equals(this._1, that._1)
+                    && Objects.equals(this._2, that._2)
+                    && Objects.equals(this._3, that._3);
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        return Tuple.hash(_1, _2, _3);
+    }
+
+    @Override
+    public String toString() {
+        return "(" + _1 + ", " + _2 + ", " + _3 + ")";
+    }
+
+
+}
+--------------------------------------------------------------------------------------------------------
+@TestPropertySource(locations = "classpath:/test.properties")
+@EmbeddedKafka(topics = { "any-topic", "${kafka.topics.another-topic}" },
+        brokerProperties = { "log.dir=${kafka.broker.logs-dir}",
+                            "listeners=PLAINTEXT://localhost:${kafka.broker.port}",
+                            "auto.create.topics.enable=${kafka.broker.topics-enable:true}" }
+        brokerPropertiesLocation = "classpath:/broker.properties")
+--------------------------------------------------------------------------------------------------------
+public class KafkaTest {
+
+  @Test
+  public void shouldWaitForRecordsToBePublished() throws Exception {
+
+    try (EmbeddedKafkaCluster cluster = provisionWith(useDefaults())) {
+      cluster.send(to("test-topic", "a", "b", "c").useDefaults());
+      cluster.observe(on("test-topic", 3).useDefaults());
+    }
+  }
+}
+--------------------------------------------------------------------------------------------------------
+@RestController
+public class UserApi {
+    private final UserService userService;
+    public UserApi(UserService userService) {
+        this.userService = userService;
+    }
+    @JsonView(UserViews.BasicView.class)
+    @GetMapping("/users/{userId}/basic")
+    public ResponseEntity<UserDetails> getUserDetails(@PathVariable long userId) {
+        return ResponseEntity.ok(userDetails);
+    }
+    @JsonView(UserViews.ExtendedView.class)
+    @GetMapping("/users/{userId}/extended")
+    public ResponseEntity<UserDetails> getUserDetailsExtended(@PathVariable long userId) {
+        return ResponseEntity.ok(userDetails);
+    }
+
+
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import com.java.jacksondemo.model.UserDetails;
+import java.io.IOException;
+public class UserDetailsSerializer extends StdSerializer<UserDetails> {
+    private final JacksonDemoProperties jacksonDemoProperties;
+    protected UserDetailsSerializer(JacksonDemoProperties jacksonDemoProperties) {
+        super(UserDetails.class);
+        this.jacksonDemoProperties = jacksonDemoProperties;
+    }
+    @Override
+    public void serialize(UserDetails userDetails, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+        jsonGenerator.writeStartObject();
+        jsonGenerator.writeNumberField("user-id", userDetails.getUserId());
+        jsonGenerator.writeStringField("first-name", userDetails.getFirstName());
+        if (jacksonDemoProperties.isSerializeSensitiveInfo()) {
+            jsonGenerator.writeStringField("ssn", userDetails.getSsn());
+            jsonGenerator.writeNumberField("age", userDetails.getAge());
+        }
+        jsonGenerator.writeEndObject();
+    }
+
+
+   public ObjectMapper objectMapper(JacksonDemoProperties provider) {
+        ObjectMapper objectMapper = new ObjectMapper();      objectMapper.setPropertyNamingStrategy(PropertyNamingStrategy.KEBAB_CASE);
+        SimpleModule simpleModule = new SimpleModule();
+        simpleModule.addSerializer(UserDetails.class, new UserDetailsSerializer(provider));
+        objectMapper.registerModule(simpleModule);
+        return objectMapper;
+
+@JsonNaming(value = PropertyNamingStrategy.SnakeCaseStrategy.class)
+spring.jackson.property-naming-strategy=KEBAB_CASE
+
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+@JsonDeserialize(builder = User.UserBuilder.class)
+public class User {
+    private String firstName;
+    private Integer age;
+    private User(String firstName, Integer age) {
+        this.firstName = firstName;
+        this.age = age;
+    }
+    public Integer getAge() {
+        return age;
+    }
+    public String getFirstName() {
+        return firstName;
+    }
+    @JsonPOJOBuilder
+    public static class UserBuilder {
+        private String firstName;
+        private Integer age;
+        public UserBuilder withFirstName(String firstName) {
+            this.firstName = firstName;
+            return this;
+        }
+        public UserBuilder withAge(Integer age) {
+            this.age = age;
+            return this;
+        }
+        public User build() {
+            return new User(firstName, age);
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+        stubFor(post(urlEqualTo("/"))
+                .willReturn(
+                        aResponse()
+                                .withStatus(200)
+                                .withHeader("content-type", 
+                          "text/xml")                             
+                .withBodyFile("CountrySuccessResponse.xml")
+                )
+--------------------------------------------------------------------------------------------------------
+@Configuration
+public class OutputConfiguration {
+    @Bean
+    @Primary
+    public ObjectMapper customJson(){
+        return new Jackson2ObjectMapperBuilder()
+                   .indentOutput(true)
+                   .serializationInclusion(JsonInclude.Include.NON_NULL)
+                   .propertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE)
+                   .build();
+    }
+}
+@Configuration
+public class OutputConfiguration {
+   @Bean
+    public Jackson2ObjectMapperBuilder customJson() {
+        return new Jackson2ObjectMapperBuilder()
+                .indentOutput(true)
+                .serializationInclusion(JsonInclude.Include.NON_NULL)
+                .propertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
+    }
+}
+@Bean
+    public MappingJackson2HttpMessageConverter customJson(){
+        return new MappingJackson2HttpMessageConverter(
+                new Jackson2ObjectMapperBuilder()
+                        .indentOutput(true)
+                        .serializationInclusion(JsonInclude.Include.NON_NULL)
+                        .propertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE)
+                        .build()
+        );
+} 
+--------------------------------------------------------------------------------------------------------
+#!/bin/bash
+
+# New-year script, tested on a Mac
+
+# Prevent sed error 'illegal byte sequence'
+export LC_ALL=C LC_CTYPE=C LANG=C
+
+newYear=`date +'%Y'`
+echo "Updating copyright notice to $newYear"
+
+# Exclude specific directories: -type d \( -path ./.git -o -path ./.ide \) -prune -o
+# Make sed work on Mac: sed -e
+# Prevent making backups: -i ''
+find . -type d \( -path ./.git -o -path ./gradle \) -prune -o -type f -print0 | xargs -0 sed -i '' -e "s/Copyright 2019 Vavr/Copyright $newYear Vavr/"
+--------------------------------------------------------------------------------------------------------
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.UnknownHostException;

@@ -108,6 +108,115 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
 }
 -----------------------------------------------------------------------------------------
+import com.jayway.restassured.RestAssured;
+import com.junit.demo.JunitApplication;
+import com.junit.demo.extension.WiremockExtension;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.web.server.LocalServerPort;
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+@ExtendWith(WiremockExtension.class)
+@SpringBootTest(classes = {JunitApplication.class}, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+class DemoApiIT {
+    @BeforeEach
+    void setup(@LocalServerPort int port) {
+        RestAssured.basePath = "/demo";
+        RestAssured.port = port;
+    }
+    @Test
+    void testUserApi() {
+        stubFor(get(urlPathMatching("/users/.*"))
+             .willReturn(
+                 aResponse()
+                   .withStatus(200)
+                   .withHeader("content-type", "application/json")
+                   .withBodyFile("UserResponse.json"))
+        );
+        RestAssured
+                .get("/{userId}", "testId")
+                .then()
+                .assertThat()
+                .statusCode(200)
+                .body(Matchers.containsString("testUser"));
+        verify(exactly(1), getRequestedFor(urlPathMatching("/users/.*")));
+    }
+    @Test
+    void testUserApi1() {
+        stubFor(get(urlPathMatching("/users/.*"))
+                .willReturn(
+                   aResponse()
+                     .withStatus(200)
+                     .withHeader("content-type", "application/json")
+                     .withBodyFile("UserResponse.json"))
+        );
+        RestAssured
+                .get("/{userId}", "testId")
+                .then()
+                .assertThat()
+                .statusCode(200)
+                .body(Matchers.containsString("testUser"));
+        
+        // will fail if you have not reset wiremock
+        verify(exactly(1), getRequestedFor(urlPathMatching("/users/.*")));
+    }
+
+-----------------------------------------------------------------------------------------
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+class JunitOrderAnnotationTest {
+    @Test
+    @Order(2)
+    void testC() {}
+    @Test
+    @Order(1)
+    void testA() {}
+    @Test
+    void testB() {}
+}
+-----------------------------------------------------------------------------------------
+ public class MyExtension implements
+      BeforeEachCallback,
+      AfterEachCallback {
+
+    @Override
+    public void beforeEach(ExtensionContext ctx) throws Exception {
+      final List<String> values = new ArrayList<>();
+      values.add("something magic");
+      ctx
+          .getStore(ExtensionContext.Namespace.create("my-storage"))
+          .put("instance" , values);
+    }
+
+    @Override
+    public void afterEach(ExtensionContext ctx) throws Exception {
+      final List<String> values = ctx
+          .getStore(ExtensionContext.Namespace.create("my-storage"))
+          .get("instance" , List.class);
+
+      values.forEach(System.out::println);
+    }
+  }
+-----------------------------------------------------------------------------------------
+public class IgnoreFileNotFoundExceptionExtension 
+  implements TestExecutionExceptionHandler {
+ 
+    Logger logger = LogManager
+      .getLogger(IgnoreFileNotFoundExceptionExtension.class);
+     
+    @Override
+    public void handleTestExecutionException(ExtensionContext context,
+      Throwable throwable) throws Throwable {
+ 
+        if (throwable instanceof FileNotFoundException) {
+            logger.error("File not found:" + throwable.getMessage());
+            return;
+        }
+        throw throwable;
+    }
+}
+-----------------------------------------------------------------------------------------
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.servlet.Filter;
