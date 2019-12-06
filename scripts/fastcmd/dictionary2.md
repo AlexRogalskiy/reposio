@@ -562,6 +562,108 @@ public class User {
                 .withBodyFile("CountrySuccessResponse.xml")
                 )
 --------------------------------------------------------------------------------------------------------
+@ParameterizedTest
+@EnumSource(value = TimeUnit.class, mode = EXCLUDE, names = { "DAYS", "HOURS" })
+void testWithEnumSourceExclude(TimeUnit timeUnit) {
+    assertFalse(EnumSet.of(TimeUnit.DAYS, TimeUnit.HOURS).contains(timeUnit));
+    assertTrue(timeUnit.name().length() > 5);
+}
+@ParameterizedTest
+@EnumSource(value = TimeUnit.class, mode = MATCH_ALL, names = "^(M|N).+SECONDS$")
+void testWithEnumSourceRegex(TimeUnit timeUnit) {
+    String name = timeUnit.name();
+    assertTrue(name.startsWith("M") || name.startsWith("N"));
+    assertTrue(name.endsWith("SECONDS"));
+}
+--------------------------------------------------------------------------------------------------------
+spring.jpa.properties.hibernate.ddl-auto=none
+spring.jpa.generate-ddl=false
+spring.jpa.properties.hibernate.id.new_generator_mappings=false
+--------------------------------------------------------------------------------------------------------
+@Bean(name = "dataSource")
+public DriverManagerDataSource dataSource() {
+    DriverManagerDataSource dataSource = new DriverManagerDataSource();
+    dataSource.setDriverClassName("org.h2.Driver");
+    dataSource.setUrl("jdbc:h2:~/myDB;MV_STORE=false");
+    dataSource.setUsername("sa");
+    dataSource.setPassword("");
+
+    // schema init
+    Resource initSchema = new ClassPathResource("scripts/schema-h2.sql");
+    Resource initData = new ClassPathResource("scripts/data-h2.sql");
+    DatabasePopulator databasePopulator = new ResourceDatabasePopulator(initSchema, initData);
+    DatabasePopulatorUtils.execute(databasePopulator, dataSource);
+
+    return dataSource;
+}
+--------------------------------------------------------------------------------------------------------
+spring.datasource.tomcat.initSQL=ALTER SESSION SET...
+--------------------------------------------------------------------------------------------------------
+ALTER SESSION SET NLS_COMP=LINGUISTIC;  
+ALTER SESSION SET NLS_SORT=BINARY_CI; 
+--------------------------------------------------------------------------------------------------------
+//    private Fairy buildFairy(final AnnotatedElement annotatedElement) {
+//        final Random random = findAnnotation(annotatedElement, Random.class).get();
+//        final Builder builder = Fairy.builder();
+//
+//        final String locale = random.locale();
+//        if (!Random.DEFAULT_LOCALE.equals(locale)) {
+//            builder.withLocale(Locale.forLanguageTag(locale));
+//        }
+//
+//        final int seed = random.seed();
+//        if (Random.DEFAULT_SEED != seed) {
+//            builder.withRandomSeed(seed);
+//        }
+//        return builder.build();
+//    }
+--------------------------------------------------------------------------------------------------------
+@ParameterizedTest
+@ValueSource(strings = { "01.01.2017", "31.12.2017" })
+void testWithExplicitJavaTimeConverter(
+        @JavaTimeConversionPattern("dd.MM.yyyy") LocalDate argument) {
+
+    assertEquals(2017, argument.getYear());
+}
+
+@ParameterizedTest
+@EnumSource(TimeUnit.class)
+void testWithExplicitArgumentConversion(
+        @ConvertWith(ToStringArgumentConverter.class) String argument) {
+
+    assertNotNull(TimeUnit.valueOf(argument));
+}
+public class ToStringArgumentConverter extends SimpleArgumentConverter {
+
+    @Override
+    protected Object convert(Object source, Class<?> targetType) {
+        assertEquals(String.class, targetType, "Can only convert to String");
+        return String.valueOf(source);
+    }
+}
+
+
+@ParameterizedTest
+@CsvSource({
+    "Jane, Doe, F, 1990-05-20",
+    "John, Doe, M, 1990-10-22"
+})
+void testWithArgumentsAccessor(ArgumentsAccessor arguments) {
+    Person person = new Person(arguments.getString(0),
+                               arguments.getString(1),
+                               arguments.get(2, Gender.class),
+                               arguments.get(3, LocalDate.class));
+
+    if (person.getFirstName().equals("Jane")) {
+        assertEquals(Gender.F, person.getGender());
+    }
+    else {
+        assertEquals(Gender.M, person.getGender());
+    }
+    assertEquals("Doe", person.getLastName());
+    assertEquals(1990, person.getDateOfBirth().getYear());
+}
+--------------------------------------------------------------------------------------------------------
 @Configuration
 public class OutputConfiguration {
     @Bean
