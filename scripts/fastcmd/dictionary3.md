@@ -1391,6 +1391,1922 @@ public class StreamResource {
     }
 }
 -----------------------------------------------------------------------------------------
+import java.util.Arrays;
+
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.annotation.AfterReturning;
+import org.aspectj.lang.annotation.AfterThrowing;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
+import org.aspectj.lang.annotation.Pointcut;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+@Aspect
+@Component
+public class ControllerLoggingAspect {
+	Logger log = LoggerFactory.getLogger(ControllerLoggingAspect.class);
+	private ObjectMapper mapper = new ObjectMapper();
+
+	@Pointcut("within(@org.springframework.web.bind.annotation.RestController *)")
+	public void restControllerPointCut() {
+	}
+
+	@Pointcut("execution(public * *(..))")
+	public void endPoints() {
+	}
+
+	@Pointcut("endPoints() && restControllerPointCut()")
+	public void restEndPoints() {
+	}
+
+	@Before("restEndPoints()")
+	public void logBefore(JoinPoint joinPoint) {
+		log.info("Entering Method: " + joinPoint.getSignature().getName());
+		log.debug("Arguments: " + Arrays.toString(joinPoint.getArgs()));
+	}
+
+	@AfterReturning(pointcut = "restEndPoints()", returning = "result")
+	public void logAfterReturn(JoinPoint joinPoint, Object result) {
+		log.info("Exiting Method: " + joinPoint.getSignature().getName());
+		if (log.isDebugEnabled()) {
+			try {
+				log.debug("Response: " + mapper.writeValueAsString(result));
+			} catch (JsonProcessingException e) {
+				log.warn("An error occurred while attempting to write value as JSON: " + result.toString());
+				log.warn(e.getMessage(), e);
+			}
+		}
+	}
+
+	@AfterThrowing(pointcut = "restEndPoints()", throwing = "t")
+	public void logAfterException(JoinPoint joinPoint, Throwable t) {
+		log.debug("Exception occurred in method: " + joinPoint.getSignature().getName());
+		log.debug("Exception: " + t.getMessage(), t);
+	}
+}
+-----------------------------------------------------------------------------------------
+	@ParameterizedTest
+	@CsvFileSource(resources="/DatesSource.csv")
+	public void verifyDateValidationUsingCsvFile(@ToDataValidationBean DateValidationBean dateValidation) {
+		ReservationServiceImpl service = new ReservationServiceImpl();
+		List<String> errorMsgs = service.verifyReservationDates(dateValidation.checkInDate,
+				dateValidation.checkOutDate);
+		assertThat(errorMsgs).containsExactlyInAnyOrder(dateValidation.errorMsgs);
+	}
+-----------------------------------------------------------------------------------------
+@SpringJUnitWebConfig(HotelApplication.class)
+@WebMvcTest(controllers = CustomerController.class, secure = false)
+
+mvn clean package -P test-functional
+
+mvn test -Dgroups=smoke
+mvn surefire:test -Dgroups=smoke
+-----------------------------------------------------------------------------------------
+git clone https://github.com/OpenLiberty/sample-getting-started.git
+
+cd sample-getting-started
+
+mvn clean package liberty:run-server
+
+./gradlew build --no-daemon --continue
+-----------------------------------------------------------------------------------------
+@SpringBootTest
+@TestInstance(Lifecycle.PER_CLASS)
+@Execution(ExecutionMode.CONCURRENT)
+-----------------------------------------------------------------------------------------
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+io.spring.initializr.actuate.autoconfigure.InitializrActuatorEndpointsAutoConfiguration,\
+io.spring.initializr.actuate.autoconfigure.InitializrStatsAutoConfiguration
+-----------------------------------------------------------------------------------------
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+@ExtendWith(MockitoExtension.class)
+public class TestMockitoInjection {
+	private BoringService service;
+
+	public TestMockitoInjection(@Mock BoringService service) {
+		this.service = service;
+	}
+
+	@Test
+	public void testConstructorInjectedValue() {
+		when(service.returnNumber()).thenReturn(2);
+		assertEquals(2, service.returnNumber());
+	}
+
+	@Test
+	public void testMethodInjection(@Mock BoringService service) {
+		when(service.returnNumber()).thenReturn(3);
+		assertEquals(3, service.returnNumber());
+	}
+
+	public class BoringService {
+		public int returnNumber() {
+			return 1;
+		}
+	}
+}
+
+import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
+
+import org.junit.jupiter.api.Test;
+import org.junit.platform.testkit.engine.EngineTestKit;
+import org.junit.platform.testkit.engine.Events;
+
+public class TestKitExample {
+
+    @Test
+    void failIfTestsAreSkipped() {
+        Events testEvents = EngineTestKit 
+            .engine("junit-jupiter") 
+            .selectors(selectClass(TestKitSubject.class)) 
+            .execute() 
+            .tests(); 
+
+        testEvents.assertStatistics(stats -> stats.skipped(1)); 
+    }
+
+}
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.parallel.ResourceAccessMode;
+import org.junit.jupiter.api.parallel.ResourceLock;
+
+public class SharedResourceParallelTest {
+
+	@Test
+	@ResourceLock(value = "UNIQUE_RESOURCE", mode = ResourceAccessMode.READ_WRITE)
+	public void readWriteTestA(TestInfo info) throws InterruptedException {
+		System.out.println("Executing " + info.getDisplayName() + " on thread: " + Thread.currentThread());
+		Thread.sleep(2000L);
+	}
+
+	@Test
+	@ResourceLock(value = "UNIQUE_RESOURCE", mode = ResourceAccessMode.READ_WRITE)
+	public void readWriteTestB(TestInfo info) throws InterruptedException {
+		System.out.println("Executing " + info.getDisplayName() + " on thread: " + Thread.currentThread());
+		Thread.sleep(2000L);
+	}
+	
+	@Test
+	@ResourceLock(value = "UNIQUE_RESOURCE", mode = ResourceAccessMode.READ)
+	public void readOnlyTestA(TestInfo info) throws InterruptedException {
+		System.out.println("Executing " + info.getDisplayName() + " on thread: " + Thread.currentThread());
+		Thread.sleep(2000L);
+	}
+
+	@Test
+	@ResourceLock(value = "UNIQUE_RESOURCE", mode = ResourceAccessMode.READ)
+	public void readOnlyTestB(TestInfo info) throws InterruptedException {
+		System.out.println("Executing " + info.getDisplayName() + " on thread: " + Thread.currentThread());
+		Thread.sleep(2000L);
+	}
+}
+-----------------------------------------------------------------------------------------
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.batch.item.ItemProcessor;
+
+public class MahomiesProcessor implements ItemProcessor<FootballPlayRecord, FootballPlayRecord> {
+	private static final Logger LOGGER = LoggerFactory.getLogger(MahomiesProcessor.class);
+
+	@Override
+	public FootballPlayRecord process(FootballPlayRecord item) throws Exception {
+		if (item.getDescription().contains("MAHOMES")) {
+			if (item.getDescription().contains("TOUCHDOWN")) {
+				if (item.isBigPlay()) {
+					item.setMahomesFlair("An incredible play by Mahomes: 😍😍😍");
+				} else {
+					item.setMahomesFlair("A great play Mahomes: 🙌🙌🙌");
+				}
+			} else if (item.getDescription().contains("INTERCEPTION") || item.getDescription().contains("FUMBLE")) {
+				item.setMahomesFlair("Oh no an interception: 😭😭😭");
+			} else if (item.isBigPlay()) {
+				item.setMahomesFlair("A big play by Mahomes: 🤩🤩🤩");
+			} else {
+				item.setMahomesFlair("Just normal Mahomes magic: 😄😄😄");
+			}
+			LOGGER.info(item.getMahomesFlair());
+		}
+		return item;
+	}
+
+}
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.batch.item.ItemProcessor;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+public class JSONProcessor implements ItemProcessor<FootballPlayRecord, FootballPlayRecord> {
+	private static final Logger LOGGER = LoggerFactory.getLogger(JSONProcessor.class);
+	ObjectMapper mapper = new ObjectMapper();
+
+	@Override
+	public FootballPlayRecord process(FootballPlayRecord item) throws Exception {
+		String jsonString = mapper.writeValueAsString(item);
+
+		LOGGER.info(jsonString);
+		return item;
+	}
+
+}
+-----------------------------------------------------------------------------------------
+@Modifying(clearAutomatically = true)
+-----------------------------------------------------------------------------------------
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Description;
+import org.springframework.context.support.ResourceBundleMessageSource;
+import org.thymeleaf.spring4.SpringTemplateEngine;
+import org.thymeleaf.spring4.view.ThymeleafViewResolver;
+import org.thymeleaf.templateresolver.ServletContextTemplateResolver;
+
+@SpringBootApplication
+public class CommoditiesClientApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(CommoditiesClientApplication.class, args);
+	}
+
+	@Bean
+	@Description("Thymeleaf Template Resolver")
+	public ServletContextTemplateResolver templateResolver() {
+		ServletContextTemplateResolver templateResolver = new ServletContextTemplateResolver();
+		templateResolver.setPrefix("/WEB-INF/views/");
+		templateResolver.setSuffix(".html");
+		templateResolver.setTemplateMode("HTML5");
+
+		return templateResolver;
+	}
+
+	@Bean
+	@Description("Thymeleaf Template Engine")
+	public SpringTemplateEngine templateEngine() {
+		SpringTemplateEngine templateEngine = new SpringTemplateEngine();
+		templateEngine.setTemplateResolver(templateResolver());
+		templateEngine.setTemplateEngineMessageSource(messageSource());
+		return templateEngine;
+	}
+
+	@Bean
+	@Description("Thymeleaf View Resolver")
+	public ThymeleafViewResolver viewResolver() {
+		ThymeleafViewResolver viewResolver = new ThymeleafViewResolver();
+		viewResolver.setTemplateEngine(templateEngine());
+		viewResolver.setOrder(1);
+		return viewResolver;
+	}
+
+	@Bean
+	@Description("Spring Message Resolver")
+	public ResourceBundleMessageSource messageSource() {
+		ResourceBundleMessageSource messageSource = new ResourceBundleMessageSource();
+		messageSource.setBasename("messages");
+		return messageSource;
+	}
+}
+-----------------------------------------------------------------------------------------
+@EnableStubRunnerServer
+@Timed(value = "people.asset", longTask = true)
+-----------------------------------------------------------------------------------------
+   @Bean
+    public SecurityEvaluationContextExtension securityEvaluationContextExtension() {
+        return new SecurityEvaluationContextExtension();
+    }
+-----------------------------------------------------------------------------------------
+    @Bean
+    public DaoAuthenticationProvider authProvider() {
+        final CustomAuthenticationProvider authProvider 
+        	= new CustomAuthenticationProvider(userRepository, userDetailsService);
+        authProvider.setPasswordEncoder(encoder());
+        return authProvider;
+    }
+
+    @Bean
+    public PasswordEncoder encoder() {
+        return new BCryptPasswordEncoder(11);
+    }
+-----------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+@Configuration
+public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
+    @Override
+    protected void configure(HttpSecurity httpSecurity) throws Exception {
+        httpSecurity.authorizeRequests()
+            .antMatchers("/h2-console/**")
+            .permitAll()
+            .anyRequest()
+            .authenticated()
+            .and()
+            .formLogin()
+            .permitAll();
+        httpSecurity.csrf()
+            .ignoringAntMatchers("/h2-console/**");
+        httpSecurity.headers()
+            .frameOptions()
+            .sameOrigin();
+    }
+
+    @Autowired
+    private DataSource dataSource;
+
+    @Autowired
+    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
+        auth.jdbcAuthentication()
+            .dataSource(dataSource)
+            .withDefaultSchema()
+            .withUser(User.withUsername("user")
+                .password(passwordEncoder().encode("pass"))
+                .roles("USER"));
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+}
+
+
+    @Override
+    protected void configure(final HttpSecurity http) throws Exception {
+        // @formatter:off
+        http.authorizeRequests()
+            .antMatchers("/login").permitAll()
+//            .antMatchers("/foos/**").hasIpAddress("11.11.11.11")
+            .antMatchers("/foos/**").access("isAuthenticated() and hasIpAddress('11.11.11.11')")
+            .anyRequest().authenticated()
+            .and().formLogin().permitAll()
+            .and().csrf().disable();
+        // @formatter:on
+    }
+-----------------------------------------------------------------------------------------
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.junit.*;
+import org.mockserver.client.server.MockServerClient;
+import org.mockserver.integration.ClientAndProxy;
+import org.mockserver.integration.ClientAndServer;
+import org.mockserver.model.Header;
+import org.mockserver.model.HttpForward;
+import org.mockserver.verify.VerificationTimes;
+
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+
+import static junit.framework.Assert.assertEquals;
+import static org.mockserver.integration.ClientAndProxy.startClientAndProxy;
+import static org.mockserver.integration.ClientAndServer.startClientAndServer;
+import static org.mockserver.matchers.Times.exactly;
+import static org.mockserver.model.HttpClassCallback.callback;
+import static org.mockserver.model.HttpForward.forward;
+import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
+import static org.mockserver.model.StringBody.exact;
+
+public class MockServerLiveTest {
+
+    private static ClientAndServer mockServer;
+
+    @BeforeClass
+    public static void startServer() {
+        mockServer = startClientAndServer(1080);
+    }
+
+
+    @Test
+    public void whenPostRequestMockServer_thenServerReceived(){
+        createExpectationForInvalidAuth();
+        hitTheServerWithPostRequest();
+        verifyPostRequest();
+    }
+
+    @Test
+    public void whenPostRequestForInvalidAuth_then401Received(){
+        createExpectationForInvalidAuth();
+        org.apache.http.HttpResponse response = hitTheServerWithPostRequest();
+        assertEquals(401, response.getStatusLine().getStatusCode());
+    }
+
+    @Test
+    public void whenGetRequest_ThenForward(){
+        createExpectationForForward();
+        hitTheServerWithGetRequest("index.html");
+        verifyGetRequest();
+
+    }
+
+    @Test
+    public void whenCallbackRequest_ThenCallbackMethodCalled(){
+        createExpectationForCallBack();
+        org.apache.http.HttpResponse response= hitTheServerWithGetRequest("/callback");
+        assertEquals(200,response.getStatusLine().getStatusCode());
+    }
+
+    private void verifyPostRequest() {
+        new MockServerClient("localhost", 1080).verify(
+                request()
+                        .withMethod("POST")
+                        .withPath("/validate")
+                        .withBody(exact("{username: 'foo', password: 'bar'}")),
+                VerificationTimes.exactly(1)
+        );
+    }
+    private void verifyGetRequest() {
+        new MockServerClient("localhost", 1080).verify(
+                request()
+                        .withMethod("GET")
+                        .withPath("/index.html"),
+                VerificationTimes.exactly(1)
+        );
+    }
+
+    private org.apache.http.HttpResponse hitTheServerWithPostRequest() {
+        String url = "http://127.0.0.1:1080/validate";
+        HttpClient client = HttpClientBuilder.create().build();
+        HttpPost post = new HttpPost(url);
+        post.setHeader("Content-type", "application/json");
+        org.apache.http.HttpResponse response=null;
+
+        try {
+            StringEntity stringEntity = new StringEntity("{username: 'foo', password: 'bar'}");
+            post.getRequestLine();
+            post.setEntity(stringEntity);
+            response=client.execute(post);
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return response;
+    }
+
+    private org.apache.http.HttpResponse hitTheServerWithGetRequest(String page) {
+        String url = "http://127.0.0.1:1080/"+page;
+        HttpClient client = HttpClientBuilder.create().build();
+        org.apache.http.HttpResponse response=null;
+        HttpGet get = new HttpGet(url);
+        try {
+            response=client.execute(get);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return response;
+    }
+
+    private void createExpectationForInvalidAuth() {
+        new MockServerClient("127.0.0.1", 1080)
+                .when(
+                    request()
+                        .withMethod("POST")
+                        .withPath("/validate")
+                        .withHeader("\"Content-type\", \"application/json\"")
+                        .withBody(exact("{username: 'foo', password: 'bar'}")),
+                        exactly(1)
+                )
+                .respond(
+                    response()
+                        .withStatusCode(401)
+                        .withHeaders(
+                            new Header("Content-Type", "application/json; charset=utf-8"),
+                            new Header("Cache-Control", "public, max-age=86400")
+                    )
+                        .withBody("{ message: 'incorrect username and password combination' }")
+                        .withDelay(TimeUnit.SECONDS,1)
+                );
+    }
+
+    private void createExpectationForForward(){
+        new MockServerClient("127.0.0.1", 1080)
+            .when(
+                request()
+                   .withMethod("GET")
+                   .withPath("/index.html"),
+                   exactly(1)
+                )
+                .forward(
+                    forward()
+                        .withHost("www.mock-server.com")
+                        .withPort(80)
+                        .withScheme(HttpForward.Scheme.HTTP)
+                );
+    }
+
+    private void createExpectationForCallBack(){
+        mockServer
+            .when(
+                request()
+                    .withPath("/callback")
+                )
+                .callback(
+                    callback()
+                        .withCallbackClass("com.baeldung.mock.server.ExpectationCallbackHandler")
+                );
+    }
+
+    @AfterClass
+    public static void stopServer() {
+        mockServer.stop();
+    }
+}
+-----------------------------------------------------------------------------------------
+import static java.lang.String.format;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.List;
+import org.jeasy.rules.annotation.Action;
+import org.jeasy.rules.annotation.Condition;
+import org.jeasy.rules.annotation.Fact;
+import org.jeasy.rules.annotation.Priority;
+import org.jeasy.rules.annotation.Rule;
+import org.jeasy.rules.api.Facts;
+
+/**
+ * This component validates that an annotated rule object is well defined.
+ *
+ * @author Mahmoud Ben Hassine (mahmoud.benhassine@icloud.com)
+ */
+class RuleDefinitionValidator {
+
+    void validateRuleDefinition(final Object rule) {
+        checkRuleClass(rule);
+        checkConditionMethod(rule);
+        checkActionMethods(rule);
+        checkPriorityMethod(rule);
+    }
+
+    private void checkRuleClass(final Object rule) {
+        if (!isRuleClassWellDefined(rule)) {
+            throw new IllegalArgumentException(format("Rule '%s' is not annotated with '%s'", rule.getClass().getName(), Rule.class.getName()));
+        }
+    }
+
+    private void checkConditionMethod(final Object rule) {
+        List<Method> conditionMethods = getMethodsAnnotatedWith(Condition.class, rule);
+        if (conditionMethods.isEmpty()) {
+            throw new IllegalArgumentException(format("Rule '%s' must have a public method annotated with '%s'", rule.getClass().getName(), Condition.class.getName()));
+        }
+
+        if (conditionMethods.size() > 1) {
+            throw new IllegalArgumentException(format("Rule '%s' must have exactly one method annotated with '%s'", rule.getClass().getName(), Condition.class.getName()));
+        }
+
+        Method conditionMethod = conditionMethods.get(0);
+
+        if (!isConditionMethodWellDefined(conditionMethod)) {
+            throw new IllegalArgumentException(format("Condition method '%s' defined in rule '%s' must be public, must return boolean type and may have parameters annotated with @Fact (and/or exactly one parameter of type Facts or one of its sub-types).", conditionMethod, rule.getClass().getName()));
+        }
+    }
+
+    private void checkActionMethods(final Object rule) {
+        List<Method> actionMethods = getMethodsAnnotatedWith(Action.class, rule);
+        if (actionMethods.isEmpty()) {
+            throw new IllegalArgumentException(format("Rule '%s' must have at least one public method annotated with '%s'", rule.getClass().getName(), Action.class.getName()));
+        }
+
+        for (Method actionMethod : actionMethods) {
+            if (!isActionMethodWellDefined(actionMethod)) {
+                throw new IllegalArgumentException(format("Action method '%s' defined in rule '%s' must be public, must return void type and may have parameters annotated with @Fact (and/or exactly one parameter of type Facts or one of its sub-types).", actionMethod, rule.getClass().getName()));
+            }
+        }
+    }
+
+    private void checkPriorityMethod(final Object rule) {
+
+        List<Method> priorityMethods = getMethodsAnnotatedWith(Priority.class, rule);
+
+        if (priorityMethods.isEmpty()) {
+            return;
+        }
+
+        if (priorityMethods.size() > 1) {
+            throw new IllegalArgumentException(format("Rule '%s' must have exactly one method annotated with '%s'", rule.getClass().getName(), Priority.class.getName()));
+        }
+
+        Method priorityMethod = priorityMethods.get(0);
+
+        if (!isPriorityMethodWellDefined(priorityMethod)) {
+            throw new IllegalArgumentException(format("Priority method '%s' defined in rule '%s' must be public, have no parameters and return integer type.", priorityMethod, rule.getClass().getName()));
+        }
+    }
+
+    private boolean isRuleClassWellDefined(final Object rule) {
+        return Utils.isAnnotationPresent(Rule.class, rule.getClass());
+    }
+
+    private boolean isConditionMethodWellDefined(final Method method) {
+        return Modifier.isPublic(method.getModifiers())
+                && method.getReturnType().equals(Boolean.TYPE)
+                && validParameters(method);
+    }
+
+    private boolean validParameters(final Method method) {
+        int notAnnotatedParameterCount = 0;
+        Annotation[][] parameterAnnotations = method.getParameterAnnotations();
+        for(Annotation[] annotations : parameterAnnotations){
+            if(annotations.length == 0){
+                notAnnotatedParameterCount += 1;
+            } else {
+                //Annotation types has to be Fact
+                for(Annotation annotation : annotations){
+                    if(!annotation.annotationType().equals(Fact.class)){
+                        return false;
+                    }
+                }
+            }
+        }
+        if(notAnnotatedParameterCount > 1){
+            return false;
+        }
+        if (notAnnotatedParameterCount == 1) {
+            Class<?>[] parameterTypes = method.getParameterTypes();
+            int index = getIndexOfParameterOfTypeFacts(method); // TODO use method.getParameters when moving to Java 8
+            return Facts.class.isAssignableFrom(parameterTypes[index]);
+        }
+        return true;
+    }
+
+    private int getIndexOfParameterOfTypeFacts(Method method) {
+        Class<?>[] parameterTypes = method.getParameterTypes();
+        int index = 0;
+        for (Class<?> parameterType : parameterTypes) {
+            if (Facts.class.isAssignableFrom(parameterType)) {
+                return index;
+            }
+            index++;
+        }
+        return 0;
+    }
+
+    private boolean isActionMethodWellDefined(final Method method) {
+        return Modifier.isPublic(method.getModifiers())
+                && method.getReturnType().equals(Void.TYPE)
+                && validParameters(method);
+    }
+
+    private boolean isPriorityMethodWellDefined(final Method method) {
+        return Modifier.isPublic(method.getModifiers())
+                && method.getReturnType().equals(Integer.TYPE)
+                && method.getParameterTypes().length == 0;
+    }
+
+    private List<Method> getMethodsAnnotatedWith(final Class<? extends Annotation> annotation, final Object rule) {
+        Method[] methods = getMethods(rule);
+        List<Method> annotatedMethods = new ArrayList<>();
+        for (Method method : methods) {
+            if (method.isAnnotationPresent(annotation)) {
+                annotatedMethods.add(method);
+            }
+        }
+        return annotatedMethods;
+    }
+
+    private Method[] getMethods(final Object rule) {
+        return rule.getClass().getMethods();
+    }
+
+}
+-----------------------------------------------------------------------------------------
+import org.assertj.core.api.AbstractAssert;
+
+public class PersonAssert extends AbstractAssert<PersonAssert, Person> {
+
+    public PersonAssert(Person actual) {
+        super(actual, PersonAssert.class);
+    }
+
+    public static PersonAssert assertThat(Person actual) {
+        return new PersonAssert(actual);
+    }
+
+    public PersonAssert hasFullName(String fullName) {
+        isNotNull();
+        if (!actual.getFullName().equals(fullName)) {
+            failWithMessage("Expected person to have full name %s but was %s", fullName, actual.getFullName());
+        }
+        return this;
+    }
+
+    public PersonAssert isAdult() {
+        isNotNull();
+        if (actual.getAge() < 18) {
+            failWithMessage("Expected person to be adult");
+        }
+        return this;
+    }
+
+    public PersonAssert hasNickname(String nickName) {
+        isNotNull();
+        if (!actual.getNicknames().contains(nickName)) {
+            failWithMessage("Expected person to have nickname %s", nickName);
+        }
+        return this;
+    }
+}
+-----------------------------------------------------------------------------------------
+MockSettings customSettings = withSettings().defaultAnswer(new CustomAnswer());
+MyList listMock = mock(MyList.class, customSettings);
+
+   @Mock(answer = Answers.RETURNS_DEEP_STUBS)
+    private PizzaBuilder anotherbuilder;
+	
+	import org.junit.Test;
+import org.mockito.exceptions.base.MockitoAssertionError;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.VerificationCollector;
+
+import java.util.List;
+
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+
+public class LazyVerificationUnitTest {
+
+    @Test
+    public void whenLazilyVerified_thenReportsMultipleFailures() {
+        VerificationCollector collector = MockitoJUnit.collector()
+            .assertLazily();
+
+        List mockList = mock(List.class);
+        verify(mockList).add("one");
+        verify(mockList).clear();
+
+        try {
+            collector.collectAndReport();
+        } catch (MockitoAssertionError error) {
+            assertTrue(error.getMessage()
+                .contains("1. Wanted but not invoked:"));
+            assertTrue(error.getMessage()
+                .contains("2. Wanted but not invoked:"));
+        }
+    }
+}
+
+         Mockito.doReturn(100, Mockito.withSettings().lenient())
+                .when(list)
+                .size();
+				
+    private void verifyPostRequest() {
+        new MockServerClient("localhost", 1080).verify(
+                request()
+                        .withMethod("POST")
+                        .withPath("/validate")
+                        .withBody(exact("{username: 'foo', password: 'bar'}")),
+                VerificationTimes.exactly(1)
+        );
+    }
+    private void verifyGetRequest() {
+        new MockServerClient("localhost", 1080).verify(
+                request()
+                        .withMethod("GET")
+                        .withPath("/index.html"),
+                VerificationTimes.exactly(1)
+        );
+    }
+-----------------------------------------------------------------------------------------
+import com.github.tomakehurst.wiremock.WireMockServer;
+import io.restassured.RestAssured;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static io.restassured.RestAssured.post;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.xml.HasXPath.hasXPath;
+
+public class RestAssuredXMLIntegrationTest {
+    private static final int PORT = 8081;
+    private static WireMockServer wireMockServer = new WireMockServer(PORT);
+
+    private static final String EVENTS_PATH = "/employees";
+    private static final String APPLICATION_XML = "application/xml";
+    private static final String EMPLOYEES = getXml();
+
+    @BeforeClass
+    public static void before() throws Exception {
+        System.out.println("Setting up!");
+        wireMockServer.start();
+        configureFor("localhost", PORT);
+        RestAssured.port = PORT;
+        stubFor(post(urlEqualTo(EVENTS_PATH)).willReturn(
+          aResponse().withStatus(200)
+            .withHeader("Content-Type", APPLICATION_XML)
+            .withBody(EMPLOYEES)));
+    }
+
+    @Test
+    public void givenUrl_whenXmlResponseValueTestsEqual_thenCorrect() {
+        post("/employees").then().assertThat()
+          .body("employees.employee.first-name", equalTo("Jane"));
+    }
+
+    @Test
+    public void givenUrl_whenMultipleXmlValuesTestEqual_thenCorrect() {
+        post("/employees").then().assertThat()
+          .body("employees.employee.first-name", equalTo("Jane"))
+          .body("employees.employee.last-name", equalTo("Daisy"))
+          .body("employees.employee.sex", equalTo("f"));
+    }
+
+    @Test
+    public void givenUrl_whenMultipleXmlValuesTestEqualInShortHand_thenCorrect() {
+        post("/employees")
+          .then()
+          .assertThat()
+          .body("employees.employee.first-name", equalTo("Jane"),
+            "employees.employee.last-name", equalTo("Daisy"),
+            "employees.employee.sex", equalTo("f"));
+    }
+
+    @Test
+    public void givenUrl_whenValidatesXmlUsingXpath_thenCorrect() {
+        post("/employees")
+          .then()
+          .assertThat()
+          .body(hasXPath("/employees/employee/first-name",
+            containsString("Ja")));
+    }
+
+    @Test
+    public void givenUrl_whenValidatesXmlUsingXpath2_thenCorrect() {
+        post("/employees")
+          .then()
+          .assertThat()
+          .body(hasXPath("/employees/employee/first-name[text()='Jane']"));
+    }
+
+    private static String getXml() {
+        return Util
+          .inputStreamToString(RestAssuredXMLIntegrationTest.class.getResourceAsStream("/employees.xml"));
+    }
+
+    @AfterClass
+    public static void after() throws Exception {
+        System.out.println("Running: tearDown");
+        wireMockServer.stop();
+    }
+}
+
+import com.github.fge.jsonschema.SchemaVersion;
+import com.github.fge.jsonschema.cfg.ValidationConfiguration;
+import com.github.fge.jsonschema.main.JsonSchemaFactory;
+import com.github.tomakehurst.wiremock.WireMockServer;
+import io.restassured.RestAssured;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static io.restassured.RestAssured.get;
+import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
+import static io.restassured.module.jsv.JsonSchemaValidatorSettings.settings;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItems;
+
+public class RestAssuredIntegrationTest {
+    private static final int PORT = 8083;
+    private static WireMockServer wireMockServer = new WireMockServer(PORT);
+
+    private static final String EVENTS_PATH = "/events?id=390";
+    private static final String APPLICATION_JSON = "application/json";
+    private static final String GAME_ODDS = getEventJson();
+
+    @BeforeClass
+    public static void before() throws Exception {
+        System.out.println("Setting up!");
+        wireMockServer.start();
+        RestAssured.port = PORT;
+        configureFor("localhost", PORT);
+        stubFor(get(urlEqualTo(EVENTS_PATH)).willReturn(
+          aResponse().withStatus(200)
+            .withHeader("Content-Type", APPLICATION_JSON)
+            .withBody(GAME_ODDS)));
+    }
+
+    @Test
+    public void givenUrl_whenCheckingFloatValuePasses_thenCorrect() {
+        get("/events?id=390").then().assertThat()
+          .body("odd.ck", equalTo(12.2f));
+    }
+
+    @Test
+    public void givenUrl_whenSuccessOnGetsResponseAndJsonHasRequiredKV_thenCorrect() {
+
+        get("/events?id=390").then().statusCode(200).assertThat()
+          .body("id", equalTo("390"));
+    }
+
+    @Test
+    public void givenUrl_whenJsonResponseHasArrayWithGivenValuesUnderKey_thenCorrect() {
+        get("/events?id=390").then().assertThat()
+          .body("odds.price", hasItems("1.30", "5.25", "2.70", "1.20"));
+    }
+
+    @Test
+    public void givenUrl_whenJsonResponseConformsToSchema_thenCorrect() {
+
+        get("/events?id=390").then().assertThat()
+          .body(matchesJsonSchemaInClasspath("event_0.json"));
+    }
+
+    @Test
+    public void givenUrl_whenValidatesResponseWithInstanceSettings_thenCorrect() {
+        JsonSchemaFactory jsonSchemaFactory = JsonSchemaFactory
+          .newBuilder()
+          .setValidationConfiguration(
+            ValidationConfiguration.newBuilder()
+              .setDefaultVersion(SchemaVersion.DRAFTV4)
+              .freeze()).freeze();
+
+        get("/events?id=390")
+          .then()
+          .assertThat()
+          .body(matchesJsonSchemaInClasspath("event_0.json").using(
+            jsonSchemaFactory));
+    }
+
+    @Test
+    public void givenUrl_whenValidatesResponseWithStaticSettings_thenCorrect() {
+
+        get("/events?id=390")
+          .then()
+          .assertThat()
+          .body(matchesJsonSchemaInClasspath("event_0.json").using(
+            settings().with().checkedValidation(false)));
+    }
+
+    @AfterClass
+    public static void after() throws Exception {
+        System.out.println("Running: tearDown");
+        wireMockServer.stop();
+    }
+
+    private static String getEventJson() {
+        return Util.inputStreamToString(RestAssuredIntegrationTest.class
+          .getResourceAsStream("/event_0.json"));
+    }
+}
+
+import static io.restassured.RestAssured.given;
+import static io.restassured.RestAssured.when;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThan;
+import static org.junit.Assert.assertEquals;
+import io.restassured.RestAssured;
+import io.restassured.http.Cookie;
+import io.restassured.response.Response;
+
+import java.util.concurrent.TimeUnit;
+
+import org.junit.Before;
+import org.junit.Test;
+
+public class RestAssuredAdvancedLiveTest {
+    
+    @Before
+    public void setup(){
+        RestAssured.baseURI = "https://api.github.com";
+        RestAssured.port = 443;
+    }
+    
+    @Test
+    public void whenMeasureResponseTime_thenOK(){
+        Response response = RestAssured.get("/users/eugenp");
+        long timeInMS = response.time();
+        long timeInS = response.timeIn(TimeUnit.SECONDS);
+        
+        assertEquals(timeInS, timeInMS/1000);
+    }
+    
+    @Test
+    public void whenValidateResponseTime_thenSuccess(){
+        when().get("/users/eugenp").then().time(lessThan(5000L));
+    }
+
+    @Test
+    public void whenValidateResponseTimeInSeconds_thenSuccess(){
+        when().get("/users/eugenp").then().time(lessThan(5L),TimeUnit.SECONDS);
+    }
+    
+    //===== parameter
+    
+    @Test
+    public void whenUseQueryParam_thenOK(){
+        given().queryParam("q", "john").when().get("/search/users").then().statusCode(200);
+        given().param("q", "john").when().get("/search/users").then().statusCode(200);
+    }
+    
+    @Test
+    public void whenUseMultipleQueryParam_thenOK(){
+        int perPage = 20;
+        given().queryParam("q", "john").queryParam("per_page",perPage).when().get("/search/users").then().body("items.size()", is(perPage));        
+        given().queryParams("q", "john","per_page",perPage).when().get("/search/users").then().body("items.size()", is(perPage));
+    }
+    
+    @Test
+    public void whenUseFormParam_thenSuccess(){
+        given().log().all().formParams("username", "john","password","1234").post("/");
+        given().log().all().params("username", "john","password","1234").post("/");
+    }
+    
+    @Test
+    public void whenUsePathParam_thenOK(){
+        given().pathParam("user", "eugenp").when().get("/users/{user}/repos").then().log().all().statusCode(200);
+    }
+    
+    @Test
+    public void whenUseMultiplePathParam_thenOK(){
+        given().log().all().pathParams("owner", "eugenp","repo","tutorials").when().get("/repos/{owner}/{repo}").then().statusCode(200);
+        given().log().all().pathParams("owner", "eugenp").when().get("/repos/{owner}/{repo}","tutorials").then().statusCode(200);
+    }
+    
+    //===== header
+    
+    @Test
+    public void whenUseCustomHeader_thenOK(){
+        given().header("User-Agent", "MyAppName").when().get("/users/eugenp").then().statusCode(200);
+    }
+    
+    @Test
+    public void whenUseMultipleHeaders_thenOK(){
+        given().header("User-Agent", "MyAppName","Accept-Charset","utf-8").when().get("/users/eugenp").then().statusCode(200);
+    }    
+    
+    //======= cookie
+    
+    @Test
+    public void whenUseCookie_thenOK(){
+        given().cookie("session_id", "1234").when().get("/users/eugenp").then().statusCode(200);
+    }
+    
+    @Test
+    public void whenUseCookieBuilder_thenOK(){
+        Cookie myCookie = new Cookie.Builder("session_id", "1234").setSecured(true).setComment("session id cookie").build();
+        given().cookie(myCookie).when().get("/users/eugenp").then().statusCode(200);
+    }
+    
+    // ====== request
+    
+    @Test
+    public void whenRequestGet_thenOK(){
+        when().request("GET", "/users/eugenp").then().statusCode(200);
+    }
+    
+    @Test
+    public void whenRequestHead_thenOK(){
+        when().request("HEAD", "/users/eugenp").then().statusCode(200);
+    }
+    
+    //======= log
+    
+    @Test
+    public void whenLogRequest_thenOK(){
+        given().log().all().when().get("/users/eugenp").then().statusCode(200);
+    }
+    
+    @Test
+    public void whenLogResponse_thenOK(){
+        when().get("/repos/eugenp/tutorials").then().log().body().statusCode(200);
+    }
+    
+    @Test
+    public void whenLogResponseIfErrorOccurred_thenSuccess(){
+        when().get("/users/eugenp").then().log().ifError();
+        when().get("/users/eugenp").then().log().ifStatusCodeIsEqualTo(500);
+        when().get("/users/eugenp").then().log().ifStatusCodeMatches(greaterThan(200));
+    }
+    
+    @Test
+    public void whenLogOnlyIfValidationFailed_thenSuccess(){
+        when().get("/users/eugenp").then().log().ifValidationFails().statusCode(200);
+        given().log().ifValidationFails().when().get("/users/eugenp").then().statusCode(200);
+    }
+   
+}
+
+import com.github.tomakehurst.wiremock.WireMockServer;
+import io.restassured.RestAssured;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.containing;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static io.restassured.RestAssured.get;
+import static io.restassured.RestAssured.with;
+import static org.hamcrest.Matchers.hasItems;
+
+public class RestAssured2IntegrationTest {
+    private static final int PORT = 8084;
+    private static WireMockServer wireMockServer = new WireMockServer(PORT);
+
+    private static final String EVENTS_PATH = "/odds";
+    private static final String APPLICATION_JSON = "application/json";
+    private static final String ODDS = getJson();
+
+    @BeforeClass
+    public static void before() throws Exception {
+        System.out.println("Setting up!");
+        wireMockServer.start();
+        configureFor("localhost", PORT);
+        RestAssured.port = PORT;
+        stubFor(get(urlEqualTo(EVENTS_PATH)).willReturn(
+          aResponse().withStatus(200)
+            .withHeader("Content-Type", APPLICATION_JSON)
+            .withBody(ODDS)));
+        stubFor(post(urlEqualTo("/odds/new"))
+            .withRequestBody(containing("{\"price\":5.25,\"status\":1,\"ck\":13.1,\"name\":\"X\"}"))
+            .willReturn(aResponse().withStatus(201)));
+    }
+
+    @Test
+    public void givenUrl_whenVerifiesOddPricesAccuratelyByStatus_thenCorrect() {
+        get("/odds").then().body("odds.findAll { it.status > 0 }.price",
+          hasItems(5.25f, 1.2f));
+    }
+
+    @Test
+    public void whenRequestedPost_thenCreated() {
+        with().body(new Odd(5.25f, 1, 13.1f, "X"))
+            .when()
+            .request("POST", "/odds/new")
+            .then()
+            .statusCode(201);
+    }
+
+    private static String getJson() {
+        return Util.inputStreamToString(RestAssured2IntegrationTest.class
+          .getResourceAsStream("/odds.json"));
+    }
+
+    @AfterClass
+    public static void after() throws Exception {
+        System.out.println("Running: tearDown");
+        wireMockServer.stop();
+    }
+}
+
+import static io.restassured.RestAssured.get;
+import static io.restassured.RestAssured.given;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
+
+/**
+ * For this Live Test we need:
+ * * a running instance of the service located in the spring-security-rest-basic-auth module.
+ * @see <a href="https://github.com/eugenp/tutorials/tree/master/spring-security-rest-basic-auth">spring-security-rest-basic-auth module</a>
+ * 
+ */
+public class BasicAuthenticationLiveTest {
+
+    private static final String USER = "user1";
+    private static final String PASSWORD = "user1Pass";
+    private static final String SVC_URL = "http://localhost:8080/spring-security-rest-basic-auth/api/foos/1";
+
+    @Test
+    public void givenNoAuthentication_whenRequestSecuredResource_thenUnauthorizedResponse() {
+        get(SVC_URL).then()
+            .assertThat()
+            .statusCode(HttpStatus.UNAUTHORIZED.value());
+    }
+
+    @Test
+    public void givenBasicAuthentication_whenRequestSecuredResource_thenResourceRetrieved() {
+        given().auth()
+            .basic(USER, PASSWORD)
+            .when()
+            .get(SVC_URL)
+            .then()
+            .assertThat()
+            .statusCode(HttpStatus.OK.value());
+    }
+}
+
+
+import static io.restassured.RestAssured.get;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.hasKey;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
+
+/**
+ * For this Live Test we need:
+ * * a running instance of the authorization server located in the spring-security-oauth repo - oauth-authorization-server module.
+ * @see <a href="https://github.com/Baeldung/spring-security-oauth/tree/master/oauth-authorization-server">spring-security-oauth/oauth-authorization-server module</a>
+ * 
+ * * a running instance of the service located in the spring-security-oauth repo - oauth-resource-server-1 module.
+ * @see <a href="https://github.com/Baeldung/spring-security-oauth/tree/master/oauth-resource-server-1">spring-security-oauth/oauth-resource-server-1 module</a>
+ * 
+ */
+public class OAuth2AuthenticationLiveTest {
+
+    private static final String USER = "john";
+    private static final String PASSWORD = "123";
+    private static final String CLIENT_ID = "fooClientIdPassword";
+    private static final String SECRET = "secret";
+    private static final String AUTH_SVC_TOKEN_URL = "http://localhost:8081/spring-security-oauth-server/oauth/token";
+    private static final String RESOURCE_SVC_URL = "http://localhost:8082/spring-security-oauth-resource/foos/1";
+
+    @Test
+    public void givenNoAuthentication_whenRequestSecuredResource_thenUnauthorizedResponse() {
+        get(RESOURCE_SVC_URL).then()
+            .assertThat()
+            .statusCode(HttpStatus.UNAUTHORIZED.value());
+    }
+
+    @Test
+    public void givenAccessTokenAuthentication_whenRequestSecuredResource_thenResourceRetrieved() {
+        String accessToken = given().auth()
+            .basic(CLIENT_ID, SECRET)
+            .formParam("grant_type", "password")
+            .formParam("username", USER)
+            .formParam("password", PASSWORD)
+            .formParam("scope", "read foo")
+            .when()
+            .post(AUTH_SVC_TOKEN_URL)
+            .then()
+            .assertThat()
+            .statusCode(HttpStatus.OK.value())
+            .extract()
+            .path("access_token");
+
+        given().auth()
+            .oauth2(accessToken)
+            .when()
+            .get(RESOURCE_SVC_URL)
+            .then()
+            .assertThat()
+            .statusCode(HttpStatus.OK.value())
+            .body("$", hasKey("id"))
+            .body("$", hasKey("name"));
+    }
+}
+-----------------------------------------------------------------------------------------
+import org.junit.jupiter.api.extension.ConditionEvaluationResult;
+import org.junit.jupiter.api.extension.ExecutionCondition;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import java.util.Optional;
+public class DemoExecutionConditionExtension implements ExecutionCondition {
+    @Override
+    public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext extensionContext) {
+        String env = System.getProperty("env");
+        return Optional.ofNullable(env)
+                .filter(s -> !s.equalsIgnoreCase("dev"))
+                .map(s -> ConditionEvaluationResult.enabled("enabled for env "+env))
+                .orElse(ConditionEvaluationResult.disabled("disabled for env " + env));
+    }
+
+-----------------------------------------------------------------------------------------
+@Component
+public class HeaderContextFilter implements WebFilter {
+    private final List<String> headers;
+    public HeaderContextFilter(DemoProperties demoProperties) {
+    // 2)   
+        headers = demoProperties.getHeaders();
+    }
+    @Override
+    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+        return chain.filter(exchange)
+                .subscriberContext(context -> {
+                    Map<String, String> headerMap = new HashMap<>();
+                    // 3)
+                    headers.forEach(header -> headerMap.put(header, exchange.getRequest().getHeaders().getFirst(header)));
+                    // 4)
+                    context = context.put("headers", headerMap);
+                    return context;
+                });
+    }
+}
+
+@Bean
+public WebClient webClient(DemoProperties demoProperties, HeaderExchange headerExchange) {
+    return WebClient
+            .builder()
+            .filter(headerExchange)
+            .baseUrl(demoProperties.getBackendUri())
+            .build();
+}
+
+@Component
+public class HeaderExchange implements ExchangeFilterFunction {
+    private List<String> headers;
+    public HeaderExchange(DemoProperties demoProperties) {
+        this.headers = demoProperties.getHeaders();
+    }
+    @Override
+    public Mono<ClientResponse> filter(ClientRequest clientRequest, ExchangeFunction exchangeFunction) {
+        return Mono.subscriberContext()
+                .flatMap(context -> {
+                    // 1)
+                    Map<String, String> headerMap = context.get("headers");
+                    // 2)
+                    ClientRequest newRequest = ClientRequest
+                            .from(clientRequest)
+                            .headers(httpHeaders -> 
+// 3)
+headers.forEach(header -> httpHeaders.add(header, headerMap.get(header))))
+                            .build();
+                    return exchangeFunction.exchange(newRequest);
+                });
+    }
+}
+-----------------------------------------------------------------------------------------
+import org.testng.ITestContext;
+import org.testng.ITestListener;
+import org.testng.ITestResult;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
+public class TestNGLogCollector implements ITestListener {
+
+    private static CollectorImpl collector;
+
+    private static Object logger;
+
+    public static void setLogSource(Object logger) {
+        TestNGLogCollector.logger = Objects.requireNonNull(logger);
+    }
+
+    protected void before() {
+        collector = Arrays.stream(Frameworks.values())
+                .map(v -> v.getCollector(logger))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Unknown logger " + logger.getClass()));
+
+        collector.setup();
+    }
+
+    protected void after() {
+        if (collector != null) {
+            collector.remove();
+            collector = null;
+        }
+    }
+
+    public static List<String> getLogs() {
+        return collector.getResult();
+    }
+
+    public static List<?> getRawLogs() {
+        return collector.getRawLogs();
+    }
+
+
+    @Override
+    public void onTestStart(ITestResult result) {
+        before();
+    }
+
+    @Override
+    public void onTestSuccess(ITestResult result) {
+        after();
+    }
+
+    @Override
+    public void onTestFailure(ITestResult result) {
+        after();
+    }
+
+    @Override
+    public void onTestFailedButWithinSuccessPercentage(ITestResult result) {
+        after();
+    }
+
+    @Override
+    public void onTestSkipped(ITestResult result) {}
+
+    @Override
+    public void onStart(ITestContext context) {}
+
+    @Override
+    public void onFinish(ITestContext context) {}
+}
+-----------------------------------------------------------------------------------------
+given()
+  .when()
+  .get(getBaseUrl() + "/default/users/Michael")
+  .then()
+  .header("Cache-Control", "no-cache, no-store, max-age=0, must-revalidate")
+  .header("Pragma", "no-cache");
+-----------------------------------------------------------------------------------------
+import org.mockserver.mock.action.ExpectationCallback;
+import org.mockserver.model.HttpRequest;
+import org.mockserver.model.HttpResponse;
+
+import static org.mockserver.model.HttpResponse.notFoundResponse;
+import static org.mockserver.model.HttpResponse.response;
+
+
+public class ExpectationCallbackHandler implements ExpectationCallback {
+
+    public HttpResponse handle(HttpRequest httpRequest) {
+        if (httpRequest.getPath().getValue().endsWith("/callback")) {
+            return httpResponse;
+        } else {
+            return notFoundResponse();
+        }
+    }
+
+    public static HttpResponse httpResponse = response()
+            .withStatusCode(200);
+}
+-----------------------------------------------------------------------------------------
+import java.time.LocalDateTime;
+import java.util.Collection;
+
+import org.springframework.security.access.AccessDecisionVoter;
+import org.springframework.security.access.ConfigAttribute;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+
+public class MinuteBasedVoter implements AccessDecisionVoter {
+    @Override
+    public boolean supports(ConfigAttribute attribute) {
+        return true;
+    }
+
+    @Override
+    public boolean supports(Class clazz) {
+        return true;
+    }
+
+    @Override
+    public int vote(Authentication authentication, Object object, Collection collection) {
+        return authentication.getAuthorities().stream().map(GrantedAuthority::getAuthority).filter(r -> "ROLE_USER".equals(r) && LocalDateTime.now().getMinute() % 2 != 0).findAny().map(s -> ACCESS_DENIED).orElseGet(() -> ACCESS_ABSTAIN);
+    }
+}
+-----------------------------------------------------------------------------------------
+    @Bean
+    public AccessDecisionManager accessDecisionManager() {
+        // @formatter: off
+        List<AccessDecisionVoter<? extends Object>> decisionVoters = Arrays.asList(new WebExpressionVoter(), new RoleVoter(), new AuthenticatedVoter(), new MinuteBasedVoter());
+        // @formatter: on
+        return new UnanimousBased(decisionVoters);
+    }
+-----------------------------------------------------------------------------------------
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.password.StandardPasswordEncoder;
+import org.springframework.security.crypto.scrypt.SCryptPasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+@Configuration
+public class PasswordStorageWebSecurityConfigurer extends WebSecurityConfigurerAdapter {
+
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.eraseCredentials(false) // 4
+          .userDetailsService(getUserDefaultDetailsService())
+          .passwordEncoder(passwordEncoder());
+    }
+
+    @Bean
+    public UserDetailsService getUserDefaultDetailsService() {
+        return new InMemoryUserDetailsManager(User
+          .withUsername("baeldung")
+          .password("{noop}SpringSecurity5")
+          .authorities(Collections.emptyList())
+          .build());
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        // set up the list of supported encoders and their prefixes
+        PasswordEncoder defaultEncoder = new StandardPasswordEncoder();
+        Map<String, PasswordEncoder> encoders = new HashMap<>();
+        encoders.put("bcrypt", new BCryptPasswordEncoder());
+        encoders.put("scrypt", new SCryptPasswordEncoder());
+        encoders.put("noop", NoOpPasswordEncoder.getInstance());
+
+        DelegatingPasswordEncoder passwordEncoder = new DelegatingPasswordEncoder("bcrypt", encoders);
+        passwordEncoder.setDefaultPasswordEncoderForMatches(defaultEncoder);
+
+        return passwordEncoder;
+    }
+
+}
+-----------------------------------------------------------------------------------------
+	public static Color getColor (int val) {
+		// 255で割ると色が１段階分減っちゃうけど、256にするなら複雑なロジック必要になりそうだから後回し
+		double red = ((val & 0xff0000) >> 16) / 255.0d;
+		double green = ((val & 0xff00) >> 8) / 255.0d;
+		double blue = (val & 0xff) / 255.0d;
+		double opacity = (((val & 0xff000000) >> 24) & 0xff) / 255.0d;
+		return new Color(red, green, blue, opacity);
+	}
+-----------------------------------------------------------------------------------------
+
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.stereotype.Component;
+
+@Component
+public class SimpleCORSFilter implements Filter {
+
+	public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
+		HttpServletResponse response = (HttpServletResponse) res;
+		response.setHeader("Access-Control-Allow-Origin", "*");
+		response.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE");
+		response.setHeader("Access-Control-Max-Age", "3600");
+		response.setHeader("Access-Control-Allow-Headers", "x-requested-with");
+		chain.doFilter(req, res);
+	}
+
+	public void init(FilterConfig filterConfig) {}
+
+	public void destroy() {}
+}
+-----------------------------------------------------------------------------------------
+import org.junit.runner.RunWith;
+
+import cucumber.api.CucumberOptions;
+import cucumber.api.junit.Cucumber;
+
+@RunWith(Cucumber.class)
+@CucumberOptions(features = "src/test/resources")
+public class RunCukesTest {
+}
+-----------------------------------------------------------------------------------------
+import java.io.IOException;
+import java.net.Socket;
+
+public class FreePortFinder {
+
+    public static int find() {
+        for (int p = 8080; p < 9000; p++) {
+            if (isPortAvailable(p)) {
+                return p;
+            }
+        }
+        throw new RuntimeException("unable to find any available ports");
+    }
+
+    private static boolean isPortAvailable(int port) {
+        Socket s = null;
+        try {
+            s = new Socket("localhost", port);
+            return false;
+        } catch (IOException e) {
+            return true;
+        } finally {
+            if (s != null) {
+                try {
+                    s.close();
+                } catch (IOException e) {
+                    throw new RuntimeException("Unable to close socket to port " + port, e);
+                }
+            }
+        }
+    }
+}
+@Entity
+@Table(name = "locations")
+@SequenceGenerator(name = "location_id_generator", allocationSize = 1, initialValue = 10)
+public class Location {
+}
+-----------------------------------------------------------------------------------------
+import java.util.Date;
+import java.util.TimeZone;
+
+import org.springframework.stereotype.Component;
+
+@Component
+public class DateFactory {
+
+    public static final TimeZone DEFAULT_TIME_ZONE = TimeZone.getTimeZone("UTC");
+
+    public Date now() {
+        return new Date();
+    }
+
+    public TimeZone timeZone() {
+        return DEFAULT_TIME_ZONE;
+    }
+}
+-----------------------------------------------------------------------------------------
+import javax.sql.DataSource;
+
+import org.springframework.cloud.Cloud;
+import org.springframework.cloud.CloudFactory;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+
+@Configuration
+@Profile(SaganProfiles.CLOUDFOUNDRY)
+class CloudFoundryDatabaseConfig {
+
+    @Bean
+    public Cloud cloud() {
+        return new CloudFactory().getCloud();
+    }
+
+    @Bean
+    public DataSource dataSource() {
+        DataSource dataSource = cloud().getServiceConnector("sagan-db", DataSource.class, null);
+        return dataSource;
+    }
+}
+-----------------------------------------------------------------------------------------
+import io.spring.initializr.generator.buildsystem.Build;
+
+import org.springframework.core.Ordered;
+
+/**
+ * Callback for customizing a project's {@link Build}. Invoked with an {@link Ordered
+ * order} of {@code 0} by default, considering overriding {@link #getOrder()} to customize
+ * this behaviour.
+ *
+ * @param <B> {@link Build} type handled by this customizer
+ * @author Andy Wilkinson
+ */
+@FunctionalInterface
+public interface BuildCustomizer<B extends Build> extends Ordered {
+
+	void customize(B build);
+
+	@Override
+	default int getOrder() {
+		return 0;
+	}
+
+}
+-----------------------------------------------------------------------------------------
+	@Bean
+	@ConditionalOnMissingBean(name = "statsRetryTemplate")
+	RetryTemplate statsRetryTemplate() {
+		RetryTemplate retryTemplate = new RetryTemplate();
+		ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
+		backOffPolicy.setInitialInterval(3000L);
+		backOffPolicy.setMultiplier(3);
+		SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy(this.statsProperties.getElastic().getMaxAttempts(),
+				Collections.singletonMap(Exception.class, true));
+		retryTemplate.setBackOffPolicy(backOffPolicy);
+		retryTemplate.setRetryPolicy(retryPolicy);
+		return retryTemplate;
+	}
+-----------------------------------------------------------------------------------------
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+
+    @Bean
+    public CommandLineRunner commandLineRunner(ApplicationContext ctx) {
+        return args -> {
+
+            System.out.println("Let's inspect the beans provided by Spring Boot:");
+
+            String[] beanNames = ctx.getBeanDefinitionNames();
+            Arrays.sort(beanNames);
+            for (String beanName : beanNames) {
+                System.out.println(beanName);
+            }
+
+        };
+    }
+-----------------------------------------------------------------------------------------
+appsody list
+appsody repo add incubator https://raw.githubusercontent.com/seabaylea/stacks/javametrics-dev/index.yaml
+appsody run
+appsody stop
+minikube service appsody-spring
+
+            <!-- Plugin to run unit tests -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${version.maven-surefire-plugin}</version>
+                <executions>
+                    <execution>
+                        <phase>test</phase>
+                        <id>default-test</id>
+                        <configuration>
+                            <excludes>
+                                <exclude>**/it/**</exclude>
+                            </excludes>
+                            <reportsDirectory>
+                                ${project.build.directory}/test-reports/unit
+                            </reportsDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+                <configuration>
+                    <skipTests>${skipTests}</skipTests>
+                </configuration>
+            </plugin>
+            <!-- Plugin to run functional tests -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>${version.maven-failsafe-plugin}</version>
+                <executions>
+                    <execution>
+                        <phase>integration-test</phase>
+                        <id>integration-test</id>
+                        <goals>
+                            <goal>integration-test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/it/**</include>
+                            </includes>
+                            <systemPropertyVariables>
+                                <liberty.test.port>${http.port}</liberty.test.port>
+                                <war.name>${app.name}</war.name>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>verify-results</id>
+                        <goals>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <summaryFile>
+                        ${project.build.directory}/test-reports/it/failsafe-summary.xml
+                    </summaryFile>
+                    <reportsDirectory>
+                        ${project.build.directory}/test-reports/it
+                    </reportsDirectory>
+                </configuration>
+            </plugin>
+-----------------------------------------------------------------------------------------
+@echo Checking prerequisites...
+@echo off
+
+docker ps >nul 2>nul
+IF %ERRORLEVEL% NEQ 0 ECHO [Warning] Docker not running or not installed 
+@echo Adding %~dp0 to your Path environment variable if not already present....
+@echo off
+
+setx APPSODY_PATH "%~dp0
+set APPSODY_PATH=%~dp0
+set lastPathChar=%PATH:~-1%
+if NOT "%lastPathChar%" == ";" set "PATH=%PATH%;"
+
+for /F "skip=2 tokens=1,2*" %%N in ('%SystemRoot%\System32\reg.exe query "HKCU\Environment" /v "Path" 2^>nul') do if /I "%%N" == "Path" set "UserPath=%%P"
+IF DEFINED UserPath goto UserPathRead
+REM If no user path env var is set, we just set it to %APPSODY_PATH%
+setx PATH "%%APPSODY_PATH%%
+
+goto :SkipSetx
+
+:UserPathRead
+REM If the user path env var is already populated, add %APPSODY_PATH%, unless it is there already
+SET UserPathTest=%UserPath:APPSODY_PATH=NONE%
+REM echo UserPathTest = %UserPathTest%
+REM echo UserPath = %UserPath%
+if NOT "%UserPathTest%" == "%UserPath%" goto SkipSetx
+
+set lastUserPathChar=%UserPath:~-1%
+if NOT "%lastUserPathChar%" == ";" set "UserPath=%UserPath%;"
+setx PATH "%UserPath%%%APPSODY_PATH%%
+:SkipSetx
+REM Append the value of %APPSODY_PATH% to the PATH env var, unless it's already there
+CALL SET TestPath=%%PATH:%APPSODY_PATH%=NONE%%
+REM echo TestPath = %TestPath%
+REM echo PATH = %PATH%
+if NOT "%TestPath%" == "%PATH%" goto :done
+set PATH=%PATH%%APPSODY_PATH%
+:done
+
+@echo Done - enjoy appsody!
+-----------------------------------------------------------------------------------------
+java --enable-preview -jar java-13-preview.jar [SOME STRING]
+-----------------------------------------------------------------------------------------
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.testcontainers.containers.GenericContainer;
+
+public class SpringTestContainersExtension extends SpringExtension {
+
+	private GenericContainer<?> container;
+	private boolean restartContainerForEveryTest = false;
+
+	public SpringTestContainersExtension(GenericContainer<?> container) {
+		this.container = container;
+	}
+
+	public SpringTestContainersExtension(GenericContainer<?> container, boolean restartContainerForEveryTest) {
+		this.container = container;
+		this.restartContainerForEveryTest = restartContainerForEveryTest;
+	}
+
+	@Override
+	public void afterAll(ExtensionContext context) throws Exception {
+		if (container.isRunning()) {
+			container.stop();
+		}
+		super.afterAll(context);
+	}
+
+	@Override
+	public void postProcessTestInstance(Object testInstance, ExtensionContext context) throws Exception {
+		if (!container.isRunning()) {
+			container.start();
+		}
+		super.postProcessTestInstance(testInstance, context);
+	}
+
+	@Override
+	public void afterEach(ExtensionContext context) throws Exception {
+		if (restartContainerForEveryTest) {
+			container.stop();
+		}
+		super.afterEach(context);
+	}
+
+}
+-----------------------------------------------------------------------------------------
+import org.junit.jupiter.api.extension.ConditionEvaluationResult;
+import org.junit.jupiter.api.extension.ExecutionCondition;
+import org.junit.jupiter.api.extension.ExtensionContext;
+
+public class DisableOnMacCondition implements ExecutionCondition {
+
+	@Override
+	public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
+		String osName = System.getProperty("os.name");
+		if (osName.equalsIgnoreCase("Mac OS X")) {
+			return ConditionEvaluationResult.disabled("Test disabled on mac");
+		} else {
+			return ConditionEvaluationResult.enabled("Test enabled");
+		}
+	}
+
+}
+-----------------------------------------------------------------------------------------
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 
