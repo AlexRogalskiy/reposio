@@ -619,6 +619,24 @@ ALTER SESSION SET NLS_SORT=BINARY_CI;
 //    }
 --------------------------------------------------------------------------------------------------------
 @ParameterizedTest
+@CsvSource({
+    "Jane, Doe, F, 1990-05-20",
+    "John, Doe, M, 1990-10-22"
+})
+void testWithArgumentsAggregator(@AggregateWith(PersonAggregator.class) Person person) {
+    // perform assertions against person
+}
+public class PersonAggregator implements ArgumentsAggregator {
+    @Override
+    public Person aggregateArguments(ArgumentsAccessor arguments, ParameterContext context) {
+        return new Person(arguments.getString(0),
+                          arguments.getString(1),
+                          arguments.get(2, Gender.class),
+                          arguments.get(3, LocalDate.class));
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@ParameterizedTest
 @ValueSource(strings = { "01.01.2017", "31.12.2017" })
 void testWithExplicitJavaTimeConverter(
         @JavaTimeConversionPattern("dd.MM.yyyy") LocalDate argument) {
@@ -642,6 +660,12 @@ public class ToStringArgumentConverter extends SimpleArgumentConverter {
     }
 }
 
+      return providers.stream()
+            .filter(provider -> provider.supports(targetType))
+            .map(provider -> provider.createFor(annotatedElement, targetType))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Cannot find provider for type: " + targetType));
+			
 
 @ParameterizedTest
 @CsvSource({
@@ -663,6 +687,8 @@ void testWithArgumentsAccessor(ArgumentsAccessor arguments) {
     assertEquals("Doe", person.getLastName());
     assertEquals(1990, person.getDateOfBirth().getYear());
 }
+--------------------------------------------------------------------------------------------------------
+https://jbehave.org/reference/latest/dependencies.html
 --------------------------------------------------------------------------------------------------------
 @Configuration
 public class OutputConfiguration {

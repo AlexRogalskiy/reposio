@@ -44595,6 +44595,14 @@ public static void setUpBeforeClass() {
 //    @Autowired
 //    private EmbeddedKafkaBroker embeddedKafka;
 --------------------------------------------------------------------------------------------------------
+public class Main {
+  public static void main(String[] args) {
+    OffsetDateTime o = OffsetDateTime.parse("2014-09-02T15:22:14.59-07:00");
+    
+    System.out.println(o);
+  }
+}
+--------------------------------------------------------------------------------------------------------
 import java.io.IOException;
 
 import org.springframework.beans.factory.annotation.Autowired;
