@@ -71119,11 +71119,6 @@ public class HomeController {
         return modelAndView;
     }
 }
-Проект на Git
-
-
-Помогите пожалуйста, сильно не критикуйте, мой первый web проект и я много чего не знаю(
-Ответ: Это мой первый пр
 --------------------------------------------------------------------------------------------------------
 # Run tests which tagged with `integration, slow, feature-168`
 $ mvn -Dgroups="integration, fast, feature-168"
