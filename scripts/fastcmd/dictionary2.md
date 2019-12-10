@@ -690,6 +690,22 @@ void testWithArgumentsAccessor(ArgumentsAccessor arguments) {
 --------------------------------------------------------------------------------------------------------
 https://jbehave.org/reference/latest/dependencies.html
 --------------------------------------------------------------------------------------------------------
+@BeforeStory
+	public void beforeStory()
+	{
+		getDriverProvider().initialize();
+		
+		manage().timeouts().implicitlyWait(pageLoadTimeout, TimeUnit.SECONDS);
+		manage().timeouts().pageLoadTimeout(pageLoadTimeout, TimeUnit.SECONDS);
+		
+		loginSteps.GivenMyWebSiteWithConfig();
+	}
+
+	@AfterStory
+	public void afterStory() {
+		getDriverProvider().end();
+	}
+--------------------------------------------------------------------------------------------------------
 @Configuration
 public class OutputConfiguration {
     @Bean

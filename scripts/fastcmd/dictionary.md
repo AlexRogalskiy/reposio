@@ -44603,6 +44603,14 @@ public class Main {
   }
 }
 --------------------------------------------------------------------------------------------------------
+//@ExtendWith(AnnotatedEmbedderRunner.class)
+@UsingEmbedder(embedder = Embedder.class, verboseFailures = true, ignoreFailureInStories = false, generateViewAfterStories = true)
+--------------------------------------------------------------------------------------------------------
+@Api(tags = {"Swagger Resource"})
+@SwaggerDefinition(tags = {
+    @Tag(name = "Swagger Resource", description = "Write description here")
+})
+--------------------------------------------------------------------------------------------------------
 import java.io.IOException;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44650,6 +44658,63 @@ public class MessageListener {
   }
     
     
+}
+--------------------------------------------------------------------------------------------------------
+        this.mockMvc = MockMvcBuilders
+                .standaloneSetup(downloadController)
+                .setCustomArgumentResolvers(this.getPrincipalArgumentResolver())
+                .build();
+--------------------------------------------------------------------------------------------------------
+ @SpringBootTest(classes = {Application.class}, webEnvironment = WebEnvironment.RANDOM_PORT)
+  public class MyTest {
+
+    @LocalServerPort
+    int randomServerPort;
+
+    @LocalManagementPort
+    int randomManagementPort;
+--------------------------------------------------------------------------------------------------------
+junit.jupiter.conditions.deactivate=*
+junit.jupiter.extensions.autodetection.enabled=true
+junit.jupiter.testinstance.lifecycle.default=per_class
+junit.jupiter.execution.parallel.enabled=true
+junit.jupiter.execution.parallel.config.strategy=fixed
+junit.jupiter.execution.parallel.config.fixed.parallelism=2
+junit.jupiter.execution.parallel.mode.default=same_thread
+junit.jupiter.execution.parallel.mode.classes.default=concurrent
+junit.jupiter.displayname.generator.default=org.junit.jupiter.api.DisplayNameGenerator$ReplaceUnderscores
+
+--------------------------------------------------------------------------------------------------------
+private SecurityScheme securityScheme() {
+    GrantType grantType = new AuthorizationCodeGrantBuilder()
+        .tokenEndpoint(new TokenEndpoint(AUTH_SERVER + "/token", "oauthtoken"))
+        .tokenRequestEndpoint(
+          new TokenRequestEndpoint(AUTH_SERVER + "/authorize", CLIENT_ID, CLIENT_SECRET))
+        .build();
+ 
+    SecurityScheme oauth = new OAuthBuilder().name("spring_oauth")
+        .grantTypes(Arrays.asList(grantType))
+        .scopes(Arrays.asList(scopes()))
+        .build();
+    return oauth;
+}
+
+
+private AuthorizationScope[] scopes() {
+    AuthorizationScope[] scopes = { 
+      new AuthorizationScope("read", "for read operations"), 
+      new AuthorizationScope("write", "for write operations"), 
+      new AuthorizationScope("foo", "Access foo API") };
+    return scopes;
+}
+@Bean
+public SecurityConfiguration security() {
+    return SecurityConfigurationBuilder.builder()
+        .clientId(CLIENT_ID)
+        .clientSecret(CLIENT_SECRET)
+        .scopeSeparator(" ")
+        .useBasicAuthenticationWithAccessCodeGrant(true)
+        .build();
 }
 --------------------------------------------------------------------------------------------------------
 import java.util.Date;
