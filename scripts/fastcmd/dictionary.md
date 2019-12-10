@@ -71127,11 +71127,285 @@ public class HomeController {
         return modelAndView;
     }
 }
-Проект на Git
+--------------------------------------------------------------------------------------------------------
+# The shell script to start the mock service as a daemon process 
+# add -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=1044  in the java command below
+# to start the mocksy in debug mode
+
+################################ Configurations ######################################
+
+# give the rules file path here
+RULES_FILE_PATH=src/test/rules/xml/rules.xml
+
+# configure the port you want the mocksy to run
+PORT=7890
 
 
-Помогите пожалуйста, сильно не критикуйте, мой первый web проект и я много чего не знаю(
-Ответ: Это мой первый пр
+############################## Start script - DO NOT EDIT ############################
+
+nohup java -jar target/mocksy-server-0.8-full.jar  --admin --port $PORT --ruleset $RULES_FILE_PATH >>nohup.out 2>&1 &
+sleep 2
+
+echo 		
+if grep "Unable to access jarfile" nohup.out &> /dev/null; 
+then
+        echo "mocksy jar not found .. please build the project before starting"
+        rm nohup.out	
+        
+elif tail -12 nohup.out | grep "java.net.BindException: Address already in use" &> /dev/null;
+then
+		kill -9 $! &> /dev/null # this kills the process which failed to start completely due to the port clash
+    	echo $PORT "already in use...pls edit start.sh to start on a different PORT"
+    	
+elif grep "java.lang.IllegalArgumentException" nohup.out &> /dev/null;
+then
+		kill -9 $! &> /dev/null # this kills the process which failed to start completely
+		rm nohup.out	
+    	echo $RULES_FILE_PATH "does not exist...please edit start.sh to set the correct RULES_FILE_PATH"
+    	
+else
+    	MOCK_PID=$!
+		echo "found ruleset at " $RULES_FILE_PATH
+		echo "started the mocksy process with the processid" $MOCK_PID
+		echo $MOCK_PID > .pid.txt
+fi
+echo
+echo "check nohup.out for logs and errors"
+echo
+--------------------------------------------------------------------------------------------------------
+import org.jhipster.blog.domain.User;
+import org.jhipster.blog.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * Authenticate a user from the database.
+ */
+@Component("userDetailsService")
+public class DomainUserDetailsService implements UserDetailsService {
+
+    private final Logger log = LoggerFactory.getLogger(DomainUserDetailsService.class);
+
+    private final UserRepository userRepository;
+
+    public DomainUserDetailsService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    @Override
+    @Transactional
+    public UserDetails loadUserByUsername(final String login) {
+        log.debug("Authenticating {}", login);
+        String lowercaseLogin = login.toLowerCase(Locale.ENGLISH);
+        Optional<User> userFromDatabase = userRepository.findOneWithAuthoritiesByLogin(lowercaseLogin);
+        return userFromDatabase.map(user -> {
+            if (!user.getActivated()) {
+                throw new UserNotActivatedException("User " + lowercaseLogin + " was not activated");
+            }
+            List<GrantedAuthority> grantedAuthorities = user.getAuthorities().stream()
+                    .map(authority -> new SimpleGrantedAuthority(authority.getName()))
+                .collect(Collectors.toList());
+            return new org.springframework.security.core.userdetails.User(lowercaseLogin,
+                user.getPassword(),
+                grantedAuthorities);
+        }).orElseThrow(() -> new UsernameNotFoundException("User " + lowercaseLogin + " was not found in the " +
+        "database"));
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.util.StringUtils;
+import org.springframework.web.filter.GenericFilterBean;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+
+/**
+ * Filters incoming requests and installs a Spring Security principal if a header corresponding to a valid user is
+ * found.
+ */
+public class JWTFilter extends GenericFilterBean {
+
+    private TokenProvider tokenProvider;
+
+    public JWTFilter(TokenProvider tokenProvider) {
+        this.tokenProvider = tokenProvider;
+    }
+
+    @Override
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
+        throws IOException, ServletException {
+        HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
+        String jwt = resolveToken(httpServletRequest);
+        if (StringUtils.hasText(jwt) && this.tokenProvider.validateToken(jwt)) {
+            Authentication authentication = this.tokenProvider.getAuthentication(jwt);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+        }
+        filterChain.doFilter(servletRequest, servletResponse);
+    }
+
+    private String resolveToken(HttpServletRequest request){
+        String bearerToken = request.getHeader(JWTConfigurer.AUTHORIZATION_HEADER);
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7, bearerToken.length());
+        }
+        return null;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import io.github.jhipster.config.JHipsterProperties;
+
+import java.util.*;
+import java.util.stream.Collectors;
+import javax.annotation.PostConstruct;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.stereotype.Component;
+
+import io.jsonwebtoken.*;
+
+@Component
+public class TokenProvider {
+
+    private final Logger log = LoggerFactory.getLogger(TokenProvider.class);
+
+    private static final String AUTHORITIES_KEY = "auth";
+
+    private String secretKey;
+
+    private long tokenValidityInMilliseconds;
+
+    private long tokenValidityInMillisecondsForRememberMe;
+
+    private final JHipsterProperties jHipsterProperties;
+
+    public TokenProvider(JHipsterProperties jHipsterProperties) {
+        this.jHipsterProperties = jHipsterProperties;
+    }
+
+    @PostConstruct
+    public void init() {
+        this.secretKey =
+            jHipsterProperties.getSecurity().getAuthentication().getJwt().getSecret();
+
+        this.tokenValidityInMilliseconds =
+            1000 * jHipsterProperties.getSecurity().getAuthentication().getJwt().getTokenValidityInSeconds();
+        this.tokenValidityInMillisecondsForRememberMe =
+            1000 * jHipsterProperties.getSecurity().getAuthentication().getJwt().getTokenValidityInSecondsForRememberMe();
+    }
+
+    public String createToken(Authentication authentication, Boolean rememberMe) {
+        String authorities = authentication.getAuthorities().stream()
+            .map(GrantedAuthority::getAuthority)
+            .collect(Collectors.joining(","));
+
+        long now = (new Date()).getTime();
+        Date validity;
+        if (rememberMe) {
+            validity = new Date(now + this.tokenValidityInMillisecondsForRememberMe);
+        } else {
+            validity = new Date(now + this.tokenValidityInMilliseconds);
+        }
+
+        return Jwts.builder()
+            .setSubject(authentication.getName())
+            .claim(AUTHORITIES_KEY, authorities)
+            .signWith(SignatureAlgorithm.HS512, secretKey)
+            .setExpiration(validity)
+            .compact();
+    }
+
+    public Authentication getAuthentication(String token) {
+        Claims claims = Jwts.parser()
+            .setSigningKey(secretKey)
+            .parseClaimsJws(token)
+            .getBody();
+
+        Collection<? extends GrantedAuthority> authorities =
+            Arrays.stream(claims.get(AUTHORITIES_KEY).toString().split(","))
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
+
+        User principal = new User(claims.getSubject(), "", authorities);
+
+        return new UsernamePasswordAuthenticationToken(principal, token, authorities);
+    }
+
+    public boolean validateToken(String authToken) {
+        try {
+            Jwts.parser().setSigningKey(secretKey).parseClaimsJws(authToken);
+            return true;
+        } catch (SignatureException e) {
+            log.info("Invalid JWT signature.");
+            log.trace("Invalid JWT signature trace: {}", e);
+        } catch (MalformedJwtException e) {
+            log.info("Invalid JWT token.");
+            log.trace("Invalid JWT token trace: {}", e);
+        } catch (ExpiredJwtException e) {
+            log.info("Expired JWT token.");
+            log.trace("Expired JWT token trace: {}", e);
+        } catch (UnsupportedJwtException e) {
+            log.info("Unsupported JWT token.");
+            log.trace("Unsupported JWT token trace: {}", e);
+        } catch (IllegalArgumentException e) {
+            log.info("JWT token compact of handler are invalid.");
+            log.trace("JWT token compact of handler are invalid trace: {}", e);
+        }
+        return false;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+{
+  "type": "service_account",
+  "project_id": "one-click-research",
+  "private_key_id": "85ed53ca03beaa508081a307adc228b9f593690f",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCZiO2UI2XwwRQr\nQk6CCs2luxn/QbYKd297v3DEHG/kG1OOeyehT8bU6BQGaHKQl92gAaAnZkD8v8d/\nkzj4bqT5888ttyhZxl59uXASoC+HSxafTFhIDNvD/QXPVQnhPT+1C3e+KgQM3Ww6\nqAb6eB4DzSKzGf+DnVk4I6L5oMVeEZTILUa87RSygPmQJDIdoj/2IHfGeGhjiJmh\ninAPLEcW6yQVfKFfvHq6H29Qxg+fRYmjgw/1RiVH4vWXvZNs38JOcY2d1QzpbnTT\nSkgmwLQIBUfwChBPji0K9WWp//xXYLc1uN7JAp3tY8G0R5YriegzFPbILYdo4coO\nb3Dy9UIvAgMBAAECggEAL/QBaBRKQZC8cOprxNgE9O9kJkJqzggRrM/VM5tCIzeZ\nuFWkwhA9pL+7iWjT529XTCNV1xhr0cVAVQsxbv53zo2ktr2O/8MiPhhN9bNMRPBh\n520b4Z0KgsMjLmd8B3puzGgBhUZwL2h05jkWvOIJVdybKt9C2+OoOw1+WIMrQb62\nJSKCsmWHpgeq5lSPaCe0YKJA5WYgni9No+KvEphVX2W/A7xceP2ozanQfk/SHZOo\ndQX3Y4V1b4YwMkrKqv0oe/XIAapVjZLB9dgccpSficEKrqdVnzxz/53EOVW/H7Kx\ne5CTP/DMmu+F1bmCXkglldgMw/TgHatoyOwi5/L0EQKBgQDIQciS3oiedXB7L82s\nTExLqA2Ek+A75Yo/+XFkdkWWJYjcmF3UsWbx5o1H0kdgsk2quyUuunF/IzbziZYR\n2CerdHbvjd6FNyY7GJPHl1hgWegazGb4ZpP2qZzSwr1ChOu+YIk+V30I5cID16oR\n0OIqtdSEO8zGshw5GixM90v9eQKBgQDERcAdxtoZeB4AdW5Z72m7uGkm9GxZnMxw\nJ2McULUQn2agXjLx++/IS0PV0tx6dHs6dfmYhaw6UrOKYo/zRQ2xG5xkac6X6AHR\ninYJ9nysf4TqAcf8GbpGcCHCRwzKibuOwpNIVvT4/9N1bqoY/I+NyewoNVXu/pdc\nWMRpgb9a5wKBgAY6NXiLvwfecw8Bn426Ga1InpL+3jw+mRwAL8yF+QgARs9FVbWl\nhqQDHWWcXmfdY5jplPBtD9Z6S90q7CXF6QXl60Trzn2qB2BTFVVhmXf1k8gxjwou\ndm93Os87CxOkeohDDEGKCvNZ4byo2jsPmdjmKqOqEGYlZ8dGzxXdotlRAoGAD0hb\nGDZ2nwsSUvjR2eDhe8N1NJpNoYCrDoSSnA7QunWe+Re8ocj7N75cjta3YjWVrsym\n3bBy46uy3TClgsy6rzK2L79pXbyr/5PncwklVg0r3Ui8OK4MKhXrGwSLQ24ME6ak\n7zoOIyFQZtFyHzXzO5ggclUM1uouAPvMd2ap7rsCgYBzKFeWi4VFHQ0Y+lSTm6jK\nAtq2P/ze+dZbF4aEQOHWQvffOnpCwIqW0Nr//ONOR6IxHpquoadavNw2KAqC3E+5\n23QyWBHOrLziDwLK8pmXV0NF3L+GHkC7jrQ+3DQQCTB6wPQF6jZjZqgnNq8Bx04X\no2pNLDyyPLU7OOhWrzS/ow==\n-----END PRIVATE KEY-----\n",
+  "client_email": "firebase-adminsdk-f94ft@one-click-research.iam.gserviceaccount.com",
+  "client_id": "111069798407979759883",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-f94ft%40one-click-research.iam.gserviceaccount.com"
+}
+--------------------------------------------------------------------------------------------------------
+# The shell script to stop the mock service
+
+echo "Stopping the mockprocess with processid $(cat .pid.txt)"
+
+kill -9 $(cat .pid.txt) &> /dev/null; 
+
+rm .pid.txt &> /dev/null; 
+rm nohup.out &> /dev/null; 
+echo "Done !!"# The shell script to stop the mock service
+
+echo "Stopping the mockprocess with processid $(cat .pid.txt)"
+
+kill -9 $(cat .pid.txt) &> /dev/null; 
+
+rm .pid.txt &> /dev/null; 
+rm nohup.out &> /dev/null; 
+echo "Done !!"
 --------------------------------------------------------------------------------------------------------
 # Run tests which tagged with `integration, slow, feature-168`
 $ mvn -Dgroups="integration, fast, feature-168"
