@@ -3364,6 +3364,464 @@ $ mvn release:perform
 -----------------------------------------------------------------------------------------
 sudo ifconfig lo0 alias 127.0.0.2
 -----------------------------------------------------------------------------------------
+public enum Platform {
+	Linux, Windows, OS_X, Solaris, FreeBSD;
+
+	public static Platform detect() {
+		String osName = System.getProperty("os.name");
+		if (osName.equals("Linux"))
+			return Linux;
+		if (osName.startsWith("Windows", 0))
+			return Windows;
+		if (osName.equals("Mac OS X"))
+			return OS_X;
+		if (osName.contains("SunOS"))
+			return Solaris;
+		if (osName.equals("FreeBSD"))
+			return FreeBSD;
+		throw new IllegalArgumentException("Could not detect Platform: os.name=" + osName);
+	}
+
+	public boolean isUnixLike() {
+		return this != Windows;
+	}
+}
+-----------------------------------------------------------------------------------------
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Retention(RetentionPolicy.RUNTIME)  
+@Target({ElementType.METHOD,ElementType.CONSTRUCTOR})  
+public @interface AnnotationVO {
+	 public String methodName();  
+	 public String description();  
+}
+-----------------------------------------------------------------------------------------
+db.driver=org.mariadb.jdbc.Driver
+db.url=jdbc:mariadb://localhost/javaee
+db.username=javaee
+db.password=deNUfh27t
+-----------------------------------------------------------------------------------------
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import bean.Aanilevy;
+import org.springframework.jdbc.core.RowMapper;
+
+public class AanilevyRowMapper implements RowMapper <Aanilevy> {
+	
+	
+	
+public Aanilevy mapRow(ResultSet rs, int rownumber)	throws SQLException{
+	
+	Aanilevy aanilevy=new Aanilevy();
+	
+	
+	aanilevy.setId(rs.getInt("id"));
+	
+	aanilevy.setNimi(rs.getString("nimi"));
+	
+	aanilevy.setTekija(rs.getString("tekija"));
+	
+	
+	return aanilevy;
+}
+}
+
+https://github.com/btuduri/jarmasm/tree/master/armasm/src/asm/instructions
+-----------------------------------------------------------------------------------------
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
+
+/**
+ * Mainclass holds main method
+ *
+ * @author sven
+ *
+ */
+public class Main {
+	/**
+	 * Path to the manifest file
+	 */
+	@Parameter(names = { "--manifest", "-m" }, required = false)
+	File manifestPath;
+	/**
+	 * Path to where the new created maven archive gets installed
+	 */
+	@Parameter(names = { "--install", "-i" }, required = true)
+	File installPath;
+	/**
+	 * Path to the jars that the file depends on
+	 */
+	@Parameter(names = { "--libs", "-l" }, required = false)
+	File libDir;
+	/**
+	 * Griupid of the jar to be installed
+	 */
+	@Parameter(names = { "--groupid", "-g" }, required = true)
+	String groupId;
+	/**
+	 * Artifactid of the jar
+	 */
+	@Parameter(names = { "--artifactid", "-a" }, required = true)
+	String artifactId;
+	/**
+	 * Version of the jar
+	 */
+	@Parameter(names = { "--version", "-v" }, required = true)
+	String version;
+	/**
+	 * Holds the xml of the pom
+	 */
+	private final StringBuilder builder = new StringBuilder();
+	/**
+	 * Pattern to validate jarfiles
+	 */
+	private static final Predicate<String> jarPattern = Pattern.compile("*\\.jar").asPredicate();
+	/**
+	 * Contains all jarFiles that the files depends directly or indirectly
+	 */
+	private List<Path> jarFiles;
+
+	public static void main(final String[] args) throws JarMavenPackagerArgumentsException {
+		final Main main = new Main();
+		JCommander.newBuilder().addObject(main).build().parse(args);
+		main.searchForJars();
+
+	}
+
+	/**
+	 * Searches for dependencies in the manifestclasspath or the libdir provided
+	 *
+	 * @throws JarMavenPackagerArgumentsException
+	 */
+	void searchForJars() throws JarMavenPackagerArgumentsException {
+		if ((this.libDir == null) && (this.manifestPath == null)) {
+			throw new JarMavenPackagerArgumentsException("Provide at least on of manifestfilepaht or libdir");
+		}
+		if (this.libDir != null) {
+			try {
+				this.jarFiles = Files.walk(this.libDir.toPath()).filter(Files::isDirectory).filter(Files::exists)
+						.filter(path -> Main.jarPattern.test(path.getFileName().toString()))
+						.collect(Collectors.toUnmodifiableList());
+			} catch (final IOException e) {
+				throw new JarMavenPackagerArgumentsException("failure trying to read the libdir", e);
+			}
+		} else {
+			// Parse the manifest file
+			// TODO implement this shit !!!. But maybe not this is too incosistent
+
+		}
+	}
+}
+
+	public static Optional<String> getSha1FromFile(final File file) throws NoSuchAlgorithmException {
+		final MessageDigest digest = MessageDigest.getInstance("SHA1");
+		try (FileInputStream inputStream = new FileInputStream(file)) {
+			final byte[] dataBytes = new byte[1024];
+			int nRead = 0;
+			while ((nRead = inputStream.read(dataBytes)) != -1) {
+				digest.update(dataBytes, 0, nRead);
+			}
+			final byte[] mdbytes = digest.digest();
+			final StringBuilder builder = new StringBuilder();
+			for (final byte mdbyte : mdbytes) {
+				builder.append(Integer.toString((mdbyte & 0xff) + 0x100, 16).substring(1));
+			}
+			return Optional.of(builder.toString());
+		} catch (final FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (final IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return Optional.empty();
+	}
+-----------------------------------------------------------------------------------------
+package com.paragon.mailingcontour.commons.rest.configuration;
+
+import ch.qos.logback.classic.AsyncAppender;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.spi.LoggerContextListener;
+import ch.qos.logback.core.spi.ContextAwareBase;
+import net.logstash.logback.appender.LogstashSocketAppender;
+import net.logstash.logback.stacktrace.ShortenedThrowableConverter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class LoggingConfiguration {
+
+    private final Logger log = LoggerFactory.getLogger(LoggingConfiguration.class);
+
+    private LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
+
+    private final String appName;
+
+    private final String serverPort;
+
+    private final String instanceId;
+
+    private final JHipsterProperties jHipsterProperties;
+
+    public LoggingConfiguration(@Value("${spring.application.name}") String appName, @Value("${server.port}") String serverPort,
+                                @Value("${eureka.instance.instanceId}") String instanceId, JHipsterProperties jHipsterProperties) {
+        this.appName = appName;
+        this.serverPort = serverPort;
+        this.instanceId = instanceId;
+        this.jHipsterProperties = jHipsterProperties;
+        if (jHipsterProperties.getLogging().getLogstash().isEnabled()) {
+            addLogstashAppender(context);
+
+            // Add context listener
+            LogbackLoggerContextListener loggerContextListener = new LogbackLoggerContextListener();
+            loggerContextListener.setContext(context);
+            context.addListener(loggerContextListener);
+        }
+    }
+
+    public void addLogstashAppender(LoggerContext context) {
+        log.info("Initializing Logstash logging");
+
+        LogstashSocketAppender logstashAppender = new LogstashSocketAppender();
+        logstashAppender.setName("LOGSTASH");
+        logstashAppender.setContext(context);
+        String customFields = "{\"app_name\":\"" + appName + "\",\"app_port\":\"" + serverPort + "\"," +
+            "\"instance_id\":\"" + instanceId + "\"}";
+
+        // Set the Logstash appender config from JHipster properties
+        logstashAppender.setSyslogHost(jHipsterProperties.getLogging().getLogstash().getHost());
+        logstashAppender.setPort(jHipsterProperties.getLogging().getLogstash().getPort());
+        logstashAppender.setCustomFields(customFields);
+
+        // Limit the maximum length of the forwarded stacktrace so that it won't exceed the 8KB UDP limit of logstash
+        ShortenedThrowableConverter throwableConverter = new ShortenedThrowableConverter();
+        throwableConverter.setMaxLength(7500);
+        throwableConverter.setRootCauseFirst(true);
+        logstashAppender.setThrowableConverter(throwableConverter);
+
+        logstashAppender.start();
+
+        // Wrap the appender in an Async appender for performance
+        final AsyncAppender asyncLogstashAppender = new AsyncAppender();
+        asyncLogstashAppender.setContext(context);
+        asyncLogstashAppender.setName("ASYNC_LOGSTASH");
+        asyncLogstashAppender.setQueueSize(jHipsterProperties.getLogging().getLogstash().getQueueSize());
+        asyncLogstashAppender.addAppender(logstashAppender);
+        asyncLogstashAppender.start();
+
+        context.getLogger("ROOT").addAppender(asyncLogstashAppender);
+    }
+
+    /**
+     * Logback configuration is achieved by configuration file and API.
+     * When configuration file change is detected, the configuration is reset.
+     * This listener ensures that the programmatic configuration is also re-applied after reset.
+     */
+    class LogbackLoggerContextListener extends ContextAwareBase implements LoggerContextListener {
+
+        @Override
+        public boolean isResetResistant() {
+            return true;
+        }
+
+        @Override
+        public void onStart(LoggerContext context) {
+            addLogstashAppender(context);
+        }
+
+        @Override
+        public void onReset(LoggerContext context) {
+            addLogstashAppender(context);
+        }
+
+        @Override
+        public void onStop(LoggerContext context) {
+            // Nothing to do.
+        }
+
+        @Override
+        public void onLevelChange(ch.qos.logback.classic.Logger logger, Level level) {
+            // Nothing to do.
+        }
+    }
+}
+-----------------------------------------------------------------------------------------
+import io.github.jhipster.config.JHipsterConstants;
+
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.AfterThrowing;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Pointcut;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.env.Environment;
+
+import java.util.Arrays;
+
+/**
+ * Aspect for logging execution of service and repository Spring components.
+ *
+ * By default, it only runs with the "dev" profile.
+ */
+@Aspect
+public class LoggingAspect {
+
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
+
+    private final Environment env;
+
+    public LoggingAspect(Environment env) {
+        this.env = env;
+    }
+
+    /**
+     * Pointcut that matches all repositories, services and Web REST endpoints.
+     */
+    @Pointcut("within(io.github.jhipster.registry.repository..*) || within(io.github.jhipster.registry.service..*) || within(io.github.jhipster.registry.web.rest..*)")
+    public void loggingPointcut() {
+        // Method is empty as this is just a Pointcut, the implementations are in the advices.
+    }
+
+    /**
+     * Advice that logs methods throwing exceptions.
+     *
+     * @param joinPoint join point for advice
+     * @param e exception
+     */
+    @AfterThrowing(pointcut = "loggingPointcut()", throwing = "e")
+    public void logAfterThrowing(JoinPoint joinPoint, Throwable e) {
+        if (env.acceptsProfiles(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT)) {
+            log.error("Exception in {}.{}() with cause = \'{}\' and exception = \'{}\'", joinPoint.getSignature().getDeclaringTypeName(),
+                joinPoint.getSignature().getName(), e.getCause() != null? e.getCause() : "NULL", e.getMessage(), e);
+
+        } else {
+            log.error("Exception in {}.{}() with cause = {}", joinPoint.getSignature().getDeclaringTypeName(),
+                joinPoint.getSignature().getName(), e.getCause() != null? e.getCause() : "NULL");
+        }
+    }
+
+    /**
+     * Advice that logs when a method is entered and exited.
+     *
+     * @param joinPoint join point for advice
+     * @return result
+     * @throws Throwable throws IllegalArgumentException
+     */
+    @Around("loggingPointcut()")
+    public Object logAround(ProceedingJoinPoint joinPoint) throws Throwable {
+        if (log.isDebugEnabled()) {
+            log.debug("Enter: {}.{}() with argument[s] = {}", joinPoint.getSignature().getDeclaringTypeName(),
+                joinPoint.getSignature().getName(), Arrays.toString(joinPoint.getArgs()));
+        }
+        try {
+            Object result = joinPoint.proceed();
+            if (log.isDebugEnabled()) {
+                log.debug("Exit: {}.{}() with result = {}", joinPoint.getSignature().getDeclaringTypeName(),
+                    joinPoint.getSignature().getName(), result);
+            }
+            return result;
+        } catch (IllegalArgumentException e) {
+            log.error("Illegal argument: {} in {}.{}()", Arrays.toString(joinPoint.getArgs()),
+                    joinPoint.getSignature().getDeclaringTypeName(), joinPoint.getSignature().getName());
+
+            throw e;
+        }
+    }
+}
+-----------------------------------------------------------------------------------------
+    @Bean
+    public MongoDbFactory mongoFactory() {
+        return connectionFactory().mongoDbFactory();
+    }
+-----------------------------------------------------------------------------------------
+import org.jhipster.blog.domain.Entry;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Repository;
+
+import org.springframework.data.jpa.repository.*;
+import org.springframework.data.repository.query.Param;
+import java.util.List;
+
+/**
+ * Spring Data JPA repository for the Entry entity.
+ */
+@SuppressWarnings("unused")
+@Repository
+public interface EntryRepository extends JpaRepository<Entry,Long> {
+
+    @Query("select distinct entry from Entry entry left join fetch entry.tags")
+    List<Entry> findAllWithEagerRelationships();
+
+    @Query("select entry from Entry entry left join fetch entry.tags where entry.id =:id")
+    Entry findOneWithEagerRelationships(@Param("id") Long id);
+
+    Page<Entry> findByBlogUserLoginOrderByDateDesc(String currentUserLogin, Pageable pageable);
+}
+-----------------------------------------------------------------------------------------
+    @Bean
+    public SpringLiquibase liquibase(@Qualifier("taskExecutor") TaskExecutor taskExecutor,
+            DataSource dataSource, LiquibaseProperties liquibaseProperties) {
+
+        // Use liquibase.integration.spring.SpringLiquibase if you don't want Liquibase to start asynchronously
+        SpringLiquibase liquibase = new AsyncSpringLiquibase(taskExecutor, env);
+        liquibase.setDataSource(dataSource);
+        liquibase.setChangeLog("classpath:config/liquibase/master.xml");
+        liquibase.setContexts(liquibaseProperties.getContexts());
+        liquibase.setDefaultSchema(liquibaseProperties.getDefaultSchema());
+        liquibase.setDropFirst(liquibaseProperties.isDropFirst());
+        if (env.acceptsProfiles(JHipsterConstants.SPRING_PROFILE_NO_LIQUIBASE)) {
+            liquibase.setShouldRun(false);
+        } else {
+            liquibase.setShouldRun(liquibaseProperties.isEnabled());
+            log.debug("Configuring Liquibase");
+        }
+        return liquibase;
+    }
+-----------------------------------------------------------------------------------------
+@Configuration
+public class BeanRegister {
+    @Bean
+    @Primary
+    @ConfigurationProperties(prefix = "spring.datasource")
+    public DataSource dataSource() {
+        DataSource primary = DataSourceBuilder.create().build();
+        return primary;
+    }
+
+    @Bean(name = "readDataSource")
+    @ConfigurationProperties(prefix = "spring.datasource.read")
+    public DataSource readDataSource() {
+        DataSource read = DataSourceBuilder.create().build();
+        return read;
+    }
+
+    @Bean(name = "objectMapper")
+    @Primary
+    public ObjectMapper objectMapper() {
+        ObjectMapper mp = new ObjectMapper();
+        mp.setDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
+        return mp;
+    }
+}
+-----------------------------------------------------------------------------------------
 kubectl apply -f service-account.yml
 kubectl apply -f config.yml
 kubectl apply -f jenkins.yml
