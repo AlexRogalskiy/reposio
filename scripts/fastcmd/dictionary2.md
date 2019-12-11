@@ -21542,7 +21542,955 @@ public class VideoService {
         ObjectId id = gridFsTemplate.store(file.getInputStream(), file.getName(), file.getContentType(), metaData);
         return id.toString();
     }
+}
+--------------------------------------------------------------------------------------------------------
+spring.jackson.mapper.sort_properties_alphabetically=true
+--------------------------------------------------------------------------------------------------------
+	// end::user_guide[]
+	@extensions.ExpectToFail
+	// tag::user_guide[]
+	@Test
+	void timeoutExceededWithPreemptiveTermination() {
+		// The following assertion fails with an error message similar to:
+		// execution timed out after 10 ms
+		assertTimeoutPreemptively(ofMillis(10), () -> {
+			// Simulate task that takes more than 10 ms.
+			new CountDownLatch(1).await();
+		});
+	}
+	
+		@Test
+	void testInAllEnvironments() {
+		assumingThat("CI".equals(System.getenv("ENV")),
+			() -> {
+				// perform these assertions only on the CI server
+				assertEquals(2, calculator.divide(4, 2));
+			});
 
+		// perform these assertions in all environments
+		assertEquals(42, calculator.multiply(6, 7));
+	}
+--------------------------------------------------------------------------------------------------------
+import org.junit.platform.engine.EngineDiscoveryRequest;
+import org.junit.platform.engine.ExecutionRequest;
+import org.junit.platform.engine.TestDescriptor;
+import org.junit.platform.engine.TestEngine;
+import org.junit.platform.engine.UniqueId;
+import org.junit.platform.engine.support.descriptor.EngineDescriptor;
+
+/**
+ * This is a no-op {@link TestEngine} that is only
+ * used to make examples compile.
+ */
+class CustomTestEngine implements TestEngine {
+
+	@Override
+	public String getId() {
+		return "custom-test-engine";
+	}
+
+	@Override
+	public TestDescriptor discover(EngineDiscoveryRequest discoveryRequest, UniqueId uniqueId) {
+		return new EngineDescriptor(UniqueId.forEngine(getId()), "Custom Test Engine");
+	}
+
+	@Override
+	public void execute(ExecutionRequest request) {
+	}
+}
+
+// tag::user_guide[]
+import java.lang.reflect.Method;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.DisplayNameGeneration;
+import org.junit.jupiter.api.DisplayNameGenerator;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
+class DisplayNameGeneratorDemo {
+
+	@Nested
+	@DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
+	class A_year_is_not_supported {
+
+		@Test
+		void if_it_is_zero() {
+		}
+
+		@DisplayName("A negative value for year is not supported by the leap year computation.")
+		@ParameterizedTest(name = "For example, year {0} is not supported.")
+		@ValueSource(ints = { -1, -4 })
+		void if_it_is_negative(int year) {
+		}
+
+	}
+
+	@Nested
+	@DisplayNameGeneration(IndicativeSentences.class)
+	class A_year_is_a_leap_year {
+
+		@Test
+		void if_it_is_divisible_by_4_but_not_by_100() {
+		}
+
+		@ParameterizedTest(name = "Year {0} is a leap year.")
+		@ValueSource(ints = { 2016, 2020, 2048 })
+		void if_it_is_one_of_the_following_years(int year) {
+		}
+
+	}
+
+	static class IndicativeSentences extends DisplayNameGenerator.ReplaceUnderscores {
+
+		@Override
+		public String generateDisplayNameForClass(Class<?> testClass) {
+			return super.generateDisplayNameForClass(testClass);
+		}
+
+		@Override
+		public String generateDisplayNameForNestedClass(Class<?> nestedClass) {
+			return super.generateDisplayNameForNestedClass(nestedClass) + "...";
+		}
+
+		@Override
+		public String generateDisplayNameForMethod(Class<?> testClass, Method testMethod) {
+			String name = testClass.getSimpleName() + ' ' + testMethod.getName();
+			return name.replace('_', ' ') + '.';
+		}
+	}
+}
+// end::user_guide[]
+
+Caused by: org.springframework.beans.factory.NoSuchBeanDefinitionException: No bean named 'entityManagerFactory' available
+--------------------------------------------------------------------------------------------------------
+	@Test
+	@ExpectToFail
+	void shouldFail() {
+		throw new RuntimeException("any");
+	}
+--------------------------------------------------------------------------------------------------------
+pluginManagement {
+	plugins {
+		id("com.gradle.enterprise") version "3.1"
+		id("net.nemerosa.versioning") version "2.8.2"
+		id("com.github.ben-manes.versions") version "0.26.0"
+		id("com.diffplug.gradle.spotless") version "3.25.0"
+		id("org.ajoberstar.git-publish") version "2.1.1"
+		kotlin("jvm") version "1.3.50"
+		id("com.github.johnrengelman.shadow") version "5.2.0"
+		id("org.asciidoctor.convert") version "1.5.8.1"
+		id("me.champeau.gradle.jmh") version "0.4.8"
+		id("io.spring.nohttp") version "0.0.3.RELEASE"
+	}
+}
+
+plugins {
+	id("com.gradle.enterprise")
+}
+
+gradleEnterprise {
+	buildScan {
+		termsOfServiceUrl = "https://gradle.com/terms-of-service"
+		termsOfServiceAgree = "yes"
+	}
+}
+
+val javaVersion = JavaVersion.current()
+require(javaVersion.isJava11Compatible) {
+	"The JUnit 5 build requires Java 11 or higher. Currently executing with Java ${javaVersion.majorVersion}."
+}
+
+rootProject.name = "junit5"
+
+include("documentation")
+include("junit-jupiter")
+include("junit-jupiter-api")
+include("junit-jupiter-engine")
+include("junit-jupiter-migrationsupport")
+include("junit-jupiter-params")
+include("junit-platform-commons")
+include("junit-platform-console")
+include("junit-platform-console-standalone")
+include("junit-platform-engine")
+include("junit-platform-launcher")
+include("junit-platform-reporting")
+include("junit-platform-runner")
+include("junit-platform-suite-api")
+include("junit-platform-testkit")
+include("junit-vintage-engine")
+include("platform-tests")
+include("platform-tooling-support-tests")
+include("junit-bom")
+
+// check that every subproject has a custom build file
+// based on the project name
+rootProject.children.forEach { project ->
+	project.buildFileName = "${project.name}.gradle"
+	if (!project.buildFile.isFile) {
+		project.buildFileName = "${project.name}.gradle.kts"
+	}
+	require(project.buildFile.isFile) {
+		"${project.buildFile} must exist"
+	}
+}
+--------------------------------------------------------------------------------------------------------
+import java.lang.reflect.Method;
+import java.util.concurrent.atomic.AtomicReference;
+
+import javax.swing.SwingUtilities;
+
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.InvocationInterceptor;
+import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
+
+// @formatter:off
+// tag::user_guide[]
+public class SwingEdtInterceptor implements InvocationInterceptor {
+
+	@Override
+	public void interceptTestMethod(Invocation<Void> invocation,
+			ReflectiveInvocationContext<Method> invocationContext,
+			ExtensionContext extensionContext) throws Throwable {
+
+		AtomicReference<Throwable> throwable = new AtomicReference<>();
+
+		SwingUtilities.invokeAndWait(() -> {
+			try {
+				invocation.proceed();
+			}
+			catch (Throwable t) {
+				throwable.set(t);
+			}
+		});
+		Throwable t = throwable.get();
+		if (t != null) {
+			throw t;
+		}
+	}
+}
+// end::user_guide[]
+// @formatter:on
+--------------------------------------------------------------------------------------------------------
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.Test;
+
+// @formatter:off
+// tag::user_guide[]
+class TestInterfaceDemo implements TestLifecycleLogger,
+		TimeExecutionLogger, TestInterfaceDynamicTestsDemo {
+
+	@Test
+	void isEqualValue() {
+		assertEquals(1, "a".length(), "is always equal");
+	}
+
+}
+// end::user_guide[]
+// @formatter:on
+--------------------------------------------------------------------------------------------------------
+// @formatter:off
+// tag::user_guide[]
+
+import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
+
+import example.ExampleTestCase;
+
+import org.junit.jupiter.api.Test;
+import org.junit.platform.testkit.engine.EngineTestKit;
+
+class EngineTestKitStatisticsDemo {
+
+	@Test
+	void verifyJupiterContainerStats() {
+		EngineTestKit
+			.engine("junit-jupiter") // <1>
+			.selectors(selectClass(ExampleTestCase.class)) // <2>
+			.execute() // <3>
+			.containerEvents() // <4>
+			.assertStatistics(stats -> stats.started(2).succeeded(2)); // <5>
+	}
+
+	@Test
+	void verifyJupiterTestStats() {
+		EngineTestKit
+			.engine("junit-jupiter") // <1>
+			.selectors(selectClass(ExampleTestCase.class)) // <2>
+			.execute() // <3>
+			.testEvents() // <6>
+			.assertStatistics(stats ->
+				stats.skipped(1).started(3).succeeded(1).aborted(1).failed(1)); // <7>
+	}
+
+}
+// end::user_guide[]
+// @formatter:on
+
+// @formatter:off
+// tag::user_guide[]
+
+import static org.junit.platform.engine.discovery.DiscoverySelectors.selectMethod;
+import static org.junit.platform.testkit.engine.EventConditions.event;
+import static org.junit.platform.testkit.engine.EventConditions.skippedWithReason;
+import static org.junit.platform.testkit.engine.EventConditions.test;
+
+import example.ExampleTestCase;
+
+import org.junit.jupiter.api.Test;
+import org.junit.platform.testkit.engine.EngineTestKit;
+import org.junit.platform.testkit.engine.Events;
+
+class EngineTestKitSkippedMethodDemo {
+
+	@Test
+	void verifyJupiterMethodWasSkipped() {
+		String methodName = "skippedTest";
+
+		Events testEvents = EngineTestKit // <5>
+			.engine("junit-jupiter") // <1>
+			.selectors(selectMethod(ExampleTestCase.class, methodName)) // <2>
+			.execute() // <3>
+			.testEvents(); // <4>
+
+		testEvents.assertStatistics(stats -> stats.skipped(1)); // <6>
+
+		testEvents.assertThatEvents() // <7>
+			.haveExactly(1, event(test(methodName),
+				skippedWithReason("for demonstration purposes")));
+	}
+
+}
+// end::user_guide[]
+// @formatter:on
+
+// @formatter:off
+// tag::user_guide[]
+
+import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
+import static org.junit.platform.testkit.engine.EventConditions.event;
+import static org.junit.platform.testkit.engine.EventConditions.finishedWithFailure;
+import static org.junit.platform.testkit.engine.EventConditions.test;
+import static org.junit.platform.testkit.engine.TestExecutionResultConditions.instanceOf;
+import static org.junit.platform.testkit.engine.TestExecutionResultConditions.message;
+
+import example.ExampleTestCase;
+
+import org.junit.jupiter.api.Test;
+import org.junit.platform.testkit.engine.EngineTestKit;
+
+class EngineTestKitFailedMethodDemo {
+
+	@Test
+	void verifyJupiterMethodFailed() {
+		EngineTestKit.engine("junit-jupiter") // <1>
+			.selectors(selectClass(ExampleTestCase.class)) // <2>
+			.execute() // <3>
+			.testEvents() // <4>
+			.assertThatEvents().haveExactly(1, // <5>
+				event(test("failingTest"),
+					finishedWithFailure(
+						instanceOf(ArithmeticException.class), message("/ by zero"))));
+	}
+
+}
+// end::user_guide[]
+// @formatter:on
+
+
+// @formatter:off
+// tag::user_guide[]
+
+import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
+import static org.junit.platform.testkit.engine.EventConditions.abortedWithReason;
+import static org.junit.platform.testkit.engine.EventConditions.container;
+import static org.junit.platform.testkit.engine.EventConditions.engine;
+import static org.junit.platform.testkit.engine.EventConditions.event;
+import static org.junit.platform.testkit.engine.EventConditions.finishedSuccessfully;
+import static org.junit.platform.testkit.engine.EventConditions.finishedWithFailure;
+import static org.junit.platform.testkit.engine.EventConditions.skippedWithReason;
+import static org.junit.platform.testkit.engine.EventConditions.started;
+import static org.junit.platform.testkit.engine.EventConditions.test;
+import static org.junit.platform.testkit.engine.TestExecutionResultConditions.instanceOf;
+import static org.junit.platform.testkit.engine.TestExecutionResultConditions.message;
+
+import java.io.StringWriter;
+import java.io.Writer;
+
+import example.ExampleTestCase;
+
+import org.junit.jupiter.api.Test;
+import org.junit.platform.testkit.engine.EngineTestKit;
+import org.opentest4j.TestAbortedException;
+
+class EngineTestKitAllEventsDemo {
+
+	@Test
+	void verifyAllJupiterEvents() {
+		Writer writer = // create a java.io.Writer for debug output
+		// end::user_guide[]
+				// For the demo, we are simply swallowing the debug output.
+				new StringWriter();
+		// tag::user_guide[]
+
+		EngineTestKit.engine("junit-jupiter") // <1>
+			.selectors(selectClass(ExampleTestCase.class)) // <2>
+			.execute() // <3>
+			.allEvents() // <4>
+			.debug(writer) // <5>
+			.assertEventsMatchExactly( // <6>
+				event(engine(), started()),
+				event(container(ExampleTestCase.class), started()),
+				event(test("skippedTest"), skippedWithReason("for demonstration purposes")),
+				event(test("succeedingTest"), started()),
+				event(test("succeedingTest"), finishedSuccessfully()),
+				event(test("abortedTest"), started()),
+				event(test("abortedTest"),
+					abortedWithReason(instanceOf(TestAbortedException.class),
+						message(m -> m.contains("abc does not contain Z")))),
+				event(test("failingTest"), started()),
+				event(test("failingTest"), finishedWithFailure(
+					instanceOf(ArithmeticException.class), message("/ by zero"))),
+				event(container(ExampleTestCase.class), finishedSuccessfully()),
+				event(engine(), finishedSuccessfully()));
+	}
+
+}
+// end::user_guide[]
+// @formatter:on
+
+// tag::user_guide[]
+import java.lang.reflect.Method;
+import java.util.logging.Logger;
+
+import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
+import org.junit.jupiter.api.extension.BeforeTestExecutionCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
+import org.junit.jupiter.api.extension.ExtensionContext.Store;
+
+// end::user_guide[]
+/**
+ * Simple extension that <em>times</em> the execution of test methods and
+ * logs the results at {@code INFO} level.
+ *
+ * @since 5.0
+ */
+// @formatter:off
+// tag::user_guide[]
+public class TimingExtension implements BeforeTestExecutionCallback, AfterTestExecutionCallback {
+
+	private static final Logger logger = Logger.getLogger(TimingExtension.class.getName());
+
+	private static final String START_TIME = "start time";
+
+	@Override
+	public void beforeTestExecution(ExtensionContext context) throws Exception {
+		getStore(context).put(START_TIME, System.currentTimeMillis());
+	}
+
+	@Override
+	public void afterTestExecution(ExtensionContext context) throws Exception {
+		Method testMethod = context.getRequiredTestMethod();
+		long startTime = getStore(context).remove(START_TIME, long.class);
+		long duration = System.currentTimeMillis() - startTime;
+
+		logger.info(() ->
+			String.format("Method [%s] took %s ms.", testMethod.getName(), duration));
+	}
+
+	private Store getStore(ExtensionContext context) {
+		return context.getStore(Namespace.create(getClass(), context.getRequiredTestMethod()));
+	}
+
+}
+// end::user_guide[]
+// @formatter:on
+--------------------------------------------------------------------------------------------------------
+Certified Ethical Hacker (CEH)
+CompTIA A+
+Certified Information Systems Security Professional (CISSP)
+Cisco Certified Network Professional (CCNP)
+Cisco Certified Network Associate (CCNA)
+ITIL®️
+Project Management Professional (PMP®️)
+--------------------------------------------------------------------------------------------------------
+import com.mploed.spring.events.scoring.domain.ScoringResult;
+import com.mploed.spring.events.scoring.events.ScoringNegativeEvent;
+import com.mploed.spring.events.scoring.events.ScoringPositiveEvent;
+import com.mploed.spring.events.scoring.events.creditApplicationEntered.CreditApplicationEnteredEvent;
+import com.mploed.spring.events.scoring.events.customerCreated.Customer;
+import com.mploed.spring.events.scoring.events.customerCreated.CustomerCreatedEvent;
+import com.mploed.spring.events.scoring.repository.ScoringResultRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.Date;
+
+@Component
+public class IncomingMessageListener {
+
+	private final static Logger LOGGER = LoggerFactory.getLogger(IncomingMessageListener.class);
+
+	private RestTemplate restTemplate;
+
+	private ScoringResultRepository scoringResultRepository;
+
+	private ScoringChannels scoringChannels;
+
+	@Autowired
+	public IncomingMessageListener(RestTemplate restTemplate, ScoringResultRepository scoringResultRepository, ScoringChannels scoringChannels) {
+		this.restTemplate = restTemplate;
+		this.scoringResultRepository = scoringResultRepository;
+		this.scoringChannels = scoringChannels;
+	}
+
+	@StreamListener(ScoringChannels.CREDIT_APPLICATION_ENTERED)
+	public void receiveCreditApplicationEnteredEvent(CreditApplicationEnteredEvent event) {
+		LOGGER.info("Received Credit Application Entered Event: " + event.toString());
+		ScoringResult scoringResult = loadOrInitializeScoringResult(event.getApplicationNumber());
+
+		scoringResult.setPositiveBalance(event.isBalancePositive());
+
+		scoringResult.setSupportworthyCause(event.isCauseSupportWorthy());
+
+		scoringResult.setLastUpdate(new Date());
+		ScoringResult savedScoringResult = scoringResultRepository.save(scoringResult);
+		notifyInCaseOfFinalizedScoring(savedScoringResult);
+
+	}
+
+
+	@StreamListener(ScoringChannels.CUSTOMER_CREATED)
+	public void receiveCustomerCreatedEvent(@Payload CustomerCreatedEvent customerCreatedEvent) {
+		LOGGER.info("Received Customer Created Event: " + customerCreatedEvent.toString());
+		Customer customer = restTemplate.getForObject(customerCreatedEvent.getCustomerUrl(), Customer.class);
+
+		LOGGER.info("Received Customer from Event: " + customer.toString());
+		ScoringResult scoringResult = loadOrInitializeScoringResult(customer.getApplicationNumber());
+
+		scoringResult.setLegitCity(customer.isCityLegit());
+		scoringResult.setLastUpdate(new Date());
+		ScoringResult savedScoringResult = scoringResultRepository.save(scoringResult);
+
+		notifyInCaseOfFinalizedScoring(savedScoringResult);
+	}
+
+	private void notifyInCaseOfFinalizedScoring(ScoringResult scoringResult) {
+		LOGGER.info("Scoring complete: " + scoringResult.isComplete());
+		if (scoringResult.isComplete()) {
+			LOGGER.info("Scoring positive: " + scoringResult.isScoringPositive());
+			if (scoringResult.isScoringPositive()) {
+				ScoringPositiveEvent scoringPositiveEvent = new ScoringPositiveEvent(scoringResult.getApplicationNumber());
+				scoringChannels.scoringPositiveOut().send(MessageBuilder.withPayload(scoringPositiveEvent).build());
+			} else {
+				ScoringNegativeEvent scoringNegativeEvent = new ScoringNegativeEvent(scoringResult.getApplicationNumber());
+				scoringChannels.scoringNegativeOut().send(MessageBuilder.withPayload(scoringNegativeEvent).build());
+			}
+		}
+	}
+
+	private ScoringResult loadOrInitializeScoringResult(String applicationNumber) {
+		ScoringResult scoringResult = scoringResultRepository.findByApplicationNumber(applicationNumber);
+
+		if (scoringResult == null) {
+			scoringResult = new ScoringResult();
+			scoringResult.setApplicationNumber(applicationNumber);
+		}
+		return scoringResult;
+	}
+
+}
+
+import org.springframework.cloud.stream.annotation.Input;
+import org.springframework.cloud.stream.annotation.Output;
+import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.SubscribableChannel;
+
+public interface ScoringChannels {
+	String CREDIT_APPLICATION_ENTERED = "creditApplicationEnteredIn";
+	String CUSTOMER_CREATED = "customerCreatedIn";
+
+	@Output
+	MessageChannel scoringPositiveOut();
+
+	@Output
+	MessageChannel scoringNegativeOut();
+
+	@Input
+	SubscribableChannel creditApplicationEnteredIn();
+
+	@Input
+	SubscribableChannel customerCreatedIn();
+
+}
+
+import com.mploed.spring.events.creditapplication.domain.FinancialSituation;
+import com.mploed.spring.events.creditapplication.events.external.CreditApplicationEnteredEvent;
+import com.mploed.spring.events.creditapplication.events.internal.CreditDetailsEnteredEvent;
+import com.mploed.spring.events.creditapplication.events.internal.FinancialSituationEnteredEvent;
+import com.mploed.spring.events.creditapplication.messaging.CreditApplicationChannels;
+import com.mploed.spring.events.creditapplication.repository.CreditApplicationEnteredEventRepository;
+import com.mploed.spring.events.creditapplication.repository.CreditDetailsEnteredEventRepository;
+import com.mploed.spring.events.creditapplication.domain.CreditDetails;
+import com.mploed.spring.events.creditapplication.repository.FinancialSituationEnteredEventRepository;
+import com.mploed.spring.events.creditapplication.repository.VerifiedCreditApplicationNumberRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.view.RedirectView;
+
+@Controller
+@RequestMapping(path = "credit-application")
+public class CreditApplicationController {
+	private final static Logger LOGGER = LoggerFactory.getLogger(CreditApplicationController.class);
+
+	private CreditDetailsEnteredEventRepository creditDetailsEnteredEventRepository;
+	private FinancialSituationEnteredEventRepository financialSituationEnteredEventRepository;
+	private VerifiedCreditApplicationNumberRepository verifiedCreditApplicationNumberRepository;
+	private CreditApplicationEnteredEventRepository creditApplicationEnteredEventRepository;
+	private CreditApplicationChannels creditApplicationChannels;
+
+
+	@Value("${nextProcessStepUrl}")
+	private String nextProcessStepUrl;
+
+	@Autowired
+	public CreditApplicationController(CreditDetailsEnteredEventRepository creditDetailsEnteredEventRepository,
+	                                   FinancialSituationEnteredEventRepository financialSituationEnteredEventRepository,
+	                                   VerifiedCreditApplicationNumberRepository verifiedCreditApplicationNumberRepository,
+	                                   CreditApplicationEnteredEventRepository creditApplicationEnteredEventRepository,
+	                                   CreditApplicationChannels creditApplicationChannels) {
+		this.creditDetailsEnteredEventRepository = creditDetailsEnteredEventRepository;
+		this.financialSituationEnteredEventRepository = financialSituationEnteredEventRepository;
+		this.verifiedCreditApplicationNumberRepository = verifiedCreditApplicationNumberRepository;
+		this.creditApplicationEnteredEventRepository = creditApplicationEnteredEventRepository;
+		this.creditApplicationChannels = creditApplicationChannels;
+	}
+
+	@GetMapping("/{applicationNumber}")
+	public String index(Model model, @PathVariable String applicationNumber) {
+		LOGGER.info("Received a request for a new application: " + applicationNumber);
+		CreditDetails creditDetails = new CreditDetails();
+		model.addAttribute("creditDetails", creditDetails);
+		model.addAttribute("applicationNumber", applicationNumber);
+		return "creditDetails";
+	}
+
+
+	@PostMapping("/{applicationNumber}/creditDetails")
+	public String saveCreditDetails(@PathVariable String applicationNumber,
+	                                @ModelAttribute CreditDetails creditDetails,
+	                                Model model) {
+		LOGGER.info("Received credit details: " + creditDetails);
+		CreditDetailsEnteredEvent creditDetailsEnteredEvent = new CreditDetailsEnteredEvent(applicationNumber, creditDetails);
+		creditDetailsEnteredEventRepository.save(creditDetailsEnteredEvent);
+		model.addAttribute("financialSituation", new FinancialSituation());
+		model.addAttribute("applicationNumber", applicationNumber);
+		return "financialSituation";
+	}
+
+	@PostMapping("/{applicationNumber}/financialSituation")
+	public String saveFinancialSituation(@PathVariable String applicationNumber,
+	                                     @ModelAttribute FinancialSituation financialSituation,
+	                                     Model model) {
+		LOGGER.info("Received financial situation for: " + applicationNumber);
+		LOGGER.info("Received financial situation: " + financialSituation);
+		FinancialSituationEnteredEvent financialSituationEnteredEvent = new FinancialSituationEnteredEvent(applicationNumber, financialSituation);
+		financialSituationEnteredEventRepository.save(financialSituationEnteredEvent);
+		CreditDetailsEnteredEvent creditDetailsEnteredEvent = creditDetailsEnteredEventRepository.findByApplicationNumber(applicationNumber);
+		model.addAttribute("creditDetails", creditDetailsEnteredEvent.getCreditDetails());
+		model.addAttribute("financialSituation", financialSituation);
+		model.addAttribute("applicationNumber", applicationNumber);
+		return "summary";
+	}
+
+	@PostMapping("/{applicationNumber}/confirm")
+	public RedirectView confirmCreditApplication(@PathVariable String applicationNumber) {
+		LOGGER.info("app number: " + applicationNumber);
+		FinancialSituationEnteredEvent financialSituationEnteredEvent = financialSituationEnteredEventRepository.findByApplicationNumber(applicationNumber);
+		CreditDetailsEnteredEvent creditDetailsEnteredEvent = creditDetailsEnteredEventRepository.findByApplicationNumber(applicationNumber);
+
+		CreditApplicationEnteredEvent creditApplicationEnteredEvent = new CreditApplicationEnteredEvent(applicationNumber,
+				creditDetailsEnteredEvent.getCreditDetails(),
+				financialSituationEnteredEvent.getFinancialSituation());
+		CreditApplicationEnteredEvent savedEvent = creditApplicationEnteredEventRepository.save(creditApplicationEnteredEvent);
+		creditApplicationChannels.creditApplicationEnteredOut().send(MessageBuilder.withPayload(savedEvent).build());
+		LOGGER.info(savedEvent.toString());
+		return new RedirectView(nextProcessStepUrl + applicationNumber);
+	}
+
+}
+
+		<plugin>
+				<groupId>com.spotify</groupId>
+				<artifactId>dockerfile-maven-plugin</artifactId>
+				<version>1.3.4</version>
+				<configuration>
+					<repository>${docker.image.prefix}/${project.artifactId}</repository>
+				</configuration>
+			</plugin>
+--------------------------------------------------------------------------------------------------------
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
+
+// tag::user_guide[]
+class WebServerDemo {
+
+	// end::user_guide[]
+	// @formatter:off
+	// tag::user_guide[]
+	@RegisterExtension
+	static WebServerExtension server = WebServerExtension.builder()
+		.enableSecurity(false)
+		.build();
+	// end::user_guide[]
+	// @formatter:on
+	// tag::user_guide[]
+
+	@Test
+	void getProductList() {
+		WebClient webClient = new WebClient();
+		String serverUrl = server.getServerUrl();
+		// Use WebClient to connect to web server using serverUrl and verify response
+		assertEquals(200, webClient.get(serverUrl + "/products").getResponseStatus());
+	}
+
+}
+// end::user_guide[]
+--------------------------------------------------------------------------------------------------------
+	@BeforeEach
+	@Timeout(5)
+	void setUp() {
+		// fails if execution time exceeds 5 seconds
+	}
+
+	@Test
+	@Timeout(value = 100, unit = TimeUnit.MILLISECONDS)
+	void failsIfExecutionTimeExceeds100Milliseconds() {
+		// fails if execution time exceeds 100 milliseconds
+	}
+--------------------------------------------------------------------------------------------------------
+IntStream.range(1, 100_000_000).mapToDouble(i -> Math.pow(i, i)).map(Math::sqrt).max();
+
+	@ParameterizedTest
+	@CsvFileSource(resources = "/two-column.csv", numLinesToSkip = 1)
+	void testWithCsvFileSource(String country, int reference) {
+		assertNotNull(country);
+		assertNotEquals(0, reference);
+	}
+--------------------------------------------------------------------------------------------------------
+// tag::user_guide[]
+
+import static example.util.StringUtils.isPalindrome;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
+import static org.junit.jupiter.api.DynamicTest.dynamicTest;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Random;
+import java.util.function.Function;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+import example.util.Calculator;
+
+import org.junit.jupiter.api.DynamicNode;
+import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.api.function.ThrowingConsumer;
+
+// end::user_guide[]
+// @formatter:off
+// tag::user_guide[]
+class DynamicTestsDemo {
+
+	private final Calculator calculator = new Calculator();
+
+	// end::user_guide[]
+	@Tag("exclude")
+	// tag::user_guide[]
+	// This will result in a JUnitException!
+	@TestFactory
+	List<String> dynamicTestsWithInvalidReturnType() {
+		return Arrays.asList("Hello");
+	}
+
+	@TestFactory
+	Collection<DynamicTest> dynamicTestsFromCollection() {
+		return Arrays.asList(
+			dynamicTest("1st dynamic test", () -> assertTrue(isPalindrome("madam"))),
+			dynamicTest("2nd dynamic test", () -> assertEquals(4, calculator.multiply(2, 2)))
+		);
+	}
+
+	@TestFactory
+	Iterable<DynamicTest> dynamicTestsFromIterable() {
+		return Arrays.asList(
+			dynamicTest("3rd dynamic test", () -> assertTrue(isPalindrome("madam"))),
+			dynamicTest("4th dynamic test", () -> assertEquals(4, calculator.multiply(2, 2)))
+		);
+	}
+
+	@TestFactory
+	Iterator<DynamicTest> dynamicTestsFromIterator() {
+		return Arrays.asList(
+			dynamicTest("5th dynamic test", () -> assertTrue(isPalindrome("madam"))),
+			dynamicTest("6th dynamic test", () -> assertEquals(4, calculator.multiply(2, 2)))
+		).iterator();
+	}
+
+	@TestFactory
+	DynamicTest[] dynamicTestsFromArray() {
+		return new DynamicTest[] {
+			dynamicTest("7th dynamic test", () -> assertTrue(isPalindrome("madam"))),
+			dynamicTest("8th dynamic test", () -> assertEquals(4, calculator.multiply(2, 2)))
+		};
+	}
+
+	@TestFactory
+	Stream<DynamicTest> dynamicTestsFromStream() {
+		return Stream.of("racecar", "radar", "mom", "dad")
+			.map(text -> dynamicTest(text, () -> assertTrue(isPalindrome(text))));
+	}
+
+	@TestFactory
+	Stream<DynamicTest> dynamicTestsFromIntStream() {
+		// Generates tests for the first 10 even integers.
+		return IntStream.iterate(0, n -> n + 2).limit(10)
+			.mapToObj(n -> dynamicTest("test" + n, () -> assertTrue(n % 2 == 0)));
+	}
+
+	@TestFactory
+	Stream<DynamicTest> generateRandomNumberOfTests() {
+
+		// Generates random positive integers between 0 and 100 until
+		// a number evenly divisible by 7 is encountered.
+		Iterator<Integer> inputGenerator = new Iterator<Integer>() {
+
+			Random random = new Random();
+			// end::user_guide[]
+			{
+				// Use fixed seed to always produce the same number of tests for execution on the CI server
+				random = new Random(23);
+			}
+			// tag::user_guide[]
+			int current;
+
+			@Override
+			public boolean hasNext() {
+				current = random.nextInt(100);
+				return current % 7 != 0;
+			}
+
+			@Override
+			public Integer next() {
+				return current;
+			}
+		};
+
+		// Generates display names like: input:5, input:37, input:85, etc.
+		Function<Integer, String> displayNameGenerator = (input) -> "input:" + input;
+
+		// Executes tests based on the current input value.
+		ThrowingConsumer<Integer> testExecutor = (input) -> assertTrue(input % 7 != 0);
+
+		// Returns a stream of dynamic tests.
+		return DynamicTest.stream(inputGenerator, displayNameGenerator, testExecutor);
+	}
+
+	@TestFactory
+	Stream<DynamicNode> dynamicTestsWithContainers() {
+		return Stream.of("A", "B", "C")
+			.map(input -> dynamicContainer("Container " + input, Stream.of(
+				dynamicTest("not null", () -> assertNotNull(input)),
+				dynamicContainer("properties", Stream.of(
+					dynamicTest("length > 0", () -> assertTrue(input.length() > 0)),
+					dynamicTest("not empty", () -> assertFalse(input.isEmpty()))
+				))
+			)));
+	}
+
+	@TestFactory
+	DynamicNode dynamicNodeSingleTest() {
+		return dynamicTest("'pop' is a palindrome", () -> assertTrue(isPalindrome("pop")));
+	}
+
+	@TestFactory
+	DynamicNode dynamicNodeSingleContainer() {
+		return dynamicContainer("palindromes",
+			Stream.of("racecar", "radar", "mom", "dad")
+				.map(text -> dynamicTest(text, () -> assertTrue(isPalindrome(text)))
+		));
+	}
+
+}
+// end::user_guide[]
+--------------------------------------------------------------------------------------------------------
+@DisabledByFormula(
+	"After Mayan b'ak'tun 13 and on Linux",
+	now().isAfter(MAYAN_B_AK_TUN_13) && OS.determine() == OS.NIX))
+class DisabledByFormulaTest {
+ 
+	private static final LocalDateTime MAYAN_B_AK_TUN_13 =
+		LocalDateTime.of(2012, 12, 21, 0, 0);
+ 
+}
+
+class DisabledByFormulaTest {
+ 
+	private static final LocalDateTime MAYAN_B_AK_TUN_13 =
+		LocalDateTime.of(2012, 12, 21, 0, 0);
+ 
+	@RegisterExtension
+	static final DisabledByFormula FORMULA = DisabledByFormula
+		.disabledWhen(
+			"After Mayan b'ak'tun 13 and on Linux",
+			now().isAfter(MAYAN_B_AK_TUN_13)
+				&& OS.determine() == OS.NIX);
+ 
+--------------------------------------------------------------------------------------------------------
+import com.mploed.spring.events.scoring.messaging.ScoringChannels;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.context.annotation.Bean;
+import org.springframework.web.client.RestTemplate;
+
+@SpringBootApplication
+@EnableBinding(ScoringChannels.class)
+public class ScoringApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(ScoringApplication.class, args);
+	}
+
+	@Bean
+	RestTemplate restTemplate() {
+		return new RestTemplate();
+	}
 }
 --------------------------------------------------------------------------------------------------------
 import org.springframework.beans.factory.annotation.Autowired;
