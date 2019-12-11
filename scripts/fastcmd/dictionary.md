@@ -87754,8 +87754,6 @@ public void whenExceptionThrown_thenRuleIsApplied() {
     exceptionRule.expectMessage("For input string");
     Integer.parseInt("1a");
 }
-
-
 --------------------------------------------------------------------------------------------------------
 "file.separator"	Character that separates components of a file path. This is “/” on UNIX and “\” on Windows.
 "java.class.path"	Path used to find directories and JAR archives containing class files. Elements of the class path are separated by a platform-specific character specified in the path.separator property.
@@ -88591,9 +88589,182 @@ class DisplayNameGeneratorDemo {
             String name = testClass.getSimpleName() + ' ' + testMethod.getName();
             return name.replace('_', ' ') + '.';
         }
-
     }
+}
 
+
+https://github.com/reeda/spring-boot-jbehave/tree/master/src
+
+
+@ContextConfiguration(classes = AcceptanceTestsConfiguration.class)
+@ImportResource({"classpath:/application.properties", "classpath:/tests.properties"})
+@ActiveProfiles("tests")
+@DirtiesContext
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface AcceptanceTest {
+}
+
+<400 BAD_REQUEST Bad Request,BaseExceptionHandler.DefaultExceptionResponse(path=, status=400, error=Bad Request, message=Validation failed for argument [0] in public org.springframework.http.ResponseEntity com.paragon.microservices.confirmationlink.callback.controller.impl.TicketControllerImpl.checkAndSendToDataBus(com.paragon.microservices.confirmationlink.callback.model.dto.TicketRequest) with 2 errors: [Field error in object 'ticketRequest' on field 'subject': rejected value [null]; codes [NotBlank.ticketRequest.subject,NotBlank.subject,NotBlank.java.lang.String,NotBlank]; arguments [org.springframework.context.support.DefaultMessageSourceResolvable: codes [ticketRequest.subject,subject]; arguments []; default message [subject]]; default message [Ticket request <subject> property should not be blank]] [Field error in object 'ticketRequest' on field 'requestSource': rejected value [null]; codes [NotNull.ticketRequest.requestSource,NotNull.requestSource,NotNull.com.paragon.microservices.confirmationlink.callback.model.enumeration.RequestSourceType,NotNull]; arguments [org.springframework.context.support.DefaultMessageSourceResolvable: codes [ticketRequest.requestSource,requestSource]; arguments []; default message [requestSource]]; default message [Ticket request <request-source> property should not be null]] , timestamp=Wed Dec 11 17:16:11 MSK 2019),[]>
+--------------------------------------------------------------------------------------------------------
+@SpringBootApplication
+public class App 
+{
+    public static void main(String[] args) 
+    {
+        ApplicationContext ctx = SpringApplication.run(App.class, args);
+         
+        String[] beanNames = ctx.getBeanDefinitionNames();
+         
+        Arrays.sort(beanNames);
+ 
+        for (String beanName : beanNames) {
+            System.out.println(beanName);
+        }
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@RunWith(AnnotatedEmbedderRunner.class)
+@UsingEmbedder(embedder = Embedder.class, generateViewAfterStories = true,
+    ignoreFailureInStories = true, ignoreFailureInView = false, 
+    verboseFailures = true)
+@UsingSteps(instances = { NgisRestSteps.class })
+public class StoriesTest extends JUnitStories {
+ 
+  @Override
+  protected List<String> storyPaths() {
+    return new StoryFinder().findPaths(
+        CodeLocations.codeLocationFromClass(getClass()).getFile(),
+        Arrays.asList(getStoryFilter(storyPaths)), null);
+  }
+ 
+  private String getStoryFilter(String storyPaths) {
+    if (storyPaths == null) {
+      return '*.story';
+    }
+    if (storyPaths.endsWith('.story')) {
+      return storyPaths;
+    }
+    return storyPaths + '.story';
+  }
+ 
+  private List<String> specifiedStoryPaths(String storyPaths) {
+    List<String> result = new ArrayList<String>();
+    URI cwd = new File('src/test/resources').toURI();
+    for (String storyPath : storyPaths.split(File.pathSeparator)) {
+      File storyFile = new File(storyPath);
+      if (!storyFile.exists()) {
+        throw new IllegalArgumentException('Story file not found: '
+          + storyPath);
+      }
+      result.add(cwd.relativize(storyFile.toURI()).toString());
+    }
+    return result;
+  }
+ 
+  @Override
+  public Configuration configuration() {
+    return super.configuration()
+        .useStoryReporterBuilder(new StoryReporterBuilder()
+            .withFormats(Format.XML, Format.STATS, Format.CONSOLE)
+            .withRelativeDirectory('../build/jbehave')
+        )
+        .usePendingStepStrategy(new FailingUponPendingStep())
+        .useFailureStrategy(new SilentlyAbsorbingFailure());
+  }
+}
+--------------------------------------------------------------------------------------------------------
+/**
+ * Enum representing the step types
+ */
+public enum StepType {
+
+	/** 
+	 * Represents a precondition to an event
+	 */
+	GIVEN, 
+	
+	/**
+	 * Represents an event
+	 */
+	WHEN, 
+	
+	/**
+	 * Represents an outcome of an event
+	 */
+	THEN,
+	
+    /**
+     * Represents repetition of previous step
+     */
+	AND,
+	
+	/**
+	 * Represents an ignorable step 
+	 */
+	IGNORABLE
+}
+--------------------------------------------------------------------------------------------------------
+ <dependency>
+            <groupId>net.thucydides</groupId>
+            <artifactId>thucydides-jbehave-plugin</artifactId>
+            <version>0.9.275</version>
+        </dependency>
+--------------------------------------------------------------------------------------------------------
+        //return value -> EqualsBuilder.reflectionEquals(value, ticketMessage, "requestId");
+--------------------------------------------------------------------------------------------------------
+Filter<?> filter = Filter.filter(Criteria.where("hey").regex(Pattern.compile(".*find.*")));
+System.out.println(JsonPath.read(json, "$..[?]", filter));
+--------------------------------------------------------------------------------------------------------
+Object dataObject = JsonPath.parse(jsonString).read("$[?(@.id == 2)]");
+String dataString = dataObject.toString();
+
+DocumentContext context = JsonPath.parse(jsonString);
+List<Map<String, Object>> dataList = context.read("$[?(@.director == 'Sam Mendes')]");
+--------------------------------------------------------------------------------------------------------
+@ParameterizedTest(name = "{index} {1}")
+@MethodSource("argumentProvider")
+public void testSomething(Object someObject, String niceRepresentation) {
+    // Test something
+}
+
+private static Stream<Arguments> argumentProvider() {
+    return Stream.of(
+            Arguments.of(new Object(), "Nice 1"),
+            Arguments.of(new Object(), "Nice 2")
+    );
+}
+
+  
+   @ParameterizedTest(name = "Null Check Test  #{index} with [{arguments}]")
+   @ParameterizedTest
+   @ValueSource(strings = { "Hello", "World" })
+   void withSomeValues(String word) {
+	System.out.println(word);
+	assertNotNull(word);
+}
+
+   @ParameterizedTest
+    @ValueSource(strings ={"niraj,sonawane"})
+    void withCustomConverter(@ConvertWith(PersonConverter.class) Person person) {
+		assertEquals(Person.getFirstName(),"niraj");
+		assertEquals(Person.getLastName(),"sonawane");
+	} 
+    //Convert class 
+    public class PersonConverter implements ArgumentConverter {
+	@Override
+	public Object convert(Object source, ParameterContext context) throws ArgumentConversionException {
+		if (source instanceof String)
+			try {
+				String[] split = ((String) source).split(",");
+				return new Emp(split[0], split[1]);
+
+			} catch (NumberFormatException ex) {
+				String message = source + " is no correct string representation of a Emp.";
+				throw new ArgumentConversionException(message, ex);
+			}
+		throw new ArgumentConversionException(source + " is no valid point");
+	}
 }
 --------------------------------------------------------------------------------------------------------
 package com.paragon.microservices.mailer.model.domain;
