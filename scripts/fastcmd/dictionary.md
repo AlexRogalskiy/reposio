@@ -87314,6 +87314,233 @@ assertEquals("may not be null", constraintViolations.iterator().next().getMessag
 --------------------------------------------------------------------------------------------------------
 @Order(Ordered.HIGHEST_PRECEDENCE)
 --------------------------------------------------------------------------------------------------------
+import de.flapdoodle.embed.process.config.store.FileType;
+import de.flapdoodle.embed.process.extract.IExtractedFileSet;
+
+import java.io.File;
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * @author Ilya Sadykov
+ */
+public class EmptyFileSet implements IExtractedFileSet {
+    @Override
+    public File executable() {
+        return null;
+    }
+
+    @Override
+    public List<File> files(FileType type) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public File baseDir() {
+        return null;
+    }
+
+    @Override
+    public boolean baseDirIsGenerated() {
+        return false;
+    }
+}
+
+
+import ru.yandex.qatools.embed.postgresql.config.PostgresConfig;
+
+public enum Command {
+    Postgres("postgres", PostgresExecutable.class),
+    InitDb("initdb", InitDbExecutable.class),
+    CreateDb("createdb", CreateDbExecutable.class),
+    PgCtl("pg_ctl", PgCtlExecutable.class),
+    Psql("psql", PsqlExecutable.class),
+    PgDump("pg_dump", PsqlExecutable.class),
+    PgRestore("pg_restore", PsqlExecutable.class),
+    Createuser("createuser", PsqlExecutable.class),
+    ;
+
+    private final String commandName;
+    private final Class<? extends AbstractPGExecutable<PostgresConfig, ? extends AbstractPGProcess>> executableClass;
+
+    Command(String commandName,
+            Class<? extends AbstractPGExecutable<PostgresConfig, ? extends AbstractPGProcess>>
+                    executableClass) {
+        this.commandName = commandName;
+        this.executableClass = executableClass;
+    }
+
+    public <E extends AbstractPGExecutable<PostgresConfig, P>, P extends AbstractPGProcess> Class<E> executableClass() {
+        return (Class<E>) this.executableClass;
+    }
+
+    public String commandName() {
+        return this.commandName;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.lankydan.rest.membership.GymMembershipController;
+import com.lankydan.entity.person.Person;
+import lombok.Getter;
+import org.springframework.hateoas.Link;
+import org.springframework.hateoas.ResourceSupport;
+
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
+
+@Getter
+public class PersonResource extends ResourceSupport {
+
+  private final Person person;
+
+  public PersonResource(final Person person) {
+    this.person = person;
+    final long id = person.getId();
+    add(linkTo(PersonController.class).withRel("people"));
+    add(linkTo(methodOn(GymMembershipController.class).all(id)).withRel("memberships"));
+    add(linkTo(methodOn(PersonController.class).get(id)).withSelfRel());
+  }
+}
+	@Override
+	public void configureContentNegotiation(
+			ContentNegotiationConfigurer configurer) {
+		// Simple strategy: only path extension is taken into account
+		configurer.favorPathExtension(true).
+			ignoreAcceptHeader(true).
+			useJaf(false).
+			defaultContentType(MediaType.TEXT_HTML).
+			mediaType("html", MediaType.TEXT_HTML).
+			mediaType("xml", MediaType.APPLICATION_XML).
+			mediaType("json", MediaType.APPLICATION_JSON);
+	}
+	
+fdisk -l /dev/sda
+--------------------------------------------------------------------------------------------------------
+package org.hibernate.validator.referenceguide.chapter06.classlevel;
+
+@Target({ TYPE, ANNOTATION_TYPE })
+@Retention(RUNTIME)
+@Constraint(validatedBy = { ValidPassengerCountValidator.class })
+@Documented
+public @interface ValidPassengerCount {
+
+    String message() default "{org.hibernate.validator.referenceguide.chapter06.classlevel." +
+            "ValidPassengerCount.message}";
+
+    Class<?>[] groups() default { };
+
+    Class<? extends Payload>[] payload() default { };
+}
+package org.hibernate.validator.referenceguide.chapter06.classlevel;
+
+public class ValidPassengerCountValidator
+        implements ConstraintValidator<ValidPassengerCount, Car> {
+
+    @Override
+    public void initialize(ValidPassengerCount constraintAnnotation) {
+    }
+
+    @Override
+    public boolean isValid(Car car, ConstraintValidatorContext context) {
+        if ( car == null ) {
+            return true;
+        }
+
+        return car.getPassengers().size() <= car.getSeatCount();
+    }
+}
+
+public class ValidPassengerCountValidator
+        implements ConstraintValidator<ValidPassengerCount, Car> {
+
+    @Override
+    public void initialize(ValidPassengerCount constraintAnnotation) {
+    }
+
+    @Override
+    public boolean isValid(Car car, ConstraintValidatorContext constraintValidatorContext) {
+        if ( car == null ) {
+            return true;
+        }
+
+        boolean isValid = car.getPassengers().size() <= car.getSeatCount();
+
+        if ( !isValid ) {
+            constraintValidatorContext.disableDefaultConstraintViolation();
+            constraintValidatorContext
+                    .buildConstraintViolationWithTemplate( "{my.custom.template}" )
+                    .addPropertyNode( "passengers" ).addConstraintViolation();
+        }
+
+        return isValid;
+    }
+}
+
+@Constraint(validatedBy = {
+        ScriptAssertObjectValidator.class,
+        ScriptAssertParametersValidator.class
+})
+@Target({ TYPE, FIELD, PARAMETER, METHOD, CONSTRUCTOR, ANNOTATION_TYPE })
+@Retention(RUNTIME)
+@Documented
+public @interface ScriptAssert {
+
+    String message() default "{org.hibernate.validator.referenceguide.chapter06." +
+            "crossparameter.ScriptAssert.message}";
+
+    Class<?>[] groups() default { };
+
+    Class<? extends Payload>[] payload() default { };
+
+    String script();
+
+    ConstraintTarget validationAppliesTo() default ConstraintTarget.IMPLICIT;
+}
+
+@ScriptAssert(script = "arg1.size() <= arg0", validationAppliesTo = ConstraintTarget.PARAMETERS)
+public Car buildCar(int seatCount, List<Passenger> passengers) {
+    //...
+}
+
+@Inject
+    @HibernateValidator
+    private ValidatorFactory validatorFactory;
+
+    @Inject
+    @HibernateValidator
+    private Validator validator;
+	
+	HibernateValidatorConfiguration configuration = Validation
+        .byProvider( HibernateValidator.class )
+        .configure();
+
+ConstraintMapping constraintMapping = configuration.createConstraintMapping();
+
+constraintMapping
+    .type( Car.class )
+        .property( "manufacturer", FIELD )
+            .constraint( new NotNullDef() )
+        .property( "licensePlate", FIELD )
+            .ignoreAnnotations()
+            .constraint( new NotNullDef() )
+            .constraint( new SizeDef().min( 2 ).max( 14 ) )
+    .type( RentalCar.class )
+        .property( "rentalStation", METHOD )
+                .constraint( new NotNullDef() );
+
+Validator validator = configuration.addMapping( constraintMapping )
+        .buildValidatorFactory()
+        .getValidator();  
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
