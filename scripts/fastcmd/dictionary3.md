@@ -30,6 +30,17 @@ sudo -i
 
 nmcli nm enable false eth0 && nmcli nm enable true eth0
 -----------------------------------------------------------------------------------------
+Lifecycle: 
+Before:
+Given a step that is executed before each scenario 
+After:
+Outcome: ANY    
+Given a step that is executed after each scenario regardless of outcome
+Outcome: SUCCESS 
+Given a step that is executed after each successful scenario
+Outcome: FAILURE 
+Given a step that is executed after each failed scenario
+-----------------------------------------------------------------------------------------
 public class <T extends Self<T>> Self<T> {
     public T someMethodThatReturnsSelf() {
         return (T) this; //yeah, this ugly and generates warnings, but it does work.
