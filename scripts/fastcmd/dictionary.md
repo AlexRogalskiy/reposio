@@ -87314,6 +87314,59 @@ assertEquals("may not be null", constraintViolations.iterator().next().getMessag
 --------------------------------------------------------------------------------------------------------
 @Order(Ordered.HIGHEST_PRECEDENCE)
 --------------------------------------------------------------------------------------------------------
+    public static class StepConverters {
+
+        public static class RequestSourceConverter {
+            @AsParameterConverter
+            public RequestSourceType convertToRequestType(final String value) {
+                return RequestSourceType.findBySourceCode(value);
+            }
+        }
+
+        public static class IssueTypeConverter {
+            @AsParameterConverter
+            public IssueType convertToIssueType(final String value) {
+                return IssueType.findByIssueCode(value);
+            }
+        }
+    }
+--------------------------------------------------------------------------------------------------------
+public StepsRunner() {
+    super();
+    configuration = new MostUsefulConfiguration();
+    final File outputDir = new File(System.getProperty("jbehave.output.dir"));
+    configuration.useStoryReporterBuilder( new StoryReporterBuilder() {
+        @Override
+        public File outputDirectory()
+        {
+            return outputDir;
+        }
+    });
+}
+--------------------------------------------------------------------------------------------------------
+@Test
+public void nestedViewResolverIsNotSpringBean() throws Exception {
+	StaticWebApplicationContext webAppContext = new StaticWebApplicationContext();
+	webAppContext.setServletContext(new MockServletContext());
+	webAppContext.refresh();
+
+	InternalResourceViewResolver nestedResolver = new InternalResourceViewResolver();
+	nestedResolver.setApplicationContext(webAppContext);
+	nestedResolver.setViewClass(InternalResourceView.class);
+	viewResolver.setViewResolvers(new ArrayList<ViewResolver>(Arrays.asList(nestedResolver)));
+
+	FixedContentNegotiationStrategy fixedStrategy = new FixedContentNegotiationStrategy(MediaType.TEXT_HTML);
+	viewResolver.setContentNegotiationManager(new ContentNegotiationManager(fixedStrategy));
+
+	viewResolver.afterPropertiesSet();
+
+	String viewName = "view";
+	Locale locale = Locale.ENGLISH;
+
+	View result = viewResolver.resolveViewName(viewName, locale);
+	assertNotNull("Invalid view", result);
+}
+--------------------------------------------------------------------------------------------------------
 import de.flapdoodle.embed.process.config.store.FileType;
 import de.flapdoodle.embed.process.extract.IExtractedFileSet;
 
