@@ -41,6 +41,509 @@ Given a step that is executed after each successful scenario
 Outcome: FAILURE 
 Given a step that is executed after each failed scenario
 -----------------------------------------------------------------------------------------
+npm install -g native-css
+npm install native-css
+
+native-css <input> <output>
+-----------------------------------------------------------------------------------------
+    @RequestMapping(value="/login.htm", method = RequestMethod.GET)
+    public String chamarLogin(@ModelAttribute("login") Login login, HttpSession session){
+        
+        byte[] bytes  = Base64.getEncoder().encode("geraldo".getBytes());
+        
+         String token = (String) session.getAttribute("token");
+        
+        if(token!=null && token.equals("aprovado")){
+            return "index";
+        }
+        
+        return"login";
+    }
+-----------------------------------------------------------------------------------------
+import java.util.ArrayList;
+import java.util.List;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
+import modelo.Autor;
+import modelo.Editora;
+import modelo.Livro;
+
+/**
+ *
+ * @author DesenvolvedorJava
+ */
+public class LivrariaDao
+{
+    
+    public void cadastrarAutor(Autor autor){
+        EntityManagerFactory factory = 
+                Persistence.createEntityManagerFactory("PersistSpring");
+        
+        EntityManager em = factory.createEntityManager();
+        em.getTransaction().begin();
+        em.persist(autor);
+        em.getTransaction().commit();
+        em.close();
+    }
+    
+    public void cadastrarEditora(Editora editora){
+        EntityManagerFactory factory = 
+                Persistence.createEntityManagerFactory("PersistSpring");
+        
+        EntityManager em = factory.createEntityManager();
+        em.getTransaction().begin();
+        em.persist(editora);
+        em.getTransaction().commit();
+        em.close();
+    }
+    
+    public List<Editora> listarEditora(){
+               EntityManagerFactory factory = 
+                Persistence.createEntityManagerFactory("PersistSpring");
+        EntityManager em = factory.createEntityManager();
+        em.getTransaction().begin();
+        List<Editora> listaEditora = em.createQuery("select e from Editora as e").getResultList();
+        em.close();
+        factory.close();
+        return listaEditora;
+    }
+    
+    public void cadastrarLivro(Livro livro){
+        EntityManagerFactory factory = 
+                Persistence.createEntityManagerFactory("PersistSpring");
+        EntityManager em = factory.createEntityManager();
+        em.getTransaction().begin();
+        em.persist(livro);
+        em.getTransaction().commit();
+        em.close();
+        factory.close();
+    }
+    
+    public List<Autor> listarAutor(){
+               EntityManagerFactory factory = 
+                Persistence.createEntityManagerFactory("PersistSpring");
+        EntityManager em = factory.createEntityManager();
+        em.getTransaction().begin();
+        List<Autor> listaAutor = em.createQuery("select a from Autor as a").getResultList();
+        em.close();
+        factory.close();
+        return listaAutor;
+    }
+    
+    public List<Livro> listarLivro(){
+        EntityManagerFactory factory = 
+                Persistence.createEntityManagerFactory("PersistSpring");
+        
+        EntityManager em = factory.createEntityManager();
+        em.getTransaction().begin();
+        List<Livro> listaLivro = em.createQuery("select l from Livro as l").getResultList();
+        em.close();
+        factory.close();
+        return listaLivro;
+    }
+    
+    public Livro verLivro(int idlivro){
+        EntityManagerFactory factory = 
+                Persistence.createEntityManagerFactory("PersistSpring");
+        
+        EntityManager em = factory.createEntityManager();
+        em.getTransaction().begin();
+        Livro livro = em.find(Livro.class, idlivro);
+        em.close();
+        factory.close();
+        return livro;
+    }
+    
+    public void excluirLivro(int idlivro){
+        EntityManagerFactory factory = 
+                Persistence.createEntityManagerFactory("PersistSpring");
+        
+        EntityManager em = factory.createEntityManager();
+        em.getTransaction().begin();
+        Livro livro = em.find(Livro.class, idlivro);
+        em.remove(livro);
+        em.getTransaction().commit();
+        em.close();
+        factory.close();
+    }
+    
+    
+    public void atualizarLivro(Livro livro){
+        EntityManagerFactory factory = 
+                Persistence.createEntityManagerFactory("PersistSpring");
+        
+        EntityManager em = factory.createEntityManager();
+        em.getTransaction().begin();
+        em.merge(livro);
+        em.getTransaction().commit();
+        em.close();
+        factory.close();
+    }
+    
+}
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
+import modelo.Login;
+
+/**
+ *
+ * @author DesenvolvedorJava
+ */
+public class LoginDao {
+    
+    public void cadastrarLogin(Login login){
+        EntityManagerFactory factory = 
+                Persistence.createEntityManagerFactory("PersistSpring");
+        
+        EntityManager em = factory.createEntityManager();
+        em.getTransaction().begin();
+        em.persist(login);
+       
+        em.getTransaction().commit();
+        em.close();
+    }
+    
+    public boolean validarUsuario(Login login){
+        EntityManagerFactory factory = 
+                Persistence.createEntityManagerFactory("PersistSpring");
+        
+        EntityManager em = factory.createEntityManager();
+        em.getTransaction().begin();
+        
+        Login l = em.find(Login.class, login.getLogin());
+        em.close();
+        if(l != null && l.getSenha().equals(login.getSenha())){
+            return true;
+        }
+        
+        return false;
+    }
+    
+}
+
+tsuru-admin platform-add <platform-name>
+
+
+#!/bin/bash -e
+
+# Copyright 2015 tsuru authors. All rights reserved.
+# Use of this source code is governed by a BSD-style
+# license that can be found in the LICENSE file.
+
+SOURCE_DIR=/var/lib/tsuru
+
+source ${SOURCE_DIR}/base/rc/config
+
+apt-get update
+apt-get install -y openjdk-7-jdk maven tomcat7
+
+cp $SOURCE_DIR/java/Procfile $SOURCE_DIR/default/Procfile
+
+rm -rf /var/lib/tomcat7/webapps
+ln -s ${CURRENT_DIR} /var/lib/tomcat7/webapps
+mkdir -p /usr/share/tomcat7/common/classes /usr/share/tomcat7/server/classes /usr/share/tomcat7/shared/classes
+chown -R ${USER}:${USER} /etc/tomcat7 /var/lib/tomcat7 /var/cache/tomcat7 /var/log/tomcat7 /usr/share/tomcat7
+sed -i 's/8080/8888/' /etc/tomcat7/server.xml
+
+
+
+https://github.com/raphamorim/platforms
+
+https://github.com/raphamorim/tsuru.io
+-----------------------------------------------------------------------------------------
+  
+#!/usr/bin/env bash
+
+if [ -z ${CASSANDRA_VERSION+x} ]; then
+    CASSANDRA_VERSION=3.0.7
+fi
+
+if [[ ! -d download ]] ; then
+    mkdir -p download
+fi
+
+FILENAME="apache-cassandra-${CASSANDRA_VERSION}-bin.tar.gz"
+
+echo "[INFO] Downloading ${FILENAME}"
+if [[ ! -f download/${FILENAME} ]] ; then
+    mkdir -p download
+    wget https://archive.apache.org/dist/cassandra/${CASSANDRA_VERSION}/${FILENAME} -O download/${FILENAME}
+    if [[ $? != 0 ]] ; then
+        echo "[ERROR] Download failed"
+        exit 1
+    fi
+fi
+
+
+if [[ ! -d work ]] ; then
+    mkdir -p work
+fi
+
+BASENAME=apache-cassandra-${CASSANDRA_VERSION}
+if [[ ! -d work/${BASENAME} ]] ; then
+
+    echo "[INFO] Extracting ${FILENAME}"
+    mkdir -p work/${BASENAME}
+    cd work
+
+    tar xzf ../download/${FILENAME}
+    if [[ $? != 0 ]] ; then
+        echo "[ERROR] Extraction failed"
+        exit 1
+    fi
+    cd ..
+fi
+
+cd work/${BASENAME}
+
+echo "[INFO] Cleaning data directory"
+rm -Rf data
+mkdir -p data
+
+echo "[INFO] Starting Apache Cassandra ${CASSANDRA_VERSION}"
+export MAX_HEAP_SIZE=1500M
+export HEAP_NEWSIZE=300M
+bin/cassandra
+
+for start in {1..20}
+do
+    nc  -w 1 localhost 9042 </dev/null
+    if [[ $? == 0 ]] ; then
+        echo "[INFO] Cassandra is up and running"
+        cd ../..
+        exit 0
+    fi
+    sleep 1
+done
+
+echo "[ERROR] Cannot connect to Cassandra"
+exit 1
+
+-----------------------------------------------------------------------------------------
+        <dependency>
+            <groupId>net.thucydides</groupId>
+            <artifactId>thucydides-jbehave-plugin</artifactId>
+            <version>0.9.275</version>
+        </dependency>
+-----------------------------------------------------------------------------------------
+#!/bin/sh
+# Parts of this file come from:
+# http://en.wikibooks.org/wiki/Clojure_Programming/Getting_Started#Create_clj_Script 
+
+BREAK_CHARS="\(\){}[],^%$#@\"\";:''|\\"
+CLOJURE_DIR=/usr/local/lib/clojure
+CLOJURE_JAR=$CLOJURE_DIR/clojure.jar
+CLASSPATH="$CLOJURE_DIR/*:$CLOJURE_JAR"
+
+while [ $# -gt 0 ]
+do
+    case "$1" in
+    -cp|-classpath)
+            CLASSPATH="$CLASSPATH:$2"
+    shift ; shift
+    ;;
+-e) tmpfile="/tmp/`basename $0`.$$.tmp"
+    echo "$2" > "$tmpfile"
+    shift ; shift
+    set "$tmpfile" "$@"
+    break # forces any -cp to be before any -e
+    ;;
+*)  break
+    ;;
+esac
+done
+
+if [ $# -eq 0 ]
+then
+  exec rlwrap --remember -c -b $BREAK_CHARS \
+          java -cp $CLASSPATH clojure.main
+else
+  exec java -cp $CLASSPATH clojure.main $1 -- "$@"
+fi
+-----------------------------------------------------------------------------------------
+import java.util.List;
+
+import org.springframework.data.cassandra.core.mapping.MapId;
+import org.springframework.data.cassandra.core.mapping.Table;
+import org.springframework.data.cassandra.core.query.CassandraPageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Persistable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.NoRepositoryBean;
+
+/**
+ * Cassandra-specific extension of the {@link CrudRepository} interface that allows the specification of a type for the
+ * identity of the {@link Table @Table} (or {@link Persistable @Persistable}) type.
+ * <p />
+ * Repositories based on {@link CassandraRepository} can define either a single primary key, use a primary key class or
+ * a compound primary key without a primary key class. Types using a compound primary key without a primary key class
+ * must use {@link MapId} to declare their key value.
+ *
+ * @author Alex Shvid
+ * @author Matthew T. Adams
+ * @author Mark Paluch
+ * @see MapIdCassandraRepository
+ */
+@NoRepositoryBean
+public interface CassandraRepository<T, ID> extends CrudRepository<T, ID> {
+
+	/* (non-Javadoc)
+	 * @see org.springframework.data.repository.CrudRepository#saveAll(java.lang.Iterable)
+	 */
+	@Override
+	<S extends T> List<S> saveAll(Iterable<S> entites);
+
+	/* (non-Javadoc)
+	 * @see org.springframework.data.repository.CrudRepository#findAll()
+	 */
+	@Override
+	List<T> findAll();
+
+	/**
+	 * {@inheritDoc}
+	 * <p/>
+	 * Note: Cassandra supports single-field {@code IN} queries only. When using {@link MapId} with multiple components,
+	 * use {@link #findById(Object)}.
+	 *
+	 * @throws org.springframework.dao.InvalidDataAccessApiUsageException thrown when using {@link MapId} with multiple
+	 *           key components.
+	 */
+	@Override
+	List<T> findAllById(Iterable<ID> ids);
+
+	/**
+	 * Returns a {@link Slice} of entities meeting the paging restriction provided in the {@code Pageable} object.
+	 *
+	 * @param pageable must not be {@literal null}.
+	 * @return a {@link Slice} of entities.
+	 * @see CassandraPageRequest
+	 * @since 2.0
+	 */
+	Slice<T> findAll(Pageable pageable);
+
+	/**
+	 * Inserts the given entity. Assumes the instance to be new to be able to apply insertion optimizations. Use the
+	 * returned instance for further operations as the save operation might have changed the entity instance completely.
+	 * Prefer using {@link #save(Object)} instead to avoid the usage of store-specific API.
+	 *
+	 * @param entity must not be {@literal null}.
+	 * @return the saved entity
+	 * @since 2.0
+	 */
+	<S extends T> S insert(S entity);
+
+	/**
+	 * Inserts the given entities. Assumes the given entities to have not been persisted yet and thus will optimize the
+	 * insert over a call to {@link #saveAll(Iterable)}. Prefer using {@link #saveAll(Iterable)} to avoid the usage of
+	 * store specific API.
+	 *
+	 * @param entities must not be {@literal null}.
+	 * @return the saved entities
+	 * @since 2.0
+	 */
+	<S extends T> List<S> insert(Iterable<S> entities);
+
+}
+
+			<!-- Cassandra Driver -->
+			<dependency>
+				<groupId>com.datastax.cassandra</groupId>
+				<artifactId>cassandra-driver-core</artifactId>
+				<version>${cassandra-driver.version}</version>
+			</dependency>
+			
+						<dependency>
+				<groupId>org.apache.cassandra</groupId>
+				<artifactId>cassandra-all</artifactId>
+				<version>${cassandra.version}</version>
+				<scope>test</scope>
+				<exclusions>
+					<exclusion>
+						<groupId>ch.qos.logback</groupId>
+						<artifactId>logback-core</artifactId>
+					</exclusion>
+					<exclusion>
+						<artifactId>guava</artifactId>
+						<groupId>com.google.guava</groupId>
+					</exclusion>
+					<exclusion>
+						<groupId>io.netty</groupId>
+						<artifactId>netty-all</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			
+			
+					<plugin>
+				<groupId>org.bitstrings.maven.plugins</groupId>
+				<artifactId>dependencypath-maven-plugin</artifactId>
+				<version>1.1.1</version>
+				<executions>
+					<execution>
+						<id>set-all</id>
+						<goals>
+							<goal>set</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			
+						<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<parallel>methods</parallel>
+					<threadCount>10</threadCount>
+					<useFile>false</useFile>
+					<includes>
+						<include>**/test/unit/**/*</include>
+						<include>**/*UnitTests</include>
+					</includes>
+					<excludes>
+						<exclude>**/test/integration/**/*.java</exclude>
+						<exclude>**/**IntegrationTests</exclude>
+						<exclude>**/test/performance/**/*</exclude>
+					</excludes>
+					<systemPropertyVariables>
+						<java.util.logging.config.file>src/test/resources/logging.properties</java.util.logging.config.file>
+					</systemPropertyVariables>
+				</configuration>
+			</plugin>
+			
+					<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-failsafe-plugin</artifactId>
+				<configuration>
+					<forkCount>1</forkCount>
+					<argLine>-Xms1g -Xmx1500m -Xss256k</argLine>
+					<reuseForks>true</reuseForks>
+					<useFile>false</useFile>
+					<includes>
+						<include>**/test/integration/**/*</include>
+						<include>**/*IntegrationTests</include>
+					</includes>
+					<excludes>
+						<exclude>**/test/unit/**/*</exclude>
+						<exclude>**/*UnitTests</exclude>
+						<exclude>**/test/performance/**/*</exclude>
+					</excludes>
+					<systemPropertyVariables>
+						<java.util.logging.config.file>src/test/resources/logging.properties</java.util.logging.config.file>
+					</systemPropertyVariables>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>integration-test</goal>
+							<goal>verify</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+-----------------------------------------------------------------------------------------
 public class <T extends Self<T>> Self<T> {
     public T someMethodThatReturnsSelf() {
         return (T) this; //yeah, this ugly and generates warnings, but it does work.
@@ -49,6 +552,796 @@ public class <T extends Self<T>> Self<T> {
 -----------------------------------------------------------------------------------------
 https://github.com/yildirimabdullah/spring-kafka-test
 https://mguenther.github.io/kafka-junit/
+-----------------------------------------------------------------------------------------
+techio.yml
+
+  
+title: More complex modelling with Spring Data Cassandra
+plan:
+- title: More complex modelling with Spring Data Cassandra
+  statement: markdowns/welcome.md
+projects:
+  java:
+    root: /java-project
+    runner:
+      name: techio/java-maven3-junit4-runner
+      version: 1.1.4-java-8
+-----------------------------------------------------------------------------------------
+import lankydan.tutorial.documents.OrderTransaction;
+import lankydan.tutorial.repositories.OrderTransactionRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jms.annotation.JmsListener;
+import org.springframework.stereotype.Component;
+
+@Component
+public class OrderTransactionReceiver {
+
+  @Autowired private OrderTransactionRepository transactionRepository;
+
+  private int count = 1;
+
+  @JmsListener(destination = "OrderTransactionQueue", containerFactory = "myFactory")
+  public void receiveMessage(OrderTransaction transaction) {
+    System.out.println("<" + count + "> Received <" + transaction + ">");
+    count++;
+    //    throw new RuntimeException();
+    transactionRepository.save(transaction);
+  }
+}
+
+https://ssh.cloud.google.com/cloudshell/editor
+cloudshell_open --repo_url "https://github.com/GoogleCloudPlatform/DataflowTemplates.git" --page "editor"
+-----------------------------------------------------------------------------------------
+https://github.com/apache/incubator-druid
+----------------------------------------------------------------------------------------
+Start Zookeeper
+
+./bin/zookeeper-server-start.sh config/zookeeper.properties
+Start Kafka
+
+./bin/kafka-server-start.sh config/server.properties
+Create topic
+
+./bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic example
+----------------------------------------------------------------------------------------
+import static java.util.Objects.requireNonNull;
+
+import java.lang.reflect.ParameterizedType;
+
+import javax.persistence.EntityManager;
+import javax.persistence.LockModeType;
+import javax.persistence.PersistenceContext;
+
+import org.springframework.orm.ObjectRetrievalFailureException;
+
+import ddd.domain.Repository;
+
+public class GenericJpaRepository<E, K> implements Repository<E, K> {
+
+	@PersistenceContext
+	private EntityManager entityManager;
+
+	private Class<E> entityClass;
+
+	@SuppressWarnings("unchecked")
+	public GenericJpaRepository() {
+		this.entityClass = ((Class<E>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0]);
+	}
+
+	@Override
+	public E load(K id) {
+		requireNonNull(id);
+
+		E entity = entityManager.find(entityClass, id, LockModeType.OPTIMISTIC);
+
+		if (entity == null) {
+			throw new ObjectRetrievalFailureException(entityClass, id);
+		}
+
+		return entity;
+	}
+
+	@Override
+	public void save(E entity) {
+		requireNonNull(entity);
+
+		if (entityManager.contains(entity)) {
+			entityManager.lock(entity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
+		} else {
+			entityManager.persist(entity);
+		}
+
+		entityManager.flush();
+	}
+
+	@Override
+	public void delete(E entity) {
+		requireNonNull(entity);
+
+		entityManager.remove(entity);
+		entityManager.flush();
+	}
+
+}
+
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
+
+@Configuration
+@ComponentScan
+@EnableAspectJAutoProxy
+public class DddConfig {
+}
+
+@Override
+	public void onStartup(ServletContext servletContext) throws ServletException {
+		AnnotationConfigWebApplicationContext rootContext = new AnnotationConfigWebApplicationContext();
+		rootContext.register(ScrumBoardConfig.class);
+
+		servletContext.addListener(new ContextLoaderListener(rootContext));
+
+		registerDispatcherServlet(servletContext, rootContext);
+		registerH2WebServlet(servletContext);
+
+		registerHttpPutContentFilter(servletContext);
+	}
+	
+	import static java.util.Objects.requireNonNull
+import example.ddd.Event
+import example.scrumboard.domain.backlogitem.BacklogItemId
+import groovy.transform.Immutable
+import groovy.transform.TypeChecked
+
+@Immutable(knownImmutableClasses = [ProductId.class, BacklogItemId.class])
+@TypeChecked
+class BacklogItemPlannedEvent implements Event {
+	ProductId productId
+	BacklogItemId backlogItemId
+}
+
+
+import static java.util.Objects.requireNonNull;
+
+import java.lang.reflect.ParameterizedType;
+
+import javax.persistence.EntityManager;
+import javax.persistence.LockModeType;
+import javax.persistence.PersistenceContext;
+
+import org.springframework.orm.ObjectRetrievalFailureException;
+
+import example.ddd.AggregateRoot;
+import example.ddd.Repository;
+
+public class GenericJpaRepository<E extends AggregateRoot<K>, K> implements Repository<E, K> {
+
+	@PersistenceContext
+	private EntityManager entityManager;
+
+	private Class<E> entityClass;
+
+	@SuppressWarnings("unchecked")
+	public GenericJpaRepository() {
+		this.entityClass = ((Class<E>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0]);
+	}
+
+	@Override
+	public E load(K id) {
+		requireNonNull(id);
+
+		E entity = entityManager.find(entityClass, id, LockModeType.OPTIMISTIC);
+
+		if (entity == null) {
+			throw new ObjectRetrievalFailureException(entityClass, id);
+		}
+
+		return entity;
+	}
+
+	@Override
+	public void save(E entity) {
+		requireNonNull(entity);
+
+		if (entityManager.contains(entity)) {
+			entityManager.lock(entity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
+		} else {
+			entityManager.persist(entity);
+		}
+
+		entityManager.flush();
+	}
+
+	@Override
+	public void delete(E entity) {
+		requireNonNull(entity);
+
+		entityManager.remove(entity);
+		entityManager.flush();
+	}
+
+	protected Class<E> getEntityClass() {
+		return entityClass;
+	}
+
+	protected EntityManager getEntityManager() {
+		return entityManager;
+	}
+
+}
+----------------------------------------------------------------------------------------
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.web.support.SpringBootServletInitializer;
+import org.springframework.context.ConfigurableApplicationContext;
+
+@Slf4j
+@SpringBootApplication(exclude={DataSourceAutoConfiguration.class,HibernateJpaAutoConfiguration.class})
+public class MiCommonApplication extends SpringBootServletInitializer {
+
+
+	public static void main(String[] args) {
+		ConfigurableApplicationContext context =  SpringApplication.run(MiCommonApplication.class, args);
+		String[] activeProfiles = context.getEnvironment().getActiveProfiles();
+		for (String profile : activeProfiles){
+			log.info("String active profile:{}" ,profile);
+		}
+		log.info("应用程序启动完毕");
+	}
+}
+
+    /**
+     * 主库配置（负责写）
+     * @return
+     */
+    @Bean(name="masterDataSource", destroyMethod = "close", initMethod="init")
+    @Primary
+    @ConfigurationProperties(prefix = "spring.datasource",locations = "classpath:application.properties")
+    public DataSource writeDataSource() {
+        log.info("-------------------- Master DataSource init ---------------------");
+        return DataSourceBuilder.create().type(dataSourceType).build();
+    }
+    /**
+     * 从库配置（负责读）
+     * @return
+     */
+    @Bean(name = "slaveDataSourceOne")
+    @ConfigurationProperties(prefix = "spring.slave",locations = "classpath:application.properties")
+    public DataSource readDataSourceOne(){
+        log.info("-------------------- Slave DataSource One init ---------------------");
+        
+		
+		
+		import org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource;
+
+import java.util.concurrent.atomic.AtomicInteger;
+
+/**
+ * 多数据源切换
+ * @author yesh
+ *         (M.M)!
+ *         Created by 2017/6/16.
+ */
+public class MyAbstractRoutingDataSource extends AbstractRoutingDataSource {
+
+    private final int dataSourceNumber;
+
+    private AtomicInteger count = new AtomicInteger(0);
+
+    public MyAbstractRoutingDataSource(int dataSourceNumber) {
+        this.dataSourceNumber = dataSourceNumber;
+    }
+
+    @Override
+    protected Object determineCurrentLookupKey() {
+        String typeKey = DataSourceContextHolder.getJdbcType();
+        //配置MyBatis后
+        //determineTargetDataSource中默认跑了determineCurrentLookupKey方法
+        //若为空设置为主库（写）
+        if (typeKey == null){
+            return DataSourceType.write.getType();
+        }
+        else if (typeKey.equals(DataSourceType.write.getType())){
+            return DataSourceType.write.getType();
+        }
+
+        // 不为则为分库（读） 简单负载均衡
+        int number = count.getAndAdd(1);
+        int lookupKey = number % dataSourceNumber;
+        return new Integer(lookupKey);
+    }
+}
+
+import com.baomidou.mybatisplus.MybatisConfiguration;
+import com.baomidou.mybatisplus.MybatisXMLLanguageDriver;
+import com.baomidou.mybatisplus.entity.GlobalConfiguration;
+import com.baomidou.mybatisplus.enums.DBType;
+import com.baomidou.mybatisplus.plugins.PaginationInterceptor;
+import com.baomidou.mybatisplus.spring.MybatisSqlSessionFactoryBean;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.ibatis.mapping.DatabaseIdProvider;
+import org.apache.ibatis.plugin.Interceptor;
+import org.mybatis.spring.annotation.MapperScan;
+import org.mybatis.spring.boot.autoconfigure.MybatisProperties;
+import org.mybatis.spring.boot.autoconfigure.SpringBootVFS;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.annotation.*;
+import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.util.ObjectUtils;
+import org.springframework.util.StringUtils;
+
+import javax.annotation.Resource;
+import javax.sql.DataSource;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+/**
+ * 配置mybatis
+ * @author yesh
+ *         (M.M)!
+ *         Created by 2017/6/16.
+ */
+@Slf4j
+@Configuration
+@EnableTransactionManagement //开启事务管理
+@MapperScan(value = "com.mi.module.*.mapper")
+@Import({ DataBaseConfiguration.class})
+public class MybatisPlusConfig{
+
+    @Value("${spring.datasource.type}")
+    private Class<? extends DataSource> dataSourceType;
+
+    @Value("${datasource.readSize}")
+    private String dataSourceSize;
+
+    @Resource(name = "masterDataSource")
+    private DataSource dataSource;
+
+//    @Resource(name = "readDataSources")
+//    private List<DataSource> readDataSources;
+
+
+    @Autowired
+    private MybatisProperties properties;
+
+    @Autowired
+    private ResourceLoader resourceLoader = new DefaultResourceLoader();
+
+    @Autowired(required = false)
+    private Interceptor[] interceptors;
+
+    @Autowired(required = false)
+    private DatabaseIdProvider databaseIdProvider;
+
+    /**
+     *	 mybatis-plus分页插件
+     */
+    @Bean
+    public PaginationInterceptor paginationInterceptor() {
+        PaginationInterceptor page = new PaginationInterceptor();
+        page.setDialectType("mysql");
+        return page;
+    }
+
+
+    /**
+     * 这里全部使用mybatis-autoconfigure 已经自动加载的资源。不手动指定
+     * 配置文件和mybatis-boot的配置文件同步
+     * @return
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public MybatisSqlSessionFactoryBean mybatisSqlSessionFactoryBean() {
+        MybatisSqlSessionFactoryBean mybatisPlus = new MybatisSqlSessionFactoryBean();
+        mybatisPlus.setDataSource(dataSource);
+        mybatisPlus.setVfs(SpringBootVFS.class);
+        if (StringUtils.hasText(this.properties.getConfigLocation())) {
+            mybatisPlus.setConfigLocation(this.resourceLoader.getResource(this.properties.getConfigLocation()));
+        }
+        mybatisPlus.setConfiguration(properties.getConfiguration());
+        if (!ObjectUtils.isEmpty(this.interceptors)) {
+            mybatisPlus.setPlugins(this.interceptors);
+        }
+        // MP 全局配置，更多内容进入类看注释
+        GlobalConfiguration globalConfig = new GlobalConfiguration();
+        //驼峰下划线规则
+        globalConfig.setDbColumnUnderline(true);
+        globalConfig.setDbType(DBType.MYSQL.name());
+        // ID 策略
+        // AUTO->`0`("数据库ID自增")
+        // INPUT->`1`(用户输入ID")
+        // ID_WORKER->`2`("全局唯一ID")
+        // UUID->`3`("全局唯一ID")
+        globalConfig.setIdType(3);
+        mybatisPlus.setGlobalConfig(globalConfig);
+        MybatisConfiguration mc = new MybatisConfiguration();
+        mc.setDefaultScriptingLanguage(MybatisXMLLanguageDriver.class);
+        mybatisPlus.setConfiguration(mc);
+        if (this.databaseIdProvider != null) {
+            mybatisPlus.setDatabaseIdProvider(this.databaseIdProvider);
+        }
+        if (StringUtils.hasLength(this.properties.getTypeAliasesPackage())) {
+            mybatisPlus.setTypeAliasesPackage(this.properties.getTypeAliasesPackage());
+        }
+        if (StringUtils.hasLength(this.properties.getTypeHandlersPackage())) {
+            mybatisPlus.setTypeHandlersPackage(this.properties.getTypeHandlersPackage());
+        }
+        if (!ObjectUtils.isEmpty(this.properties.resolveMapperLocations())) {
+            mybatisPlus.setMapperLocations(this.properties.resolveMapperLocations());
+        }
+        return mybatisPlus;
+    }
+
+    //旧方法使用基本的Mybatis
+//    @Bean
+//    @ConditionalOnMissingBean
+//    public SqlSessionFactory sqlSessionFactory() throws Exception {
+//        SqlSessionFactoryBean sqlSessionFactoryBean = new SqlSessionFactoryBean();
+//        sqlSessionFactoryBean.setDataSource(roundRobinDataSouceProxy());
+//        PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+//        sqlSessionFactoryBean.setMapperLocations(resolver.getResources("classpath:mybatis/*.xml"));
+//        sqlSessionFactoryBean.setTypeAliasesPackage("com.mi.model");
+//        sqlSessionFactoryBean.getObject().getConfiguration().setMapUnderscoreToCamelCase(true);
+//        return sqlSessionFactoryBean.getObject();
+//    }
+
+//    /**
+//     * 有多少个数据源就要配置多少个bean
+//     * @return
+//     */
+//    @Bean
+//    public AbstractRoutingDataSource roundRobinDataSouceProxy() {
+//
+//        int size = Integer.parseInt(dataSourceSize);
+//
+//        MyAbstractRoutingDataSource proxy = new MyAbstractRoutingDataSource(size);
+//
+//        Map<Object, Object> targetDataSources = new HashMap<Object, Object>();
+//
+//        // DataSource writeDataSource = SpringContextHolder.getBean("writeDataSource");
+//        //设置写库
+//        targetDataSources.put(DataSourceType.write.getType(),dataSource);
+//
+//        // targetDataSources.put(DataSourceType.read.getType(),readDataSource);
+//        //设置多读库
+//        for (int i = 0; i < size; i++) {
+//            targetDataSources.put(i, readDataSources.get(i));
+//        }
+//
+//        proxy.setDefaultTargetDataSource(dataSource);
+//        proxy.setTargetDataSources(targetDataSources);
+//        return proxy;
+//    }
+}
+----------------------------------------------------------------------------------------
+public static final Format YOUR_CUSTOM_CONSOLE = new Format("YOUR_CUSTOM_CONSOLE")
+{
+@Override
+public StoryReporter createStoryReporter(FilePrintStreamFactory factory,
+StoryReporterBuilder storyReporterBuilder) {
+return new TeamCityConsoleOutput(storyReporterBuilder.keywords()).doReportFailureTrace(
+storyReporterBuilder.reportFailureTrace()).doCompressFailureTrace(
+storyReporterBuilder.compressFailureTrace());
+}
+};
+
+@RunWith(JUnitReportingRunner.class)
+public abstract class AbstractIntegrationTestStory extends JUnitStory {
+
+@BeforeStories
+public void beforeStories() throws ExecutionException {
+assertTrue(false);
+}
+
+...
+
+@Override
+public Configuration configuration() {
+return JBehaveTestHelper.configuration(this.getClass(), xref);
+}
+}
+
+	@Override
+	protected List<String> storyPaths() {
+		//String codeLocation = CodeLocations.codeLocationFromClass(this.getClass()).getFile();
+		
+		String storiesPath = null;
+        
+            try {
+				storiesPath = new File(getClass().getClassLoader().getResource("stories").toURI()).getAbsolutePath();
+			} catch (URISyntaxException e) {
+				e.printStackTrace();
+			}
+               
+        return new StoryFinder().findPaths(storiesPath, "**/*.story", "");
+	}
+	
+	
+	import com.github.kumaraman21.intellijbehave.parser.StoryElementType;
+import org.jbehave.core.annotations.Given;
+import org.jbehave.core.annotations.Then;
+import org.jbehave.core.annotations.When;
+import org.jbehave.core.steps.StepType;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class StepTypeMappings {
+
+  public static final Map<StepType, String> STEP_TYPE_TO_ANNOTATION_MAPPING = new HashMap<StepType, String>();
+  static {
+    STEP_TYPE_TO_ANNOTATION_MAPPING.put(StepType.GIVEN, Given.class.getName());
+    STEP_TYPE_TO_ANNOTATION_MAPPING.put(StepType.WHEN, When.class.getName());
+    STEP_TYPE_TO_ANNOTATION_MAPPING.put(StepType.THEN, Then.class.getName());
+  }
+
+  public static final Map<String, StepType> ANNOTATION_TO_STEP_TYPE_MAPPING = new HashMap<String, StepType>();
+  static {
+      ANNOTATION_TO_STEP_TYPE_MAPPING.put(Given.class.getName(), StepType.GIVEN);
+      ANNOTATION_TO_STEP_TYPE_MAPPING.put(When.class.getName(), StepType.WHEN);
+      ANNOTATION_TO_STEP_TYPE_MAPPING.put(Then.class.getName(), StepType.THEN);
+    }
+
+  public static final Map<StoryElementType, StepType> STORY_ELEMENT_TYPE_TO_STEP_TYPE_MAPPING = new HashMap<StoryElementType, StepType>();
+  static {
+    STORY_ELEMENT_TYPE_TO_STEP_TYPE_MAPPING.put(StoryElementType.GIVEN_STEP, StepType.GIVEN);
+    STORY_ELEMENT_TYPE_TO_STEP_TYPE_MAPPING.put(StoryElementType.WHEN_STEP, StepType.WHEN);
+    STORY_ELEMENT_TYPE_TO_STEP_TYPE_MAPPING.put(StoryElementType.THEN_STEP, StepType.THEN);
+  }
+
+  public static final Map<String, StoryElementType> STEP_TEXT_TO_STORY_ELEMENT_TYPE_MAPPING = new HashMap<String, StoryElementType>();
+  static {
+    STEP_TEXT_TO_STORY_ELEMENT_TYPE_MAPPING.put(StepType.GIVEN.name(), StoryElementType.GIVEN_STEP );
+    STEP_TEXT_TO_STORY_ELEMENT_TYPE_MAPPING.put(StepType.WHEN.name(), StoryElementType.WHEN_STEP);
+    STEP_TEXT_TO_STORY_ELEMENT_TYPE_MAPPING.put(StepType.THEN.name(), StoryElementType.THEN_STEP);
+  }
+}
+
+public class CustomWebMvcTagsProvider extends DefaultWebMvcTagsProvider {
+
+public Iterable<Tag> getTags(HttpServletRequest request, HttpServletResponse response, Object handler, Throwable exception) {
+return Tags.of(super.getTags(request, response, handler, exception)).and(getTenantTag(request));
+}
+
+private Tag getTenantTag(HttpServletRequest request) {
+String tenant = ((Map<String, String>)request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE)).get("tenant");
+if(tenant == null){
+tenant = "na";
+}
+return Tag.of("tenant", tenant);
+}
+
+
+spring.batch.job.enabled=false
+----------------------------------------------------------------------------------------
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description:
+  Global configuration that could be used by multiple related stacks
+   
+# Metadata: # no metadata
+ 
+Parameters:
+  Environment:
+    Type: String
+    Description:
+      Stack Environment Prefix.
+       
+Resources:
+  # We need at least one resource. The VPC is the logical one to include here.
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      # The range of ip addresses used in the VPC. Subnets will be inside this.
+      # Using the /16 lets me easily have subnets that don't overlap without
+      # needing to remember bit masks.
+      CidrBlock: 10.0.0.0/16  # 10.0.0.0 -> 10.0.255.255
+      EnableDnsSupport: true  # If false, the servers don't seem to get access to DNS at all.
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: !Sub "${Environment} VPC"
+   
+Outputs:
+  VPC:
+    Description: The ID for the Virtual Private Cloud; needed by more or less everything.
+    Value: !Ref VPC
+    Export:
+      Name: !Sub "${Environment}::VPC"
+----------------------------------------------------------------------------------------
+	/**
+	 * Retrieves a list of CompanyInfor objects. Given the name parameters, the
+	 * return list will contain objects that match the search both on company
+	 * name as well as symbol.
+	 * 
+	 * @param name
+	 *            The search parameter for company name or symbol.
+	 * @return The list of company information.
+	 */
+	@HystrixCommand(fallbackMethod = "getCompanyInfoFallback",
+		    commandProperties = {
+		      @HystrixProperty(name="execution.timeout.enabled", value="false")
+		    })
+	public List<CompanyInfo> getCompanyInfo(String name) {
+		logger.debug("QuoteService.getCompanyInfo: retrieving info for: "
+				+ name);
+		Map<String, String> params = new HashMap<String, String>();
+		params.put("name", name);
+		CompanyInfo[] companies = restTemplate.getForObject(company_url,
+				CompanyInfo[].class, params);
+		logger.debug("QuoteService.getCompanyInfo: retrieved info: "
+				+ companies);
+		return Arrays.asList(companies);
+	}
+----------------------------------------------------------------------------------------
+@Entity
+public class Tree {
+
+	@OneToMany
+	private Set<Node> nodes = new HashSet<>();
+
+	public NestedSet<Node> asNestedSet() {
+		return new NestedSet<Node>(nodes);
+	}
+
+	public Node getRootComponent() {
+		return asNestedSet().getRoot();
+	}
+}
+
+@Entity
+public class Node implements NestedSetElement {
+	@ManyToOne
+	@JoinColumn
+	private Tree tree;
+
+	@Embedded
+	private NestedSetBound bound = new NestedSetBound();
+
+	@Override
+	public NestedSetBound getBound() {
+		return bound;
+	}
+
+	@Override
+	public void setBound(NestedSetBound bound) {
+		this.bound = bound;
+	}
+
+	public Node getParent() {
+		return tree.asNestedSet().getParentOf(this);
+	}
+
+	public final List<Node> getChildren() {
+		return tree.asNestedSet().getChildrenOf(this);
+	}
+}
+-----------------------------------------------------------------------------------------
+  public static String joinPath(String... paths) {
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < paths.length; i++) {
+      if (i > 0) {
+        sb.append("/");
+      }
+      if (paths[i].endsWith("/")) {
+        sb.append(paths[i].substring(0, paths[i].length() - 1));
+      } else {
+        sb.append(paths[i]);
+      }
+    }
+    return sb.toString();
+  }
+-----------------------------------------------------------------------------------------
+  @JsonFormat(pattern = "dd/MM/yyyy HH:mm")
+  @DateTimeFormat(pattern = "dd/MM/yyyy")
+  
+  
+      final URI uri =
+        MvcUriComponentsBuilder.fromController(getClass())
+            .path("/{id}")
+            .buildAndExpand(person.getId())
+            .toUri();
+			
+			
+			import com.lankydan.entity.membership.GymMembership;
+import com.lankydan.rest.person.PersonController;
+import lombok.Getter;
+import org.springframework.hateoas.Link;
+import org.springframework.hateoas.ResourceSupport;
+
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
+
+@Getter
+public class GymMembershipResource extends ResourceSupport {
+
+  private final GymMembership gymMembership;
+
+  public GymMembershipResource(final GymMembership gymMembership) {
+    this.gymMembership = gymMembership;
+    final long membershipId = gymMembership.getId();
+    final long personId = gymMembership.getOwner().getId();
+    add(new Link(String.valueOf(membershipId), "membership-id"));
+    add(linkTo(methodOn(GymMembershipController.class).all(personId)).withRel("memberships"));
+    add(linkTo(methodOn(PersonController.class).get(personId)).withRel("owner"));
+    add(linkTo(methodOn(GymMembershipController.class).get(personId, membershipId)).withSelfRel());
+  }
+}
+-----------------------------------------------------------------------------------------
+import com.lankydan.cassandra.Person;
+import com.lankydan.cassandra.PersonKey;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.cassandra.core.CassandraOperations;
+import org.springframework.data.cassandra.core.mapping.CassandraPersistentEntity;
+import org.springframework.data.cassandra.repository.support.MappingCassandraEntityInformation;
+
+@Configuration
+public class KeyspaceBCassandraConfig {
+
+  @Bean
+  public KeyspaceBPersonRepository keyspaceBPersonRepository(
+      final CassandraOperations cassandraTemplate,
+      @Value("${cassandra.keyspace.b}") final String keyspace) {
+    final CassandraPersistentEntity<Person> entity =
+        (CassandraPersistentEntity<Person>)
+            cassandraTemplate
+                .getConverter()
+                .getMappingContext()
+                .getRequiredPersistentEntity(Person.class);
+    final MappingCassandraEntityInformation<Person, PersonKey> entityInformation =
+        new MappingCassandraEntityInformation<>(entity, cassandraTemplate.getConverter());
+    return new KeyspaceBPersonRepositoryImpl(cassandraTemplate, entityInformation, keyspace);
+  }
+}
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+import com.lankydan.cassandra.movie.entity.MovieByActor;
+import com.lankydan.cassandra.movie.entity.MovieByActorKey;
+import org.springframework.data.cassandra.repository.CassandraRepository;
+import org.springframework.data.cassandra.repository.Query;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+
+@Repository
+public interface MovieByActorRepository extends CassandraRepository<MovieByActor, MovieByActorKey> {
+
+  @Query(allowFiltering = true)
+  List<MovieByActor> findByKeyReleaseDateAndKeyMovieId(LocalDateTime releaseDate, UUID movieId);
+}
 -----------------------------------------------------------------------------------------
 public class JwtAuthenticationFilter extends AbstractAuthenticationProcessingFilter {
 

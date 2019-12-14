@@ -23157,6 +23157,6504 @@ Contact:
 yangli@amberweather.com
 
 
+Think of SensoDuino as a dozen or more free virtual shields for your Arduino each supporting a different sensor and function. All you need is your Android phone, Arduino, and a $10 HC-05 Bluetooth module. SensoDuino captures data from sensors built into your Android mobile device such as GPS, audio, gyro, date/time then transmits this data over an HC-05 Bluetooth module to Arduino or any device equipped with Bluetooth capabilities be it Windows PC, Mac, or microcontroller. OTHER SERIAL BLUETOOTH MODULES MAY OR MAY NOT WORK.
+
+
+SensoDuino also saves the captured sensor data to a comma-delimited text file for graphing and analysis. You can control the frequency of sensor data acquisition, transmission, and logging (subject to the specifications of the sensor vendor.)
+
+For more info: http://www.techbitar.com/sensoduino.html
+
+
+PLEASE RATE: This is a free app and only through your ratings I can determine if it's worth supporting or discontinuing.
+
+
+SensoDuino recognizes the following Android sensors IF THEY EXIST ON YOUR ANDROID DEVICE: Gyroscope, Accelerometer, Magnetometer/Compass, GPS, Light Level, Audio Level , Proximity, Pressure/Barometer, Temperature, Relative Humidity, Orientation, Gravity, Linear Accelerometer, Rotation Vector, Date, and Time.
+
+
+Some software (virtual) sensors relay on the presence of hardware sensors to function. For example, the gravity sensor, linear acceleration sensor, and rotation vector sensor all of these software sensors relay on the presence of hardware gyro sensor on your Android device to function.
+
+
+SensoDuino also features an Android sensor scanner that will list hardware and software sensors supported by your Android device as well as key sensor specifications such as max power consumption, resolution, vendor, etc.
+
+
+FEATURES OVERVIEW
+
+
+- Read Android sensors.
+- Save android sensor data to comma-delimited text file.
+- Transmit android sensor data in ASCII comma-delimited format via Bluetooth.
+- List available Android device sensors both hardware and virtual (software).
+- Configure speed of sensor data capture, logging, and transmission.
+- Log accuracy of most sensor data.
+- Keep device awake to prevent loss of sensor data logging.
+- Support Android devices from version 2.33
+
+
+ANALYTIC EXAMPLES
+- Import geo-tagged sensor log into Google Map or GPSvisualizer.com for location analysis.
+- Stream sensor data to a PC in real-time via Bluetooth for analysis and charting.
+
+
+ELECTROMECHANICS & ROBOTICS EXAMPLE
+- Use SensoDuino as a UAV & IMU controller for RC airplanes, quadcopters, etc.
+- Use Audio, Light , Accelerometer (motion) sensors to trigger alarms, turn things on/off.
+- Design game and robot controllers.
+- Much more.
+
+
+PERMISSIONS
+SensoDuino needs your permission to perform the following tasks: log sensor data to your device SD, read GPS data, transmit sensor data via Bluetooth, read audio sensor (microphone), send application crash reports and user feedback via the internet, and network state for Google Analytics.
+
+
+SENSODUINO USER GUIDE
+http://www.techbitar.com/sensoduino.html
+
+
+With new features added to SensoDuino, the captured screens may look slightly different from the production screens for a while until updated screenshots are uploaded.
+Show less
+SensoDuino 0.160 Update
+2016-10-27
+0.160
+- SensoDuino gets a face lift.
+0.159
+- We now have a Date/Time "sensors." SensoDuino treats the Android system Time (H,M,S) and Date (Y,M,D) functions like any other sensor data that can be transmitted and logged.
+- Supports sensor update increments of 60 minutes.
+- Added Android KitKat (4.4) support.
+- Misc enhancement.
+
+RELEASED: Oct 8, 2013
+
+
+
+The description of Science Journal
+Science Journal is the free digital science notebook brought to you by Google.
+
+Whether you're a science educator or a hobbyist doing science at home, you can keep your notes, photos and observations all in one convenient place. Use the sensors in your phone to measure and graph phenomena such as light, sound and motion, or connect to external sensors via Bluetooth to conduct experiments on the world around you.
+
+With the Science Journal app, you can:
+• Measure light, sound, acceleration, air pressure and more using your phone's built-in sensors.
+• Take notes and photos to document your science experiments. More note types coming soon!
+• Connect to external sensors using selected Bluetooth-enabled Arduino and Vernier devices.
+• Access your experiments across your devices using Google Drive.
+• Export recorded sensor data as CSV files.
+• Create automated triggers for recording data and taking notes.
+• Use sonification to hear the movement of your graphs.
+
+Science Journal is available for free on Android, iPhone, iPad and compatible Chromebook devices.
+
+Educational activities by our partners: https://makingscience.withgoogle.com/science-journal/activities
+For support: https://productforums.google.com/forum/#!forum/sciencejournal
+Open-source code available: https://github.com/google/science-journal
+
+Permissions notice:
+• Location: Needed to scan for Bluetooth sensor devices.
+• Camera: Needed to take pictures to document experiments.
+• Microphone: Needed for sound intensity sensor.
+• Storage: Needed to access photos to insert into experiments.
+
+
+The description of Physics - Experiments for High School and College
+We noticed lack of good physical apps who do not only show formulas but how the process work and what you can observe instead. That's why we developed this App which helps students in physics by visualizing important experiments e. g. needed for the German "Abitur", the highest possible school-leaving qualification in Germany.
+
+From our point of view, physics would be quite interesting if students could understand the experimental processes behind it. However, unfortunately, this requires a high skill level of imaginative power. By using this app which simulates these important experiments we hope to help every student who has problems in imagining what happens at specific experiments.
+
+Each experiment provides certain possibilities to change some parameters and to vary the experiment's construction. Additionally, this app provides some output values to enable a quantitative analysis of the experiments available in "PhysicsApp".
+Furthermore, a night mode is covered by this app.
+
+This app version contains ads (only in menus, the experiments themselves can be enjoyed without any ads). You can download a pro version without any ads by clicking on this link: https://play.google.com/store/apps/details?id=com.physic.pro.physicsapp. Downloading a pro version supports our effort to develop this huge project.
+
+These following experiments are currently available:
+
+Mechanics
+— Accelerated Motion
+— Constant Motion
+— Conservation of Momentum: Elastic Collision and Inelastic Collision
+— Harmonic Oscillations: Spring Pendulum
+— Vectors
+— Circular Path
+— Horizontal Throw
+— Crooked Throw
+
+Quantal Objects
+— Two Sources Ripple Tank
+— Diffraction by Double Slit
+— Diffraction by Grid
+— Photoelectric Effect
+— Millikan's Oil Drop Experiment
+— Teltron Tube
+— Electron Diffraction
+
+Electrodynamics
+— Lorentz Force
+— Self Induction: Gauss's Cannon
+— Conductor Loop
+— Generator
+— Transformer
+
+Additionally, we have developed a small game called Atom Smasher so you can relax after learning physics. It's a mini game challenging your dexterity.
+
+You are controlling an atom smasher. Your mission is to ensure that your atom does not collapse due to collecting negative energy in form of electrons. You will reach the next level, if the atom collected all quarks on its pathway. However, whenever you see protons or neutrons, you also can collect them to gain more points or skip the current level.
+
+Can you save the world by creating a new particle? Or do you destroy it through a huge explosion caused by merging the atom and an electron? Let's find out!
+
+✓ This game supports Google Play Games in order to enable a worldwide ranking and achievements.
+
+------------------------------------------------------------------------------------------------------------------------------------------------
+Please feel free to write at PhysicsApp@e-mail.spdns.org to give feedback (bugs, translation mistakes, improvement suggestions).
+Show less
+Physics - Experiments for High School and College 1.5.5 Update
+2019-06-29
+✔ Fixed bugs which appeared extremely rarely. Thanks to everyone sending bug reports.
+
+
+
+Aachen City Guide FLApp
+
+What links Aachen Cathedral to multimedia specialists from RWTH Aachen University? The new science guide explains not only that. It leads you to 13 prominent science locations – around Aachen's old town and the city campus of RWTH Aachen University. FLApp, the Future Lab Aachen App presents well-known and unusual locations, peeks behind the curtain, and highlights the most fascinating research projects of Aachen's universities in compact articles. With audio guide, images, videos, augmented reality, and expert statements.
+Experience Aachen in a whole new way!
+
+The app is GPS-based. A dynamic map shows the current location. Steles in the city mark the stations and can notify you of their proximity using iBeacon signals. Digital 3D objects in augmented reality are available at selected stations.
+
+The trip starting at the cathedral, passing the Audimax, and finishing at the RWTH main building is 1.3 km long.
+We recommend downloading the app via WiFi at home. You can also download it on-site using the Aachen WiFi network.
+Available languages: English and German
+Show less
+
+
+
+
+
+The description of Mushroom Identify - Automatic picture recognition
+AUTOMATICALLY IDENTIFY MUSHROOMS FROM A PICTURE
+It's so easy! Take a picture and get an id in seconds!
+(this feature is still in development and will get better with time, for now it recognizes more than 900 species)
+
+NEW: buy or sell your mushrooms!
+
+
+Save places where you found mushrooms on a map.
+If you aren't sure of the type of the mushroom in front of you, you can also check it with the app to identify the mushroom. If you still aren't sure, check with a professional!
+Mushroom Identificator analyses the weather and temperatures of the last days and predict when it is time to go picking ceps/penny buns and Chanterelles!
+Show less
+Mushroom Identify - Automatic picture recognition 2.58 Update
+2019-11-17
+- You can now ask other users for help
+- Accuracy dramatically improved, real time identification, offline mode, many mushrooms added, mushroom calendar, satellite view, plenty of small fixes
+
+
+
+
+
+The description of VibSensor
+VibSensor is a vibration meter geared to science and engineering applications where quantitative accelerometer and vibration data are needed. It turns your mobile device into a vibrometer or seismometer, with easy collection, data storage, and email of data. VibSensor gives the user five tools:
+
+Live Display: See tilt and vibration data in real time.
+
+Acquisition: Timed or vibration activated acquisition, with settable delay, duration, and trigger level. Collect raw accelerometer data for up to 10 minutes at max rate allowed by device. Also analyze low frequency vibrations with periods up to five minutes.
+
+Data Storage: Acquired collections are stored on the device, with date and time stamp for later retrieval. Collections can be named for easy identification.
+
+Analysis: Each collection can be viewed to see the raw accelerometer data, processed tilt and vibration, and calculated power spectral densities, both in graphical and report format. Units can be selected to be either g or m^2/sec.
+
+Email Access: Users can email raw or processed data in text (csv or tab-delimited) or MATLAB format.
+
+With VibSensor, you can explore the world of vibrations. Perform vibration analysis, or use it as an accelerometer data logger. Capture vibrational resonances and magnitudes, or even use it like a seismograph to capture an earthquake!
+Show less
+VibSensor 2.1.1 Update
+2017-03-18
+- Vibration activated recording: like a true seismometer or seismograph, collections are triggered on vibration events. Select the trigger level, collection duration, and number of repeat collections. Your phone goes into an armed state and waits for an event to start.
+- Unified power spectrum display with log-linear display on both axes.
+- Collection settings saved between app restarts.
+- Enhanced export of report info in attachment.
+- Starting timestamp reported to millisecond precision.
+
+
+
+The description of RWTHApp
+With the RWTHApp you can now get the most important information about your studies at RWTH Aachen University right to your smartphone: your RWTHmoodle learning rooms, courses and directions to your next lecture.
+
+RWTHApp offers the following features:
+
+-> Room search (and navigation)
+-> Employee search
+-> View and download documents from RWTHmoodle course rooms
+-> Information about current events (RWTHonline)
+-> Canteens
+-> University library
+-> Schedule
+-> Grades
+-> Directfeedback / Audience Response System
+-> Secure authorization via OAuth
+
+
+
+
+
+The description of Lab4Physics
+"Lab4Physics makes it easy and inexpensive to bring fun and engaging lab experiences into the classroom!
+
+The Lab4Physics app uses built-in sensors found in smartphones and tablets to transform your mobile device into a powerful science lab that can be used flexibly by teachers and students alike. Students can use the accelerometer, sonometer, camera, and a speedometer to gather, vizualize and analize data, or use pre-designed, inquiry-based experiments to explore concepts like movement, gravity, acceleration, force, energy, rotation, torque, and waves.
+
+Lab4Physics puts a lab in every student's pocket and transforms physics from theoretically intense to intensely fun!"
+Lab4Physics 2.5.9 Update
+2019-11-21
+- A new tool: Plotter. Now you can make your own graphs! You can enter the axis names, select the graph units, enter your coordinates, and see the graph, that includes lineal trend, quadratic trend and logarithmic trend.
+- If you are a teacher, you can access directly from the app to our Teacher Portal, where you can find the Lab Report and Teacher Information for each experiment.
+- The graph library was updated, so now they're more precise.
+- Performance improvements and bug fixes.
+
+
+
+
+
+
+
+
+
+
+The description of GlobiLab
+Wireless data collection for Android with up to 15 built-in science sensors
+
+The GlobiLab software for Android makes K-12 science experiments mobile, convenient and immediate anytime, anywhere! GlobiLab wirelessly integrates between the award winning Labdisc data logger with 15 built-in sensors and the Android device: Allowing setup and data analysis of hands-on experiments for biology, chemistry, environmental science, math, physics and even geography. GlobiLab software for Android was specifically designed to engage students and help visualize complex science concepts by harnessing the Android built-in accelerometer sensor, data display, multimedia and multi-touch features.
+
+GlobiLab employs colourful data displays in a variety of meter types, intuitive icons and Android multi-touch to deliver an even more immediate learning experience. For example, students can use map, zoom, pinch and pan gestures to view and analyze collected GPS experiment data displayed on a satellite map.
+
+Additional multimedia features include advanced markers and annotation functionality, allowing text and images to be added at key points along the graph and enabling students to tell the experiment story behind their data results.
+
+GlobiLab Android software includes the following features:
+•Working with phones and tablets of all sizes
+•Variety of data displays including: Meters, table, bar graph, line graph and satellite Maps
+•File management: Open and save samples to the device
+•Labdisc management: Setup of all data logging parameters, online display of current measurements (up to 100 samples/sec.) and download of the Labdisc sample memory
+•Graph manipulations: Markers, zoom, crop, text and image annotation
+•Data analysis: Including statistics and curve fitting
+•Full interactive experiment curriculum for K-12 biology, chemistry, environmental science, math and physics.
+Show less
+
+
+
+
+
+
+The description of Physics Toolbox Sensor Suite
+Useful for students and teachers in science, technology, engineering, and math (STEM) education and academic or industrial researchers, this app uses device sensor inputs to collect, record, and export data in comma separated value (csv) format through a shareable .csv file. Data can be plotted against elapsed time on a graph or displayed digitally. Users can export the data for further analysis in a spreadsheet or plotting tool. This app also generates tones, colors, and a stroboscope. See www.vieyrasoftware.net for a variety of usage ideas for STEM education and publications from academia and industry.
+
+A menu allows the user to sense or generate the following (dependent upon the user’s mobile device capabilities):
+
+SENSORS
+(1) G-Force Meter - ratio of Fn/Fg (x, y, z and/or total)
+(2) Linear Accelerometer – acceleration (x, y, and/or z)
+(3) Gyroscope - radial velocity (x, y, and/or z)
+(4) Barometer - atmospheric pressure
+(5) Roller Coaster - G-Force Meter, Linear Accelerometer, Gyroscope, and Barometer
+(6) Hygrometer - relative humidity
+(7) Thermometer - temperature
+(8) Proximeter - periodic motion and timer (timer and pendulum modes)
+(9) Ruler - distance between two points
+(10) Magnetometer - magnetic field intensity (x, y, z and/or total)
+(11) Compass - magnetic field direction and bubble level
+(12) GPS - latitude, longitude, altitude, speed, direction, number of satellites
+(13) Inclinometer - azimuth, roll, pitch
+(14) Light Meter - light intensity
+(15) Color Detector - detects HEX colors within a small rectangle area on the screen via the camera.
+(16) Sound Meter - sound intensity
+(17) Tone Detector - frequency and musical tone
+(18) Oscilloscope (audio) - wave shape and relative amplitude
+(19) Spectrum Analyzer (audio) - graphical FFT
+(20) Spectrogram (audio) - waterfall FFT
+
+MULTI RECORD
+(21) Multi Record - choose one or more of the above sensors to collect data at the same time.
+
+GENERATORS
+(22) Tone Generator – sound frequency producer
+(23) Color Generator – R/G/B/Y/C/M, white, and custom color screen
+(24) Stroboscope (beta) - camera flash
+(25) Play - challenges
+(26) Manual Data Plot
+(27) AR - augmented reality visualization of magnetic field vectors.
+
+
+Features
+(a) Recording: All sensor data can be recorded by pressing the red floating action button. Saved data can be found stored in the folder icon and on the device’s SD card.
+(b) Exporting: Data can be immediately transferred following recording by selection an option to send via e-mail or shared in Google Drive or Dropbox. Locally saved files can also be transferred from the folder icon.
+(c) Sensor Information: Clicking on the (i) icon within each mode provides information about the sensor name, vendor, and current data collection rate, in addition to a description of what kind of data is collected by the sensor, its physical operating principle, and links to additional resources, including webpages and videos that illustrate how it works.
+
+Settings
+* Note that not all settings are available for all sensors.
+(a) Data Display: View data in graphical, digital, or vector form.
+(b) Graph Display: View multi-dimensional data sets on a single shared graph or in multiple individual graphs.
+(c) Displayed Axis: For multi-dimensional data on a single shared graph, select total, x, y, and/or z-axis data.
+(d) CSV Timestamp Format: Record clock time or elapsed time with sensor data.
+(e) Line Width: Modify visual presentation of data with a Thin, Medium, or Thick line.
+(f) Sensor Collection Rate: Set collection rate as Fastest, Game, UI, or Normal. The sensor collection rate is displayed for each option when selected.
+(g) Keep the Screen On: Prevent the app from turning the screen off automatically.
+(h) Calibrate: Calibrate selected sensors.
+Show less
+Physics Toolbox Sensor Suite 1.9.3.9 Update
+2019-06-06
+Updated visuals in the Ruler mode.
+Fixed an issue where data from Dual Sensor mode was not properly formatted.
+Minor visual enhancements.
+
+
+
+
+
+The description of Sensorstream IMU+GPS
+This is an Android App for 2.3.3 Android OS and above.
+It deals with Hard- and Software Sensors which are integrated in Nowadays Smartphones.
+
+The User can select the Sensors and observe the current values of
+
+- Accelerometer
+- Gyroscope
+- Magnetometer
+- GPS Position
+- .... and other Sensors
+
+A Stream containing the Sensor-Values in CSV- Format by WLAN To a Client and/or a Stream To a SD-Card can be started and stopped. The Sensor-Update frequency can be adjusted.
+
+There are some GPS-Algorithms running in the Background which transform the GPS data in different coordinate frames.
+
+The Stream via WLAN uses the User Datagram Protocol (UDP) Interface.
+
+The Project Page of this app can be found here:
+http://sourceforge.net/projects/smartphone-imu/
+Here you will be able to download the Source Code.
+
+In order to receive the data you can use something like the Java File "QuoteClient"in the Files-Section of the Source Forge Project Page. Or use Python and compile:
+------------------------------------------------------------
+import socket, traceback
+
+host = ''
+port = 5555
+
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+s.bind((host, port))
+
+while 1:
+try:
+message, address = s.recvfrom(8192)
+print (message)
+except (KeyboardInterrupt, SystemExit):
+raise
+except:
+traceback.print_exc()
+
+
+
+
+
+The description of Sensor UDP
+Sensor UDP allows the user to send sensor data wirelessly via UDP on their Android device. Users can use this sensor data for a wide variety of motion tracking applications, or simply read-out the sensor data from their phone.
+
+• Includes support for Linear Acceleration, Gravity, Rotation, Orientation, Ambient Light and Proximity sensors
+• Displays sensor values on screen during wireless transmission
+• Checks device for sensor availability. It is important to note that not all devices support all sensors.
+• Includes a keyboard to 'create notes' for performance
+• Values are stored in a float array, with ordering consistent to the user interface.
+
+
+USAGE INSTRUCTIONS:
+The data is stored within the app as a float array. See the format below.
+
+Format: [ X Acceleration, Y Acceleration, Z Acceleration, X Gravity, Y Gravity, Z Gravity, X Rotation Rate, Y Rotation Rate, Z Rotation Rate, X Orientation (Azimuth), Y Orientation (Pitch), Z Orientation (Roll), deprecated, deprecated, Ambient Light, Proximity, Keyboard Buttons 1 - 8]
+
+Here is an example python script written by a colleague that receives the data and displays it. This should give you an idea how to utilize the data.
+
+https://www.dropbox.com/s/4fc3ccuam03n99a/UDPR24.py?dl=0
+
+Sensor UDP was developed for UBC SUBCLASS/Laptop Orchestra.
+Show less
+Sensor UDP 3.0 Update
+2015-09-09
+V3
+• Major UI overhaul
+• Small bug/ui fixes
+V2
+• Added a keyboard to create 'notes'
+• Converted acceleration to linear acceleration
+• Converted units of gravity to G-Force
+• Fixed Proximity label bug
+
+V1
+• Application released! See description for basic features.
+
+Sensor UDP Tags
+
+
+
+
+
+The description of VidAnalysis free
+Are you tired of having poor measuring instruments in physics lessons? Then this is the right thing for you!
+VidAnalysis is a multipurpose tool: In this app measurement, physics and the actual math behind it are combined. For example you can film the free fall of a small ball or a pendulum experiment with the camera of your smartphone or tablet. Next you analyze the video by marking the object you want the motion to be tracked in every frame of the video. With this information the app creates a time-x-distance-, time-y-distance-, x-distance-y-distance-diagram and adds all values to a list. You can also add your own function to the measured values into the diagrams.
+Isn't that cool?
+
+Summarized: With this app you can
+- organize your videos for analysis
+- choose measuring points for analysis
+- set an absolute length as reference to reality
+- set an coordinate system and even rotate it
+- correct your chosen points in analysis
+- display three diagrams, where you can add an function as a model
+- display the list of all measured values
+- share and save this list as CSV file
+
+
+
+
+The description of Galaxy Sensors
+** Developed for the Samsung Galaxy S4 and Samsung Galaxy Note 3, full compatibility is not guaranteed on other models **
+** models like Galaxy S3-S5 or Galaxy Note2-Note4 are missing temperature and humidity sensor, not my fault, sorry, the device manufacturer has decided to remove these sensors **
+** if a sensor is set as "NOT PRESENT" is because your phone doesn't have it **
+functions:
+  - Ambient temperature in degrees celsius
+  - Percentage of moisture in the air
+  - Light intensity
+  - Air pressure
+  - Height above sea level
+- widget with ambient temperature! more coming soon
+** The data is read directly from the sensors could then have an error of up to 5-10% (in the worst case) that does not depend on me, but by the sensors, unfortunately I can not do anything about it, to try to reduce the errors Please keep the device on a flat surface for a few seconds, so that the values ​​are optimized, if your hands touch the device, the temperature will be too high of some degree **
+If you want to report the full compatibility of your device with the application please leave feedback or send me an email, so it will be added to the list, any feedback and comments are very much appreciated, the application aims to be simple and instant, to have at hand all the data from the main sensors of the phone, if there are suggestions, recommendations and requests for additions will be happy to provide (where possible)
+
+1.1 added Google Analytics
+1.2 added translation in:
+-Italian
+-English
+-French
+-German
+-Portoguese
+-Russian
+-Spanish
+1.2.1 fixed an orientation bug
+1.3 added icons
+1.3.1 bug fix
+1.3.2 finally aviable first widget
+1.3.3 added share functionality, fixed a bug with translation
+1.3.4 fixed russian, widget 2x1
+1.3.5 added imperial system ON/OFF menu option
+1.3.6 fixed some translation, added version number, added option to change font
+1.3.7 added inHg to imperial system
+1.4 fixed widget, added notification, new accuracy (0s: Low -15s: Medium -45s: High)
+1.4.1 fixed layout
+1.4.2 fixed layout for medium font size
+1.4.3 fixed a problem with font switch
+1.4.4 battery usage should be 1/4 now
+1.4.5 added greek and hungarian
+1.4.6 added dutch
+1.4.7 added settings menu, added notification kind
+1.4.8 added fist start notification
+1.4.9 divided option to have imperial system for temp/altitude/pressure
+1.5 fixed translations, now you can select background color, now you can set text dimension and report translation error via mail from inside the app =)
+1.5.1 some fixes, added material ActionBar/theme
+1.5.2 fixed translations in ru/de, added text color option
+1.5.3 added option to set pressure at nearest sea level, various fixes
+1.5.4 bug fixes
+1.5.5 bug fixes
+1.5.6 (requested feature) now you can pause sensors, if you click on datas (light value, temperature value and others) it will pause, if you click again it will read values again =)
+1.6 added more material elements
+1.6.1: added floating action button for settings, layout fix, added rotation support, general fix
+1.6.2: added polish translation, added psi unit for pression
+1.7: support for new devices
+1.7.1: fixed share, general fixes, api updates
+1.7.2: general fixes, color change fix
+1.8: new icon shapes, bug fixed, updated libraries, new api for android 8.1, apk size reduced to half size just 2mb, removed unnecessary libraries
+1.8.1: fixed notifications on Oreo+
+1.8.2: api 28 for Android pie, updated dependencies, new settings menu, moved to Firebase
+1.8.3: fully moved to firebase
+1.8.4: finally fixed temperature widget (if it doesn't work remove it and add it again to your home screen)
+1.8.5: hotfixes
+Show less
+Galaxy Sensors 1.8.10 Update
+2019-10-30
+1.8.7: Hotfix, moved to androidX
+1.8.8: Another hotfix
+1.8.9: Guess what? no, not an hotfix, redesign of the icon
+1.8.10: Updated libraries
+
+
+
+
+
+
+The description of SensorStreamer
+Our phones are full of useful sensors - accelerometer, gyroscope, magnetometer... Every hacker have surely experienced the need to test something with one of these sensors. Usually you take Arduino with a sensor breakout board and you write a small piece of code, which send data to serial line.
+
+But not always you have the sensors you need and the wires are sometimes a limitation. Here comes SensorStreamer - lightweight Android app, which can log sensor data and send them over network to your computer, where you can analyse them e.g. with a simple Python script.
+
+Supported Features
+- streaming of values from any sensor in the phone (as far as the sensor is
+supported by Android API)
+- stream data over TCP sockets in
+- client mode
+- server mode
+- stream data in
+- JSON object
+- binary packet
+
+This application is open-source - you can find the sources on GitHub: https://github.com/yaqwsx/SensorStreamer
+Show less
+
+
+
+
+
+
+
+The description of ParaTek Ai Speech generator
+We are Excited to announce the Apps recent feature on a Paranormal TV Show called "Ghost Chasers" On the Really channel network. The App was quite successful in the session used on the show on 2 occasions during EP 2 & 4 Whilst some of the team were skeptical of the Apps ability's It did however Show some promise which left a few of the team members astonished with the results captured.
+
+New sleek look with 2 new added features, Digital compass and Proxair tool to detect motion near the device screen using proximity sensors, Works in 0 light.
+
+Speech generators have been used by paranormal investigators for years, Due to their simplicity and ease of use, they quickly came one of the sought after tool's in the paranormal tool kit. AppyDroid take this to a new level and introduce Gen - 2 Our Ai system into this app to provide 4 layers of analysis and deciphering before the is chosen, Not a random process like other app's, it uses Ai technology to completely operate the app, Simple on and off function.
+
+.No radio interference
+.No audio banks
+.No technical knowledge
+.No speech recognition to falsely reply
+
+Simple to use ITC Tool brought to you by AppyDroid.. Our brand is trusted by real novice and professional Ghost hunter's, We consistently strive to bring the best technology available in our app's. We also have the widest range of app's available than any other market source, No copies or replica's Just genuine Idea's and theory's put into our ITC App's
+
+Please note: This app is not a magical tool that will summon spirits on every use: It merely is a new concept ITC Tool, It is not designed to be 100% accurate, Not imply that it can communicate with spirit's, If you are looking for direct communication, sadly that technology is not available, Its simply a tool to see if you can get meaningful responses at the right time.. We hope to step up the game with using new technologies and ideas, But dont leave bad ratings if you don't understand the ITC Principle behind what this does, Please use it thoroughly before making assumptions or concluding your verdict.. The app is in beta, Please accept there may be bug's, Only reports can fix these so report issues when you find them..
+
+Feel free to check out our website www.appydroid.co.uk for full support and information.
+Show less
+ParaTek Ai Speech generator 1.9 Update
+2017-03-24
+V1.9 Update
+
+Tweaked EMF Code in Ai component
+Minor update to fix "Click.mp3 Error" Display message.
+Some additional words Added
+Next release will have 1000 additional words
+
+
+
+
+
+
+
+The description of Physics Toolbox Magnetometer
+This magnetic field sensor app measures and displays a graph of Magnetic Field (µT) vs. Time (s) that in x, y, and/or z dimensions, as well as total magnitude. By accessing settings, data can also be displayed with a digital read-out.
+
+Total magnitude magnetic field strength can be recorded and exported in an e-mail or through Google Drive as a .csv attachment using a comma or a semicolon as a delimiter. Click on settings to plot data against elapsed time or clock time, to change the plot line thickness, or to change data collection rate. A brief tutorial upon start-up gives an overview of how to use the app.
+
+The magnetic field sensor can measure the background magnetic field of the earth and be used to check for the presence of permanent magnets or electromagnetic fields. Within the classroom, the magnetometer can be used to determine the inverse-square law for a "point source" magnet, to determine the strength of a field produced by a solenoid, or to measure the frequency of objects with magnetic variations, such as audio speakers or magnetic plate stirrers.
+
+Permissions Explained:
+
+android.permission.WRITE_EXTERNAL_STORAGE: A csv file is created and modified on the phone's internal memory.
+
+If you have any questions, comments, or would like to see modifications/updates, please email me at vieyrasoft@gmail.com
+
+
+
+
+
+
+The description of Lablet - Physics Sensor Lab
+Lablet leverages tablets (and smart phones) as experimental tools to perform real physics experiments. Experiments can be conducted and analyzed entirely on the tablet. Lablet is designed for use in lab classes, but is not limited to such. Lablet can run fully customizable lab activities to guide students through an experiment.
+
+
+Camera Experiment:
+
+Lablet enables students to use the tablet camera to perform an experiment. For example, students can record a video of the trajectory of a thrown ball. To analyze the trajectory, students can step through the video and tag the ball in each frame. Using this data, the velocity and the acceleration of the ball can be calculated and even the gravitational constant can be derived. Students learn the relation between kinetic and potential energy. Furthermore, they see how the movement of the ball differs in the x and y directions.
+
+
+Microphone Experiment:
+
+The frequency analysis module uses the tablet’s microphone to record audio data. Lablet displays the fourier transformation of the recoded data. This can be used for Doppler shift and similar experiments.
+
+
+Accelerometer Experiment:
+
+The accelerometer module uses the tablet’s accelerometer sensor to capture the acceleration of the tablet. Lablet integrates this data in order to display velocity and distance graphs.
+
+
+Lab Activities ("electronic" lab handouts):
+
+Lablet supports "electronic" lab handouts with information and instructions to guide the students through a complete lab activity. Teachers can widely customize a lab activity by editing a simple lab activity script file. Here, a rich set of components and layout options are provided, for example, text questions, check boxes or special components such as a sheet where students learn to calculate velocity and acceleration from the raw data.
+
+About Lablet
+- Overview: http://lablet.auckland.ac.nz/features/
+- Example lab activities: http://lablet.auckland.ac.nz/lab-activities/
+- Source code and documentation: http://lablet.auckland.ac.nz/download/
+- Contact us: uoa.lablet@gmail.com
+Show less
+
+
+
+
+
+
+The description of My Sensors
+This application is a very simple utility which allows you to explore each sensor available on an Android device. This is mainly intended to be an instructional and experimental application providing a basis for further development. This application displays both static and real-time information about each sensor available. Additionally it allows real-time logging of sensor data to a file stored on your device.
+My Sensors v1.4 Update
+2016-01-31
+==Version 1.4 (Version Code=7)==
+* Supports Android SDK v4 thru v23
+* Now supports logging (*.csv) of real-time sensor data to your device storage.
+* Supports text file generation of all found sensor details.
+* Option to delete all log files and browse logged files through an external file browser.
+* As always, NO ads, NO special permissions and still FREE!
+
+
+
+
+
+
+
+The description of Sensor Charts
+Sensor Charts is a powerful tool able to record automatically in background all sensors data and render it at your command in wonderful and colorful charts.
+What was the day of August when the cell phone boiled with a stratospheric battery temperature? With Sensor Charts any data from your sensors like this will be within your reach, simply and effectively.
+
+It supports several sensor types (multitool)*:
+
+☁️ Pressure sensor
+🛳️ Magnetometer
+💡 Light sensor
+⚡️ Battery
+⚡️ Battery Temperature
+⚡️ Battery Voltage
+🚀 Proximity sensor
+📱 Memory (Free)
+📱 RAM (Free)
+⛳️Compass
+🏃 Step Counter
+🌞 Screen Brightness
+
+
+Sensor Charts will show you:
+
+🌟 time ranges in pie charts (to answer questions like: how long has your screen been turned off in the current month?)
+
+🌟 historic sensor data by day and month in linear charts. You can zoom on charts with two fingers and check when your battery left you or when it was discharging very fast.
+
+You'll be able also to set alerts for your sensors.
+
+You can use Sensor Charts as your personal tricorder.
+
+*N.B.: Available sensors in the multi-tool depend on their actual presence on your device. Devices with a greater number of sensors can take full advantage of this app.
+Show less
+Sensor Charts 1.2.7 Update
+2019-12-08
+- Total and mean values for Step Counter sensor (pedometer)
+- Imperial Units as default for the USA
+- Improvements
+
+
+The description of Sensor Record
+With Sensor Record you can easily track the sensor data of your Smartphone in a high frequency and save it to your SD Card for evaluation.
+
+
+The description of Accelerometer Acceleration Log
+This app enables you to use your device to measure and export accelerations. It will continuously plot the data from the accelerometers on the screen, which thereafter can be exported to a comma separated CSV file.
+
+Settings include custom axis scales and what CSV format to export to (separator character).
+
+Features
+- Log Accelerations from all sensor directions
+- Save as CSV (for Excel, etc)
+
+Saved files are located on the sd-card in the folder ../Accelerometerlog/saved_data/
+
+
+
+The description of Sensor Node Free
+*****NOW FREE*****
+Turn your phone into a sensor node for a wireless sensor network. Sensor Node make use of all your phone's amazing sensors and stream them to your PC in real time. A typical sensor node like this cost you hundreds of dollars outside. Sensor Node is available for you for free! Or use it as a wireless IMU. You can use it for your project in school or research! If you require assistance, feel free to contact the developer at mobilescino@gmail.com
+
+Each device can be given an ID to be identified by the PC. Start using your phones as a sensor node today!
+
+Sensor Node main features:
+- Stream live data from phone to PC through UDP in xml format
+- Stream live data from phone to PC through Mqtt protocol
+- View data from sensors, phone status as well as battery status
+- Log sensor data to CSV file (Excel compatible) and download it later
+- See live graphs of your phone sensors
+- Capable of setting frequency of sensor data
+
+Phone status and Battery status depends on phone hardware.
+
+Note:
+- Mqtt address should in the form of tcp://192.168.1.123:1883
+- Battery streaming only updates once a minute to reduce battery consumption
+
+Streaming of data using UDP:
+- Data sent is in XML format
+- Data is sent by UDP in real time
+- Remember to off your firewall
+- To use, create a UDP socket binding to the port you choose and poll the socket for incoming data. Example at https://www.dropbox.com/s/zgxrrje17hhn8vj/androidSensor123.py
+
+- Please comment to help me improve this application. Thank you
+
+- Please support by downloading the pro version.
+Show less
+Sensor Node Free 1.0.0 Update
+2018-06-28
+- Minor urgent fixes
+- Ip address for streaming now saved automatically
+
+
+
+
+
+
+The description of PortDroid
+Portdorid is a Network Analysis Application that helps Network Administrators, Penetration Testers and Hackers with several useful networking tools including:
+• Port Scanning
+• Identifying Devices on Local Network
+• Ping
+• Traceroute
+• Wake-On-Lan (WoL)
+• DNS Lookup
+• Reverse IP Lookup
+
+Portscanner - Scans and ip for open TCP ports, optionally it will use Banner Grabbing on with each port in order to gain more information or discover a web service. When a service is found on a port external applications will be offered to deal with certain protocols (ssh, telnet, http, https, ftp, smb etc.)
+
+Local Network Information - Find out who's on your wifi network. This will identify all devices on the same network and from here you can probe further and open the portscanner on any of the found devices.
+
+Ping – Check if a host is online and how fast it responds
+
+Traceroute - Perform a traceroute and geo-locate IPs to view on map
+
+Wake-On-Lan - Wake compatible WOL devices.
+
+DNS Lookup - Lookup the DNS records for a website
+
+Reverse IP Lookup - Find out websites that are hosted on an IP address
+
+Permissions Required:
+• Internet - Needed for remote connections (ping, port scan etc)
+• Wifi Connections - Needed to analyse wifi connections
+• Network Connections - Needed to analyse non-wifi network connections
+• In-App Purchases - To upgrade to pro version to receive additional features
+
+This app is highly configurable and in active development, so feature requests and bug reports are appreciated!
+Show less
+PortDroid 0.5.06 Update
+2019-11-19
+Fixed a load of stuff that stopped working and improved the UI a little
+Added Reverse IP Lookup
+Added MAC address lookups to devices
+Added some basic icons to devices
+
+
+
+
+The description of Accelerometer Frequency
+Simple app for developers to display Accelerometer info and the frequency of Accelerometer events.
+
+Features
+* Display Accelerometer event frequency
+* Switch between NORMAL, UI, GAME and FASTEST
+* Display device and accelerometer type
+* Display accelerometer range and resolution
+* Check for Screen off/Accelerometer bug
+* Collect accelerometer info on website
+
+The information you see is uploaded to a webpage when you exit the app and it was running for at least 5 seconds and the screen off/accelerometer bug was tested. See the results: http://accfreq.cochibo.com
+
+
+Notes
+
+The Screen off/Accelerometer bug is described in Anroid issues 3708 and 11028, see:
+
+http://code.google.com/p/android/issues/detail?id=3708
+http://code.google.com/p/android/issues/detail?id=11028
+
+This app uses both a partial wakelock and the "re-register accelerometer events" workaround to assure only devices that really will not deliver accelerometer events when the screen is turned off register as having the bug.
+
+For more on this issue, see:
+
+http://stackoverflow.com/questions/2143102/accelerometer-stops-delivering-samples-when-the-screen-is-off-on-droid-nexus-one
+
+If you have the bug and want to get rid of it, you can try installing a mod, like CyanogenMod. This works on many phones, but not all phones.
+Show less
+Accelerometer Frequency 2.2 Update
+2015-09-11
+2.2
+• Minor bug fixed
+2.1
+• Minor bug fixed
+
+2.0
+• Nicer UI
+• Data is uploaded to a webpage
+• More device and accelerometer info is displayed
+
+1.6
+• Range and resolution of the accelerometer are displayed
+
+
+
+
+
+The description of Accelerometer Counter
+Count accelerometer events with this app by shaking or rotating your device. The accelerometer sensor is continually monitored and when the detection level is crossed, the counter is increased by one.
+
+• Detect the acceleration in either of the X,Y Z axis, the magnitude of the acceleration, or the angles about the device's Z axis or XY plane.
+
+• Detect on rising or falling past the detection level.
+
+• AC or DC coupling option.
+
+• Adjust measurement speed to one of 12 frequencies between 0.5 Hz and 2 kHz.
+
+• Reduce double counts with optional no-count wait after detection.
+
+• Graph to show accelerometer input in Cartesian and/or spherical coordinates.
+
+• Counts indicated on graph and with optional 'click' sound.
+
+
+Accelerometer sensors will vary in sampling speed, resolution and accuracy from one device to the next. For indication only.
+Show less
+Accelerometer Counter 1.10 Update
+2017-11-02
+bus fixes/tweaks
+Added option to use either Accelerometer Sensor or Linear Acceleration Sensor
+
+
+
+
+
+
+The description of Sensor Data
+Sensor Data allows you to record, save, and evaluate data collected from your phone or tablet's built-in sensors.
+
+SENSORS: Includes capabilities for your built-in accelerometer, gyroscope, magnetic field, light, proximity, pressure, humidity, and/or temperature sensors. Further supports composite sensors such as heartrate, step counter, step detector, rotation vector, gravity, linear acceleration, and uncalibrated sensors.
+
+EASY TO USE: Select your sensors in the settings and simply click Record to begin.
+
+SAVE TO FILE or DRIVE: All data can be automatically saved to your device or to Google Drive in a tab-delimited .txt file to allow for further analysis.
+
+ANALYZE YOUR DATA: Data files can also be analyzed in Sensor Data by performing actions such as re-sampling or Butterworth filtering.
+
+SIMULTANEOUS RECORDING: Manipulate sampling frequency, duration of record, and the number of sensors to record simultaneously.
+Show less
+Sensor Data 1.6.1 Update
+2019-07-18
+Bug fix for saving locally.
+Added capability to record the uncalibrated accelerometer device and "device specific sensors".
+Have included information about each sensor in "My Device" section.
+Modified filtering to emulate MATLAB's filtfilt.m command.
+Added sharing and rating of app in menu.
+Added onboarding tutorial.
+Bug fixes for null exception errors.
+Other minor bug fixes and layout changes.
+Sensor Data Tags
+
+
+
+
+The description of Cayenne
+Start your next IoT project or prototype right from your phone with the Cayenne project builder. Now supporting Arduino, ESP8266, Raspberry Pi, over 100 LoRa-enabled devices, and any hardware brought in via MQTT API. Start your project or prototype in a fraction of the time.
+
+You can add, manage and control sensors and actuators from your phone’s dashboard from a library of drag and drop widgets.
+
+Features Include:
+
+Easily setup microcontrollers and boards
+✓ Quickly connect Arduino, ESP8266, Raspberry Pi boards and other devices to be managed remotely.
+
+Integration of LoRa-enabled devices and networks.
+✓ Provision, monitor, and control LoRa-enabled sensors on LoRaWAN™ networks.
+
+MQTT API Release.
+✓ Bring in any device (microcontroller, single board computer, sensor, motor or actuator) that is not in the Cayenne library via MQTT API.
+
+Create custom dashboards with drag and drop widgets
+✓ Customize the look of your projects with a fully flexible dashboard.
+
+Add sensors, actuators, and extensions
+✓ Create widgets to view and control the hardware connected to your project.
+
+Customizable Project Builder
+✓ Create custom projects and prototypes with mix-and- match widgets providing interoperability between devices, all on a single dashboard.
+
+Monitor data and remote control your devices and projects
+✓ Discover different ways to visualize data and control your connected hardware.
+
+Easily set up triggers and actions for your projects
+✓ Automate your project with easy to create if/then statements.
+
+Create and manage actions with Event Scheduling
+✓ Use scheduled events to trigger actuators or device actions at the time you choose
+
+Check out our community using Cayenne: http://community.mydevices.com/
+Show less
+
+
+
+
+The description of Sensor Toolbox
+Sensor Toolbox App gives you access to data and Graphs from Sensors:
+
+Sensor Toolbox App gives detail information about Sensors and read sensors real time data and plots real time graph
+- Accelerometer Sensor
+- Linear Acceleration Sensor
+- Gyroscope Sensor
+- Orientation Sensor
+- Gravity Sensor
+- Proximity sensor
+- Relative Humidity Sensor
+- Step detector and Counter Sensor
+- Rotation vector Sensors
+- Light sensor
+- Magnetometer
+- Pressure sensor
+- relative humidity sensor
+- Ambient Temperature sensor
+- Battery
+- Gps
+- WiFi
+
+Features
+* Real Time - Real time data obtained from Sensor.
+* Graphs - Real time Graph from real time data from sensor
+* GPS - User could see their geographical position, the altitude at which they are, and the status of the satellites.
+* Simple and Clean Design
+* WiFi -Connected Network Name, Strength, IP Address, Link Speed
+
+If you have any queries or suggestion with this app or ideas to develop, please send us message to galaxyappdevelopers@gmail.com
+
+
+
+
+
+
+The description of Sensor Sense
+Sensor Sense shows you information about all sensors supported by your phone.
+Download for free and start exploring the data around you.
+
+Sensors: Support for all Android sensors: light sensor, compass, acceleration, GPS, ...
+Real time graphs: Quickly view changes in sensors
+Record sensors: Export data as a shareable .csv file
+Callibration: callibrate all sensors when needed
+Material Design: A beautiful and intuitive interface
+Detailed information: Information about the specifications of each sensor
+Dark theme: Choose between a light and a dark theme (premium feature)
+
+
+Permissions explained:
+• Location: to display location info
+• Photos/Media/Files: to save measurements to a .csv file
+• Microphone: to display sound info
+
+
+
+
+
+The description of Sensoroid
+Sensors helps in making your device more efficient and powerful. Sensoroid helps you to know all the detail information’s of the device sensors. Real time data from the device with simple user interface.
+
+★ List all Sensors
+★ Total number of available sensors
+★ Real time data from sensors
+★ Help info of sensors
+
+★ Sensor name
+★ Int Type
+★ Vendor
+★ Resolution
+★ Power
+★ Maximum Range
+
+★ Accelerometer Sensor
+★ Proximity Sensor
+★ Light Sensor
+★ Magnetometer
+★ Orientation Sensor
+★ Virtual Gyroscope Sensor
+★ Rotation Vector Sensor
+★ Gravity Sensor
+★ Linear Acceleration Sensor
+★ Uncalibrated Gyroscope Sensor
+★ Magnetic Field Sensor
+★ Magnetic Sensor Uncalibrated
+★ Barometer Sensor
+★ RGB Sensor
+★ Relative Humidity Sensor
+★ Ambient Temperature Sensor
+★ Step Counter Sensor
+★ Step Detector Sensor
+★ Wakeup Secondary Sensor
+★ Non- Wakeup Secondary Sensor
+★ Significant Motion Detector
+★ Game Rotation Sensor
+★ GeoMagnetic Rotation Sensor
+★ Tilt Detector
+★ AMD
+★ RMD
+★ Basic Gestures
+★ Facing
+★ Pedometer Sensor
+★ Coarse Motion Classifier
+★ Motion Acceleration Sensor
+
+and lots more...
+
+Support and Technical Assistance:
+You can reach out to the developers via email available at the bottom of this app description. We would be glad to have your suggestions and feedback so that we can improve Sensoroid and serve you better.
+
+
+
+
+
+The description of Sense-it
+Do you need a set of sensors to collect data for your project? You may already have it on your Android device!
+
+Sense-it gives access to all the sensors on your smartphone or tablet devices. If you are curious about the sensors your device may have and what you might do with them, use this app to record data and generate graphs from your sensors, or check the type and hardware model of your sensors.
+
+How can you use your sensors?
+
+You can use your sensors to collect data for a project or investigation. You can set up "projects" by selecting the sensors you need and deciding on the rate at which they log data (e.g., samples per second). The Sense-it app will produce a log of the sensor data, visualize it in graphs, export it as a CSV file, so you can share it with others (e.g., through email). The data you collect could be further processed by using other software, such as spreadsheet programs.
+
+The app is linked to the nQuire-it site (www.nquire-it.org). You can link to nQuire-it missions, then add data on your Android device, or you can create your own mission for other people to join and contribute data.
+
+Depending on the hardware of your Android device, you may have access to the following sensors:
+
+* Accelerometers and gravity sensors
+* Gyroscope and compass
+* Magnetic field
+* Proximity
+* Light intensity
+* Ambient temperature, atmospheric pressure, and relative humidity
+
+The Sense-it app implements further software sensors including:
+
+* Sound intensity, using the device's microphone.
+* Location, using GPS.
+* Network signal strength.
+Show less
+Sense-it 1.2 Beta 23 Update
+
+
+
+
+The description of Physics Toolbox Play
+Useful for educational outreach in informal STEM learning and for classroom introductions to sensors, physics, and STEM careers, this app is comprised of a series of data-verified challenges. Each of the 7 challenges include one or more tasks that require the user to use sensors to accomplish a goal, followed by simple concept questions about physics, and an example of how the sensor is useful in real-life STEM careers. This app was developed thanks to an award of a mini-grant from the American Physical Society, as a sub-award from the National Science Foundation, grant NSF#1404843, and the help of an international leadership and advisory board. Learn more about the app and download a User's Guide from https://www.vieyrasoftware.net/physics-toolbox-play
+
+The 7 challenges include the following:
+
+- Sound Meter: Measure how much sound is in the environment around you.
+- G-Force Meter: Measure your motion in three dimensions.
+- Magnetometer: Find magnetic materials around you.
+- Proximeter: Use a light-based motion sensor to make a simple pendulum timer.
+- Compass: Find the directions of North, South, East, and West from where you are standing. (BETA)
+- Light Meter: Change the amount of light hitting the sensor.
+- Barometer: Measure how pressure changes in the room.
+
+
+
+
+The description of HamGPS
+Display your current Maidenhead locator with 10 digit precision. It also computes bearing and distance to a set of target locations using locator or latitude / longitude. Useful to align antennas in VHF / UHF / microwave DX activities. No network or fancy maps usage, so it can be used even in remote locations.
+
+
+
+
+The description of Ultimate EMF Detector
+A simple EMF detector! The detector is as ACCURATE as the sensor of your device.
+
+Both Pro and Free have:
+-->Magnetic Field B in microTesla,Gauss and milliGauss
+-->Auxiliary Field H in ampere per meter
+-->Recorder feature. Data can now be saved live on text file for later use on a computer. This requires the permission to read and write on external storage.
+-->Keep screen ON button
+-->XYZ, max-min and graphs.
+-->The classic EMF meter with the needle and LEDs
+
+The Pro has:
+-->No ads
+-->Recorder feature with timer. Data can now be saved live on text file for later use on a computer. This requires the permission to read and write on external storage.
+-->Keep screen ON button
+-->Sound notification for sudden EMF changes
+-->A few backgrounds and skins for the detector.
+
+
+Use this simple app to detect electromagnetic fields, metals, devices and amaze your friends with what your phone can do. Watch out because some people believe that sudden changes in the EM field might indicate the presence of paranormal entities :p.
+
+The new themes offer the user greater accuracy, graphs of the displayed readings and even the ability to calculate and show the auxiliary field H which is calculated from the magnetic field. The simple theme makes it easier for inexperienced users to measure and study magnetic fields.
+
+This app uses the magnetic sensor(compass) of your phone and displays the reading with a line of LEDs and a classic needle meter. You can switch between units of measurement (uTesla and Gauss) and change the range of measurement from the settings.
+
+You can use this app to measure and study magnetism and electromagnetism, the earths geomagnetic field and more. It can be used as a detector not only for EMF but also for magnets, metals, devices and even (as some people believe) entities and ghosts.
+
+NOTE that this app uses the magnetic sensor. If your phone doesn't have this sensor the app is NOT going to display any measurements. If you open the app and the readings are 0 it means that this app can't work on your phone. Also avoid getting your phone near powerful electrical devices like power transformers since you might damage it. Use at your own risk.
+
+
+
+
+
+The description of Chemistry & Physics simulations
+Presented by Kiwix, this suite of PhET interactive simulations explores a wide range of science and math concepts. Ideal for use in the classroom or at home, these award-winning resources engage students through an intuitive, game-like environment that promotes exploration and discovery.
+
+Important Note: We encourage you to support the mission of the PhET project and purchase the official PhET Android App, which is now available in English! Price is only $0.99 for lifetime access:
+
+https://play.google.com/store/apps/details?id=edu.colorado.phet.android_app&hl=en
+
+
+All proceeds help PhET to bring more STEM simulations to HTML5 and to this app.
+
+INTERACT, DISCOVER, LEARN!
+
+
+This app was developed by Kiwix using open educational resources developed by the PhET Interactive Simulations project at the University of Colorado Boulder and made available under the Creative Commons Attribution license (CC-BY). The PhET name and logo are registered trademarks of The Regents of the University of Colorado, a body corporate. Permission to use the PhET logo and name has been granted through a license agreement with the University of Colorado.
+
+Attribution:
+PhET Interactive Simulations
+University of Colorado Boulder
+https://phet.colorado.edu
+Show less
+
+
+
+
+The description of Sensors Data Collector
+Sensors Data Collector lets you collect data from various sensors from your device (including accelerometer, magnetometer, gyroscope etc), and lets you label/annotate this data in real time when collecting it. The collected data is saved to CSV files on your device's local storage, and can be easily used for training machine learning algorithms or for other artificial intelligence tasks.
+
+Sensors Data Collector acquire high precision data of all the sensors available on your Android phone or Tablet, and shows real-time graphs and charts of the data being collected. The app allows you (during the data collection process) to select which activity is being performed and allow you switch between activities (user defined labels). This option allows you to save high quality labeled data that can directly be used in your experiments, demonstrations, and to train machine learning and data mining algorithms.
+
+The app also allows you to visualize the saved data, by plotting in on a lines chart as well as a 2-simensional scatter plot after performing PCA (for dimensionality reduction).
+Android Sensor Types:
+Motion Sensors:
+- Accelerometers
+- Gravity
+- Gyroscopes
+- Rotational Vectors
+- Step Detectors/Counters
+
+Position Sensors:
+- Orientation
+- Magnetometers
+- Proximity
+
+Environmental Sensors:
+- Ambient Air Temperature
+- Device Temperature
+- Air Pressure
+- Illumination
+- Humidity
+
+Body Sensors:
+- Heart Rate
+- etc
+
+App features:
+- Select duration of the data collection process
+- The speed of the sensors data collection: very fast, fast, medium, slow
+- Selecting sensors among the available ones
+- Defining and adding labels corresponding to the activities you want to perform or recognize
+- Data (together with selected labels and timestamps) is continuously saved to csv files on your device's storage
+- Files corresponding to the collected datasets can be renamed, zipped, shared or deleted.
+- Switch between activities (selected label) during the data collection process
+- Visualize charts and graphs for the selected sensors in real-time
+- User friendly and intuitive user interface
+- Visualize the saved data as lines chart
+- Dimensionality reduction with PCA
+- Visualize the saved data as a scatter plot with colors corresponding to the activities (labels).
+Show less
+Sensors Data Collector 1.2 Update
+2019-02-15
+- Fixed a bug related to sharing the collected data.
+- Charts (plots) are refreshed periodically and show lower-resolution data in order to save the battery and to improve the performance of the app when several sensors are selected (but the data is still collected and written to the csv files in real-time with high-resolution).
+- Improved the visualization of the collected data.
+
+
+
+
+
+The description of NFC Tools
+
+NFC Tools is an app which allows you to read, write and program tasks on your NFC tags and other RFID compatible chips.
+
+ 
+
+All you need to do is get your device close to an NFC chip to read the data on it or execute tasks.
+
+ 
+
+Simple and intuitive, NFC Tools can record standard information on your tags which will be compatible with any NFC device.
+
+For instance, you can store a VCARD to share your contact details easily, open an URL, share a phone number or even a geolocation.
+
+ 
+
+But the NFC Tools app goes further and allows you to program tasks on your NFC tags in order to automate actions that were once boringly repetitive.
+
+Turn on the Bluetooth, set an alarm, control the volume, share a WiFi network configuration and so much more.
+
+ 
+
+For example, a simple motion with your phone in front of your NFC tag before going to sleep and the WiFi will turn off, the phone will switch to silence and your alarm will be set for the next morning, all by itself.
+
+ 
+
+Quite practical, isn't it?
+
+For the most tech-savvy of you, the geeks :) preset variables, conditions and root tasks are also available so you can create more complex actions.
+
+ 
+
+Make your life easier with more than 100 tasks available and infinite combinations.
+
+ 
+
+The "Read" tab allows you to see data such as:
+
+ 
+
+- the maker of the tag
+
+- the type of tag (ex : Mifare Ultralight, NTAG213)
+
+- the norm of the tag (ex : NFC Forum Type 2)
+
+- the available technology (ex: NFC A)
+
+- its serial number (ex : 04:85:c8:5a:40:2b:80)
+
+- the size of the tag and of the data on it
+
+- if you can write on the tag and if the tag can be locked as read only
+
+- all the data on the tag (NDEF format)
+
+ 
+
+The "Write" tab let you record standardised data such as:
+
+ 
+
+- a simple text
+
+- a link to a website, a video, a social profile or an app
+
+- an email
+
+- a contact
+
+- a phone number
+
+- a predefined text message
+
+- an address or geolocation
+
+- a WiFi or Bluetooth configuration
+
+- personalised data.
+
+ 
+
+The write function allows you to add as much data as you wish.
+
+This way you can record large quantities of information on your tag.
+
+ 
+
+Other features are available under the "Other" tab,
+
+such as copying, erasing and password protecting your NFC tag.
+
+ 
+
+The tasks allowing you to automate your phone are under the "Tasks" tab and are categorised.
+
+Here are a few examples of the available actions:
+
+ 
+
+- activate/deactivate/toggle WiFi, Bluetooth, car mode
+
+- configure a sound profile: silent/vibrate/normal
+
+- change brightness
+
+- set volumes levels (media, alarm, notification, ring volume)
+
+- set a timer
+
+- launch an app
+
+- open an URL/URI
+
+- send a text message or make a call
+
+- read aloud a text with text to speech
+
+- configure a WiFi network
+
+- and much much more!
+
+ 
+
+NFC Tools has been tested with the following NFC tags:
+
+- NTAG 203, 210, 212, 213, 215, 216
+
+- Topaz 512 (BCM512)
+
+- Ultralight, Ultralight C
+
+- MIFARE Classic 1k, 4k
+
+- FeliCa
+
+ 
+
+If you have any problem please feel free to contact me.
+
+ 
+
+Notes:
+
+- NFC compatible device needed
+
+- App permissions are limited to the use of the NFC
+
+- In order to execute tasks, you need the free app http://getapp.nfctasks.wakdev.com/
+
+Show less
+
+NFC Tools 7.2 Update
+
+2019-11-26
+
+We work hard to provide you with a quality app, but you may run into problems we couldn't anticipate. If so, don't panic, keep calm and feel free to contact us at apps [at] wakdev.com
+
+ 
+
+Release notes : http://release-notes.nfctools.wakdev.com
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of NFC Tasks
+
+NFC Tasks is an additional application for the execution of tasks recorded by the NFC Tools.
+
+ 
+
+To write and configure tasks on your NFC tags , you can download the application NFC Tools here : http://getapp.nfctools.wakdev.com/ or search on the Play Store : NFC Tools.
+
+ 
+
+The execution of tasks NFC requires a lot of rights than the simple use of NFC on your phone. This is why I decided to separate the function of NFC Tools application .
+
+ 
+
+NFC Tasks can be used independently with NFC tags that have been already configured by NFC Tools.
+
+ 
+
+The application can perform this following tasks :
+
+- Enable / Disable / Toggle wifi
+
+- Enable / Disable / Toggle wifi hotspot
+
+- Enable / Disable / Toggle bluetooth
+
+- Enable / Disable / Toggle mobile data
+
+- Enable / Disable / Toggle Airplane mode (root)
+
+- Configuring sound profile : Mute / Vibrate / Normal
+
+- Set brightness level and brightness mode
+
+- Set auto-rotate
+
+- Set volume for ringtones and notifications
+
+- Set volume for media
+
+- Set volume for alarms
+
+- Set alarm
+
+- Set timer (from Android 4.4)
+
+- Launch app
+
+- Launch tools
+
+- Launch Tasker tasks
+
+- TTS (Text to speech)
+
+- Configuring a wireless network
+
+- And more...
+
+ 
+
+Notes:
+
+- If you encounter any problem, contact me.
+
+Show less
+
+NFC Tasks 4.1 Update
+
+2019-08-12
+
+We work hard to provide you with a quality app, but you may run into problems we couldn't anticipate. If so, don't panic, keep calm and feel free to contact us at apps [at] wakdev.com
+
+ 
+
+Release notes : http://release-notes.nfctasks.wakdev.com
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of NFC Tag writer, RFID Tag reader - NFC tools app
+
+NFC Reader & NFC Tag Writer is a simple and efficient application letting you read contact-less tags on your smartphones and tablets. NFC Reader supports various tags like NDEF, RFID(Hi-band only), FeliCa, ISO 14443, Mifare Classic 1k, MIFARE DESFire, MIFARE Ultralight, NTAG, NXP chips, and other supported card types only.
+
+ 
+
+NFC Tag writer help to write messages or Records in NDEF format on an RFID or NFC Chipset card or device.
+
+ 
+
+Requirements:
+
+- Your device must support NFC hardware.
+
+- Enable NFC for the best results.
+
+ 
+
+Features of NFC Tag writer - NFC tag reader app:
+
+- Compatible with most famous tags.
+
+- Easy to use.
+
+- Very simple visual interface.
+
+- No internet connection required.
+
+- No cost. This app is absolutely free!
+
+The "Read" tab allows you to see data such as:
+
+ 
+
+- the maker of the tag
+
+- the available technology
+
+- its serial number
+
+- the size of the tag and of the data on it
+
+- all the data on the tag (NDEF format)
+
+ 
+
+The "Write" tab let you record standardized data such as:
+
+ 
+
+- a simple text
+
+- a link to a website, a video, a social profile or an app
+
+- an email
+
+- a contact
+
+- a phone number
+
+- personalized data.
+
+ 
+
+ 
+
+To use NFC Reader & NFC TAG Writer, you have just to hold a tag or a card against the back of your device to read it. NFC Reader lets you copy the content of the tag. All readings will be saved in the History section. Helps to read nfc chip, nfc sticker, nfc card, nfc reader writer, rfid nfc, nfc in mobile, pos reader, writing tools, amiibo, rfc, icカード, contactless reader, chip reader. NFC east, ec kartenlesegerät, programa nfce, считыватель, 行動支付, нфц, tag reader, ec kartenleser, druppel, bilhete unico, suica リーダー, bilhete único, tagów, contactless nfc, weitergeben, nfc business card, nfc kartenleser, rfid auslesen, wiegand, ziemlich, kartenlesegerät, nfc attendance, nfc time clock, speichen, weitere, amiibo, amiibos, ausweisapp2, метки, чипо, nfc wallet agent, mifare classic tool, keycard, нфс, мой проездной, уэшка, tagów, esempi, загран, 215, nft, web tool, work tool, dogtag, cat tag, emitter, tagging, website tools, cdvi, nfr, rfdi, fnc, ktp, rothenberger, lecteur de carte, lecteur de cartes, nfc tools pro, mfoc, simplifiez, tagów, ntag215, paxton, déboucher, loxam, deboucher, emit, intratone, yubikey, mcts, puces, autenticator, x-type, tagów, atid, 标签, nfcrfid, ntag, wiegand, magicband, 讀卡機, hce, nfc samsung, nfc nxp, nfx, nfz, saeta, paxton, replicator, zaeta, wiegand, digital tools, mugi, nfc east. Nfc app for android, Nfc car reader, nfc retag, bilhete unico app, kartenzahlung mit handy, NFC writer application, rfid auslesen, nfx, nfg, ncf reader, kartenleser, replicators, уэшка, nfc retag, nfc retag pro, nfz, nfc app, nfc tags, rfid auslesen, kartenlesegerät, tagów, rfid cloner, iphone kreditkartenleser, id アプリ.
+
+ 
+
+NFC Reader lets you read complete dump of NFC tags. NFC Reader can read contactless IC card use NFC hardware.
+
+Support ISO7816-4, FeliCa compliant cards if no read restriction.
+
+Show less
+
+NFC Tag writer, RFID Tag reader - NFC tools app 1.4.2 Update
+
+2019-07-25
+
+Adding in-app purchases.
+
+NFC Tag writer, RFID Tag reader - NFC tools app Tags
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of NFC TagInfo by NXP
+
+Did you ever wonder what value remains on your contactless public transport card?
+
+Are you interested to see which technology is driving the contactless cards in your hand?
+
+Do you want to look behind the scenes and explore which NFC-enabled items you and your friends have? Right here you can find the answer. Scan it using TagInfo.
+
+ 
+
+TagInfo is the second application provided to you by NXP Semiconductors that utilizes the Near Field Communication technology. NXP Semiconductors is the co-inventor of NFC and we do not only provide services to professionals but we like to provide utilities and apps for the masses as well. We are keen to help you explore NFC features of your devices and to make you enjoy the technology.
+
+ 
+
+Main features:
+
+- Value checker function for a selected range of public transport systems
+
+- Identify applications contained on cards and tags
+
+- Identify IC types and IC manufacturer
+
+- Extract and analyze NFC data sets (NDEF messages)
+
+- Read out and display the complete tag memory layout
+
+- Supports for all kind of NFC Forum record types (let us know if you find anything missing)
+
+- Explore details around contactless cards, tags and NFC-enabled item in general
+
+- Help mobile developers to detect configuration errors on contactless cards
+
+- Provide an easy and cost effective analysis of contactless card
+
+- Wide range of UI and application configurations
+
+- Creation and sharing of analysis reports
+
+ 
+
+The TagInfo application allows you to browse the content of public transport and payment cards that are based on a contactless technology compatible with NFC in your device.
+
+Some of these applications supported are:
+
+- CLIPPER, all-in-one transit card, San Francisco Bay Area, CA, USA
+
+- Kiev Metro, Kiev, Ukraine
+
+- ORCA, one regional card for all, Puget Sound region, WA, USA
+
+- OV-chipkaart, openbaar vervoer chipkaart (public transport chip card), The Netherlands
+
+- Oyster, electronic ticketing, Greater London area, United Kingdom (some cards don’t support public access)
+
+- Myki, Victoria, Australia
+
+- Moscow Metro, Moscow, Russia
+
+- Nol Silver and Gold Card, Dubai, UAE
+
+- Octopus, Hong Kong, China
+
+- Suica, Super Urban Intelligent Card, Japan
+
+- T:kort, Kolumbuskort, NSB-kort, Ruter Reisekortet, Norway
+
+…and more. We are continuously working to enable more card schemes when application owners and system provider provide information on how to access content on their contactless cards.
+
+ 
+
+In addition to its use as value checker TagInfo will identify many additional applications like
+
+- Electronic Identity Documents
+
+- ExpressPay, contactless payment card, American Express
+
+- PayPass, contactless payment card, MasterCard
+
+- payWave, contactless payment card, Visa
+
+- Zip, contactless payment card, Discover Network
+
+…and many more.
+
+ 
+
+Please note that based on the contained security mechanisms of such applications no access to the actual contained data is provided by our application.
+
+ 
+
+On top of the consumer focused functions it explores the full details of openly accessible information on contactless cards, tags and NFC-enabled items. It lists information like
+
+- IC manufacturer
+
+- IC type
+
+- Card OS (if present)
+
+- NFC data sets (NDEF messages)
+
+- IC memory size, IC configuration
+
+- Technologies and standards supported
+
+ 
+
+In addition to the above it supports the full content browsing and analysis of all four NFC Forum Tag Types, all MIFARE based systems, all NTAG based systems and all ICODE based systems. Its support is not limited to products of NXP Semiconductors but actually covers a very wide range of the most deployed products and systems using NFC-enabled and compatible contactless technologies all around the world.
+
+ 
+
+The full coverage and ease of use makes an NFC-enabled device to become a powerful handheld analyzer for hobbyists exploring the capabilities of NFC-enabled items and compatible devices as well as for professionals helping them to identify configuration problems and data formatting issues.
+
+Show less
+
+NFC TagInfo by NXP 4.24.5 Update
+
+2019-09-27
+
+Bug Fixes
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of Smart NFC
+
+Smart NFC - The fully loaded, easiest and best NFC app to automate tasks using NFC. Smart NFC has the simplest, easiest and coolest UI and UX that makes all NFC related tasks super easy; be it simple NFC detection, reading and writing NFC tags or automation of your daily tasks or be it advertising and promoting your product using NFC. Smart NFC does it all.
+
+ADVANTAGE SMART NFC - You will not need to install multiple apps. Install Smart NFC and it caters to all your NFC-related needs.
+
+Smart NFC - Tap into future
+
+You can also automate your everyday tasks using Smart NFC app and NFC tags.Opening a URL at a tap of phone, changing phone settings as soon as you keep the phone on desk (which had a tags ticked to it), open an app, create tasks, Wi-Fi network management and every other task you perform can be automated using the Smart NFC app.
+
+e.g.: If you have to change your phone setting (volume/Wi-Fi/location/mail etc) as soon as you reach office or work desk or sit in the car, you can easily automate it by using Smart NFC app. In 2-3 simple and easy steps Smart NFC app programs the NFC tag, which you can stick on the desk and it’s done. Now instead of changing the phone setting every day, now the phone does that for you automatically as soon as you keep you phone on the desk. And don’t worry, you can always change the function of (or re-program) the NFC tag whenever, you need it, and even tell a tag to never re-program itself.With NFC possibilities in automation, user engagement and many other domains, are unlimited. Let your imagination fly.
+
+Below are the pre-set key features that are in-built in the app:
+
+- Detect NFC on the smartphone
+
+- Read it, Write it, Program it, Scan or retag NFC tags.
+
+- Quickly detects if a phone has NFC or not. Does my phone have NFC?
+
+- Detects if NFC is enabled or disabled.
+
+- ‘Save’ feature to enables you to record actionable information upon tapping the NFC tag
+
+- Display/send information.
+
+- Link to a website, a video, a social profile or an app
+
+- Send email
+
+- Save a contact
+
+- Save phone number
+
+- Display predefined text message
+
+- Display an address or location
+
+- ‘Save’ to record data on NFC tags
+
+- ‘Adding utility’ to automate for your phone settings and make your life simpler
+
+- Activate, deactivate and toggle your Wi-Fi, Bluetooth, car mode
+
+- Automate sound profile: silent/vibrate/normal
+
+- Automate display settings
+
+- Change volume settings (media, alarm, notification, ring volume)
+
+- Launch an app from the phone
+
+- One tap access to camera, music player, flashlight
+
+ 
+
+What is NFC?
+
+ 
+
+NFC stands for ‘near field communication’. Most smartphones now have in-built NFC hardware i.e. are NFC enabled. NFC technology and its use is growing leaps and bounds every day as an NFC-enabled smartphone can do wonders with just a tap on NFC tags or any things that carry a tag like, smart posters or smart visiting cards or even for payments.
+
+NFC technology is now being widely used in the world over in offices, hospitals, colleges and real estate business to automate their business processes.With small (less than the size of door knob) NFC tags, businesses can engage, attract, advertise and retain their customers. For example, a newly launched e-commerce grocery company can provide an NFC tags to their select customers to directly place the order for a
+
+select an item and thus helping the company to increase sales and grow its business.
+
+"Smart NFC Pro" is a paid version( with more features and ad free) for this application. You can buy it from play store https://play.google.com/store/apps/details?id=com.tantranshanfc_pro.mainpart&hl=en
+
+Want our consultancy on how NFC can help you grow your business?
+
+Mail us at info@tantransha.com or visit www.tantransha.com
+
+ 
+
+ 
+
+The description of NFC Ring Control
+
+This app was designed to be used as a companion app for a genuine NFC RIng® purchased from https://store.nfcring.com.
+
+ 
+
+Read from and Write to your NFC Ring®. Create links to your favorite social network profile or read your current NFC Ring®.
+
+ 
+
+The NFC Ring® app has built in support for Facebook, Twitter, generic website links, Etherpad and Youtube.
+
+ 
+
+You can use the app to write any link you want, such as your own blog or a news page. Simply choose your link and hold your rings public inlay to the sweet spot on your phone or tablet.
+
+ 
+
+NFC Ring Control is Open source software. The Source code is available at https://github.com/mclear/NFC_Ring_Control
+
+ 
+
+Our Community maintains a Q&A at https://github.com/mclear/NFC_Ring_Control/wiki
+
+ 
+
+Please post any issues on our bugtracker: https://github.com/mclear/NFC_Ring_Control/issues/new
+
+ 
+
+Please post bug reports before posting any negative reviews, our community works hard to maintain this software, we appreciate the feedback and your assistance.
+
+Show less
+
+NFC Ring Control 0.4.0 Update
+
+2016-06-30
+
+0.4.0
+
+Fix broken Feedback and Write again and this time push hard to github to stop Cordova removing important files.
+
+0.3.7
+
+Remove Registration
+
+ 
+
+0.3.5
+
+Fix Feedback Button
+
+Include more translations
+
+Clear up language and make it easier to use
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of NFC ReTag FREE
+
+Re-use/recycle write protected NFC Tags such as hotel key-cards, access badges, price tags, lift cards, key fobs etc...
+
+You can use this app to associate multiple functions (e.g. Wlan OFF, Bluetooth ON, Mobile Data TOGGLE, start navigation,run Tasker task, start any installed app, use media buttons, call a phone number, add a timestamp, calendar entry, add Text-to-Speech and much more!) to a NFC (near field communication) tag via an app internal database. You can even add tag cycles and let your tag run different activities per scan. So ReTag is the perfect NFC automation tool for you ;-).
+
+ 
+
+(Works with ANY android supported tag = re-writable AND write protected!)
+
+ 
+
+With NFC ReTag you don´t have to write anything on the tag (-> uses the tag ID, great for small tagsizes and write-protected tags!) and NO data is send to the internet. Additional write options (for better dispatching, device independent tags etc.) are also available. Import of activity tags and beaming is also supportet.
+
+ 
+
+*!* NFC enabled device required / NO root required *!*
+
+ 
+
+Support forum: http://forum.xda-developers.com/showthread.php?t=1477138
+
+ 
+
+If you have any issues, please do not hesitate to write us an e-mail.
+
+ 
+
+You could combine any activities/ actions and add as many activities and cycles as you want per tag. (obviously except for writing activity tags -> depends on tagsize). For best performance and dispatching, write a special NFC ReTag tag (this is NOT an activity tag!).
+
+ 
+
+Available activities:
+
+ 
+
+Device Settings
+
+* Set Ringer (silent/ vibrate/ normal)
+
+* Set Ringer Volume
+
+* Set Music Volume
+
+* Set ALarm Volume
+
+* Set Brightness (auto/ value)
+
+* Set Auto Sync (on/off/toggle)
+
+* Set Auto Rotate (on/off/toggle)
+
+* Set Display timeout
+
+* Set Stay On while Loading (AC/USB/AC+USB/Never)
+
+ 
+
+Wireless & Networks
+
+* Set Wlan (on/off/toggle)
+
+* Set Bluetooth (on/off/toggle)
+
+* Set Airplane mode (on/off/toggle)
+
+* Connect Wifi Hotspot (on/off/toggle)
+
+* Connect Wifi SSID (SSID)
+
+* Set Mobile Data (on/off/toggle)
+
+ 
+
+Start & Launch
+
+* App/ Activity Launcher (any app on your device)
+
+* Music (Toogle Play, Stop, Next etc.)
+
+* Navigation (adress)
+
+* Website (URL)
+
+* Tasker task
+
+* Carmode (on/off/toggle)
+
+ 
+
+Phone/ Message
+
+* Dial(number)
+
+* Call (number)
+
+ 
+
+Calendar & Alarm
+
+* Set Alarm (07:32)
+
+* Set Alarmtimer (in 12 min)
+
+* Add Calendar entry
+
+* Make Timestamp
+
+ 
+
+Misc & Labs
+
+* Say something (TextoSpeech)
+
+* Start Secret code
+
+* Go to Homescreen
+
+* Show Pop-up (Text)
+
+* WAIT (milliseconds)
+
+* Add new SSID (great for sharing/ beaming WiFi SSID and password)
+
+* Say current time
+
+* Launch App Activities
+
+* Bluetooth discoverability
+
+* Set default ringtone, notification tone, alarm tone
+
+* GPS
+
+* Tasker Task advanced
+
+* ReTag Broadcast (for 3rd party apps)
+
+ 
+
+Addition Features:
+
+* Unique tag cycles (activities for scan 1, scan 2, scan 3 etc.)
+
+* Write/import NFC ReTag activity tags
+
+* Beam your activity cycles
+
+* Write special NFC ReTag tag (better dispatching)
+
+* Write Smarttags (Green, Blue etc.)
+
+* Backup/ import database
+
+* Disable NFC ReTag background dispatching
+
+* Save tag as template
+
+* Support for placeholders (e.g. [%UID], [%DAT])
+
+* BT and WiFi trigger
+
+* and many many more ...
+
+ 
+
+Full description and changelog: http://forum.xda-developers.com/showthread.php?t=1477138
+
+ 
+
+An ad supported free version (with limited number of tags) and an unlimited ad-free (PRO) version is available. Please check if this app works on your phone via the FREE version before downloading the PRO version.
+
+ 
+
+Supports any standard android NFC tags (NFC Forum Type 1, Type 2, Type 3, Type 4 etc.).
+
+ 
+
+Hints:
+
+Issues with TASKER: Install Tasker BEFORE NFC ReTAG, enable Misc / Allow External Access in Tasker UI, enable Tasker (on/off button), try the Tasker fallback option within NFC ReTag settings!
+
+ 
+
+Some security related NFC Tags (e.g. in passports) change their ID on every read attempt. This app will not work with such tags.
+
+Show less
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of NFC Check
+
+Does your smartphone support Near Field Communication ("NFC")? Is it enabled and ready to use?
+
+ 
+
+The NFC Check App is provided by the Tapkey team to quickly and comprehensibly tell you whether your smartphone has NFC functionality built in and activated.
+
+ 
+
+If you're interested in more technical details, we also tell you:
+
+* Is Android Beam active?
+
+* Does your device support hosted card emulation (HCE mode)?
+
+* Does your device support Android Application Records (AAR)?
+
+* Does your device support reading and writing Mifare Classic and Mifare Ultralight cards?
+
+* What are all these technologies about?
+
+ 
+
+And of course we tell you, whether your smartphone can be used with the revolutionary Tapkey solution.
+
+ 
+
+ 
+
+test NFC. enable NFC. detect NFC. check NFC. find NFC. use NFC. support NFC. android beam NFC.
+
+NFC test. NFC enabled. NFC detect. NFC check. NFC find. NFC use. NFC support. NFC android beam. Mifare.
+
+Show less
+
+NFC Check 1.6 Update
+
+2017-11-17
+
+* Information about support for Mifare Classic and Mifare Ultralight cards
+
+NFC Check Tags
+
+ 
+
+ 
+
+ 
+
+The description of NFC/RF Reader and Writer
+
+NFC/RF reader and writer app very easy to use.Just hold the NFC/RF card against the backed of your device to read the data on the NFC/RF tags.
+
+ 
+
+It supports various tags like NDEF, RFID, FeliCa, ISO 14443, Mifare Classic 1k, MIFARE DESFire, MIFARE Ultralight, NTAG, ...etc.\n
+
+ 
+
+No need to press any buttons, And it give the accurate results.
+
+ 
+
+NFC app can write and read all types of data including text, url, ISBN, product, contact, calendar, email, location, and Wi-Fi credentials from all types of the NFC, RF cards. And also you can share and search the result with in app.
+
+ 
+
+It maintains history so you can access your old records at any time.
+
+Show less
+
+NFC/RF Reader and Writer 1.8 Update
+
+2019-10-15
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of Cards
+
+Cards is a mobile wallet that keeps your cards in one app.
+
+ 
+
+Enjoy a walletless life: Cards is more useful, safer and faster than your wallet.
+
+ 
+
+With Cards you can pay, catch a bus, open doors, grab loyalty offers, identify to officials, get into shows etc.
+
+ 
+
+NEW! Cards Apps™ turns your digital cards into information hubs allowing you to check out messages, discounts, store locations and much more from your favorite cards!
+
+ 
+
+Cards Apps™ allows engaging card specific actions directly from your favorite cards: ordering a pizza from Pizza Card, flight tickets from Airline Card, tracking parcels from Courier Card etc.
+
+ 
+
+Cards Quick Card™ lets you instantly open any card without opening the app. You can open cards using our Quick Card™ unlock popup or using the cards shortcuts in the notification bar.
+
+ 
+
+NEW! Present Cards directly on your Smartwatch using Android Wear.
+
+ 
+
+You can keep:
+
+ 
+
+∙ Loyalty Cards
+
+∙ Payment Cards (Credit/Debit/ATM)
+
+∙ Transport Cards (Bus/Train/Metro)
+
+∙ Identity Cards (Driver's License/Student/ID)
+
+∙ Tickets (Shows/Movies)
+
+∙ Key Cards (Work/Car/Home Entrance)
+
+ 
+
+*** Cards acceptance depends on technology availability from the specific card brand, based on your country's regulation.
+
+*** Some functions may not properly work in some regions.
+
+ 
+
+What can I do with Cards?
+
+ 
+
+∙ Load any card to your phone
+
+∙ Send cards by tapping your phone on card readers (using NFC contactless technology)
+
+∙ Send cards by presenting Barcodes
+
+∙ Cards Apps™ - Perform tasks from within Cards without downloading bloated & unfamiliar apps
+
+∙ Quick Card™ - Instantly access any card
+
+∙ Read important messages from your card brands
+
+ 
+
+ 
+
+The description of NFC TagInfo
+
+Read detailed information from NFC tags and contactless smartcards!
+
+ 
+
+Have you ever wondered if you unknowingly carry RFID or NFC-enabled cards in your wallet? Use NFC TagInfo with your NFC-enabled Android device to find them and to check what information they carry.
+
+ 
+
+The NFC TagInfo application reads meta information and data from contactless RFID and NFC transponders. It is an ideal tool for anyone who is curious about the information stored on their Near Field Communication tags.
+
+ 
+
+The analysis tool is a must-have for NFC application developers on the Android platform. NFC TagInfo demonstrates the tag-reading capabilities of the Android API. Developers may use this tool to inspect and verify the information on their NFC and RFID tags.
+
+ 
+
+Main features:
+
+* Read & visualize basic meta information on the tag
+
+* Read & visualize NDEF message data
+
+* Read & visualize raw data (in hexadecimal, ASCII and UTF-8 text encoding)
+
+* Read & visualize access conditions
+
+* Read & visualize electronic passport (eMRTD)
+
+* Save tag information to files
+
+ 
+
+Supported NDEF records:
+
+* Text Record
+
+* URI Record
+
+* Smartposter Record
+
+* Generic Control Record
+
+* Signature Record
+
+* NFC Geo Record
+
+* Android Application Record
+
+* other records (basic support)
+
+ 
+
+Supported tags for reading raw data and access conditions:
+
+* NFC Forum Type 1
+
+* NFC Forum Type 2 / MIFARE Ultralight (EV1) / NTAG
+
+* NFC Forum Type 3 / FeliCa Lite
+
+* my-d(TM) NFC / my-d(TM) move
+
+* MIFARE Classic
+
+* MIFARE DESFire
+
+* MIFARE DESFire EV1
+
+* FeliCa
+
+* ISO/IEC 15693 (only limited support)
+
+* NFC Barcode
+
+ 
+
+Additional MIFARE Classic support:
+
+* View MIFARE application directory
+
+* View value blocks
+
+* Try authentication with typical authentication keys
+
+* You can setup your own authentication keys
+
+* In advanced mode: support for individual authentication keys per sector
+
+* In advanced mode: load & save keyset as XML-file
+
+ 
+
+Additional MIFARE DESFire support:
+
+* Display data from Clipper cards
+
+* Display data from NORTIC cards
+
+* Display data from ORCA cards
+
+ 
+
+ISO/IEC 14443 + ISO/IEC 7816-4 support:
+
+* Detect ePassport application
+
+ 
+
+ePassport support:
+
+* View basic identity card data
+
+* View photo (JPEG2000 support using PassportImageDecoder service)
+
+* View raw data files
+
+* Tested with Austrian/Belgian/Dutch/UK/US passports
+
+* Certain passports (e.g. US passport booklet) can only be read while they are opened
+
+* In advanced mode: load & save keyset as XML-file
+
+ 
+
+While we test our app prior to releases, there might still be some errors that cause unexpected behavior and functional interruptions. If you happen to find such misbehavior please help us by providing a so-called "crash report".
+
+ 
+
+ 
+
+Privacy Policy
+
+* NFC TagInfo does not store data retrieved from tags on persistent memory without explicit user consent.
+
+* NFC TagInfo does not transmit data retrieved from tags across the Internet.
+
+Show less
+
+NFC TagInfo 1.12a Update
+
+2015-06-19
+
+* Support for NXP NTAG 213/215/216 tags
+
+* Limited support for NXP NTAG I2C
+
+* Improved support for Thinfilm/Kovio NFC Barcode tags (if platform supports them)
+
+* Improved support and major bug-fixes for reading NXP MIFARE Ultralight EV1 and NTAG tags
+
+* Improved support for reading NXP MIFARE Ultralight C tags
+
+* Improved support and major bug-fixes for reading electronic passports (eMRTD)
+
+* Major bug-fixes and stability improvements
+
+ 
+
+ 
+
+ 
+
+The description of NFC write and read tags
+
+NFC write and read tags is an NFC app which will help you to make your life easier.
+
+ 
+
+want to make NFC tag with templates of email, SMS or URL search ?
+
+with this app you can even do more then that !!!
+
+ 
+
+you just take tag, which can be a paper, sticker, ring or anything else that contains NFC tag, and can set any task on it.
+
+ 
+
+go to Write tag option in the menu, and start to add records to your NFC tag, after you finish, just click on the Write button , put your NFC tag close to your smartphone, and WOW, now you have a new tag that contain tasks!!
+
+ 
+
+NFC write and read tags is an app which can read all tag types including text, url, VCARD, Bluetooth, WIFI, SMS , email and much more.
+
+after reading the tag you will have actions on each record, which you can execute.
+
+ 
+
+NFC write and read tags has an advanced options for people that knows what they are doing such as tag copy, copy tag to infinity and erase tag.
+
+ 
+
+our improved UI & UX will allow you to navigate easily in our app.
+
+ 
+
+we support in more then 5 languages at the moment except English, such as Hebrew, Arabic, French and much more.
+
+ 
+
+in any issue you have, please contact our support and we will be more then happy to help you.
+
+ 
+
+so who you are waiting for ?? Download and start using the best NFC app that exist.
+
+Show less
+
+NFC write and read tags 1.5.1 Update
+
+2019-11-26
+
+Thank you for using NFC write and read tags.
+
+ 
+
+New in this version (1.5.0+):
+
+- More languages added.
+
+- More color themes added.
+
+- Performance improved - the NFC read and write is much more faster now.
+
+- New features added.
+
+- Bug fixes.
+
+ 
+
+ 
+
+ 
+
+The description of Easy NFC File Transfer & NFC Checker
+
+Using out app you can easily share and send different files types like Music, Pictures, text, documents and more to another NFC (Near field communication) Capable device.
+
+ 
+
+After checking your device with our NFC checker Just chose the desired file from the file explorer interface, tap send button and tap the two devices together.
+
+Enjoy the simplicity and files transfer speed of the NFC technology !
+
+ 
+
+Note: Just make sure that booth devices support NFC technology and enabled.
+
+Easy NFC File Transfer & NFC Checker 1.6 Update
+
+2019-02-15
+
+Add NFC share
+
+Fix more bugs
+
+ 
+
+ 
+
+ 
+
+The description of NFC Tag Cloner
+
+Clone NFC tags! And do it in an effective way which lightens up your day! Supported clone modes:
+
+- read one, write one tag.
+
+- read one, write many tags.
+
+ 
+
+Emailing tags is also supported. The app optionally remembers your NFC tag data for later use.
+
+ 
+
+THIS APP DOES NOT HACK CARDS, IT ONLY COPIES CARDS WITHOUT KEY PROTECTION.. You must yourself supply keys to the app whenever the card is protected.
+
+ 
+
+Supported NFC tags:
+
+- ALL tags types using standard NDEF content
+
+- Mifare Ultralight
+
+- Mifare Classic
+
+ 
+
+Visit us at https://www.facebook.com/NFCTagCloner :-)
+
+ 
+
+For parsing tags sent as email attatchments see https://github.com/skjolber/nfc-tags.
+
+Show less
+
+NFC Tag Cloner 1.3.1 Update
+
+2015-09-07
+
+Improved Mifare Ultralight support
+
+ 
+
+ 
+
+The description of NFC Connect
+
+NFC Connect is an app which allows you to read, write and program tasks on your NFC tags and other RFID compatible chips.
+
+ 
+
+All you need to do is get your device close to an NFC chip to read the data on it or execute tasks.
+
+ 
+
+Simple and intuitive, NFC Connect can record standard information on your tags which will be compatible with any NFC device.
+
+For instance, you can store a VCARD to share your contact details easily, open an URL, share a phone number or even a geolocation.
+
+ 
+
+But the NFC Connect app goes further and allows you to program tasks on your NFC tags in order to automate actions that were once boringly repetitive.
+
+ 
+
+ 
+
+Make your life easier with more than 100 tasks available and infinite combinations.
+
+ 
+
+The "Read" tab allows you to see data such as:
+
+ 
+
+- the maker of the tag
+
+- the type of tag (ex : Mifare Ultralight, NTAG213)
+
+- the norm of the tag (ex : NFC Forum Type 2)
+
+- the available technology (ex: NFC A)
+
+- its serial number (ex : 04:85:c8:5a:40:2b:80)
+
+- the size of the tag and of the data on it
+
+- if you can write on the tag and if the tag can be locked as read only
+
+- all the data on the tag (NDEF format)
+
+ 
+
+The "Write" tab let you record standardised data such as:
+
+ 
+
+- a simple text
+
+- a link to a website, a video, a social profile or an app
+
+- an email
+
+- a contact
+
+- a phone number
+
+- a predefined text message
+
+- launch an app
+
+ 
+
+ 
+
+The write function allows you to add as much data as you wish.
+
+This way you can record large quantities of information on your tag.
+
+ 
+
+Other features are available under the "Other" tab,
+
+such as copying, erasing and password protecting your NFC tag.
+
+ 
+
+The tasks allowing you to automate your phone are under the "Tasks" tab and are categorised.
+
+Here are a few examples of the available actions:
+
+ 
+
+- launch an app
+
+- open an URL/URI
+
+- send a text message or make a call
+
+- read aloud a text with text to speech
+
+- and much much more!
+
+ 
+
+NFC Connect has been tested with the following NFC tags:
+
+- NTAG 203, 210, 212, 213, 215, 216
+
+- Topaz 512 (BCM512)
+
+- Ultralight, Ultralight C
+
+- MIFARE Classic 1k, 4k
+
+- FeliCa
+
+ 
+
+If you have any problem please feel free to contact us at ample.arch@gmail.com
+
+Show less
+
+ 
+
+ 
+
+The description of Barcode/NFC/OCR Scanner Keyboard
+
+Use this innovative soft-keyboard to scan barcodes, QR codes, text (OCR) and NFC tags into any app. Invoke the integrated scanners with a single tap, the scanned data appears immediately in the target app like manually typed on the keyboard. This works perfectly with almost any target app without modifications.
+
+ 
+
+TIME SAVING
+
+This keyboard is a convenient time saver! It reduces typing efforts and avoids typing errors. Tedious copy/paste is not required anymore; barcodes and QR codes, texts and NFC tags are scanned without app switching. The keyboard layout resembles the layout of the Android standard keyboard - you will immediately be familiar with it.
+
+ 
+
+VERSATILE
+
+This Scanner Keyboard is very flexible, ready for volume licensing, optimized for bulk deployment and can be configured to meet virtually all requirements. It meets demands of commercial, industrial, logistics and supply chain applications.
+
+ 
+
+BARCODE SCANNING
+
+Choose between two integrated camera barcode scanners. The traditional barcode scanner is ideal for older phone models, the recently introduced advanced barcode scanner provides selective barcode scanning - a very valuable feature if multiple barcodes are visible in the scan view.
+
+ 
+
+TEXT RECOGNITION (OCR)
+
+The integrated text scanner (OCR), converts camera images to text within seconds. Latin-based text in pictures of arbitrary documents is detected automatically and inserted into the target app.
+
+ 
+
+FEATURES
+
+◾ Keyboard with modern layout, voice recognition, spelling suggestions and multi-language support
+
+◾ Two camera barcode scanner engines to choose from
+
+◾ Selective barcode scanning (tap on barcode of interest)
+
+◾ OCR text scanner converts images to Latin-based text
+
+◾ Integrated NFC tag reader
+
+◾ Quick front/back camera switching and flashlight support
+
+◾ Autofocus support
+
+◾ Works with almost any target app
+
+◾ Swipe to change keyboard layout
+
+◾ Configurable auto-scan (invoke scanner automatically)
+
+◾ Configurable scanner keys
+
+◾ One-by-one / batch mode scanning
+
+◾ Macro support / Quicktext
+
+◾ Multiple licensing options
+
+◾ Ready for bulk deployment
+
+◾ And much more...
+
+ 
+
+COMPATIBILITY / LIMITATIONS
+
+Scanner Keyboard is available for Android 4.0 (Ice Cream Sandwich) and higher. The advanced barcode scanner and the OCR text scanner are supported from Android 5.0 (Lollipop) onward and requires installed Google Play services. The keyboard supports common input languages and keyboard layouts, the keyboard layout automatically matches the system settings of your Android device.
+
+ 
+
+BULK/ENTERPRISE LICENSING, OEM VERSIONS
+
+For users with volume license requirements, TEC-IT offers a bulk-license version of the app (no Google account required). Customized or OEM versions (e.g. with seamless integration of hardware scanners) are available on request. Please contact sales@tec-it.com.
+
+ 
+
+FREE DEMO
+
+The free trial displays a demo hint in irregular intervals. Please upgrade (in-app purchase) to the unlimited version to remove this limitation.
+
+ 
+
+SUPPORT
+
+In case of problems, questions or requests please contact support@tec-it.com, TECITSupport (Skype) or visit https://www.tec-it.com/bsk.
+
+ 
+
+Terms of use and privacy: https://www.tec-it.com/download/PDF/TEC-IT_AGB_EN.pdf
+
+Show less
+
+ 
+
+ 
+
+The description of NFC Smart Card Info
+
+This app shows Secure Element applications (a.k.a Java Card applet or Smart Card application) are installed on a contact-less Smart Card (ISO/IEC 14443-4) or EMV credit card using Android NFC phones.
+
+ 
+
+- Show tag ID, tag tech, 14443 card type (A/B), historical bytes
+
+- Show name, AID and brief description of detected applets
+
+- Log level preference: show various level of log detail including R-APDU via
+
+- Show HCE support status + P2P protocol type in About
+
+- Material Design UI
+
+ 
+
+Notes:
+
+- Only work with NFC phones.
+
+- This app won't detect custom applet. It only works with known applications (with known AID).
+
+- This app is intended for information & development purpose only as I am a NFC developer.
+
+- This app does not save or transmit any of the read data. We don't collect data of any kind.
+
+ 
+
+Supports 170+ card types such as:
+
+- Payment: VISA, Mastercard, Amex, Discover, Google wallet
+
+- ICAO Machine Readable Travel Documents (MRTD)
+
+- Card manager & Security Domain: VISA, Gemplus, JCOP, GP
+
+- CAC (Common Access Card), PIV (Personal Identity Verification)
+
+- UnionPay (China), PagoBANCOMAT (Italy), Girocard (Germany), Bankaxept (Norwegian), BAROC (Taiwan), Dankort (Danish), RuPay (India), BelPIC, Banrisul (Brazil), JCB (Japan) ...
+
+Show less
+
+NFC Smart Card Info 2.1.2.15.170 Update
+
+2015-10-10
+
+Add HCE Info & minor improvements
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of NFC Tools Plugin : Reuse Tag
+
+This plugin for NFC Tools Pro Edition allows you to re-use / re-tag your NFC tags which are read-only or not supported by your device (eg: some NFC tags like Mifare Classic 1k does not work on Nexus 4 or Galaxy S4).
+
+ 
+
+Using the unique identifier of the NFC tag, you do not need to write data.
+
+Associate your NFC tags to your tasks profiles directly in NFC Pro Tools Edition.
+
+ 
+
+Notes :
+
+- Requires an NFC-enabled device.
+
+- Application's rights is limited to the use of NFC.
+
+- This plugin require NFC Tools Pro Edition
+
+- Tasks require a additional free application called NFC Tasks
+
+Show less
+
+ 
+
+ 
+
+ 
+
+The description of ReadID - NFC Passport Reader
+
+The ReadID demo app (previously known as NFC Passport Reader) reads and verifies the RFID chip embedded in electronic passports, national identity cards and other ICAO compliant identity documents (ePassport, or, in ICAO 9309 terminology, Machine Readable Travel Documents: MRTD). The app optically scans (OCR) the Machine Readable Zone (MRZ) to gain access to the embedded chip. It then reads the embedded chip using NFC and displays the biographical and biometric information of the document holder, as well as document information, after which security checks, such as Active Authentication, Document Signature Validation, and Country Signature Validation, are performed and detailed results are shown.
+
+ 
+
+The app also supports electronic driving licenses (eDL, ISO 18013, currently limited to Dutch driving licenses).
+
+ 
+
+FAQ AND MORE INFORMATION
+
+Please see our website for more information on how to use the ReadID demo app including FAQs (https://www.readid.com/demo).
+
+ 
+
+We provide the ReadID demo app free of charge to demonstrate and improve the underlying ReadID software. If you see opportunities to use ReadID, for example as part of the traditional border control inspection system use case or as part of innovative online use cases such as customer onboarding, then please contact us at readid@innovalor.nl.
+
+ 
+
+DISCLAIMER
+
+This version of the app is provided as-is and without warranty. The authors make no claims about fitness for any particular purpose.
+
+ 
+
+PRIVACY
+
+We value your privacy and do not collect your personal information. For details, see our privacy statement https://www.readid.com/demo/demo-app-privacy.
+
+ 
+
+LICENSES FOR OPEN SOURCE LIBRARIES USED
+
+See "About" in the app.
+
+ 
+
+ 
+
+ 
+
+The description of Advanced NFC System
+
+Advanced NFC System is the only application I found that keeps configured settings only when the NFC tag is connected to the phone, to restore the previous status is sufficient to disconnect the NFC tag .
+
+ 
+
+Advanced NFC System allows you to :
+
+- activate the bluetooth
+
+- activate the wifi
+
+- activate the data connection(pre lollipop)
+
+- keep the screen on
+
+- launch an application
+
+- set to silent mode
+
+- set to vibration mode
+
+- set to normal mode and set the ringer volume
+
+- delete the contents of a NFC tag
+
+- read the contents of a NFC tag
+
+- verify the presence of the NFC device within the phone
+
+ 
+
+Possible uses:
+
+By placing NFC tags on the car navigator holder you can start your preferred navigator app simply by placing the phone in the holder.
+
+Turn bluetooth on while being in the car without risking to forget it activated, it will be automatically disabled when you disconnect the tag.
+
+Activate the silent mode at night, the disconnection of the tag will be resetted to the previous settings.
+
+Activate the vibration mode in the office without forgetting to restore the ringer-tone status when you step away from your desk.
+
+The application can be used with the tags placed in the meeting room to mute the ringer-tone for all participants.
+
+ 
+
+Disabling functionality takes about a minute from the moment the tag has been disconnected.
+
+If you make a call during this minute deactivation will be halted and resumes when the call ends.
+
+ 
+
+Give us a hint about your favourite NFC app use in the comments.
+
+ 
+
+For any inquiries , suggestions or recommendations do not hesitate to contact me at primedevmar@gmail.com
+
+ 
+
+In the Play Store is available the "Advanced NFC System Pro" version, free from advertising and usable in offline mode.
+
+Show less
+
+ 
+
+ 
+
+The description of External NFC
+
+This app allows to use external NFC reader with usual NFC applications.
+
+ 
+
+This project is actually in development stage.
+
+ 
+
+Now supports:
+
+MFRC522 via USB-UART adapters;
+
+ACR122.
+
+ 
+
+Common Mifare cards:
+
+Ultralight;
+
+Classic;
+
+Plus
+
+ 
+
+Additional:
+
+Uses special activation for clone cards;
+
+Polls broken cards with invalid BCC in 0 block;
+
+Show less
+
+External NFC 1.04b Update
+
+2019-01-17
+
+fixed crashes on Android 8.0+
+
+updated usb-serial library
+
+optimized MFRC522/PN532 communication protocol
+
+ 
+
+ 
+
+ 
+
+The description of G-tos
+
+We have added lots of new features to the G-tos app.
+
+Now the app can write data on writable NFC tags.
+
+ 
+
+Summary
+
+ 
+
+The Gtos / G-tos app can scan/read NFC tags, Qr codes, and Barcodes. The app can also write NFC data on to NFC tags.
+
+ 
+
+We designed the app to provide you with a much better presentation of scanned data and also to give you the right options related to the data you scanned.
+
+ 
+
+We are constantly working on perfecting the app, so please if you find any issues let us know.
+
+ 
+
+ 
+
+Full details
+
+ 
+
+Scanning
+
+The Gtos app scans NFC data, Qr codes, and barcodes.
+
+ 
+
+NFC data types that G-tos app can read includes:
+
+★ URL tag data
+
+★ WiFi tag data
+
+★ Bluetooth tag data
+
+★ Profile tag data
+
+★ Address tag data
+
+★ Geolocation tag data
+
+★ App launcher tag data
+
+★ Email tag data
+
+★ SMS tag data
+
+★ Text tag data
+
+★ Phone tag data
+
+★ Calendar tag data
+
+ 
+
+ 
+
+Qr code types that G-tos app can read includes:
+
+★ URL/website link Qr code
+
+★ WiFi Qr code
+
+★ Profile/Contact Qr code
+
+★ Geolocation Qr code
+
+★ App launcher Qr code
+
+★ Email Qr code
+
+★ SMS Qr code
+
+★ Text Qr code
+
+★ Phone Qr code
+
+★ Calendar Qr code
+
+ 
+
+G-tos scans the following barcodes;
+
+- Product barcode
+
+- Book barcodes - ISBN
+
+- Data matrix
+
+ 
+
+When the Gtos app scans a data source NFC tag or barcode, it gives you the user a well-presented result display with options related to the data type making the data easy to use.
+
+The options include:
+
+☆ Call
+
+☆ Open
+
+☆ Share
+
+☆ Search
+
+☆ Save
+
+☆ Copy
+
+☆ Connect
+
+ 
+
+The G-tos app saves your scanned Qr code, barcode, and NFC data by default. You can disable this feature or delete saved data from settings.
+
+ 
+
+Formatting
+
+The Gtos app can format NFC tags into NDEF format which can be read by both Android and iOS NFC apps. Formatting an NFC tag will delete all data on that tag unless that NFC tag's data has been protected. To format an NFC tag, touch format from mod tag then the tap the targeted NFC tag with your smartphone.
+
+ 
+
+Writing
+
+Notes:
+
+🔸 You can write tags that can be read with our iOS Gtos app and other NFC apps.
+
+🔸 Some phone cases and phone car mount metallic plates can interfere with NFC.
+
+🔸 NFC tag usually does not have a lot of space, keep data small so that it can fit in your NFC tag.
+
+ 
+
+ 
+
+Simple data tag
+
+The G-tos app you can write simple NFC data tags. These data tags are NFC tag that contains that are not automation task. They are of the following types:
+
+◾ URL/website link
+
+◾ WiFi
+
+◾ Bluetooth
+
+◾ Profile
+
+◾ Address
+
+◾ Geolocation
+
+◾ App launcher
+
+◾ Email
+
+◾ SMS
+
+◾ Text
+
+◾ Phone
+
+◾ Calendar
+
+ 
+
+The NFC tag data that are written by the Gtos app is cross-app and cross-platform. They can be read with the Gtos app, other Android NFC reader apps, the G-tos iOS app, and other iOS NFC apps.
+
+ 
+
+ 
+
+NFC tasks
+
+You can write single and multiple tasks that will be performed automatically by the phone on contact with the written NFC tag when NFC is turned on. They include:
+
+◽ Bluetooth
+
+◽ WiFi
+
+◽ Location
+
+◽ Airplane Mode
+
+◽ Brightness
+
+◽ Ringer
+
+◽ Volume
+
+◽ phone flash Lights
+
+ 
+
+You can read core tag data on an NFC tag including protected once. Core tag data include Tag Type, SAK, ATQA, Data format, Technologies Available, NFC tag’s Serial Number, Protected by password, Signature, Memory Information, Size, Writable, Can be made read-only, and Records.
+
+ 
+
+The Gtos app has a copy tag feature. With this feature, you can copy data from one NFC tag to another NFC tag as long as it is not protected. And, it is really easy. Make sure the target NFC tag has enough space before copying data.
+
+ 
+
+This app comes with how-tos to help you in figuring out how to use it.
+
+ 
+
+Always test your newly written tag by scanning/reading it with the G-tos app.
+
+ 
+
+This version of the Gtos app does not generate Qr codes or barcodes. If you will like to generate free Qr codes you can use the Qr code generator on the Gfects website.
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of NFC app for Android - RFID NFC Tools tag
+
+NFC Reader is a simple and efficient tool for letting you read contact-less tags on your smartphones and tablets. NFC Reader supports various tags like NDEF, RFID, FeliCa, ISO 14443, Mifare Classic 1k, MIFARE DESFire, MIFARE Ultralight, NTAG, ...
+
+ 
+
+To use NFC Reader, you have just to hold a tag or a card against the back of your device to read it. NFC Reader lets you to copy the content of the tag or to open the URI. You can also manage the tags and cards previously scanned in the History section.
+
+ 
+
+NFC Reader lets you read complete dump of NFC tags. Older NFC data can be accessed in the History menu
+
+ 
+
+All you need to do is get your device close to an NFC chip to read the data on it or execute tasks. NFC Reader is a simple and efficient tool for letting you read contact-less tags on your smartphones and tablets. NFC Reader supports various tags like NDEF, RFID, FeliCa, ISO 14443, Mifare Classic 1k, MIFARE DESFire, MIFARE Ultralight, NTAG, ...
+
+ 
+
+To use NFC Reader, you have just to hold a tag or a card against the back of your device to read it. NFC Reader lets you to copy the content of the tag or to open the URI. You can also manage the tags and cards previously scanned in the History section. Helps to read nfc chip, nfc sticker, nfc card, nfc reader writer, rfid nfc, nfc in mobile, pos reader, writing tools, amiibo, rfc, icカード, contactless reader, chip reader.
+
+ 
+
+NFC Reader lets you read complete dump of NFC tags. NFC Reader can read contactless IC card use NFC hardware.
+
+Support ISO7816-4, FeliCa compliant cards if no read restriction.
+
+Show less
+
+ 
+
+ 
+
+The description of ST25
+
+ST25 NFC Tap App is an Android application dedicated to handle the ST NFC tag ST25TA (CLOUD ST25TA02K-P), the dynamic NFC tag M24SR (M24SR Nucleo shield and M24SR Discovery boards), the Dual Interface EEPROMs of the M24LRxx family, ST25TV series NFC tags and the ST25DV series Dynamic NFC Tags.
+
+ 
+
+It allows the user to store or read NDEF messages such as NDEF URL, SMS, Email, vCard (including picture), AAR and proprietary messages. NDEF Multi-records is also available.
+
+ 
+
+Tag information retrieval [CC file, (*)System File]
+
+ 
+
+NDEF, ISO14443 Type A (ISO-DEP)
+
+NDEF, ISO/IEC 15693
+
+ 
+
+Tools functionalities (Counters,GPO control, registers, …, according to Tag found)
+
+Password management [Password Authentication, Tag Read only/Write only …] (*).
+
+Energy Harvesting(*)
+
+Specific demonstration features such as FW update, image transfers are available and work with specific firmware and Discovery kits.
+
+ 
+
+ 
+
+The description of NFC Manager
+
+Application to read, write, erase and lock your NFC tags
+
+ 
+
+Features
+
+ 
+
+∙ Determining the presence of NFC on the device
+
+∙ Open NFC settings
+
+∙ Read , Write, Erase and Lock operations
+
+∙ Save data to SD card
+
+∙ Sharing data
+
+∙ NFC information
+
+∙ Support Android P
+
+ 
+
+ 
+
+Supported tags (short list)
+
+ 
+
+IsoDep, NfcA, NfcB, NfcF, NfcV, Ndef, NdefFormatable, MifareClassic, MifareUltralight
+
+Show less
+
+NFC Manager 1.9.4 Update
+
+2019-12-09
+
+Updated packages
+
+Support Android 10 ver.9
+
+Optimization
+
+ 
+
+ 
+
+ 
+
+The description of i-NFC writer
+
+You can able to write any information on the NFC tag using this writer. This is very simple app you can write a website link/ timestamp or other information in NFC tag in three steps.
+
+ 
+
+You can use this app to write a info in each NFC tag and can be used in treasure hunt or any other kind of similar event.
+
+ 
+
+For example you can write this info in NFC visiting cards, NFC badges, NFC advertisement board and in any kind of NFC tag.
+
+ 
+
+-If you’d like to produce a small series of NFC-enabled
+
+business cards,
+
+ 
+
+-This app helps makes you to share information in quick way in simple steps. or
+
+create your own scavenger hunt with NFC stickers, you can write tags with
+
+your Android.
+
+ 
+
+What contents can be written in NFC ?
+
+ 
+
+1) Website link/Address
+
+2) Timestamp
+
+3) Name or other unique information what you wanna write on a tag so that you can able to identify it.
+
+Show less
+
+ 
+
+ 
+
+ 
+
+The description of DG NFC Automation
+
+Automate your Time Recording punches with NFC tags, with support for check-in, check-out and task switching.
+
+ 
+
+Setup is easy:
+
+∙ Get a bunch of writable NFC tags.
+
+∙ Use this app to write the "punch" commands to the NFC tags.
+
+∙ Done. Each scan of such a tag performs the according action.
+
+ 
+
+Notes:
+
+∙ NFC tags needs to be NDEF-compatible, e.g. NTAG203
+
+∙ Task and client names are stored on the NFC Tag. If the Time Recording app cannot find a matching task later-on when scanning a tag it will create a new task with the given names (which comes in handy if you want to have other Time Recording app users or app installations use the same task names)
+
+Show less
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of RFID NFC Tool
+
+This tool utilizes the NFC feature of the Android device to allow users to read from and WRITE to RFID and NFC tags.
+
+The currently supported tags include:
+
+* Mifare Classic 1K & 4K (S50 & S70)
+
+* Mifare Ultralight / Ultralight C / Ultralight EV1 / NTAG series
+
+* some ISO 15693 tags (i.e. NXP ICODE SLI series)
+
+* NFC Type 1 tag
+
+* ISO 14443-4 compliant tags that accept ISO7816-4 format commands
+
+ 
+
+Note: For Mifare Classic tags, you need to know the Key(s) to access the data in each respective sector, otherwise the default key would be assumed. For more information, please look up NXP's Mifare Classic in the internet.
+
+Show less
+
+RFID NFC Tool 0.5.4 Update
+
+2015-08-22
+
+* Solve crash issue when tag has no key, e.g. Mifare Ultralight
+
+* Minor fixes for better user experience
+
+* Version 0.5.4
+
+ 
+
+ 
+
+ 
+
+The description of NFC Writer by Trigger
+
+Trigger Writer allows you to simply and quickly program multiple NFC tags.
+
+ 
+
+You can program:
+
+ 
+
+- web addresses
+
+- foursquare venues
+
+- address book contacts
+
+- phone numbers
+
+- emails
+
+- text
+
+ 
+
+We will add different data types based on feedback.
+
+ 
+
+This application supports NFC Forum Type 1, Type 2, Type 3 and Type 4 Tags as well as third party NFC Enabled tags like the MIFARE Classic, DESFire, Ultralight and Ultralight C.
+
+ 
+
+The app is configured to allow you to write multiple tags without leaving the write screen.
+
+ 
+
+Programmed tags will work with *any* device that has NFC. Everyone who scans the tag will see the same content.
+
+ 
+
+You can buy tags from within the app.
+
+ 
+
+The last 25 recently written tags are displayed on the homepage for easy access.
+
+Show less
+
+NFC Writer by Trigger 2.0.2 Update
+
+2017-02-21
+
+Improved UX by fixing crashes and deprecated forursquare tag writing functionality.
+
+ 
+
+We appreciate your feedback, so please send both your positive and negative feedback to help+writer@coleridgeapps.com.
+
+ 
+
+ 
+
+The description of NFC Transfer
+
+Application uses android beam to transfer files between android devices.
+
+ 
+
+Files can be of any format, you can use any of your favorite file browser applications to choose files.
+
+ 
+
+Application is having a very basic UI, enhancements are on its way.
+
+ 
+
+Application do not restrict you to have same application installed in sharing devices. All you need is a Android Beam Supporting device.
+
+ 
+
+Share your files directly from any application over NFC. (* Support from application is mandatory )
+
+Show less
+
+ 
+
+The description of Free NFC Writer
+
+With the RIXA NFC writer you can write information to NFC stickers. This NFC writer is simple to use and no training is needed as it works intuitively.
+
+ 
+
+NFC Writer works with most NFC tags on the market. If you do not have tags, go to the app section "need tags?" and we will help you.
+
+ 
+
+RIXA NFC Writer can be used as stand-alone app but information can also be shared from other apps into the RIXA NFC Writer. Thus, information can be written in 2 ways:
+
+1) You enter the URI directly
+
+2) You share the URL from another app into the RIXA NFC Writer app
+
+ 
+
+NFC Tags can be read without any app.
+
+ 
+
+This app is both for professional and private use cases.
+
+ 
+
+Enjoy writing NFC stickers!
+
+Show less
+
+ 
+
+ 
+
+The description of File to PDF Converter(Ai, PSD, EPS, PNG, BMP, Etc)
+
+File To PDF Converter(Adobe Illustrator(Ai), Adobe Photoshop(PSD), EPS, PNG, BMP, JPEG/JPG, Camera raw file formats like ari, 3fr, cr2, crw, kdc, sr2, dng, erf, orf, mrw & many more)
+
+ 
+
+File to PDF Converter is a file converter application that allows you to convert files extensions like Adobe Illustrator(Ai), Adobe Photoshop(PSD) extensions, Adobe Encapsulated Postscript(EPS), PNG, JPEG/JPG, BMP, Camera raw file formats to Portable Document Format(PDF).
+
+ 
+
+Application can convert many file extension like Adobe Illustrator(Ai), Adobe Photoshop(PSD) extensions, PNG(Portable Network Graphics), JPEG/JPG, BMP, Camera raw file formats(Like nef, nrw, dng, srf) to Portable Document Format(PDF) without uploading them to any server. Internet connection is not required to convert most of the file formats supported by application.
+
+ 
+
+Choose the file extension Like Adobe Illustrator(Ai), Adobe Photoshop(PSD), EPS, PNG, BMP, JPEG, Camera raw formats(Like Sony, Nikon, Samsung, Kodak, Canon etc) then application will list all the files available in your mobile device that matches the extension selected by user. User can tap on files listed by application to convert it to Portable Document Format(PDF).
+
+ 
+
+Any one can easily convert his/her document file to PDF format.
+
+ 
+
+It is very easy to install and user friendly.
+
+ 
+
+User can open Converted PDF file directly from Application.
+
+ 
+
+User can also share converted PDF document through email, save to google drive & through other ways.
+
+ 
+
+File to PDF Converter can convert following files formats without uploading your files to server i.e your files not be shared with us or will not be uploaded by application in order to convert it.
+
+ 
+
+Adobe Illustrator(Ai) to PDF
+
+Adobe Photoshop(PSD) to PDF
+
+BMP(Bitmap) to PDF.
+
+PNG(Portable Network Graphics) to PDF
+
+JPEG/JPG to PDF
+
+ 
+
+Camera Raws File Formats:
+
+ 
+
+ARRIRAW(.ari)
+
+Camera Raw(.raw)
+
+Casio Raw(.bay)
+
+Canon(.cr2)
+
+Canon(.crw)
+
+Digital Negative Image(.dng)
+
+Epson Raw(.erf)
+
+Fuji Raw(.raf)
+
+Hasselblad Raw(.3fr)
+
+Kodak Raw(.dcr)
+
+Kodak Raw(.kdc)
+
+Leica Raw(.rwl)
+
+Leaf Raw(.mos),
+
+Mamiya Raw(.mrw)
+
+Nikon(.nef)
+
+Nikon(.nrw)
+
+Olympus Raw(.orf)
+
+Panasonic Raw(.rw2)
+
+Pentax Raw(pef)
+
+Sony(.arw)
+
+Sony(.sr2)
+
+Sony(.srf)
+
+Samsung Raw(.srw)
+
+SIGMA Raw(.x3f)
+
+ 
+
+Source Code Files:
+
+ 
+
+Supported languages: Ada (.ada), AutoHotkey (.ahk), ActionScript (.as), BASIC (.bas), C/C++ (.c, .cpp, .h), Coffee (.coffee), C# (.cs), CSS (.css), Dart (.dart), Gradle (.gradle), Groovy (.groovy), Haml (.haml), HTACCESS (.htaccess), Windows INI (.ini), Java (.java), JavaScript (.js), JSON (.json), Kotlin (.kt), Less (.less), Lisp (.lisp) Lua (.lua), Objective-C (.m), Makefile (.mk), Markdown (.md), Nim (.nim), NSIS (.nsi), Pascal (.pas), PHP (.php), Perl (.pl), Java Properties (.properties), PowerShell (.ps1), Python (.py), R Script (.r), Ruby (.rb), Sass (.sass, .scss), Bash (.sh), SQL (.sql), Swift (.swift), Tcl (.tcl), Visual Basic (.vb), XML (.xml), XQuery (.xq, .xquery), YAML (.yaml, .yml)
+
+ 
+
+Languages supported by application:
+
+English
+
+Korean
+
+Show less
+
+File to PDF Converter(Ai, PSD, EPS, PNG, BMP, Etc) 2.9 Update
+
+2019-11-22
+
+Added recent files section : Share, view recently converted & viewed PDF files.
+
+Multiple files sharing support : Share multiple files through application.
+
+Zip Functionality : Zip files before sharing. Added support for converting HTML file.The description of Envision AI
+
+🏆 2019 Google Play Awards WINNER! - Best Accessibility Experience
+
+ 
+
+See what you can’t with Envision, the fastest and most reliable app that describes the visual world around you with the help of artificial intelligence and OCR. Envision is carefully designed with the help of the visually impaired community, to bring the best assistive app to the blind and low vision. Read text in over 60 languages, use the magnifier, scan barcodes or your environment and so much more.
+
+ 
+
+With full TalkBack support, Envision helps you:
+
+ 
+
+∙ Read Instantly - Read text instantly in over 60 different languages. Available fully offline for latin-based languages like English.
+
+ 
+
+∙ Read documents - Scan documents with one or multiple pages at once, with the help of Envision in framing the document.
+
+ 
+
+∙ Read Handwriting - Read handwritten postcards, letters, lists or any neat handwriting.
+
+ 
+
+∙ Describe Scenes - Describes any scene around you with accuracy.
+
+ 
+
+∙ Scan Barcodes - Scan barcodes easily and get more information about products.
+
+ 
+
+∙ Detect Colors - Find out the colour of clothes and objects around you easily.
+
+ 
+
+∙ Teach Envision - Train Envision to recognise your friends and family when describing scenes.
+
+ 
+
+∙ Envision everything - Share with Envision any file you want to access! Simply, select the file or photo from your phone archive or while on another app, tap share and select “Envision”, to access anything, anytime.
+
+ 
+
+We are constantly working on improving our services and introducing more features. If you have any questions, feedback or feature request, please email us at karthik@letsenvision.com or write to us from within the app.
+
+ 
+
+Happy Envisioning!
+
+Show less
+
+Envision AI 0.9.3 Update
+
+2019-08-01
+
+Bug fixes and improvements.
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of Basic Artificial Intelligence
+
+# Basic Concept of Artificial Intelligence.
+
+ 
+
+# Deduction, Reasoning, Problem Solving
+
+ 
+
+# Knowledge Representation
+
+# Planning
+
+# Learning
+
+# Natural Language Processing (communication)
+
+# Perception
+
+# Motion and Manipulation
+
+# Action selection
+
+# Affective computing
+
+# AI box
+
+# AI-complete
+
+# Algorithmic probability
+
+# Automated reasoning
+
+# Autonomic Computing
+
+# Autonomic Networking
+
+# Backward chaining
+
+# Bayesian network
+
+# Bio-inspired computing
+
+# Artificial immune systems
+
+# Blackboard system
+
+# Chatterbot
+
+# Combs method
+
+# Commonsense reasoning
+
+# Computational humor
+
+# Computer-assisted proof
+
+# Conceptual dependency theory
+
+# Darwin machine
+
+# Description logic
+
+# Frame problem
+
+# Game theory
+
+# Grammar systems theory
+
+# Informatics (academic field)
+
+# Intelligent control
+
+# Kinect
+
+# LIDA (cognitive architecture)
+
+# Means-ends analysis
+
+# Moravec's paradox
+
+# Music and artificial intelligence
+
+# Ordered weighted averaging aggregation operator
+
+# PEAS – Performance, Environment, Actuators, Sensors
+
+# Percept (artificial intelligence)
+
+# Perceptual Computing
+
+# Rule-based system
+
+# Self-management (computer science)
+
+# Soft computing
+
+# Software agent
+
+# Intelligent agent / Rational agent
+
+# Autonomous agent
+
+# Automated planning and scheduling
+
+# Control system
+
+# Hierarchical control system
+
+# Networked control system
+
+# Distributed artificial intelligence
+
+# Multi-agent system
+
+# Monitoring and Surveillance Agents
+
+# Embodied agent
+
+# Situated AI
+
+# Sussman Anomaly
+
+# Wetware (brain)
+
+Show less
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of Aicut
+
+Make eye-catching photos with Aicut! Quick and easy AI separation let you use two different filters in one photo. Now comes with multiple presets (including Portrait Mode / Background Blur / Bokeh) to make your photos really pop!
+
+ 
+
+When your photos are perfectly fine, but not in some parts, AI-powered photo editing app - Aicut will help you out!
+
+ 
+
+You can separate people, objects from background with Aicut! By editing and applying unique filters to yourself and background separately, you can make your photos more vivid and beautiful like celebrities!
+
+ 
+
+30+ a bunch of filters and essential edit functions are ready for you!
+
+ 
+
+Don’t hesitate which hashtags are the most meaningful. Aicut analyzes your photo and generates set of relevant hashtags. Auto hashtag generator helps you to make more followers.
+
+ 
+
+Just paste the tags we create on the Instagram!
+
+ 
+
+ 
+
+Key Features:
+
+ 
+
+∙ Auto Image Segmentation
+
+ 
+
+Our state-of-the-art machine learning technology recognizes which part is the most salient, separates people or objects from background. If you want to edit only you or your friend, edit your photo with Aicut!
+
+ 
+
+∙ Auto Hashtag generator
+
+ 
+
+With Aicut, it’s very easy to create relevant hashtags before posting on the Instagram! Our smart AI hashtag generator understands your photos, recommends the most relevant, meaning hashtags.
+
+ 
+
+∙ Edit like a Pro
+
+ 
+
+Be a pro with Aicut! Aicut has collaborated with professional photographers to fine-tune the application. You can edit like a professional photographer with Aicut. Also, Aicut supports basic editing features including brightness, contrast, and saturation. Includes Background Blur for more professional looking Portrait Mode pictures!
+
+Show less
+
+Aicut 1.1.4 Update
+
+2019-09-20
+
+Aicut v1.1.4 Release! HUGE UPDATE!
+
+ 
+
+- 5 Presets including Portrait Mode(Background Blur / Bokeh) available.
+
+- Brush feature for modifying object area, for more precise editing.
+
+- Major UI changes and improvements for easier use.
+
+- Bugfixes & Improvements.
+
+Aicut Tags
+
+Photography
+
+ 
+
+ 
+
+ 
+
+ The description of Message AI
+
+Message AI helps you sound more positive in your messages, increasing your likability and improving relationships 💝
+
+ 
+
+Have you ever sent a text you later regretted? Maybe you were too negative or angry at the time. Message AI warns you when you're about to send a message that could harm your relationships!
+
+ 
+
+In addition, Message AI helps you understand how people really feel by analyzing conversations in all popular messaging apps.
+
+ 
+
+How it works:
+
+Our MessageIQ artificial intelligence analyzes your messages and shows you your Positivity Score. We score each word from -100 to 100 so you can identify positive/negative emotions.
+
+ 
+
+Better communication is the #1 way to improve relationships. Many people don't realize how angry they sound when tired and end up hurting the people they care about unintentionally!
+
+ 
+
+We're in this together
+
+Message AI is the friend that always looks out for you. We'll not only warn you if you sound negative, we'll also show you when your friends are being negative.
+
+ 
+
+Features:
+
+Find out if your crush likes you back ❤️
+
+Who secretly likes you? Discover your secret admirers 😙
+
+Monitor your relationship with artificial intelligence!
+
+Be more positive and increase your likability 🔥
+
+Identify passive aggressiveness so you can defuse toxic situations.
+
+Uncover hidden attitudes people have. How do people REALLY feel?
+
+Pick up on warning signals that someone's about to ghost you with AI 👻
+
+Build better relationships with improve communication.
+
+Be a better friend and more positive person!
+
+Show less
+
+ 
+
+ 
+
+ 
+
+The description of Artificial Intelligence
+
+Artificial intelligence (AI) is an area of computer science that emphasizes the creation of intelligent machines that work and react like humans. The processes include learning, reasoning and self-correction. AI is accomplished by studying how human brain thinks, and how humans learn, decide, and work while trying to solve a problem, and then using the outcomes of this study as a basis of developing intelligent software and systems.
+
+ 
+
+What is for you ?
+
+ 
+
+- Introduction to Artificial Intelligence (AI) and intelligent agents, history of Artificial Intelligence
+
+- Building intelligent agents (search, games, logic, constraint satisfaction problems)
+
+- Machine Learning algorithms
+
+- Applications of AI (Natural Language Processing, Robotics/Vision)
+
+ 
+
+App Description
+
+ 
+
+Artificial Intelligence app has detailed description of theory and algorithm that involves in making system think like human brain. You will enjoy the learning through simple and easy to use User Interface .
+
+- Day and Night mode in reading screen to make your reading comfortable .
+
+- You can mark topic favourite and read it through a separate section of app with a great ease.
+
+- Latest news updates from across the globe on Artificial Intelligence (AI) in news section.
+
+- Easy sharing of stories from the home screen itself via Facebook, Twitter, Google Plus, WhatsApp and more
+
+ 
+
+App contents
+
+ 
+
+1) Introduction to Artificial Intelligence (AI)
+
+ 
+
+- Turing Test
+
+- History of AI
+
+- Typical AI problem
+
+- The AI Cycle
+
+ 
+
+2) Problem solving
+
+ 
+
+- State Space
+
+- Graph Searching
+
+- A* search
+
+- A Generic Search
+
+- Genetic Algorithm
+
+- Breadth-First Search
+
+- Depth Search
+
+- Heuristic Search
+
+- Games
+
+- Backtracking
+
+- Minimax Algorithm
+
+- Uninformed Search
+
+- N-Queen sample
+
+- Optimal Decision
+
+- Proof of Admissibility
+
+- Search Tree
+
+- Alpha Beta Pruning
+
+- Look Ahead
+
+- Iterative-Deepening
+
+- Greedy Search
+
+- Search Graph
+
+- Informed Search
+
+- Bi-directional Search
+
+- Consistency driven
+
+- Adversarial Search
+
+- Path consistency
+
+- Method of Informed
+
+- Other Memory limited
+
+- Properties of depth
+
+ 
+
+3) Knowledge and reasoning
+
+ 
+
+- Propositional Logic
+
+- Rule of Inference
+
+- Hidden Markov Model
+
+- Bayesian networks
+
+- Forward chaining
+
+- First order logic
+
+- AND/OR Trees
+
+- Semantics
+
+- Knowledge Level
+
+- Rule based systems
+
+- Pure Pro-log
+
+- Unification
+
+- Herbrand Universe
+
+- Soundness
+
+- Non-Monotonic
+
+ 
+
+4) Acting logically and learning
+
+ 
+
+- Reinforced Learning
+
+- Semantics of Bayesian
+
+- Supervised Learning
+
+- Learning issue
+
+- Semantic Networks
+
+- Neural Network
+
+- Native Bayes Model
+
+- Artificial Neural
+
+- Probabilistic
+
+- Frames
+
+- Decision Tree Pruning
+
+- Perceptron
+
+- Statistical learning
+
+- Candidate Elimination
+
+- Back-Propagation
+
+- Unsupervised
+
+- Taxonomy of Learning
+
+- Extending Semantic
+
+- Multi-Layer
+
+- Splitting Functions
+
+- Interleaving vs. Non-Interleaving of Sub-Plan
+
+- Planning as search
+
+- The General form of EM Algorithm
+
+ 
+
+5) Communicating, perceiving and acting
+
+ 
+
+- Regression Algorithm
+
+- Natural Language
+
+- Clustering Algorithm
+
+- Statistical Algorithm
+
+- Pattern Recognition
+
+- Usage & Application
+
+- Ambiguity
+
+- Steps in Language
+
+ 
+
+ 
+
+These five units contains 142 topics and by reading all you will be good enough to design a system using languages like R, Python, SAS, Matlab, Weka, SPSS etc.
+
+ 
+
+Your data privacy
+
+ 
+
+We do not seek any usage permission and ask user to share their valuable data. This app Control system engineering require no special user data to run.
+
+ 
+
+ 
+
+All complex real world problems being solved with applications of Artificial Intelligence (AI).This App will provide a broad understanding of the basic techniques for building intelligent computer systems and an understanding of how AI is applied to problems. Download the Artificial Intelligence app and start preparing for your Engineering exams like a handbook.
+
+ 
+
+ 
+
+ 
+
+Have feedback on our App? We are always looking for way to improve...!
+
+Email us anytime at skedsoft@gmail.com
+
+Show less
+
+Artificial Intelligence 2.0.2 Update
+
+2018-01-08
+
+- Now you can set bookmark..
+
+- You can see explanation for exercise attempted.
+
+- you and now rate app.
+
+ 
+
+ 
+
+The description of Picai
+
+Just pick one filter from Picai's AI recommendations!
+
+With Picai's picture-perfect filter recommendations from analyzing your photos,
+
+You can take amazing photos fast and easily with Picai!
+
+ 
+
+Tired of picking best filter for your photos?
+
+Picai can help you!
+
+ 
+
+Scene Recognition
+
+Picai automatically analyzes and recognizes your photo using AI algorithms.
+
+Picai knows cover-worthy filters for your selfie, appetizing filters for food and perfect filters for your shot.
+
+ 
+
+Filter Recommendation
+
+Picai will show two optimum filters for the perfect shot from 100+ filters.
+
+Picai utilizes patented cutting-edge AI deep learning technology for your best moment.
+
+ 
+
+Easy Selection
+
+Pick one filter from Picai’s recommendations.
+
+Picai’s patented split-screen filter selection is unique compared to any other camera apps.
+
+ 
+
+Essential Camera Features
+
+We have essential features like timer, full-screen camera, silent mode for your photo of day.
+
+ 
+
+..Any shot is beautiful with Picai!
+
+Show less
+
+Picai 1.3.3 Update
+
+2019-02-25
+
+Picai 1.3.3 Update!
+
+ 
+
+- Bugfixes and improvements.
+
+ 
+
+ 
+
+ 
+
+The description of AI Mentor
+
+AI Mentor is a Computer Science Engineering app which provides an offline tutorial environment to learn, prepare and enhance the CONCEPTS OF Artificial Intelligence and will walk you through the entire syllabus in a detailed and effective manner.
+
+ 
+
+The motive of this app is to behave as an assistant and make all the university going students exam ready in the subject of Artificial Intelligence from anywhere at any time and beyond any limits.
+
+ 
+
+The course structure is created according to University Standards of India and abroad.
+
+ 
+
+Question Bank is provided in the app with the most important questions from previous year exam papers in order to guide the students of the exam pattern.
+
+ 
+
+ 
+
+Content Covered In this app:
+
+ 
+
+ 
+
+ 
+
+∙ Introduction to AI
+
+ 
+
+∙ Search Techniques
+
+-BFS, DFS, Best First Search
+
+- Heuristic Approach
+
+ 
+
+∙ Knowledge Representation
+
+ 
+
+∙ Statistical Reasoning and Probability
+
+-Bayesian Belief Network, Dampster Shafer Theorem, Certainty Factor
+
+ 
+
+∙ Natural Language Processing
+
+-Spell checking, Soundex Algorithm
+
+ 
+
+∙ Machine Learning
+
+-Supervised Machine Learning, Unsupervised machine learning, Reinforcement Learning, Neural Networks, genetic algorithm, Fuzzy logic
+
+and much more.
+
+ 
+
+ 
+
+APP VERSION:
+
+ 
+
+1.4
+
+ 
+
+Happy Learning!
+
+Show less
+
+AI Mentor 1.5 Update
+
+2019-09-29
+
+Handwritten Notes Added.
+
+Bugs Fixed.
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of Kore.ai
+
+Kore.ai makes doing your job as easy as sending a message.
+
+ 
+
+- Message coworkers, partners, and clients, really anyone you can think of. Create group chats, share ideas, files, videos, and protect sensitive info with advanced message controls.
+
+ 
+
+- Get helpful updates from bots that connect directly with the apps and systems you use on (and off) the job. Even better, direct your bots to perform tasks and generate reports, right from the compose bar.
+
+ 
+
+- Create shareable, customizable rooms where you can discuss projects, share files, and just generally get down to business. Seamlessly loop in contractors and outside vendors so there are no more endless email chains.
+
+ 
+
+- Simplify your work life with universal search, automatic syncing, and streamlined file management. Everything in Kore is 100% searchable so you can find what you’re looking for right away.
+
+Show less
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of AI with Python Tutorial
+
+Artificial intelligence is the intelligence demonstrated by machines, in contrast to the intelligence displayed by humans. This app covers the basic concepts of various fields of artificial intelligence like Artificial Neural Networks, Natural Language Processing, Machine Learning, Deep Learning, Genetic algorithms etc., and its implementation in Python.
+
+Features:
+
+- Primer Concepts
+
+- Getting Started
+
+- Machine Learning
+
+- Data Preparation
+
+- Supervised Learning: Classification
+
+- Supervised Learning: Regression
+
+- Logic Programming
+
+- Unsupervised Learning: Clustering
+
+- Natural Language Processing
+
+- NLTK Package
+
+- Analyzing Time Series Data
+
+- Speech Recognition
+
+- Heuristic Search
+
+- Gaming
+
+- Neural Networks
+
+- Reinforcement Learning
+
+- Genetic Algorithms
+
+- Computer Vision
+
+- Deep Learning
+
+Tag:
+
+Learn Artificial intelligence, Artificial intelligence Tutorial Free, How to Learn AI with python, AI with Python Tutorial, AI video tutorial
+
+ 
+
+ 
+
+The description of Robin
+
+** CNET: "... Robin has depth" ! **
+
+ 
+
+Robin, by Audioburst, is your voice assistant on the go.
+
+Keep your eyes on the road while Robin plays your favorite audio content from top podcasts and radio stations.
+
+ 
+
+Whatever your interests - NBA, celebs, history, politics, design, gourmet food - just tell Robin and she’ll build you a playlist.
+
+ 
+
+And when you need to make a quick call or get directions Robin can do that too.
+
+ 
+
+Hands-free features including:
+
+* Personalized playlist including traffic, weather and local news reports. Just say “play my personal playlist”
+
+* Topical playlists - Ask for news on any of these popular categories: Sports, Entertainment, News, World News, Health, Science, Business or Tech
+
+* Send a text by voice, set reminders & alarms
+
+* Get directions, locate parking lots and gas stations around you.
+
+* Post, view and share from Facebook
+
+ 
+
+** Endorsed by TechCrunch, CNET, Wired, Lifehacker, TechRadar, etc. **
+
+ 
+
+Robin is an Infotainment assistant that can be both useful and fun, constantly learning and adapting to you. Just tap the microphone button and Robin will be all ears.
+
+ 
+
+Notes
+
+----------------------------
+
+∙ Robin is currently in Beta - she’s still a student. That means you can watch her intelligence evolve daily and even get to contribute a little. Come be a part of the experience!
+
+ 
+
+* Permissions:
+
+Robin will never email your contacts without your knowledge!
+
+To set reminders she’ll need permission to access your calendar, and to Gmail for email narration - that’s all!
+
+ 
+
+∙ Having trouble with a particular location? Missing a point of interest? Any other issue?
+
+For best results, give your feedback to Robin from right within the app - just say ‘feedback’.
+
+ 
+
+Examples of useful commands
+
+----------
+
+News Commands
+
+ 
+
+Personal playlist
+
+* Play my Personal Playlist
+
+* Add Taylor swift to my playlist.
+
+ 
+
+Weather & Traffic
+
+* What's the weather like in San Diego tomorrow?
+
+* Is it snowing in Miami?
+
+* I’m in New York
+
+ 
+
+News & Updates
+
+* What's the latest on Lebron James?
+
+* Tell me something about Kim Kardashian?
+
+* Play Top Stories
+
+* Play Entertainment news
+
+* Play Tech news
+
+* Play Sports news
+
+* Play Business news
+
+ 
+
+Places
+
+* Where is the nearest Starbucks?... Can I park there?
+
+* Find Thai restaurants in SF... How about French?
+
+* Find a burger place ... Does it have a good rating?
+
+ 
+
+Navigation
+
+* Go to 1234 Lombard San Francisco
+
+* Directions to Hollywood and Highland
+
+ 
+
+Gas Stations
+
+* Where is the cheapest gas in Santa Monica?
+
+ 
+
+Texting, calling & email
+
+* Call Joe / text Jill
+
+* Read my email to me
+
+ 
+
+Reminders
+
+* Remind me to exercise tonight!
+
+ 
+
+Facebook
+
+* Read my Facebook feed
+
+* Post on Facebook
+
+ 
+
+ 
+
+ 
+
+The description of NEW LIFE AI
+
+visual arts, fashion, music are merging into one concept called “life aesthetics”.
+
+by creating, curating and promoting aesthetics online, you contribute to a trillion dollar aesthetics economy that benefits corporations and you don’t get paid for it. on top of it, your data and attention are sold to the highest bidder.
+
+why is that?
+
+* industrialism is organised around the rational brain, while aesthetics are emotional
+
+* social network algorithms are made for viral content, not quality
+
+* there was no proper way to measure the value of aesthetics…
+
+…until today.
+
+welcome to the new life aesthetics economy!
+
+NEW LIFE is an a.i. content network for aesthetics. the mobile app connects people and aesthetics through an algorithm and uses curation inputs in order to calculate the power generated by content, a vote or an invitation.
+
+we wanted the aesthetics economy to be an entertaining, stimulating and collective environment to foster creativity. the user experience is at the intersection of social media and gaming, the interface allows you to create a profile, upload or vote for content, connect with other aesthetics producers and increase your NEW POWER.
+
+with more NEW POWER you will unlock features, storage capacity, exposure and contacts.
+
+the profit generated through the in-app purchases and the marketplace is redistributed to the community based on their NEW POWER.
+
+as an aesthetics producer, you can earn royalties and affiliate commissions by promoting your invite code, curating or posting creations.
+
+Show less
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of Artificial Intelligence
+
+The app is a complete free handbook of Artificial Intelligence with diagrams and graphs. It is part of Computer science or software engineering education which brings important topics, notes, news & blog on the subject. The App serves as a quick reference guide on this engineering subject.
+
+ 
+
+It covers more than 600 topics of Artificial Intelligence, Automata, Real-time systems & Neuro fuzzy in detail. The topics are divided into 5 units.
+
+ 
+
+Each topic is complete with diagrams, equations and other forms of graphical representations for better learning and quick understanding. The App will provide faster learning and quick revisions on the subject.
+
+ 
+
+Few Additional subjects which have been included in the app are
+
+ 
+
+Automata
+
+Neural network fuzzy systems
+
+Real-time Systems
+
+ 
+
+Some of the topics Covered in this application are:
+
+ 
+
+1. Turing test
+
+2. Introduction to Artificial Intelligence
+
+3. History of AI
+
+4. The AI Cycle
+
+5. Knowledge Representation
+
+6. Typical AI problems
+
+7. Limits of AI
+
+8. Introduction to Agents
+
+9. Agent Performance
+
+10. Intelligent Agents
+
+11. Structure Of Intelligent Agents
+
+12. Types of agent program
+
+13. Goal based Agents
+
+14. Utility-based agents
+
+15. Agents and environments
+
+16. Agent architectures
+
+17. Search for Solutions
+
+18. State Spaces
+
+19. Graph Searching
+
+20. A Generic Searching Algorithm
+
+21. Uninformed Search Strategies
+
+22. Breadth-First Search
+
+23. Heuristic Search
+
+24. AÃ¢Ë†â€” Search
+
+25. Search Tree
+
+26. Depth first Search
+
+27. Properties of Depth First Search
+
+28. Bi-directional search
+
+29. Search Graphs
+
+30. Informed Search Strategies
+
+31. Methods of Informed Search
+
+32. Greedy Search
+
+33. Proof of Admissibility of A*
+
+34. Properties of Heuristics
+
+35. Iterative-Deepening A*
+
+36. Other Memory limited heuristic search
+
+37. N-Queens eample
+
+38. Adversarial Search
+
+39. Genetic Algorithms
+
+40. Games
+
+41. Optimal decisions in Games
+
+42. minimax algorithm
+
+43. Alpha Beta Pruning
+
+44. Backtracking
+
+45. Consistency Driven Techniques
+
+46. Path Consistency (K-Consistency)
+
+47. Look Ahead
+
+48. Propositional Logic
+
+49. Syntax of Propositional Calculus
+
+50. Knowledge Representation and Reasoning
+
+51. Propositional Logic Inference
+
+52. Propositional Definite Clauses
+
+53. Knowledge-Level Debugging
+
+54. Rules of Inference
+
+55. Soundness and Completeness
+
+56. First Order Logic
+
+57. Unification 58. Semantics
+
+59. Herbrand Universe
+
+60. Soundness, Completeness, Consistency, Satisfiability
+
+61. Resolution
+
+62. Herbrand Revisited
+
+63. Proof as Search
+
+64. Some Proof Strategies
+
+65. Non-Monotonic Reasoning
+
+66. Truth Maintenance Systems
+
+67. Rule Based Systems
+
+68. Pure Prolog
+
+69. Forward chaining
+
+70. backward Chaining
+
+71. Choice between forward and backward chaining
+
+72. AND/OR Trees
+
+73. Hidden Markov Model
+
+74. Bayesian networks
+
+75. Learning Issues
+
+76. Supervised Learning
+
+77. Decision Trees
+
+78. Knowledge Representation Formalisms
+
+79. Semantic Networks
+
+80. Inference in a Semantic Net
+
+81. Extending Semantic Nets
+
+82. Frames
+
+83. Slots as Objects
+
+84. Interpreting frames
+
+85. Introduction to Planning
+
+86. Problem Solving vs. Planning
+
+87. Logic Based Planning
+
+88. Planning Systems
+
+89. Planning as Search
+
+90. Situation-Space Planning Algorithms
+
+91. Partial-Order Planning
+
+92. Plan-Space Planning Algorithms
+
+93. Interleaving vs. Non-Interleaving of Sub-Plan Steps
+
+94. Simple Sock/Shoe Example
+
+95. Probabilistic Reasoning
+
+96. Review of Probability Theory
+
+97. Semantics of Bayesian Networks
+
+98. Introduction to Learning
+
+99. Taxonomy of Learning Systems
+
+100. Mathematical formulation of the inductive learning problem
+
+ 
+
+AI is going to be one of the most important technologies in the coming days. It is a must have study for engineering, computer science, software engineering and other cognitive science students. It also going to be extremely important for mechanical, Automotive & electrical engineering students and Professionals.
+
+ 
+
+Download the app for the introduction to AI and related technology.
+
+Show less
+
+Artificial Intelligence 7 Update
+
+2019-03-11
+
+Check out Top Learning Videos! We have Added
+
+∙ Chapter and topics made offline access
+
+∙ New Intuitive Knowledge Test & Score Section
+
+∙ Search Option with auto-prediction to get straight the your topic
+
+∙ Fast Response Time of Application
+
+∙ Provide Storage Access for Offline Mode
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of Neil
+
+Meet Neil, a new kind of newsreader. We call it your personal curator AI.
+
+Neil is a chatbot, a virtual assistant whose only goal is to find interesting stories for you to read.
+
+ 
+
+How does it work?
+
+ 
+
+Tell Neil about your interests
+
+No need to browse through hundreds of categories, just use your own words to tell Neil what you like.
+
+Neil will try to understand and will ask you for details when he is not sure.
+
+ 
+
+Neil finds quality content for you
+
+Neil scans thousands of sources that have been manually curated in order to find content matching your interests.
+
+Neil focuses on quality, avoiding fake news and clickbait articles to bring you news worth reading.
+
+ 
+
+Neil learns and gets better with time
+
+Like or dislike articles to teach Neil about your preferences. Neil will keep learning to find what you really care about. When Neil can’t find any article about a given topic, he will keep looking and let you know later when he finds one!
+
+ 
+
+Other features
+
+∙ Bookmark articles you love to easily find them or to read them later.
+
+∙ Turn on the Reader Mode to read articles without ads, navigation and other distractions.
+
+∙ Import your interests from Facebook or Twitter to help Neil learn faster.
+
+∙ Share your favorite articles with your friends.
+
+∙ Receive a daily notification with a cool article from Neil.
+
+∙ More to come!
+
+ 
+
+Neil is currently available in English, French and Korean.
+
+ 
+
+Neil is free, with no ad, so give it a try and find news worth reading!
+
+Show less
+
+Neil 2.10 Update
+
+2018-10-02
+
+v2.10: Fixed notifications on Android Oreo and Pie
+
+ 
+
+v2.6: Neil just got smarter!
+
+∙ We upgraded Neil's conversation abilities so that it understands you better.
+
+∙ "Train" and "Search" buttons have been simplified into a single "Chat" button.
+
+∙ Suggested topics are also easier to access.
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of ZINI the Healthcare AI
+
+ZINI is your Personal Health Companion released in the form of a Chatbot. She is an Artificial Intelligence that learns as it interacts with you and gets better over time. Her Mission is to take care of all your healthcare needs and requirements and Become your Personal and Private Healthcare Assistant, Guide & friend.
+
+ 
+
+ 
+
+Features
+
+ 
+
+∙ Global Health Identification or GHID: Zini Provides Every user a Unique Global Health ID that can be Used to Manage their Healthcare info Anywhere anytime. No Need for Separate Health IDs, UHIDs or other Separate details in every Hospital and Clinic. Get a GHID and Manage everything from there.
+
+ 
+
+∙ Emergency Medical Profile – This Lets you Save your Emergency Medical Information so you can be helped in case of a Medical Emergency.
+
+ 
+
+∙ Health Records Manager -- This feature allows you to Save and Manage all your Health Records over time in a Chronological fashion and Keep them safe and Secure on the cloud for as long as you want. Never fear losing your Health Documents and Share them On the go easily with your Doctor or your Loved One’s.
+
+ 
+
+∙ Nearby Clinics / Hospital -- Get a List of All Nearby Clinics and Hospitals in your Current Location. Share it with Others.
+
+ 
+
+∙ Health Vitals Manager -- Keep Track of Your Vitals like BP, Sugar, Pulse, Temperature etc over time. Get Useful Graphical and Other Statistical display of this INfo over time. Get useful insights on your data and More, Share it with your Doctor and your Loved one’s Across the Globe.
+
+ 
+
+∙ Empathic Chatting -- Although in Very Initial Stages, You can Share your Emotions or anything you wish to talk to her. ZINI is an AI, Her responses may help you, comfort you or May be Guide you in the Right Direction in times of need.
+
+ 
+
+∙ Ask for Suggestions on a Specialist -- ZINI can tell you which Doctor or Specialist you should go visit in accordance with your current Symptoms.
+
+ 
+
+∙ Diagnostic Chatting -- Discuss your symptoms and health issues with ZINI. She will ask you relevant queries, discuss your symptoms and provide you with genuine suggestions.
+
+ 
+
+We hope ZINI becomes your Own Personal Virtual Healthcare assistant Soon. Do Share your Feedback and Suggestions with us.
+
+Show less
+
+ZINI the Healthcare AI 3.0.5 Update
+
+2019-11-18
+
+Updates
+
+-- New Assessment Progress implementation
+
+-- Stop Medical Assessment(in between)
+
+ 
+
+Fixed
+
+-- Graphical Representation Distortion Fixed
+
+-- UI/UX Improved & Bug Fixes
+
+ 
+
+ 
+
+ 
+
+The description of Mei
+
+Mei is a better alternative to your stock SMS texting app. It combines the best features of all messaging apps with AI and more into a single app. It’s completely free, with no ads, no catch. Advanced texting features including; scheduling, disappearing and expiring messages, dual sim, folders, labels, unique personalization (colors and themes), polling and free data messaging (soon compatible with RCS). See why Mei is one of the highest-rated SMS/MMS texting apps in the Play Store!
+
+ 
+
+On top of being a feature-rich texting app, Mei is the first SMS texting app with an optional AI assistant to give you real-time advice to help you text. Imagine Mei as your best friend, there to give you personalized advice when you want it, all in your messaging app.
+
+ 
+
+Texting can be confusing and it’s sometime hard to understand your contacts' personalities and what they really mean. Never understood why Alex never schedules plans in advance, or how to respond to Katie who uses way too many emojis or stickers, or want to know when a friend’s mood seems different? Our AI assistant, Mei (pronounced ‘May’) can help you understand your contacts to text better and smarter. And better communication means better relationships.
+
+ 
+
+Mei’s AI models were originally trained in English, with limited input from other languages. As we get more data in non-English languages (mainly from users and their feedback) our models will start to improve and Mei will become more accurate in those languages. So please correct Mei when she’s wrong and check back later as she’ll improve over time!
+
+ 
+
+Mei is compatible with MightyText, Pushbullet and mySMS for desktop and web access (our own desktop version coming soon). Mei syncs with any Android smartwatch, watch or wearable.
+
+ 
+
+Key Messaging Features:
+
+- Fully customizable (inc. dark mode and monochrome theme)
+
+- Schedule messages or cancel them before they send
+
+- Conversations automatically organized into folders (inc. spam)
+
+- Create custom folders and labels
+
+- Audio / Voice messages
+
+- Rich Communication Service (RCS) chat features coming soon
+
+- Mesh messaging coming soon
+
+ 
+
+When Messaging Other Mei Users…
+
+- End-to-end encryption
+
+- Message internationally for free
+
+- Unsend / delete text messages, even once read
+
+- Disappearing messages, deleted after they’re read
+
+- Expiring messages, deleted after a set time
+
+ 
+
+Key AI (+ Advanced) Features:
+
+- AI assistant can be turned on or off freely
+
+- Interpret texts real-time to give you personalized advice
+
+- Detect when you or the person you’re texting is acting out of character
+
+- Reminders
+
+- Personality profiles on you and your contacts
+
+- Personality comparisons for you and your contacts
+
+- Reveal a secret admirer that may be hiding in your text conversations!
+
+- Earn credits for interacting with Mei and participating in anonymous polling
+
+- Many more features to come…
+
+Show less
+
+Mei 3.4.0-Prod Update
+
+2019-11-27
+
+Enabled picture polls (via picture links)
+
+Introduced end-to-end encrypted RCS (for alpha testers only)
+
+Miscellaneous crash fixes
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of Artificial Intelligence
+
+►The App provides a refreshing and motivating new synthesis of the field of Artificial Intelligence: A New Synthesis takes the user on a complete tour of this intriguing new world of AI.✴
+
+ 
+
+►Artificial Intelligence is the study of how to build or program computers to enable them to do what minds can do.✦
+
+ 
+
+►This App discusses the ways in which computational ideas and computer modeling can aid our understanding of human and animal minds.✴
+
+ 
+
+► Major theoretical approaches are outlined, as well as some recent developments. This App is suitable for any psychologist, philosopher, or computer scientist wanting to know the current state of the art in this area of cognitive science.✦
+
+ 
+
+【Topics Covered Listed Below】
+
+ 
+
+➻ Artificial Intelligence- Introduction
+
+➻ Philosophy of AI
+
+➻ Goals of AI
+
+➻ What Contributes to AI?
+
+➻ Programming Without and With AI
+
+➻ What is AI Technique?
+
+➻ Applications of AI
+
+➻ History of AI
+
+➻ What is Intelligence?
+
+➻ Types of Intelligence
+
+➻ What is Intelligence Composed of?
+
+➻ Difference between Human and Machine Intelligence
+
+➻ Artificial Intelligence - Research Areas
+
+➻ Working of Speech and Voice Recognition Systems
+
+➻ Real Life Applications of AI Research Areas
+
+➻ Task Classification of AI
+
+➻ What are Agent and Environment?
+
+➻ Agent Terminology
+
+➻ Rationality
+
+➻ What is Ideal Rational Agent?
+
+➻ The Structure of Intelligent Agents
+
+➻ Nature of Environments
+
+➻ Properties of Environment
+
+➻ AI - Popular Search Algorithms
+
+➻ Search Terminology
+
+➻ Brute-Force Search Strategies
+
+➻ Comparison of Various Algorithms Complexities
+
+➻ Informed (Heuristic) Search Strategies
+
+➻ Local Search Algorithms
+
+➻ Simulated Annealing
+
+➻ Travelling Salesman Problem
+
+➻ Fuzzy Logic Systems
+
+➻ Fuzzy Logic Systems Architecture
+
+➻ Example of a Fuzzy Logic System
+
+➻ Application Areas of Fuzzy Logic
+
+➻ Advantages of FLSs
+
+➻ Disadvantages of FLSs
+
+➻ Natural Language Processing
+
+➻ Components of NLP
+
+➻ Difficulties in NLU
+
+➻ NLP Terminology
+
+➻ Steps in NLP
+
+➻ Implementation Aspects of Syntactic Analysis
+
+➻ Top-Down Parser
+
+➻ Expert Systems
+
+➻ Knowledge Base
+
+➻ Inference Engine
+
+➻ User Interface
+
+➻ Expert Systems Limitations
+
+➻ Applications of Expert System
+
+➻ Expert System Technology
+
+➻ Development of Expert Systems: General Steps
+
+➻ Benefits of Expert Systems
+
+➻ Robotics
+
+➻ Difference in Robot System and Other AI Program
+
+➻ Robot Locomotion
+
+➻ Components of a Robot
+
+➻ Computer Vision
+
+➻ Application Domains of Computer Vision
+
+➻ Applications of Robotics
+
+➻ Neural Networks
+
+➻ Types of Artificial Neural Networks
+
+➻ Working of ANNs
+
+➻ Machine Learning in ANNs
+
+➻ Bayesian Networks (BN)
+
+➻ Building a Bayesian Network
+
+➻ Applications of Neural Networks
+
+➻ AI - Issues
+
+➻ A I- Terminology
+
+➻ Intelligent System for Controlling a Three-Phase Active Filter
+
+➻ Comparison Study of AI-based Methods in Wind Energy
+
+➻ Fuzzy Logic Control of Switched Reluctance Motor Drives
+
+➻ Advantages of Fuzzy Control While Dealing with Complex/Unknown Model Dynamics: A Quadcopter Example
+
+➻ Retrieval of Optical Constant and Particle Size Distribution of Particulate Media Using the PSO-Based Neural Network Algorithm
+
+➻ A Novel Artificial Organic Controller with Hermite Optical Flow Feedback for Mobile Robot Navigation
+
+Show less
+
+ 
+
+ 
+
+ 
+
+The description of PIXEL AI
+
+Maybe this is the easiest game you ever played. Actually, this game played itself! All you need to do, is choose which hero to start play, then enjoy watching AI controlled heroes to start running and fighting!
+
+ 
+
+This is the first game totally made by myself, and it cost me 3 years to get it published! Hope you like it, feel free to comment or give me feedback using the email below. If you are a machine learning researcher, and want to challenge my build-in AI with your own AI, feel free to contact me too.
+
+ 
+
+Features:
+
+ 
+
+1.8Bit retro pixel art style plat-former game, with recolor-able game objects.
+
+ 
+
+2. The game is automatic played by AI, all you need do is choose and watch.
+
+ 
+
+3. Most pixel sprite are generated by AI, which means your hero and enemies will be never the same.
+
+ 
+
+4. Procedural generated random levels, which means the level you played will be never the same too.
+
+ 
+
+5. Nothing is fixed, everything is random!
+
+ 
+
+Credits:
+
+ 
+
+Programmer:
+
+ 
+
+Luc Skyward https://lucskyward.github.io/
+
+ 
+
+Graphic:
+
+ 
+
+Oryx Design Lab https://www.oryxdesignlab.com/
+
+ 
+
+Music:
+
+ 
+
+forestcrunk https://allihoopa.com/forestcrunk
+
+ 
+
+Privacy Policy:
+
+ 
+
+https://lucskyward.github.io/privacy_policy.html
+
+ 
+
+Terms and conditions:
+
+ 
+
+https://lucskyward.github.io/terms_and_conditions.html
+
+Show less
+
+ 
+
+ 
+
+ 
+
+The description of Happy Draw
+
+HappyDraw is an Draw and guess game that provide online and offline mode.
+
+ 
+
+In single player mode, you don’t need to wait for others to guess your drawing anymore. Because the 🤖AI(artificial intelligence) would do it immediately.
+
+ 
+
+Multiple Player Mode make it possible for you and your friend start a drawing battle. Install this wonderful free drawing app and show off you creativity now!😁
+
+ 
+
+ 
+
+Highlights:
+
+ 
+
+*Create a ✏️drawing based on the given word and see if the AI can recognize it! It time to show your imaginations!
+
+ 
+
+*Time Limit Game: You only have ⏱️20 seconds to finish each drawing. But don’t worry, you don’t need artistic skills to play well in this game. Just doodle and have fun!
+
+ 
+
+* No Time Limit Game: Draw whenever you are free, just enjoy the fun of drawing and doodle, and forget about the time
+
+ 
+
+*There are over 300 levels waiting for you to challenge!❤️
+
+ 
+
+*We provide a platform to exhibit your artwork. Draw something and share them with your friends and family.👪
+
+ 
+
+If you have any query or if you encounter any difficulty when playing HappyDraw, please drop a mail to us at💌 happy.ai.app@outlook.com
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of AI Benchmark
+
+Face Recognition, Image Classification, Image Enhancement...
+
+ 
+
+Is your smartphone capable of running the latest Deep Neural Networks to perform these AI-based tasks? Does it have a dedicated AI Chip? Is it fast enough? Run AI Benchmark to comprehensively evaluate it's AI Performance!
+
+ 
+
+Current phone ranking: http://ai-benchmark.com/ranking.html
+
+ 
+
+AI Benchmark measures the speed, accuracy and memory requirements for several key AI and Computer Vision algorithms. Among the tested solutions are Image Classification and Face Recognition methods, Neural Networks used for Image Super-Resolution and Photo Enhancement, AI models playing Atari Games and performing Bokeh Simulation, as well as algorithms used in autonomous driving systems. Visualization of the algorithms’ output allows to assess their results graphically and to get to know the current state-of-the-art in various AI fields.
+
+ 
+
+In total, AI Benchmark consists of 21 tests and 11 sections provided below:
+
+ 
+
+Section 1. Classification, MobileNet-V2
+
+Section 2. Classification, Inception-V3
+
+Section 3. Face Recognition, Inception-ResNet-V1
+
+Section 4. Playing Atari Games, LSTM
+
+Section 5. Deblurring, SRCNN
+
+Section 6. Super-Resolution, VGG19
+
+Section 7. Super-Resolution, SRGAN
+
+Section 8. Bokeh Simulation, U-Net
+
+Section 9. Semantic Segmentation, ICNet
+
+Section 10. Image Enhancement, DPED ResNet
+
+Section 11. Memory limits, SRCNN
+
+ 
+
+A detailed description of the tests can be found here: http://ai-benchmark.com/tests.html
+
+ 
+
+Note: Hardware acceleration is supported on Android 9.0 and above on all mobile SoCs with AI accelerators, including Qualcomm Snapdragon, HiSilicon Kirin, Samsung Exynos and MediaTek Helio.
+
+Show less
+
+ 
+
+ 
+
+ 
+
+The description of Artificial Intelligence
+
+In this Application you can Learn About
+
+ 
+
+Hot topics in AI research
+
+ 
+
+Large scale Machine Learning. Machine Learning (ML) is concerned about developing systems that improve their performance with experience. ...
+
+Deep Learning. ...
+
+Reinforcement Learning. ...
+
+Robotics. ...
+
+Computer Vision. ...
+
+Natural Language Processing. ...
+
+Recommender Systems. ...
+
+Algorithmic Game Theory and Computational Mechanism Design.
+
+ 
+
+More Topics.....
+
+ 
+
+#Technology News
+
+#Hacker News
+
+#Updating News Every 30 Seconds.
+
+#AI News
+
+ 
+
+ 
+
+#AI
+
+#AI and ML
+
+#Deep Learning
+
+#Natural Language Processing
+
+#AI in Problem solving Methods
+
+#AI & ML Algorithms
+
+#AI Agents
+
+#AI in Robotics
+
+#Speech Recognition
+
+#AI in Bio-metrics
+
+#Computer Vision
+
+#ANN
+
+ 
+
+ 
+
+#Premium Concepts
+
+ 
+
+#Posts about AI and ML
+
+Show less
+
+ 
+
+ 
+
+The description of AI Volume Booster
+
+Disclaimer: The app uses AI to improve your device's sound. This app may not work on your device because it is experimental. It requires the full resources of the device and uses features that may not be available on it. If the program does not work on your device, please do not write negative reviews, because on other devices it works perfectly.
+
+Many devices do not use the full capacity of their built-in speakers. That's why we decided to modify the signal being sent to them using Artificial Intelligence. The AI tries to boost the sound of your device by manipulating the shape and amplitude of the audio signal. We use two different algorithms to modify the audio signal. Different devices will get different results even on the same device models because each audio source has different parameters. You can determine to what extent you will use each of them so that the reproduced sound satisfies you.
+
+One of the algorithms uses a ‘Fast Fourier transform’ to determine the base shape of the signal. The AI analyzes and increases the individual components of the signal to increase its power and density as much as possible.
+
+The other algorithm increases the amplitude of the signal so much so that it can deliver non-linear distortions. They will let the speakers get maximum power. The AI tries to compensate for these nonlinear distortions as much as possible.
+
+We will keep working on refining the algorithms in order to increase the sound quality of your device’s speakers. In the upcoming weeks/months we will add other algorithms to increase the level and volume of the sound. At this point the program is free. If you want it to stay this way, it will be a good idea to pay more attention to the ads that appear on the app. We will try to release a new version at least once a week.
+
+Our program achieves excellent results with the application SoundCloud, which enables you to discover, stream, and share a constantly expanding mix of free music. It also produces good results with most of the built-in sound reproduction programs. For apps such as Play Music or Samsung Music, you will get minimal results because they work directly with device hardware. However, we are working on ways to improve the sound reproduced by them. Check out our new versions regularly to see how the program is enriched.
+
+You can also use the app to enhance the sound of your headphones or other external speakers.
+
+Added application management from notification drawer. Users can swipe down on the status bar to open the notification drawer, where they can use three action buttons: Mute, Boost OFF and Boost ON.
+
+ 
+
+After version 3.0 AI accumulates a larger volume of data than before. The longer you use the app, the sound is getting better.
+
+ 
+
+Important: This application can not damage your device!
+
+For security reason, the application does not use your device's microphone. It does not record ambient noise and does not collect personal information about the user.
+
+Show less
+
+AI Volume Booster 4.1.9.6 Update
+
+ 
+
+ 
+
+ 
+
+The description of Medicus AI
+
+Understand your medical reports and health values like never before:
+
+ 
+
+- Add all your blood tests and see what they mean
+
+- Stay on top of your health, with personalized health insights, assessments, and recommendations
+
+- Created by a world-class team of PhDs and doctors
+
+- 100% privacy: no user accounts, data is only saved on your device
+
+- Add reminders for your upcoming checkups and your favorite health tips
+
+- Get more health tips with time, to always stay healthy
+
+- Provide more details about yourself for more accurate insights
+
+- Export your data at any time
+
+- And more…
+
+ 
+
+Medicus is powered by a Medical Reasoning Engine that uses AI to encode medical knowledge and the latest medical guidelines, to accurately simulate the reasoning that doctors do for the same cases.
+
+ 
+
+Medicus makes the complexity of the medical reasoning into a simple app that anyone can use.
+
+Show less
+
+ 
+
+ 
+
+The description of ElectroMind
+
+The ElectroMind app is a powerful tool and an easy way to create your own artificial intelligence.
+
+ 
+
+Create a smart artificial being with the ability to learn and speak just by clicking a few buttons! Impress your family and friends with the life you have created!
+
+ 
+
+We are still working on improving the app.
+
+If you have awesome app ideas or new features that must be added to the app or if you have noticed some bugs or issues, please let us know by contacting us.
+
+ 
+
+Enjoy, The PieWare Team!
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of ALPHA
+
+Actively Learning Personal Heuristic Algorithm
+
+ 
+
+ALPHA can be taught by users, and thus can be fully personalized.
+
+ 
+
+Features:
+
+* Simple UI
+
+* Fully personalizable AI
+
+* Predefined Actions (Just ask ALPHA what it can do)
+
+* View and Edit Local Commands
+
+* Dynamic Cloud Commands
+
+* Backup & Restore Local Commands
+
+ 
+
+By order of increasing priority, the different types of commands are: Predefined Actions, Cloud Commands, Local Commands.
+
+ 
+
+Cloud Commands can store multiple alternate responses to a single input. The response is chosen randomly out of that list.
+
+Inappropriate Cloud Commands can be reported via the Report button provided. You can Report a Command only once. 10 reports on a Command automatically removes it.
+
+Since the removal of profanity and other inappropriate Cloud Commands is not instant, using ALPHA with Cloud Commands on might be deemed unsuitable for children.
+
+ 
+
+The Storage permission is required for Backup & Restore
+
+The Network permission is required for Cloud Commands
+
+ 
+
+It is advised not to use ALPHA to save personal data such as passwords, but if you must, turn off Cloud Commands before you do so. No person or organization shall be held responsible for loss/theft of data through unsuitable use of ALPHA Cloud Commands.
+
+Show less
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of S Pro Camera
+
+A professional AI camera, one-stop total solution, support Selfie,AI Scene Detection（up to 16 scene labels）,Pro mode,Beauty,Portrait,Bokeh,Sticker,Filter,Gif emoji,Motion photo.
+
+1. 40 million users worldwide approval and support more than 50 languages all over the world(including RTL layout).
+
+ 
+
+2. Take fully advantage of hardware capability, compatible with all platforms and camera modules(including API1&API2), support ZSL, continuous shooting, HDR, panorama, time-lapse, professional manual mode, 18:9 preview.
+
+ 
+
+3. Intelligent and interesting, supporting AI features such as face beauty, face cute, portrait bokeh, gender and age recognition, AI scene detection, and supporting real-time video of face beauty and face cute.
+
+ 
+
+4. Support motion photo, watermark, filter, GIF animation, sweep QR code and more, while supporting touching screen, smiling face, volume keys and other shooting trigger mode.
+
+ 
+
+5. For more customization requirements (such as dual camera, fingerprint snapshot, enhanced AI scene detection，etc.) and any feedback, please contact video.wideview@gmail.com.
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of Jarvis artificial intelligent personal assistant
+
+The Jarvis-AI is the best digital companion. that can assist you anytime, anywhere with its cool and unique features.
+
+ 
+
+The special voice recognition and hot-word detection functions can create a cool experience while use it on outdoor and travelling
+
+ 
+
+Train your new personal assistant with your own commands and response. The customized reply can make more fun. And our online database contains more daily updated commands
+
+ 
+
+Just install Jarvis-AI. That will impress you and all
+
+Important features (Voice control)
+
+->Make calls
+
+->Set Alarm
+
+->Open apps
+
+->Play Music
+
+->Open Wi-Fi, Bluetooth and Flash light
+
+->Time, Date and Battery level
+
+->Read Messages
+
+->Quick alert
+
+->Hot-word detection
+
+->Custom Commands
+
+->Charge full alert
+
+ 
+
+(This product does not associated with the original character)
+
+Show less
+
+ 
+
+ 
+
+ 
+
+The description of Deep Art Effects
+
+The ultimate art editor filter app for high quality photo filter lovers, that transforms photos and selfies into famous fine art paintings with the help of AI. Use free art filters and art effects. Choose from more than 50+ art styles and find your favourite photo art effect.
+
+ 
+
+ 
+
+Share the unique and awesome artworks you created with hashtag #deeparteffects to the social media platforms such as Instagram, Facebook or Twitter and impress your followers. Become an deep artist with the help of machine learning algorithms using artificial intelligence in combination with neural networks! Draw in the style of artists such as Van Gogh, Monet, Leonardo da Vinci, Michelangelo, Picasso, Raphael, Rembrandt, Dali and many others! Please note: The image rights always remain with the user. Artworks and pictures are not passed to third parties.
+
+ 
+
+ 
+
+FEATURES
+
+ 
+
+Basic Version
+
+★ Be an artist - Create Art with AI
+
+★ Fast image processing near realtime
+
+★ HD Resolution for artworks (1080px)
+
+★ More than 40 filters from famous artists
+
+★ Change style filter intensity
+
+★ Enhanced prisma filters
+
+★ Encrypted data transfer
+
+★ Server in Europe for privacy
+
+★ No photos and artworks are saved on our servers for guests
+
+★ Use login to manage your artworks in the cloud. Delete, rename, view and organize your artworks
+
+★ Possibility to buy a print version in ULTRA HD (3840px) without watermark
+
+★ Share your artworks with the community
+
+ 
+
+Premium Version
+
+★ FULL HD resolution for artworks (1920px)
+
+★ Remove watermarks
+
+★ Exclusive new styles for premium users
+
+★ No advertising
+
+ 
+
+Deep Art Effects is more than filters and better than photo effects. It's a place where masterpieces happen right out of your photos. And it's you to decide what kind of art technique to base it on.
+
+For example, you may want to convert a photo to sketch, pencil drawing or oil on canvas. And not to some abstract, exactly you have Got This App. Well, usual photo editing apps would have probably given up here. Just create art with ai. Download now and check it out.
+
+ 
+
+TURN ANY PHOTO INTO ARTWORK - FOR FREE
+
+ 
+
+What if Pablo Picasso painted your portrait? What if Vincent van Gogh painted Manhattan as starry night? Let’s say goodbye to the dull and traditional filter app!
+
+ 
+
+We use an algorithm inspired by the human brain. It uses the stylistic elements of one image to draw the content of another. Get your own artwork in just three steps.
+
+ 
+
+HOW TO GET AWESOME ARTISTIC PAINTINGS
+
+ 
+
+1.) Upload your photo.
+
+2.) Choose the style you want to transform to.
+
+3.) Usually it is completed within a few seconds in high resolution! Super fast!
+
+ 
+
+Optional: Register to manage your deep artwork
+
+ 
+
+JOIN THE ART WORLD
+
+ 
+
+Deep Art Effects is a collaboration between human, machine, and our concept of art. It is an experiment to see what emerges when anyone can create a masterpiece.
+
+ 
+
+It is yoga for the brain. Brain for the yoga. It is a universal art machine that paints any image in the style of any other, producing sometimes-beautiful, sometimes-disturbing, always-surprising artworks.
+
+ 
+
+We encourage you to play. We can't wait to see what you make with it!
+
+ 
+
+Do you have any suggestions for improvement? Any ideas? Any issues with the app? Please let us know.
+
+Show less
+
+ 
+
+ 
+
+ 
+
+The description of Bobify
+
+Painting with plain colors is outdated.
+
+ 
+
+Today you can draw with something more interesting: artificial intelligence!
+
+ 
+
+With Bobify you can create incredible artworks on your phone or tablet, powered by cutting edge AI and supercomputers.
+
+ 
+
+Dive into the new vibrant worlds full of wonder, beauty and surprises.
+
+ 
+
+ 
+
+FAQ:
+
+WTF are these paint brushes? How are they made?
+
+> They are created by the vivid imagination of our AI.
+
+ 
+
+Can I upload and draw on my own photos?
+
+> Soon! (hopefully)
+
+ 
+
+ 
+
+ 
+
+The description of wizdom.ai
+
+wizdom.ai is a free and comprehensive research management software for researchers, academics and students. With the wizdom.ai android app, you can search, add and manage publications in your wizdom.ai library on the go. Sync instantly across wizdom.ai desktop and web, and cite them in your next paper!
+
+ 
+
+Features:
+
+ 
+
+Search and Add Publications
+
+∙  Search and add publications on the go, from Google Scholar, PubMed, arXiv – and many other scholarly databases.
+
+∙  Scan ISBN bar codes to quickly add books to your wizdom.ai library.
+
+ 
+
+Research and collaborate on the go
+
+∙  Instantly access all your research articles and attached files in your wizdom.ai library and drive.
+
+∙  Have shared articles and discussions for your research at your fingertips in wizdom.ai groups.
+
+∙  Read abstracts, view keywords and have quick publication links ready for your research.
+
+∙  Message your latest ideas or share interesting research findings with your colleagues instantly.
+
+ 
+
+Sync across the Desktop and Web Library
+
+∙  Sync your research articles and PDF files with the wizdom.ai Desktop and Web Library when connected to the internet.
+
+∙  Refer to publications in your next research paper using one of over 7000 auto formatted citation styles with the wizdom.ai citation plugins.
+
+ 
+
+NEW TO WIZDOM.AI? - Sign up within the app for your free wizdom.ai account and get a head start on your research. Import publications from existing folders on your computer or from other reference managers using the wizdom.ai Desktop app (for Windows, Mac and Linux), available for download at https://www.wizdom.ai/download. Use our web importers to read interactively and add publications from the web, then cite them in auto-formatted styles using wizdom.ai citation plugins for Google Docs, Word, and OpenOffice in your next research paper!
+
+ 
+
+Share your thoughts and feedback to help us make your research easier. Reach out to us by an email at mailto:support@wizdom.ai.
+
+Show less
+
+wizdom.ai 1.0.0 Update
+
+2019-04-21
+
+- improvement and bug fixes
+
+ 
+
+ 
+
+ 
+
+The description of wizdom.ai
+
+wizdom.ai is a free and comprehensive research management software for researchers, academics and students. With the wizdom.ai android app, you can search, add and manage publications in your wizdom.ai library on the go. Sync instantly across wizdom.ai desktop and web, and cite them in your next paper!
+
+ 
+
+Features:
+
+ 
+
+Search and Add Publications
+
+∙  Search and add publications on the go, from Google Scholar, PubMed, arXiv – and many other scholarly databases.
+
+∙  Scan ISBN bar codes to quickly add books to your wizdom.ai library.
+
+ 
+
+Research and collaborate on the go
+
+∙  Instantly access all your research articles and attached files in your wizdom.ai library and drive.
+
+∙  Have shared articles and discussions for your research at your fingertips in wizdom.ai groups.
+
+∙  Read abstracts, view keywords and have quick publication links ready for your research.
+
+∙  Message your latest ideas or share interesting research findings with your colleagues instantly.
+
+ 
+
+Sync across the Desktop and Web Library
+
+∙  Sync your research articles and PDF files with the wizdom.ai Desktop and Web Library when connected to the internet.
+
+∙  Refer to publications in your next research paper using one of over 7000 auto formatted citation styles with the wizdom.ai citation plugins.
+
+ 
+
+NEW TO WIZDOM.AI? - Sign up within the app for your free wizdom.ai account and get a head start on your research. Import publications from existing folders on your computer or from other reference managers using the wizdom.ai Desktop app (for Windows, Mac and Linux), available for download at https://www.wizdom.ai/download. Use our web importers to read interactively and add publications from the web, then cite them in auto-formatted styles using wizdom.ai citation plugins for Google Docs, Word, and OpenOffice in your next research paper!
+
+ 
+
+Share your thoughts and feedback to help us make your research easier. Reach out to us by an email at mailto:support@wizdom.ai.
+
+Show less
+
+wizdom.ai 1.0.0 Update
+
+2019-04-21
+
+- improvement and bug fixes
+
+ 
+
+ 
+
+The description of Alvin AI Assistant
+
+Meet Alvin, your personal assistant and friend - Alvin is World’s 1st personal AI assistant that you can teach to do anything. Alvin is an Artificial Intelligence (A.I.) that has a conversation with you, remembers things you tell him and does things you ask him to do. Alvin learns all about you to serve you better. Alvin is there to help you out.
+
+ 
+
+The app comes with a basic version of Alvin AI that you can teach to do what you want. You can teach him new words, concepts, things, logic and procedures. Just visit these sites to get started:
+
+ 
+
+http://www.alvinai.com (general description)
+
+http://www.englishscript.com (tutorial for teaching Alvin)
+
+http://www.demohackers.com (community page to share experiments).
+
+ 
+
+Just tap the background to speak to Alvin or alternatively just type text to chat with Alvin.
+
+ 
+
+Notice! This release is for testing purposes only. It is not complete and have bugs in it. It is provided only for co-development of Alvin AI in the open community.
+
+ 
+
+To make Alvin ready, please support us and join our pre-launch crowdfunding project in Indiegogo:
+
+ 
+
+https://www.indiegogo.com/projects/alvin-world-s-1st-really-personal-a-i-assistant/coming_soon/x/13194855
+
+ 
+
+Here are some examples of what you can say to Alvin:
+
+ 
+
+> Hi! Hello!
+
+> How do you do?
+
+> How are you?
+
+> What are you?
+
+> Who are you?
+
+> Show yourself.
+
+> What time is it?
+
+> What day is it?
+
+> Tell me about me/you/...
+
+> I have a dog. Its name is Jojo.
+
+> Read the news. Continue.
+
+ 
+
+In case Alvin does not know yet some word, you can teach it and its different forms to him and then try again, e.g.
+
+ 
+
+> I play flute.
+
+< I don't know the word "flute".
+
+> Flute and flutes are nouns.
+
+> I play flute.
+
+ 
+
+> I have a dog.
+
+> My dog barks.
+
+< I don't know the word "barks".
+
+> Bark, barked, barked and barks are verbs.
+
+> My dog barks.
+
+ 
+
+> I am annoyed.
+
+< I don't know the word "annoyed".
+
+> Annoyed is an adjective.
+
+> I am annoyed.
+
+ 
+
+> I am somewhat angry.
+
+< I don't know the word "somewhat".
+
+> Somewhat is an adverb.
+
+> I am somewhat angry.
+
+ 
+
+Copy text from a speech bubble to the clipboard by pressing it long time. Then just long press the text prompt line to paste it there. A long press elsewhere sets the X-cursor (to be used with opened images/taken pictures later on).
+
+ 
+
+A short press anywhere (except the Menu bar and the text prompt line) triggers the speech recognition to let you talk with Alvin.
+
+ 
+
+You can redefine any existing procedure by just asking it first e.g. "How to read the news?" and then copying it (long press on the speech bubble) and pasting it to text prompt and then modify it and then press the send button (">"). Notice! Do not edit procedures that are running! It may crash the app still.
+
+ 
+
+Known issues:
+
+ 
+
+- Crash on Android 4.3 in app startup (unsupported Style XML).
+
+- In some products the file open dialogs don't show Ok/Cancel buttons, overcome for now by using a single click selection. Also on some devices the dialogs are unreadable since both the text and background are both white.
+
+- Very slow on low CPU devices.
+
+ 
+
+For more info please visit http://www.alvinai.com.
+
+Show less
+
+Alvin AI Assistant 0.1-b24 Update
+
+2019-10-11
+
+- Tens of thousands of English words added for Alvin. Now Alvin should not complain anymore about not knowing any words.
+
+- Serious bug fixed that caused instability.
+
+ 
+
+ 
+
+The description of AIOS
+
+★ The world is very popular and recommended AI intelligent system.
+
+★ integrated Clean cleaning acceleration engine: optimize the use of memory efficiency, and instantly solve the slow problem of mobile phone card.
+
+★ ultra-small size of the AI ​​intelligent system, such as hummingbird light, almost can not imagine
+
+★ AIOS intelligent system - the world faster, smaller system.
+
+★ soon can not imagine, small to be negligible!
+
+★ next-generation intelligent engine - the world's smaller intelligent systems, such as hummingbird-like light, take up the least resources, running fast;
+
+★ smart folder - smart sorting app, easy to quickly find applications and games;
+
+★ cloud recommended - based on ADAS cloud large data analysis, look at the people around you are using what app, recommend the most intimate content;
+
+ 
+
+AIOS V4.63 update:
+
+AIOS starting OREO8.0 mutual entertainment system code Oreo
+
+AIOS V4.69 update Android P AI smart user system
+
+1. Optimized performance, cleanup and acceleration to make the experience smoother
+
+2. Optimized search, deep links make search faster and more complete
+
+3. Optimized AI intelligence, personalized algorithm experience service Thank you for your companionship and support,
+
+4. Fix the problem, let the system run more stable and faster
+
+5. Optimized AI intelligent, personalized algorithm experience service
+
+6. Optimize the personalized, add interested applications
+
+7. Experience running faster, faster and faster memory
+
+Thank you for your support and support, and look forward to your point of praise (¯ε¯ @), more and better features have been on the road (☆ ▽ ☆).
+
+ 
+
+If you have any suggestions or questions, please email us at rongqiangjias@gmail.com
+
+Focus on Facebook: https://www.facebook.com/jia.rongqiang/posts/1737123816580703
+
+Follow yotobe: https://www.youtube.com/embed/hhXZDSLPbdM
+
+Follow Twitter: https://twitter.com/rongqiangjia/status/900019078718410756
+
+Follow Instagram: https://instagram.com/p/BYHFzr9A7Jw/
+
+Follow WeChat: Futureideas
+
+Focus on QQ: 2557713223
+
+Official website: http://www.webapps.cn.com
+
+Show less
+
+ 
+
+ 
+
+ 
+
+The description of AI Music Player
+
+“AI Music player” is a best media player for mobile. This app find all song formats quickly and you can view music by categories: song title, artist, album. AI Music player gives high quality sound and better experience. AI Music player app can play all formats of music files. Such as: MP3, WAV, MP4, 3GP, etc.
+
+ 
+
+AI Music player helps you listen to music everywhere, play any favourite songs with high quality. AI Music player scans all music automatically and group them by title, artist, album. Support audio equalizer to improves music sound. Smart way to listen songs on “AI Music player”.
+
+ 
+
+Key features:
+
+ 
+
+:- Play local music using “AI Music player”
+
+:- 3 tabs: songs, albums, and artists
+
+:- Easy way to song search
+
+:- Good user interface
+
+:- Play any song, artist, album, or playlist on shuffle mode
+
+:- Support Hight quality file.
+
+:- Plays support files mp3, ogg, flac, wav, mp4/m4a, ape, wv, mpc, m3u, m3u8 playlists.
+
+:- Easily use play, pause, stop function.
+
+:- Song play in background mode.
+
+:- Easily use sharing functionality.
+
+:- Music player also show in notification bar and handel play, pause, stop function.
+
+Show less
+
+
+
+
+
+
+
+
+
+ 
+
+The description of NFC Shortcut Widget
+
+Bored of navigating through the menu to simply enable/disable the NFC feature on your device? This application offers a nice looking widget to immediate access in that menu.
+
+ 
+
+This is just a widget, there is no annoying icon in the applications drawer. Just open your widgets list and drag it on the Home Screen.
+
+ 
+
+The widget takes you to the settings menu. It is not possible to immediately change the state in a non-rooted device.
+
+ 
+
+* Icons source: http://www.iconarchive.com/ free collections
 
 
  
