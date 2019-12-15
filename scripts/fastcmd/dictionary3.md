@@ -1124,6 +1124,2529 @@ return Tag.of("tenant", tenant);
 
 spring.batch.job.enabled=false
 ----------------------------------------------------------------------------------------
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.mvc.ResourceAssemblerSupport;
+import org.springframework.stereotype.Component;
+
+import com.sctrcd.qzr.facts.Answer;
+import com.sctrcd.qzr.web.controllers.HrMaxQuizController;
+
+/**
+ * Injected into the {@link HrMaxQuizController} as a tool for building {@link AnswerResource}.
+ * 
+ * @author Stephen Masters
+ */
+@Component
+public class AnswerResourceAssembler extends ResourceAssemblerSupport<Answer, AnswerResource> {
+
+    @Autowired
+    private QuestionResourceAssembler questionResourceAssembler;
+    
+    public AnswerResourceAssembler() {
+        super(HrMaxQuizController.class, AnswerResource.class);
+    }
+
+    @Override
+    public AnswerResource toResource(Answer answer) {
+
+        AnswerResource resource = createResourceWithId("questions/" + answer.getKey() + "/answer", answer);
+
+        resource.setKey(answer.getKey());
+        if (answer.getValue() != null) { 
+            resource.setValue(answer.getValue().toString());
+        }
+        resource.setWhen(answer.getWhen());
+
+        if (answer.getQuestion() != null) {
+            try {
+                resource.add(linkTo(methodOn(HrMaxQuizController.class)
+                        .getQuestion(answer.getKey()))
+                        .withRel("question"));
+            } catch (NotFoundException e) {
+                // Do nothing ... the exception cannot be thrown.
+            }
+        }
+
+        return resource;
+    }
+
+}
+
+import javax.xml.bind.annotation.XmlRootElement;
+
+import org.joda.time.DateTime;
+import org.springframework.hateoas.ResourceSupport;
+
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.sctrcd.qzr.web.json.JsonJodaDateTimeSerializer;
+
+@XmlRootElement(name = "answer")
+public class AnswerResource extends ResourceSupport {
+
+    private String key;
+    private String value;
+    private DateTime when;
+
+    public AnswerResource() {
+    }
+
+    public AnswerResource(String key, String value) {
+        this.key = key;
+        this.value = value;
+    }
+    
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
+
+    @JsonSerialize(using = JsonJodaDateTimeSerializer.class)
+    public DateTime getWhen() {
+        return when;
+    }
+
+    public void setWhen(DateTime when) {
+        this.when = when;
+    }
+
+    public String toString() {
+        return this.getClass().getSimpleName() 
+                + ": { key=\"" + key + "\", value=\"" + value + "\" }";
+    }
+}
+
+java -jar target/qzr-web-1.0.0-SNAPSHOT.jar --spring.profiles.active=scratch,drools
+
+
+import org.kie.api.event.rule.ObjectInsertedEvent;
+import org.kie.api.event.rule.ObjectDeletedEvent;
+import org.kie.api.event.rule.ObjectUpdatedEvent;
+import org.drools.core.event.DefaultRuleRuntimeEventListener;
+import org.kie.api.runtime.rule.FactHandle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.sctrcd.drools.DroolsUtil;
+
+/**
+ * When validation rules fire, they should insert a TradeValidationAnnotation
+ * into the working memory. This class listens for these events, and adds them
+ * to a list so that a client can query all the alerts raised for a request.
+ * <p>
+ * You should probably avoid using this outside testing, as the contained lists
+ * of events will grow and grow.
+ * </p>
+ * 
+ * @author Stephen Masters
+ */
+public class LoggingRuleRuntimeEventListener
+            extends DefaultRuleRuntimeEventListener {
+
+    private static Logger log = LoggerFactory.getLogger(LoggingRuleRuntimeEventListener.class);
+
+    private FactHandle handleFilter;
+    private Class<?> classFilter;
+
+    /**
+     * Void constructor sets the listener to record all working memory events
+     * with no filtering.
+     */
+    public LoggingRuleRuntimeEventListener() {
+        this.handleFilter = null;
+    }
+    
+    /**
+     * Constructor which sets up an event filter. The listener will only record
+     * events when the event {@link FactHandle} matches the constructor argument.
+     * 
+     * @param handle
+     *            The {@link FactHandle} to filter on.
+     */
+    public LoggingRuleRuntimeEventListener(FactHandle handle) {
+        this.handleFilter = handle;
+    }
+    
+    public LoggingRuleRuntimeEventListener(Class<?> classFilter) {
+        this.handleFilter = null;
+        this.classFilter = classFilter;
+    }
+
+    @Override
+    public void objectInserted(final ObjectInsertedEvent event) {
+        if ((handleFilter == null  && classFilter == null)
+                || event.getFactHandle() == handleFilter
+                || event.getObject().getClass().equals(classFilter)) {
+            log.trace("Insertion: " + DroolsUtil.objectDetails(event.getObject()));
+        }
+    }
+
+    @Override
+    public void objectDeleted(final ObjectDeletedEvent event) {
+        if ((handleFilter == null  && classFilter == null) 
+                || event.getFactHandle() == handleFilter
+                || event.getOldObject().getClass().equals(classFilter)) {
+            log.trace("Retraction: " + DroolsUtil.objectDetails(event.getOldObject()));
+        }
+    }
+
+    @Override
+    public void objectUpdated(final ObjectUpdatedEvent event) {
+        if ((handleFilter == null  && classFilter == null) 
+                || event.getFactHandle() == handleFilter
+                || event.getObject().getClass().equals(classFilter)) {
+
+            log.trace("Update: " + DroolsUtil.objectDetails(event.getObject()));
+        }
+    }
+
+    @Override
+    public String toString() {
+        return LoggingRuleRuntimeEventListener.class.getSimpleName();
+    }
+}
+
+
+
+import io.fabric8.kubernetes.client.KubernetesClient;
+import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.test.api.ArquillianResource;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import static io.fabric8.kubernetes.assertions.Assertions.assertThat;
+
+@RunWith(Arquillian.class)
+public class KubernetesIntegrationKT {
+
+    @ArquillianResource
+    KubernetesClient client;
+
+    @Test
+    public void testAppProvisionsRunningPods() throws Exception {
+        assertThat(client).deployments().pods().isPodReadyForPeriod();
+    }
+}
+
+
+      <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <version>${nexus-staging-maven-plugin.version}</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <serverId>oss.sonatype.org</serverId>
+                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                        </configuration>
+                    </plugin>
+					
+   <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-cas</artifactId>
+        </dependency>
+		
+		https://www.programcreek.com/java-api-examples/index.php?project_name=kakawait%2Fcas-security-spring-boot-starter#
+		
+		
+		import com.kakawait.spring.security.cas.authentication.DynamicProxyCallbackUrlCasAuthenticationProvider;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+import org.jasig.cas.client.validation.TicketValidator;
+import org.springframework.context.MessageSource;
+import org.springframework.security.cas.authentication.CasAssertionAuthenticationToken;
+import org.springframework.security.cas.authentication.CasAuthenticationProvider;
+import org.springframework.security.cas.authentication.StatelessTicketCache;
+import org.springframework.security.config.annotation.SecurityBuilder;
+import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
+import org.springframework.security.core.userdetails.AuthenticationUserDetailsService;
+
+/**
+ * @author Thibaud Leprêtre
+ */
+@Accessors(fluent = true)
+@Setter
+public class CasAuthenticationProviderSecurityBuilder implements SecurityBuilder<CasAuthenticationProvider> {
+
+    private CasSecurityProperties.ServiceResolutionMode serviceResolutionMode;
+
+    private AuthenticationUserDetailsService<CasAssertionAuthenticationToken> authenticationUserDetailsService;
+
+    private GrantedAuthoritiesMapper grantedAuthoritiesMapper;
+
+    private MessageSource messageSource;
+
+    private StatelessTicketCache statelessTicketCache;
+
+    private TicketValidator ticketValidator;
+
+    private String key;
+
+    @Override
+    public CasAuthenticationProvider build() throws Exception {
+        CasAuthenticationProvider provider;
+        switch (serviceResolutionMode) {
+            case DYNAMIC:
+                provider = new DynamicProxyCallbackUrlCasAuthenticationProvider();
+                break;
+            default:
+                provider = new CasAuthenticationProvider();
+                break;
+        }
+        provider.setAuthenticationUserDetailsService(authenticationUserDetailsService);
+        provider.setKey(key);
+        provider.setTicketValidator(ticketValidator);
+        if (messageSource != null) {
+            provider.setMessageSource(messageSource);
+        }
+        if (statelessTicketCache != null) {
+            provider.setStatelessTicketCache(statelessTicketCache);
+        }
+        if (grantedAuthoritiesMapper != null) {
+            provider.setAuthoritiesMapper(grantedAuthoritiesMapper);
+        }
+        return provider;
+    }
+}
+
+
+
+import javax.persistence.AttributeConverter;
+import javax.persistence.Converter;
+
+/**
+ * Converts between AccountType enum to databse persistence value.
+ * 
+ * @author David Ferreira Pinto
+ *
+ */
+@Converter
+public class AccountTypeConverter implements
+		AttributeConverter<AccountType, String> {
+
+	@Override
+	public String convertToDatabaseColumn(AccountType type) {
+		switch (type) {
+		case CURRENT:
+			return "C";
+		case SAVINGS:
+			return "S";
+		default:
+			throw new IllegalArgumentException("Unknown" + type);
+		}
+	}
+
+	@Override
+	public AccountType convertToEntityAttribute(String dbData) {
+		switch (dbData) {
+		case "C":
+			return AccountType.CURRENT;
+		case "S":
+			return AccountType.SAVINGS;
+		default:
+			throw new IllegalArgumentException("Unknown" + dbData);
+		}
+	}
+
+}
+
+https://www.programcreek.com/java-api-examples/index.php?project_name=gratiartis%2Fqzr#
+----------------------------------------------------------------------------------------
+mvn dependency:purge-local-repository
+
+<dependency>
+<groupId>org.springframework.security</groupId>
+<artifactId>spring-security-oauth2-client</artifactId>
+</dependency>
+<dependency>
+<groupId>org.springframework.security</groupId>
+<artifactId>spring-security-oauth2-jose</artifactId>
+</dependency>
+
+eureka.client.service-url.defaultZone=http://localhost:${server.port}/eureka/
+----------------------------------------------------------------------------------------
+  @Test
+  public void testBarCreation() {
+    EnvironmentTestUtils.addEnvironment(context, "bar.name=test");
+    context.register(BarConfiguration.class, PropertyPlaceholderAutoConfiguration.class);
+    context.refresh();
+    assertEquals(context.getBean(Bar.class).getName(), "test");
+  }
+----------------------------------------------------------------------------------------
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import com.ace.cache.service.IRedisService;
+import org.apache.log4j.Logger;
+import org.joda.time.DateTime;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.BinaryClient.LIST_POSITION;
+
+@Service
+public class RedisServiceImpl implements IRedisService {
+    private static final Logger LOGGER = Logger.getLogger(RedisServiceImpl.class);
+
+    @Autowired
+    private JedisPool pool;
+
+    @Override
+    public String get(String key) {
+        Jedis jedis = null;
+        String value = null;
+        try {
+            jedis = pool.getResource();
+            value = jedis.get(key);
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return value;
+    }
+
+    @Override
+    public Set<String> getByPre(String pre) {
+        Jedis jedis = null;
+        Set<String> value = null;
+        try {
+            jedis = pool.getResource();
+            value = jedis.keys(pre + "*");
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return value;
+    }
+
+    @Override
+    public String set(String key, String value) {
+        Jedis jedis = null;
+        try {
+            jedis = pool.getResource();
+            return jedis.set(key, value);
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage());
+            return "0";
+        } finally {
+            returnResource(pool, jedis);
+        }
+    }
+
+    @Override
+    public String set(String key, String value, int expire) {
+        Jedis jedis = null;
+        try {
+            jedis = pool.getResource();
+            int time = jedis.ttl(key).intValue() + expire;
+            String result = jedis.set(key, value);
+            jedis.expire(key, time);
+            return result;
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage());
+            return "0";
+        } finally {
+            returnResource(pool, jedis);
+        }
+    }
+
+    @Override
+    public Long delPre(String key) {
+        Jedis jedis = null;
+        try {
+            jedis = pool.getResource();
+            Set<String> set = jedis.keys(key + "*");
+            int result = set.size();
+            Iterator<String> it = set.iterator();
+            while (it.hasNext()) {
+                String keyStr = it.next();
+                jedis.del(keyStr);
+            }
+            return new Long(result);
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage());
+            return 0L;
+        } finally {
+            returnResource(pool, jedis);
+        }
+    }
+
+    @Override
+    public Long del(String... keys) {
+        Jedis jedis = null;
+        try {
+            jedis = pool.getResource();
+            return jedis.del(keys);
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage());
+            return 0L;
+        } finally {
+            returnResource(pool, jedis);
+        }
+    }
+
+    @Override
+    public Long append(String key, String str) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.append(key, str);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+            return 0L;
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+    @Override
+    public Boolean exists(String key) {
+        Jedis jedis = null;
+        try {
+            jedis = pool.getResource();
+            return jedis.exists(key);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+            return false;
+        } finally {
+            returnResource(pool, jedis);
+        }
+    }
+
+    @Override
+    public Long setnx(String key, String value) {
+        Jedis jedis = null;
+        try {
+            jedis = pool.getResource();
+            return jedis.setnx(key, value);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+            return 0L;
+        } finally {
+            returnResource(pool, jedis);
+        }
+    }
+
+    @Override
+    public String setex(String key, String value, int seconds) {
+        Jedis jedis = null;
+        String res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.setex(key, seconds, value);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+    @Override
+    public Long setrange(String key, String str, int offset) {
+        Jedis jedis = null;
+        try {
+            jedis = pool.getResource();
+            return jedis.setrange(key, offset, str);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+            return 0L;
+        } finally {
+            returnResource(pool, jedis);
+        }
+    }
+
+    @Override
+    public List<String> mget(String... keys) {
+        Jedis jedis = null;
+        List<String> values = null;
+        try {
+            jedis = pool.getResource();
+            values = jedis.mget(keys);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return values;
+    }
+
+    @Override
+    public String mset(String... keysvalues) {
+        Jedis jedis = null;
+        String res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.mset(keysvalues);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+    @Override
+    public Long msetnx(String... keysvalues) {
+        Jedis jedis = null;
+        Long res = 0L;
+        try {
+            jedis = pool.getResource();
+            res = jedis.msetnx(keysvalues);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+    @Override
+    public String getset(String key, String value) {
+        Jedis jedis = null;
+        String res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.getSet(key, value);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+    @Override
+    public String getrange(String key, int startOffset, int endOffset) {
+        Jedis jedis = null;
+        String res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.getrange(key, startOffset, endOffset);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+    @Override
+    public Long incr(String key) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.incr(key);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+    @Override
+    public Long incrBy(String key, Long integer) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.incrBy(key, integer);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Long decr(String key) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.decr(key);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Long decrBy(String key, Long integer) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.decrBy(key, integer);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Long serlen(String key) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.strlen(key);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Long hset(String key, String field, String value) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.hset(key, field, value);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Long hsetnx(String key, String field, String value) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.hsetnx(key, field, value);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public String hmset(String key, Map<String, String> hash) {
+        Jedis jedis = null;
+        String res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.hmset(key, hash);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public String hget(String key, String field) {
+        Jedis jedis = null;
+        String res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.hget(key, field);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public List<String> hmget(String key, String... fields) {
+        Jedis jedis = null;
+        List<String> res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.hmget(key, fields);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Long hincrby(String key, String field, Long value) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.hincrBy(key, field, value);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Boolean hexists(String key, String field) {
+        Jedis jedis = null;
+        Boolean res = false;
+        try {
+            jedis = pool.getResource();
+            res = jedis.hexists(key, field);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Long hlen(String key) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.hlen(key);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+
+    }
+
+
+    @Override
+    public Long hdel(String key, String... fields) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.hdel(key, fields);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Set<String> hkeys(String key) {
+        Jedis jedis = null;
+        Set<String> res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.hkeys(key);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public List<String> hvals(String key) {
+        Jedis jedis = null;
+        List<String> res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.hvals(key);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Map<String, String> hgetall(String key) {
+        Jedis jedis = null;
+        Map<String, String> res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.hgetAll(key);
+        } catch (Exception e) {
+            // TODO
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Long lpush(String key, String... strs) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.lpush(key, strs);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Long rpush(String key, String... strs) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.rpush(key, strs);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Long linsert(String key, LIST_POSITION where, String pivot, String value) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.linsert(key, where, pivot, value);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public String lset(String key, Long index, String value) {
+        Jedis jedis = null;
+        String res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.lset(key, index, value);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Long lrem(String key, long count, String value) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.lrem(key, count, value);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public String ltrim(String key, long start, long end) {
+        Jedis jedis = null;
+        String res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.ltrim(key, start, end);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    synchronized public String lpop(String key) {
+        Jedis jedis = null;
+        String res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.lpop(key);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    synchronized public String rpop(String key) {
+        Jedis jedis = null;
+        String res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.rpop(key);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public String rpoplpush(String srckey, String dstkey) {
+        Jedis jedis = null;
+        String res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.rpoplpush(srckey, dstkey);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public String lindex(String key, long index) {
+        Jedis jedis = null;
+        String res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.lindex(key, index);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Long llen(String key) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.llen(key);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public List<String> lrange(String key, long start, long end) {
+        Jedis jedis = null;
+        List<String> res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.lrange(key, start, end);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Long sadd(String key, String... members) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.sadd(key, members);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Long srem(String key, String... members) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.srem(key, members);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public String spop(String key) {
+        Jedis jedis = null;
+        String res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.spop(key);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Set<String> sdiff(String... keys) {
+        Jedis jedis = null;
+        Set<String> res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.sdiff(keys);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Long sdiffstore(String dstkey, String... keys) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.sdiffstore(dstkey, keys);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Set<String> sinter(String... keys) {
+        Jedis jedis = null;
+        Set<String> res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.sinter(keys);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Long sinterstore(String dstkey, String... keys) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.sinterstore(dstkey, keys);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Set<String> sunion(String... keys) {
+        Jedis jedis = null;
+        Set<String> res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.sunion(keys);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Long sunionstore(String dstkey, String... keys) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.sunionstore(dstkey, keys);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Long smove(String srckey, String dstkey, String member) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.smove(srckey, dstkey, member);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Long scard(String key) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.scard(key);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Boolean sismember(String key, String member) {
+        Jedis jedis = null;
+        Boolean res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.sismember(key, member);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public String srandmember(String key) {
+        Jedis jedis = null;
+        String res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.srandmember(key);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Set<String> smembers(String key) {
+        Jedis jedis = null;
+        Set<String> res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.smembers(key);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+    @Override
+    public Long zadd(String key, double score, String member) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.zadd(key, score, member);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+    @Override
+    public Long zrem(String key, String... members) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.zrem(key, members);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Double zincrby(String key, double score, String member) {
+        Jedis jedis = null;
+        Double res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.zincrby(key, score, member);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Long zrank(String key, String member) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.zrank(key, member);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Long zrevrank(String key, String member) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.zrevrank(key, member);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Set<String> zrevrange(String key, long start, long end) {
+        Jedis jedis = null;
+        Set<String> res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.zrevrange(key, start, end);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Set<String> zrangebyscore(String key, String max, String min) {
+        Jedis jedis = null;
+        Set<String> res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.zrevrangeByScore(key, max, min);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Set<String> zrangeByScore(String key, double max, double min) {
+        Jedis jedis = null;
+        Set<String> res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.zrevrangeByScore(key, max, min);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Long zcount(String key, String min, String max) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.zcount(key, min, max);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Long zcard(String key) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.zcard(key);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Double zscore(String key, String member) {
+        Jedis jedis = null;
+        Double res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.zscore(key, member);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Long zremrangeByRank(String key, long start, long end) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.zremrangeByRank(key, start, end);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Long zremrangeByScore(String key, double start, double end) {
+        Jedis jedis = null;
+        Long res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.zremrangeByScore(key, start, end);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+
+    @Override
+    public Set<String> keys(String pattern) {
+        Jedis jedis = null;
+        Set<String> res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.keys(pattern);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+    @Override
+    public String type(String key) {
+        Jedis jedis = null;
+        String res = null;
+        try {
+            jedis = pool.getResource();
+            res = jedis.type(key);
+        } catch (Exception e) {
+
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+
+    /**
+     * 返还到连接池
+     *
+     * @param pool
+     * @param jedis
+     */
+    private static void returnResource(JedisPool pool, Jedis jedis) {
+        if (jedis != null) {
+            jedis.close();
+        }
+    }
+
+    @Override
+    public Date getExpireDate(String key) {
+        Jedis jedis = null;
+        Date res = new Date();
+        try {
+            jedis = pool.getResource();
+            res = new DateTime().plusSeconds(jedis.ttl(key).intValue()).toDate();
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage());
+        } finally {
+            returnResource(pool, jedis);
+        }
+        return res;
+    }
+}
+----------------------------------------------------------------------------------------
+import com.bookstore.domain.User;
+import org.apache.commons.lang.CharEncoding;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
+import org.springframework.core.env.Environment;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.spring4.SpringTemplateEngine;
+
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+import javax.mail.internet.MimeMessage;
+import java.util.Locale;
+
+/**
+ * Service for sending e-mails.
+ * <p/>
+ * <p>
+ * We use the @Async annotation to send e-mails asynchronously.
+ * </p>
+ */
+@Service
+public class MailService {
+
+    private final Logger log = LoggerFactory.getLogger(MailService.class);
+
+    @Inject
+    private Environment env;
+
+    @Inject
+    private JavaMailSenderImpl javaMailSender;
+
+    @Inject
+    private MessageSource messageSource;
+
+    @Inject
+    private SpringTemplateEngine templateEngine;
+
+    /**
+     * System default email address that sends the e-mails.
+     */
+    private String from;
+
+    @PostConstruct
+    public void init() {
+        this.from = env.getProperty("mail.from");
+    }
+
+    @Async
+    public void sendEmail(String to, String subject, String content, boolean isMultipart, boolean isHtml) {
+        log.debug("Send e-mail[multipart '{}' and html '{}'] to '{}' with subject '{}' and content={}",
+                isMultipart, isHtml, to, subject, content);
+
+        // Prepare message using a Spring helper
+        MimeMessage mimeMessage = javaMailSender.createMimeMessage();
+        try {
+            MimeMessageHelper message = new MimeMessageHelper(mimeMessage, isMultipart, CharEncoding.UTF_8);
+            message.setTo(to);
+            message.setFrom(from);
+            message.setSubject(subject);
+            message.setText(content, isHtml);
+            javaMailSender.send(mimeMessage);
+            log.debug("Sent e-mail to User '{}'", to);
+        } catch (Exception e) {
+            log.warn("E-mail could not be sent to user '{}', exception is: {}", to, e.getMessage());
+        }
+    }
+
+    @Async
+    public void sendActivationEmail(User user, String baseUrl) {
+        log.debug("Sending activation e-mail to '{}'", user.getEmail());
+        Locale locale = Locale.forLanguageTag(user.getLangKey());
+        Context context = new Context(locale);
+        context.setVariable("user", user);
+        context.setVariable("baseUrl", baseUrl);
+        String content = templateEngine.process("activationEmail", context);
+        String subject = messageSource.getMessage("email.activation.title", null, locale);
+        sendEmail(user.getEmail(), subject, content, false, true);
+    }
+
+    @Async
+    public void sendPasswordResetMail(User user, String baseUrl) {
+        log.debug("Sending password reset e-mail to '{}'", user.getEmail());
+        Locale locale = Locale.forLanguageTag(user.getLangKey());
+        Context context = new Context(locale);
+        context.setVariable("user", user);
+        context.setVariable("baseUrl", baseUrl);
+        String content = templateEngine.process("passwordResetEmail", context);
+        String subject = messageSource.getMessage("email.reset.title", null, locale);
+        sendEmail(user.getEmail(), subject, content, false, true);
+    }
+}
+----------------------------------------------------------------------------------------
+import java.nio.charset.StandardCharsets
+import java.util.Base64
+
+import _root_.io.gatling.core.scenario.Simulation
+import ch.qos.logback.classic.{Level, LoggerContext}
+import io.gatling.core.Predef._
+import io.gatling.http.Predef._
+import org.slf4j.LoggerFactory
+
+import scala.concurrent.duration._
+
+/**
+ * Performance test for the Book entity.
+ */
+class BookGatlingTest extends Simulation {
+
+    val context: LoggerContext = LoggerFactory.getILoggerFactory.asInstanceOf[LoggerContext]
+    // Log all HTTP requests
+    //context.getLogger("io.gatling.http").setLevel(Level.valueOf("TRACE"))
+    // Log failed HTTP requests
+    //context.getLogger("io.gatling.http").setLevel(Level.valueOf("DEBUG"))
+
+    val baseURL = Option(System.getProperty("baseURL")) getOrElse """http://127.0.0.1:8080"""
+
+    val httpConf = http
+        .baseURL(baseURL)
+        .inferHtmlResources()
+        .acceptHeader("*/*")
+        .acceptEncodingHeader("gzip, deflate")
+        .acceptLanguageHeader("fr,fr-fr;q=0.8,en-us;q=0.5,en;q=0.3")
+        .connection("keep-alive")
+        .userAgentHeader("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:33.0) Gecko/20100101 Firefox/33.0")
+
+    val headers_http = Map(
+        "Accept" -> """application/json"""
+    )
+
+        val authorization_header = "Basic " + Base64.getEncoder.encodeToString("bookstoreapp:mySecretOAuthSecret".getBytes(StandardCharsets.UTF_8))
+
+    val headers_http_authentication = Map(
+        "Content-Type" -> """application/x-www-form-urlencoded""",
+        "Accept" -> """application/json""",
+        "Authorization"-> authorization_header
+    )
+
+    val headers_http_authenticated = Map(
+        "Accept" -> """application/json""",
+        "Authorization" -> "Bearer ${access_token}"
+    )
+
+    val scn = scenario("Test the Book entity")
+        .exec(http("First unauthenticated request")
+        .get("/api/account")
+        .headers(headers_http)
+        .check(status.is(401)))
+        .pause(10)
+        .exec(http("Authentication")
+        .post("/oauth/token")
+        .headers(headers_http_authentication)
+        .formParam("username", "admin")
+        .formParam("password", "admin")
+        .formParam("grant_type", "password")
+        .formParam("scope", "read write")
+        .formParam("client_secret", "mySecretOAuthSecret")
+        .formParam("client_id", "bookstoreapp")
+        .formParam("submit", "Login")
+        .check(jsonPath("$.access_token").saveAs("access_token")))
+        .pause(1)
+        .exec(http("Authenticated request")
+        .get("/api/account")
+        .headers(headers_http_authenticated)
+        .check(status.is(200)))
+        .pause(10)
+        .repeat(2) {
+            exec(http("Get all books")
+            .get("/api/books")
+            .headers(headers_http_authenticated)
+            .check(status.is(200)))
+            .pause(10 seconds, 20 seconds)
+            .exec(http("Create new book")
+            .put("/api/books")
+            .headers(headers_http_authenticated)
+            .body(StringBody("""{"id":null, "title":"SAMPLE_TEXT", "description":"SAMPLE_TEXT", "publicationDate":"2020-01-01T00:00:00.000Z", "price":null}""")).asJSON
+            .check(status.is(201))
+            .check(headerRegex("Location", "(.*)").saveAs("new_book_url")))
+            .pause(10)
+            .repeat(5) {
+                exec(http("Get created book")
+                .get("${new_book_url}")
+                .headers(headers_http_authenticated))
+                .pause(10)
+            }
+            .exec(http("Delete created book")
+            .delete("${new_book_url}")
+            .headers(headers_http_authenticated))
+            .pause(10)
+        }
+
+    val users = scenario("Users").exec(scn)
+
+    setUp(
+        users.inject(rampUsers(100) over (1 minutes))
+    ).protocols(httpConf)
+}
+
+import java.nio.charset.StandardCharsets
+import java.util.Base64
+
+import _root_.io.gatling.core.scenario.Simulation
+import ch.qos.logback.classic.{Level, LoggerContext}
+import io.gatling.core.Predef._
+import io.gatling.http.Predef._
+import org.slf4j.LoggerFactory
+
+import scala.concurrent.duration._
+
+/**
+ * Performance test for the Author entity.
+ */
+class AuthorGatlingTest extends Simulation {
+
+    val context: LoggerContext = LoggerFactory.getILoggerFactory.asInstanceOf[LoggerContext]
+    // Log all HTTP requests
+    //context.getLogger("io.gatling.http").setLevel(Level.valueOf("TRACE"))
+    // Log failed HTTP requests
+    //context.getLogger("io.gatling.http").setLevel(Level.valueOf("DEBUG"))
+
+    val baseURL = Option(System.getProperty("baseURL")) getOrElse """http://127.0.0.1:8080"""
+
+    val httpConf = http
+        .baseURL(baseURL)
+        .inferHtmlResources()
+        .acceptHeader("*/*")
+        .acceptEncodingHeader("gzip, deflate")
+        .acceptLanguageHeader("fr,fr-fr;q=0.8,en-us;q=0.5,en;q=0.3")
+        .connection("keep-alive")
+        .userAgentHeader("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:33.0) Gecko/20100101 Firefox/33.0")
+
+    val headers_http = Map(
+        "Accept" -> """application/json"""
+    )
+
+        val authorization_header = "Basic " + Base64.getEncoder.encodeToString("bookstoreapp:mySecretOAuthSecret".getBytes(StandardCharsets.UTF_8))
+
+    val headers_http_authentication = Map(
+        "Content-Type" -> """application/x-www-form-urlencoded""",
+        "Accept" -> """application/json""",
+        "Authorization"-> authorization_header
+    )
+
+    val headers_http_authenticated = Map(
+        "Accept" -> """application/json""",
+        "Authorization" -> "Bearer ${access_token}"
+    )
+
+    val scn = scenario("Test the Author entity")
+        .exec(http("First unauthenticated request")
+        .get("/api/account")
+        .headers(headers_http)
+        .check(status.is(401)))
+        .pause(10)
+        .exec(http("Authentication")
+        .post("/oauth/token")
+        .headers(headers_http_authentication)
+        .formParam("username", "admin")
+        .formParam("password", "admin")
+        .formParam("grant_type", "password")
+        .formParam("scope", "read write")
+        .formParam("client_secret", "mySecretOAuthSecret")
+        .formParam("client_id", "bookstoreapp")
+        .formParam("submit", "Login")
+        .check(jsonPath("$.access_token").saveAs("access_token")))
+        .pause(1)
+        .exec(http("Authenticated request")
+        .get("/api/account")
+        .headers(headers_http_authenticated)
+        .check(status.is(200)))
+        .pause(10)
+        .repeat(2) {
+            exec(http("Get all authors")
+            .get("/api/authors")
+            .headers(headers_http_authenticated)
+            .check(status.is(200)))
+            .pause(10 seconds, 20 seconds)
+            .exec(http("Create new author")
+            .put("/api/authors")
+            .headers(headers_http_authenticated)
+            .body(StringBody("""{"id":null, "name":"SAMPLE_TEXT", "surname":"SAMPLE_TEXT", "description":"SAMPLE_TEXT", "birthDate":"2020-01-01T00:00:00.000Z"}""")).asJSON
+            .check(status.is(201))
+            .check(headerRegex("Location", "(.*)").saveAs("new_author_url")))
+            .pause(10)
+            .repeat(5) {
+                exec(http("Get created author")
+                .get("${new_author_url}")
+                .headers(headers_http_authenticated))
+                .pause(10)
+            }
+            .exec(http("Delete created author")
+            .delete("${new_author_url}")
+            .headers(headers_http_authenticated))
+            .pause(10)
+        }
+
+    val users = scenario("Users").exec(scn)
+
+    setUp(
+        users.inject(rampUsers(100) over (1 minutes))
+    ).protocols(httpConf)
+}
+
+import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.context.annotation.Import;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.validation.beanvalidation.BeanValidationPostProcessor;
+import org.springframework.validation.beanvalidation.MethodValidationPostProcessor;
+import spring.study.beanpostproessor.registrar.SimpleRegistrar;
+
+/**
+ * Created by Format on 2017/6/18.
+ */
+@SpringBootApplication
+@Import(SimpleRegistrar.class)
+@EnableAspectJAutoProxy
+@EnableScheduling
+@EnableAsync
+public class BeanPostProcessorApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(BeanPostProcessorApplication.class, args);
+    }
+
+    @Bean
+    public BeanPostProcessor beanValidationPostProcessor() {
+        BeanValidationPostProcessor processor = new BeanValidationPostProcessor();
+        processor.setAfterInitialization(true);
+        return processor;
+    }
+
+    @Bean
+    public BeanPostProcessor methodValidationPostProcessor() {
+        MethodValidationPostProcessor processor = new MethodValidationPostProcessor();
+        return processor;
+    }
+
+}
+
+import org.springframework.beans.factory.annotation.AnnotatedGenericBeanDefinition;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.beans.factory.support.RootBeanDefinition;
+import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
+import org.springframework.core.type.AnnotationMetadata;
+import spring.study.beanpostproessor.bean.EmbeddedService;
+
+/**
+ * Created by Format on 2017/6/19.
+ */
+public class SimpleRegistrar implements ImportBeanDefinitionRegistrar {
+    @Override
+    public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
+        AnnotatedGenericBeanDefinition beanDefinition = new AnnotatedGenericBeanDefinition(EmbeddedService.class);
+        beanDefinition.getPropertyValues().add("id", "embedded_id_001");
+        registry.registerBeanDefinition("beanFromSimpleRegistrar", beanDefinition);
+    }
+}
+
+
+import org.aopalliance.intercept.MethodInterceptor;
+import org.aopalliance.intercept.MethodInvocation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ * Created by format on 16/11/15.
+ */
+public class LogMethodInterceptor implements MethodInterceptor {
+    private Logger logger = LoggerFactory.getLogger(LogMethodInterceptor.class);
+    private List<String> exclude;
+    public LogMethodInterceptor(String[] exclude) {
+        this.exclude = Arrays.asList(exclude);
+    }
+    @Override
+    public Object invoke(MethodInvocation invocation) throws Throwable {
+        String methodName = invocation.getMethod().getName();
+        if(exclude.contains(methodName)) {
+            return invocation.proceed();
+        }
+        long start = System.currentTimeMillis();
+        Object result = invocation.proceed();
+        long end = System.currentTimeMillis();
+        logger.info("====method({}), cost({}) ", methodName, (end - start));
+        return result;
+    }
+}
+
+import org.springframework.boot.context.embedded.AnnotationConfigEmbeddedWebApplicationContext;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextRefreshedEvent;
+import spring.study.refresh.context.bean.SimpleBeanInListener;
+
+/**
+ * Created by Format on 2017/5/10.
+ */
+public class MyApplicationListener implements ApplicationListener<ApplicationEvent> {
+    @Override
+    public void onApplicationEvent(ApplicationEvent event) {
+        if(event instanceof ContextRefreshedEvent) {
+            ApplicationContext applicationContext = ((ContextRefreshedEvent) event).getApplicationContext();
+            if(applicationContext instanceof AnnotationConfigEmbeddedWebApplicationContext) {
+                ((AnnotationConfigEmbeddedWebApplicationContext) applicationContext).getBeanFactory().registerSingleton("simpleBeanInListener", new SimpleBeanInListener());
+            }
+
+        }
+    }
+}
+
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import org.springframework.security.core.Authentication;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.Date;
+
+
+public class TokenAuthenticationService {
+
+    private long EXPIRATIONTIME = 1000 * 60 * 60 * 24 * 10; // 10 days
+    private String secret = "ThisIsASecret";
+    private String tokenPrefix = "Bearer";
+    private String headerString = "Authorization";
+    public void addAuthentication(HttpServletResponse response, String username)
+    {
+        // We generate a token now.
+        String JWT = Jwts.builder()
+                    .setSubject(username)
+                    .setExpiration(new Date(System.currentTimeMillis() + EXPIRATIONTIME))
+                    .signWith(SignatureAlgorithm.HS512, secret)
+                    .compact();
+        response.addHeader(headerString,tokenPrefix + " "+ JWT);
+    }
+
+    public Authentication getAuthentication(HttpServletRequest request)
+    {
+        String token = request.getHeader(headerString);
+        if(token != null)
+        {
+            // parse the token.
+            String username = Jwts.parser()
+                        .setSigningKey(secret)
+                        .parseClaimsJws(token)
+                        .getBody()
+                        .getSubject();
+            if(username != null) // we managed to retrieve a user
+            {
+                return new AuthenticatedUser(username);
+            }
+        }
+        return null;
+    }
+}
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+
+public class JWTLoginFilter extends AbstractAuthenticationProcessingFilter{
+
+    private TokenAuthenticationService tokenAuthenticationService;
+
+    public JWTLoginFilter(String url, AuthenticationManager authenticationManager)
+    {
+        super(new AntPathRequestMatcher(url));
+        setAuthenticationManager(authenticationManager);
+        tokenAuthenticationService = new TokenAuthenticationService();
+    }
+
+    @Override
+    public Authentication attemptAuthentication(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse)
+            throws AuthenticationException, IOException, ServletException {
+        AccountCredentials credentials = new ObjectMapper().readValue(httpServletRequest.getInputStream(),AccountCredentials.class);
+        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(credentials.getUsername(), credentials.getPassword());
+        return getAuthenticationManager().authenticate(token);
+    }
+
+    @Override
+    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authentication)
+            throws IOException, ServletException{
+        String name = authentication.getName();
+        tokenAuthenticationService.addAuthentication(response,name);
+    }
+}
+----------------------------------------------------------------------------------------
+import java.io.Serializable;
+import java.util.*;
+
+import lombok.Value;
+
+import org.springframework.util.Assert;
+
+/**
+ * 審査例外を表現します。
+ * 
+ * @author jkazama
+ */
+public class ValidationException extends RuntimeException {
+
+    private static final long serialVersionUID = 1L;
+
+    private final Warns warns;
+
+    /**
+     * フィールドに従属しないグローバルな審査例外を通知するケースで利用してください。
+     * @param message
+     */
+    public ValidationException(String message) {
+        super(message);
+        warns = Warns.init(message);
+    }
+
+    /**
+     * フィールドに従属する審査例外を通知するケースで利用してください。
+     * @param field
+     * @param message
+     */
+    public ValidationException(String field, String message) {
+        super(message);
+        warns = Warns.init(field, message);
+    }
+
+    /**
+     * フィールドに従属する審査例外を通知するケースで利用してください。
+     * @param field
+     * @param message
+     * @param messageArgs
+     */
+    public ValidationException(String field, String message, String[] messageArgs) {
+        super(message);
+        warns = Warns.init(field, message, messageArgs);
+    }
+
+    /**
+     * 複数件の審査例外を通知するケースで利用してください。
+     * @param warns
+     */
+    public ValidationException(final Warns warns) {
+        super(warns.head().getMessage());
+        this.warns = warns;
+    }
+
+    /**
+     * @return 発生した審査例外一覧を返します。
+     */
+    public List<Warn> list() {
+        return warns.list();
+    }
+
+    @Override
+    public String getMessage() {
+        return warns.head().getMessage();
+    }
+
+    /** 審査例外情報  */
+    public static class Warns implements Serializable {
+        private static final long serialVersionUID = 1L;
+        private List<Warn> list = new ArrayList<>();
+
+        private Warns() {
+        }
+
+        public Warns add(String message) {
+            list.add(new Warn(null, message, null));
+            return this;
+        }
+
+        public Warns add(String field, String message) {
+            list.add(new Warn(field, message, null));
+            return this;
+        }
+
+        public Warns add(String field, String message, String[] messageArgs) {
+            list.add(new Warn(field, message, messageArgs));
+            return this;
+        }
+
+        public Warn head() {
+            Assert.notEmpty(list, "Not found warn.");
+            return list.get(0);
+        }
+
+        public List<Warn> list() {
+            return list;
+        }
+
+        public boolean nonEmpty() {
+            return !list.isEmpty();
+        }
+
+        public static Warns init() {
+            return new Warns();
+        }
+
+        public static Warns init(String message) {
+            return init().add(message);
+        }
+
+        public static Warns init(String field, String message) {
+            return init().add(field, message);
+        }
+
+        public static Warns init(String field, String message, String[] messageArgs) {
+            return init().add(field, message, messageArgs);
+        }
+
+    }
+
+    /**
+     * フィールドスコープの審査例外トークン。
+     */
+    @Value
+    public static class Warn implements Serializable {
+        private static final long serialVersionUID = 1L;
+        private String field;
+        private String message;
+        private String[] messageArgs;
+
+        /**
+         * @return フィールドに従属しないグローバル例外時はtrue
+         */
+        public boolean global() {
+            return field == null;
+        }
+    }
+
+}
+----------------------------------------------------------------------------------------
+import cc.catalysts.boot.structurizr.ModelPostProcessor;
+import cc.catalysts.boot.structurizr.ViewProvider;
+import cc.catalysts.boot.structurizr.config.StructurizrConfigurationProperties;
+import com.structurizr.Workspace;
+import com.structurizr.api.StructurizrClient;
+import com.structurizr.api.StructurizrClientException;
+import com.structurizr.model.Relationship;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.core.annotation.AnnotationAwareOrderComparator;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static cc.catalysts.boot.structurizr.service.StructurizrService.ORDER;
+
+/**
+ * @author Klaus Lehner, Catalysts GmbH
+ */
+@Service
+@Order(ORDER)
+public class StructurizrService implements ApplicationListener<ContextRefreshedEvent> {
+
+    public static final int ORDER = 0;
+
+    private static final Logger LOG = LoggerFactory.getLogger(StructurizrService.class);
+
+    private final StructurizrClient structurizrClient;
+    private final Workspace workspace;
+    private final StructurizrConfigurationProperties config;
+
+    @Autowired
+    public StructurizrService(StructurizrClient structurizrClient, Workspace workspace, StructurizrConfigurationProperties config) {
+        this.structurizrClient = structurizrClient;
+        this.workspace = workspace;
+        this.config = config;
+    }
+
+    @Override
+    public void onApplicationEvent(ContextRefreshedEvent event) {
+        List<ModelPostProcessor> postProcessors = event.getApplicationContext()
+                .getBeansOfType(ModelPostProcessor.class).values().stream().collect(Collectors.toList());
+
+        AnnotationAwareOrderComparator.sort(postProcessors);
+
+        for (ModelPostProcessor postProcessor : postProcessors) {
+            postProcessor.postProcess(workspace.getModel());
+        }
+
+        if (config.isAddImplicitRelationships()) {
+            final Set<Relationship> relationships = workspace.getModel().addImplicitRelationships();
+            LOG.info("Added {} implicit relationships.", relationships.size());
+        }
+
+        event.getApplicationContext()
+                .getBeansOfType(ViewProvider.class)
+                .values().stream()
+                .forEach(vp -> vp.createViews(workspace.getViews()));
+
+
+        if (config.isPerformMerge()) {
+            try {
+                structurizrClient.putWorkspace(config.getWorkspaceId(), workspace);
+            } catch (StructurizrClientException e) {
+                LOG.error("Could not put workspace.", e);
+                throw new RuntimeException(e);
+            }
+        }
+    }
+}
+----------------------------------------------------------------------------------------
+ReflectionToStringBuilder.reflectionToString(obj, ToStringStyle.SHORT_PREFIX_STYLE);
+----------------------------------------------------------------------------------------
+
+const gulp = require('gulp');
+const concat = require('gulp-concat');
+const newer = require('gulp-newer');
+const uglify = require('gulp-uglify');
+const templateCache = require('gulp-angular-templatecache');
+const htmlmin = require('gulp-htmlmin');
+const cleanCSS = require('gulp-clean-css');
+const ngAnnotate = require('gulp-ng-annotate');
+
+const staticDir = 'src/main/resources/static/';
+const webAppDir = 'src/main/javascript/';
+
+const jslib = [
+    'node_modules/lodash/lodash.min.js',
+    'node_modules/ng-file-upload/dist/ng-file-upload-shim.min.js',
+    'node_modules/angular/angular.min.js',
+    'node_modules/angular-animate/angular-animate.min.js',
+    'node_modules/angular-aria/angular-aria.min.js',
+    'node_modules/angular-gettext/dist/angular-gettext.min.js',
+    'node_modules/angular-ui-router/release/angular-ui-router.min.js',
+    'node_modules/moment/min/moment.min.js',
+    'node_modules/moment/locale/ru.js',
+    'node_modules/angular-moment/angular-moment.min.js',
+    'node_modules/angular-material/angular-material.min.js',
+    'node_modules/angular-material-data-table/dist/md-data-table.min.js',
+    'node_modules/angular-loading-bar/build/loading-bar.min.js',
+    'node_modules/angular-cache/dist/angular-cache.min.js',
+    'node_modules/angular-scroll/angular-scroll.min.js',
+    'node_modules/ng-file-upload/dist/ng-file-upload.min.js',
+    'node_modules/angular-recaptcha/release/angular-recaptcha.min.js',
+    'node_modules/angular-file-saver/dist/angular-file-saver.bundle.min.js'
+];
+
+const csslib = [
+    'node_modules/angular-material/angular-material.min.css',
+    'node_modules/angular-material-data-table/dist/md-data-table.min.css',
+    'node_modules/angular-loading-bar/build/loading-bar.min.css'
+];
+
+gulp.task('source-concat', function() {
+    return gulp.src(jslib)
+        .pipe(newer(staticDir + 'javascript/source.min.js'))
+        .pipe(concat('source.min.js'))
+        .pipe(uglify())
+        .pipe(gulp.dest(staticDir + 'javascript/'))
+});
+
+gulp.task('design-concat', function() {
+    return gulp.src(csslib)
+        .pipe(newer(staticDir + 'stylesheets/design.min.css'))
+        .pipe(concat('design.min.css'))
+        .pipe(cleanCSS())
+        .pipe(gulp.dest(staticDir + 'stylesheets/'))
+});
+
+gulp.task('app-concat', function () {
+    return gulp.src([
+        webAppDir + 'app.js',
+        webAppDir + 'app/**/*.js',
+        webAppDir + 'directives/**/*.js',
+        webAppDir + 'services/**/*.js',
+        webAppDir + 'translations/**/*.js'
+    ])
+        .pipe(newer(staticDir + 'javascript/application.min.js'))
+        .pipe(concat('application.min.js'))
+        .pipe(ngAnnotate())
+        .pipe(uglify())
+        .pipe(gulp.dest(staticDir + 'javascript/'))
+});
+
+gulp.task('css-concat', function () {
+    return gulp.src([webAppDir + '**/*.css'])
+        .pipe(newer(staticDir + 'stylesheets/main.min.css'))
+        .pipe(concat('main.min.css'))
+        .pipe(cleanCSS())
+        .pipe(gulp.dest(staticDir + 'stylesheets/'))
+});
+
+gulp.task('template-concat', function () {
+    return gulp.src([
+        webAppDir + '/**/*.html'
+    ])
+        .pipe(htmlmin({collapseWhitespace: true}))
+        .pipe(templateCache({
+            module:'templates',
+            standalone: true,
+            filename: "templates.min.js"
+        }))
+        .pipe(gulp.dest(staticDir + 'javascript/'));
+});
+
+gulp.task('default', ['source-concat', 'design-concat', 'app-concat', 'css-concat', 'template-concat']);
+
+gulp.task('watch', function() {
+    gulp.watch(webAppDir + '**/*.js', ['app-concat']);
+    gulp.watch(webAppDir + '**/*.html', ['template-concat']);
+    gulp.watch(webAppDir + '**/*.css', ['css-concat']);
+});
+
+
+
+
+
+        queries.put("HSQL Database Engine",
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.SYSTEM_USERS");
+        queries.put("Oracle", "SELECT 'Hello' from DUAL");
+        queries.put("Apache Derby", "SELECT 1 FROM SYSIBM.SYSDUMMY1");
+        queries.put("MySQL", "SELECT 1");
+        queries.put("PostgreSQL", "SELECT 1");
+        queries.put("Microsoft SQL Server", "SELECT 1");
+----------------------------------------------------------------------------------------
+List<String> toRemove = Arrays.asList("1", "2", "3");
+String text = "Hello 1 2 3";
+text=toRemove.stream()
+             .map(toRem-> (Function<String,String>)s->s.replaceAll(toRem, ""))
+             .reduce(Function.identity(), Function::andThen)
+             .apply(text);
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
 ---
 AWSTemplateFormatVersion: '2010-09-09'
 Description:
