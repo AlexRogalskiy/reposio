@@ -1290,6 +1290,1071 @@ class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     }
 }
 ==============================================================================================================
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class MQProducerConfig {
+	@Value("${spring.rabbitmq.queuename}")
+	private String queueName;
+	@Value("${spring.rabbitmq.exchange}")
+	private String queueExchange;
+	@Value("${spring.rabbitmq.routingkey}")
+	private String routingkey;
+	 
+    @Bean
+    public MessageConverter messageConverter() {
+        return new Jackson2JsonMessageConverter();
+    }
+    
+    @Bean
+    @ConfigurationProperties(prefix="spring.rabbitmq")
+    public ConnectionFactory connectionFactory(){
+    	return new CachingConnectionFactory (); //publisherConfirms 消息确认回调
+    }
+    
+    @Bean
+    public RabbitTemplate template(ConnectionFactory connectionFactory, MessageConverter converter) {
+        RabbitTemplate template = new RabbitTemplate(connectionFactory);
+        //template.setChannelTransacted(false);
+        template.setMandatory(true);
+        template.setExchange(queueExchange);
+        template.setRoutingKey(routingkey);
+        template.setMessageConverter(converter);
+        return template;
+    }
+
+    @Bean
+    public Queue queue() {
+        return new Queue(queueName, true);
+    }
+    
+}
+
+import java.util.Date;
+import java.util.UUID;
+
+import javax.annotation.Resource;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.amqp.AmqpException;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessagePostProcessor;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.rabbit.core.RabbitTemplate.ConfirmCallback;
+import org.springframework.amqp.rabbit.support.CorrelationData;
+import org.springframework.beans.factory.annotation.Value;
+
+public abstract class BasicService implements ConfirmCallback {
+	private Logger logger = LoggerFactory.getLogger(this.getClass());
+	
+	@Resource
+	public RabbitTemplate rabbitTemplate;
+	@Value("${spring.rabbitmq.routingkey}")
+	private String routingkey;
+	@Value("${spring.rabbitmq.appid}")
+	private String appId;
+
+    public void sendMessage(final String serviceName, final String serviceMethodName,final String correlationId, Object request) {
+    	logger.info("sendMessage [this.{}, serviceMethodName:{} serviceName:{} correlationId: {}]", this.getClass(), serviceMethodName, serviceName, correlationId);
+    	rabbitTemplate.setConfirmCallback(this);
+    	rabbitTemplate.setCorrelationKey(correlationId);
+    	rabbitTemplate.convertAndSend(routingkey, request, new MessagePostProcessor() {            
+        	@Override
+            public Message postProcessMessage(Message message) throws AmqpException {
+                message.getMessageProperties().setAppId(appId);
+                message.getMessageProperties().setTimestamp(new Date());
+                message.getMessageProperties().setMessageId(UUID.randomUUID().toString());
+                message.getMessageProperties().setCorrelationId(correlationId.getBytes());
+                message.getMessageProperties().setHeader("ServiceMethodName", serviceMethodName);
+                message.getMessageProperties().setHeader("ServiceName", serviceName);
+                return message;
+            }
+        }, new CorrelationData(correlationId));
+    }
+
+    /**
+     * 抽象回调方法
+     */
+	@Override
+	public abstract void confirm(CorrelationData correlationData, boolean ack, String cause);
+	
+}
+
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
+import javax.annotation.Resource;
+
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.rabbit.core.ChannelAwareMessageListener;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.stereotype.Component;
+
+import com.rabbitmq.client.Channel;
+
+/**
+ * 消息监听
+ * @author lonyee
+ *
+ */
+@Component
+public class MQAwareListener implements ChannelAwareMessageListener, ApplicationContextAware {
+
+    @Resource
+    private MessageConverter messageConverter;
+    @Resource
+    private RabbitTemplate rabbitTemplate;
+	@Value("${spring.rabbitmq.appid}")
+	private String appId;
+
+    private ApplicationContext ctx;
+
+    @Override
+    public void onMessage(Message message, Channel channel) throws IOException {
+        System.out.println("----- received" + message.getMessageProperties());
+		try {
+			Object msg = messageConverter.fromMessage(message);
+			if (!appId.equals(message.getMessageProperties().getAppId())){
+		        channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, false);
+		        throw new SecurityException("非法应用appId:" + message.getMessageProperties().getAppId());
+			}
+			Object service = ctx.getBean(message.getMessageProperties().getHeaders().get("ServiceName").toString());
+			String serviceMethodName = message.getMessageProperties().getHeaders().get("ServiceMethodName").toString();
+			Method method = service.getClass().getMethod(serviceMethodName, msg.getClass());
+	        method.invoke(service, msg);
+	        //确认消息成功消费
+	        channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			System.out.println("------ err"+ e.getMessage());
+	        channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, false);
+		}
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.ctx = applicationContext;
+    }
+
+}
+
+import org.springframework.amqp.core.AcknowledgeMode;
+import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.TopicExchange;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
+import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class MQConsumerConfig {
+	@Value("${spring.rabbitmq.queuename}")
+	private String queueName ;
+	@Value("${spring.rabbitmq.exchange}")
+	private String queueExchange;
+	@Value("${spring.rabbitmq.routingkey}")
+	private String routingkey;
+
+    @Bean
+    public MessageConverter messageConverter() {
+        return new Jackson2JsonMessageConverter();
+    }
+
+    @Bean
+    public RabbitTemplate template(ConnectionFactory connectionFactory, MessageConverter converter) {
+        RabbitTemplate template = new RabbitTemplate(connectionFactory);
+        template.setMessageConverter(converter);
+        return template;
+    }
+    
+    @Bean
+    public SimpleMessageListenerContainer container(ConnectionFactory connectionFactory, Queue queue, MessageListenerAdapter listenerAdapter) {
+        SimpleMessageListenerContainer container = new SimpleMessageListenerContainer(connectionFactory);
+        //container.setQueueNames(queueName);
+        container.setQueues(queue);
+        container.setExposeListenerChannel(true);
+        container.setMaxConcurrentConsumers(1);
+        container.setConcurrentConsumers(1);
+        container.setPrefetchCount(1000);
+        container.setAcknowledgeMode(AcknowledgeMode.MANUAL); //设置确认模式手工确认
+        container.setMessageListener(listenerAdapter);
+        return container;
+    }
+    
+    @Bean
+    public MessageListenerAdapter listenerAdapter(MQAwareListener listener, MessageConverter converter) {
+        return new MessageListenerAdapter(listener, converter);
+    }
+    
+    @Bean
+    public Queue queue() {
+        return new Queue(queueName, true);
+    }
+    
+    /**
+     * 创建exchange, 可以创建TopicExchange(*、#模糊匹配routing key，routing key必须包含".")，DirectExchange，FanoutExchange(无routing key概念)
+     * @return
+     */
+    @Bean
+    public TopicExchange exchange(){
+        return new TopicExchange(queueExchange);
+    }
+    /*@Bean
+    public DirectExchange exchange(){
+        return new DirectExchange(queueExchange);
+    }*/
+    
+    @Bean
+    public Binding binding(Queue queue, TopicExchange exchange){
+        return BindingBuilder.bind(queue).to(exchange).with(routingkey);
+    }
+}
+
+
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.social.security.SocialUserDetails;
+import org.springframework.social.security.SocialUserDetailsService;
+
+/**
+ * This class delegates requests forward to our UserDetailsService implementation.
+ * This is possible because we use the username of the user as the account ID.
+ * @author Petri Kainulainen
+ */
+public class SimpleSocialUserDetailsService implements SocialUserDetailsService {
+
+    private static final Logger logger = LoggerFactory.getLogger(SimpleSocialUserDetailsService.class);
+
+    private UserDetailsService userDetailsService;
+
+    public SimpleSocialUserDetailsService(UserDetailsService userDetailsService) {
+        this.userDetailsService = userDetailsService;
+    }
+
+    /**
+     * Loads the username by using the account ID of the user.
+     * @param userId    The account ID of the requested user.
+     * @return  The information of the requested user.
+     * @throws UsernameNotFoundException    Thrown if no user is found.
+     * @throws DataAccessException
+     */
+    @Override
+    public SocialUserDetails loadUserByUserId(String userId) throws UsernameNotFoundException, DataAccessException {
+        logger.debug("Loading user by user id: {}", userId);
+
+        UserDetails userDetails = userDetailsService.loadUserByUsername(userId);
+        logger.debug("Found user details: {}", userDetails);
+
+        return (SocialUserDetails) userDetails;
+    }
+}
+
+
+import com.nixmash.blog.solr.common.SolrSettings;
+import com.nixmash.blog.solr.repository.simple.SimpleProductRepositoryImpl;
+import org.apache.solr.client.solrj.embedded.EmbeddedSolrServer;
+import org.apache.solr.core.CoreContainer;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.data.solr.core.SolrTemplate;
+
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+
+@Configuration
+@Profile("dev")
+public class EmbeddedSolrContext {
+
+	@Autowired
+	private SolrSettings solrSettings;
+
+	@Bean(name = "solrClient")
+	public EmbeddedSolrServer solrServerFactoryBean() {
+		String solrCoreName = solrSettings.getSolrCoreName();
+		String solrHome = solrSettings.getSolrEmbeddedPath();
+		Path path = FileSystems.getDefault().getPath(solrHome);
+		CoreContainer container = CoreContainer.createAndLoad(path);
+		return new EmbeddedSolrServer(container, solrCoreName);
+	}
+
+	@Bean
+	public SolrTemplate solrTemplate() throws Exception {
+		String solrCoreName = solrSettings.getSolrCoreName();
+		SolrTemplate solrTemplate = new SolrTemplate(solrServerFactoryBean());
+		solrTemplate.setSolrCore(solrCoreName);
+		return solrTemplate;
+	}
+
+	@Bean
+	public SimpleProductRepositoryImpl simpleProductRepository() throws Exception {
+		SimpleProductRepositoryImpl simpleRepository = new SimpleProductRepositoryImpl();
+		simpleRepository.setSolrOperations(solrTemplate());
+		return simpleRepository;
+	}
+
+}
+
+import com.nixmash.blog.solr.enums.SolrDocType;
+import com.nixmash.blog.solr.model.IProduct;
+import com.nixmash.blog.solr.model.Product;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.repository.NoRepositoryBean;
+import org.springframework.data.solr.core.query.*;
+import org.springframework.data.solr.core.query.result.FacetPage;
+import org.springframework.data.solr.repository.support.SimpleSolrRepository;
+
+import java.util.List;
+
+@NoRepositoryBean
+public class SimpleProductRepositoryImpl extends SimpleSolrRepository<Product, String> implements SimpleBaseProductRepository {
+
+	@Override
+	public List<Product> findByAvailableTrue() {
+		Query query = new SimpleQuery(new Criteria(new SimpleField(Criteria.WILDCARD)).expression(Criteria.WILDCARD));
+		query.addFilterQuery(new SimpleQuery(new Criteria(IProduct.DOCTYPE_FIELD).is(SolrDocType.PRODUCT)));
+		query.setRows(1000);
+		Page<Product> results = getSolrOperations().queryForPage(query, Product.class);
+		return results.getContent();
+	}
+
+	@Override
+	public FacetPage<Product> findByFacetOnAvailable(Pageable pageable) {
+		FacetQuery query = new SimpleFacetQuery(new
+						Criteria(IProduct.DOCTYPE_FIELD).is(SolrDocType.PRODUCT));
+		query.setFacetOptions(new FacetOptions(Product.AVAILABLE_FIELD).setFacetLimit(5));
+		query.setPageRequest(new PageRequest(0, 100));
+		return getSolrOperations().queryForFacetPage(query, Product.class);
+
+	}
+
+	@Override
+	public FacetPage<Product> findByFacetOnCategory(Pageable pageable) {
+
+		FacetQuery query = new
+				SimpleFacetQuery(new Criteria(IProduct.DOCTYPE_FIELD)
+						.is(SolrDocType.PRODUCT));
+
+		query.setFacetOptions(new FacetOptions(Product.CATEGORY_FIELD)
+				.setPageable(new PageRequest(0,20)));
+
+		return getSolrOperations().queryForFacetPage(query, Product.class);
+	}
+
+}
+
+import com.nixmash.blog.solr.model.IProduct;
+import com.nixmash.blog.solr.model.Product;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.geo.Box;
+import org.springframework.data.geo.Distance;
+import org.springframework.data.geo.Point;
+import org.springframework.data.solr.core.query.Query.Operator;
+import org.springframework.data.solr.core.query.result.FacetPage;
+import org.springframework.data.solr.core.query.result.HighlightPage;
+import org.springframework.data.solr.repository.Facet;
+import org.springframework.data.solr.repository.Highlight;
+import org.springframework.data.solr.repository.Query;
+import org.springframework.data.solr.repository.SolrCrudRepository;
+
+import java.util.Collection;
+import java.util.List;
+
+
+public interface CustomProductRepository extends CustomBaseProductRepository, SolrCrudRepository<Product, String> {
+
+	Page<Product> findByPopularityGreaterThanEqual(Integer popularity, Pageable page);
+
+	@Query("name:*?0* AND doctype:product")
+	List<Product> findByNameStartingWith(String name);
+
+	List<Product> findByAvailableTrue();
+
+	List<Product> findByAvailableTrueAndDoctype(String docType);
+
+	@Query(IProduct.AVAILABLE_FIELD + ":false")
+	Page<Product> findByAvailableFalseUsingAnnotatedQuery(Pageable page);
+
+	public List<Product> findByNameContainsOrCategoriesContains(String title, String category, Sort sort);
+
+	@Query(name = "Product.findByNameOrCategory")
+	public List<Product> findByNameOrCategory(String searchTerm, Sort sort);
+
+	@Query("cat:*?0* AND doctype:product")
+	public List<Product> findByCategory(String category);
+
+	@Query("(name:*?0* OR cat:*?0*) AND doctype:product")
+	public List<Product> findByAnnotatedQuery(String searchTerm, Sort sort);
+
+	@Query("inStock:true AND doctype:product")
+	public List<Product> findAvailableProducts();
+
+	@Query("doctype:product")
+	public List<Product> findAllProducts();
+
+	@Query("doctype:product")
+	public Page<Product> findAllProductsPaged(Pageable page);
+	
+	@Query(value = "*:*", filters = { "doctype:product" })
+	@Facet(fields = IProduct.CATEGORY_FIELD, limit = 6)
+	public FacetPage<Product> findProductCategoryFacets(Pageable page);
+
+	@Query("doctype:product")
+	@Facet(fields = IProduct.NAME_FIELD, limit = 100)
+	public FacetPage<Product> findByNameStartingWith(Collection<String> nameFragments, Pageable pageable);
+
+	public List<Product> findByLocationWithin(Point location, Distance distance);
+	
+	public List<Product> findByLocationNear(Point location, Distance distance);
+	
+	public List<Product> findByLocationNear(Box bbox);
+	
+	@Query("{!geofilt pt=?0 sfield=store d=?1}")
+	public List<Product> findByLocationSomewhereNear(Point location, Distance distance);
+	
+	@Highlight(prefix = "<b>", postfix = "</b>")
+	@Query(fields = { IProduct.ID_FIELD, IProduct.NAME_FIELD,
+			IProduct.FEATURE_FIELD, IProduct.CATEGORY_FIELD , IProduct.POPULARITY_FIELD, IProduct.LOCATION_FIELD}, defaultOperator = Operator.AND)
+	public HighlightPage<Product> findByNameIn(Collection<String> names, Pageable page);
+
+}
+
+import com.nixmash.blog.solr.enums.SolrDocType;
+import com.nixmash.blog.solr.model.IProduct;
+import com.nixmash.blog.solr.model.Product;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.solr.core.SolrTemplate;
+import org.springframework.data.solr.core.query.*;
+import org.springframework.data.solr.core.query.result.HighlightPage;
+import org.springframework.stereotype.Repository;
+
+import javax.annotation.Resource;
+import java.util.List;
+
+@Repository
+public class CustomProductRepositoryImpl implements CustomBaseProductRepository {
+
+	private static final Logger logger = LoggerFactory.getLogger(CustomBaseProductRepository.class);
+
+	@Resource
+	private SolrTemplate solrTemplate;
+
+	@Override
+	public Page<Product> findTestCategoryRecords() {
+		return solrTemplate.queryForPage(
+				new SimpleQuery(new SimpleStringCriteria("cat:test")).setPageRequest(new PageRequest(0, 100)),
+				Product.class);
+	}
+
+	@Override
+	public List<Product> findProductsBySimpleQuery(String userQuery) {
+
+		Query query = new SimpleQuery(userQuery);
+		query.addFilterQuery(new SimpleQuery(new Criteria(IProduct.DOCTYPE_FIELD).is(SolrDocType.PRODUCT)));
+		query.setRows(1000);
+
+		Page<Product> results = solrTemplate.queryForPage(query, Product.class);
+		return results.getContent();
+	}
+
+	@Override
+	public void updateProductCategory(String productId, List<String> categories) {
+		PartialUpdate update = new PartialUpdate(IProduct.ID_FIELD, productId);
+		update.setValueOfField(IProduct.CATEGORY_FIELD, categories);
+		solrTemplate.saveBean(update);
+		solrTemplate.commit();
+	}
+
+	@Override
+	public void updateProductName(Product product) {
+		logger.debug("Performing partial update for todo entry: {}", product);
+		PartialUpdate update = new PartialUpdate(Product.ID_FIELD, product.getId());
+		update.add(Product.NAME_FIELD, product.getName());
+		solrTemplate.saveBean(update);
+		solrTemplate.commit();
+	}
+
+	@Override
+	public List<Product> searchWithCriteria(String searchTerm) {
+		logger.debug("Building a product criteria query with search term: {}", searchTerm);
+
+		String[] words = searchTerm.split(" ");
+
+		Criteria conditions = createSearchConditions(words);
+		SimpleQuery search = new SimpleQuery(conditions);
+		search.addSort(sortByIdDesc());
+
+		Page<Product> results = solrTemplate.queryForPage(search, Product.class);
+		return results.getContent();
+	}
+
+	@Override
+	public HighlightPage<Product> searchProductsWithHighlights(String searchTerm) {
+		SimpleHighlightQuery query = new SimpleHighlightQuery();
+		String[] words = searchTerm.split(" ");
+		Criteria conditions = createHighlightedNameConditions(words);
+		query.addCriteria(conditions);
+
+		HighlightOptions hlOptions = new HighlightOptions();
+		hlOptions.addField("name");
+		hlOptions.setSimplePrefix("<b>");
+		hlOptions.setSimplePostfix("</b>");
+		query.setHighlightOptions(hlOptions);
+
+		return solrTemplate.queryForHighlightPage(query, Product.class);
+	}
+
+	private Criteria createHighlightedNameConditions(String[] words) {
+		Criteria conditions = null;
+
+		for (String word : words) {
+			if (conditions == null) {
+				conditions = new Criteria(Product.NAME_FIELD).contains(word);
+			} else {
+				conditions = conditions.or(new Criteria(Product.NAME_FIELD).contains(word));
+			}
+		}
+
+		return conditions;
+	}
+
+	private Criteria createSearchConditions(String[] words) {
+		Criteria conditions = null;
+
+		for (String word : words) {
+			if (conditions == null) {
+				conditions = new Criteria(Product.NAME_FIELD).contains(word)
+						.or(new Criteria(Product.CATEGORY_FIELD).contains(word));
+			} else {
+				conditions = conditions.or(new Criteria(Product.NAME_FIELD).contains(word))
+						.or(new Criteria(Product.CATEGORY_FIELD).contains(word));
+			}
+		}
+
+		return conditions;
+	}
+
+	public Sort sortByIdDesc() {
+		return new Sort(Sort.Direction.DESC, Product.ID_FIELD);
+	}
+}
+
+import com.nixmash.blog.solr.model.PostDoc;
+import org.springframework.data.solr.UncategorizedSolrException;
+import org.springframework.data.solr.repository.Query;
+import org.springframework.data.solr.repository.SolrCrudRepository;
+
+import java.util.List;
+
+public interface CustomPostDocRepository extends CustomBasePostDocRepository, SolrCrudRepository<PostDoc, String> {
+
+    @Query("doctype:post")
+    List<PostDoc> findAllPostDocuments();
+
+    @Query("doctype:post AND id:?0")
+    PostDoc findPostDocByPostId(long postId);
+
+    @Query(value = "id:?0", requestHandler = "/mlt", filters = { "posttype:POST" })
+    List<PostDoc> findMoreLikeThis(long postId) throws UncategorizedSolrException;
+
+}
+
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+/**
+ * Created by daveburke on 10/25/16.
+ */
+@SuppressWarnings({"SpringElInspection", "ELValidationInJSP"})
+@Caching(
+
+        evict = {
+                @CacheEvict(cacheNames= "posts", key = "#result.postId"),
+                @CacheEvict(cacheNames= "posts", key = "#result.postName"),
+                @CacheEvict(cacheNames= "pagedPosts",
+                        allEntries = true,
+                        beforeInvocation = true)
+        }
+)
+@Target({ElementType.METHOD})
+@Retention(RUNTIME)
+public @interface CachePostUpdate {
+}
+
+
+
+import com.nixmash.blog.jpa.dto.PostDTO;
+import com.nixmash.blog.jpa.model.Post;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.batch.core.*;
+import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.job.flow.FlowExecutionStatus;
+import org.springframework.batch.core.job.flow.JobExecutionDecider;
+import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.core.listener.ExecutionContextPromotionListener;
+import org.springframework.batch.core.scope.context.ChunkContext;
+import org.springframework.batch.core.step.tasklet.Tasklet;
+import org.springframework.batch.item.ItemWriter;
+import org.springframework.batch.item.database.JpaPagingItemReader;
+import org.springframework.batch.item.file.FlatFileItemWriter;
+import org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor;
+import org.springframework.batch.item.file.transform.DelimitedLineAggregator;
+import org.springframework.batch.repeat.RepeatStatus;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.FileSystemResource;
+
+import javax.persistence.EntityManagerFactory;
+
+@SuppressWarnings("Convert2Lambda")
+@Configuration
+public class DemoJobConfiguration {
+
+    private static final Logger logger = LoggerFactory.getLogger(DemoJobConfiguration.class);
+
+    private static final FlowExecutionStatus YES = new FlowExecutionStatus("YES");
+    private static final FlowExecutionStatus NO = new FlowExecutionStatus("NO");
+
+    private final JobBuilderFactory jobBuilderFactory;
+    private final StepBuilderFactory stepBuilderFactory;
+    private final EntityManagerFactory entityManagerFactory;
+    private final DemoJobListener demoJobListener;
+    private final DemoJobStepListener demoJobStepListener;
+
+    @Autowired
+    public DemoJobConfiguration(EntityManagerFactory entityManagerFactory, DemoJobListener demoJobListener, DemoJobStepListener demoJobStepListener, StepBuilderFactory stepBuilderFactory, JobBuilderFactory jobBuilderFactory) {
+        this.entityManagerFactory = entityManagerFactory;
+        this.demoJobListener = demoJobListener;
+        this.demoJobStepListener = demoJobStepListener;
+        this.stepBuilderFactory = stepBuilderFactory;
+        this.jobBuilderFactory = jobBuilderFactory;
+    }
+
+    private String c(FlowExecutionStatus executionStatus) {
+        return executionStatus.getName();
+    }
+
+    @Bean
+    public JpaPagingItemReader<Post> demoJobReader() throws Exception {
+        String jpqlQuery = "SELECT p from Post p";
+
+        JpaPagingItemReader<Post> reader = new JpaPagingItemReader<>();
+        reader.setQueryString(jpqlQuery);
+        reader.setEntityManagerFactory(entityManagerFactory);
+        reader.setPageSize(1000);
+        reader.afterPropertiesSet();
+        reader.setSaveState(true);
+
+        return reader;
+    }
+
+    @Bean
+    public DemoJobItemProcessor demoJobProcessor() {
+        return new DemoJobItemProcessor();
+    }
+
+    @Bean
+    public ItemWriter<PostDTO> demoJobWriter() {
+        FlatFileItemWriter<PostDTO> writer = new FlatFileItemWriter<>();
+        writer.setResource(new FileSystemResource("/home/daveburke/web/nixmashspring/posts.csv"));
+        DelimitedLineAggregator<PostDTO> delLineAgg = new DelimitedLineAggregator<>();
+        delLineAgg.setDelimiter(";");
+        BeanWrapperFieldExtractor<PostDTO> fieldExtractor = new BeanWrapperFieldExtractor<>();
+        fieldExtractor.setNames(new String[]{"postTitle"});
+        delLineAgg.setFieldExtractor(fieldExtractor);
+        writer.setLineAggregator(delLineAgg);
+        return writer;
+    }
+
+    @Bean(name = "demoJob")
+    public Job demoJob() throws Exception {
+        return jobBuilderFactory.get("demoJob")
+                .incrementer(new RunIdIncrementer())
+                .listener(demoJobListener)
+                .flow(demoStep1())
+                .next(decideIfGoodToContinue())
+                .on(c(NO))
+                .end()
+                .on(c(YES))
+                .to(optionalStep())
+                .end()
+                .build();
+    }
+
+    @Bean
+    public Step demoStep1() throws Exception {
+        return stepBuilderFactory.get("demoStep1")
+                .<Post, PostDTO>chunk(100)
+                .reader(demoJobReader())
+                .processor(demoJobProcessor())
+                .writer(demoJobWriter())
+                .listener(demoPromotionListener())
+                .listener(demoJobStepListener)
+                .allowStartIfComplete(true)
+                .build();
+    }
+
+    @Bean
+    public JobExecutionDecider decideIfGoodToContinue() {
+        return new JobExecutionDecider() {
+
+            int iteration = 0;
+
+            @Override
+            public FlowExecutionStatus decide(JobExecution jobExecution, StepExecution stepExecution) {
+                long postId = 0;
+                try {
+                    postId = jobExecution.getExecutionContext().getLong("postId");
+                } catch (Exception e) {
+                    logger.info("FlowExecution Exception: " + e.getMessage());
+                }
+
+                long iterations = jobExecution.getJobParameters().getLong("iterations");
+                if(iteration < iterations) {
+                    logger.info("ITERATING... POSTID = " + postId);
+                    iteration++;
+                    return YES;
+                } else {
+                    logger.info("REPEATED 2X's. SKIPPING OPTIONAL STEP");
+                    return NO;
+                }
+            }
+        };
+    }
+
+    @Bean
+    public Step optionalStep() {
+        return stepBuilderFactory.get("optionalStep")
+                .tasklet(new Tasklet() {
+                    @Override
+                    public RepeatStatus execute(StepContribution contribution,
+                                                ChunkContext chunkContext) throws Exception {
+                        logger.info("IN OPTIONAL STEP ------------------------ */");
+                        return RepeatStatus.FINISHED;
+                    }
+                })
+                .build();
+    }
+
+    @Bean
+    public ExecutionContextPromotionListener demoPromotionListener()
+    {
+        ExecutionContextPromotionListener listener =
+                                                                                    new ExecutionContextPromotionListener();
+        listener.setKeys( new String[] { "postId" } );
+        return listener;
+    }
+
+import org.springframework.amqp.core.*;
+import org.springframework.amqp.rabbit.annotation.EnableRabbit;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
+import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Scope;
+import org.springframework.web.filter.CharacterEncodingFilter;
+
+@EnableRabbit
+@Configuration
+public class AmqpConfig {
+    public static final String EXCHANGE = "spring.boot.direct";
+    public static final String ROUTINGKEY_FAIL = "spring.boot.routingKey.failure";
+    public static final String ROUTINGKEY = "spring.boot.routingKey";
+    public static final String QUEUE_NAME = "spring.demo";
+    public static final String QUEUE_NAME_FAIL = "spring.demo.failure";
+
+    //RabbitMQ的配置信息
+    @Value("${spring.rabbitmq.host}")
+    private String host;
+    @Value("${spring.rabbitmq.port}")
+    private Integer port;
+    @Value("${spring.rabbitmq.username}")
+    private String username;
+    @Value("${spring.rabbitmq.password}")
+    private String password;
+    @Value("${spring.rabbitmq.virtual-host}")
+    private String virtualHost;
+
+
+    //建立一个连接容器，类型数据库的连接池
+    @Bean
+    public ConnectionFactory connectionFactory() {
+        CachingConnectionFactory connectionFactory =
+                new CachingConnectionFactory(host, port);
+        connectionFactory.setUsername(username);
+        connectionFactory.setPassword(password);
+        connectionFactory.setVirtualHost(virtualHost);
+        connectionFactory.setPublisherConfirms(true);// 确认机制
+        //发布确认，template要求CachingConnectionFactory的publisherConfirms属性设置为true
+        return connectionFactory;
+    }
+
+    // RabbitMQ的使用入口
+    @Bean
+    @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+    //必须是prototype类型
+    public RabbitTemplate rabbitTemplate() {
+        RabbitTemplate template = new RabbitTemplate(this.connectionFactory());
+        template.setMessageConverter(this.jsonMessageConverter());
+        template.setMandatory(true);
+        return template;
+    }
+
+    /**
+     * 交换机
+     * 针对消费者配置
+     * FanoutExchange: 将消息分发到所有的绑定队列，无routingkey的概念
+     * HeadersExchange ：通过添加属性key-value匹配
+     * DirectExchange:按照routingkey分发到指定队列
+     * TopicExchange:多关键字匹配
+     */
+    @Bean
+    public DirectExchange exchange() {
+        return new DirectExchange(EXCHANGE);
+    }
+
+    /**
+     * 队列
+     *
+     * @return
+     */
+    @Bean
+    public Queue queue() {
+        return new Queue(QUEUE_NAME, true); //队列持久
+
+    }
+
+    @Bean
+    public Queue queueFail() {
+        return new Queue(QUEUE_NAME_FAIL, true); //队列持久
+
+    }
+    /**
+     * 绑定
+     *
+     * @return
+     */
+    @Bean
+    public Binding binding(Queue queue, DirectExchange exchange) {
+        return BindingBuilder.bind(queue()).to(exchange()).with(AmqpConfig.ROUTINGKEY);
+    }
+
+    @Bean
+    public Binding bindingFail(Queue queue, DirectExchange exchange) {
+        return BindingBuilder.bind(queueFail()).to(exchange()).with(AmqpConfig.ROUTINGKEY_FAIL);
+    }
+    @Bean
+    public MessageConverter jsonMessageConverter() {
+        return new Jackson2JsonMessageConverter();
+    }
+
+    /**
+     * 声明一个监听容器
+     *
+     * @return
+     */
+//    @Bean(name="rabbitListenerContainer")
+//    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory() {
+//        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+//        factory.setMessageConverter(jsonMessageConverter());
+//        factory.setConnectionFactory(connectionFactory());
+//        factory.setAcknowledgeMode(AcknowledgeMode.MANUAL);//设置消费者手动应答
+//        factory.setPrefetchCount(1);//从代理接收消息的数目。这个值越大，发送消息就越快，但是导致非顺序处理的风险就越高
+//
+//        return factory;
+//    }
+
+    @Bean
+    Receiver receiver(){
+        return new Receiver();
+    }
+
+    @Bean
+    MessageListenerAdapter listenerAdapter(Receiver receiver) {
+        return new MessageListenerAdapter(receiver, "onMessage");
+    }
+
+    @Bean
+    public SimpleMessageListenerContainer messageListenerContainer(MessageListenerAdapter listenerAdapter) {
+        SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
+        container.setConnectionFactory(connectionFactory());
+        container.setQueueNames(AmqpConfig.QUEUE_NAME);
+        container.setExposeListenerChannel(true);
+        container.setMaxConcurrentConsumers(1);
+        container.setConcurrentConsumers(1);
+        container.setAcknowledgeMode(AcknowledgeMode.MANUAL); //设置确认模式手工确认
+        container.setMessageListener(listenerAdapter);
+        return container;
+    }
+
+
+
+    @Bean
+    public CharacterEncodingFilter characterEncodingFilter() {
+        CharacterEncodingFilter filter = new CharacterEncodingFilter();
+        filter.setEncoding("UTF-8");
+        filter.setForceEncoding(true);
+        return filter;
+    }
+
+}
+
+
+import java.io.Serializable;
+import java.lang.reflect.Type;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.eclipse.microprofile.config.spi.Converter;
+
+/**
+ * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2017 Red Hat inc.
+ */
+class Converters {
+
+    static final Converter<String> STRING_CONVERTER = (Converter & Serializable) value -> value;
+
+    static final Converter<Boolean> BOOLEAN_CONVERTER = (Converter & Serializable) value -> {
+        if (value != null) {
+            return "TRUE".equalsIgnoreCase(value)
+                    || "1".equalsIgnoreCase(value)
+                    || "YES".equalsIgnoreCase(value)
+                    || "Y".equalsIgnoreCase(value)
+                    || "ON".equalsIgnoreCase(value)
+                    || "JA".equalsIgnoreCase(value)
+                    || "J".equalsIgnoreCase(value)
+                    || "OUI".equalsIgnoreCase(value);
+        }
+        return null;
+    };
+
+    static final Converter<Double> DOUBLE_CONVERTER = (Converter & Serializable) value -> value != null ? Double.valueOf(value) : null;
+
+    static final Converter<Float> FLOAT_CONVERTER = (Converter & Serializable) value -> value != null ? Float.valueOf(value) : null;
+
+    static final Converter<Long> LONG_CONVERTER = (Converter & Serializable) value -> value != null ? Long.valueOf(value) : null;
+
+    static final Converter<Integer> INTEGER_CONVERTER = (Converter & Serializable) value -> value != null ? Integer.valueOf(value) : null;
+
+    static final Converter<Duration> DURATION_CONVERTER = (Converter & Serializable) value -> {
+        try {
+            return value != null ? Duration.parse(value) : null;
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException(e);
+        }
+    };
+
+    static final Converter<LocalDate> LOCAL_DATE_CONVERTER = (Converter & Serializable) value -> {
+        try {
+            return value != null ? LocalDate.parse(value) : null;
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException(e);
+        }
+    };
+
+    static final Converter<LocalTime> LOCAL_TIME_CONVERTER = (Converter & Serializable) value -> {
+        try {
+            return value != null ? LocalTime.parse(value) : null;
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException(e);
+        }
+    };
+
+    static final Converter<LocalDateTime> LOCAL_DATE_TIME_CONVERTER = (Converter & Serializable) value -> {
+        try {
+            return value != null ? LocalDateTime.parse(value) : null;
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException(e);
+        }
+    };
+
+    public static final Map<Type, Converter> ALL_CONVERTERS = new HashMap<>();
+
+    static {
+        ALL_CONVERTERS.put(String.class, STRING_CONVERTER);
+
+        ALL_CONVERTERS.put(Boolean.class, BOOLEAN_CONVERTER);
+        ALL_CONVERTERS.put(Boolean.TYPE, BOOLEAN_CONVERTER);
+
+        ALL_CONVERTERS.put(Double.class, DOUBLE_CONVERTER);
+        ALL_CONVERTERS.put(Double.TYPE, DOUBLE_CONVERTER);
+
+        ALL_CONVERTERS.put(Float.class, FLOAT_CONVERTER);
+        ALL_CONVERTERS.put(Float.TYPE, FLOAT_CONVERTER);
+
+        ALL_CONVERTERS.put(Long.class, LONG_CONVERTER);
+        ALL_CONVERTERS.put(Long.TYPE, LONG_CONVERTER);
+
+        ALL_CONVERTERS.put(Integer.class, INTEGER_CONVERTER);
+        ALL_CONVERTERS.put(Integer.TYPE, INTEGER_CONVERTER);
+
+        ALL_CONVERTERS.put(Duration.class, DURATION_CONVERTER);
+
+        ALL_CONVERTERS.put(LocalDate.class, LOCAL_DATE_CONVERTER);
+
+        ALL_CONVERTERS.put(LocalTime.class, LOCAL_TIME_CONVERTER);
+
+        ALL_CONVERTERS.put(LocalDateTime.class, LOCAL_DATE_TIME_CONVERTER);
+    }
+}
+==============================================================================================================
 import org.springframework.boot.autoconfigure.cache.CacheType;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
@@ -1382,7 +2447,734 @@ public class InfinispanEmbeddedCacheManagerChecker implements Condition {
 ==============================================================================================================
 ==============================================================================================================
 ==============================================================================================================
+import org.eclipse.microprofile.metrics.MetricUnits;
+
+/**
+ * @author hrupp, Michal Szynkiewicz, michal.l.szynkiewicz@gmail.com
+ */
+public class ExporterUtil {
+
+    public static final long NANOS_PER_MICROSECOND = 1_000;
+    public static final long NANOS_PER_MILLI = 1_000_000;
+    public static final long NANOS_PER_SECOND = 1_000_000_000;
+    public static final long NANOS_PER_MINUTE = 60 * 1_000_000_000L;
+    public static final long NANOS_PER_HOUR = 3600 * 1_000_000_000L;
+    public static final long NANOS_PER_DAY = 24 * 3600 * 1_000_000_000L;
+
+    private ExporterUtil() {
+    }
+
+    public static Double convertNanosTo(Double value, String unit) {
+
+        Double out;
+
+        switch (unit) {
+            case MetricUnits.NANOSECONDS:
+                out = value;
+                break;
+            case MetricUnits.MICROSECONDS:
+                out = value / NANOS_PER_MICROSECOND;
+                break;
+            case MetricUnits.MILLISECONDS:
+                out = value / NANOS_PER_MILLI;
+                break;
+            case MetricUnits.SECONDS:
+                out = value / NANOS_PER_SECOND;
+                break;
+            case MetricUnits.MINUTES:
+                out = value / NANOS_PER_MINUTE;
+                break;
+            case MetricUnits.HOURS:
+                out = value / NANOS_PER_HOUR;
+                break;
+            case MetricUnits.DAYS:
+                out = value / NANOS_PER_DAY;
+                break;
+            default:
+                out = value;
+        }
+        return out;
+    }
+}
+
+import java.util.EnumSet;
+
+/**
+ * An enumeration representing the different types of metrics.
+ * 
+ * @author hrupp, Raymond Lam, Ouyang Zhou
+ */
+public enum MetricType {
+    /**
+     * A Counter monotonically in-/decreases its values.
+     * An example could be the number of Transactions committed.
+     */
+    COUNTER("counter", Counter.class),
+
+    /**
+     * A Gauge has values that 'arbitrarily' goes up/down at each
+     * sampling. An example could be CPU load
+     */
+    GAUGE("gauge", Gauge.class),
+
+    /**
+     * A Meter measures the rate at which a set of events occur.
+     * An example could be amount of Transactions per Hour.
+     */
+    METERED("meter", Meter.class),
+
+    /**
+     * A Histogram calculates the distribution of a value.
+     */
+    HISTOGRAM("histogram", Histogram.class),
+
+    /**
+     * A timer aggregates timing durations and provides duration 
+     * statistics, plus throughput statistics
+     */
+    TIMER("timer", Timer.class),
+    
+    /**
+     * Invalid - Placeholder
+     */
+    INVALID("invalid", null)
+    ;
+
+
+  private String type;
+  private Class<?> classtype;
+
+  MetricType(String type, Class<?> classtype) {
+    this.type = type;
+    this.classtype = classtype;
+  }
+
+  public String toString() {
+    return type;
+  }
+
+  /**
+   * Convert the string representation into an enum
+   * @param in the String representation
+   * @return the matching Enum
+   * @throws IllegalArgumentException if in is not a valid enum value
+   */
+  public static MetricType from(String in) {
+    EnumSet<MetricType> enumSet = EnumSet.allOf(MetricType.class);
+    for (MetricType u : enumSet) {
+      if (u.type.equals(in)) {
+        return u;
+      }
+    }
+    throw new IllegalArgumentException(in + " is not a valid MetricType");
+  }
+
+  /**
+   * Convert the metric class type into an enum
+   * @param in The metric class type
+   * @return the matching Enum
+   * @throws IllegalArgumentException if in is not a valid enum value
+   */
+  public static MetricType from(Class<?> in) {
+    EnumSet<MetricType> enumSet = EnumSet.allOf(MetricType.class);
+    for (MetricType u : enumSet) {
+      if (u.classtype != null && u.classtype.equals(in)) {
+        return u;
+      }
+    }
+    return MetricType.INVALID;
+  }
+}
 ==============================================================================================================
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Defines all {@link ActiveMQException} types and their codes.
+ */
+public enum ActiveMQExceptionType {
+
+   // Error codes -------------------------------------------------
+
+   INTERNAL_ERROR(000) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQInternalErrorException(msg);
+      }
+   },
+   UNSUPPORTED_PACKET(001) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQUnsupportedPacketException(msg);
+      }
+   },
+   NOT_CONNECTED(002) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQNotConnectedException(msg);
+      }
+   },
+   CONNECTION_TIMEDOUT(003) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQConnectionTimedOutException(msg);
+      }
+   },
+   DISCONNECTED(004) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQDisconnectedException(msg);
+      }
+   },
+   UNBLOCKED(005) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQUnBlockedException(msg);
+      }
+   },
+   IO_ERROR(006) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQIOErrorException(msg);
+      }
+   },
+   QUEUE_DOES_NOT_EXIST(100) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQNonExistentQueueException(msg);
+      }
+   },
+   QUEUE_EXISTS(101) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQQueueExistsException(msg);
+      }
+   },
+   OBJECT_CLOSED(102) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQObjectClosedException(msg);
+      }
+   },
+   INVALID_FILTER_EXPRESSION(103) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQInvalidFilterExpressionException(msg);
+      }
+   },
+   ILLEGAL_STATE(104) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQIllegalStateException(msg);
+      }
+   },
+   SECURITY_EXCEPTION(105) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQSecurityException(msg);
+      }
+   },
+   ADDRESS_DOES_NOT_EXIST(106) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQAddressDoesNotExistException(msg);
+      }
+   },
+   ADDRESS_EXISTS(107) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQAddressExistsException(msg);
+      }
+   },
+   INCOMPATIBLE_CLIENT_SERVER_VERSIONS(108) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQIncompatibleClientServerException(msg);
+      }
+   },
+   LARGE_MESSAGE_ERROR_BODY(110) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQLargeMessageException(msg);
+      }
+   },
+   TRANSACTION_ROLLED_BACK(111) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQTransactionRolledBackException(msg);
+      }
+   },
+   SESSION_CREATION_REJECTED(112) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQSessionCreationException(msg);
+      }
+   },
+   DUPLICATE_ID_REJECTED(113) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQDuplicateIdException(msg);
+      }
+   },
+   DUPLICATE_METADATA(114) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQDuplicateMetaDataException(msg);
+      }
+   },
+   TRANSACTION_OUTCOME_UNKNOWN(115) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQTransactionOutcomeUnknownException(msg);
+      }
+   },
+   ALREADY_REPLICATING(116) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQAlreadyReplicatingException(msg);
+      }
+   },
+   INTERCEPTOR_REJECTED_PACKET(117) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQInterceptorRejectedPacketException(msg);
+      }
+   },
+   INVALID_TRANSIENT_QUEUE_USE(118) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQInvalidTransientQueueUseException(msg);
+      }
+   },
+   REMOTE_DISCONNECT(119) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQRemoteDisconnectException(msg);
+      }
+   },
+   TRANSACTION_TIMEOUT(120) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQTransactionTimeoutException(msg);
+      }
+   },
+   GENERIC_EXCEPTION(999),
+   NATIVE_ERROR_INTERNAL(200),
+   NATIVE_ERROR_INVALID_BUFFER(201),
+   NATIVE_ERROR_NOT_ALIGNED(202),
+   NATIVE_ERROR_CANT_INITIALIZE_AIO(203),
+   NATIVE_ERROR_CANT_RELEASE_AIO(204),
+   NATIVE_ERROR_CANT_OPEN_CLOSE_FILE(205),
+   NATIVE_ERROR_CANT_ALLOCATE_QUEUE(206),
+   NATIVE_ERROR_PREALLOCATE_FILE(208),
+   NATIVE_ERROR_ALLOCATE_MEMORY(209),
+   ADDRESS_FULL(210) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQAddressFullException(msg);
+      }
+   },
+   LARGE_MESSAGE_INTERRUPTED(211) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQLargeMessageInterruptedException(msg);
+      }
+   },
+   CLUSTER_SECURITY_EXCEPTION(212) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQClusterSecurityException(msg);
+      }
+
+   },
+   NOT_IMPLEMTNED_EXCEPTION(213),
+   MAX_CONSUMER_LIMIT_EXCEEDED(214) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQQueueMaxConsumerLimitReached(msg);
+      }
+   },
+   UNEXPECTED_ROUTING_TYPE_FOR_ADDRESS(215) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQUnexpectedRoutingTypeForAddress(msg);
+      }
+   },
+   INVALID_QUEUE_CONFIGURATION(216) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQInvalidQueueConfiguration(msg);
+      }
+   },
+   DELETE_ADDRESS_ERROR(217) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQDeleteAddressException(msg);
+      }
+   };
+
+   private static final Map<Integer, ActiveMQExceptionType> TYPE_MAP;
+
+   static {
+      HashMap<Integer, ActiveMQExceptionType> map = new HashMap<>();
+      for (ActiveMQExceptionType type : EnumSet.allOf(ActiveMQExceptionType.class)) {
+         map.put(type.getCode(), type);
+      }
+      TYPE_MAP = Collections.unmodifiableMap(map);
+   }
+
+   private final int code;
+
+   ActiveMQExceptionType(int code) {
+      this.code = code;
+   }
+
+   public int getCode() {
+      return code;
+   }
+
+   public ActiveMQException createException(String msg) {
+      return new ActiveMQException(msg + ", code:" + this);
+   }
+
+   public static ActiveMQException createException(int code, String msg) {
+      return getType(code).createException(msg);
+   }
+
+   public static ActiveMQExceptionType getType(int code) {
+      ActiveMQExceptionType type = TYPE_MAP.get(code);
+      if (type != null)
+         return type;
+      return ActiveMQExceptionType.GENERIC_EXCEPTION;
+   }
+}
+
+public enum RoutingType {
+
+   MULTICAST, ANYCAST;
+
+   public byte getType() {
+      switch (this) {
+         case MULTICAST:
+            return 0;
+         case ANYCAST:
+            return 1;
+         default:
+            return -1;
+      }
+   }
+
+   public static RoutingType getType(byte type) {
+      switch (type) {
+         case 0:
+            return MULTICAST;
+         case 1:
+            return ANYCAST;
+         default:
+            return null;
+      }
+   }
+}
+
+https://github.com/jmesnil/activemq-artemis/blob/master/artemis-commons/src/main/java/org/apache/activemq/artemis/api/core/SimpleString.java
+
+
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.Locale;
+
+/**
+ * Provides general information about the processors on this host.
+ *
+ * @author Jason T. Greene
+ */
+public class ProcessorInfo {
+    private ProcessorInfo() {
+    }
+
+    private static final String CPUS_ALLOWED = "Cpus_allowed:";
+    private static final byte[] BITS = new byte[]{0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4};
+    private static final Charset ASCII = Charset.forName("US-ASCII");
+
+    /**
+     * Returns the number of processors available to this process. On most operating systems this method
+     * simply delegates to {@link Runtime#availableProcessors()}. However, on Linux, this strategy
+     * is insufficient, since the JVM does not take into consideration the process' CPU set affinity
+     * which is employed by cgroups and numactl. Therefore this method will analyze the Linux proc filesystem
+     * to make the determination. Since the CPU affinity of a process can be change at any time, this method does
+     * not cache the result. Calls should be limited accordingly.
+     * <br>
+     * Note tha on Linux, both SMT units (Hyper-Threading) and CPU cores are counted as a processor.
+     *
+     * @return the available processors on this system.
+     */
+    public static int availableProcessors() {
+        if (System.getSecurityManager() != null) {
+            return AccessController.doPrivileged((PrivilegedAction<Integer>) () -> Integer.valueOf(determineProcessors())).intValue();
+        }
+
+        return determineProcessors();
+    }
+
+    private static int determineProcessors() {
+        int javaProcs = Runtime.getRuntime().availableProcessors();
+        if (!isLinux()) {
+            return javaProcs;
+        }
+
+        int maskProcs = 0;
+
+        try {
+            maskProcs = readCPUMask();
+        } catch (Exception e) {
+            // yum
+        }
+
+        return maskProcs > 0 ? Math.min(javaProcs, maskProcs) : javaProcs;
+    }
+
+    private static int readCPUMask() throws IOException {
+        final FileInputStream stream = new FileInputStream("/proc/self/status");
+        final InputStreamReader inputReader = new InputStreamReader(stream, ASCII);
+
+        try (BufferedReader reader = new BufferedReader(inputReader)) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.startsWith(CPUS_ALLOWED)) {
+                    int count = 0;
+                    int start = CPUS_ALLOWED.length();
+                    for (int i = start; i < line.length(); i++) {
+                         char ch = line.charAt(i);
+                         if (ch >= '0' && ch <= '9') {
+                             count += BITS[ch - '0'];
+                         } else if (ch >= 'a' && ch <= 'f') {
+                             count += BITS[ch - 'a' + 10];
+                         } else if (ch >= 'A' && ch <= 'F') {
+                             count += BITS[ch - 'A' + 10];
+                         }
+                     }
+                     return count;
+                 }
+             }
+         }
+
+         return -1;
+     }
+
+    private static boolean isLinux() {
+        String osArch = System.getProperty("os.name", "unknown").toLowerCase(Locale.US);
+        return (osArch.contains("linux"));
+    }
+}
+
+import org.wildfly.common.iteration.ByteIterator;
+import org.wildfly.common.iteration.CodePointIterator;
+
+/**
+ * A base-32 alphabet.
+ *
+ * @see ByteIterator#base32Encode(Base32Alphabet)
+ * @see CodePointIterator#base32Decode(Base32Alphabet)
+ */
+public abstract class Base32Alphabet extends Alphabet {
+
+    /**
+     * Construct a new instance.
+     *
+     * @param littleEndian {@code true} if the alphabet is little-endian (LSB first), {@code false} otherwise
+     */
+    protected Base32Alphabet(final boolean littleEndian) {
+        super(littleEndian);
+    }
+
+    /**
+     * Encode the given 5-bit value to a code point.
+     *
+     * @param val the 5-bit value
+     * @return the Unicode code point
+     */
+    public abstract int encode(int val);
+
+    /**
+     * Decode the given code point.  If the code point is not valid, -1 is returned.
+     *
+     * @param codePoint the code point
+     * @return the decoded 5-bit value or -1 if the code point is not valid
+     */
+    public abstract int decode(int codePoint);
+
+    /**
+     * The standard <a href="http://tools.ietf.org/html/rfc4648">RFC 4648</a> base-32 alphabet.
+     */
+    public static final Base32Alphabet STANDARD = new Base32Alphabet(false) {
+        public int encode(final int val) {
+            if (val <= 25) {
+                return 'A' + val;
+            } else {
+                assert val < 32;
+                return '2' + val - 26;
+            }
+        }
+
+        public int decode(final int codePoint) {
+            if ('A' <= codePoint && codePoint <= 'Z') {
+                return codePoint - 'A';
+            } else if ('2' <= codePoint && codePoint <= '7') {
+                return codePoint - '2' + 26;
+            } else {
+                return -1;
+            }
+        }
+    };
+
+    /**
+     * The standard <a href="http://tools.ietf.org/html/rfc4648">RFC 4648</a> base-32 alphabet mapped to lowercase.
+     */
+    public static final Base32Alphabet LOWERCASE = new Base32Alphabet(false) {
+        public int encode(final int val) {
+            if (val <= 25) {
+                return 'a' + val;
+            } else {
+                assert val < 32;
+                return '2' + val - 26;
+            }
+        }
+
+        public int decode(final int codePoint) {
+            if ('a' <= codePoint && codePoint <= 'z') {
+                return codePoint - 'a';
+            } else if ('2' <= codePoint && codePoint <= '7') {
+                return codePoint - '2' + 26;
+            } else {
+                return -1;
+            }
+        }
+    };
+
+}
+
+/**
+ * A base-n encoder/decoder alphabet.  Alphabets may be little-endian or big-endian.  Each base has its own subclass.
+ */
+public abstract class Alphabet {
+    private final boolean littleEndian;
+
+    Alphabet(final boolean littleEndian) {
+        this.littleEndian = littleEndian;
+    }
+
+    /**
+     * Determine whether this is a little-endian or big-endian alphabet.
+     *
+     * @return {@code true} if the alphabet is little-endian, {@code false} if it is big-endian
+     */
+    public boolean isLittleEndian() {
+        return littleEndian;
+    }
+
+    /**
+     * Encode the given byte value to a code point.
+     *
+     * @param val the value
+     * @return the Unicode code point
+     */
+    public abstract int encode(int val);
+
+    /**
+     * Decode the given code point (character).  If the code point is not valid, -1 is returned.
+     *
+     * @param codePoint the Unicode code point
+     * @return the decoded value or -1 if the code point is not valid
+     */
+    public abstract int decode(int codePoint);
+}
+
+import org.wildfly.common.iteration.ByteIterator;
+import org.wildfly.common.iteration.CodePointIterator;
+
+/**
+ * A base-64 alphabet.
+ *
+ * @see ByteIterator#base64Encode(Base64Alphabet)
+ * @see CodePointIterator#base64Decode(Base64Alphabet)
+ */
+public abstract class Base64Alphabet extends Alphabet {
+
+    /**
+     * Construct a new instance.
+     *
+     * @param littleEndian {@code true} if the alphabet is little-endian (LSB first), {@code false} otherwise
+     */
+    protected Base64Alphabet(final boolean littleEndian) {
+        super(littleEndian);
+    }
+
+    /**
+     * Encode the given 6-bit value to a code point.
+     *
+     * @param val the 6-bit value
+     * @return the Unicode code point
+     */
+    public abstract int encode(int val);
+
+    /**
+     * Decode the given code point.  If the code point is not valid, -1 is returned.
+     *
+     * @param codePoint the code point
+     * @return the decoded 6-bit value or -1 if the code point is not valid
+     */
+    public abstract int decode(int codePoint);
+
+    /**
+     * The standard <a href="http://tools.ietf.org/html/rfc4648">RFC 4648</a> base-64 alphabet.
+     */
+    public static final Base64Alphabet STANDARD = new Base64Alphabet(false) {
+        public int encode(final int val) {
+            if (val <= 25) {
+                return 'A' + val;
+            } else if (val <= 51) {
+                return 'a' + val - 26;
+            } else if (val <= 61) {
+                return '0' + val - 52;
+            } else if (val == 62) {
+                return '+';
+            } else {
+                assert val == 63;
+                return '/';
+            }
+        }
+
+        public int decode(final int codePoint) throws IllegalArgumentException {
+            if ('A' <= codePoint && codePoint <= 'Z') {
+                return codePoint - 'A';
+            } else if ('a' <= codePoint && codePoint <= 'z') {
+                return codePoint - 'a' + 26;
+            } else if ('0' <= codePoint && codePoint <= '9') {
+                return codePoint - '0' + 52;
+            } else if (codePoint == '+') {
+                return 62;
+            } else if (codePoint == '/') {
+                return 63;
+            } else {
+                return -1;
+            }
+        }
+    };
+}
+
+
+    private static char hex(int v) {
+        return (char) (v < 10 ? '0' + v : 'a' + v - 10);
+    }
+	
+	https://github.com/jmesnil/wildfly-common/tree/master/src/main/java/org/wildfly/common
 ==============================================================================================================
 ==============================================================================================================
 ==============================================================================================================

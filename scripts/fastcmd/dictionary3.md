@@ -3622,13 +3622,1109 @@ text=toRemove.stream()
              .reduce(Function.identity(), Function::andThen)
              .apply(text);
 ----------------------------------------------------------------------------------------
+import com.structurizr.model.Element;
+import com.structurizr.model.Relationship;
+import com.structurizr.util.StringUtils;
+
+import java.util.Collection;
+import java.util.LinkedList;
+
+public final class Styles {
+
+    private Collection<ElementStyle> elements = new LinkedList<>();
+    private Collection<RelationshipStyle> relationships = new LinkedList<>();
+
+    public Collection<ElementStyle> getElements() {
+        return elements;
+    }
+
+    public void add(ElementStyle elementStyle) {
+        if (elementStyle != null) {
+            this.elements.add(elementStyle);
+        }
+    }
+
+    public ElementStyle addElementStyle(String tag) {
+        ElementStyle elementStyle = null;
+
+        if (tag != null) {
+            if (elements.stream().anyMatch(es -> es.getTag().equals(tag))) {
+                throw new IllegalArgumentException("An element style for the tag \"" + tag + "\" already exists.");
+            }
+
+            elementStyle = new ElementStyle();
+            elementStyle.setTag(tag);
+            add(elementStyle);
+        }
+
+        return elementStyle;
+    }
+
+    /**
+     * Removes all element styles.
+     */
+    public void clearElementStyles() {
+        this.elements = new LinkedList<>();
+    }
+
+    /**
+     * Removes all relationship styles.
+     */
+    public void clearRelationshipStyles() {
+        this.relationships = new LinkedList<>();
+    }
+
+    public Collection<RelationshipStyle> getRelationships() {
+        return relationships;
+    }
+
+    public void add(RelationshipStyle relationshipStyle) {
+        if (relationshipStyle != null) {
+            this.relationships.add(relationshipStyle);
+        }
+    }
+
+    public RelationshipStyle addRelationshipStyle(String tag) {
+        RelationshipStyle relationshipStyle = null;
+
+        if (tag != null) {
+            if (relationships.stream().anyMatch(rs -> rs.getTag().equals(tag))) {
+                throw new IllegalArgumentException("A relationship style for the tag \"" + tag + "\" already exists.");
+            }
+
+            relationshipStyle = new RelationshipStyle();
+            relationshipStyle.setTag(tag);
+             add(relationshipStyle);
+        }
+
+        return relationshipStyle;
+    }
+
+    private ElementStyle findElementStyle(String tag) {
+        if (tag != null) {
+            for (ElementStyle elementStyle : elements) {
+                if (elementStyle != null && elementStyle.getTag().equals(tag)) {
+                    return elementStyle;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private RelationshipStyle findRelationshipStyle(String tag) {
+        if (tag != null) {
+            for (RelationshipStyle relationshipStyle : relationships) {
+                if (relationshipStyle != null && relationshipStyle.getTag().equals(tag)) {
+                    return relationshipStyle;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public ElementStyle findElementStyle(Element element) {
+        ElementStyle style = new ElementStyle("").background("#dddddd").color("#000000").shape(Shape.Box);
+
+        if (element != null) {
+            for (String tag : element.getTagsAsSet()) {
+                ElementStyle elementStyle = findElementStyle(tag);
+                if (elementStyle != null) {
+                    if (!StringUtils.isNullOrEmpty(elementStyle.getBackground())) {
+                        style.setBackground(elementStyle.getBackground());
+                    }
+
+                    if (!StringUtils.isNullOrEmpty(elementStyle.getColor())) {
+                        style.setColor(elementStyle.getColor());
+                    }
+
+                    if (!StringUtils.isNullOrEmpty(elementStyle.getStroke())) {
+                        style.setStroke(elementStyle.getStroke());
+                    }
+
+                    if (elementStyle.getShape() != null) {
+                        style.setShape(elementStyle.getShape());
+                    }
+                }
+            }
+        }
+
+        return style;
+    }
+
+    public RelationshipStyle findRelationshipStyle(Relationship relationship) {
+        RelationshipStyle style = new RelationshipStyle("").color("#707070");
+
+        if (relationship != null) {
+            for (String tag : relationship.getTagsAsSet()) {
+                RelationshipStyle relationshipStyle = findRelationshipStyle(tag);
+                if (relationshipStyle != null) {
+                    if (relationshipStyle.getColor() != null && relationshipStyle.getColor().trim().length() > 0) {
+                        style.setColor(relationshipStyle.getColor());
+                    }
+                }
+            }
+        }
+
+        return style;
+    }
+
+}
+
+/**
+ * These represent paper sizes in pixels at 300dpi.
+ */
+public enum PaperSize {
+
+    A6_Portrait("A6", Orientation.Portrait, 1240, 1748),
+    A6_Landscape("A6", Orientation.Landscape, 1748, 1240),
+
+    A5_Portrait("A5", Orientation.Portrait, 1748, 2480),
+    A5_Landscape("A5", Orientation.Landscape, 2480, 1748),
+
+    A4_Portrait("A4", Orientation.Portrait, 2480, 3508),
+    A4_Landscape("A4", Orientation.Landscape, 3508, 2480),
+
+    A3_Portrait("A3", Orientation.Portrait, 3508, 4961),
+    A3_Landscape("A3", Orientation.Landscape, 4961, 3508),
+
+    A2_Portrait("A2", Orientation.Portrait, 4961, 7016),
+    A2_Landscape("A2", Orientation.Landscape, 7016, 4961),
+
+    Letter_Portrait("Letter", Orientation.Portrait, 2550, 3300),
+    Letter_Landscape("Letter", Orientation.Landscape, 3300, 2550),
+
+    Legal_Portrait("Legal", Orientation.Portrait, 2550, 4200),
+    Legal_Landscape("Legal", Orientation.Landscape, 4200, 2550),
+
+    Slide_4_3("Slide 4:3", Orientation.Landscape, 3306, 2480),
+    Slide_16_9("Slide 16:9", Orientation.Landscape, 3508, 1973);
+
+    private String name;
+    private Orientation orientation;
+    private int width;
+    private int height;
+
+    private PaperSize(String name, Orientation orientation, int width, int height) {
+        this.name = name;
+        this.orientation = orientation;
+        this.width = width;
+        this.height = height;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public Orientation getOrientation() {
+        return orientation;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
+    }
+
+    enum Orientation {
+        Portrait,
+        Landscape
+    }
+
+}
 ----------------------------------------------------------------------------------------
+import java.nio.charset.Charset;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
+import static java.lang.Math.min;
+
+/**
+ * An ID generator that uses a digest function when generating IDs for model elements and relationships.
+ * This allows IDs to be more stable than a sequential number, and allows models to be merged more easily.
+ */
+public class MessageDigestIdGenerator implements IdGenerator {
+
+    private static final Charset UTF8 = Charset.forName("UTF-8");
+    private static final char[] HEX_CHARS = "0123456789abcdef".toCharArray();
+
+    public static MessageDigestIdGenerator getInstance(final String algorithm) {
+        return getInstance(algorithm, Integer.MAX_VALUE);
+    }
+
+    public static MessageDigestIdGenerator getInstance(final String algorithm, final int length) {
+        try {
+            return new MessageDigestIdGenerator(MessageDigest.getInstance(algorithm), length);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalArgumentException("Unknown algorithm: " + algorithm, e);
+        }
+    }
+
+    private final MessageDigest digest;
+    private final int length;
+
+    public MessageDigestIdGenerator(final MessageDigest digest, final int length) {
+        this.digest = digest;
+        this.length = length;
+    }
+
+    @Override
+    public void found(String id) {
+        // nothing to do
+    }
+
+    @Override
+    public String generateId(Element element) {
+        return generateId(
+                element.getCanonicalName());
+    }
+
+    @Override
+    public String generateId(Relationship relationship) {
+        return generateId(
+                relationship.getSource().getCanonicalName(),
+                relationship.getDescription(),
+                relationship.getDestination().getCanonicalName());
+    }
+
+    public synchronized String generateId(final String...terms) {
+        digest.reset();
+        for (final String term : terms) {
+            if(term!=null) {
+                digest.update(term.getBytes(UTF8));
+            }
+        }
+
+        final byte[] bytes = this.digest.digest();
+        final char[] chars = new char[min(bytes.length * 2, this.length)];
+
+        int b=0, c=0;
+        while(b < bytes.length && c < chars.length) {
+            int value = bytes[b++] & 0xFF;
+            chars[c++] = HEX_CHARS[value >>> 4];
+            if(c < chars.length) {
+                chars[c++] = HEX_CHARS[value & 0x0F];
+            }
+        }
+        return new String(chars);
+    }
+}
 ----------------------------------------------------------------------------------------
+import java.io.Closeable;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.LinkedHashMap;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarInputStream;
+import java.util.jar.Manifest;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
+/*
+* A universal random access interface for both JarFile and JarInputStream
+*
+* In the case when JarInputStream is provided to constructor, the whole stream
+* will be loaded into memory for random access purposes.
+* On the other hand, when a JarFile is provided, it simply works as a wrapper.
+* */
+
+public class JarMap implements Closeable, AutoCloseable {
+
+    private JarFile jarFile;
+    private JarInputStream jis;
+    private LinkedHashMap<String, JarEntry> bufMap;
+    private Manifest manifest;
+
+    public JarMap(File file) throws IOException {
+        this(file, true);
+    }
+
+    public JarMap(File file, boolean verify) throws IOException {
+        this(file, verify, ZipFile.OPEN_READ);
+    }
+
+    public JarMap(File file, boolean verify, int mode) throws IOException {
+        jarFile = new JarFile(file, verify, mode);
+        manifest = jarFile.getManifest();
+    }
+
+    public JarMap(String name) throws IOException {
+        this(new File(name));
+    }
+
+    public JarMap(String name, boolean verify) throws IOException {
+        this(new File(name), verify);
+    }
+
+    public JarMap(InputStream is) throws IOException {
+        this(is, true);
+    }
+
+    public JarMap(InputStream is, boolean verify) throws IOException {
+        jis = new JarInputStream(is, verify);
+        bufMap = new LinkedHashMap<>();
+        JarEntry entry;
+        while ((entry = jis.getNextJarEntry()) != null) {
+            bufMap.put(entry.getName(), new JarMapEntry(entry, jis));
+        }
+        manifest = jis.getManifest();
+    }
+
+    public File getFile() {
+        return jarFile == null ? null : new File(jarFile.getName());
+    }
+
+    public Manifest getManifest() {
+        return manifest;
+    }
+
+    public InputStream getInputStream(ZipEntry ze) throws IOException {
+        if (bufMap != null) {
+            JarMapEntry e = (JarMapEntry) bufMap.get(ze.getName());
+            if (e != null)
+                return e.data.getInputStream();
+        }
+        return jarFile.getInputStream(ze);
+    }
+
+    public OutputStream getOutputStream(ZipEntry ze) {
+        manifest = null; /* Invalidate the manifest */
+        if (bufMap == null)
+            bufMap = new LinkedHashMap<>();
+        JarMapEntry e = new JarMapEntry(ze.getName());
+        bufMap.put(ze.getName(), e);
+        return e.data;
+    }
+
+    public byte[] getRawData(ZipEntry ze) throws IOException {
+        if (bufMap != null) {
+            JarMapEntry e = (JarMapEntry) bufMap.get(ze.getName());
+            if (e != null)
+                return e.data.toByteArray();
+        }
+        ByteArrayStream bytes = new ByteArrayStream();
+        bytes.readFrom(jarFile.getInputStream(ze));
+        return bytes.toByteArray();
+    }
+
+    public Enumeration<JarEntry> entries() {
+        return jarFile == null ? Collections.enumeration(bufMap.values()) : jarFile.entries();
+    }
+
+    public ZipEntry getEntry(String name) {
+        return getJarEntry(name);
+    }
+
+    public JarEntry getJarEntry(String name) {
+        JarEntry e = jarFile == null ? bufMap.get(name) : jarFile.getJarEntry(name);
+        if (e == null && bufMap != null)
+            return bufMap.get(name);
+        return e;
+    }
+
+    @Override
+    public void close() throws IOException {
+        (jarFile == null ? jis : jarFile).close();
+    }
+
+    private static class JarMapEntry extends JarEntry {
+        ByteArrayStream data;
+
+        JarMapEntry(JarEntry je, InputStream is) {
+            super(je);
+            data = new ByteArrayStream();
+            data.readFrom(is);
+        }
+
+        JarMapEntry(String s) {
+            super(s);
+            data = new ByteArrayStream();
+        }
+    }
+}
 ----------------------------------------------------------------------------------------
+public class FooParameterResolver implements ParameterResolver {
+  @Override
+  public boolean supportsParameter(ParameterContext parameterContext, 
+    ExtensionContext extensionContext) throws ParameterResolutionException {
+      return parameterContext.getParameter().getType() == Foo.class;
+  }
+ 
+  @Override
+  public Object resolveParameter(ParameterContext parameterContext, 
+    ExtensionContext extensionContext) throws ParameterResolutionException {
+      return new Foo();
+  }
+}
+https://www.baeldung.com/junit-5-parameters
+
+    @Override
+    public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {
+        configurer.mediaType("adoc", MediaType.parseMediaType("text/asciidoc;charset=utf-8"))
+                .mediaType("md", MediaType.parseMediaType("text/markdown;charset=utf-8"))
+                .mediaType("html", MediaType.parseMediaType("text/html;charset=utf-8"))
+                .mediaType("properties", MediaType.parseMediaType("text/properties;charset=utf-8"))
+                .mediaType("yml", MediaType.parseMediaType("text/yaml;charset=utf-8"))
+                .mediaType("sql", MediaType.parseMediaType(MediaType.TEXT_PLAIN_VALUE + ";charset=utf-8"))
+                .mediaType("jdl", MediaType.parseMediaType(MediaType.TEXT_PLAIN_VALUE + ";charset=utf-8"))
+                .mediaType("doc", MediaType.parseMediaType("application/msword"));
+        super.configureContentNegotiation(configurer);
+    }
+
+public class ProductionDogeRepository implements DogeRepository {
+
+    @Override
+    public String getDogeData() {
+        StringBuffer doge = new StringBuffer();
+        doge.append("░░░░░░░░░▄░░░░░░░░░░░░░░▄").append("\n");
+        doge.append("░░░░░░░░▌▒█░░░░░░░░░░░▄▀▒▌").append("\n");
+        doge.append("░░░░░░░░▌▒▒█░░░░░░░░▄▀▒▒▒▐").append("\n");
+        doge.append("░░░░░░░▐▄▀▒▒▀▀▀▀▄▄▄▀▒▒▒▒▒▐").append("\n");
+        doge.append("░░░░░▄▄▀▒░▒▒▒▒▒▒▒▒▒█▒▒▄█▒▐").append("\n");
+        doge.append("░░░▄▀▒▒▒░░░▒▒▒░░░▒▒▒▀██▀▒▌").append("\n");
+        doge.append("░░▐▒▒▒▄▄▒▒▒▒░░░▒▒▒▒▒▒▒▀▄▒▒▌").append("\n");
+        doge.append("░░▌░░▌█▀▒▒▒▒▒▄▀█▄▒▒▒▒▒▒▒█▒▐").append("\n");
+        doge.append("░▐░░░▒▒▒▒▒▒▒▒▌██▀▒▒░░░▒▒▒▀▄▌").append("\n");
+        doge.append("░▌░▒▄██▄▒▒▒▒▒▒▒▒▒░░░░░░▒▒▒▒▌").append("\n");
+        doge.append("▌▒▀▐▄█▄█▌▄░▀▒▒░░░░░░░░░░▒▒▒▐").append("\n");
+        doge.append("▐▒▒▐▀▐▀▒░▄▄▒▄▒▒▒▒▒▒░▒░▒░▒▒▒▒▌").append("\n");
+        doge.append("▐▒▒▒▀▀▄▄▒▒▒▄▒▒▒▒▒▒▒▒░▒░▒░▒▒▐").append("\n");
+        doge.append("░▌▒▒▒▒▒▒▀▀▀▒▒▒▒▒▒░▒░▒░▒░▒▒▒▌").append("\n");
+        doge.append("░▐▒▒▒▒▒▒▒▒▒▒▒▒▒▒░▒░▒░▒▒▄▒▒▐").append("\n");
+        doge.append("░░▀▄▒▒▒▒▒▒▒▒▒▒▒░▒░▒░▒▄▒▒▒▒▌").append("\n");
+        doge.append("░░░░▀▄▒▒▒▒▒▒▒▒▒▒▄▄▄▀▒▒▒▒▄▀").append("\n");
+        doge.append("░░░░░░▀▄▄▄▄▄▄▀▀▀▒▒▒▒▒▄▄▀").append("\n");
+        doge.append("░░░░░░░░░▒▒▒▒▒▒▒▒▒▒▀▀");
+        return doge.toString();
+    }
+}
 ----------------------------------------------------------------------------------------
+import java.util.Locale;
+
+import android.text.TextUtils;
+
+public class Utils {
+	public static String bytesToHexString(byte[] src) {
+		StringBuilder stringBuilder = new StringBuilder();
+		if (src != null && src.length > 0) {
+			for (int i = 0; i < src.length; i++) {
+				int hex = src[i] & 0xFF;
+				String hexStr = Integer.toHexString(hex);
+				if (hexStr.length() < 2) {
+					stringBuilder.append(0);
+				}
+				stringBuilder.append(hexStr);
+			}
+			return stringBuilder.toString();
+		} else
+			return null;
+	}
+
+	public static byte[] hexStringToBytes(String hexString) {
+		byte[] bs = null;
+		if (!TextUtils.isEmpty(hexString)) {
+			bs = new byte[hexString.length() / 2];
+			char[] hexChars = hexString.toUpperCase(Locale.getDefault()).toCharArray();
+			for (int i = 0; i < bs.length; i++) {
+				bs[i] = (byte) ((byte) "0123456789ABCDEF".indexOf(hexChars[i * 2]) << 4 | (byte) "0123456789ABCDEF"
+						.indexOf(hexChars[i * 2 + 1]));
+			}
+		}
+		return bs;
+	}
+}
+
+
+import org.apache.commons.codec.binary.Base64;
+
+import java.security.Key;
+import java.security.SecureRandom;
+
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+
+public class EncryptorUtils {
+    public static final String ALGORITHM = "AES";
+
+    public static byte[] decrypt(String key)  {
+        return Base64.decodeBase64(key);
+    }
+
+    public static String encrypt(byte[] key)  {
+        return Base64.encodeBase64String(key);
+    }
+
+    public static byte[] decryptBASE64(String key) throws Exception {
+        return Base64.decodeBase64(key);
+    }
+
+    public static String encryptBASE64(byte[] key) throws Exception {
+        return Base64.encodeBase64String(key);
+    }
+
+    private static Key toKey(byte[] key) throws Exception {
+        //DESKeySpec dks = new DESKeySpec(key);
+        //SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(ALGORITHM);
+        //SecretKey secretKey = keyFactory.generateSecret(dks);
+
+        // 当使用其他对称加密算法时，如AES、Blowfish等算法时，用下述代码替换上述三行代码
+        SecretKey secretKey = new SecretKeySpec(key, ALGORITHM);
+
+        return secretKey;
+    }
+
+    public static byte[] decrypt(byte[] data, String key) throws Exception {
+        Key k = toKey(decryptBASE64(key));
+
+        Cipher cipher = Cipher.getInstance(ALGORITHM);
+        cipher.init(Cipher.DECRYPT_MODE, k);
+
+        return cipher.doFinal(data);
+    }
+
+    public static byte[] encrypt(byte[] data, String key) throws Exception {
+        Key k = toKey(decryptBASE64(key));
+        Cipher cipher = Cipher.getInstance(ALGORITHM);
+        cipher.init(Cipher.ENCRYPT_MODE, k);
+
+        return cipher.doFinal(data);
+    }
+
+    public static String initKey() throws Exception {
+        return initKey(null);
+    }
+
+    public static String initKey(String seed) throws Exception {
+        SecureRandom secureRandom = null;
+
+        if (seed != null) {
+            secureRandom = new SecureRandom(decryptBASE64(seed));
+        } else {
+            secureRandom = new SecureRandom();
+        }
+
+        KeyGenerator kg = KeyGenerator.getInstance(ALGORITHM);
+        kg.init(secureRandom);
+
+        SecretKey secretKey = kg.generateKey();
+
+        return encryptBASE64(secretKey.getEncoded());
+    }
+
+
+    public static void main(String[] args) throws Exception {
+        String[] vals = new String[]{"test","test@123"};
+        for (String source : vals) {
+            System.out.println("原文: " + source);
+            String encryptData = encrypt(source.getBytes());
+            System.out.println("加密后: " + encryptData);
+            String decryptData = new String(decrypt(encryptData));
+            System.out.println("解密后: " + decryptData);
+        }
+    }
+}
 ----------------------------------------------------------------------------------------
+<?xml version="1.0"?>
+<!--
+
+    Copyright 2017 The OpenTracing Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+    in compliance with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software distributed under the License
+    is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+    or implied. See the License for the specific language governing permissions and limitations under
+    the License.
+
+-->
+
+<!--
+    Checkstyle configuration that checks the Google coding conventions from Google Java Style
+    that can be found at https://google.github.io/styleguide/javaguide.html.
+
+    Checkstyle is very configurable. Be sure to read the documentation at
+    http://checkstyle.sf.net (or in your downloaded distribution).
+
+    To completely disable a check, just comment it out or delete it from the file.
+
+    Authors: Max Vetrenko, Ruslan Diachenko, Roman Ivanov.
+ -->
+<!DOCTYPE module PUBLIC
+  "-//Puppy Crawl//DTD Check Configuration 1.3//EN"
+  "http://checkstyle.sourceforge.net/dtds/configuration_1_3.dtd">
+
+<module name="Checker">
+  <property name="charset" value="UTF-8"/>
+
+  <property name="fileExtensions" value="java, properties, xml"/>
+  <!-- Checks for whitespace                               -->
+  <!-- See http://checkstyle.sf.net/config_whitespace.html -->
+  <module name="FileTabCharacter">
+    <property name="eachLine" value="true"/>
+  </module>
+
+  <module name="TreeWalker">
+    <module name="OuterTypeFilename"/>
+    <module name="IllegalTokenText">
+      <property name="tokens" value="STRING_LITERAL, CHAR_LITERAL"/>
+      <property name="format"
+        value="\\u00(09|0(a|A)|0(c|C)|0(d|D)|22|27|5(C|c))|\\(0(10|11|12|14|15|42|47)|134)"/>
+      <property name="message"
+        value="Consider using special escape sequence instead of octal value or Unicode escaped value."/>
+    </module>
+    <module name="AvoidEscapedUnicodeCharacters">
+      <property name="allowEscapesForControlCharacters" value="true"/>
+      <property name="allowByTailComment" value="true"/>
+      <property name="allowNonPrintableEscapes" value="true"/>
+    </module>
+    <!--module name="LineLength">
+      <property name="max" value="100"/>
+      <property name="ignorePattern"
+        value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
+    </module-->
+    <module name="AvoidStarImport"/>
+    <!--module name="OneTopLevelClass"/-->
+    <module name="NoLineWrap"/>
+    <module name="EmptyBlock">
+      <property name="option" value="TEXT"/>
+      <property name="tokens"
+        value="LITERAL_TRY, LITERAL_FINALLY, LITERAL_IF, LITERAL_ELSE, LITERAL_SWITCH"/>
+    </module>
+    <module name="NeedBraces"/>
+    <module name="LeftCurly"/>
+    <module name="RightCurly">
+      <property name="id" value="RightCurlySame"/>
+      <property name="tokens"
+        value="LITERAL_TRY, LITERAL_CATCH, LITERAL_FINALLY, LITERAL_IF, LITERAL_ELSE, LITERAL_DO"/>
+    </module>
+    <module name="RightCurly">
+      <property name="id" value="RightCurlyAlone"/>
+      <property name="option" value="alone"/>
+      <property name="tokens"
+        value="CLASS_DEF, METHOD_DEF, CTOR_DEF, LITERAL_FOR, LITERAL_WHILE, STATIC_INIT, INSTANCE_INIT"/>
+    </module>
+    <module name="WhitespaceAround">
+      <property name="allowEmptyConstructors" value="true"/>
+      <property name="allowEmptyMethods" value="true"/>
+      <property name="allowEmptyTypes" value="true"/>
+      <property name="allowEmptyLoops" value="true"/>
+      <message key="ws.notFollowed"
+        value="WhitespaceAround: ''{0}'' is not followed by whitespace. Empty blocks may only be represented as '{}' when not part of a multi-block statement (4.1.3)"/>
+      <message key="ws.notPreceded"
+        value="WhitespaceAround: ''{0}'' is not preceded with whitespace."/>
+    </module>
+    <module name="OneStatementPerLine"/>
+    <module name="MultipleVariableDeclarations"/>
+    <module name="ArrayTypeStyle"/>
+    <module name="MissingSwitchDefault"/>
+    <module name="FallThrough"/>
+    <module name="UpperEll"/>
+    <module name="ModifierOrder"/>
+    <!--module name="EmptyLineSeparator">
+      <property name="allowNoEmptyLineBetweenFields" value="true"/>
+    </module-->
+    <module name="SeparatorWrap">
+      <property name="id" value="SeparatorWrapDot"/>
+      <property name="tokens" value="DOT"/>
+      <property name="option" value="nl"/>
+    </module>
+    <module name="SeparatorWrap">
+      <property name="id" value="SeparatorWrapComma"/>
+      <property name="tokens" value="COMMA"/>
+      <property name="option" value="EOL"/>
+    </module>
+    <module name="SeparatorWrap">
+      <!-- ELLIPSIS is EOL until https://github.com/google/styleguide/issues/258 -->
+      <property name="id" value="SeparatorWrapEllipsis"/>
+      <property name="tokens" value="ELLIPSIS"/>
+      <property name="option" value="EOL"/>
+    </module>
+    <module name="SeparatorWrap">
+      <!-- ARRAY_DECLARATOR is EOL until https://github.com/google/styleguide/issues/259 -->
+      <property name="id" value="SeparatorWrapArrayDeclarator"/>
+      <property name="tokens" value="ARRAY_DECLARATOR"/>
+      <property name="option" value="EOL"/>
+    </module>
+    <module name="SeparatorWrap">
+      <property name="id" value="SeparatorWrapMethodRef"/>
+      <property name="tokens" value="METHOD_REF"/>
+      <property name="option" value="nl"/>
+    </module>
+    <module name="PackageName">
+      <property name="format" value="^[a-z]+(\.[a-z][a-z0-9]*)*$"/>
+      <message key="name.invalidPattern"
+        value="Package name ''{0}'' must match pattern ''{1}''."/>
+    </module>
+    <module name="TypeName">
+      <message key="name.invalidPattern"
+        value="Type name ''{0}'' must match pattern ''{1}''."/>
+    </module>
+    <module name="MemberName">
+      <property name="format" value="^[a-z][a-z0-9][a-zA-Z0-9]*$"/>
+      <message key="name.invalidPattern"
+        value="Member name ''{0}'' must match pattern ''{1}''."/>
+    </module>
+    <module name="ParameterName">
+      <property name="format" value="^[a-z]([a-z0-9][a-zA-Z0-9]*)?$"/>
+      <message key="name.invalidPattern"
+        value="Parameter name ''{0}'' must match pattern ''{1}''."/>
+    </module>
+    <module name="CatchParameterName">
+      <property name="format" value="^[a-z]([a-z0-9][a-zA-Z0-9]*)?$"/>
+      <message key="name.invalidPattern"
+        value="Catch parameter name ''{0}'' must match pattern ''{1}''."/>
+    </module>
+    <module name="LocalVariableName">
+      <property name="tokens" value="VARIABLE_DEF"/>
+      <property name="format" value="^[a-z]([a-z0-9][a-zA-Z0-9]*)?$"/>
+      <message key="name.invalidPattern"
+        value="Local variable name ''{0}'' must match pattern ''{1}''."/>
+    </module>
+    <module name="ClassTypeParameterName">
+      <property name="format" value="(^[A-Z][0-9]?)$|([A-Z][a-zA-Z0-9]*[T]$)"/>
+      <message key="name.invalidPattern"
+        value="Class type name ''{0}'' must match pattern ''{1}''."/>
+    </module>
+    <module name="MethodTypeParameterName">
+      <property name="format" value="(^[A-Z][0-9]?)$|([A-Z][a-zA-Z0-9]*[T]$)"/>
+      <message key="name.invalidPattern"
+        value="Method type name ''{0}'' must match pattern ''{1}''."/>
+    </module>
+    <module name="InterfaceTypeParameterName">
+      <property name="format" value="(^[A-Z][0-9]?)$|([A-Z][a-zA-Z0-9]*[T]$)"/>
+      <message key="name.invalidPattern"
+        value="Interface type name ''{0}'' must match pattern ''{1}''."/>
+    </module>
+    <module name="NoFinalizer"/>
+    <module name="GenericWhitespace">
+      <message key="ws.followed"
+        value="GenericWhitespace ''{0}'' is followed by whitespace."/>
+      <message key="ws.preceded"
+        value="GenericWhitespace ''{0}'' is preceded with whitespace."/>
+      <message key="ws.illegalFollow"
+        value="GenericWhitespace ''{0}'' should followed by whitespace."/>
+      <message key="ws.notPreceded"
+        value="GenericWhitespace ''{0}'' is not preceded with whitespace."/>
+    </module>
+    <module name="Indentation">
+      <property name="basicOffset" value="2"/>
+      <property name="braceAdjustment" value="0"/>
+      <property name="caseIndent" value="2"/>
+      <property name="throwsIndent" value="4"/>
+      <property name="lineWrappingIndentation" value="4"/>
+      <property name="arrayInitIndent" value="2"/>
+    </module>
+    <!--module name="AbbreviationAsWordInName">
+      <property name="ignoreFinal" value="false"/>
+      <property name="allowedAbbreviationLength" value="1"/>
+    </module-->
+    <module name="OverloadMethodsDeclarationOrder"/>
+    <module name="VariableDeclarationUsageDistance"/>
+    <module name="CustomImportOrder">
+      <property name="sortImportsInGroupAlphabetically" value="true"/>
+      <property name="separateLineBetweenGroups" value="true"/>
+      <property name="customImportOrderRules" value="STATIC###THIRD_PARTY_PACKAGE"/>
+    </module>
+    <module name="MethodParamPad"/>
+    <module name="NoWhitespaceBefore">
+      <property name="tokens" value="COMMA, SEMI, POST_INC, POST_DEC, DOT, ELLIPSIS, METHOD_REF"/>
+      <property name="allowLineBreaks" value="true"/>
+    </module>
+    <module name="ParenPad"/>
+    <!--module name="OperatorWrap">
+      <property name="option" value="NL"/>
+      <property name="tokens"
+        value="BAND, BOR, BSR, BXOR, DIV, EQUAL, GE, GT, LAND, LE, LITERAL_INSTANCEOF, LOR, LT, MINUS, MOD, NOT_EQUAL, PLUS, QUESTION, SL, SR, STAR, METHOD_REF "/>
+    </module-->
+    <module name="AnnotationLocation">
+      <property name="id" value="AnnotationLocationMostCases"/>
+      <property name="tokens" value="CLASS_DEF, INTERFACE_DEF, ENUM_DEF, METHOD_DEF, CTOR_DEF"/>
+    </module>
+    <module name="AnnotationLocation">
+      <property name="id" value="AnnotationLocationVariables"/>
+      <property name="tokens" value="VARIABLE_DEF"/>
+      <property name="allowSamelineMultipleAnnotations" value="true"/>
+    </module>
+    <module name="NonEmptyAtclauseDescription"/>
+    <module name="JavadocTagContinuationIndentation"/>
+    <!--module name="SummaryJavadoc">
+      <property name="forbiddenSummaryFragments"
+        value="^@return the *|^This method returns |^A [{]@code [a-zA-Z0-9]+[}]( is a )"/>
+    </module-->
+    <!--module name="JavadocParagraph"/-->
+    <module name="AtclauseOrder">
+      <property name="tagOrder" value="@param, @return, @throws, @deprecated"/>
+      <property name="target"
+        value="CLASS_DEF, INTERFACE_DEF, ENUM_DEF, METHOD_DEF, CTOR_DEF, VARIABLE_DEF"/>
+    </module>
+    <!--module name="JavadocMethod">
+      <property name="scope" value="public"/>
+      <property name="allowMissingParamTags" value="true"/>
+      <property name="allowMissingThrowsTags" value="true"/>
+      <property name="allowMissingReturnTag" value="true"/>
+      <property name="minLineCount" value="2"/>
+      <property name="allowedAnnotations" value="Override, Test"/>
+      <property name="allowThrowsTagsForSubclasses" value="true"/>
+    </module-->
+    <module name="MethodName">
+      <property name="format" value="^[a-z][a-z0-9][a-zA-Z0-9_]*$"/>
+      <message key="name.invalidPattern"
+        value="Method name ''{0}'' must match pattern ''{1}''."/>
+    </module>
+    <module name="SingleLineJavadoc">
+      <property name="ignoreInlineTags" value="false"/>
+    </module>
+    <module name="EmptyCatchBlock">
+      <property name="exceptionVariableName" value="expected"/>
+    </module>
+    <module name="CommentsIndentation"/>
+  </module>
+</module>
+
+import org.springframework.boot.autoconfigure.template.TemplateAvailabilityProvider;
+import org.springframework.core.env.Environment;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.util.ClassUtils;
+
+/**
+ * {@link org.springframework.boot.autoconfigure.template.TemplateAvailabilityProvider} that provides availability information for
+ * jade4j view templates
+ *
+ * @author Domingo Suarez Torres
+ */
+public class Jade4JTemplateAvailabilityProvider implements TemplateAvailabilityProvider {
+
+  @Override
+  public boolean isTemplateAvailable(String view, Environment environment, ClassLoader classLoader, ResourceLoader resourceLoader) {
+    if (ClassUtils.isPresent("de.neuland.jade4j.spring.template.SpringTemplateLoader", classLoader)) {
+      String prefix = environment.getProperty("spring.jade4j.prefix", Jade4JAutoConfiguration.DEFAULT_PREFIX);
+      String suffix = environment.getProperty("spring.jade4j.suffix", Jade4JAutoConfiguration.DEFAULT_SUFFIX);
+      return resourceLoader.getResource(prefix + view + suffix).exists();
+    }
+
+    return false;
+  }
+}
 ----------------------------------------------------------------------------------------
+import java.util.HashMap;
+import java.util.Map;
+
+public class TreeNode {
+	public Map<String, TreeNode> children = new HashMap<String, TreeNode>();
+	
+	public TreeNode() { }
+
+	public Map<String, TreeNode> getChildren() {
+		return children == null || children.size() == 0? null : children;
+	}
+
+	public boolean isLeaf() {  // 说明到了最后一个节点
+		return children.size() == 0;
+	}
+}
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.commons.lang.StringUtils;
+
+public class TreePath {
+	public int maxDepth = Integer.MIN_VALUE;
+	public Map<String, TreeNode> roots = new HashMap<String, TreeNode>();
+	
+	public TreePath() { }
+	public TreePath(String paths[]) {
+		addAll(paths);
+	}
+
+	private void add(String paths[], TreeNode parent, int depth) {
+		if(paths == null || paths.length <= depth) {
+			// 避免深度溢出
+			return;
+		}
+		TreeNode temp = parent.children.get(paths[depth]);
+		if(temp == null) { // 找不到入口
+			temp = new TreeNode();
+			parent.children.put(paths[depth], temp);
+			for(int i = depth + 1, l = paths.length; i < l; ++i) {
+				TreeNode n = new TreeNode();
+				temp.children.put(paths[i], n);
+				temp = n;
+			}
+		}
+		else {
+			add(paths, temp, depth + 1);
+		}
+	}
+	
+	public void add(String path) {
+		String paths[] = StringUtils.split(path, '.');
+		if(maxDepth < paths.length) { maxDepth = paths.length; }
+		Map<String, TreeNode> nodes = this.roots;
+		int depth = 0;
+		TreeNode temp = nodes.get(paths[depth]);
+		if(temp == null) { // 找不到入口
+			temp = new TreeNode();
+			this.roots.put(paths[depth], temp);
+			for(int i = depth + 1, l = paths.length; i < l; ++i) {
+				TreeNode n = new TreeNode();
+				temp.children.put(paths[i], n);
+				temp = n;
+			}
+		}
+		else {
+			add(paths, temp, depth + 1);
+		}
+	}
+	
+	public void addAll(String paths[]) {
+		for(String path : paths) { this.add(path); }
+	}
+	
+	/*public static void main(String[] args) {
+		TreePath tp = new TreePath();
+		tp.add("n1.n2.n3");
+		tp.add("n1.n4");
+		System.out.println(JSON.toJSONString(tp));
+		System.out.println(NewJsonUtil.toString(tp, new String[]{}));
+	}*/
+}
 ----------------------------------------------------------------------------------------
+import java.nio.ByteBuffer;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Random;
+import java.util.stream.Collectors;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
+import com.google.common.io.BaseEncoding;
+
+import ch.rasc.eds.starter.Application;
+
+public class TotpAuthUtil {
+
+	public static boolean verifyCode(String secret, int code, int variance) {
+		long timeIndex = System.currentTimeMillis() / 1000 / 30;
+		byte[] secretBytes = BaseEncoding.base32().decode(secret);
+		for (int i = -variance; i <= variance; i++) {
+			if (getCode(secretBytes, timeIndex + i) == code) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public static long getCode(byte[] secret, long timeIndex) {
+		try {
+			SecretKeySpec signKey = new SecretKeySpec(secret, "HmacSHA1");
+			ByteBuffer buffer = ByteBuffer.allocate(8);
+			buffer.putLong(timeIndex);
+			byte[] timeBytes = buffer.array();
+			Mac mac = Mac.getInstance("HmacSHA1");
+			mac.init(signKey);
+			byte[] hash = mac.doFinal(timeBytes);
+			int offset = hash[19] & 0xf;
+			long truncatedHash = hash[offset] & 0x7f;
+			for (int i = 1; i < 4; i++) {
+				truncatedHash <<= 8;
+				truncatedHash |= hash[offset + i] & 0xff;
+			}
+			return truncatedHash %= 1000000;
+		}
+		catch (InvalidKeyException | NoSuchAlgorithmException | IllegalStateException e) {
+			Application.logger.error("getCode", e);
+			return 0;
+		}
+	}
+
+	public static String randomSecret() {
+		String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+		return new Random().ints(16, 0, 32).mapToObj(i -> String.valueOf(chars.charAt(i)))
+				.collect(Collectors.joining());
+	}
+}
+
+@ApiIgnore
+
+
+import org.springframework.boot.autoconfigure.thymeleaf.ThymeleafAutoConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+import org.thymeleaf.templateresolver.UrlTemplateResolver;
+
+@Configuration 
+@Import({ControllerConfiguration.class})
+public class ApplicationConfiguration extends WebMvcConfigurerAdapter {
+	
+	/**
+	 * This bean gets picked up automatically by {@link ThymeleafAutoConfiguration}.
+	 */
+	@Bean
+	public UrlTemplateResolver urlTemplateResolver(){
+		UrlTemplateResolver urlTemplateResolver = new UrlTemplateResolver();
+		urlTemplateResolver.setOrder(20);
+		return urlTemplateResolver;
+	}
+	
+	@Override
+	public void addViewControllers(ViewControllerRegistry registry) {
+		super.addViewControllers(registry);
+		registry.addViewController("/").setViewName("redirect:/movies");
+	}
+	
+}
+----------------------------------------------------------------------------------------
+import org.apache.activemq.artemis.api.core.ActiveMQIllegalStateException;
+import org.jboss.logging.Messages;
+import org.jboss.logging.annotations.Cause;
+import org.jboss.logging.annotations.Message;
+import org.jboss.logging.annotations.MessageBundle;
+
+/**
+ * Logger Code 20
+ *
+ * each message id must be 6 digits long starting with 20, the 3rd digit should be 9
+ *
+ * so 209000 to 209999
+ */
+@MessageBundle(projectCode = "AMQ")
+public interface ActiveMQUtilBundle {
+
+   ActiveMQUtilBundle BUNDLE = Messages.getBundle(ActiveMQUtilBundle.class);
+
+   @Message(id = 209000, value = "invalid property: {0}", format = Message.Format.MESSAGE_FORMAT)
+   ActiveMQIllegalStateException invalidProperty(String part);
+
+   @Message(id = 209001, value = "Invalid type: {0}", format = Message.Format.MESSAGE_FORMAT)
+   IllegalStateException invalidType(Byte type);
+
+   @Message(id = 209002, value = "the specified string is too long ({0})", format = Message.Format.MESSAGE_FORMAT)
+   IllegalStateException stringTooLong(Integer length);
+
+   @Message(id = 209003, value = "Error instantiating codec {0}", format = Message.Format.MESSAGE_FORMAT)
+   IllegalArgumentException errorCreatingCodec(@Cause Exception e, String codecClassName);
+
+   @Message(id = 209004, value = "Failed to parse long value from {0}", format = Message.Format.MESSAGE_FORMAT)
+   IllegalArgumentException failedToParseLong(String value);
+}
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
