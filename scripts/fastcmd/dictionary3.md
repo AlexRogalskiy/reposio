@@ -14,7 +14,6 @@ Type ipconfig /flushdns and press Enter.
 -----------------------------------------------------------------------------------------
 sudo systemctl restart NetworkManager.service
 
-
 nmcli nm enable false
 sleep 5
 nmcli nm enable true 

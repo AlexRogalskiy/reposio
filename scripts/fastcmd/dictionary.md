@@ -71472,6 +71472,11 @@ rm .pid.txt &> /dev/null;
 rm nohup.out &> /dev/null; 
 echo "Done !!"
 --------------------------------------------------------------------------------------------------------
+$ mvn package -P xtest, another-profile-id
+
+# multi modules, same syntax
+$ mvn -pl module-name package -P xtest, another-profile-id
+--------------------------------------------------------------------------------------------------------
 # Run tests which tagged with `integration, slow, feature-168`
 $ mvn -Dgroups="integration, fast, feature-168"
 
@@ -71479,6 +71484,201 @@ $ mvn -Dgroups="integration, fast, feature-168"
 $ mvn -DexcludedGroups="slow"
 --------------------------------------------------------------------------------------------------------
 java -jar lombok.jar config -g --verbose
+--------------------------------------------------------------------------------------------------------
+mvn help:active-profiles
+--------------------------------------------------------------------------------------------------------
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Appenders>
+        <Console name="ConsoleAppender" target="SYSTEM_OUT">
+            <PatternLayout
+                    pattern="%d [%t] %-5level %logger{36} - %msg%n%throwable"/>
+        </Console>
+        <ReportPortalLog4j2Appender name="ReportPortalAppender">
+            <PatternLayout
+                    pattern="%d [%t] %-5level %logger{36} - %msg%n%throwable"/>
+        </ReportPortalLog4j2Appender>
+    </Appenders>
+    <Loggers>
+        <Root level="DEBUG">
+            <AppenderRef ref="ConsoleAppender"/>
+            <AppenderRef ref="ReportPortalAppender"/>
+        </Root>
+    </Loggers>
+</Configuration>
+
+<configuration>
+                <testFailureIgnore>false</testFailureIgnore>
+                <argLine>
+                    -javaagent:"${settings.localRepository}/org/aspectj/aspectjweaver/${aspectj.version}/aspectjweaver-${aspectj.version}.jar"
+                </argLine>
+                <systemProperties>
+                    <property>
+                        <name>junit.jupiter.extensions.autodetection.enabled</name>
+                        <value>true</value>
+                    </property>
+                </systemProperties>
+            </configuration>
+			
+			  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.0.0-M3</version>
+        <configuration>
+          <includes>
+            <include>%regex[.*(Cat|Dog).*Test.*]</include>
+          </includes>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+--------------------------------------------------------------------------------------------------------
+        <dependency>
+            <groupId>org.hsqldb</groupId>
+            <artifactId>hsqldb</artifactId>
+            <version>2.3.3</version>
+            <scope>runtime</scope>
+        </dependency>
+		
+		
+		import com.github.database.rider.springboot.model.company.CompanyRepository;
+import com.zaxxer.hikari.HikariDataSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.core.env.Environment;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+
+import javax.persistence.EntityManagerFactory;
+import javax.sql.DataSource;
+import java.util.HashMap;
+import java.util.Map;
+
+
+@Configuration
+@EnableTransactionManagement
+@EnableJpaRepositories(
+        entityManagerFactoryRef = "companyEntityManagerFactory", basePackages = {
+        "com.github.database.rider.springboot.model.company", "com.github.database.rider.springboot.infra.company"},
+        transactionManagerRef = "companyTransactionManager")
+public class CompanyDBConfig {
+
+    @Autowired
+    private Environment env;
+
+    @Bean(name = "companyDataSourceProperties")
+    @ConfigurationProperties("company.datasource")
+    public DataSourceProperties dataSourceProperties() {
+        return new DataSourceProperties();
+    }
+
+    @Bean(name = "companyDataSource")
+    @ConfigurationProperties("company.datasource.configuration")
+    public DataSource dataSource(@Qualifier("companyDataSourceProperties") DataSourceProperties companyDataSourceProperties) {
+        return companyDataSourceProperties.initializeDataSourceBuilder().type(HikariDataSource.class)
+                .build();
+    }
+
+    @Bean(name = "companyEntityManagerFactory")
+    public LocalContainerEntityManagerFactoryBean entityManagerFactory(
+            EntityManagerFactoryBuilder builder, @Qualifier("companyDataSource") DataSource companyDataSource) {
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("hibernate.hbm2ddl.auto",
+                env.getProperty("spring.jpa.hibernate.ddl-auto"));
+        properties.put("hibernate.dialect",
+                env.getProperty("spring.jpa.properties.hibernate.dialect"));
+        return builder
+                .dataSource(companyDataSource)
+                .properties(properties)
+                .packages(CompanyRepository.class.getPackage().getName())
+                .persistenceUnit("companyPU")
+                .build();
+    }
+
+    @Bean(name = "companyTransactionManager")
+    public PlatformTransactionManager transactionManager(
+            @Qualifier("companyEntityManagerFactory") EntityManagerFactory companyEntityManagerFactory) {
+        return new JpaTransactionManager(companyEntityManagerFactory);
+    }
+
+}
+--------------------------------------------------------------------------------------------------------
+@Test
+void givenValidUser_whenSaveUser_thenSucceed(@Mock MailClient mailClient) {
+    // Given
+    user = new User("Jerry", 12);
+    when(userRepository.insert(any(User.class))).then(new Answer<User>() {
+        int sequence = 1;
+             
+        @Override
+        public User answer(InvocationOnMock invocation) throws Throwable {
+            User user = (User) invocation.getArgument(0);
+            user.setId(sequence++);
+            return user;
+        }
+    });
+ 
+    userService = new DefaultUserService(userRepository, settingRepository, mailClient);
+ 
+    // When
+    User insertedUser = userService.register(user);
+         
+    // Then
+    verify(userRepository).insert(user);
+    Assertions.assertNotNull(user.getId());
+    verify(mailClient).sendUserRegistrationMail(insertedUser);
+}
+--------------------------------------------------------------------------------------------------------
+LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
+    .selectors(
+        selectPackage("com.example.mytests"),
+        selectClass(MyTestClass.class)
+    )
+    .filters(
+        includeClassNamePatterns(".*Tests")
+    )
+    .build();
+
+Launcher launcher = LauncherFactory.create();
+
+// Register a listener of your choice
+SummaryGeneratingListener listener = new SummaryGeneratingListener();
+launcher.registerTestExecutionListeners(listener);
+
+launcher.execute(request);
+
+TestExecutionSummary summary = listener.getSummary();
+// Do something with the TestExecutionSummary.
+--------------------------------------------------------------------------------------------------------
+    <profile>
+            <id>dev</id>
+            <activation>
+                <!-- this profile is active by default -->
+                <activeByDefault>true</activeByDefault>
+                <!-- activate if system properties 'env=dev' -->
+                <property>
+                    <name>env</name>
+                    <value>dev</value>
+                </property>
+            </activation>
+            <properties>
+                <db.driverClassName>com.mysql.jdbc.Driver</db.driverClassName>
+                <db.url>jdbc:mysql://localhost:3306/dev</db.url>
+                <db.username>mkyong</db.username>
+                <db.password>8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92</db.password>
+            </properties>
+        </profile>
 --------------------------------------------------------------------------------------------------------
 import java.io.IOException;
 import java.util.Map;
@@ -87432,6 +87632,87 @@ public enum Command {
     }
 }
 --------------------------------------------------------------------------------------------------------
+	/**
+	 * A simple parser for timeouts of format: 1d 2h 30m 15s.
+	 */
+	public static class SimpleTimeoutParser implements TimeoutParser {
+
+		private static final String UNIT_PATTERN = "[a-zA-Z]+";
+		private static final Pattern TIMEOUT_PATTERN = compile("(\\d+)\\s*("
+				+ UNIT_PATTERN + ")");
+		private Map<String, Long> units = new HashMap<>();
+
+		public SimpleTimeoutParser() {
+			addUnit("d", 24 * 3600).addUnit("h", 3600).addUnit("m", 60)
+					.addUnit("s", 1);
+		}
+
+		private SimpleTimeoutParser addUnit(String unit, long value) {
+			if (!unit.matches(UNIT_PATTERN)) {
+				throw new TimeoutFormatException("Unit '" + unit
+						+ "' must be a non-numeric word");
+			}
+			if (value < 0) {
+				throw new TimeoutFormatException("Unit value '" + value
+						+ "' cannot be negative");
+			}
+			units.put(unit, Long.valueOf(value));
+			return this;
+		}
+
+		@Override
+        public boolean isValid(String timeout) {
+			return TIMEOUT_PATTERN.matcher(timeout).find();
+		}
+
+		@Override
+        public long asSeconds(String timeout) {
+			long total = 0;
+			Matcher matcher = TIMEOUT_PATTERN.matcher(timeout);
+			while (matcher.find()) {
+				long value = Long.parseLong(matcher.group(1));
+				String unit = matcher.group(2);
+				if (!units.containsKey(unit)) {
+					throw new TimeoutFormatException("Unrecognized unit: "
+							+ unit);
+				}
+				total += units.get(unit).longValue() * value;
+			}
+			return total;
+		}
+
+	}
+--------------------------------------------------------------------------------------------------------
+mvn test -B -U -P CI
+--------------------------------------------------------------------------------------------------------
+import java.io.PrintStream;
+
+import org.jbehave.core.reporters.Format;
+
+public class PrintStreamAnnotationMonitor extends PrintingAnnotationMonitor {
+
+    private final PrintStream output;
+
+    public PrintStreamAnnotationMonitor() {
+        this(System.out);
+    }
+
+    public PrintStreamAnnotationMonitor(PrintStream output) {
+        this.output = output;
+    }
+
+    @Override
+    protected void print(String format, Object... args) {
+        Format.println(output, format, args);
+    }
+
+    @Override
+    protected void printStackTrace(Throwable e) {
+        e.printStackTrace(output);
+    }
+}
+
+--------------------------------------------------------------------------------------------------------
 import com.lankydan.rest.membership.GymMembershipController;
 import com.lankydan.entity.person.Person;
 import lombok.Getter;
@@ -87585,6 +87866,309 @@ Validator validator = configuration.addMapping( constraintMapping )
         .buildValidatorFactory()
         .getValidator();  
 --------------------------------------------------------------------------------------------------------
+import com.xala3pa.annotated.Annotated;
+import com.xala3pa.annotations.Statistics;
+
+import java.lang.reflect.Method;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
+public class AnnotationsUtils {
+    public static void runAnnotation(Class<?> clazz, Map<String, Long> statistics) {
+        Method[] methods = clazz.getMethods();
+
+        for (Method method : methods) {
+            if (method.isAnnotationPresent(Statistics.class)) {
+                try {
+                    calculateStatistics(statistics, method);
+                    method.invoke(Annotated.class.newInstance(), "Alvaro\n");
+                } catch (Exception e) {
+                    System.err.println(e);
+                }
+            }
+        }
+
+    }
+
+    private static void calculateStatistics(Map<String, Long> statistics, Method method) {
+        String methodName = method.getName();
+        Long count = statistics.getOrDefault(methodName, 0L);
+        statistics.put(methodName, ++count);
+    }
+}
+
+/**
+ @Documented – indicates that elements using this annotation should be documented by javadoc and similar tools.
+ This type should be used to annotate the declarations of types whose annotations affect the use of annotated
+ elements by their clients. If a type declaration is annotated with Documented, its annotations become part of
+ the public API of the annotated elements.
+ @Target – indicates the kinds of program element to which an annotation type is applicable.
+ Some possible values are TYPE, METHOD, CONSTRUCTOR, FIELD etc. If Target meta-annotation is not present,
+ then annotation can be used on any program element.
+ @Inherited – indicates that an annotation type is automatically inherited.
+ If user queries the annotation type on a class declaration, and the class declaration has no annotation for this type,
+ then the class’s superclass will automatically be queried for the annotation type.
+ This process will be repeated until an annotation for this type is found, or the top of the class hierarchy (Object) is reached.
+ @Retention – indicates how long annotations with the annotated type are to be retained.
+ It takes RetentionPolicy argument whose Possible values are SOURCE, CLASS and RUNTIME
+ */
+@Documented
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+@Inherited
+public @interface Statistics {
+}
+--------------------------------------------------------------------------------------------------------
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Array;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.Objects;
+
+final class JavannaInvocationHandler implements InvocationHandler {
+
+    private static final Method EQUALS_METHOD;
+    private static final Method HASHCODE_METHOD;
+    private static final Method TO_STRING_METHOD;
+    private static final Method ANNOTATION_TYPE_METHOD;
+
+    static {
+        try {
+            EQUALS_METHOD = Object.class.getMethod( "equals", Object.class );
+            HASHCODE_METHOD = Object.class.getMethod( "hashCode" );
+            TO_STRING_METHOD = Object.class.getMethod( "toString" );
+            ANNOTATION_TYPE_METHOD = Annotation.class.getMethod( "annotationType" );
+        } catch ( NoSuchMethodException e ) {
+            throw new IllegalStateException( "JVM does not provide expected method", e );
+        }
+    }
+
+    private final JavaAnnotation<?> annotation;
+    private final Map<String, ?> values;
+
+    JavannaInvocationHandler( JavaAnnotation<?> annotation, Map<String, ?> values ) {
+        this.annotation = annotation;
+        this.values = values;
+    }
+
+    @Override
+    public Object invoke( Object proxy, Method method, Object[] args ) throws Throwable {
+        if ( method.equals( EQUALS_METHOD ) ) {
+            Object other = args[ 0 ];
+            return isEqual( other );
+        }
+        if ( method.equals( HASHCODE_METHOD ) ) {
+            return annotation.hashCode() + values.hashCode();
+        }
+        if ( method.equals( TO_STRING_METHOD ) ) {
+            return asString();
+        }
+        if ( method.equals( ANNOTATION_TYPE_METHOD ) ) {
+            return annotation.getAnnotationType();
+        }
+
+        final String member = method.getName();
+        Object value = values.get( member );
+
+        if ( value == null ) {
+            value = annotation.getDefaultValueByMember().get( member );
+        }
+
+        return cloneIfArray( value );
+    }
+
+    private Boolean isEqual( Object other ) {
+        Class<? extends Annotation> type = annotation.getAnnotationType();
+
+        if ( type.isInstance( other ) ) {
+            Annotation otherAnnotation = type.cast( other );
+
+            Map<String, Object> otherValues = Javanna.getAnnotationValues( otherAnnotation );
+
+            return mapsAreEqual( values, otherValues );
+        }
+
+        return false;
+    }
+
+    private String asString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append( annotation.getAnnotationType().getName() );
+        builder.append( "(" );
+
+        final int lastIndex = values.size();
+        int index = 0;
+
+        for (Map.Entry<String, ?> entry : values.entrySet()) {
+            builder.append( entry.getKey() )
+                    .append( "=" )
+                    .append( valueAsString( entry.getValue() ) );
+
+            if ( ++index != lastIndex ) {
+                builder.append( ", " );
+            }
+        }
+
+        builder.append( ")" );
+
+        return builder.toString();
+    }
+
+    private static String valueAsString( Object value ) {
+        // handle array of any type (Arrays.toString() requires us to know the type)
+        if ( value.getClass().isArray() ) {
+            int length = Array.getLength( value );
+            StringBuilder builder = new StringBuilder();
+            builder.append( "{" );
+            for (int i = 0; i < length - 1; i++) {
+                Object element = Array.get( value, i );
+                builder.append( valueAsString( element ) ).append( ", " );
+            }
+
+            // last element, if any
+            if ( length > 0 ) {
+                builder.append( Array.get( value, length - 1 ) );
+            }
+
+            return builder.append( "}" ).toString();
+        }
+        return value.toString();
+    }
+
+    private static boolean mapsAreEqual( Map<String, ?> values, Map<String, Object> otherValues ) {
+        if ( !values.keySet().equals( otherValues.keySet() ) ) {
+            return false;
+        }
+
+        // keys are equal, now check each value
+
+        for (Map.Entry<String, ?> entry : values.entrySet()) {
+            Object value1 = entry.getValue();
+            Object value2 = otherValues.get( entry.getKey() );
+            if ( !valuesAreEqual( value1, value2 ) ) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static boolean valuesAreEqual( Object first, Object second ) {
+        if ( first.getClass().isArray() ) {
+            if ( second.getClass().isArray() ) {
+                // both are arrays
+                int length1 = Array.getLength( first );
+                int length2 = Array.getLength( second );
+                if ( length1 != length2 ) {
+                    return false;
+                }
+                for (int i = 0; i < length1; i++) {
+                    Object child1 = Array.get( first, i );
+                    Object child2 = Array.get( second, i );
+                    if ( !valuesAreEqual( child1, child2 ) ) {
+                        return false;
+                    }
+                }
+
+                // all elements are the same
+                return true;
+            } else {
+                return false;
+            }
+        } else if ( second.getClass().isArray() ) {
+            return false;
+        } else {
+            // none is an array
+            return Objects.equals( first, second );
+        }
+    }
+
+    @SuppressWarnings( "SuspiciousSystemArraycopy" )
+    private static Object cloneIfArray( Object value ) {
+        if ( value.getClass().isArray() ) {
+            Class<?> type = value.getClass().getComponentType();
+            int length = Array.getLength( value );
+            Object clone = Array.newInstance( type, length );
+            System.arraycopy( value, 0, clone, 0, length );
+            return clone;
+        } else {
+            return value;
+        }
+    }
+}
+
+<dependency>
+  <groupId>org.jetbrains</groupId>
+  <artifactId>annotations</artifactId>
+  <version>18.0.0</version>
+</dependency>
+
+
+import java.lang.annotation.Annotation;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.util.List;
+
+import com.almende.util.AnnotationUtil.AnnotatedClass;
+import com.almende.util.AnnotationUtil.AnnotatedMethod;
+import com.almende.util.AnnotationUtil.AnnotatedParam;
+
+public class Example {
+	public static void main(String args[]) {
+		// Get annotated class from a Java class
+		AnnotatedClass annotatedClass = AnnotationUtil.get(MyClass.class);
+		
+		// Get all class methods
+		List<AnnotatedMethod> methods = annotatedClass.getMethods();
+		for (AnnotatedMethod method : methods) {
+			System.out.println("Method: " + method.getName());
+			
+			// get a particular method annotation
+			Expose expose = method.getAnnotation(Expose.class);
+			if (expose != null) {
+				System.out.println("expose: " + expose.value());
+			}
+			
+			// loop over all parameters
+			List<AnnotatedParam> params = method.getParams();
+			for (AnnotatedParam param : params) {
+				// loop over all parameter annotations
+				for (Annotation annotation : param.getAnnotations()) {
+					System.out.println("Param annotation: " + annotation);
+				}
+			}
+		}
+	}
+
+	class MyClass implements MyInterface {
+		@Expose(true)
+		public void myMethod(String a, String b) {
+			// ...
+		}
+	}
+
+	interface MyInterface {
+		public void myMethod(@Name("a") String a, @Name("b") String b);
+	}
+
+	@Retention(RetentionPolicy.RUNTIME)
+	@Target(value=ElementType.METHOD)
+	public @interface Expose {
+		boolean value();
+	}
+
+	@Retention(RetentionPolicy.RUNTIME)
+	@Target(value=ElementType.PARAMETER)
+	public @interface Name {
+		String value();
+	}
+}
+
+clean test -P test-functional
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------
@@ -91839,6 +92423,8 @@ class RegisterRestControllerTest {
 C:\git-project\Changeset_on_build_properties.patch
 --------------------------------------------------------------------------------------------------------
 0.3.0-alpha-0018-c9ebac0
+--------------------------------------------------------------------------------------------------------
+mvn clean test -P test-unit
 --------------------------------------------------------------------------------------------------------
     public boolean equals(Object o) {
         if (o == this) {
