@@ -5196,7 +5196,85 @@ public enum ActiveMQExceptionType {
    }
 }
 ----------------------------------------------------------------------------------------
+ExecutorService executor = Executors.newFixedThreadPool(2);
+Map<String, String> map = new HashMap<>();
+StampedLock lock = new StampedLock();
+
+executor.submit(() -> {
+    long stamp = lock.writeLock();
+    try {
+        sleep(1);
+        map.put("foo", "bar");
+    } finally {
+        lock.unlockWrite(stamp);
+    }
+});
+
+Runnable readTask = () -> {
+    long stamp = lock.readLock();
+    try {
+        System.out.println(map.get("foo"));
+        sleep(1);
+    } finally {
+        lock.unlockRead(stamp);
+    }
+};
+
+executor.submit(readTask);
+executor.submit(readTask);
+
+stop(executor);
 ----------------------------------------------------------------------------------------
+ExecutorService executor = Executors.newFixedThreadPool(2);
+StampedLock lock = new StampedLock();
+
+executor.submit(() -> {
+    long stamp = lock.readLock();
+    try {
+        if (count == 0) {
+            stamp = lock.tryConvertToWriteLock(stamp);
+            if (stamp == 0L) {
+                System.out.println("Could not convert to write lock");
+                stamp = lock.writeLock();
+            }
+            count = 23;
+        }
+        System.out.println(count);
+    } finally {
+        lock.unlock(stamp);
+    }
+});
+
+stop(executor);
+
+
+ExecutorService executor = Executors.newFixedThreadPool(10);
+
+Semaphore semaphore = new Semaphore(5);
+
+Runnable longRunningTask = () -> {
+    boolean permit = false;
+    try {
+        permit = semaphore.tryAcquire(1, TimeUnit.SECONDS);
+        if (permit) {
+            System.out.println("Semaphore acquired");
+            sleep(5);
+        } else {
+            System.out.println("Could not acquire semaphore");
+        }
+    } catch (InterruptedException e) {
+        throw new IllegalStateException(e);
+    } finally {
+        if (permit) {
+            semaphore.release();
+        }
+    }
+}
+
+IntStream.range(0, 10)
+    .forEach(i -> executor.submit(longRunningTask));
+
+stop(executor);
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
