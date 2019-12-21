@@ -5276,6 +5276,2758 @@ IntStream.range(0, 10)
 
 stop(executor);
 ----------------------------------------------------------------------------------------
+'use strict';
+
+ 
+
+var unpack = function (array) {
+  var findNbSeries = function (array) {
+    var currentPlotPack;
+
+    var length = array.length;
+
+ 
+
+    for (var i = 0; i < length; i++) {
+      currentPlotPack = array[i][1];
+
+      if(currentPlotPack !== null) {
+        return currentPlotPack.length;
+
+      }
+
+    }
+
+    return 0;
+
+  };
+
+ 
+
+  var i, j;
+
+  var nbPlots = array.length;
+
+  var nbSeries = findNbSeries(array);
+
+ 
+
+  // Prepare unpacked array
+
+  var unpackedArray = new Array(nbSeries);
+
+ 
+
+  for (i = 0; i < nbSeries; i++) {
+    unpackedArray[i] = new Array(nbPlots);
+
+  }
+
+ 
+
+  // Unpack the array
+
+  for (i = 0; i < nbPlots; i++) {
+    var timestamp = array[i][0];
+
+    var values = array[i][1];
+
+    for (j = 0; j < nbSeries; j++) {
+      unpackedArray[j][i] = [timestamp * 1000, values === null ? null : values[j]];
+
+    }
+
+  }
+
+ 
+
+  return unpackedArray;
+
+};
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+function getItemLink(item){
+                return item.pathFormatted + '.html';
+
+}
+
+ 
+
+function setDetailsLinkUrl(){
+    $.each(stats.contents, function (name, data) {
+        $('#details_link').attr('href', getItemLink(data));
+
+        return false;
+
+    });
+
+}
+
+ 
+
+var MENU_ITEM_MAX_LENGTH = 50;
+
+ 
+
+function menuItem(item, level, parent, group) {
+    if (group)
+
+        var style = 'group';
+
+    else
+
+        var style = '';
+
+ 
+
+    if (item.name.length > MENU_ITEM_MAX_LENGTH) {
+        var title = ' title="' + item.name + '"';
+
+        var displayName = item.name.substr(0, MENU_ITEM_MAX_LENGTH) + '...';
+
+    }
+
+    else {
+        var title = '';
+
+        var displayName = item.name;
+
+    }
+
+ 
+
+    if (parent) {
+                 if (level == 0)
+
+                                                     var childOfRoot = 'child-of-ROOT ';
+
+                                   else
+
+                                                     var childOfRoot = '';
+
+ 
+
+        var style = ' class="' + childOfRoot + 'child-of-menu-' + parent + '"';
+
+    } else
+
+      var style = '';
+
+ 
+
+    if (group)
+
+        var expandButton = '<span id="menu-' + item.pathFormatted + '" style="margin-left: ' + (level * 10) + 'px;" class="expand-button">&nbsp;</span>';
+
+    else
+
+        var expandButton = '<span id="menu-' + item.pathFormatted + '" style="margin-left: ' + (level * 10) + 'px;" class="expand-button hidden">&nbsp;</span>';
+
+ 
+
+    return '<li' + style + '><div class="item">' + expandButton + '<a href="' + getItemLink(item) + '"' + title + '>' + displayName + '</a></div></li>';
+
+}
+
+ 
+
+function menuItemsForGroup(group, level, parent) {
+    var items = '';
+
+ 
+
+    if (level > 0)
+
+        items += menuItem(group, level - 1, parent, true);
+
+ 
+
+    $.each(group.contents, function (contentName, content) {
+        if (content.type == 'GROUP')
+
+            items += menuItemsForGroup(content, level + 1, group.pathFormatted);
+
+        else if (content.type == 'REQUEST')
+
+            items += menuItem(content, level, group.pathFormatted);
+
+    });
+
+ 
+
+    return items;
+
+}
+
+ 
+
+function setDetailsMenu(){
+    $('.nav ul').append(menuItemsForGroup(stats, 0));
+
+ 
+
+    $('.nav').expandable();
+
+}
+
+ 
+
+function setGlobalMenu(){
+    $('.nav ul').append('<li><div class="item"><a href="#active_users">Active Users</a></div></li> \
+
+        <li><div class="item"><a href="#requests">Requests / sec</a></div></li> \
+
+        <li><div class="item"><a href="#responses">Responses / sec</a></div></li>');
+
+}
+
+ 
+
+function getLink(link){
+    var a = link.split('/');
+
+    return (a.length<=1)? link : a[a.length-1];
+
+}
+
+function setActiveMenu(){
+    $('.nav a').each(function(){
+        if(!$(this).hasClass('expand-button') && $(this).attr('href') == getLink(window.location.pathname)){
+            $(this).parents('li').addClass('on');
+
+            return false;
+
+        }
+
+    });
+
+}
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+/*
+
+* Copyright 2011-2014 eBusiness Information, Groupe Excilys (www.ebusinessinformation.fr)
+
+*
+
+* Licensed under the Apache License, Version 2.0 (the "License");
+
+* you may not use this file except in compliance with the License.
+
+* You may obtain a copy of the License at
+
+*
+
+*                            http://www.apache.org/licenses/LICENSE-2.0
+
+*
+
+* Unless required by applicable law or agreed to in writing, software
+
+* distributed under the License is distributed on an "AS IS" BASIS,
+
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
+* See the License for the specific language governing permissions and
+
+* limitations under the License.
+
+*/
+
+(function ($) {
+                $.fn.expandable = function () {
+                               var scope = this;
+
+ 
+
+                               this.find('.expand-button:not([class*=hidden])').addClass('collapse').click(function () {
+                                               var $this = $(this);
+
+ 
+
+                                               if ($this.hasClass('expand'))
+
+                                                               $this.expand(scope);
+
+                                               else
+
+                                                               $this.collapse(scope);
+
+                               });
+
+ 
+
+                               this.find('.expand-all-button').click(function () {
+                                               $(this).expandAll(scope);
+
+                               });
+
+ 
+
+                               this.find('.collapse-all-button').click(function () {
+                                               $(this).collapseAll(scope);
+
+                               });
+
+ 
+
+                               this.collapseAll(this);
+
+ 
+
+                               return this;
+
+                };
+
+ 
+
+                $.fn.expand = function (scope, recursive) {
+                               return this.each(function () {
+                                               var $this = $(this);
+
+ 
+
+                                               if (recursive) {
+                                                               scope.find('.child-of-' + $this.attr('id') + ' .expand-button.expand').expand(scope, true);
+
+                                                               scope.find('.child-of-' + $this.attr('id') + ' .expand-button.collapse').expand(scope, true);
+
+                                               }
+
+ 
+
+                                               if ($this.hasClass('expand')) {
+                                                               scope.find('.child-of-' + $this.attr('id')).toggle(true);
+
+                                                               $this.toggleClass('expand').toggleClass('collapse');
+
+                                               }
+
+                               });
+
+                };
+
+ 
+
+                $.fn.expandAll = function (scope) {
+                               $('.child-of-ROOT .expand-button.expand').expand(scope, true);
+
+                               $('.child-of-ROOT .expand-button.collapse').expand(scope, true);
+
+                };
+
+ 
+
+                $.fn.collapse = function (scope) {
+                               return this.each(function () {
+                                               var $this = $(this);
+
+ 
+
+                                  scope.find('.child-of-' + $this.attr('id') + ' .expand-button.collapse').collapse(scope);
+
+                                               scope.find('.child-of-' + $this.attr('id')).toggle(false);
+
+                                               $this.toggleClass('expand').toggleClass('collapse');
+
+                               });
+
+                };
+
+ 
+
+                $.fn.collapseAll = function (scope) {
+                               $('.child-of-ROOT .expand-button.collapse').collapse(scope);
+
+                };
+
+ 
+
+                $.fn.sortable = function (target) {
+                               var table = this;
+
+ 
+
+                               this.find('thead .sortable').click( function () {
+                                               var $this = $(this);
+
+ 
+
+                                               if ($this.hasClass('sorted-down')) {
+                                                               var desc = false;
+
+                                                               var style = 'sorted-up';
+
+                                               }
+
+                                               else {
+                                                               var desc = true;
+
+                                                               var style = 'sorted-down';
+
+                                               }
+
+ 
+
+                                               $(target).sortTable($this.attr('id'), desc);
+
+ 
+
+                                               table.find('thead .sortable').removeClass('sorted-up sorted-down');
+
+                                               $this.addClass(style);
+
+ 
+
+                                               return false;
+
+                               });
+
+ 
+
+                               return this;
+
+                };
+
+ 
+
+                $.fn.sortTable = function (col, desc) {
+                               function getValue(line) {
+                                               var cell = $(line).find('.' + col);
+
+ 
+
+                                               if (cell.hasClass('value'))
+
+                                                               var value = cell.text();
+
+                                               else
+
+                                                               var value = cell.find('.value').text();
+
+ 
+
+                                               return parseInt(value);
+
+                               }
+
+ 
+
+                               function sortLines (lines, group) {
+            var notErrorTable = col.search("error") == -1;
+
+            var linesToSort = notErrorTable ? lines.filter('.child-of-' + group) : lines;
+
+ 
+
+            var sortedLines = linesToSort.sort(function (a, b) {
+                                                               return desc ? getValue(b) - getValue(a): getValue(a) - getValue(b);
+
+                                               }).toArray();
+
+ 
+
+                                               var result = [];
+
+                                               $.each(sortedLines, function (i, line) {
+                                                               result.push(line);
+
+                if (notErrorTable)
+
+                                                                   result = result.concat(sortLines(lines, $(line).attr('id')));
+
+                                               });
+
+ 
+
+                                               return result;
+
+                               }
+
+ 
+
+                               this.find('tbody').append(sortLines(this.find('tbody tr').detach(), 'ROOT'));
+
+ 
+
+                               return this;
+
+                };
+
+})(jQuery);
+----------------------------------------------------------------------------------------
+/**
+ * @author Benjamin Winterberg
+ */
+public enum MemberType {
+    METHOD ("success"),
+    CONSTRUCTOR ("info"),
+    FIELD ("default"),
+    UNKNOWN ("default");
+
+    private String color;
+
+    MemberType(String color) {
+        this.color = color;
+    }
+
+    public String getColor() {
+        return color;
+    }
+}
+/**
+ * @author Benjamin Winterberg
+ */
+public enum FileType {
+    CLASS,
+    INTERFACE,
+    ENUM,
+    UNKNOWN;
+
+    public static FileType ofFullType(String fullType) {
+        if (fullType.startsWith("Class")) {
+            return CLASS;
+        }
+        if (fullType.startsWith("Interface")) {
+            return INTERFACE;
+        }
+        if (fullType.startsWith("Enum")) {
+            return ENUM;
+        }
+        return UNKNOWN;
+    }
+}
+
+import org.apache.commons.lang3.StringUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
+/**
+ * @author Benjamin Winterberg
+ */
+public class FileWalker {
+
+    public ExplorerResult walk(String basePath) throws Exception {
+        Objects.nonNull(basePath);
+        basePath = StringUtils.removeEnd(basePath, "/");
+
+        List<String> paths = getPaths(basePath);
+
+        FileParser parser = new FileParser();
+
+        List<TypeInfo> typeInfos = new ArrayList<>();
+
+        System.out.print("   parsing type infos... ");
+
+        for (int i = 0; i < paths.size(); i++) {
+            String path = paths.get(i);
+            String sourcePath = basePath + "/" + path;
+            File sourceFile = new File(sourcePath);
+
+            Optional<TypeInfo> optional = parser.parse(sourceFile, path);
+            optional.ifPresent(typeInfos::add);
+
+//            if (i == 500) {
+//                break;
+//            }
+        }
+
+        System.out.println(typeInfos.size() + " found");
+
+        ExplorerResult result = new ExplorerResult();
+        result.setTypeInfos(typeInfos);
+        return result;
+    }
+
+    private List<String> getPaths(String basePath) throws IOException {
+        File file = new File(basePath + "/allclasses-frame.html");
+        Document document = Jsoup.parse(file, "UTF-8", "");
+        List<String> paths = new ArrayList<>();
+        document
+                .body()
+                .select(".indexContainer li a")
+                .forEach((link) -> paths.add(link.attr("href")));
+        return paths;
+    }
+
+}
+----------------------------------------------------------------------------------------
+Optional<String> reduced =
+    stringCollection
+        .stream()
+        .sorted()
+        .reduce((s1, s2) -> s1 + "#" + s2);
+
+reduced.ifPresent(System.out::println);
+// "aaa1#aaa2#bbb1#bbb2#bbb3#ccc#ddd1#ddd2"
+
+Clock clock = Clock.systemDefaultZone();
+long millis = clock.millis();
+
+Instant instant = clock.instant();
+Date legacyDate = Date.from(instant); 
+
+LocalTime late = LocalTime.of(23, 59, 59);
+System.out.println(late);       // 23:59:59
+
+DateTimeFormatter germanFormatter =
+    DateTimeFormatter
+        .ofLocalizedTime(FormatStyle.SHORT)
+        .withLocale(Locale.GERMAN);
+
+LocalTime leetTime = LocalTime.parse("13:37", germanFormatter);
+System.out.println(leetTime);   // 13:37
+
+Instant instant = sylvester
+        .atZone(ZoneId.systemDefault())
+        .toInstant();
+		
+		
+Hint hint = Person.class.getAnnotation(Hint.class);
+System.out.println(hint);                   // null
+
+Hints hints1 = Person.class.getAnnotation(Hints.class);
+System.out.println(hints1.value().length);  // 2
+
+Hint[] hints2 = Person.class.getAnnotationsByType(Hint.class);
+System.out.println(hints2.length);  
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * @author Benjamin Winterberg
+ */
+public class Executors3 {
+
+    public static void main(String[] args) throws InterruptedException, ExecutionException {
+        test1();
+//        test2();
+//        test3();
+
+//        test4();
+//        test5();
+    }
+
+    private static void test5() throws InterruptedException, ExecutionException {
+        ExecutorService executor = Executors.newWorkStealingPool();
+
+        List<Callable<String>> callables = Arrays.asList(
+                callable("task1", 2),
+                callable("task2", 1),
+                callable("task3", 3));
+
+        String result = executor.invokeAny(callables);
+        System.out.println(result);
+
+        executor.shutdown();
+    }
+
+    private static Callable<String> callable(String result, long sleepSeconds) {
+        return () -> {
+            TimeUnit.SECONDS.sleep(sleepSeconds);
+            return result;
+        };
+    }
+
+    private static void test4() throws InterruptedException {
+        ExecutorService executor = Executors.newWorkStealingPool();
+
+        List<Callable<String>> callables = Arrays.asList(
+                () -> "task1",
+                () -> "task2",
+                () -> "task3");
+
+        executor.invokeAll(callables)
+                .stream()
+                .map(future -> {
+                    try {
+                        return future.get();
+                    }
+                    catch (Exception e) {
+                        throw new IllegalStateException(e);
+                    }
+                })
+                .forEach(System.out::println);
+
+        executor.shutdown();
+    }
+
+    private static void test3() {
+        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+
+        Runnable task = () -> {
+            try {
+                TimeUnit.SECONDS.sleep(2);
+                System.out.println("Scheduling: " + System.nanoTime());
+            }
+            catch (InterruptedException e) {
+                System.err.println("task interrupted");
+            }
+        };
+
+        executor.scheduleWithFixedDelay(task, 0, 1, TimeUnit.SECONDS);
+    }
+
+    private static void test2() {
+        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+        Runnable task = () -> System.out.println("Scheduling: " + System.nanoTime());
+        int initialDelay = 0;
+        int period = 1;
+        executor.scheduleAtFixedRate(task, initialDelay, period, TimeUnit.SECONDS);
+    }
+
+    private static void test1() throws InterruptedException {
+        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+
+        Runnable task = () -> System.out.println("Scheduling: " + System.nanoTime());
+        int delay = 3;
+        ScheduledFuture<?> future = executor.schedule(task, delay, TimeUnit.SECONDS);
+
+        TimeUnit.MILLISECONDS.sleep(1337);
+
+        long remainingDelay = future.getDelay(TimeUnit.MILLISECONDS);
+        System.out.printf("Remaining Delay: %sms\n", remainingDelay);
+    }
+
+}
+
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.locks.StampedLock;
+
+/**
+ * @author Benjamin Winterberg
+ */
+public class Lock5 {
+
+    public static void main(String[] args) {
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+
+        StampedLock lock = new StampedLock();
+
+        executor.submit(() -> {
+            long stamp = lock.tryOptimisticRead();
+            try {
+                System.out.println("Optimistic Lock Valid: " + lock.validate(stamp));
+                ConcurrentUtils.sleep(1);
+                System.out.println("Optimistic Lock Valid: " + lock.validate(stamp));
+                ConcurrentUtils.sleep(2);
+                System.out.println("Optimistic Lock Valid: " + lock.validate(stamp));
+            } finally {
+                lock.unlock(stamp);
+            }
+        });
+
+        executor.submit(() -> {
+            long stamp = lock.writeLock();
+            try {
+                System.out.println("Write Lock acquired");
+                ConcurrentUtils.sleep(2);
+            } finally {
+                lock.unlock(stamp);
+                System.out.println("Write done");
+            }
+        });
+
+        ConcurrentUtils.stop(executor);
+    }
+
+}
+
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.locks.StampedLock;
+
+/**
+ * @author Benjamin Winterberg
+ */
+public class Lock6 {
+
+    private static int count = 0;
+
+    public static void main(String[] args) {
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+
+        StampedLock lock = new StampedLock();
+
+        executor.submit(() -> {
+            long stamp = lock.readLock();
+            try {
+                if (count == 0) {
+                    stamp = lock.tryConvertToWriteLock(stamp);
+                    if (stamp == 0L) {
+                        System.out.println("Could not convert to write lock");
+                        stamp = lock.writeLock();
+                    }
+                    count = 23;
+                }
+                System.out.println(count);
+            } finally {
+                lock.unlock(stamp);
+            }
+        });
+
+        ConcurrentUtils.stop(executor);
+    }
+
+}
+
+
+
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
+
+/**
+ * @author Benjamin Winterberg
+ */
+public class Semaphore2 {
+
+    private static Semaphore semaphore = new Semaphore(5);
+
+    public static void main(String[] args) {
+        ExecutorService executor = Executors.newFixedThreadPool(10);
+
+        IntStream.range(0, 10)
+                .forEach(i -> executor.submit(Semaphore2::doWork));
+
+        ConcurrentUtils.stop(executor);
+    }
+
+    private static void doWork() {
+        boolean permit = false;
+        try {
+            permit = semaphore.tryAcquire(1, TimeUnit.SECONDS);
+            if (permit) {
+                System.out.println("Semaphore acquired");
+                ConcurrentUtils.sleep(5);
+            } else {
+                System.out.println("Could not acquire semaphore");
+            }
+        } catch (InterruptedException e) {
+            throw new IllegalStateException(e);
+        } finally {
+            if (permit) {
+                semaphore.release();
+            }
+        }
+    }
+
+}
+
+
+
+
+import jdk.nashorn.api.scripting.NashornScriptEngine;
+
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * @author Benjamin Winterberg
+ */
+public class Nashorn9 {
+
+    public static void main(String[] args) throws ScriptException, NoSuchMethodException {
+        NashornScriptEngine engine = (NashornScriptEngine) new ScriptEngineManager().getEngineByName("nashorn");
+        engine.eval("load('res/nashorn9.js')");
+
+        long t0 = System.nanoTime();
+
+        double result = 0;
+        for (int i = 0; i < 1000; i++) {
+            double num = (double) engine.invokeFunction("testPerf");
+            result += num;
+        }
+
+        System.out.println(result > 0);
+
+        long took = System.nanoTime() - t0;
+        System.out.format("Elapsed time: %d ms", TimeUnit.NANOSECONDS.toMillis(took));
+    }
+}
+
+
+
+
+import com.winterbe.java8.samples.lambda.Person;
+import jdk.nashorn.api.scripting.NashornScriptEngine;
+
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+
+/**
+ * @author Benjamin Winterberg
+ */
+public class Nashorn8 {
+    public static void main(String[] args) throws ScriptException, NoSuchMethodException {
+        NashornScriptEngine engine = (NashornScriptEngine) new ScriptEngineManager().getEngineByName("nashorn");
+        engine.eval("load('res/nashorn8.js')");
+
+        engine.invokeFunction("evaluate1");                             // [object global]
+        engine.invokeFunction("evaluate2");                             // [object Object]
+        engine.invokeFunction("evaluate3", "Foobar");                   // Foobar
+        engine.invokeFunction("evaluate3", new Person("John", "Doe"));  // [object global] <- ???????
+    }
+
+}
+
+
+
+import javax.script.Invocable;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+
+/**
+ * @author Benjamin Winterberg
+ */
+public class Nashorn7 {
+
+    public static class Person {
+        private String name;
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public int getLengthOfName() {
+            return name.length();
+        }
+    }
+
+    public static void main(String[] args) throws ScriptException, NoSuchMethodException {
+        ScriptEngine engine = new ScriptEngineManager().getEngineByName("nashorn");
+        engine.eval("function foo(predicate, obj) { return !!(eval(predicate)); };");
+
+        Invocable invocable = (Invocable) engine;
+
+        Person person = new Person();
+        person.setName("Hans");
+
+        String predicate = "obj.getLengthOfName() >= 4";
+        Object result = invocable.invokeFunction("foo", predicate, person);
+        System.out.println(result);
+    }
+
+}
+import java.util.Arrays;
+import java.util.IntSummaryStatistics;
+import java.util.List;
+import java.util.Map;
+import java.util.StringJoiner;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+
+/**
+ * @author Benjamin Winterberg
+ */
+public class Streams10 {
+
+    static class Person {
+        String name;
+        int age;
+
+        Person(String name, int age) {
+            this.name = name;
+            this.age = age;
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
+    }
+
+    public static void main(String[] args) {
+        List<Person> persons =
+            Arrays.asList(
+                new Person("Max", 18),
+                new Person("Peter", 23),
+                new Person("Pamela", 23),
+                new Person("David", 12));
+
+//        test1(persons);
+//        test2(persons);
+//        test3(persons);
+//        test4(persons);
+//        test5(persons);
+//        test6(persons);
+//        test7(persons);
+//        test8(persons);
+        test9(persons);
+    }
+
+    private static void test1(List<Person> persons) {
+        List<Person> filtered =
+            persons
+                .stream()
+                .filter(p -> p.name.startsWith("P"))
+                .collect(Collectors.toList());
+
+        System.out.println(filtered);    // [Peter, Pamela]
+    }
+
+    private static void test2(List<Person> persons) {
+        Map<Integer, List<Person>> personsByAge = persons
+            .stream()
+            .collect(Collectors.groupingBy(p -> p.age));
+
+        personsByAge
+            .forEach((age, p) -> System.out.format("age %s: %s\n", age, p));
+
+        // age 18: [Max]
+        // age 23:[Peter, Pamela]
+        // age 12:[David]
+    }
+
+    private static void test3(List<Person> persons) {
+        Double averageAge = persons
+            .stream()
+            .collect(Collectors.averagingInt(p -> p.age));
+
+        System.out.println(averageAge);     // 19.0
+    }
+
+    private static void test4(List<Person> persons) {
+        IntSummaryStatistics ageSummary =
+            persons
+                .stream()
+                .collect(Collectors.summarizingInt(p -> p.age));
+
+        System.out.println(ageSummary);
+        // IntSummaryStatistics{count=4, sum=76, min=12, average=19,000000, max=23}
+    }
+
+    private static void test5(List<Person> persons) {
+        String names = persons
+            .stream()
+            .filter(p -> p.age >= 18)
+            .map(p -> p.name)
+            .collect(Collectors.joining(" and ", "In Germany ", " are of legal age."));
+
+        System.out.println(names);
+        // In Germany Max and Peter and Pamela are of legal age.
+    }
+
+    private static void test6(List<Person> persons) {
+        Map<Integer, String> map = persons
+            .stream()
+            .collect(Collectors.toMap(
+                p -> p.age,
+                p -> p.name,
+                (name1, name2) -> name1 + ";" + name2));
+
+        System.out.println(map);
+        // {18=Max, 23=Peter;Pamela, 12=David}
+    }
+
+    private static void test7(List<Person> persons) {
+        Collector<Person, StringJoiner, String> personNameCollector =
+            Collector.of(
+                () -> new StringJoiner(" | "),          // supplier
+                (j, p) -> j.add(p.name.toUpperCase()),  // accumulator
+                (j1, j2) -> j1.merge(j2),               // combiner
+                StringJoiner::toString);                // finisher
+
+        String names = persons
+            .stream()
+            .collect(personNameCollector);
+
+        System.out.println(names);  // MAX | PETER | PAMELA | DAVID
+    }
+
+    private static void test8(List<Person> persons) {
+        Collector<Person, StringJoiner, String> personNameCollector =
+            Collector.of(
+                () -> {
+                    System.out.println("supplier");
+                    return new StringJoiner(" | ");
+                },
+                (j, p) -> {
+                    System.out.format("accumulator: p=%s; j=%s\n", p, j);
+                    j.add(p.name.toUpperCase());
+                },
+                (j1, j2) -> {
+                    System.out.println("merge");
+                    return j1.merge(j2);
+                },
+                j -> {
+                    System.out.println("finisher");
+                    return j.toString();
+                });
+
+        String names = persons
+            .stream()
+            .collect(personNameCollector);
+
+        System.out.println(names);  // MAX | PETER | PAMELA | DAVID
+    }
+
+    private static void test9(List<Person> persons) {
+        Collector<Person, StringJoiner, String> personNameCollector =
+            Collector.of(
+                () -> {
+                    System.out.println("supplier");
+                    return new StringJoiner(" | ");
+                },
+                (j, p) -> {
+                    System.out.format("accumulator: p=%s; j=%s\n", p, j);
+                    j.add(p.name.toUpperCase());
+                },
+                (j1, j2) -> {
+                    System.out.println("merge");
+                    return j1.merge(j2);
+                },
+                j -> {
+                    System.out.println("finisher");
+                    return j.toString();
+                });
+
+        String names = persons
+            .parallelStream()
+            .collect(personNameCollector);
+
+        System.out.println(names);  // MAX | PETER | PAMELA | DAVID
+    }
+}
+
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ * @author Benjamin Winterberg
+ */
+public class Streams11 {
+
+    static class Person {
+        String name;
+        int age;
+
+        Person(String name, int age) {
+            this.name = name;
+            this.age = age;
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
+    }
+
+    public static void main(String[] args) {
+        List<Person> persons =
+            Arrays.asList(
+                new Person("Max", 18),
+                new Person("Peter", 23),
+                new Person("Pamela", 23),
+                new Person("David", 12));
+
+//        test1(persons);
+//        test2(persons);
+//        test3(persons);
+//        test4(persons);
+//        test5(persons);
+        test6(persons);
+    }
+
+    private static void test1(List<Person> persons) {
+        persons
+            .stream()
+            .reduce((p1, p2) -> p1.age > p2.age ? p1 : p2)
+            .ifPresent(System.out::println);    // Pamela
+    }
+
+    private static void test2(List<Person> persons) {
+        Person result =
+            persons
+                .stream()
+                .reduce(new Person("", 0), (p1, p2) -> {
+                    p1.age += p2.age;
+                    p1.name += p2.name;
+                    return p1;
+                });
+
+        System.out.format("name=%s; age=%s", result.name, result.age);
+    }
+
+    private static void test3(List<Person> persons) {
+        Integer ageSum = persons
+            .stream()
+            .reduce(0, (sum, p) -> sum += p.age, (sum1, sum2) -> sum1 + sum2);
+
+        System.out.println(ageSum);
+    }
+
+    private static void test4(List<Person> persons) {
+        Integer ageSum = persons
+            .stream()
+            .reduce(0,
+                (sum, p) -> {
+                    System.out.format("accumulator: sum=%s; person=%s\n", sum, p);
+                    return sum += p.age;
+                },
+                (sum1, sum2) -> {
+                    System.out.format("combiner: sum1=%s; sum2=%s\n", sum1, sum2);
+                    return sum1 + sum2;
+                });
+
+        System.out.println(ageSum);
+    }
+
+    private static void test5(List<Person> persons) {
+        Integer ageSum = persons
+            .parallelStream()
+            .reduce(0,
+                (sum, p) -> {
+                    System.out.format("accumulator: sum=%s; person=%s\n", sum, p);
+                    return sum += p.age;
+                },
+                (sum1, sum2) -> {
+                    System.out.format("combiner: sum1=%s; sum2=%s\n", sum1, sum2);
+                    return sum1 + sum2;
+                });
+
+        System.out.println(ageSum);
+    }
+
+    private static void test6(List<Person> persons) {
+        Integer ageSum = persons
+            .parallelStream()
+            .reduce(0,
+                (sum, p) -> {
+                    System.out.format("accumulator: sum=%s; person=%s; thread=%s\n",
+                        sum, p, Thread.currentThread().getName());
+                    return sum += p.age;
+                },
+                (sum1, sum2) -> {
+                    System.out.format("combiner: sum1=%s; sum2=%s; thread=%s\n",
+                        sum1, sum2, Thread.currentThread().getName());
+                    return sum1 + sum2;
+                });
+
+        System.out.println(ageSum);
+    }
+}
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.IntStream;
+
+/**
+ * @author Benjamin Winterberg
+ */
+public class Streams7 {
+
+    static class Foo {
+        String name;
+        List<Bar> bars = new ArrayList<>();
+
+        Foo(String name) {
+            this.name = name;
+        }
+    }
+
+    static class Bar {
+        String name;
+
+        Bar(String name) {
+            this.name = name;
+        }
+    }
+
+    public static void main(String[] args) {
+//        test1();
+        test2();
+    }
+
+    static void test2() {
+        IntStream.range(1, 4)
+            .mapToObj(num -> new Foo("Foo" + num))
+            .peek(f -> IntStream.range(1, 4)
+                .mapToObj(num -> new Bar("Bar" + num + " <- " + f.name))
+                .forEach(f.bars::add))
+            .flatMap(f -> f.bars.stream())
+            .forEach(b -> System.out.println(b.name));
+    }
+
+    static void test1() {
+        List<Foo> foos = new ArrayList<>();
+
+        IntStream
+            .range(1, 4)
+            .forEach(num -> foos.add(new Foo("Foo" + num)));
+
+        foos.forEach(f ->
+            IntStream
+                .range(1, 4)
+                .forEach(num -> f.bars.add(new Bar("Bar" + num + " <- " + f.name))));
+
+        foos.stream()
+            .flatMap(f -> f.bars.stream())
+            .forEach(b -> System.out.println(b.name));
+    }
+
+}
+public class ConcurrentUtils {
+
+    public static void stop(ExecutorService executor) {
+        try {
+            executor.shutdown();
+            executor.awaitTermination(60, TimeUnit.SECONDS);
+        }
+        catch (InterruptedException e) {
+            System.err.println("termination interrupted");
+        }
+        finally {
+            if (!executor.isTerminated()) {
+                System.err.println("killing non-finished tasks");
+            }
+            executor.shutdownNow();
+        }
+    }
+
+    public static void sleep(int seconds) {
+        try {
+            TimeUnit.SECONDS.sleep(seconds);
+        } catch (InterruptedException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+}
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.IntStream;
+
+/**
+ * @author Benjamin Winterberg
+ */
+public class Lock1 {
+
+    private static final int NUM_INCREMENTS = 10000;
+
+    private static ReentrantLock lock = new ReentrantLock();
+
+    private static int count = 0;
+
+    private static void increment() {
+        lock.lock();
+        try {
+            count++;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public static void main(String[] args) {
+        testLock();
+    }
+
+    private static void testLock() {
+        count = 0;
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+
+        IntStream.range(0, NUM_INCREMENTS)
+                 .forEach(i -> executor.submit(Lock1::increment));
+
+        ConcurrentUtils.stop(executor);
+
+        System.out.println(count);
+    }
+}
+----------------------------------------------------------------------------------------
+import org.springframework.context.annotation.Condition;
+import org.springframework.context.annotation.ConditionContext;
+import org.springframework.core.env.Environment;
+import org.springframework.core.type.AnnotatedTypeMetadata;
+import org.springframework.util.StringUtils;
+
+/**
+ * BasicServiceCondition
+ * 
+ * @author 	alanwei
+ * @since 	2016-09-16
+ */
+public class BasicServiceConfigCondition implements Condition {
+
+	/**
+	 * match [motan.basicservice.exportPort, motan.basicservice.export] config property
+	 * 
+	 * @see org.springframework.context.annotation.Condition#matches(org.springframework.context.annotation.ConditionContext, org.springframework.core.type.AnnotatedTypeMetadata)
+	 */
+	@Override
+	public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+		Environment env = context.getEnvironment();
+		return (!StringUtils.isEmpty(env.getProperty("motan.basicservice.exportPort"))
+				|| !StringUtils.isEmpty(env.getProperty("motan.basicservice.export")));
+	}
+}
+----------------------------------------------------------------------------------------
+
+    @Order(Ordered.HIGHEST_PRECEDENCE+1000)
+    @Bean
+    CommandLineRunner argProcessingCommandLineRunner() {
+        return (args) -> {
+            //filter optionArgs (processed by te spring boot) - logic from {@link SimpleCommandLineArgsParser#parse}
+            args = Stream.of(args).filter(arg -> !arg.startsWith("--")).toArray(String[]::new);
+
+            // do with args whatever we need -> for example print them
+            Stream.of(args).forEach(arg -> logger.info("On of the input args is: {}", arg));
+        };
+    }
+
+    @Order(Ordered.LOWEST_PRECEDENCE-1000)
+    @Bean
+    CommandLineRunner processBeforeStart(PersonRepository personRepository) {
+        return (callback) -> Arrays.asList("Panda Makrova:5;Wanda Trollowa:63;Sigma Alfova:18".split(";")).forEach(
+                entry -> {
+                    String[] nameAndAge = entry.split(":");
+                    String name = nameAndAge[0];
+                    String age = nameAndAge[1];
+                    Person person = Person.getFactory().create(name, Integer.valueOf(age));
+                    personRepository.save(person);
+                    logger.info("Person {} inserted to DB", person);
+                }
+        );
+    }
+
+
+    @Before
+    public void createTestFile() throws Exception {
+        destination_file = File.createTempFile("test-poi-spring-boot", ".xlsx");
+        destination_file.createNewFile();
+
+        sourceFile = File.createTempFile("test-poi-spring-boot-source", ".txt");
+        sourceFile.createNewFile();
+
+        FileOutputStream fos = new FileOutputStream(sourceFile);
+        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
+
+        for (int i = 0; i < ROWS_TO_GENERATE; i++) {
+            bw.write(UUID.randomUUID().toString());
+            bw.newLine();
+        }
+
+        bw.close();
+
+        destination_file.deleteOnExit();
+        sourceFile.deleteOnExit();
+    }
+	
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.web.bind.annotation.AuthenticationPrincipal;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.thymeleaf.spring.support.Layout;
+
+@Controller
+public class SecurityController {
+
+    @RequestMapping({"/", "/home"})
+    public String home(final Model model) {
+        return "home";
+    }
+
+    @Layout("layouts/logged_in")
+    @RequestMapping("/hello")
+    public String hello(@AuthenticationPrincipal User user, final Model model) {
+        model.addAttribute("name", user.getUsername());
+        return "hello";
+    }
+
+    @RequestMapping("/login")
+    public String login(final Model model) {
+        return "login";
+    }
+}
+----------------------------------------------------------------------------------------
+    @Bean
+    public EmbeddedServletContainerCustomizer containerCustomizer() {
+        return factory -> {
+            TomcatEmbeddedServletContainerFactory containerFactory = (TomcatEmbeddedServletContainerFactory) factory;
+            containerFactory.setTomcatContextCustomizers(Arrays.asList(context -> {
+                final PersistentManager persistentManager = new PersistentManager();
+                final FileStore store = new FileStore();
+
+                final String sessionDirectory = makeSessionDirectory();
+                log.info("Writing sessions to " + sessionDirectory);
+                store.setDirectory(sessionDirectory);
+
+                persistentManager.setStore(store);
+                context.setManager(persistentManager);
+            }));
+        };
+    }
+----------------------------------------------------------------------------------------
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoOperations;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.stereotype.Repository;
+
+import com.example.domain.Post;
+
+@Repository
+public class PostDAO {
+
+	@Autowired
+	MongoOperations mongoTemplate;
+
+	public void savePost(Post post) {
+		mongoTemplate.save(post);
+	}
+	
+	public void deletePost(Post post) {
+		mongoTemplate.remove(post);
+	}
+
+	public List<Post> getAllPosts() {
+		//new mongodb query
+		Query query = new Query();
+		//sort by date
+		query.with(new Sort(Sort.Direction.DESC,"date"));
+		//run query
+		ArrayList<Post> allPostList = (ArrayList<Post>) mongoTemplate
+				.find(query, (Post.class));
+		return allPostList;
+	}
+	
+	public List<Post> getAllUsersPosts(String user) {
+		//find post by user
+		Query query = new Query(Criteria.where("user").is(user));	
+		//sort by date
+		query.with(new Sort(Sort.Direction.DESC,"date"));
+		//run query
+		ArrayList<Post> allPostList = (ArrayList<Post>) mongoTemplate
+				.find(query, (Post.class));
+		return allPostList;
+	}
+
+	public Post getPostById(String id) {
+		Query query = new Query(Criteria.where("_id").is(id));
+		Post post = (Post) mongoTemplate.findOne(query, (Post.class));
+		return post;
+	}
+}
+----------------------------------------------------------------------------------------
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.persistence.Entity;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.metamodel.ManagedType;
+import javax.persistence.metamodel.Metamodel;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.rest.core.config.RepositoryRestConfiguration;
+import org.springframework.data.rest.webmvc.config.RepositoryRestConfigurerAdapter;
+
+import com.kristijangeorgiev.softdelete.model.entity.PermissionRole;
+import com.kristijangeorgiev.softdelete.model.entity.RoleUser;
+import com.kristijangeorgiev.softdelete.model.entity.pk.PermissionRolePK;
+import com.kristijangeorgiev.softdelete.model.entity.pk.RoleUserPK;
+import com.kristijangeorgiev.softdelete.repository.PermissionRoleRepository;
+import com.kristijangeorgiev.softdelete.repository.RoleUserRepository;
+
+/**
+ * 
+ * <h2>CustomRepositoryRestConfigurerAdapter</h2>
+ * 
+ * @author Kristijan Georgiev
+ *
+ */
+
+@Configuration
+public class CustomRepositoryRestConfigurerAdapter extends RepositoryRestConfigurerAdapter {
+
+	@Autowired
+	private EntityManagerFactory entityManagerFactory;
+
+	@Override
+	public void configureRepositoryRestConfiguration(RepositoryRestConfiguration config) {
+
+		// PermissionRole Entity
+		config.withEntityLookup().forRepository(PermissionRoleRepository.class, (PermissionRole entity) -> {
+			return new PermissionRolePK(entity.getPermissionId(), entity.getRoleId());
+		}, PermissionRoleRepository::findOne);
+
+		// RoleUser Entity
+		config.withEntityLookup().forRepository(RoleUserRepository.class, (RoleUser entity) -> {
+			return new RoleUserPK(entity.getRoleId(), entity.getUserId());
+		}, RoleUserRepository::findOne);
+
+		List<Class<?>> entityClasses = getAllManagedEntityTypes(entityManagerFactory);
+
+		// Expose id's for all entity classes
+		for (Class<?> entityClass : entityClasses)
+			config.exposeIdsFor(entityClass);
+
+		// Return newly created entities in the response
+		config.setReturnBodyOnCreate(true);
+
+		// Return updated entities in the response
+		config.setReturnBodyOnUpdate(true);
+	}
+
+	// Find all classes that are annotated with @Entity
+	private List<Class<?>> getAllManagedEntityTypes(EntityManagerFactory entityManagerFactory) {
+		List<Class<?>> entityClasses = new ArrayList<>();
+		Metamodel metamodel = entityManagerFactory.getMetamodel();
+
+		for (ManagedType<?> managedType : metamodel.getManagedTypes())
+			if (managedType.getJavaType().isAnnotationPresent(Entity.class))
+				entityClasses.add(managedType.getJavaType());
+
+		return entityClasses;
+	}
+}
+----------------------------------------------------------------------------------------
+import java.io.Serializable;
+
+import javax.persistence.EntityManager;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.support.JpaRepositoryFactory;
+import org.springframework.data.jpa.repository.support.JpaRepositoryFactoryBean;
+import org.springframework.data.repository.core.RepositoryInformation;
+import org.springframework.data.repository.core.RepositoryMetadata;
+import org.springframework.data.repository.core.support.RepositoryFactorySupport;
+
+import com.kristijangeorgiev.softdelete.repository.SoftDeletesRepositoryImpl;
+
+/**
+ * 
+ * @author Kristijan Georgiev
+ * 
+ *         Returns the custom repository implementation for the soft deletes
+ */
+
+public class CustomJpaRepositoryFactoryBean<T extends JpaRepository<S, ID>, S, ID extends Serializable>
+		extends JpaRepositoryFactoryBean<T, S, ID> {
+
+	public CustomJpaRepositoryFactoryBean(Class<? extends T> repositoryInterface) {
+		super(repositoryInterface);
+	}
+
+	@Override
+	protected RepositoryFactorySupport createRepositoryFactory(EntityManager entityManager) {
+		return new CustomJpaRepositoryFactory<T, ID>(entityManager);
+	}
+
+	private static class CustomJpaRepositoryFactory<T, ID extends Serializable> extends JpaRepositoryFactory {
+
+		private final EntityManager entityManager;
+
+		public CustomJpaRepositoryFactory(EntityManager entityManager) {
+			super(entityManager);
+			this.entityManager = entityManager;
+		}
+
+		@Override
+		@SuppressWarnings("unchecked")
+		protected Object getTargetRepository(RepositoryInformation information) {
+			return new SoftDeletesRepositoryImpl<T, ID>((Class<T>) information.getDomainType(), entityManager);
+		}
+
+		@Override
+		protected Class<?> getRepositoryBaseClass(RepositoryMetadata metadata) {
+			return SoftDeletesRepositoryImpl.class;
+		}
+	}
+}
+
+import java.util.List;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+
+import org.hibernate.annotations.Where;
+import org.hibernate.annotations.WhereJoinTable;
+import org.springframework.context.annotation.Lazy;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+
+/**
+ * 
+ * <h2>Role</h2>
+ * 
+ * @author Kristijan Georgiev
+ * 
+ *         Role entity
+ *
+ */
+
+@Data
+@Entity
+@NoArgsConstructor
+@EqualsAndHashCode(callSuper = true)
+@JsonIgnoreProperties(ignoreUnknown = true)
+@Table(uniqueConstraints = { @UniqueConstraint(columnNames = { "code" }) })
+@ToString(exclude = { "roleUsers", "permissionRole", "users", "permissions" })
+public class Role extends BaseIdEntity {
+
+	private static final long serialVersionUID = 1L;
+
+	@NotNull
+	@Size(min = 1, max = 255)
+	private String code;
+
+	@NotNull
+	@Size(min = 1, max = 255)
+	private String name;
+
+	@Size(min = 1, max = 255)
+	private String description;
+
+	@Lazy
+	@OneToMany(mappedBy = "role")
+	@Where(clause = NOT_DELETED)
+	private List<RoleUser> roleUsers;
+
+	@Lazy
+	@OneToMany(mappedBy = "role")
+	@Where(clause = NOT_DELETED)
+	private List<PermissionRole> permissionRole;
+
+	@Lazy
+	@Where(clause = NOT_DELETED)
+	@WhereJoinTable(clause = NOT_DELETED)
+	@ManyToMany(mappedBy = "roles", cascade = CascadeType.DETACH)
+	private List<User> users;
+
+	/*
+	 * Get all permissions associated with the Role that are not deleted
+	 */
+	@Lazy
+	@Where(clause = NOT_DELETED)
+	@WhereJoinTable(clause = NOT_DELETED)
+	@ManyToMany(cascade = CascadeType.ALL)
+	@JoinTable(name = "permission_role", joinColumns = {
+			@JoinColumn(name = "role_id", referencedColumnName = "id") }, inverseJoinColumns = {
+					@JoinColumn(name = "permission_id", referencedColumnName = "id") })
+	private List<Permission> permissions;
+}
+----------------------------------------------------------------------------------------
+import java.util.List;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.ManyToMany;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+
+import org.hibernate.annotations.Where;
+import org.hibernate.annotations.WhereJoinTable;
+import org.springframework.context.annotation.Lazy;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+
+/**
+ * 
+ * <h2>Permission</h2>
+ * 
+ * @author Kristijan Georgiev
+ * 
+ *         Permission entity
+ *
+ */
+
+@Data
+@Entity
+@NoArgsConstructor
+@EqualsAndHashCode(callSuper = true)
+@JsonIgnoreProperties(ignoreUnknown = true)
+@ToString(exclude = { "roles", "permissionRoles" })
+@Table(uniqueConstraints = { @UniqueConstraint(columnNames = { "code" }) })
+public class Permission extends BaseIdEntity {
+
+	private static final long serialVersionUID = 1L;
+
+	@NotNull
+	@Size(min = 1, max = 255)
+	private String name;
+
+	@NotNull
+	@Size(min = 1, max = 255)
+	private String code;
+
+	@Lazy
+	@Where(clause = NOT_DELETED)
+	@WhereJoinTable(clause = NOT_DELETED)
+	@ManyToMany(mappedBy = "permissions", cascade = CascadeType.DETACH)
+	private List<Role> roles;
+
+	@Lazy
+	@Where(clause = NOT_DELETED)
+	@OneToMany(mappedBy = "permission")
+	private List<PermissionRole> permissionRoles;
+
+}
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.IdClass;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+
+import org.hibernate.annotations.Where;
+import org.springframework.context.annotation.Lazy;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.kristijangeorgiev.softdelete.model.entity.pk.RoleUserPK;
+
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+
+/**
+ * 
+ * <h2>RoleUser</h2>
+ * 
+ * @author Kristijan Georgiev
+ * 
+ *         RoleUser association entity
+ *
+ */
+
+@Data
+@Entity
+@NoArgsConstructor
+@IdClass(RoleUserPK.class)
+@EqualsAndHashCode(callSuper = true)
+@JsonIgnoreProperties(ignoreUnknown = true)
+@ToString(exclude = { "role", "user" })
+public class RoleUser extends BaseEntity {
+
+	private static final long serialVersionUID = 1L;
+
+	@Id
+	@Column(name = "role_id")
+	private Long roleId;
+
+	@Id
+	@Column(name = "user_id")
+	private Long userId;
+
+	@Lazy
+	@ManyToOne
+	@Where(clause = NOT_DELETED)
+	@JoinColumn(name = "role_id", referencedColumnName = "id", insertable = false, updatable = false)
+	private Role role;
+
+	@Lazy
+	@ManyToOne
+	@Where(clause = NOT_DELETED)
+	@JoinColumn(name = "user_id", referencedColumnName = "id", insertable = false, updatable = false)
+	private User user;
+
+}
+----------------------------------------------------------------------------------------
+import org.hibernate.MultiTenancyStrategy;
+import org.hibernate.cfg.Environment;
+import org.hibernate.context.spi.CurrentTenantIdentifierResolver;
+import org.hibernate.engine.jdbc.connections.spi.MultiTenantConnectionProvider;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.orm.jpa.JpaProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.orm.jpa.JpaVendorAdapter;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.sql.DataSource;
+
+@Configuration
+public class HibernateConfig {
+
+  @Autowired
+  private JpaProperties jpaProperties;
+
+  @Bean
+  public JpaVendorAdapter jpaVendorAdapter() {
+    return new HibernateJpaVendorAdapter();
+  }
+
+  @Bean
+  public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource,
+      MultiTenantConnectionProvider multiTenantConnectionProviderImpl,
+      CurrentTenantIdentifierResolver currentTenantIdentifierResolverImpl) {
+    Map<String, Object> properties = new HashMap<>();
+    properties.putAll(jpaProperties.getHibernateProperties(dataSource));
+    properties.put(Environment.MULTI_TENANT, MultiTenancyStrategy.SCHEMA);
+    properties.put(Environment.MULTI_TENANT_CONNECTION_PROVIDER, multiTenantConnectionProviderImpl);
+    properties.put(Environment.MULTI_TENANT_IDENTIFIER_RESOLVER, currentTenantIdentifierResolverImpl);
+
+    LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
+    em.setDataSource(dataSource);
+    em.setPackagesToScan("com.srai");
+    em.setJpaVendorAdapter(jpaVendorAdapter());
+    em.setJpaPropertyMap(properties);
+    return em;
+  }
+}
+----------------------------------------------------------------------------------------
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.Resource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.InitBinder;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.srai.model.Person;
+import com.srai.model.repository.PersonRepository;
+
+import javax.validation.Valid;
+
+/** Simple controller to illustrate templates. */
+@RestController
+@RequestMapping(value = "/person")
+public class PersonController {
+
+  /** Person repository. */
+  @Autowired
+  private transient PersonRepository repository;
+
+  /**
+   * Person retriever.
+   * @return Person
+   */
+  @RequestMapping(value = "/{personId}", method = RequestMethod.GET)
+  @ResponseBody public ResponseEntity<?> getPerson(@PathVariable final Long personId) {
+    final Person person = repository.findOne(personId);
+    if (person == null) {
+      return ResponseEntity.notFound().build();
+    }
+    final Resource<Person> resource = new Resource<Person>(person);
+    resource.add(linkTo(methodOn(PersonController.class).getPerson(personId)).withSelfRel());
+
+    return ResponseEntity.ok(resource);
+  }
+
+  /**
+   * Person creation.
+   * @return Person
+   */
+  @RequestMapping(value = "/", method = RequestMethod.POST)
+  @ResponseBody public ResponseEntity<?> savePerson(@RequestBody final Person person) {
+    final Person persistedPerson = repository.save(person);
+    final Resource<Person> resource = new Resource<Person>(persistedPerson);
+    resource.add(
+        linkTo(methodOn(PersonController.class).getPerson(persistedPerson.getId())).withSelfRel()
+    );
+    return ResponseEntity
+        .status(HttpStatus.CREATED)
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(resource);
+  }
+
+}
+----------------------------------------------------------------------------------------
+import java.io.Serializable;
+import java.time.LocalDateTime;
+
+import javax.persistence.MappedSuperclass;
+import javax.persistence.PrePersist;
+import javax.persistence.PreUpdate;
+import javax.persistence.Version;
+
+import lombok.Data;
+
+/**
+ * 
+ * <h2>BaseEntity</h2>
+ * 
+ * @author Kristijan Georgiev
+ * 
+ *         MappedSuperclass that contains all the necessary fields for using
+ *         soft deletes
+ *
+ */
+
+@Data
+@MappedSuperclass
+public class BaseEntity implements Serializable {
+
+	private static final long serialVersionUID = 1L;
+
+	protected static final String NOT_DELETED = "deleted_on > CURRENT_TIMESTAMP OR deleted_on IS NULL";
+
+	@Version
+	protected Long version;
+
+	protected LocalDateTime createdOn;
+
+	protected LocalDateTime updatedOn;
+
+	protected LocalDateTime deletedOn;
+
+	@PrePersist
+	protected void onCreate() {
+		this.createdOn = LocalDateTime.now();
+		this.updatedOn = LocalDateTime.now();
+	}
+
+	@PreUpdate
+	protected void onUpdate() {
+		this.updatedOn = LocalDateTime.now();
+	}
+
+}
+
+
+package com.paragon.mailingcontour.commons.datasource.repository;
+
+import com.google.common.base.CaseFormat;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.BeanWrapperImpl;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.support.JpaEntityInformation;
+import org.springframework.data.jpa.repository.support.JpaEntityInformationSupport;
+import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
+
+import javax.persistence.EntityManager;
+import javax.persistence.Table;
+import javax.persistence.TypedQuery;
+import javax.persistence.UniqueConstraint;
+import javax.persistence.criteria.*;
+import javax.validation.ConstraintViolation;
+import javax.validation.ConstraintViolationException;
+import javax.validation.Validation;
+import java.beans.IntrospectionException;
+import java.beans.PropertyDescriptor;
+import java.io.Serializable;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationTargetException;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Stream;
+
+/**
+ * Custom implementation for soft deleting
+ *
+ * @param <T>  the class of the entity
+ * @param <ID> the ID class of the entity
+ */
+public class SoftDeletesRepositoryImpl<T, ID extends Serializable> extends SimpleJpaRepository<T, ID> implements SoftDeletesRepository<T, ID> {
+    private final JpaEntityInformation<T, ?> entityInformation;
+    private final EntityManager em;
+    private final Class<T> domainClass;
+    private static final String DELETED_FIELD = "deletedOn";
+
+    public SoftDeletesRepositoryImpl(final Class<T> domainClass, final EntityManager em) {
+        super(domainClass, em);
+        this.em = em;
+        this.domainClass = domainClass;
+        this.entityInformation = JpaEntityInformationSupport.getEntityInformation(domainClass, em);
+    }
+
+    @Override
+    public Iterable<T> findAllActive() {
+        return super.findAll(notDeleted());
+    }
+
+    @Override
+    public Iterable<T> findAllActive(Sort sort) {
+        return super.findAll(notDeleted(), sort);
+    }
+
+    @Override
+    public Page<T> findAllActive(Pageable pageable) {
+        return super.findAll(notDeleted(), pageable);
+    }
+
+    @Override
+    public Iterable<T> findAllActive(final Iterable<ID> ids) {
+        if (Objects.isNull(ids) || !ids.iterator().hasNext()) {
+            return Collections.emptyList();
+        }
+        if (this.entityInformation.hasCompositeId()) {
+            final List<T> results = new ArrayList<T>();
+            for (final ID id : ids) {
+                results.add(findOneActive(id).orElse(null));
+            }
+            return results;
+        }
+        final ByIdsSpecification<T> specification = new ByIdsSpecification<T>(this.entityInformation);
+        final TypedQuery<T> query = getQuery(Specification.where(specification).and(notDeleted()), (Sort) null);
+        return query.setParameter(specification.parameter, ids).getResultList();
+    }
+
+    @Override
+    public Optional<T> findOneActive(final ID id) {
+        return super.findOne(Specification.where(new ByIdSpecification<>(this.entityInformation, id)).and(notDeleted()));
+    }
+
+    @Override
+    @Transactional
+    @SuppressWarnings("unchecked")
+    public <S extends T> S save(final S entity) {
+        final Set<ConstraintViolation<S>> constraintViolations = Validation.buildDefaultValidatorFactory().getValidator().validate(entity);
+        if (constraintViolations.size() > 0) {
+            throw new ConstraintViolationException(constraintViolations.toString(), constraintViolations);
+        }
+        final Class<?> entityClass = entity.getClass();
+        final CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
+        final CriteriaQuery<Object> criteriaQuery = criteriaBuilder.createQuery();
+        final Root<?> root = criteriaQuery.from(entityClass);
+
+        final List<Predicate> predicates = new ArrayList<>();
+        if (this.entityInformation.hasCompositeId()) {
+            for (final String s : this.entityInformation.getIdAttributeNames()) {
+                predicates.add(criteriaBuilder.equal(root.<ID>get(s), entityInformation.getCompositeIdAttributeValue(this.entityInformation.getId(entity), s)));
+            }
+            predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get(DELETED_FIELD), LocalDateTime.now()));
+            criteriaQuery.select(root).where(predicates.toArray(new Predicate[predicates.size()]));
+
+            final TypedQuery<Object> typedQuery = em.createQuery(criteriaQuery);
+            final List<Object> resultSet = typedQuery.getResultList();
+            if (resultSet.size() > 0) {
+                final S result = (S) resultSet.get(0);
+                BeanUtils.copyProperties(entity, result, getNullPropertyNames(entity));
+                return (S) super.save(result);
+            }
+        }
+
+        if (entity.getClass().isAnnotationPresent(Table.class)) {
+            final Annotation a = entity.getClass().getAnnotation(Table.class);
+            try {
+                final UniqueConstraint[] uniqueConstraints = (UniqueConstraint[]) a.annotationType().getMethod("uniqueConstraints").invoke(a);
+                if (Objects.nonNull(uniqueConstraints)) {
+                    for (UniqueConstraint uniqueConstraint : uniqueConstraints) {
+                        final Map<String, Object> data = new HashMap<>();
+                        for (String name : uniqueConstraint.columnNames()) {
+                            if (name.endsWith("_id")) {
+                                name = CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, name.substring(0, name.length() - 3));
+                            }
+                            final PropertyDescriptor pd = new PropertyDescriptor(name, entityClass);
+                            final Object value = pd.getReadMethod().invoke(entity);
+                            if (value == null) {
+                                data.clear();
+                                break;
+                            }
+                            data.put(name, value);
+                        }
+                        if (!data.isEmpty())
+                            for (Map.Entry<String, Object> entry : data.entrySet()) {
+                                predicates.add(criteriaBuilder.equal(root.get(entry.getKey()), entry.getValue()));
+                            }
+                    }
+
+                    if (predicates.isEmpty()) {
+                        return super.save(entity);
+                    }
+                    predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get(DELETED_FIELD), LocalDateTime.now()));
+                    criteriaQuery.select(root).where(predicates.toArray(new Predicate[0]));
+
+                    final TypedQuery<Object> typedQuery = em.createQuery(criteriaQuery);
+                    final List<Object> resultSet = typedQuery.getResultList();
+                    if (resultSet.size() > 0) {
+                        final S result = (S) resultSet.get(0);
+                        BeanUtils.copyProperties(
+                            entity,
+                            result,
+                            Stream.concat(Arrays.stream(
+                                getNullPropertyNames(entity)),
+                                Arrays.stream(new String[]{entityInformation.getIdAttribute().getName()})).toArray(String[]::new)
+                        );
+                        return (S) super.save(result);
+                    }
+                }
+            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException
+                | NoSuchMethodException | SecurityException | IntrospectionException e) {
+                e.printStackTrace();
+            }
+        }
+        return super.save(entity);
+    }
+
+    @Override
+    @Transactional
+    public <S extends T> S saveAndFlush(final S entity) {
+        final S result = this.save(entity);
+        this.flush();
+        return result;
+    }
+
+    @Transactional
+    public <S extends T> List<S> save(final Iterable<S> entities) {
+        final List<S> result = new ArrayList<S>();
+        if (Objects.isNull(entities)) {
+            return result;
+        }
+        for (final S entity : entities) {
+            result.add(this.save(entity));
+        }
+        return result;
+    }
+
+    public static String[] getNullPropertyNames(Object source) {
+        final BeanWrapper src = new BeanWrapperImpl(source);
+        final PropertyDescriptor[] pds = src.getPropertyDescriptors();
+        final Set<String> propertyNames = new HashSet<>();
+        for (final PropertyDescriptor pd : pds) {
+            if (!pd.getName().equals(DELETED_FIELD) && src.getPropertyValue(pd.getName()) == null) {
+                propertyNames.add(pd.getName());
+            }
+        }
+        return propertyNames.toArray(new String[0]);
+    }
+
+    @Override
+    @Transactional
+    public void softDelete(ID id) {
+        Assert.notNull(id, "The given id must not be null!");
+        this.softDelete(id, LocalDateTime.now());
+    }
+
+    @Override
+    @Transactional
+    public void softDelete(final T entity) {
+        Assert.notNull(entity, "The entity must not be null!");
+        this.softDelete(entity, LocalDateTime.now());
+    }
+
+    @Override
+    @Transactional
+    public void softDelete(Iterable<? extends T> entities) {
+        Assert.notNull(entities, "The given Iterable of entities not be null!");
+        for (final T entity : entities) {
+            this.softDelete(entity);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void softDeleteAll() {
+        for (final T entity : this.findAllActive())
+            this.softDelete(entity);
+    }
+
+    @Override
+    @Transactional
+    public void scheduleSoftDelete(ID id, LocalDateTime localDateTime) {
+        this.softDelete(id, localDateTime);
+    }
+
+    @Override
+    @Transactional
+    public void scheduleSoftDelete(T entity, LocalDateTime localDateTime) {
+        this.softDelete(entity, localDateTime);
+    }
+
+    private void softDelete(final ID id, final LocalDateTime localDateTime) {
+        Assert.notNull(id, "The given id must not be null!");
+        final T entity = findOneActive(id).orElse(null);
+        if (Objects.isNull(entity)) {
+            throw new EmptyResultDataAccessException(String.format("No %s entity with id %s exists!", entityInformation.getJavaType(), id), 1);
+        }
+        this.softDelete(entity, localDateTime);
+    }
+
+    private void softDelete(T entity, LocalDateTime localDateTime) {
+        Assert.notNull(entity, "The entity must not be null!");
+
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+
+        CriteriaUpdate<T> update = cb.createCriteriaUpdate((Class<T>) domainClass);
+
+        Root<T> root = update.from((Class<T>) domainClass);
+
+        update.set(DELETED_FIELD, localDateTime);
+
+        final List<Predicate> predicates = new ArrayList<Predicate>();
+
+        if (entityInformation.hasCompositeId()) {
+            for (String s : entityInformation.getIdAttributeNames())
+                predicates.add(cb.equal(root.<ID>get(s),
+                    entityInformation.getCompositeIdAttributeValue(entityInformation.getId(entity), s)));
+            update.where(cb.and(predicates.toArray(new Predicate[predicates.size()])));
+        } else
+            update.where(cb.equal(root.<ID>get(entityInformation.getIdAttribute().getName()),
+                entityInformation.getId(entity)));
+
+        em.createQuery(update).executeUpdate();
+    }
+
+    public long countActive() {
+        return super.count(notDeleted());
+    }
+
+    @Override
+    public boolean existsActive(ID id) {
+        Assert.notNull(id, "The entity must not be null!");
+        return findOneActive(id) != null ? true : false;
+    }
+
+    private static final class ByIdSpecification<T, ID extends Serializable> implements Specification<T> {
+
+        private final JpaEntityInformation<T, ?> entityInformation;
+        private final ID id;
+
+        public ByIdSpecification(JpaEntityInformation<T, ?> entityInformation, ID id) {
+            this.entityInformation = entityInformation;
+            this.id = id;
+        }
+
+        @Override
+        public Predicate toPredicate(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
+            final List<Predicate> predicates = new ArrayList<Predicate>();
+            if (entityInformation.hasCompositeId()) {
+                for (String s : entityInformation.getIdAttributeNames())
+                    predicates.add(cb.equal(root.<ID>get(s), entityInformation.getCompositeIdAttributeValue(id, s)));
+
+                return cb.and(predicates.toArray(new Predicate[predicates.size()]));
+            }
+            return cb.equal(root.<ID>get(entityInformation.getIdAttribute().getName()), id);
+        }
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static final class ByIdsSpecification<T> implements Specification<T> {
+
+        private final JpaEntityInformation<T, ?> entityInformation;
+
+        ParameterExpression<Iterable> parameter;
+
+        public ByIdsSpecification(JpaEntityInformation<T, ?> entityInformation) {
+            this.entityInformation = entityInformation;
+        }
+
+        @Override
+        public Predicate toPredicate(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
+            Path<?> path = root.get(entityInformation.getIdAttribute());
+            parameter = cb.parameter(Iterable.class);
+            return path.in(parameter);
+        }
+    }
+
+    private static final class DeletedIsNull<T> implements Specification<T> {
+        @Override
+        public Predicate toPredicate(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
+            return cb.isNull(root.<LocalDateTime>get(DELETED_FIELD));
+        }
+    }
+
+    private static final class DeletedTimeGreatherThanNow<T> implements Specification<T> {
+        @Override
+        public Predicate toPredicate(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
+            return cb.greaterThan(root.<LocalDateTime>get(DELETED_FIELD), LocalDateTime.now());
+        }
+    }
+
+    private static final <T> Specification<T> notDeleted() {
+        return Specification.where(new DeletedIsNull<T>()).or(new DeletedTimeGreatherThanNow<T>());
+    }
+}
+
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.repository.NoRepositoryBean;
+import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.util.Optional;
+
+@Transactional
+@NoRepositoryBean
+public interface SoftDeletesRepository<T, ID extends Serializable> extends PagingAndSortingRepository<T, ID> {
+
+    Iterable<T> findAllActive();
+
+    Iterable<T> findAllActive(final Sort sort);
+
+    Page<T> findAllActive(final Pageable pageable);
+
+    Iterable<T> findAllActive(final Iterable<ID> ids);
+
+    Optional<T> findOneActive(final ID id);
+
+    @Modifying
+    void softDelete(final ID id);
+
+    @Modifying
+    void softDelete(final T entity);
+
+    @Modifying
+    void softDelete(final Iterable<? extends T> entities);
+
+    @Modifying
+    void softDeleteAll();
+
+    @Modifying
+    void scheduleSoftDelete(final ID id, final LocalDateTime localDateTime);
+
+    @Modifying
+    void scheduleSoftDelete(final T entity, final LocalDateTime localDateTime);
+
+    long countActive();
+
+    boolean existsActive(final ID id);
+}
+----------------------------------------------------------------------------------------
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return orders.isEmpty() ? "UNSORTED" : StringUtils.collectionToCommaDelimitedString(orders);
+	}
+
+	/**
+	 * Creates a new {@link Sort} with the current setup but the given order direction.
+	 *
+	 * @param direction
+	 * @return
+	 */
+	private Sort withDirection(Direction direction) {
+
+		return Sort.by(orders.stream().map(it -> new Order(direction, it.getProperty())).collect(Collectors.toList()));
+	}
+
+	/**
+	 * Enumeration for sort directions.
+	 *
+	 * @author Oliver Gierke
+	 */
+	public static enum Direction {
+
+		ASC, DESC;
+
+		/**
+		 * Returns whether the direction is ascending.
+		 *
+		 * @return
+		 * @since 1.13
+		 */
+		public boolean isAscending() {
+			return this.equals(ASC);
+		}
+
+		/**
+		 * Returns whether the direction is descending.
+		 *
+		 * @return
+		 * @since 1.13
+		 */
+		public boolean isDescending() {
+			return this.equals(DESC);
+		}
+
+		/**
+		 * Returns the {@link Direction} enum for the given {@link String} value.
+		 *
+		 * @param value
+		 * @throws IllegalArgumentException in case the given value cannot be parsed into an enum value.
+		 * @return
+		 */
+		public static Direction fromString(String value) {
+
+			try {
+				return Direction.valueOf(value.toUpperCase(Locale.US));
+			} catch (Exception e) {
+				throw new IllegalArgumentException(String.format(
+						"Invalid value '%s' for orders given! Has to be either 'desc' or 'asc' (case insensitive).", value), e);
+			}
+		}
+
+		/**
+		 * Returns the {@link Direction} enum for the given {@link String} or null if it cannot be parsed into an enum
+		 * value.
+		 *
+		 * @param value
+		 * @return
+		 */
+		public static Optional<Direction> fromOptionalString(String value) {
+
+			try {
+				return Optional.of(fromString(value));
+			} catch (IllegalArgumentException e) {
+				return Optional.empty();
+			}
+		}
+	}
+	
+	import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+/**
+ * @author Greg Turnquist
+ */
+// tag::code[]
+@Component
+public class LearningSpringBootHealthIndicator
+						implements HealthIndicator {
+
+	@Override
+	public Health health() {
+		try {
+			URL url =
+				new URL("http://greglturnquist.com/learning-spring-boot");
+			HttpURLConnection conn =
+				(HttpURLConnection) url.openConnection();
+			int statusCode = conn.getResponseCode();
+			if (statusCode >= 200 && statusCode < 300) {
+				return Health.up().build();
+			} else {
+				return Health.down()
+					.withDetail("HTTP Status Code", statusCode)
+					.build();
+			}
+		} catch (IOException e) {
+			return Health.down(e).build();
+		}
+	}
+}
+
+import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.HttpSecurity;
+import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.web.server.context.WebSessionSecurityContextRepository;
+
+/**
+ * @author Greg Turnquist
+ */
+// tag::code[]
+@EnableWebFluxSecurity
+@EnableReactiveMethodSecurity
+public class SecurityConfiguration {
+
+	@Bean
+	SecurityWebFilterChain springWebFilterChain() {
+		return HttpSecurity.http()
+			.securityContextRepository(new WebSessionSecurityContextRepository())
+			.authorizeExchange()
+			.anyExchange().authenticated()
+			.and()
+			.build();
+	}
+}
+
+import org.apache.catalina.connector.Connector;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.springframework.beans.factory.annotation.Autowired;
+
+import org.springframework.boot.context.embedded.tomcat.TomcatConnectorCustomizer;
+
+import org.springframework.stereotype.Component;
+
+/**
+ * @author  jbellmann
+ */
+@Component
+public class ProxyTomcatConnectorCustomizer implements TomcatConnectorCustomizer {
+
+    private final Logger logger = LoggerFactory.getLogger(ProxyTomcatConnectorCustomizer.class);
+
+    private final ProxyConnectorCustomizersProperties proxyConnectorCustomizerProperties;
+
+    @Autowired
+    public ProxyTomcatConnectorCustomizer(
+            final ProxyConnectorCustomizersProperties proxyConnectorCustomizerProperties) {
+        this.proxyConnectorCustomizerProperties = proxyConnectorCustomizerProperties;
+    }
+
+    @Override
+    public void customize(final Connector connector) {
+        if (!proxyConnectorCustomizerProperties.isEnabled()) {
+            logger.warn("CUSTOMIZE CONNECTORS IS DISABLED");
+            return;
+        }
+
+        for (ConnectorCustomizer cc : proxyConnectorCustomizerProperties.getCustomizers()) {
+
+            if (cc.isEnabled()) {
+
+                if (connector.getPort() == cc.getPort()) {
+                    logger.warn("CUSTOMIZE CONNECTOR ON PORT : {}", connector.getPort());
+
+                    logger.warn("SET CONNECTOR - 'secure' : {}", cc.isSecure());
+                    connector.setSecure(cc.isSecure());
+
+                    logger.warn("SET CONNECTOR - 'scheme' : {}", cc.getScheme());
+                    connector.setScheme(cc.getScheme());
+
+                    logger.warn("SET CONNECTOR - 'proxy-port' : {}", cc.getProxyPort());
+                    connector.setProxyPort(cc.getProxyPort());
+
+                    logger.warn("SET CONNECTOR - 'proxy-name' : {}", cc.getProxyName());
+                    connector.setProxyName(cc.getProxyName());
+                } else {
+                    logger.info("No customizer found for connector on port : {}", connector.getPort());
+                }
+
+            }
+        }
+    }
+
+}
+
+		mockServer.expect(requestTo("https://api.github.com/orgs/zalando-stups/members?per_page=25"))
+				.andExpect(method(HttpMethod.GET))
+				// .andExpect(header("Authorization", "Bearer ACCESS_TOKEN"))
+				.andRespond(
+						withSuccess(new ClassPathResource("listMembers.json", getClass()), MediaType.APPLICATION_JSON));
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------

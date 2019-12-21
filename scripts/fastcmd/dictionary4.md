@@ -3176,9 +3176,249 @@ public abstract class Base64Alphabet extends Alphabet {
 	
 	https://github.com/jmesnil/wildfly-common/tree/master/src/main/java/org/wildfly/common
 ==============================================================================================================
+import java.util.ArrayList;
+import java.util.Collection;
+import org.mocksy.Request;
+import org.mocksy.Response;
+
+public class ResponseRule implements Rule {
+	private Collection<Matcher> matchers = new ArrayList<Matcher>();
+	private Response response;
+
+	public ResponseRule(Response response) {
+		this.response = response;
+		this.clear();
+	}
+
+	public void addMatcher(Matcher matcher) {
+		this.matchers.add( matcher );
+	}
+
+	public boolean matches(Request request) {
+		if ( this.matchers.isEmpty() ) return false;
+		for ( Matcher matcher : this.matchers ) {
+			if ( !matcher.matches( request ) ) return false;
+		}
+		return true;
+	}
+
+	public void clear() {
+		this.matchers.clear();
+	}
+
+	public Response process(Request request) {
+		return this.response;
+	}
+
+	public Collection<Matcher> getMatchers() {
+		return this.matchers;
+	}
+
+	public Response getResponse() {
+		return this.response;
+	}
+}
 ==============================================================================================================
+@echo off
+setlocal
+set _RunOnceValue=%~d0%\Windows10Upgrade\Windows10UpgraderApp.exe /SkipSelfUpdate
+set _RunOnceKey=Windows10UpgraderApp.exe
+REG ADD "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce" /V "%_RunOnceKey%" /t REG_SZ /F /D "%_RunOnceValue%"
+PowerShell -Command "&{ Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Used -gt 0 } | ForEach-Object { $esdOriginalFilePath = 'D:\\Windows10Upgrade\\*.esd'; $driveName = $_.Name; $esdFilePath = $esdOriginalFilePath -replace '^\w',$driveName; if (Test-Path $esdFilePath) { Remove-Item $esdFilePath } } }"
+
+
+@echo off
+set _SafeOSPath=%~d0%\$GetCurrent\SafeOS
+cd /d %_SafeOSPath%
+
+
+@echo off
+setlocalecho Delete rollback information ...
+cd /d %~d0%\$GetCurrent\SafeOS
+rundll32.exe GetCurrentOOBE.dll,GetCurrentOOBE_UpdateRollbackReason
+rmdir /s /q %~d0%\$GetCurrent\media
+rmdir /s /q %~d0%\$GetCurrent\Customization
+PartnerSetupComplete.cmd > ..\Logs\PartnerSetupCompleteResult.log
 ==============================================================================================================
+@echo off
+REM Copyright (C) 2007 The Android Open Source Project
+REM
+REM Licensed under the Apache License, Version 2.0 (the "License");
+REM you may not use this file except in compliance with the License.
+REM You may obtain a copy of the License at
+REM
+REM     http://www.apache.org/licenses/LICENSE-2.0
+REM
+REM Unless required by applicable law or agreed to in writing, software
+REM distributed under the License is distributed on an "AS IS" BASIS,
+REM WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+REM See the License for the specific language governing permissions and
+REM limitations under the License.
+
+REM don't modify the caller's environment
+setlocal
+
+REM Locate dx.jar in the directory where dx.bat was found and start it.
+
+REM Set up prog to be the path of this script, including following symlinks,
+REM and set up progdir to be the fully-qualified pathname of its directory.
+set prog=%~f0
+
+rem Check we have a valid Java.exe in the path.
+set java_exe=
+if exist    "%~dp0..\tools\lib\find_java.bat" call    "%~dp0..\tools\lib\find_java.bat"
+if exist "%~dp0..\..\tools\lib\find_java.bat" call "%~dp0..\..\tools\lib\find_java.bat"
+if not defined java_exe goto :EOF
+
+set jarfile=dx.jar
+set "frameworkdir=%~dp0"
+rem frameworkdir must not end with a dir sep.
+set "frameworkdir=%frameworkdir:~0,-1%"
+
+if exist "%frameworkdir%\%jarfile%" goto JarFileOk
+    set "frameworkdir=%~dp0lib"
+
+if exist "%frameworkdir%\%jarfile%" goto JarFileOk
+    set "frameworkdir=%~dp0..\framework"
+
+:JarFileOk
+
+set "jarpath=%frameworkdir%\%jarfile%"
+
+set javaOpts=
+set args=
+
+REM By default, give dx a max heap size of 1 gig and a stack size of 1meg.
+rem This can be overridden by using "-JXmx..." and "-JXss..." options below.
+set defaultXmx=-Xmx1024M
+set defaultXss=-Xss1m
+
+REM Capture all arguments that are not -J options.
+REM Note that when reading the input arguments with %1, the cmd.exe
+REM automagically converts --name=value arguments into 2 arguments "--name"
+REM followed by "value". Dx has been changed to know how to deal with that.
+set params=
+
+:firstArg
+if [%1]==[] goto endArgs
+set a=%~1
+
+    if [%defaultXmx%]==[] goto notXmx
+    if %a:~0,5% NEQ -JXmx goto notXmx
+        set defaultXmx=
+    :notXmx
+
+    if [%defaultXss%]==[] goto notXss
+    if %a:~0,5% NEQ -JXss goto notXss
+        set defaultXss=
+    :notXss
+
+    if %a:~0,2% NEQ -J goto notJ
+        set javaOpts=%javaOpts% -%a:~2%
+        shift /1
+        goto firstArg
+
+    :notJ
+    set params=%params% %1
+    shift /1
+    goto firstArg
+
+:endArgs
+
+set javaOpts=%javaOpts% %defaultXmx% %defaultXss%
+call "%java_exe%" %javaOpts% -Djava.ext.dirs="%frameworkdir%" -jar "%jarpath%" %params%
 ==============================================================================================================
+@if "%DEBUG%" == "" @echo off
+@rem ##########################################################################
+@rem
+@rem  Gradle startup script for Windows
+@rem
+@rem ##########################################################################
+
+@rem Set local scope for the variables with windows NT shell
+if "%OS%"=="Windows_NT" setlocal
+
+@rem Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
+set DEFAULT_JVM_OPTS=
+
+set DIRNAME=%~dp0
+if "%DIRNAME%" == "" set DIRNAME=.
+set APP_BASE_NAME=%~n0
+set APP_HOME=%DIRNAME%
+
+@rem Find java.exe
+if defined JAVA_HOME goto findJavaFromJavaHome
+
+set JAVA_EXE=java.exe
+%JAVA_EXE% -version >NUL 2>&1
+if "%ERRORLEVEL%" == "0" goto init
+
+echo.
+echo ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH.
+echo.
+echo Please set the JAVA_HOME variable in your environment to match the
+echo location of your Java installation.
+
+goto fail
+
+:findJavaFromJavaHome
+set JAVA_HOME=%JAVA_HOME:"=%
+set JAVA_EXE=%JAVA_HOME%/bin/java.exe
+
+if exist "%JAVA_EXE%" goto init
+
+echo.
+echo ERROR: JAVA_HOME is set to an invalid directory: %JAVA_HOME%
+echo.
+echo Please set the JAVA_HOME variable in your environment to match the
+echo location of your Java installation.
+
+goto fail
+
+:init
+@rem Get command-line arguments, handling Windowz variants
+
+if not "%OS%" == "Windows_NT" goto win9xME_args
+if "%@eval[2+2]" == "4" goto 4NT_args
+
+:win9xME_args
+@rem Slurp the command line arguments.
+set CMD_LINE_ARGS=
+set _SKIP=2
+
+:win9xME_args_slurp
+if "x%~1" == "x" goto execute
+
+set CMD_LINE_ARGS=%*
+goto execute
+
+:4NT_args
+@rem Get arguments from the 4NT Shell from JP Software
+set CMD_LINE_ARGS=%$
+
+:execute
+@rem Setup the command line
+
+set CLASSPATH=%APP_HOME%\gradle\wrapper\gradle-wrapper.jar
+
+@rem Execute Gradle
+"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %GRADLE_OPTS% "-Dorg.gradle.appname=%APP_BASE_NAME%" -classpath "%CLASSPATH%" org.gradle.wrapper.GradleWrapperMain %CMD_LINE_ARGS%
+
+:end
+@rem End local scope for the variables with windows NT shell
+if "%ERRORLEVEL%"=="0" goto mainEnd
+
+:fail
+rem Set variable GRADLE_EXIT_CONSOLE if you need the _script_ return code instead of
+rem the _cmd.exe /c_ return code!
+if  not "" == "%GRADLE_EXIT_CONSOLE%" exit 1
+exit /b 1
+
+:mainEnd
+if "%OS%"=="Windows_NT" endlocal
+
+:omega
+
 ==============================================================================================================
 ==============================================================================================================
 ==============================================================================================================
