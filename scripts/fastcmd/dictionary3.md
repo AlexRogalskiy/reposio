@@ -7988,6 +7988,67 @@ public class ProxyTomcatConnectorCustomizer implements TomcatConnectorCustomizer
 				.andRespond(
 						withSuccess(new ClassPathResource("listMembers.json", getClass()), MediaType.APPLICATION_JSON));
 ----------------------------------------------------------------------------------------
+curl www.likegeeks.com --output likegeeks.html
+
+curl -L www.likegeeks.com
+curl -C - example.com/some-file.zip --output MyFile.zip
+curl -m 60 example.com
+
+curl --connect-timeout 60 example.com
+curl -u username:password ftp://example.com
+curl -u username:password ftp://example.com/readme.txt
+
+curl -x 192.168.1.1:8080 http://example.com
+curl -x 192.168.1.1:8080 ftp://example.com/readme.txt
+curl --range 0-99999999 http://releases.ubuntu.com/18.04/ubuntu-18.04.3-desktop-amd64.iso ubuntu-art1
+curl --range 0-99999999 http://releases.ubuntu.com/18.04/ubuntu-18.04.3-desktop-amd64.iso
+curl --range 100000000-199999999 http://releases.ubuntu.com/18.04/ubuntu-18.04.3-desktop-amd64.iso ubuntu-part2
+cat ubuntu-part? > ubuntu-18.04.3-desktop-amd64.iso
+curl --cert path/to/cert.crt:password ftp://example.com
+
+curl -s -O http://example.com
+
+curl -s http://example.com --output index.html
+curl -I example.com
+curl -I -L example.com
+curl -H 'Connection: keep-alive' -H 'Accept-Charset: utf-8 ' http://example.c
+curl -d 'name=geek&location=usa' http://example.com
+curl -d @filename http://example.com
+curl -T myfile.txt ftp://example.com/some/directory/
+curl smtp://mail.example.com --mail-from me@example.com --mail-rcpt john@doma
+curl -u username:password imap://mail.example.com
+curl -u username:password imap://mail.example.com -X 'UID FETCH 1234'
+----------------------------------------------------------------------------------------
+mount | column –t
+cat /etc/passwd | column -t -s
+ps aux | sort -rnk 4
+ps aux | sort -nk 3
+
+sudo apt-get install multitail
+
+watch df –h
+
+nohup wget site.com/file.zip
+
+dd if=/dev/zero of=out.txt bs=1M count=10
+
+cat geeks.txt | tr ':[space]:' '\t' > out.txt
+cat myfile | tr a-z A-Z > output.txt
+
+find. -name *.png -type f -print | xargs tar -cvzf images.tar.gz
+cat urls.txt | xargs wget
+ls /etc/*.conf | xargs -i cp {} /home/likegeeks/Desktop/out
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
