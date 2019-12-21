@@ -2438,14 +2438,98 @@ public class InfinispanEmbeddedCacheManagerChecker implements Condition {
 			return query.sort(sort);
 		}
 	}
-	
-	
+==============================================================================================================
+language: go
+go:
+  - 1.12
+script:
+  - env GO111MODULE=on make lint
+  - env GO111MODULE=on go test -race -coverprofile=coverage.txt -covermode=atomic $(go list ./...)
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
 ==============================================================================================================
 ==============================================================================================================
 ==============================================================================================================
 ==============================================================================================================
 ==============================================================================================================
-==============================================================================================================
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+ 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+ 
+@DisplayName("Pass the method parameters provided by the @ValueSource annotation")
+class ValueSourceExampleTest {
+ 
+    @DisplayName("Should pass a non-null message to our test method")
+    @ParameterizedTest(name = "{index} => message=''{0}''")
+    @ValueSource(strings = {"Hello", "World"})
+    void shouldPassNonNullMessageAsMethodParameter(String message) {
+        assertNotNull(message);
+    }
+}
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+ 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+ 
+@DisplayName("Pass enum values to our test method")
+class EnumSourceExampleTest {
+ 
+    @DisplayName("Should pass non-null enum values as method parameters")
+    @ParameterizedTest(name = "{index} => pet=''{0}''")
+    @EnumSource(Pet.class)
+    void shouldPassNonNullEnumValuesAsMethodParameter(Pet pet) {
+        assertNotNull(pet);
+    }
+}
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+ 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+ 
+@DisplayName("Should pass the method parameters provided by the @CsvSource annotation")
+class CsvSourceExampleTest {
+ 
+    @DisplayName("Should calculate the correct sum")
+    @ParameterizedTest(name = "{index} => a={0}, b={1}, sum={2}")
+    @CsvSource({
+            "1, 1, 2",
+            "2, 3, 5"
+    })
+    void sum(int a, int b, int sum) {
+        assertEquals(sum, a + b);
+    }
+}import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+ 
+import java.util.stream.Stream;
+ 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+ 
+@DisplayName("Should pass the method parameters provided by the sumProvider() method")
+class MethodSourceExampleTest {
+ 
+    @DisplayName("Should calculate the correct sum")
+    @ParameterizedTest(name = "{index} => a={0}, b={1}, sum={2}")
+    void sum(int a, int b, int sum) {
+        assertEquals(sum, a + b);
+    }
+ 
+    private static Stream<Arguments> sumProvider() {
+        return Stream.of(
+                Arguments.of(1, 1, 2),
+                Arguments.of(2, 3, 5)
+        );
+    }
+}
+
+
 ==============================================================================================================
 import org.eclipse.microprofile.metrics.MetricUnits;
 
@@ -3218,6 +3302,8 @@ public class ResponseRule implements Rule {
 		return this.response;
 	}
 }
+import io.github.benas.randombeans.EnhancedRandomBuilder;
+import io.github.benas.randombeans.api.EnhancedRandom;
 ==============================================================================================================
 @echo off
 setlocal
