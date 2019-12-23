@@ -2531,6 +2531,783 @@ class MethodSourceExampleTest {
 
 
 ==============================================================================================================
+stages:
+- dependency_scanning
+- maven-build
+- sonar
+- maven-deploy
+- publish-doc
+
+cache:
+    paths:
+      - .m2/
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2"
+
+maven-build:
+  image: maven:3-jdk-8
+  stage: maven-build
+  script: "mvn clean verify javadoc:javadoc -B"
+  artifacts:
+    paths:
+      - target/
+ 
+dependency_scanning:
+  image: docker:stable
+  stage: dependency_scanning
+  variables:
+    DOCKER_DRIVER: overlay2
+  allow_failure: true
+  services:
+    - docker:stable-dind
+  script:
+    - export SP_VERSION=$(echo "$CI_SERVER_VERSION" | sed 's/^\([0-9]*\)\.\([0-9]*\).*/\1-\2-stable/')
+    - docker run
+        --env DEP_SCAN_DISABLE_REMOTE_CHECKS="${DEP_SCAN_DISABLE_REMOTE_CHECKS:-false}"
+        --volume "$PWD:/code"
+        --volume /var/run/docker.sock:/var/run/docker.sock
+        "registry.gitlab.com/gitlab-org/security-products/dependency-scanning:$SP_VERSION" /code
+  artifacts:
+    paths: [gl-dependency-scanning-report.json]
+    
+pages:
+  image: maven:3-jdk-8
+  stage: publish-doc
+  script:
+    - mkdir public
+    - cp -r target/site/apidocs/* public/
+  artifacts:
+    paths:
+    - public
+  only:
+    - master
+
+ossrh-staging:
+ stage: maven-deploy
+ image: maven:3-jdk-8
+ except:
+  - features/ossrh
+ variables:
+  GPG_TTY: "`tty`"
+ script:
+  - echo "$GPG_PRIVATE_KEY" | gpg --batch --import --passphrase "$GPG_PASSPHRASE" -
+  - mvn deploy -s settings.xml
+ only:
+  - master
+
+sonar:
+  image: maven:3-jdk-8
+  stage: sonar
+  script: "mvn sonar:sonar -s settings.xml"
+
+==============================================================================================================
+# To build docker build -t sonar-scanner .
+FROM openjdk:11.0.1-jre
+
+LABEL maintainer="Jérôme TAMA <j.tama@groupeonepoint.com>"
+
+WORKDIR /data
+
+RUN curl --insecure -o ./node-v11.6.0-linux-x64.tar.xz -L https://nodejs.org/dist/v11.6.0/node-v11.6.0-linux-x64.tar.xz \
+	&& mkdir /usr/local/lib/nodejs \
+	&& tar -xJvf node-v11.6.0-linux-x64.tar.xz -C /usr/local/lib/nodejs \ 
+	&& mv /usr/local/lib/nodejs/node-v11.6.0-linux-x64 /usr/local/lib/nodejs/node-v11.6.0 \
+	&& rm node-v11.6.0-linux-x64.tar.xz \
+	&& chmod -R a+x /usr/local/lib/nodejs/node-v11.6.0 \
+	&& curl --insecure -o ./sonarscanner.zip -L https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-3.2.0.1227-linux.zip \
+	&& unzip sonarscanner.zip \
+	&& rm sonarscanner.zip \
+	&& mv sonar-scanner-3.2.0.1227-linux /usr/local/lib/sonar-scanner
+
+ENV SONAR_RUNNER_HOME=/usr/local/lib/sonar-scanner
+ENV PATH $PATH:/usr/local/lib/sonar-scanner/bin:/usr/local/lib/nodejs/node-v11.6.0/bin
+ENV NODEJS_HOME /usr/local/lib/nodejs/node-v11.6.0/bin
+
+CMD sonar-scanner
+
+==============================================================================================================
+import com.jcraft.jsch.*;
+import fr.onepoint.universaltester.UniversalTesterException;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static java.text.MessageFormat.format;
+
+public class CloseableSSH implements Closeable, SSH {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SSH.class);
+
+    private final Session session;
+
+    public CloseableSSH(String host, String user, String password, int port) {
+        LOGGER.debug("Creating new SSH connection to {}@{}:{}", user, host, port);
+        JSch jsch = new JSch();
+        try {
+            session = jsch.getSession(user, host, port);
+            session.setPassword(password);
+            session.setConfig("StrictHostKeyChecking", "no");
+            session.connect(30000);
+        } catch (JSchException e) {
+            throw new UniversalTesterException(e);
+        }
+
+    }
+
+    @Override
+    public String exec(String command) {
+        LOGGER.debug("Executing command {} to {}", command, session.getHost());
+        ChannelExec channel = null;
+        try {
+            channel = (ChannelExec) session.openChannel("exec");
+            channel.setCommand(command);
+            channel.setInputStream(null);
+            channel.connect();
+            return IOUtils.toString(channel.getInputStream(), StandardCharsets.UTF_8);
+        } catch (JSchException | IOException e) {
+            LOGGER.error("Fail to execute command {} on {}", command, session.getHost());
+            throw new UniversalTesterException(e);
+        } finally {
+            if (channel != null) {
+                channel.disconnect();
+            }
+        }
+    }
+
+    @Override
+    public Path downloadFile(String distantLocation, Path targetDir) {
+        createDirIfNotExists(targetDir);
+        LOGGER.debug("Downloading file {} to {}", distantLocation, session.getHost());
+        ChannelSftp channel = null;
+        try {
+            channel = (ChannelSftp) session.openChannel("sftp");
+            channel.setInputStream(null);
+            channel.connect();
+            Path target = targetDir.resolve(FilenameUtils.getName(channel.realpath(distantLocation)));
+            channel.get(distantLocation, target.toString());
+            LOGGER.debug("File {} downloaded", target);
+            return target;
+        } catch (JSchException | SftpException e) {
+            LOGGER.error("Failed to download file {}", distantLocation);
+            throw new UniversalTesterException(e);
+        } finally {
+            if (channel != null) {
+                channel.disconnect();
+            }
+        }
+    }
+
+    private void createDirIfNotExists(Path targetDir) {
+        File targetDirFile = targetDir.toFile();
+        if(!targetDirFile.exists() && !targetDirFile.mkdirs()){
+            throw new UncheckedIOException(new IOException(format("Fail to create directory {0}", targetDir)));
+        }
+    }
+
+    @Override
+    public void upload(Path toUpload, String distantRepo) {
+        try (InputStream inputStream = Files.newInputStream(toUpload)) {
+            this.upload(inputStream, FilenameUtils.getName(toUpload.toString()), distantRepo);
+        } catch (IOException e) {
+            throw new UniversalTesterException(e);
+        }
+    }
+
+    private void upload(InputStream toUpload, String filename, String distantRepo) {
+        LOGGER.debug("Upload input stream to {}:{}", session.getHost(), distantRepo);
+        ChannelSftp channel = null;
+        try {
+            channel = (ChannelSftp) session.openChannel("sftp");
+            channel.setInputStream(null);
+            channel.connect();
+            String target = distantRepo + filename;
+            channel.put(toUpload, target);
+            LOGGER.debug("File uploaded to {}", target);
+        } catch (JSchException | SftpException e) {
+            LOGGER.error("Failed to upload file {}", filename);
+            throw new UniversalTesterException(e);
+        } finally {
+            if (channel != null) {
+                channel.disconnect();
+            }
+        }
+    }
+
+    @Override
+    public void close() {
+        if (session != null && session.isConnected()) {
+            session.disconnect();
+        }
+    }
+}
+
+
+import fr.onepoint.universaltester.UniversalTesterException;
+
+import java.nio.file.Path;
+
+public interface SSH {
+
+    /**
+     * Run to remote connection a command line.
+     * @param command The command line to execute.
+     * @return The message printed on standard output during execution.
+     * @throws UniversalTesterException When an error occurred during execution.
+     */
+    String exec(String command);
+
+    /**
+     * Copy a file from remote connection to local file system.
+     * @param distantLocation The path of the file on the remote file system. It can be relative or absolute.
+     * @param targetDir The directory on the local file system to store the downloaded file.
+     * @return The path of the copied file on the local file system.
+     */
+    Path downloadFile(String distantLocation, Path targetDir);
+
+    /**
+     * Copy a file frmo the local file system to the remote file system.
+     * @param toUpload The file to upload.
+     * @param distantRepo The path of the directory on the remote file system to store the uploaded file.
+     */
+    void upload(Path toUpload, String distantRepo);
+
+}
+
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+public class SSHManager {
+
+    private SSHManager(){
+        //To avoid instantiation
+    }
+
+    private static Map<String, CloseableSSH> sshByHost = new HashMap<>();
+
+    /**
+     * Allows to get already opened SSH connection to the specified target
+     * @param host the host of the target machine
+     * @param user the user used to connect
+     * @param port the target port
+     * @return An optional valued with the connection if it exists, an empty optional otherwise
+     */
+    public static Optional<SSH> getSSH(String host, String user, int port){
+        String key = getSSHKey(host, user, port);
+        return Optional.ofNullable(sshByHost.get(key));
+    }
+
+    /**
+     * Allows to get and manage an SSH connection to the specified target.
+     * If there is already a connection matching the credentials, it will be returned.
+     * A new SSH connection will be created otherwise.
+     * @param host the host of the target machine
+     * @param user the user used to connect
+     * @param password the password to use to connect
+     * @param port the target port
+     * @return An ssh connection matching the credentials.
+     */
+    public static SSH getSSH(String host, String user, String password, int port) {
+        Optional<SSH> ssh = getSSH(host,user,port);
+        if(ssh.isPresent()){
+            return ssh.get();
+        }
+        CloseableSSH newSSh = new CloseableSSH(host, user, password, port);
+        sshByHost.put(getSSHKey(host, user, port), newSSh);
+        return newSSh;
+    }
+
+    private static String getSSHKey(String host, String user, int port){
+        return String.join(":", host, user, String.valueOf(port));
+    }
+
+    /**
+     * Close specified ssh connection and remove it from manager.
+     * Will do nothing if the connection doesn't exists
+     * @param host the host of the ssh connection
+     * @param user the user connected with
+     * @param port the port connected into
+     */
+    public static void close(String host, String user, int port){
+        String key = getSSHKey(host, user, port);
+        CloseableSSH ssh = sshByHost.get(key);
+        if(ssh != null){
+            ssh.close();
+            sshByHost.remove(key);
+        }
+    }
+
+
+}
+
+import ch.qos.logback.core.LogbackException;
+import ch.qos.logback.core.status.Status;
+import ch.qos.logback.core.status.StatusListener;
+
+public class StrictConfigurationWarningStatusListener implements StatusListener {
+    @Override
+    public void addStatusEvent(Status status) {
+        if (status.getEffectiveLevel() == Status.WARN) {
+            // might want to consider how best to evaluate whether this is the relevant event
+            // this approach is bound to a string and hence will no longer work if Logback changes this event message
+            if (status.getMessage().endsWith("occurs multiple times on the classpath.")) {
+                throw new LogbackException(status.getMessage());
+            }
+        }
+    }
+}
+
+
+mport io.github.glytching.tranquil.exception.MappingException;
+
+import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
+
+public interface MappingProvider {
+
+  /**
+   * Parse the given {@code source} into a {@link Map}.
+   *
+   * @param source a source string
+   * @return a {@link Map} representation of the given {@code source}
+   */
+  List<Map<String, Object>> deserialize(String source);
+
+  /**
+   * Parse a json string encapsulated in the given {@code sourceStream} into a {@link Map}.
+   *
+   * @param sourceStream an input stream containing a json string
+   * @param charset
+   * @return a {@link Map} representation of the given {@code sourceStream}
+   */
+  List<Map<String, Object>> deserialize(InputStream sourceStream, String charset);
+
+  /**
+   * Convert the {@code source} to a string.
+   *
+   * @param source the object to be converted
+   * @return a string representation of the given {@code source}
+   */
+  String serialize(List<Map<String, Object>> source) throws MappingException;
+
+  /**
+   * Convert the {@code source} to an instance of the given {@code targetType}.
+   *
+   * @param source the object to be converted
+   * @param targetType the type to which the given {@code source} should be converted
+   * @param <T> the mapped result type
+   * @return the converted object
+   */
+  <T> T serialize(List<Map<String, Object>> source, Class<T> targetType);
+
+  /**
+   * Convert the {@code source} to an instance of the given {@code targetType}.
+   *
+   * @param source the object to be converted
+   * @param targetType the type to which the given {@code source} should be converted
+   * @param <T> the mapped result type
+   * @return the converted object
+   */
+  <T> T serialize(List<Map<String, Object>> source, TypeRef<T> targetType);
+}
+==============================================================================================================
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
+public class SubscriptionStreamCompletedEvent extends SubscriptionEvent {
+
+  public SubscriptionStreamCompletedEvent(String subscriptionKey) {
+    super(SubscriptionEventType.STREAM_COMPLETED_EVENT, subscriptionKey);
+  }
+
+  @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
+  @Override
+  public boolean equals(Object obj) {
+    return EqualsBuilder.reflectionEquals(this, obj);
+  }
+
+  @Override
+  public int hashCode() {
+    return HashCodeBuilder.reflectionHashCode(this);
+  }
+
+  @Override
+  public String toString() {
+    return ToStringBuilder.reflectionToString(this);
+  }
+}
+
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * A simple (crude, even) stop watch implementation. Yes, there are plenty of existing stop watch
+ * implementations out there but we need lap/split features.
+ */
+@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+public class StopWatch {
+
+  private final org.apache.commons.lang3.time.StopWatch main;
+  private Optional<org.apache.commons.lang3.time.StopWatch> split;
+
+  private StopWatch(boolean withSplits) {
+    this.main = new org.apache.commons.lang3.time.StopWatch();
+    main.start();
+    if (withSplits) {
+      this.split = Optional.of(new org.apache.commons.lang3.time.StopWatch());
+      split.get().start();
+    }
+  }
+
+  /**
+   * Create and start a {@link StopWatch} instance.
+   *
+   * @return a {@link StopWatch} instance which has already been started
+   */
+  public static StopWatch start() {
+    return new StopWatch(false);
+  }
+
+  /**
+   * Create and start a {@link StopWatch} instance which can be used to gather split/lap times.
+   *
+   * @return a {@link StopWatch} instance which has already been started
+   */
+  public static StopWatch startForSplits() {
+    return new StopWatch(true);
+  }
+
+  /**
+   * Create a split. Note: this will throw an exception if called on a {@link StopWatch} instance
+   * which was not started with {@link #startForSplits()}.
+   *
+   * @return the time since this watch was last split or the time since this watch was started if
+   *     this is the first split
+   */
+  public long split() {
+    if (split == null || !split.isPresent()) {
+      throw new IllegalStateException(
+          "You cannot split a StopWatch which has not been configured withSplits=true!");
+    }
+
+    split.get().stop();
+    long time = split.get().getTime(TimeUnit.MILLISECONDS);
+    split.get().reset();
+    split.get().start();
+    return time;
+  }
+
+  /**
+   * Stop this watch.
+   *
+   * @return the time since this watch was started or if this watch was created for splits the time
+   *     since the last split
+   */
+  public long stop() {
+    main.stop();
+    if (split != null) {
+      split.get().stop();
+    }
+    return main.getTime(TimeUnit.MILLISECONDS);
+  }
+}
+
+
+https://github.com/glytching/dragoman/blob/master/src/main/java/io/github/glytching/dragoman/store/mongo/MongoProviderImpl.java
+==============================================================================================================
+:host,
+:root {
+  --scrollbar-color: var(--opera-dark-scrollbar-color);
+  --scrollbar-hover-color: var(--opera-dark-scrollbar-hover-color);
+}
+
+:host-context(html.dark-theme) {
+  --scrollbar-color: var(--opera-light-scrollbar-color);
+  --scrollbar-hover-color: var(--opera-light-scrollbar-hover-color);
+}
+
+::-webkit-scrollbar {
+  height: 12px;
+  width: 12px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-clip: padding-box;
+  background-color: var(--scrollbar-color);
+  border: 2px solid transparent;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-hover-color);
+}
+
+::-webkit-scrollbar-corner {
+  background-color: transparent;
+}
+==============================================================================================================
+/* Defaults (light theme) */
+
+:root,
+:host {
+  --opera-blue: #0199ff;
+  --opera-blue-secondary: #0199ffa0;
+  --opera-red: #f54a4b;
+
+  --opera-primary-color: var(--opera-blue);
+  --opera-secondary-color: var(--opera-blue-secondary);
+}
+
+:root,
+:host {
+  --opera-blue-hover: #008ae6;
+  --opera-blue-pressed: #0077e6;
+
+  --opera-icon-size: 20px;
+  --opera-logo-size: 32px;
+  --opera-menu-width: 240px;
+  --opera-menu-item-height: 32px;
+  --opera-section-spacing: 56px;
+
+  --opera-header-height: 64px;
+  --opera-header-padding: 16px 30px;
+  --opera-header-title-padding: 0 0 0 44px;
+  --opera-header-font-size: 17px;
+  --opera-header-font-weight: 450;
+
+  --max-search-box-width: 620px;
+
+  --opera-default-font-weight: 500;
+  /*  /*   */
+
+  --opera-default-font-size: 13px;
+  --opera-headline-font-size: 36px;
+
+  --opera-section-font-size: 15px;
+  --opera-section-font-weight: 500;
+  --opera-section-margin: 26px 0 12px 0;
+
+  --opera-uppercase-font-size: 14px;
+
+  --opera-background-color: #f5f5f7;
+  --opera-secondary-background-color: #ffffff;
+  --opera-secondary-background-hover-color: #f8f8fa;
+
+  --opera-tile-background-color: #ffffff;
+  --opera-tile-text-color: #000000;
+
+  --opera-separator-color: #e6e6e6;
+  --opera-search-border-color: transparent;
+
+  --opera-focus-outline-color: rgba(1, 153, 255, .4);
+
+  --opera-font-family: system-ui;
+  --opera-font-color: #121314;
+  --opera-secondary-font-color: #6a6a75;
+  --opera-hint-font-color: #6e767a;
+
+  --opera-folder-background-color: #E6EEF5;
+
+  --opera-article-font-size: 16px;
+  --opera-article-font-weight: 600;
+
+  --opera-input-background-color: #ffffff;
+  --opera-input-background-color-hover: #fafafa;
+  --opera-input-background-color-pressed: #ededed;
+  --opera-input-font-size: 13px;
+  --opera-input-border-color: #cdcdd4;
+  --opera-input-border-radius: 3px;
+  --opera-input-border-width: 1px;
+  --opera-input-padding: 8px 16px;
+  --opera-input-height: 32px;
+  --opera-rounded-input-border-radius: 16px;
+
+  --opera-search-icon-color: var(--opera-secondary-font-color);
+  --opera-search-background-size: 16px;
+  --opera-search-padding: 7px 36px 7px 15px;
+
+  --opera-button-font-color: var(--opera-font-color);
+  --opera-button-background-color: var(--opera-input-background-color);
+  --opera-button-background-color-hover: #f8f8fa;
+  --opera-button-border-color: var(--opera-input-border-color);
+  --opera-button-padding: 6px 12px;
+
+  --opera-button-disabled-background-color: #ffffff;
+  --opera-button-disabled-border-color: #ebebee;
+  --opera-button-disabled-font-color: #a0a1a1;
+
+  --opera-primary-button-font-color: #fff;
+  --opera-primary-button-background-color: var(--opera-blue);
+  --opera-primary-button-background-color-hover: var(--opera-blue-hover);
+  --opera-primary-button-background-color-pressed: var(--opera-blue-pressed);
+  --opera-primary-button-border-color: #0084ff;
+  --opera-primary-button-padding: 6px 16px;
+
+  --opera-primary-button-disabled-background-color: var(--opera-button-background-color);
+  --opera-primary-button-disabled-border-color: var(--opera-separator-color);
+  --opera-primary-button-disabled-font-color: var(--opera-separator-color);
+
+  --opera-switch-color: #ceced4;
+  --opera-switch-color-hover: #bcbcc6;
+  --opera-switch-color-pressed: #ceced4;
+  --opera-switch-active-color: var(--opera-blue);
+  --opera-switch-active-color-hover: var(--opera-blue-hover);
+  --opera-switch-active-color-pressed: var(--opera-blue-pressed);
+  --opera-switch-toggle-color: #fff;
+  --opera-switch-height: 20px;
+  --opera-switch-width: 40px;
+
+  --opera-pad-border-radius: 5px;
+  --opera-pad-padding: 20px;
+  --opera-pad-shadow: 0 10px 20px -8px rgba(0, 0, 0, 0.04);
+  --opera-box-shadow: 0 10px 20px -8px rgba(0, 0, 0, 0.24);
+
+  --opera-link-color: rgba(0, 122, 204, 1);
+  --opera-link-hover-background-color: rgba(0, 122, 204,.08);
+  --opera-link-focus-background-color: rgba(0, 122, 204,.24);
+
+  --opera-text-line-height: 1.5;
+
+  --opera-navbar-background-color: #ffffff;
+  --opera-navbar-separator-color: #e6e6e6;
+  --opera-navbar-width: 0px;
+
+  --opera-progress-border-radius: 3px;
+  --opera-progress-bar-color: #0199ff;
+  --opera-progress-bar-secondary-color: #5dbae9;
+  --opera-progress-background-color: rgb(231, 231, 231);
+
+  --opera-scrollbar-width: 12px;
+
+  --opera-dark-scrollbar-color: #9995;
+  --opera-dark-scrollbar-hover-color: #6668;
+  --opera-light-scrollbar-color: #6665;
+  --opera-light-scrollbar-hover-color: #9998;
+
+  --speeddial-tile-width: 140px;
+  --speeddial-tile-height: 89px;
+  --speeddial-tile-spacing: 20px;
+
+  --opera-drop-shadow-filter: none;
+
+  --opera-settings-menu-width: 240px;
+
+  --opera-modal-border-width: 0;
+  --opera-modal-background-color: var(--opera-secondary-background-color);
+  --opera-modal-header-color: var(--opera-secondary-background-color);
+  --opera-modal-header-font-color: var(--opera-secondary-font-color);
+}
+
+/* Dark theme */
+
+:root.dark-theme,
+:host-context(html.dark-theme) {
+
+  --opera-blue: #45b0e6;
+  --opera-blue-secondary: #45b0e6a0;
+  --opera-blue-hover: #49baf2;
+  --opera-blue-pressed: #3d9ccc;
+  --opera-red: #ff776c;
+
+  --opera-background-color: #121314;
+  --opera-secondary-background-color: #1c1d1f;
+  --opera-secondary-background-hover-color: #222325;
+
+  --opera-tile-background-color: var(--opera-folder-background-color);
+  --opera-tile-text-color: #f0f0f0;
+
+  --opera-separator-color: #333435;
+
+  --opera-focus-outline-color: rgba(69, 176, 230, .48);
+
+  --opera-font-color: #fafafa;
+  --opera-secondary-font-color: #a8abad;
+  --opera-hint-font-color: #b4c1cc;
+
+  --opera-folder-background-color: #2a343d;
+
+  --opera-input-background-color: #3d4042;
+  --opera-input-border-color: #404547;
+  --opera-input-background-color-hover: #494c4f;
+  --opera-input-background-color-pressed: #262729;
+
+  --opera-button-disabled-background-color: #292b2c;
+  --opera-button-disabled-border-color: #292b2c;
+  --opera-button-disabled-font-color: #757576;
+
+  --opera-switch-color: #3d4042;
+  --opera-switch-color-hover: #494c4f;
+  --opera-switch-color-pressed: #3d4042;
+
+  --opera-pad-shadow: 0 10px 20px -8px rgba(0, 0, 0, 0.25);
+
+  --opera-button-background-color-hover: #494c4f;
+
+  --opera-primary-button-font-color: var(--opera-font-color);
+  --opera-primary-button-border-color: #4993b8;
+
+  --opera-primary-button-disabled-font-color: var(--opera-separator-color);
+  --opera-primary-button-disabled-background-color: var(--opera-button-background-color);
+  --opera-primary-button-disabled-border-color: var(--opera-button-background-color);
+
+  --opera-navbar-background-color: #171819;
+  --opera-navbar-separator-color: #000000;
+
+  --opera-link-color: #96ddff;
+  --opera-link-hover-background-color: rgba(150, 221, 255, .24);
+  --opera-link-focus-background-color: rgba(150, 221, 255, .48);
+
+  --opera-progress-bar-color: rgb(69, 176, 230);
+  --opera-progress-bar-secondary-color: rgb(120, 198, 237);
+  --opera-progress-background-color: rgb(43, 43, 43);
+}
+
+:root.gx,
+:host-context(html.gx) {
+  --opera-background-color: #14111a;
+  --opera-secondary-background-color: #131218;
+
+  --opera-link-color: var(--opera-gx-color);
+  --opera-link-hover-background-color: var(--opera-gx-shadow-color);
+  --opera-link-focus-background-color: var(--opera-gx-secondary-color);
+
+  --opera-focus-outline-color: var(--opera-gx-secondary-color);
+
+  --opera-drop-shadow-filter: none;
+  /* TODO(aswitalski) - use: drop-shadow(4px 4px 4px rgba(0, 0, 0, 0.32)); */
+
+  --opera-modal-border-width: 1px;
+  --opera-modal-background-color: #19171F;
+  --opera-modal-header-color: #2f2a3d;
+  --opera-modal-header-font-color: #eaE6f5;
+
+  --opera-primary-color: var(--opera-gx-color);
+  --opera-secondary-color: var(--opera-gx-secondary-color);
+
+  --opera-primary-button-font-color: var(--opera-gx-font-color);
+  --opera-primary-button-background-color: var(--opera-gx-color);
+  --opera-primary-button-disabled-background-color: var(--opera-secondary-color);
+  --opera-primary-button-background-color-hover: var(--opera-gx-color);
+  --opera-primary-button-border-color: var(--opera-secondary-color);
+}
+
+:root.bigger-tiles:not(.gx),
+:host-context(html.bigger-tiles:not(.gx)) {
+  --speeddial-tile-width: 188px;
+  --speeddial-tile-height: 120px;
+  --speeddial-tile-spacing: 24px;
+}
+==============================================================================================================
 import org.eclipse.microprofile.metrics.MetricUnits;
 
 /**
