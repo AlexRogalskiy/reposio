@@ -9558,11 +9558,167 @@ create table UserConnection (userId varchar(255) not null,
     primary key (userId, providerId, providerUserId));
 create unique index UserConnectionRank on UserConnection(userId, providerId, rank);
 ----------------------------------------------------------------------------------------
+import cucumber.api.CucumberOptions;
+import cucumber.api.junit.Cucumber;
+import org.junit.runner.RunWith;
+
+/**
+ * Created by Paul
+ *
+ * @author <a href="mailto:paul58914080@gmail.com">Paul Williams</a>
+ */
+@RunWith(Cucumber.class)
+@CucumberOptions(features = "classpath:features/MonitoringResource.feature", strict = true,
+        plugin = {"json:target/cucumber/MonitoringResource.json", "junit:target/cucumber/MonitoringResource.xml"},
+        glue = "classpath:org/ff4j/spring/boot/web/api/resources/monitoring", tags = "@MonitoringResource")
+public class RunCucumberMonitoringTest {
+}
 ----------------------------------------------------------------------------------------
+import java.util.UUID;
+
+import org.camunda.bpm.engine.ProcessEngine;
+import org.springframework.amqp.rabbit.annotation.Exchange;
+import org.springframework.amqp.rabbit.annotation.Queue;
+import org.springframework.amqp.rabbit.annotation.QueueBinding;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.camunda.demo.springboot.ProcessConstants;
+
+@Component
+@Profile("!test")
+public class AmqpReceiver {
+
+  @Autowired
+  private ProcessEngine camunda;
+
+  public AmqpReceiver() {
+  }
+  
+  public AmqpReceiver(ProcessEngine camunda) {
+    this.camunda = camunda;
+  }
+  
+  /**
+   * Dummy method to handle the shipGoods command message - as we do not have a 
+   * shipping system available in this small example
+   */
+  @RabbitListener(bindings = @QueueBinding( //
+      value = @Queue(value = "shipping_create_test", durable = "true"), //
+      exchange = @Exchange(value = "shipping", type = "topic", durable = "true"), //
+      key = "*"))
+  @Transactional  
+  public void dummyShipGoodsCommand(String orderId) {
+    // and call back directly with a generated transactionId
+    handleGoodsShippedEvent(orderId, UUID.randomUUID().toString());
+  }
+
+  public void handleGoodsShippedEvent(String orderId, String shipmentId) {
+    camunda.getRuntimeService().createMessageCorrelation(ProcessConstants.MSG_NAME_GoodsShipped) //
+        .processInstanceVariableEquals(ProcessConstants.VAR_NAME_orderId, orderId) //
+        .setVariable(ProcessConstants.VAR_NAME_shipmentId, shipmentId) //
+        .correlateWithResult();
+  }
+}
+
+<plugin>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<version>2.5.1</version>
+					<configuration>
+						<source>1.8</source>
+						<target>1.8</target>
+					</configuration>
+					<executions>
+						<execution>
+							<id>default-compile</id>
+							<phase>compile</phase>
+							<goals>
+								<goal>compile</goal>
+							</goals>
+						</execution>
+						<execution>
+							<id>default-testCompile</id>
+							<phase>test-compile</phase>
+							<goals>
+								<goal>testCompile</goal>
+							</goals>
+						</execution>
+					</executions>
+				</plugin>
 ----------------------------------------------------------------------------------------
+   private static String formatBytes(long bytes) {
+        if (bytes < 1024){
+            return bytes + "B";
+        }
+        int unit = (63 - Long.numberOfLeadingZeros(bytes)) / 10;
+        return String.format("%.1f%sB", (double)bytes / (1L << (unit * 10)), " KMGTPE".charAt(unit));
+    }
 ----------------------------------------------------------------------------------------
+package net.bndy.wf.exceptions;
+
+import net.bndy.wf.lib.annotation.*;
+
+public enum OAuthExceptionType {
+
+	@Description(value = "Invalid client id or redirect uri.")
+	InvalidClientIDOrRedirectUri,
+
+	@Description(value = "Invalid authorization code.")
+	InvalidAuthorizationCode,
+
+	@Description(value = "Invalid access token.")
+	InvalidAccessToken,
+	
+	@Description(value = "Invalid user.")
+	InvalidUser,
+}
 ----------------------------------------------------------------------------------------
+940695e0b1ff9150d1884103a38bf271
+https://apps.shopify.com/?utm_content=contextual&utm_medium=shopify&utm_source=admin
+
+theme open --env=production # will open http://your-store.myshopify.com?preview_theme_id=<your-theme-id>
+
+aeb1bcfb9a36e501f44c0fa3c0599397
+
+81036705927
+
+https://940695e0b1ff9150d1884103a38bf271:aeb1bcfb9a36e501f44c0fa3c0599397@formero.myshopify.com/admin/api/2019-10/orders.json
+
+theme deploy --env=production
+theme update --version=v1.0.2
+theme new --password=aeb1bcfb9a36e501f44c0fa3c0599397 --store=formero.myshopify.com --name=FormeroTheme
+theme get --list -p=[your-password] -s=[you-store.myshopify.com]
+theme get -p=[your-password] -s=[you-store.myshopify.com] -t=[your-theme-id]
+theme configure --password=[your-api-password] --store=[your-store.myshopify.com] --themeid=[your-theme-id]
+theme watch --notify=/tmp/theme.update
+theme remove templates/404.liquid templates/article.liquid
+theme download templates/404.liquid
+theme watch
+theme upload */*
+theme get --password=aeb1bcfb9a36e501f44c0fa3c0599397 --store=formero.myshopify.com --themeid=81036705927
+
+shopify-themekit <args>
+
+https://github.com/Shopify/node-themekit
+https://shopify.github.io/themekit/commands/
 ----------------------------------------------------------------------------------------
+echo kern.maxfiles=65536 | sudo tee -a /etc/sysctl.conf
+echo kern.maxfilesperproc=65536 | sudo tee -a /etc/sysctl.conf
+sudo sysctl -w kern.maxfiles=65536
+sudo sysctl -w kern.maxfilesperproc=65536
+ulimit -n 65536 65536
+
+https://www.templatemonster.com/shopify-themes.php?aff=TM&gclid=Cj0KCQiAxfzvBRCZARIsAGA7YMyEnm2OzWRrZIJ1dlav26VDdhjPFcjcOsUzF0AiQcZcvdbNlYkBCqYaAu5QEALw_wcB
+https://colorlib.com/wp/free-best-shopify-themes/
+https://themeforest.net/category/ecommerce/shopify
+https://webdesign.tutsplus.com/articles/20-best-shopify-themes-with-beautiful-ecommerce-designs--cms-26547
+https://business.tutsplus.com/articles/best-shopify-themes--cms-30306
+
+----------------------------------------------------------------------------------------
+go get -u github.com/Shopify/themekit
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
