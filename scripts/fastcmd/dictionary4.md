@@ -3326,6 +3326,724 @@ rmdir /s /q %~d0%\$GetCurrent\media
 rmdir /s /q %~d0%\$GetCurrent\Customization
 PartnerSetupComplete.cmd > ..\Logs\PartnerSetupCompleteResult.log
 ==============================================================================================================
+import org.infinispan.spring.provider.SpringEmbeddedCacheManagerFactoryBean;
+import org.infinispan.spring.session.configuration.EnableInfinispanEmbeddedHttpSession;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.web.client.RestTemplate;
+
+/**
+ * @author kameshs
+ */
+@EnableInfinispanEmbeddedHttpSession(cacheName = "moviestore-sessions-cache")
+@Configuration
+@EnableCaching
+@EnableConfigurationProperties(MovieStoreProps.class)
+public class MovieStoreConfiguration {
+
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
+}
+
+https://www.programcreek.com/java-api-examples/index.php?project_name=redhat-developer-demos%2Fpopular-movie-store#
+==============================================================================================================
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.thymeleaf.ThymeleafProperties;
+import org.springframework.boot.autoconfigure.web.WebMvcAutoConfiguration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.ViewResolver;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.spring4.SpringTemplateEngine;
+import org.thymeleaf.spring4.templateresolver.SpringResourceTemplateResolver;
+import org.thymeleaf.spring4.view.ThymeleafViewResolver;
+import org.thymeleaf.templateresolver.ITemplateResolver;
+
+/**
+ * @author kameshs
+ */
+@Configuration
+@ConditionalOnClass({SpringTemplateEngine.class})
+@EnableConfigurationProperties({ThymeleafProperties.class})
+@AutoConfigureAfter({WebMvcAutoConfiguration.class})
+public class ThymeleafConfiguration implements ApplicationContextAware {
+
+    private ApplicationContext applicationContext;
+
+    @Autowired
+    private ThymeleafProperties properties;
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
+    }
+
+    @Bean
+    public ViewResolver viewResolver() {
+        ThymeleafViewResolver viewResolver = new ThymeleafViewResolver();
+        viewResolver.setOrder(Integer.MAX_VALUE);
+        viewResolver.setTemplateEngine(templateEngine());
+        viewResolver.setCharacterEncoding("UTF-8");
+        return viewResolver;
+    }
+
+    @Bean
+    public SpringTemplateEngine templateEngine() {
+        SpringTemplateEngine templateEngine = new SpringTemplateEngine();
+        templateEngine.setTemplateResolver(templateResolver());
+        return templateEngine;
+    }
+
+    private ITemplateResolver templateResolver() {
+        SpringResourceTemplateResolver templateResolver = new SpringResourceTemplateResolver();
+        templateResolver.setApplicationContext(applicationContext);
+        templateResolver.setPrefix(this.properties.getPrefix());
+        templateResolver.setSuffix(this.properties.getSuffix());
+        templateResolver.setTemplateMode(this.properties.getMode());
+        templateResolver.setCacheable(this.properties.isCache());
+        return templateResolver;
+    }
+}
+<infinispan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="urn:infinispan:config:9.0 http://www.infinispan.org/schemas/infinispan-config-9.0.xsd"
+            xmlns="urn:infinispan:config:9.0">
+
+  <jgroups transport="org.infinispan.remoting.transport.jgroups.JGroupsTransport">
+    <!-- This will be tcp for local mode and kubernetes for cloud mode -->
+    <stack-file name="configurationFile" path="default-configs/default-jgroups-kubernetes.xml"/>
+  </jgroups>
+
+  <cache-container name="clustered" default-cache="popular-movies-cache" statistics="true">
+
+    <transport stack="configurationFile" cluster="PopularMovieStore" lock-timeout="60000"/>
+
+    <!-- The cache that manages HTTP session-->
+    <distributed-cache name="moviestore-sessions-cache" mode="SYNC" start="EAGER" statistics="true">
+      <store-as-binary keys="true" values="true"/>
+    </distributed-cache>
+
+    <!-- Cache that will hold the movie details fetched via moviedb api -->
+    <distributed-cache name="popular-movies-cache" mode="SYNC" start="EAGER" statistics="true">
+      <expiration lifespan="86400000"/>
+    </distributed-cache>
+
+  </cache-container>
+
+
+</infinispan>
+==============================================================================================================
+    <dependency>
+      <groupId>org.infinispan</groupId>
+      <artifactId>infinispan-core</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.infinispan</groupId>
+      <artifactId>infinispan-cloud</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.infinispan</groupId>
+      <artifactId>infinispan-spring4-embedded</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.infinispan</groupId>
+      <artifactId>infinispan-spring-boot-starter</artifactId>
+      <version>${infinispan-spring-boot-starter.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.infinispan</groupId>
+          <artifactId>infinispan-commons</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.infinispan</groupId>
+          <artifactId>infinispan-client-hotrod</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+==============================================================================================================
+import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.JavaSparkContext;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import scala.Tuple2;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+
+/**
+ * Created by achat1 on 9/23/15.
+ * Just an example to see if it works.
+ */
+@Component
+public class WordCount {
+
+    @Autowired
+    private JavaSparkContext javaSparkContext;
+
+    @Value("${input.file}")
+    private String inputFile;
+
+    @Value("${input.threshold}")
+    private int threshold;
+
+
+    public void count() {
+
+        JavaRDD<String> tokenized = javaSparkContext.textFile(inputFile).flatMap((s1) -> Arrays.asList(s1.split(" ")));
+
+        // count the occurrence of each word
+        JavaPairRDD<String, Integer> counts = tokenized
+                .mapToPair(s -> new Tuple2<>(s, 1))
+                .reduceByKey((i1, i2) -> i1 + i2);
+
+        // filter out words with less than threshold occurrences
+        JavaPairRDD<String, Integer> filtered = counts.filter(tup -> tup._2() >= threshold);
+
+        // count characters
+        JavaPairRDD<Character, Integer> charCounts = filtered.flatMap(
+                s -> {
+                    Collection<Character> chars = new ArrayList<>(s._1().length());
+                    for (char c : s._1().toCharArray()) {
+                        chars.add(c);
+                    }
+                    return chars;
+                }
+        ).mapToPair(c -> new Tuple2<>(c, 1))
+                .reduceByKey((i1, i2) -> i1 + i2);
+
+        System.out.println(charCounts.collect());
+    }
+}
+
+import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.JavaSparkContext;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import org.springframework.core.env.Environment;
+
+/**
+ * Created by achat1 on 9/22/15.
+ */
+@Configuration
+@PropertySource("classpath:application.properties")
+public class ApplicationConfig {
+
+    @Autowired
+    private Environment env;
+
+    @Value("${app.name:jigsaw}")
+    private String appName;
+
+    @Value("${spark.home}")
+    private String sparkHome;
+
+    @Value("${master.uri:local}")
+    private String masterUri;
+
+    @Bean
+    public SparkConf sparkConf() {
+        SparkConf sparkConf = new SparkConf()
+                .setAppName(appName)
+                .setSparkHome(sparkHome)
+                .setMaster(masterUri);
+
+        return sparkConf;
+    }
+
+    @Bean
+    public JavaSparkContext javaSparkContext() {
+        return new JavaSparkContext(sparkConf());
+    }
+
+    @Bean
+    public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() {
+        return new PropertySourcesPlaceholderConfigurer();
+    }
+
+}
+==============================================================================================================
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.security.oauth2.provider.token.TokenStore;
+import org.springframework.security.oauth2.provider.token.store.JdbcTokenStore;
+
+import javax.sql.DataSource;
+
+/**
+ * Created by daz on 01/07/2017.
+ */
+@Configuration
+public class AppConfig {
+    
+    @Value("${spring.datasource.url}")
+    private String datasourceUrl;
+    
+    @Value("${spring.database.driverClassName}")
+    private String dbDriverClassName;
+    
+    @Value("${spring.datasource.username}")
+    private String dbUsername;
+    
+    @Value("${spring.datasource.password}")
+    private String dbPassword;
+    
+    @Bean
+    public DataSource dataSource() {
+        final DriverManagerDataSource dataSource = new DriverManagerDataSource();
+        
+        dataSource.setDriverClassName(dbDriverClassName);
+        dataSource.setUrl(datasourceUrl);
+        dataSource.setUsername(dbUsername);
+        dataSource.setPassword(dbPassword);
+        
+        return dataSource;
+    }
+    
+    @Bean
+    public TokenStore tokenStore() {
+        return new JdbcTokenStore(dataSource());
+    }
+}
+
+
+import com.dazito.oauthexample.config.AppConfig;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
+import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
+import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
+import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
+
+/**
+ * Created by daz on 27/06/2017.
+ */
+@EnableAuthorizationServer
+@Configuration
+public class AuthServerOAuth2Config extends AuthorizationServerConfigurerAdapter {
+    
+    private final AuthenticationManager authenticationManager;
+    private final AppConfig appConfig;
+    
+    @Autowired
+    public AuthServerOAuth2Config(AuthenticationManager authenticationManager, AppConfig appConfig) {
+        this.authenticationManager = authenticationManager;
+        this.appConfig = appConfig;
+    }
+    
+    @Override
+    public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
+        clients.jdbc(appConfig.dataSource());
+    }
+    
+    @Override
+    public void configure(AuthorizationServerSecurityConfigurer security) throws Exception {
+        /*
+         * Allow our tokens to be delivered from our token access point as well as for tokens
+         * to be validated from this point
+         */
+        security.checkTokenAccess("permitAll()");
+    }
+    
+    @Override
+    public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+        endpoints
+                .authenticationManager(authenticationManager)
+                .tokenStore(appConfig.tokenStore()); // Persist the tokens in the database
+    }
+}
+atomicleopard
+
+
+import com.googlecode.objectify.ObjectifyService;
+import edu.monash.monplan.model.Course;
+import edu.monash.monplan.model.Unit;
+import org.springframework.context.annotation.Configuration;
+
+import javax.annotation.PostConstruct;
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
+import java.util.Arrays;
+
+@Configuration
+public class ObjectifyConfig implements ServletContextListener {
+
+    @PostConstruct
+    public void init() {
+        registerObjectifyEntities();
+    }
+
+    private void registerObjectifyEntities() {
+        register(Unit.class);
+        register(Course.class);
+    }
+
+
+    private void register(Class<?>... entityClasses) {
+        Arrays.stream(entityClasses)
+                .forEach(ObjectifyService::register);
+    }
+    
+    @Override
+    public void contextInitialized(ServletContextEvent servletContextEvent) {
+        registerObjectifyEntities();
+    }
+
+    @Override
+    public void contextDestroyed(ServletContextEvent servletContextEvent) {
+
+    }
+
+}
+==============================================================================================================
+/**
+ * This class is used as scheduled task which resets the database every 15 minutes to it's initial state.
+ *
+ * @author Fabian Dietenberger
+ */
+@Component
+class ScheduledDatabaseResetTask {
+
+    private final Logger logger = LoggerFactory.getLogger(ScheduledDatabaseResetTask.class);
+    private final TodoItemRepository repository;
+    private final SpringBootGwtProperties springBootGwtProperties;
+
+    @Autowired
+    public ScheduledDatabaseResetTask(final TodoItemRepository repository, final SpringBootGwtProperties springBootGwtProperties) {
+        this.repository = repository;
+        this.springBootGwtProperties = springBootGwtProperties;
+    }
+
+    @Scheduled(fixedRateString = "${spring-boot-gwt.scheduled-database-reset-interval-millis}")
+    public void resetDatabase() {
+        if (springBootGwtProperties.isScheduledDatabaseReset()) {
+            logger.info("Reset database");
+
+            repository.deleteAll();
+
+            for (final String initialTodoItem : springBootGwtProperties.getInitialTodoItems()) {
+                repository.save(new TodoItem(initialTodoItem));
+            }
+
+            final List<TodoItem> itemsInDatabase = Optional.ofNullable(repository.findAll()).orElse(Collections.emptyList());
+            logger.info("Saved " + itemsInDatabase.size() + " todo items to the database: " + itemsInDatabase.toString());
+        }
+    }
+}
+==============================================================================================================
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+
+@Configuration
+public class CorsConfig {
+
+    @Bean
+    public FilterRegistrationBean corsFilter() {
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowCredentials(true);
+        config.addAllowedOrigin("*");
+        config.addAllowedHeader("*");
+        config.addAllowedMethod("OPTIONS");
+        config.addAllowedMethod("HEAD");
+        config.addAllowedMethod("GET");
+        config.addAllowedMethod("PUT");
+        config.addAllowedMethod("POST");
+        config.addAllowedMethod("DELETE");
+        config.addAllowedMethod("PATCH");
+        source.registerCorsConfiguration("/**", config);
+        // return new CorsFilter(source);
+        final FilterRegistrationBean bean = new FilterRegistrationBean(new CorsFilter(source));
+        bean.setOrder(0);
+        return bean;
+    }
+
+    @Bean
+    public WebMvcConfigurer mvcConfigurer() {
+        return new WebMvcConfigurerAdapter() {
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/**").allowedMethods("GET", "PUT", "POST", "GET", "OPTIONS");
+            }
+        };
+    }
+}
+
+public class MonPlanAssertion {
+    public static final String ANSI_RESET = "\u001B[0m";
+    public static final String ANSI_RED = "\u001B[31m";
+
+    public static void assertTrue(boolean condition, String errorMessage) {
+        if (!condition) {
+            System.out.println(ANSI_RED + "AssertionWarning: " + errorMessage + ANSI_RESET);
+        }
+    }
+}
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <In> BigDecimal normalise(TransformerManager transformerManager, In value) {
+        Class<In> valueClass = (Class<In>) value.getClass();
+        BigDecimal bigDecimalValue = transformerManager.transform(valueClass, BigDecimal.class, value);
+        bigDecimalValue = bigDecimalValue.movePointLeft(shift).setScale(shift + scale, RoundingMode.DOWN);
+        bigDecimalValue = bigDecimalValue.min(Max).max(Min);
+        return bigDecimalValue;
+    }
+	
+==============================================================================================================
+    @Bean
+    public ServletRegistrationBean h2servletRegistration() {
+        ServletRegistrationBean registration = new ServletRegistrationBean(new WebServlet());
+        registration.addUrlMappings("/console/*");
+        return registration;
+    }
+==============================================================================================================
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.annotation.PostConstruct;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.method.support.HandlerMethodReturnValueHandler;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport;
+import org.springframework.web.servlet.mvc.method.annotation.DeferredResultMethodReturnValueHandler;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
+
+@Configuration
+public class WebMvcConfiguration extends WebMvcConfigurationSupport {
+
+  @Autowired
+  private RequestMappingHandlerAdapter requestMappingHandlerAdapter;
+
+  @Bean
+  public HandlerMethodReturnValueHandler completableFutureReturnValueHandler() {
+    return new CompletableFutureReturnValueHandler();
+  }
+
+  @PostConstruct
+  public void init() {
+    final List<HandlerMethodReturnValueHandler> originalHandlers = new ArrayList<>(
+        requestMappingHandlerAdapter.getReturnValueHandlers());
+    
+    final int deferredPos = obtainValueHandlerPosition(originalHandlers, DeferredResultMethodReturnValueHandler.class);
+    // Add our handler directly after the deferred handler.
+    originalHandlers.add(deferredPos + 1, completableFutureReturnValueHandler());
+    
+    requestMappingHandlerAdapter.setReturnValueHandlers(originalHandlers);
+  }
+
+  private int obtainValueHandlerPosition(final List<HandlerMethodReturnValueHandler> originalHandlers, Class<?> handlerClass) {
+    for (int i = 0; i < originalHandlers.size(); i++) {
+      final HandlerMethodReturnValueHandler valueHandler = originalHandlers.get(i);
+      if (handlerClass.isAssignableFrom(valueHandler.getClass())) {
+        return i;
+      }
+    }
+    return -1;
+  }
+}
+==============================================================================================================
+#!/bin/sh
+
+
+APP_NAME="bootiful-applications"
+DB_SVC_NAME="$APP_NAME-postgresql"
+NEWRELIC_SVC_NAME="$APP_NAME-newrelic"
+PAPERTRAIL_LOGS_SVC_NAME="$APP_NAME-papertrail-logs"
+
+# tear app and service down if they already exist
+cf delete -f $APP_NAME
+cf delete-service -f $DB_SVC_NAME
+cf delete-service -f $NEWRELIC_SVC_NAME
+cf delete-service -f $PAPERTRAIL_LOGS_SVC_NAME
+
+# push the app to the cloud
+cf push -p target/demo-0.0.1-SNAPSHOT.jar --random-route $APP_NAME
+
+# give it a backing service
+cf services | grep $DB_SVC_NAME || cf create-service elephantsql turtle $DB_SVC_NAME
+
+# bind it to the app
+cf bind-service $APP_NAME $DB_SVC_NAME
+cf restage $APP_NAME
+
+# scale it
+cf scale -i 3 -f $APP_NAME # our free turtle tier PG DB only handles 5 at a time
+
+# watch it auto-heal
+URI="`cf a | grep $APP_NAME | tr " " "\n" | grep cfapps.io`"
+curl http://$URI/killme
+# now watch 'cf apps' reflect auto-healing
+
+# connect to DB
+DB_URI=`cf env $APP_NAME | grep postgres: | cut -f2- -d:`;
+echo $DB_URI
+
+# lets add New Relic APM
+cf create-service newrelic standard $NEWRELIC_SVC_NAME
+cf bind-service $APP_NAME $NEWRELIC_SVC_NAME
+cf restage $APP_NAME
+
+# lets add a PaperTrail log drain - see https://papertrailapp.com/systems/CloudFoundry/events
+PAPERTRAIL_LOG_URL="logs2.papertrailapp.com:49046"
+cf create-user-provided-service $PAPERTRAIL_LOGS_SVC_NAME -l syslog://$PAPERTRAIL_LOG_URL
+cf bind-service $APP_NAME $PAPERTRAIL_LOGS_SVC_NAME
+cf restage $APP_NAME
+
+# make sure we can get back here again
+cf create-app-manifest $APP_NAME
+
+# how do we control everything programatically?
+echo the OAuth token is `cf oauth-token`
+==============================================================================================================
+import java.io.Serializable;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlType;
+
+@SuppressWarnings("serial")
+@XmlAccessorType(XmlAccessType.FIELD)
+@XmlType(name = "person", propOrder = {"name"})
+@XmlRootElement(name = "person")
+public class Person implements Serializable {
+
+    private String name;
+
+    public Person() {
+    }
+
+    public Person(String name) {
+        setName(name);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+}
+==============================================================================================================
+import org.ocpsoft.prettytime.PrettyTime;
+
+import java.nio.file.Path;
+
+/**
+* Created by lh on 28/02/15.
+*/
+public abstract class AbstractFileProvider implements FileProvider {
+    protected static final PrettyTime prettyTime = new PrettyTime();
+
+    protected boolean isArchive(Path path) {
+        return isZip(path) || isTarGz(path);
+    }
+
+    protected boolean isTarGz(Path path) {
+        return !path.toFile().isDirectory() && path.getFileName().toString().endsWith(".tar.gz");
+    }
+
+    protected boolean isZip(Path path) {
+        return !path.toFile().isDirectory() && path.getFileName().toString().endsWith(".zip");
+    }
+}
+==============================================================================================================
+import java.io.InputStream;
+import java.util.List;
+
+import javax.annotation.Resource;
+
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+@Configuration
+public class CitiesInitializer implements InitializingBean {
+
+  @Resource
+  private CityDao cityDao;
+  @Resource
+  private ObjectMapper objectMapper;
+  @Value("${sbtfragments.citiesFile}")
+  private String citiesFile;
+
+  @Override
+  public void afterPropertiesSet() throws Exception {
+    org.springframework.core.io.Resource resource = new ClassPathResource(citiesFile);
+
+    List<City> cities;
+    try (InputStream inputStream = resource.getInputStream()) {
+      cities = objectMapper.readValue(inputStream, new TypeReference<List<City>>() {
+      });
+    }
+    cities.forEach(city -> cityDao.add(city));
+  }
+}
+==============================================================================================================
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-enforcer-plugin</artifactId>
+          <version>1.4.1</version>
+          <executions>
+            <execution>
+              <id>enforce-mandatory-property</id>
+              <goals>
+                <goal>enforce</goal>
+              </goals>
+              <configuration>
+                <rules>
+                  <requireProperty>
+                    <property>apiKey</property>
+                    <message>You must pass base64 hash of the apiKey like -DapiKey="base64 encoded api key"
+                      Please visit https://www.themoviedb.org/documentation/api for more info.
+                    </message>
+                    <regex>^[A-Za-z0-9+\/=]*$</regex>
+                    <regexMessage>Please pass a valid base64 encoded value for your apiKey</regexMessage>
+                  </requireProperty>
+                </rules>
+                <fail>true</fail>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+==============================================================================================================
 @echo off
 REM Copyright (C) 2007 The Android Open Source Project
 REM

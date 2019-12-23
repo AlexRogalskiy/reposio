@@ -8038,14 +8038,1525 @@ find. -name *.png -type f -print | xargs tar -cvzf images.tar.gz
 cat urls.txt | xargs wget
 ls /etc/*.conf | xargs -i cp {} /home/likegeeks/Desktop/out
 ----------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CachingConfigurerSupport;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.interceptor.KeyGenerator;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.core.RedisTemplate;
+
+@EnableCaching
+@Configuration
+public class RedisCacheConfiguration extends CachingConfigurerSupport {
+
+    @Autowired
+    @Qualifier("userRedisTemplate")
+    private RedisTemplate userRedisTemplate;
+
+    @Autowired
+    @Qualifier("roleRedisTemplate")
+    private RedisTemplate roleRedisTemplate;
+
+    @Primary
+    @Bean(name = "userCacheManager")
+    public CacheManager userCacheManager() {
+        RedisCacheManager redisCacheManager = new RedisCacheManager(userRedisTemplate);
+        redisCacheManager.setDefaultExpiration(3600);
+        return redisCacheManager;
+    }
+
+    @Bean(name = "roleCacheManager")
+    public CacheManager roleCacheManager() {
+        RedisCacheManager redisCacheManager = new RedisCacheManager(roleRedisTemplate);
+        redisCacheManager.setDefaultExpiration(3600);
+        return redisCacheManager;
+    }
+
+    @Bean
+    @Override
+    public KeyGenerator keyGenerator() {
+        return (target, method, params) -> {
+            StringBuilder sb = new StringBuilder();
+            sb.append(target.getClass().getName());
+            sb.append(method.getName());
+            for (Object obj : params) {
+                sb.append(obj.toString());
+            }
+            return sb.toString();
+        };
+    }
+}
 ----------------------------------------------------------------------------------------
+<?xml version="1.0" encoding="UTF-8"?>
+<config
+    xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+    xmlns='http://www.ehcache.org/v3'
+    xmlns:jsr107='http://www.ehcache.org/v3/jsr107'
+    xsi:schemaLocation="
+        http://www.ehcache.org/v3 http://www.ehcache.org/schema/ehcache-core-3.0.xsd
+        http://www.ehcache.org/v3/jsr107 http://www.ehcache.org/schema/ehcache-107-ext-3.0.xsd">
+   
+  <service>
+    <jsr107:defaults enable-management="false" enable-statistics="false"/>
+  </service>
+
+  <cache-template name="default">
+    <expiry>
+      <ttl unit="seconds">1800</ttl>
+    </expiry>
+    <resources>
+      <heap unit="entries">1000</heap>
+    </resources>
+  </cache-template>
+
+  <!-- ### Component Method ### -->
+
+  <!-- AppSettingHandler -->
+  <cache alias="AppSettingHandler.appSetting" uses-template="default"> 
+    <expiry>
+      <ttl unit="seconds">30</ttl>
+    </expiry>
+    <heap unit="entries">1000</heap>
+  </cache>
+
+  <!-- HolidayMasterAccessor -->
+  <cache alias="HolidayAccessor.getHoliday" uses-template="default" />
+
+  <!-- ### Service Method ### -->
+
+  <!-- AccountService -->
+  <cache alias="AccountService.getAccount" uses-template="default" />
+  <cache alias="AccountService.getLoginByLoginId" uses-template="default" />
+
+  <!-- MasterAdminService -->
+  <cache alias="MasterAdminService.getStaff" uses-template="default">
+    <heap unit="entries">100</heap>
+  </cache>
+  <cache alias="MasterAdminService.findStaffAuthority" uses-template="default">
+    <heap unit="entries">10000</heap>
+  </cache>
+</config>
 ----------------------------------------------------------------------------------------
+import java.math.BigDecimal;
+import java.util.Optional;
+
+import com.ibm.icu.text.Transliterator;
+
+/** 各種型/文字列変換をサポートします。(ICU4Jライブラリに依存しています) */
+public abstract class ConvertUtils {
+    private static Transliterator ZenkakuToHan = Transliterator.getInstance("Fullwidth-Halfwidth");
+    private static Transliterator HankakuToZen = Transliterator.getInstance("Halfwidth-Fullwidth");
+    private static Transliterator KatakanaToHira = Transliterator.getInstance("Katakana-Hiragana");
+    private static Transliterator HiraganaToKana = Transliterator.getInstance("Hiragana-Katakana");
+
+    /** 例外無しにLongへ変換します。(変換できない時はnull) */
+    public static Long quietlyLong(Object value) {
+        try {
+            return Optional.ofNullable(value).map(v -> Long.parseLong(v.toString())).orElse(null);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /** 例外無しにIntegerへ変換します。(変換できない時はnull) */
+    public static Integer quietlyInt(Object value) {
+        try {
+            return Optional.ofNullable(value).map(v -> Integer.parseInt(v.toString())).orElse(null);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /** 例外無しにBigDecimalへ変換します。(変換できない時はnull) */
+    public static BigDecimal quietlyDecimal(Object value) {
+        try {
+            return Optional.ofNullable(value).map((v) -> new BigDecimal(v.toString())).orElse(null);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /** 例外無しBooleanへ変換します。(変換できない時はfalse) */
+    public static Boolean quietlyBool(Object value) {
+        return Optional.ofNullable(value).map((v) -> Boolean.parseBoolean(v.toString())).orElse(false);
+    }
+
+    /** 全角文字を半角にします。 */
+    public static String zenkakuToHan(String text) {
+        return Optional.ofNullable(text).map((v) -> ZenkakuToHan.transliterate(v)).orElse(null);
+    }
+
+    /** 半角文字を全角にします。 */
+    public static String hankakuToZen(String text) {
+        return Optional.ofNullable(text).map((v) -> HankakuToZen.transliterate(v)).orElse(null);
+    }
+
+    /** カタカナをひらがなにします。 */
+    public static String katakanaToHira(String text) {
+        return Optional.ofNullable(text).map((v) -> KatakanaToHira.transliterate(v)).orElse(null);
+    }
+
+    /**
+     * ひらがな/半角カタカナを全角カタカナにします。
+     * <p>low: 実際の挙動は厳密ではないので単体検証(ConvertUtilsTest)などで事前に確認して下さい。
+     */
+    public static String hiraganaToZenKana(String text) {
+        return Optional.ofNullable(text).map((v) -> HiraganaToKana.transliterate(v)).orElse(null);
+    }
+
+    /**
+     * ひらがな/全角カタカナを半角カタカナにします。
+     * <p>low: 実際の挙動は厳密ではないので単体検証(ConvertUtilsTest)などで事前に確認して下さい。
+     */
+    public static String hiraganaToHanKana(String text) {
+        return zenkakuToHan(hiraganaToZenKana(text));
+    }
+
+    /** 指定した文字列を抽出します。(サロゲートペア対応) */
+    public static String substring(String text, int start, int end) {
+        if (text == null)
+            return null;
+        int spos = text.offsetByCodePoints(0, start);
+        int epos = text.length() < end ? text.length() : end;
+        return text.substring(spos, text.offsetByCodePoints(spos, epos - start));
+    }
+
+    /** 文字列を左から指定の文字数で取得します。(サロゲートペア対応) */
+    public static String left(String text, int len) {
+        return substring(text, 0, len);
+    }
+	
+
+    /** 文字列を左から指定のバイト数で取得します。 */
+    public static String leftStrict(String text, int lenByte, String charset) {
+        StringBuilder sb = new StringBuilder();
+        try {
+            int cnt = 0;
+            for (int i = 0; i < text.length(); i++) {
+                String v = text.substring(i, i + 1);
+                byte[] b = v.getBytes(charset);
+                if (lenByte < cnt + b.length) {
+                    break;
+                } else {
+                    sb.append(v);
+                    cnt += b.length;
+                }
+            }
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e);
+        }
+        return sb.toString();
+    }
+
+}
 ----------------------------------------------------------------------------------------
+import java.io.Serializable;
+import java.util.*;
+
+import lombok.Value;
+
+/**
+ * 審査例外を表現します。
+ * <p>ValidationExceptionは入力例外や状態遷移例外等の復旧可能な審査例外です。
+ * その性質上ログ等での出力はWARNレベル(ERRORでなく)で行われます。
+ * <p>審査例外はグローバル/フィールドスコープで複数保有する事が可能です。複数件の例外を取り扱う際は
+ * Warnsを利用して初期化してください。
+ */
+public class ValidationException extends RuntimeException {
+
+    private static final long serialVersionUID = 1L;
+
+    private final Warns warns;
+
+    /** フィールドに従属しないグローバルな審査例外を通知するケースで利用してください。 */
+    public ValidationException(String message) {
+        super(message);
+        warns = Warns.init(message);
+    }
+
+    /** フィールドに従属する審査例外を通知するケースで利用してください。 */
+    public ValidationException(String field, String message) {
+        super(message);
+        warns = Warns.init(field, message);
+    }
+
+    /** フィールドに従属する審査例外を通知するケースで利用してください。 */
+    public ValidationException(String field, String message, String[] messageArgs) {
+        super(message);
+        warns = Warns.init(field, message, messageArgs);
+    }
+
+    /** 複数件の審査例外を通知するケースで利用してください。 */
+    public ValidationException(final Warns warns) {
+        super(warns.head().map((v) -> v.getMessage()).orElse(ErrorKeys.Exception));
+        this.warns = warns;
+    }
+
+    /** 発生した審査例外一覧を返します。*/
+    public List<Warn> list() {
+        return warns.list();
+    }
+
+    @Override
+    public String getMessage() {
+        return warns.head().map((v) -> v.getMessage()).orElse(ErrorKeys.Exception);
+    }
+
+    /** 審査例外情報です。  */
+    public static class Warns implements Serializable {
+        private static final long serialVersionUID = 1L;
+        private List<Warn> list = new ArrayList<>();
+
+        private Warns() {
+        }
+
+        public Warns add(String message) {
+            list.add(new Warn(null, message, null));
+            return this;
+        }
+
+        public Warns add(String field, String message) {
+            list.add(new Warn(field, message, null));
+            return this;
+        }
+
+        public Warns add(String field, String message, String[] messageArgs) {
+            list.add(new Warn(field, message, messageArgs));
+            return this;
+        }
+
+        public Optional<Warn> head() {
+            return list.isEmpty() ? Optional.empty() : Optional.of(list.get(0));
+        }
+
+        public List<Warn> list() {
+            return list;
+        }
+
+        public boolean nonEmpty() {
+            return !list.isEmpty();
+        }
+
+        public static Warns init() {
+            return new Warns();
+        }
+
+        public static Warns init(String message) {
+            return init().add(message);
+        }
+
+        public static Warns init(String field, String message) {
+            return init().add(field, message);
+        }
+
+        public static Warns init(String field, String message, String[] messageArgs) {
+            return init().add(field, message, messageArgs);
+        }
+
+    }
+
+    /** フィールドスコープの審査例外トークンを表現します。 */
+    @Value
+    public static class Warn implements Serializable {
+        private static final long serialVersionUID = 1L;
+        /** 審査例外フィールドキー */
+        private String field;
+        /** 審査例外メッセージ */
+        private String message;
+        /** 審査例外メッセージ引数 */
+        private String[] messageArgs;
+
+        /** フィールドに従属しないグローバル例外時はtrue */
+        public boolean global() {
+            return field == null;
+        }
+    }
+
+    /** 審査例外で用いるメッセージキー定数 */
+    public static interface ErrorKeys {
+        /** サーバー側で問題が発生した可能性があります */
+        String Exception = "error.Exception";
+        /** 情報が見つかりませんでした */
+        String EntityNotFound = "error.EntityNotFoundException";
+        /** ログイン状態が有効ではありません */
+        String Authentication = "error.Authentication";
+        /** 対象機能の利用が認められていません */
+        String AccessDenied = "error.AccessDeniedException";
+
+        /** ログインに失敗しました */
+        String Login = "error.login";
+        /** 既に登録されているIDです */
+        String DuplicateId = "error.duplicateId";
+
+        /** 既に処理済の情報です */
+        String ActionUnprocessing = "error.ActionStatusType.unprocessing";
+    }
+
+}
+
+import org.springframework.boot.autoconfigure.condition.*;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.*;
+import org.springframework.core.annotation.Order;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.cors.*;
+import org.springframework.web.filter.CorsFilter;
+
+import sample.context.security.*;
+import sample.context.security.SecurityConfigurer.*;
+
+/**
+ * アプリケーションのセキュリティ定義を表現します。
+ */
+@Configuration
+@EnableConfigurationProperties({ SecurityProperties.class })
+public class ApplicationSeucrityConfig {
+    
+    /** パスワード用のハッシュ(BCrypt)エンコーダー。 */
+    @Bean
+    PasswordEncoder passwordEncoder() {
+        //low: きちんとやるのであれば、strengthやSecureRandom使うなど外部切り出し含めて検討してください
+        return new BCryptPasswordEncoder();
+    }
+
+    /** CORS全体適用 */
+    @Bean
+    @ConditionalOnProperty(prefix = "extension.security.cors", name = "enabled", matchIfMissing = false)
+    CorsFilter corsFilter(SecurityProperties props) {
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowCredentials(props.cors().isAllowCredentials());
+        config.addAllowedOrigin(props.cors().getAllowedOrigin());
+        config.addAllowedHeader(props.cors().getAllowedHeader());
+        config.addAllowedMethod(props.cors().getAllowedMethod());
+        config.setMaxAge(props.cors().getMaxAge());
+        source.registerCorsConfiguration(props.cors().getPath(), config);
+        return new CorsFilter(source);
+    }
+
+    /** Spring Security を用いた API 認証/認可定義を表現します。 */
+    @Configuration
+    @EnableWebSecurity
+    @EnableGlobalMethodSecurity(prePostEnabled = true, proxyTargetClass = true)
+    @ConditionalOnProperty(prefix = "extension.security.auth", name = "enabled", matchIfMissing = true)
+    @Order(org.springframework.boot.autoconfigure.security.SecurityProperties.ACCESS_OVERRIDE_ORDER)
+    static class AuthSecurityConfig {
+    
+        /** Spring Security 全般の設定 ( 認証/認可 ) を定義します。 */
+        @Bean
+        @Order(org.springframework.boot.autoconfigure.security.SecurityProperties.ACCESS_OVERRIDE_ORDER)
+        SecurityConfigurer securityConfigurer() {
+            return new SecurityConfigurer();
+        }
+        
+        /** Spring Security のカスタム認証プロセス管理コンポーネント。 */
+        @Bean
+        AuthenticationManager authenticationManager() throws Exception {
+            return securityConfigurer().authenticationManagerBean();
+        }
+        
+        /** Spring Security のカスタム認証プロバイダ。 */
+        @Bean
+        SecurityProvider securityProvider() {
+            return new SecurityProvider();
+        }
+        
+        /** Spring Security のカスタムエントリポイント。 */
+        @Bean
+        SecurityEntryPoint securityEntryPoint() {
+            return new SecurityEntryPoint();
+        }
+        
+        /** Spring Security におけるログイン/ログアウト時の振る舞いを拡張するHandler。 */
+        @Bean
+        LoginHandler loginHandler() {
+            return new LoginHandler();
+        }
+        
+        /** Spring Security で利用される認証/認可対象となるユーザ情報を提供します。 */
+        @Bean
+        SecurityActorFinder securityActorFinder() {
+            return new SecurityActorFinder();
+        }
+    }    
+}
 ----------------------------------------------------------------------------------------
+import org.aspectj.lang.annotation.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
+
+import sample.context.actor.*;
+import sample.context.actor.Actor.ActorRoleType;
+import sample.context.security.SecurityConfigurer;
+
+/**
+ * Spring Securityの設定状況に応じてスレッドローカルへ利用者を紐付けるAOPInterceptor。
+ */
+@Aspect
+@Configuration
+public class LoginInterceptor {
+    
+    @Autowired
+    private ActorSession session;
+
+    @Before("execution(* *..controller.system.*Controller.*(..))")
+    public void bindSystem() {
+        session.bind(Actor.System);
+    }
+
+    @After("execution(* *..controller..*Controller.*(..))")
+    public void unbind() {
+        session.unbind();
+    }
+
+    /**
+     * セキュリティの認証設定(extension.security.auth.enabled)が無効時のみ有効される擬似ログイン処理。
+     * <p>開発時のみ利用してください。
+     */
+    @Aspect
+    @Component
+    @ConditionalOnMissingBean(SecurityConfigurer.class)
+    public static class DummyLoginInterceptor {
+        @Autowired
+        private ActorSession session;
+
+        @Before("execution(* *..controller.*Controller.*(..))")
+        public void bindUser() {
+            session.bind(new Actor("sample", ActorRoleType.User));
+        }
+
+        @Before("execution(* *..controller.admin.*Controller.*(..))")
+        public void bindAdmin() {
+            session.bind(new Actor("admin", ActorRoleType.Internal));
+        }
+    }
+
+}
+
+
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.util.*;
+import java.util.function.Supplier;
+
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.http.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import lombok.Setter;
+import sample.ValidationException;
+import sample.context.ResourceBundleHandler;
+import sample.context.Timestamper;
+import sample.context.actor.ActorSession;
+import sample.context.report.ReportFile;
+
+/**
+ * UIコントローラの基底クラス。
+ */
+@Setter
+public class ControllerSupport {
+
+    @Autowired
+    private MessageSource msg;
+    @Autowired
+    private ResourceBundleHandler label;
+    @Autowired
+    private Timestamper time;
+    @Autowired
+    private ActorSession session;
+
+    /** i18nメッセージ変換を行います。 */
+    protected String msg(String message) {
+        return msg(message, session.actor().getLocale());
+    }
+
+    protected String msg(String message, final Locale locale) {
+        return msg.getMessage(message, new String[0], locale);
+    }
+
+    /**
+     * リソースファイル([basename].properties)内のキー/値のMap情報を返します。
+     * <p>API呼び出し側でi18n対応を行いたい時などに利用してください。
+     */
+    protected Map<String, String> labels(String basename) {
+        return labels(basename, session.actor().getLocale());
+    }
+
+    protected Map<String, String> labels(String basename, final Locale locale) {
+        return label.labels(basename, locale);
+    }
+
+    /** メッセージリソースアクセサを返します。 */
+    protected MessageSource msgResource() {
+        return msg;
+    }
+
+    /** 日時ユーティリティを返します。 */
+    protected Timestamper time() {
+        return time;
+    }
+
+    /**
+     * 指定したキー/値をMapに変換します。
+     * get等でnullを返す可能性があるときはこのメソッドでMap化してから返すようにしてください。
+     * ※nullはJSONバインドされないため、クライアント側でStatusが200にもかかわらず例外扱いされる可能性があります。
+     */
+    protected <T> Map<String, T> objectToMap(String key, final T t) {
+        Map<String, T> ret = new HashMap<>();
+        ret.put(key, t);
+        return ret;
+    }
+
+    protected <T> Map<String, T> objectToMap(final T t) {
+        return objectToMap("result", t);
+    }
+
+    /** 戻り値を生成して返します。(戻り値がプリミティブまたはnullを許容する時はこちらを利用してください) */
+    protected <T> ResponseEntity<T> result(Supplier<T> command) {
+        return ResponseEntity.status(HttpStatus.OK).body(command.get());
+    }
+
+    protected ResponseEntity<Void> resultEmpty(Runnable command) {
+        command.run();
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    /** ファイルアップロード情報(MultipartFile)をReportFileへ変換します。 */
+    protected ReportFile uploadFile(final MultipartFile file) {
+        return uploadFile(file, (String[]) null);
+    }
+
+    /**
+     * ファイルアップロード情報(MultipartFile)をReportFileへ変換します。
+     * <p>acceptExtensionsに許容するファイル拡張子(小文字統一)を設定してください。
+     */
+    protected ReportFile uploadFile(final MultipartFile file, final String... acceptExtensions) {
+        String fname = StringUtils.lowerCase(file.getOriginalFilename());
+        if (acceptExtensions != null && !FilenameUtils.isExtension(fname, acceptExtensions)) {
+            throw new ValidationException("file", "アップロードファイルには[{0}]を指定してください",
+                    new String[] { StringUtils.join(acceptExtensions) });
+        }
+        try {
+            return new ReportFile(file.getOriginalFilename(), file.getBytes());
+        } catch (IOException e) {
+            throw new ValidationException("file", "アップロードファイルの解析に失敗しました");
+        }
+    }
+
+    /**
+     * ファイルダウンロード設定を行います。
+     * <p>利用する際は戻り値をvoidで定義するようにしてください。
+     */
+    protected void exportFile(final HttpServletResponse res, final ReportFile file) {
+        exportFile(res, file, MediaType.APPLICATION_OCTET_STREAM_VALUE);
+    }
+
+    protected void exportFile(final HttpServletResponse res, final ReportFile file, final String contentType) {
+        String filename;
+        try {
+            filename = URLEncoder.encode(file.getName(), "UTF-8").replace("+", "%20");
+        } catch (Exception e) {
+            throw new ValidationException("ファイル名が不正です");
+        }
+        res.setContentLength(file.size());
+        res.setContentType(contentType);
+        res.setHeader("Content-Disposition",
+                "attachment; filename=" + filename);
+        try {
+            IOUtils.write(file.getData(), res.getOutputStream());
+        } catch (IOException e) {
+            throw new ValidationException("ファイル出力に失敗しました");
+        }
+    }
+}
+
+import org.springframework.boot.autoconfigure.condition.*;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.*;
+import org.springframework.core.annotation.Order;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.cors.*;
+import org.springframework.web.filter.CorsFilter;
+
+import sample.context.security.*;
+import sample.context.security.SecurityConfigurer.*;
+
+/**
+ * アプリケーションのセキュリティ定義を表現します。
+ */
+@Configuration
+@EnableConfigurationProperties({ SecurityProperties.class })
+public class ApplicationSeucrityConfig {
+    
+    /** パスワード用のハッシュ(BCrypt)エンコーダー。 */
+    @Bean
+    PasswordEncoder passwordEncoder() {
+        //low: きちんとやるのであれば、strengthやSecureRandom使うなど外部切り出し含めて検討してください
+        return new BCryptPasswordEncoder();
+    }
+
+    /** CORS全体適用 */
+    @Bean
+    @ConditionalOnProperty(prefix = "extension.security.cors", name = "enabled", matchIfMissing = false)
+    CorsFilter corsFilter(SecurityProperties props) {
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowCredentials(props.cors().isAllowCredentials());
+        config.addAllowedOrigin(props.cors().getAllowedOrigin());
+        config.addAllowedHeader(props.cors().getAllowedHeader());
+        config.addAllowedMethod(props.cors().getAllowedMethod());
+        config.setMaxAge(props.cors().getMaxAge());
+        source.registerCorsConfiguration(props.cors().getPath(), config);
+        return new CorsFilter(source);
+    }
+
+    /** Spring Security を用いた API 認証/認可定義を表現します。 */
+    @Configuration
+    @EnableWebSecurity
+    @EnableGlobalMethodSecurity(prePostEnabled = true, proxyTargetClass = true)
+    @ConditionalOnProperty(prefix = "extension.security.auth", name = "enabled", matchIfMissing = true)
+    @Order(org.springframework.boot.autoconfigure.security.SecurityProperties.ACCESS_OVERRIDE_ORDER)
+    static class AuthSecurityConfig {
+    
+        /** Spring Security 全般の設定 ( 認証/認可 ) を定義します。 */
+        @Bean
+        @Order(org.springframework.boot.autoconfigure.security.SecurityProperties.ACCESS_OVERRIDE_ORDER)
+        SecurityConfigurer securityConfigurer() {
+            return new SecurityConfigurer();
+        }
+        
+        /** Spring Security のカスタム認証プロセス管理コンポーネント。 */
+        @Bean
+        AuthenticationManager authenticationManager() throws Exception {
+            return securityConfigurer().authenticationManagerBean();
+        }
+        
+        /** Spring Security のカスタム認証プロバイダ。 */
+        @Bean
+        SecurityProvider securityProvider() {
+            return new SecurityProvider();
+        }
+        
+        /** Spring Security のカスタムエントリポイント。 */
+        @Bean
+        SecurityEntryPoint securityEntryPoint() {
+            return new SecurityEntryPoint();
+        }
+        
+        /** Spring Security におけるログイン/ログアウト時の振る舞いを拡張するHandler。 */
+        @Bean
+        LoginHandler loginHandler() {
+            return new LoginHandler();
+        }
+        
+        /** Spring Security で利用される認証/認可対象となるユーザ情報を提供します。 */
+        @Bean
+        SecurityActorFinder securityActorFinder() {
+            return new SecurityActorFinder();
+        }
+    }    
+}
 ----------------------------------------------------------------------------------------
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mobile.device.Device;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Component;
+
+import java.io.Serializable;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
+@Component
+public class JwtTokenUtil implements Serializable {
+
+    private static final long serialVersionUID = -3301605591108950415L;
+
+    static final String CLAIM_KEY_USERNAME = "sub";
+    static final String CLAIM_KEY_AUDIENCE = "audience";
+    static final String CLAIM_KEY_CREATED = "created";
+
+    private static final String AUDIENCE_UNKNOWN = "unknown";
+    private static final String AUDIENCE_WEB = "web";
+    private static final String AUDIENCE_MOBILE = "mobile";
+    private static final String AUDIENCE_TABLET = "tablet";
+
+    @Value("${jwt.secret}")
+    private String secret;
+
+    @Value("${jwt.expiration}")
+    private Long expiration;
+
+    public String getUsernameFromToken(String token) {
+        String username;
+        try {
+            final Claims claims = getClaimsFromToken(token);
+            username = claims.getSubject();
+        } catch (Exception e) {
+            username = null;
+        }
+        return username;
+    }
+
+    public Date getCreatedDateFromToken(String token) {
+        Date created;
+        try {
+            final Claims claims = getClaimsFromToken(token);
+            created = new Date((Long) claims.get(CLAIM_KEY_CREATED));
+        } catch (Exception e) {
+            created = null;
+        }
+        return created;
+    }
+
+    public Date getExpirationDateFromToken(String token) {
+        Date expiration;
+        try {
+            final Claims claims = getClaimsFromToken(token);
+            expiration = claims.getExpiration();
+        } catch (Exception e) {
+            expiration = null;
+        }
+        return expiration;
+    }
+
+    public String getAudienceFromToken(String token) {
+        String audience;
+        try {
+            final Claims claims = getClaimsFromToken(token);
+            audience = (String) claims.get(CLAIM_KEY_AUDIENCE);
+        } catch (Exception e) {
+            audience = null;
+        }
+        return audience;
+    }
+
+    private Claims getClaimsFromToken(String token) {
+        Claims claims;
+        try {
+            claims = Jwts.parser()
+                    .setSigningKey(secret)
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (Exception e) {
+            claims = null;
+        }
+        return claims;
+    }
+
+    private Date generateExpirationDate() {
+        return new Date(System.currentTimeMillis() + expiration * 1000);
+    }
+
+    private Boolean isTokenExpired(String token) {
+        final Date expiration = getExpirationDateFromToken(token);
+        return expiration.before(new Date());
+    }
+
+    private Boolean isCreatedBeforeLastPasswordReset(Date created, Date lastPasswordReset) {
+        return (lastPasswordReset != null && created.before(lastPasswordReset));
+    }
+
+    private String generateAudience(Device device) {
+        String audience = AUDIENCE_UNKNOWN;
+        if (device.isNormal()) {
+            audience = AUDIENCE_WEB;
+        } else if (device.isTablet()) {
+            audience = AUDIENCE_TABLET;
+        } else if (device.isMobile()) {
+            audience = AUDIENCE_MOBILE;
+        }
+        return audience;
+    }
+
+    private Boolean ignoreTokenExpiration(String token) {
+        String audience = getAudienceFromToken(token);
+        return (AUDIENCE_TABLET.equals(audience) || AUDIENCE_MOBILE.equals(audience));
+    }
+
+    public String generateToken(UserDetails userDetails, Device device) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put(CLAIM_KEY_USERNAME, userDetails.getUsername());
+        claims.put(CLAIM_KEY_AUDIENCE, generateAudience(device));
+        claims.put(CLAIM_KEY_CREATED, new Date());
+        return generateToken(claims);
+    }
+
+    String generateToken(Map<String, Object> claims) {
+        return Jwts.builder()
+                .setClaims(claims)
+                .setExpiration(generateExpirationDate())
+                .signWith(SignatureAlgorithm.HS512, secret)
+                .compact();
+    }
+
+    public Boolean canTokenBeRefreshed(String token, Date lastPasswordReset) {
+        final Date created = getCreatedDateFromToken(token);
+        return !isCreatedBeforeLastPasswordReset(created, lastPasswordReset)
+                && (!isTokenExpired(token) || ignoreTokenExpiration(token));
+    }
+
+    public String refreshToken(String token) {
+        String refreshedToken;
+        try {
+            final Claims claims = getClaimsFromToken(token);
+            claims.put(CLAIM_KEY_CREATED, new Date());
+            refreshedToken = generateToken(claims);
+        } catch (Exception e) {
+            refreshedToken = null;
+        }
+        return refreshedToken;
+    }
+
+    public Boolean validateToken(String token, UserDetails userDetails) {
+        JwtUser user = (JwtUser) userDetails;
+        final String username = getUsernameFromToken(token);
+        final Date created = getCreatedDateFromToken(token);
+        //final Date expiration = getExpirationDateFromToken(token);
+        return (
+                username.equals(user.getUsername())
+                        && !isTokenExpired(token)
+                        && !isCreatedBeforeLastPasswordReset(created, user.getLastPasswordResetDate()));
+    }
+}
 ----------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.orm.jpa.JpaProperties;
+import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.transaction.PlatformTransactionManager;
+
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.sql.DataSource;
+
+/**
+ * write数据源配置
+ *
+ * @author lsj <lishuijun1992@gmail.com>
+ * @date 17-4-13
+ */
+@Configuration
+@EnableJpaRepositories(value = "com.lc.springBoot.jpa.repository",
+        entityManagerFactoryRef = "writeEntityManagerFactory",
+        transactionManagerRef = "writeTransactionManager")
+public class WriteDataSourceConfig1 {
+
+    @Autowired
+    JpaProperties jpaProperties;
+
+    @Autowired
+    @Qualifier("writeDruidDataSource")
+    private DataSource writeDruidDataSource;
+
+    /**
+     * 我们通过LocalContainerEntityManagerFactoryBean来获取EntityManagerFactory实例
+     * @return
+     */
+    @Bean(name = "writeEntityManagerFactoryBean")
+    @Primary
+    public LocalContainerEntityManagerFactoryBean writeEntityManagerFactoryBean(EntityManagerFactoryBuilder builder) {
+        return builder
+                .dataSource(writeDruidDataSource)
+                .properties(jpaProperties.getProperties())
+                .packages("com.lc.springBoot.jpa.entity") //设置实体类所在位置
+                .persistenceUnit("writePersistenceUnit")
+                .build();
+        //.getObject();//不要在这里直接获取EntityManagerFactory
+    }
+
+    /**
+     * EntityManagerFactory类似于Hibernate的SessionFactory,mybatis的SqlSessionFactory
+     * 总之,在执行操作之前,我们总要获取一个EntityManager,这就类似于Hibernate的Session,
+     * mybatis的sqlSession.
+     * @param builder
+     * @return
+     */
+    @Bean(name = "writeEntityManagerFactory")
+    @Primary
+    public EntityManagerFactory writeEntityManagerFactory(EntityManagerFactoryBuilder builder) {
+        return this.writeEntityManagerFactoryBean(builder).getObject();
+    }
+
+    /**
+     * 配置事物管理器
+     * @return
+     */
+    @Bean(name = "writeTransactionManager")
+    @Primary
+    public PlatformTransactionManager writeTransactionManager(EntityManagerFactoryBuilder builder) {
+        return new JpaTransactionManager(writeEntityManagerFactory(builder));
+    }
+}
+
+import com.github.pagehelper.PageHelper;
+import org.apache.ibatis.plugin.Interceptor;
+import org.apache.ibatis.session.SqlSessionFactory;
+import org.mybatis.spring.SqlSessionFactoryBean;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+
+import javax.sql.DataSource;
+import java.util.Properties;
+
+/**
+ * @author lsj <lishuijun1992@gmail.com>
+ * @date 17-4-4
+ */
+@Configuration//声明这是用来配置的类,用来取代xml配置
+public class MybatisConfig {
+
+    /**
+     * 注入一个默认数据源
+     */
+    @Autowired
+    private DataSource dataSource;
+
+    /**
+     * SqlSessionFactory配置
+     *
+     * @return
+     * @throws Exception
+     */
+    @Bean
+    public SqlSessionFactory sqlSessionFactoryBean() throws Exception {
+        SqlSessionFactoryBean sqlSessionFactoryBean = new SqlSessionFactoryBean();
+        sqlSessionFactoryBean.setDataSource(dataSource);
+
+        PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+        //配置mapper文件位置
+        sqlSessionFactoryBean.setMapperLocations(resolver.getResources("classpath:mapper/*.xml"));
+
+        //配置分页插件
+        PageHelper pageHelper = new PageHelper();
+        Properties properties = new Properties();
+        properties.setProperty("reasonable", "true");
+        properties.setProperty("supportMethodsArguments", "true");
+        properties.setProperty("returnPageInfo", "check");
+        properties.setProperty("params", "count=countSql");
+        pageHelper.setProperties(properties);
+
+        //设置插件
+        sqlSessionFactoryBean.setPlugins(new Interceptor[]{pageHelper});
+        return sqlSessionFactoryBean.getObject();
+    }
+
+    /**
+     * 配置事物管理器
+     *
+     * @return
+     */
+    @Bean
+    public DataSourceTransactionManager transactionManager() {
+        DataSourceTransactionManager dataSourceTransactionManager = new DataSourceTransactionManager();
+        dataSourceTransactionManager.setDataSource(dataSource);
+        return dataSourceTransactionManager;
+    }
+}
+
+import org.mybatis.spring.mapper.MapperScannerConfigurer;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+/**
+ * 配置mybatis需要扫描的mapper接口
+ *
+ * @author lsj <lishuijun1992@gmail.com>
+ * @date 17-4-4
+ */
+@Configuration
+//MapperScannerConfigurer执行的比较早，所以必须有下面的注解
+@AutoConfigureAfter(MybatisConfig.class)
+public class MapperScannerConfig {
+
+    @Bean
+    public MapperScannerConfigurer mapperScannerConfigurer() {
+        MapperScannerConfigurer mapperScannerConfigurer = new MapperScannerConfigurer();
+        mapperScannerConfigurer.setBasePackage("com.lc.springBoot.dataSource.mapper");
+        return mapperScannerConfigurer;
+    }
+}
+
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lc.springBoot.druid.mapper.master.StudentMapper">
+
+    <insert id="insert" parameterType="com.lc.springBoot.druid.model.Student">
+        <selectKey resultType="java.lang.Integer" keyProperty="id" keyColumn="id">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+        insert into student(name,email,age,birthday) values(#{name},#{email},#{age},#{birthday})
+    </insert>
+
+    <select id="getById" resultType="com.lc.springBoot.druid.model.Student">
+        select * from student where id = #{id}
+    </select>
+    <select id="getBypage" resultType="com.lc.springBoot.druid.model.Student">
+        SELECT * FROM student
+    </select>
+</mapper>
+
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lc.springBoot.druid.mapper.cluster1.TeacherMapper">
+
+    <insert id="insert" parameterType="com.lc.springBoot.druid.model.Teacher">
+        <selectKey resultType="java.lang.Integer" keyProperty="id" keyColumn="id">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+        insert into teacher(name) values(#{name})
+    </insert>
+</mapper>
+
+
+        PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+        // 配置mapper文件位置
+        sqlSessionFactoryBean.setMapperLocations(resolver.getResources(writeMapperLocations));
+        return sqlSessionFactoryBean.getObject();
+		
+import com.alibaba.druid.pool.DruidDataSource;
+import com.github.pagehelper.PageHelper;
+import org.apache.ibatis.plugin.Interceptor;
+import org.apache.ibatis.session.SqlSessionFactory;
+import org.mybatis.spring.SqlSessionFactoryBean;
+import org.mybatis.spring.annotation.MapperScan;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+
+import javax.sql.DataSource;
+import java.sql.SQLException;
+import java.util.Properties;
+
+/**
+ * cluster节点数据源配置
+ *
+ * @author lsj <lishuijun1992@gmail.com>
+ * @date 17-4-4
+ */
+@Configuration
+@MapperScan(basePackages = {"com.lc.springBoot.druid.mapper.cluster"},
+        sqlSessionFactoryRef = "clusterSqlSessionFactory")
+public class ClusterDruidDataSourceConfig {
+
+    @Value("${spring.datasource.cluster.clusterMapperLocations}")
+    private String clusterMapperLocations;
+
+    @ConfigurationProperties(prefix = "spring.datasource.cluster")
+    @Bean(name = "clusterDataSource")
+    public DataSource clusterDataSource() {
+        DruidDataSource dataSource = new DruidDataSource();
+        try {
+            dataSource.setFilters("stat,wall,log4j");
+            dataSource.setUseGlobalDataSourceStat(true);
+        } catch (SQLException e) {
+            //
+        }
+        return dataSource;
+    }
+
+    /**
+     * SqlSessionFactory配置
+     *
+     * @return
+     * @throws Exception
+     */
+    @Bean(name = "clusterSqlSessionFactory")
+    public SqlSessionFactory clusterSqlSessionFactory(
+            @Qualifier("clusterDataSource") DataSource dataSource
+    ) throws Exception {
+        SqlSessionFactoryBean sqlSessionFactoryBean = new SqlSessionFactoryBean();
+        sqlSessionFactoryBean.setDataSource(dataSource);
+
+        PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+        //配置mapper文件位置
+        sqlSessionFactoryBean.setMapperLocations(resolver.getResources(clusterMapperLocations));
+
+        //配置分页插件
+        PageHelper pageHelper = new PageHelper();
+        Properties properties = new Properties();
+        properties.setProperty("reasonable", "true");
+        properties.setProperty("supportMethodsArguments", "true");
+        properties.setProperty("returnPageInfo", "check");
+        properties.setProperty("params", "count=countSql");
+        pageHelper.setProperties(properties);
+
+        //设置插件
+        sqlSessionFactoryBean.setPlugins(new Interceptor[]{pageHelper});
+        return sqlSessionFactoryBean.getObject();
+    }
+
+    /**
+     * 配置事物管理器
+     *
+     * @return
+     */
+    @Bean(name = "clusterTransactionManager")
+    public DataSourceTransactionManager clusterTransactionManager(
+            @Qualifier("clusterDataSource") DataSource dataSource
+    ) {
+        DataSourceTransactionManager dataSourceTransactionManager = new DataSourceTransactionManager();
+        dataSourceTransactionManager.setDataSource(dataSource);
+        return dataSourceTransactionManager;
+    }
+}
+
+import com.alibaba.druid.support.http.WebStatFilter;
+
+import javax.servlet.annotation.WebFilter;
+import javax.servlet.annotation.WebInitParam;
+
+/**
+ * 配置过滤器,需要拦截哪些url,忽略哪些url,初始化参数等
+ *
+ * @author lsj <lishuijun1992@gmail.com>
+ * @date 17-4-7
+ */
+@WebFilter(filterName = "druidStatFilter",//过滤器名称
+        urlPatterns = "/",//需要拦截的url
+        initParams = {//filter初始化信息
+                //需要忽略的资源
+                @WebInitParam(name = "exclusions", value = "*.js,*.gif,*.jpg," +
+                        "*.bmp,*.png,*.css,*.ico,/dataSource/*"),
+                @WebInitParam(name = "sessionStatEnable", value = "true"),
+                @WebInitParam(name = "profileEnable", value = "true")})
+public class DruidStatFilter extends WebStatFilter {
+}
+
+import com.alibaba.druid.support.spring.stat.DruidStatInterceptor;
+import org.springframework.aop.Advisor;
+import org.springframework.aop.support.DefaultPointcutAdvisor;
+import org.springframework.aop.support.JdkRegexpMethodPointcut;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+/**
+ * 配置Spring监控
+ * @author lsj <lishuijun1992@gmail.com>
+ * @date 17-4-8
+ */
+@Configuration
+public class MyDruidStatInterceptor {
+
+    private static final String[] patterns = new String[]{"com.lc.springBoot.dataSource.service.*"};
+
+    @Bean
+    public DruidStatInterceptor druidStatInterceptor() {
+        return new DruidStatInterceptor();
+    }
+
+    /**
+     * 切入点
+     * @return
+     */
+    @Bean
+    public JdkRegexpMethodPointcut druidStatPointcut() {
+        JdkRegexpMethodPointcut druidStatPointcut = new JdkRegexpMethodPointcut();
+        druidStatPointcut.setPatterns(patterns);
+        return druidStatPointcut;
+    }
+
+    /**
+     * 配置aop
+     * @return
+     */
+    @Bean
+    public Advisor druidStatAdvisor() {
+        return new DefaultPointcutAdvisor(druidStatPointcut(), druidStatInterceptor());
+    }
+}
+
+
+# REDIS (RedisProperties)
+#spring.redis.cluster.max-redirects= # Maximum number of redirects to follow when executing commands across the cluster.
+#spring.redis.cluster.nodes= # Comma-separated list of "host:port" pairs to bootstrap from.
+#spring.redis.database=0 # Database index used by the connection factory.
+spring.redis.host=127.0.0.1
+spring.redis.password=1
+spring.redis.pool.max-active=8
+spring.redis.pool.max-idle=8
+spring.redis.pool.max-wait=-1
+spring.redis.pool.min-idle=0
+spring.redis.port=6379
+#spring.redis.sentinel.master= # Name of Redis server.
+#spring.redis.sentinel.nodes= # Comma-separated list of host:port pairs.
+#spring.redis.timeout=0 # Connection timeout in milliseconds.
 ----------------------------------------------------------------------------------------
+import org.launchcode.springfilterbasedauth.controllers.AbstractController;
+import org.launchcode.springfilterbasedauth.models.User;
+import org.launchcode.springfilterbasedauth.models.dao.UserDao;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ * Created by LaunchCode
+ */
+public class AuthenticationInterceptor extends HandlerInterceptorAdapter {
+
+    @Autowired
+    UserDao userDao;
+
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws IOException {
+
+        // Authentication white list; add all publicly visible pages here
+        List<String> nonAuthPages = Arrays.asList("/login", "/register");
+
+        // Require sign-in for auth pages
+        if ( !nonAuthPages.contains(request.getRequestURI()) ) {
+
+            Integer userId = (Integer) request.getSession().getAttribute(AbstractController.userSessionKey);
+
+            if (userId != null) {
+                User user = userDao.findOne(userId);
+
+                if (user != null)
+                    return true;
+            }
+
+            response.sendRedirect("/login");
+            return false;
+        }
+
+        return true;
+    }
+
+}
+
+    @Bean
+    public RedisTemplate<String, Object> redisTemplate() {
+        final RedisTemplate<String, Object> template = new RedisTemplate<String, Object>();
+        template.setConnectionFactory(jedisConnectionFactory());
+        template.setValueSerializer(new GenericToStringSerializer<Object>(Object.class));
+        return template;
+    }
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
+
+@RestController
+@RequestMapping("/api/v1/clients")
+public class BootmonClientController {
+
+    @Autowired
+    BootmonClientService bootmonClientService;
+
+    @PostMapping
+    public HttpEntity<BootmonClient> create(@RequestBody BootmonClient bootmonClient) {
+        bootmonClientService.saveBootmonClient(bootmonClient);
+
+        bootmonClient.add(linkTo(methodOn(BootmonClientController.class)
+                .create(bootmonClient))
+                .slash(bootmonClient.getName())
+                .withSelfRel());
+
+        return new ResponseEntity<>(bootmonClient, HttpStatus.OK);
+    }
+}
+
+    /**
+     * The server adapter.
+     */
+    private static class ServerAdapter implements ch.qos.logback.access.spi.ServerAdapter {
+
+        /**
+         * The HTTP server exchange.
+         */
+        private final HttpServerExchange exchange;
+
+        /**
+         * Constructs an instance.
+         *
+         * @param exchange the HTTP server exchange.
+         */
+        private ServerAdapter(HttpServerExchange exchange) {
+            this.exchange = exchange;
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public long getRequestTimestamp() {
+            long currentTimeMillis = System.currentTimeMillis();
+            long nanoTime = System.nanoTime();
+            long requestStartTime = exchange.getRequestStartTime();
+            return currentTimeMillis - TimeUnit.NANOSECONDS.toMillis(nanoTime - requestStartTime);
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public int getStatusCode() {
+            return exchange.getStatusCode();
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public long getContentLength() {
+            return exchange.getResponseBytesSent();
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public Map<String, String> buildResponseHeaderMap() {
+            Map<String, String> result = new HashMap<>();
+            HeaderMap headers = exchange.getResponseHeaders();
+            for (HeaderValues header : headers) {
+                result.put(header.getHeaderName().toString(), header.getFirst());
+            }
+            return result;
+        }
+
+    }
+	
+import net.rakugakibox.spring.boot.logback.access.test.LogbackAccessEventQueuingAppenderRule;
+import net.rakugakibox.spring.boot.logback.access.test.LogbackAccessEventQueuingListener;
+import net.rakugakibox.spring.boot.logback.access.test.LogbackAccessEventQueuingListenerConfiguration;
+import net.rakugakibox.spring.boot.logback.access.test.LogbackAccessEventQueuingListenerRule;
+import net.rakugakibox.spring.boot.logback.access.test.TestControllerConfiguration;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.RuleChain;
+import org.junit.rules.TestRule;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.rule.OutputCapture;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.junit4.SpringRunner;
+import static net.rakugakibox.spring.boot.logback.access.test.ResponseEntityAssert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * The base class for testing to use {@code <springProperty>} tag.
+ */
+@RunWith(SpringRunner.class)
+@SpringBootTest(
+        value = {
+                "logback.access.config=classpath:logback-access.propertied.xml",
+                "logback.access.test.console.pattern.prefix=>>>",
+                "logback.access.test.console.pattern.suffix=<<<",
+        },
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
+)
+public abstract class AbstractSpringPropertyTest {
+
+    /**
+     * The output capture rule.
+     */
+    private final OutputCapture outputCapture = new OutputCapture();
+
+    /**
+     * The REST template.
+     */
+    @Autowired
+    protected TestRestTemplate rest;
+
+    /**
+     * Creates a test rule.
+     *
+     * @return a test rule.
+     */
+    @Rule
+    public TestRule rule() {
+        return RuleChain
+                .outerRule(new LogbackAccessEventQueuingAppenderRule())
+                .around(new LogbackAccessEventQueuingListenerRule())
+                .around(outputCapture);
+    }
+
+    /**
+     * Tests a Logback-access event.
+     */
+    @Test
+    public void logbackAccessEvent() {
+
+        ResponseEntity<String> response = rest.getForEntity("/test/text", String.class);
+        LogbackAccessEventQueuingListener.appendedEventQueue.pop();
+
+        assertThat(response).hasStatusCode(HttpStatus.OK);
+        assertThat(outputCapture.toString())
+                .containsSequence(">>>", "127.0.0.1", "GET", "/test/text", "HTTP/1.1", "200", "<<<");
+
+    }
+
+    /**
+     * The base class of context configuration.
+     */
+    @EnableAutoConfiguration
+    @Import({LogbackAccessEventQueuingListenerConfiguration.class, TestControllerConfiguration.class})
+    public static abstract class AbstractContextConfiguration {
+    }
+}
 ----------------------------------------------------------------------------------------
+create table UserConnection (userId varchar(255) not null,
+    providerId varchar(255) not null,
+    providerUserId varchar(255),
+    rank int not null,
+    displayName varchar(255),
+    profileUrl varchar(512),
+    imageUrl varchar(512),
+    accessToken varchar(255) not null,
+    secret varchar(255),
+    refreshToken varchar(255),
+    expireTime bigint,
+    primary key (userId, providerId, providerUserId));
+create unique index UserConnectionRank on UserConnection(userId, providerId, rank);
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
