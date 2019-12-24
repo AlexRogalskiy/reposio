@@ -4037,6 +4037,58 @@ public abstract class Base64Alphabet extends Alphabet {
 	
 	https://github.com/jmesnil/wildfly-common/tree/master/src/main/java/org/wildfly/common
 ==============================================================================================================
+// -*- Mode: c++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+
+//
+
+// Copyright (C) 2019 Opera Software AS.  All rights reserved.
+
+//
+
+// This file is an original work developed by Opera Software AS
+
+ 
+
+import Resources from '../services/resources.js'
+
+import Monday from './main.js'
+
+ 
+
+document.ready().then(async () => {
+
+  await Resources.load('startpage');
+
+  if (!opr.Toolkit.isDebug()) {
+
+    await loader.preload('modals/');
+
+  }
+
+  await Monday.init();
+
+  opr.Toolkit.render(Monday, document.body);
+
+});
+
+window.addEventListener('keydown', evt => {
+
+  if (evt.code === 'Tab') {
+
+    document.documentElement.classList.add('keyboard-focus');
+
+  }
+
+}, true);
+
+ 
+
+window.addEventListener('mousedown', evt => {
+
+  document.documentElement.classList.remove('keyboard-focus');
+
+}, true);
+==============================================================================================================
 import java.util.ArrayList;
 import java.util.Collection;
 import org.mocksy.Request;
