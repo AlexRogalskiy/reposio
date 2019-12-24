@@ -445,8 +445,22 @@ public final class Tuple3<T1, T2, T3> implements Tuple, Comparable<Tuple3<T1, T2
     public String toString() {
         return "(" + _1 + ", " + _2 + ", " + _3 + ")";
     }
+}
+--------------------------------------------------------------------------------------------------------
+@ExtendWith({
+        WiremockResolver.class,
+        WiremockUriResolver.class
+})
+class WiremockJUnit5Test {
 
+    @Test
+    void shouldInjectWiremock(@Wiremock WireMockServer server, @WiremockUri String uri) {
+        customize(server); // your setup
+        SomeApiClient api = SomeApiClient.connect(uri);
 
+        Response response = api.call();
+        assertThat(response.headers(), hasSize(1));
+    }
 }
 --------------------------------------------------------------------------------------------------------
 @TestPropertySource(locations = "classpath:/test.properties")
@@ -466,6 +480,334 @@ public class KafkaTest {
       cluster.observe(on("test-topic", 3).useDefaults());
     }
   }
+}
+--------------------------------------------------------------------------------------------------------
+public enum Page {
+    
+    FIRST("first.html"),
+    SECOND("second.html"),
+    HOTKEYS("hotkeys.html"),
+    ALERT("alert.html"),
+    FRAMES("frames.html"),
+    DRAG("drag.html");
+    
+    private final String name;
+
+    Page(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kodedu.cloudterm.service.TerminalService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.socket.CloseStatus;
+import org.springframework.web.socket.TextMessage;
+import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.socket.handler.TextWebSocketHandler;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+public class TerminalSocket extends TextWebSocketHandler {
+
+    private final TerminalService terminalService;
+
+    @Autowired
+    public TerminalSocket(TerminalService terminalService) {
+        this.terminalService = terminalService;
+    }
+
+    @Override
+    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
+        terminalService.setWebSocketSession(session);
+        super.afterConnectionEstablished(session);
+    }
+
+    @Override
+    protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
+        Map<String, String> messageMap = getMessageMap(message);
+
+        if (messageMap.containsKey("type")) {
+            String type = messageMap.get("type");
+
+            switch (type) {
+                case "TERMINAL_INIT":
+                    terminalService.onTerminalInit();
+                    break;
+                case "TERMINAL_READY":
+                    terminalService.onTerminalReady();
+                    break;
+                case "TERMINAL_COMMAND":
+                    terminalService.onCommand(messageMap.get("command"));
+                    break;
+                case "TERMINAL_RESIZE":
+                    terminalService.onTerminalResize(messageMap.get("columns"), messageMap.get("rows"));
+                    break;
+                default:
+                    throw new RuntimeException("Unrecodnized action");
+            }
+        }
+    }
+
+    private Map<String, String> getMessageMap(TextMessage message) {
+        try {
+            Map<String, String> map = new ObjectMapper().readValue(message.getPayload(), new TypeReference<Map<String, String>>() {
+            });
+
+            return map;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return new HashMap<>();
+    }
+
+    @Override
+    public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
+        super.handleTransportError(session, exception);
+    }
+
+    @Override
+    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
+        super.afterConnectionClosed(session, status);
+    }
+
+    @Override
+    public boolean supportsPartialMessages() {
+        return super.supportsPartialMessages();
+    }
+}
+
+
+import com.kodedu.cloudterm.websocket.TerminalSocket;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.socket.WebSocketHandler;
+import org.springframework.web.socket.config.annotation.EnableWebSocket;
+import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
+import org.springframework.web.socket.handler.PerConnectionWebSocketHandler;
+
+@Configuration
+@EnableWebSocket
+public class WebSocketConfig implements WebSocketConfigurer {
+
+    @Override
+    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+        registry
+                .addHandler(terminalSocket(), "/terminal");
+    }
+
+    @Bean
+    public WebSocketHandler terminalSocket() {
+        WebSocketHandler webSocketHandler = new PerConnectionWebSocketHandler(TerminalSocket.class);
+        return webSocketHandler;
+    }
+}
+--------------------------------------------------------------------------------------------------------
+@Bean
+public KafkaAdmin admin() {
+    Map<String, Object> configs = new HashMap<>();
+    configs.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, ...);
+    return new KafkaAdmin(configs);
+}
+
+@Bean
+public NewTopic topic1() {
+    return TopicBuilder.name("thing1")
+            .partitions(10)
+            .replicas(3)
+            .compact()
+            .build();
+}
+
+@Bean
+public NewTopic topic2() {
+    return TopicBuilder.name("thing2")
+            .partitions(10)
+            .replicas(3)
+            .config(TopicConfig.COMPRESSION_TYPE_CONFIG, "zstd")
+            .build();
+}
+
+@Bean
+public NewTopic topic3() {
+    return TopicBuilder.name("thing3")
+            .assignReplicas(0, Arrays.asList(0, 1))
+            .assignReplicas(1, Arrays.asList(1, 2))
+            .assignReplicas(2, Arrays.asList(2, 0))
+            .config(TopicConfig.COMPRESSION_TYPE_CONFIG, "zstd")
+            .build();
+}
+
+public void sendToKafka(final MyOutputData data) {
+    final ProducerRecord<String, String> record = createRecord(data);
+
+    try {
+        template.send(record).get(10, TimeUnit.SECONDS);
+        handleSuccess(data);
+    }
+    catch (ExecutionException e) {
+        handleFailure(data, record, e.getCause());
+    }
+    catch (TimeoutException | InterruptedException e) {
+        handleFailure(data, record, e);
+    }
+}
+
+@SpringBootApplication
+public class KReplyingApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(KReplyingApplication.class, args);
+    }
+
+    @KafkaListener(id="server", topics = "kRequests")
+    @SendTo // use default replyTo expression
+    public String listen(String in) {
+        System.out.println("Server received: " + in);
+        return in.toUpperCase();
+    }
+
+    @Bean
+    public NewTopic kRequests() {
+        return TopicBuilder.name("kRequests")
+            .partitions(10)
+            .replicas(2)
+            .build();
+    }
+
+    @Bean // not required if Jackson is on the classpath
+    public MessagingMessageConverter simpleMapperConverter() {
+        MessagingMessageConverter messagingMessageConverter = new MessagingMessageConverter();
+        messagingMessageConverter.setHeaderMapper(new SimpleKafkaHeaderMapper());
+        return messagingMessageConverter;
+    }
+
+}
+
+
+@Configuration
+@EnableKafka
+public class Config implements KafkaListenerConfigurer {
+
+    @Autowired
+    private LocalValidatorFactoryBean validator;
+    ...
+
+    @Override
+    public void configureKafkaListeners(KafkaListenerEndpointRegistrar registrar) {
+      registrar.setValidator(this.validator);
+    }
+}
+
+@KafkaListener(id="validated", topics = "annotated35", errorHandler = "validationErrorHandler",
+      containerFactory = "kafkaJsonListenerContainerFactory")
+public void validatedListener(@Payload @Valid ValidatedClass val) {
+    ...
+}
+
+@Bean
+public KafkaListenerErrorHandler validationErrorHandler() {
+    return (m, e) -> {
+        ...
+    };
+}
+
+
+@KafkaListener(topics = "annotated21")
+@SendTo("!{request.value()}") // runtime SpEL
+public String replyingListener(String in) {
+    ...
+}
+
+@KafkaListener(topics = "${some.property:annotated22}")
+@SendTo("#{myBean.replyTopic}") // config time SpEL
+public Collection<String> replyingBatchListener(List<String> in) {
+    ...
+}
+
+@KafkaListener(topics = "annotated23", errorHandler = "replyErrorHandler")
+@SendTo("annotated23reply") // static reply topic definition
+public String replyingListenerWithErrorHandler(String in) {
+    ...
+}
+...
+@KafkaListener(topics = "annotated25")
+@SendTo("annotated25reply1")
+public class MultiListenerSendTo {
+
+    @KafkaHandler
+    public String foo(String in) {
+        ...
+    }
+
+    @KafkaHandler
+    @SendTo("!{'annotated25reply2'}")
+    public String bar(@Payload(required = false) KafkaNull nul,
+            @Header(KafkaHeaders.RECEIVED_MESSAGE_KEY) int key) {
+        ...
+    }
+
+}
+
+
+@Bean
+public ConcurrentKafkaListenerContainerFactory<Integer, String> kafkaListenerContainerFactory() {
+    ConcurrentKafkaListenerContainerFactory<Integer, String> factory =
+        new ConcurrentKafkaListenerContainerFactory<>();
+    factory.setConsumerFactory(cf());
+    factory.setReplyTemplate(template());
+    factory.setReplyHeadersConfigurer((k, v) -> k.equals("cat"));
+    return factory;
+}
+
+@Bean
+public ConcurrentKafkaListenerContainerFactory<Integer, String> kafkaListenerContainerFactory() {
+    ConcurrentKafkaListenerContainerFactory<Integer, String> factory =
+        new ConcurrentKafkaListenerContainerFactory<>();
+    factory.setConsumerFactory(cf());
+    factory.setReplyTemplate(template());
+    factory.setReplyHeadersConfigurer(new ReplyHeadersConfigurer() {
+
+      @Override
+      public boolean shouldCopy(String headerName, Object headerValue) {
+        return false;
+      }
+
+      @Override
+      public Map<String, Object> additionalHeaders() {
+        return Collections.singletonMap("qux", "fiz");
+      }
+
+    });
+    return factory;
+}
+--------------------------------------------------------------------------------------------------------
+public class TestBean {
+
+    @Size(min = 1, max = 2)
+    private Seq<@Max(10) Integer> seqWithOneOrTwoDecimals = List.of(0);
+
+    @NotEmpty
+    private Either<String, @Positive Integer> mustNotBeLeftOrNull = Either.right(42);
+    
+    private Tuple3<@NotBlank String, @NotBlank String, @NotNull Integer> allElementsMustBeProvided =
+        Tuple.of("a", "x", 3);
+
+    @NotNull
+    @NotEmpty
+    private Map<@Pattern(regexp = "^[a-z]$") String, @NotBlank String> allCharKeysMustHaveNonBlankValues =
+        HashMap.of("a", "Alice");
+    
+    // getters and setters
+    
 }
 --------------------------------------------------------------------------------------------------------
 @RestController

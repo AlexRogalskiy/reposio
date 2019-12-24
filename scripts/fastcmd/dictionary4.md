@@ -3055,6 +3055,174 @@ https://github.com/glytching/dragoman/blob/master/src/main/java/io/github/glytch
 ::-webkit-scrollbar-corner {
   background-color: transparent;
 }
+
+var restman = restman || {};
+restman.ui = restman.ui || {};
+
+(function() {
+    'use strict';
+
+    restman.ui.editors = {
+        _editors: {},
+
+        create: function(textareaId, readonly) {
+            var options = { 'lineNumbers': true, 'matchBrackets': true }
+            if (readonly) {
+                options['readOnly'] = true;
+            }
+            restman.ui.editors._editors[textareaId] = CodeMirror.fromTextArea($(textareaId)[0], options);
+            return textareaId;
+        },
+
+        get: function(id) {
+            return restman.ui.editors._editors[id];
+        },
+
+        setValue: function(id, value) {
+            var e = restman.ui.editors.get(id);
+            e.setValue(value);
+            e.refresh();
+        }
+    };
+})();
+==============================================================================================================
+uuidgen
+
+alias ts='date +%s'
+
+random-string()
+{
+    cat /dev/urandom | env LC_CTYPE=C tr -dc 'a-zA-Z0-9' | fold -w ${1:-32} | head -n ${1:-1}
+}
+
+random-string 10 4
+==============================================================================================================
+language: java
+sudo: false
+
+jdk:
+ - openjdk8
+
+install:
+  - mvn --settings .travis/settings.xml install -DskipTests=true -Dgpg.skip -Dmaven.javadoc.skip=true -B -V
+
+before_install:
+  - if [ ! -z "$GPG_SECRET_KEYS" ]; then echo $GPG_SECRET_KEYS | base64 --decode | $GPG_EXECUTABLE --import; fi
+  - if [ ! -z "$GPG_OWNERTRUST" ]; then echo $GPG_OWNERTRUST | base64 --decode | $GPG_EXECUTABLE --import-ownertrust; fi
+
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+
+deploy:
+  - provider: script
+    script: .travis/deploy.sh
+    skip_cleanup: true
+    on:
+      repo: lanwen/wiremock-junit5
+      branch: master
+  - provider: script
+    script: .travis/deploy.sh
+    skip_cleanup: true
+    on:
+      repo: lanwen/wiremock-junit5
+      tags: true
+
+notifications:
+ email: false
+
+cache:
+  directories:
+    - $HOME/.m2
+	
+	
+if [ ! -z "$TRAVIS_TAG" ]
+then
+    echo "on a tag -> set pom.xml <version> to $TRAVIS_TAG"
+    mvn --settings .travis/settings.xml org.codehaus.mojo:versions-maven-plugin:2.1:set -DnewVersion=$TRAVIS_TAG 1>/dev/null 2>/dev/null
+else
+    echo "not on a tag -> keep SNAPSHOT version in pom.xml"
+fi
+
+mvn clean deploy --settings .travis/settings.xml -DskipTests=true -B -U
+==============================================================================================================
+// get the data	
+d3.csv("data/spinningheart.csv", function(error, links) {
+			
+	var nodes = {};
+
+	// process the incoming data
+	links.forEach(function(link) {
+	    link.source = nodes[link.source] || 
+	        (nodes[link.source] = {name: link.source});
+	    link.target = nodes[link.target] || 
+	        (nodes[link.target] = {name: link.target});
+	    link.value = +link.value;
+	});
+	
+	var width = 900,
+	    height = 600;
+
+	var color = d3.scale.category20();
+
+	var force = d3.layout.force()
+	    // negative value results in node repulsion
+	    .charge(-150)
+	    // sets the target distance between linked
+	    .linkDistance(275)
+	    .size([width, height]);
+
+	var svg = d3.select("#graph").append("svg")
+	    .attr("width", width)
+	    .attr("height", height);
+				
+	force.nodes(d3.values(nodes))
+		.links(links)
+		.start();
+		
+	// add the connections	
+	var link = svg.selectAll(".link")
+		.data(links)
+		.enter().append("line")
+		.attr("class", "link")
+ 		.style("stroke-width", function(d) { return Math.sqrt(d.value); });
+						
+	// create the groups					
+	var node = svg.selectAll(".node")
+		.data(force.nodes())
+		.enter()
+		.append("g")
+		.attr("class", "node")
+		.style("fill", function(d) { return color(d.group); })
+		.call(force.drag);
+
+	// assign a circle to each group
+	node.append("circle")
+		.attr("r", 5);
+	
+	node.append("text")
+	.attr({
+	    "x": 12,
+	    "y": ".35em",
+	    "class":"nodelabel",
+        "stroke":"grey"
+        })
+		.text(function(d) { return d.name; });
+
+	force.on("tick", function() {
+		link.attr("x1", function(d) { return d.source.x; })
+			.attr("y1", function(d) { return d.source.y; })
+		  .attr("x2", function(d) { return d.target.x; })
+		  .attr("y2", function(d) { return d.target.y; });
+
+		node
+			.attr("cx", function(d) { return d.x; })
+			.attr("cy", function(d) { return d.y; });
+		
+		node
+			.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });		
+	});
+});
 ==============================================================================================================
 /* Defaults (light theme) */
 
