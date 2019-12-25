@@ -9839,6 +9839,17 @@ public class Util
         }
     }
 ----------------------------------------------------------------------------------------
+@KafkaListener(id = "messageReturned", topics = "someTopic")
+public Message<?> listen(String in, @Header(KafkaHeaders.REPLY_TOPIC) byte[] replyTo,
+        @Header(KafkaHeaders.CORRELATION_ID) byte[] correlation) {
+    return MessageBuilder.withPayload(in.toUpperCase())
+            .setHeader(KafkaHeaders.TOPIC, replyTo)
+            .setHeader(KafkaHeaders.MESSAGE_KEY, 42)
+            .setHeader(KafkaHeaders.CORRELATION_ID, correlation)
+            .setHeader("someOtherHeader", "someValue")
+            .build();
+}
+----------------------------------------------------------------------------------------
 import com.github.izhangzhihao.SSMSeedProject.Utils.SHAUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;

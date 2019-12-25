@@ -1290,6 +1290,193 @@ class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     }
 }
 ==============================================================================================================
+@Bean
+public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory() {
+    ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory();
+    factory.setConsumerFactory(consumerFactory());
+    factory.getContainerProperties().setAckOnError(false);
+    factory.getContainerProperties().setAckMode(AckMode.RECORD);
+    factory.setErrorHandler(new SeekToCurrentErrorHandler());
+    return factory;
+}
+
+@Bean
+public SeekToCurrentErrorHandler errorHandler(BiConsumer<ConsumerRecord<?, ?>, Exception> recoverer) {
+    SeekToCurrentErrorHandler handler = new SeekToCurrentErrorHandler(recoverer);
+    handler.addNotRetryableException(IllegalArgumentException.class);
+    return handler;
+}
+
+DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(template,
+        (r, e) -> {
+            if (e instanceof FooException) {
+                return new TopicPartition(r.topic() + ".Foo.failures", r.partition());
+            }
+            else {
+                return new TopicPartition(r.topic() + ".other.failures", r.partition());
+            }
+        });
+ErrorHandler errorHandler = new SeekToCurrentErrorHandler(recoverer, new FixedBackOff(0L, 2L));
+
+@Bean
+public KafkaJaasLoginModuleInitializer jaasConfig() throws IOException {
+    KafkaJaasLoginModuleInitializer jaasConfig = new KafkaJaasLoginModuleInitializer();
+    jaasConfig.setControlFlag("REQUIRED");
+    Map<String, String> options = new HashMap<>();
+    options.put("useKeyTab", "true");
+    options.put("storeKey", "true");
+    options.put("keyTab", "/etc/security/keytabs/kafka_client.keytab");
+    options.put("principal", "kafka-client-1@EXAMPLE.COM");
+    jaasConfig.setOptions(options);
+    return jaasConfig;
+}
+
+@Bean(name = KafkaStreamsDefaultConfiguration.DEFAULT_STREAMS_CONFIG_BEAN_NAME)
+public KafkaStreamsConfiguration kStreamsConfigs() {
+    Map<String, Object> props = new HashMap<>();
+    ...
+    props.put(StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
+            RecoveringDeserializationExceptionHandler.class);
+    props.put(RecoveringDeserializationExceptionHandler.KSTREAM_DESERIALIZATION_RECOVERER, recoverer());
+    ...
+    return new KafkaStreamsConfiguration(props);
+}
+
+@Bean
+public DeadLetterPublishingRecoverer recoverer() {
+    return new DeadLetterPublishingRecoverer(kafkaTemplate(),
+            (record, ex) -> new TopicPartition("recovererDLQ", -1));
+}
+==============================================================================================================
+@TestPropertySource(locations = "classpath:/test.properties")
+@EmbeddedKafka(topics = { "any-topic", "${kafka.topics.another-topic}" },
+        brokerProperties = { "log.dir=${kafka.broker.logs-dir}",
+                            "listeners=PLAINTEXT://localhost:${kafka.broker.port}",
+                            "auto.create.topics.enable=${kafka.broker.topics-enable:true}" }
+        brokerPropertiesLocation = "classpath:/broker.properties")
+==============================================================================================================
+@EmbeddedKafka
+public class EmbeddedKafkaConditionTests {
+
+	@Test
+	public void test(EmbeddedKafkaBroker broker) {
+		String brokerList = broker.getBrokersAsString();
+        ...
+	}
+
+}
+==============================================================================================================
+@Bean
+public KStream<byte[], byte[]> kStream(StreamsBuilder kStreamBuilder,
+        MessagingTransformer<byte[], byte[], byte[]> transformer)  transformer) {
+    KStream<byte[], byte[]> stream = kStreamBuilder.stream(STREAMING_TOPIC1);
+    stream.mapValues((ValueMapper<byte[], byte[]>) String::toUpperCase)
+            ...
+            .transform(() -> transformer)
+            .to(streamingTopic2);
+
+    stream.print(Printed.toSysOut());
+
+    return stream;
+}
+
+@Bean
+@DependsOn("flow")
+public MessagingTransformer<byte[], byte[], String> transformer(
+        MessagingFunction function) {
+
+    MessagingMessageConverter converter = new MessagingMessageConverter();
+    converter.setHeaderMapper(new SimpleKafkaHeaderMapper("*"));
+    return new MessagingTransformer<>(function, converter);
+}
+
+@Bean
+public IntegrationFlow flow() {
+    return IntegrationFlows.from(MessagingFunction.class)
+        ...
+        .get();
+}
+==============================================================================================================
+language: java
+dist: trusty
+jdk:
+  - oraclejdk8
+env:
+  global:
+  - secure: D8Z2pmvfy0LETBW5A6xzdU/Q8dEkbVAptbofWZIpHEl4dWC6vVux3A5MeRIXp6Sv5n/Vyw4pIh+dXcUrrLtofhLksTLIEgeNpG6hC+ctMYMxW63U2skIxa6RQ8iZy5/qQ9btJH3hd4hJI3u2sQ2NgHpw/KCj1sRrT8aIrS9QQl4zxxLd8D8HPUlr3O/eV1Ik38quCPmmrp/6jRJnZnE1Y3IcNqt/L0CLsZwqued6WyqWBU/2yskGxmij5i88RPgxN1oau6HUtPW8lqJhwdnTOgi9/t9kDkItopPC25A6gSGwwI75gF1jvWe95aQQfqLwHnOZcjEEBs3836ibQT5PPTr9vtKLssH35uM22pAWIlP38zilOIVN4Jy3nYC983ef7ZtBLuBFBatmOUBYOrlFN4GdlVPUOcbZFsBnjQnDoSADJ+fDt6Q/WJ2knudfc82kle0Jul8fIKP5OIGLk1ZhhuBYkbM6k8l3offk/cRIhVI5D94zm2UJkw+8MAlP6ffcPNMUzCU9YofaB0lX3j5/JKwntph27VnNUsplsUtM0uOEtN+4VuzdzAXDnm1yp4fGObffrMUJ9coG+kEBYaKFoLgFoVv1H76Xn1FLWtbqBOnC6Se5FPoxYVD2eYMjNRuEP9sYs63jS0oYjWj+Z2z1rkH26BgyGcCZxCj7qTzvTwE=
+  - secure: DTfPB0fMpchGnbeV5YVevVQBoqow1WCeSZqgjKigsVgkKTFhuX03Wnbjce7E669p2vioPclxrF6jvjegDZCexIjUYNRZhfNZtvaZ6/kzwOC9vlC9b+5WJ6XSG6gm7YZaQ2TP353c8bqBSyVW2LvECtwZZxM3x6pt8zA2UX100uh/+0Ftc3QbBoBXZkgaXfCT84P/OO52hPuZZl04u+TJabrwt3TPxRUIcxTrGUnW37wOPxyYt6qcFZplAmjorm6vFIcE0FNH90yViqEp3rKBtQGgDW0XnmoTYLRCEDDdRmTyGFoOjjnpZuaA41iiUJx6F3H63zAQOpB8mefjvYGKcnvIVHTHWfPOwNycSiATQ9g8QV5Z3y6HE+Kk5wDcL/USiOl4tn651s4eY+tE2sswpRyMfQa/f6x73xYT0Wqa22Xss4uzLtVJhxcZIku8pxDSJg40XQxSUXwuwfU3OJvNjsKVPjXnZ3QYrvQN7A6ZEDRw60BLQ+XVvlHSdLAeWPbtUWeUc1ke/x7QhTGIskkGlvV9AlW6LQDkfX5YwjQ9ZYCyAmfSjmN4J01oBQbbj+/XoS1iIna7VpWEEPbMw6sG+CF3jyk14EwmU2l8G3ZxtXBkzzCH5joIOTQZh8iUZ1BxTqBWlExHlcaUHJxG12udc/MLzkKUDIcOEIOlkzuwfhU=
+script:
+  - ./gradlew clean check --refresh-dependencies
+  - ./gradlew clean check --refresh-dependencies -PfasterxmlVersion=2.8.4
+  - ./gradlew clean check --refresh-dependencies -PfasterxmlVersion=2.9.1
+  - ./gradlew codeCoverageReport
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+  - ./gradlew uploadArchives -PnexusUsername="${SONATYPE_USER}" -PnexusPassword="${SONATYPE_PASS}"
+==============================================================================================================
+@SpringBootApplication
+public class KReplyingApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(KReplyingApplication.class, args);
+    }
+
+    @KafkaListener(id="server", topics = "kRequests")
+    @SendTo // use default replyTo expression
+    public String listen(String in) {
+        System.out.println("Server received: " + in);
+        return in.toUpperCase();
+    }
+
+    @Bean
+    public NewTopic kRequests() {
+        return new NewTopic("kRequests", 10, (short) 2);
+    }
+
+    @Bean // not required if Jackson is on the classpath
+    public MessagingMessageConverter simpleMapperConverter() {
+        MessagingMessageConverter messagingMessageConverter = new MessagingMessageConverter();
+        messagingMessageConverter.setHeaderMapper(new SimpleKafkaHeaderMapper());
+        return messagingMessageConverter;
+    }
+
+}
+==============================================================================================================
+#Bean
+public ConcurrentKafkaListenerContainerFactory kafkaListenerContainerFactory() {
+ConcurrentKafkaListenerContainerFactory factory = new ConcurrentKafkaListenerContainerFactory();
+factory.setConsumerFactory(new DefaultKafkaConsumerFactory<>(kafkaProps()));
+factory.getContainerProperties().setAckOnError(false);
+factory.getContainerProperties().setErrorHandler(new SeekToCurrentErrorHandler());
+factory.getContainerProperties().setAckMode(AbstractMessageListenerContainer.AckMode.MANUAL);
+return factory;
+}
+
+@Bean
+public ConcurrentKafkaListenerContainerFactory kafkaListenerContainerFactory(
+    ConcurrentKafkaListenerContainerFactoryConfigurer configurer,
+    ConsumerFactory<Object, Object> kafkaConsumerFactory,
+    KafkaTemplate<Object, Object> template) {
+  ConcurrentKafkaListenerContainerFactory<Object, Object> factory = new ConcurrentKafkaListenerContainerFactory<>();
+  configurer.configure(factory, kafkaConsumerFactory);
+  factory.setErrorHandler(new SeekToCurrentErrorHandler(
+      new DeadLetterPublishingRecoverer(template), 3));
+  return factory;
+}
+
+@KafkaListener(id = "fooGroup", topics = "topic1")
+public void listen(String in) {
+  logger.info("Received: " + in);
+  if (in.startsWith("foo")) {
+    throw new RuntimeException("failed");
+  }
+}
+
+@KafkaListener(id = "dltGroup", topics = "topic1.DLT")
+public void dltListen(String in) {
+  logger.info("Received from DLT: " + in);
+}
+==============================================================================================================
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -3024,6 +3211,994 @@ public class StopWatch {
 
 
 https://github.com/glytching/dragoman/blob/master/src/main/java/io/github/glytching/dragoman/store/mongo/MongoProviderImpl.java
+==============================================================================================================
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics;
+
+import javax.swing.text.Segment;
+import javax.swing.text.TabExpander;
+import javax.swing.text.Utilities;
+
+import org.rosuda.JGR.toolkit.JGRPrefs;
+
+/**
+ * Class with several utility functions used by jEdit's syntax colorizing
+ * subsystem.
+ * 
+ * @author Slava Pestov
+ * @version $Id: SyntaxUtilities.java,v 1.9 1999/12/13 03:40:30 sp Exp $
+ */
+public class SyntaxUtilities {
+	/**
+	 * Checks if a subregion of a <code>Segment</code> is equal to a string.
+	 * 
+	 * @param ignoreCase
+	 *            True if case should be ignored, false otherwise
+	 * @param text
+	 *            The segment
+	 * @param offset
+	 *            The offset into the segment
+	 * @param match
+	 *            The string to match
+	 */
+	public static boolean regionMatches(boolean ignoreCase, Segment text, int offset, String match) {
+		int length = offset + match.length();
+		char[] textArray = text.array;
+		if (length > text.offset + text.count)
+			return false;
+		for (int i = offset, j = 0; i < length; i++, j++) {
+			char c1 = textArray[i];
+			char c2 = match.charAt(j);
+			if (ignoreCase) {
+				c1 = Character.toUpperCase(c1);
+				c2 = Character.toUpperCase(c2);
+			}
+			if (c1 != c2)
+				return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Checks if a subregion of a <code>Segment</code> is equal to a character
+	 * array.
+	 * 
+	 * @param ignoreCase
+	 *            True if case should be ignored, false otherwise
+	 * @param text
+	 *            The segment
+	 * @param offset
+	 *            The offset into the segment
+	 * @param match
+	 *            The character array to match
+	 */
+	public static boolean regionMatches(boolean ignoreCase, Segment text, int offset, char[] match) {
+		int length = offset + match.length;
+		char[] textArray = text.array;
+		if (length > text.offset + text.count)
+			return false;
+		for (int i = offset, j = 0; i < length; i++, j++) {
+			char c1 = textArray[i];
+			char c2 = match[j];
+			if (ignoreCase) {
+				c1 = Character.toUpperCase(c1);
+				c2 = Character.toUpperCase(c2);
+			}
+			if (c1 != c2)
+				return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Returns the default style table. This can be passed to the
+	 * <code>setStyles()</code> method of <code>SyntaxDocument</code> to use
+	 * the default syntax styles.
+	 */
+	public static SyntaxStyle[] getDefaultSyntaxStyles() {
+		SyntaxStyle[] styles = new SyntaxStyle[Token.ID_COUNT];
+
+		styles[Token.COMMENT1] = new SyntaxStyle(JGRPrefs.COMMENTColor, JGRPrefs.COMMENT_IT, false);
+		styles[Token.COMMENT2] = new SyntaxStyle(JGRPrefs.COMMENTColor, JGRPrefs.COMMENT_IT, false);
+		styles[Token.KEYWORD1] = new SyntaxStyle(JGRPrefs.KEYWORDColor, false, JGRPrefs.KEYWORD_BOLD);
+		styles[Token.KEYWORD2] = new SyntaxStyle(JGRPrefs.OBJECTColor, JGRPrefs.OBJECT_IT, false);
+		styles[Token.KEYWORD3] = new SyntaxStyle(Color.darkGray, false, false); //not used?
+		styles[Token.LITERAL1] = new SyntaxStyle(JGRPrefs.QUOTEColor, false, false);
+		styles[Token.LITERAL2] = new SyntaxStyle(JGRPrefs.KEYWORDColor, false, true);
+		styles[Token.LABEL] = new SyntaxStyle(new Color(0x990033), false, true);//not used?
+		styles[Token.OPERATOR] = new SyntaxStyle(Color.black, false, true);
+		styles[Token.INVALID] = new SyntaxStyle(Color.red, false, true);
+
+		return styles;
+	}
+
+	/**
+	 * Paints the specified line onto the graphics context. Note that this
+	 * method munges the offset and count values of the segment.
+	 * 
+	 * @param line
+	 *            The line segment
+	 * @param tokens
+	 *            The token list for the line
+	 * @param styles
+	 *            The syntax style list
+	 * @param expander
+	 *            The tab expander used to determine tab stops. May be null
+	 * @param gfx
+	 *            The graphics context
+	 * @param x
+	 *            The x co-ordinate
+	 * @param y
+	 *            The y co-ordinate
+	 * @return The x co-ordinate, plus the width of the painted string
+	 */
+	public static int paintSyntaxLine(Segment line, Token tokens, SyntaxStyle[] styles, TabExpander expander, Graphics gfx, int x, int y) {
+		Font defaultFont = gfx.getFont();
+		Color defaultColor = gfx.getColor();
+
+		int offset = 0;
+		for (;;) {
+			byte id = tokens.id;
+			if (id == Token.END)
+				break;
+
+			int length = tokens.length;
+			if (id == Token.NULL) {
+				if (!defaultColor.equals(gfx.getColor()))
+					gfx.setColor(defaultColor);
+				if (!defaultFont.equals(gfx.getFont()))
+					gfx.setFont(defaultFont);
+			} else
+				styles[id].setGraphicsFlags(gfx, defaultFont);
+
+			line.count = length;
+			x = Utilities.drawTabbedText(line, x, y, gfx, expander, 0);
+			line.offset += length;
+			offset += length;
+
+			tokens = tokens.next;
+		}
+
+		return x;
+	}
+
+	// private members
+	private SyntaxUtilities() {
+	}
+}
+
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Toolkit;
+
+/**
+ * A simple text style class. It can specify the color, italic flag, and bold
+ * flag of a run of text.
+ * 
+ * @author Slava Pestov
+ * @version $Id: SyntaxStyle.java,v 1.6 1999/12/13 03:40:30 sp Exp $
+ */
+public class SyntaxStyle {
+	/**
+	 * Creates a new SyntaxStyle.
+	 * 
+	 * @param color
+	 *            The text color
+	 * @param italic
+	 *            True if the text should be italics
+	 * @param bold
+	 *            True if the text should be bold
+	 */
+	public SyntaxStyle(Color color, boolean italic, boolean bold) {
+		this.color = color;
+		this.italic = italic;
+		this.bold = bold;
+	}
+
+	/**
+	 * Returns the color specified in this style.
+	 */
+	public Color getColor() {
+		return color;
+	}
+
+	/**
+	 * Returns true if no font styles are enabled.
+	 */
+	public boolean isPlain() {
+		return !(bold || italic);
+	}
+
+	/**
+	 * Returns true if italics is enabled for this style.
+	 */
+	public boolean isItalic() {
+		return italic;
+	}
+
+	/**
+	 * Returns true if boldface is enabled for this style.
+	 */
+	public boolean isBold() {
+		return bold;
+	}
+
+	/**
+	 * Returns the specified font, but with the style's bold and italic flags
+	 * applied.
+	 */
+	public Font getStyledFont(Font font) {
+		if (font == null)
+			throw new NullPointerException("font param must not" + " be null");
+		lastStyledFont = new Font(font.getFamily(), (bold ? Font.BOLD : 0) | (italic ? Font.ITALIC : 0), font.getSize());
+		return lastStyledFont;
+	}
+
+	/**
+	 * Returns the font metrics for the styled font.
+	 */
+	public FontMetrics getFontMetrics(Font font) {
+		if (font == null)
+			throw new NullPointerException("font param must not" + " be null");
+		lastStyledFont = new Font(font.getFamily(), (bold ? Font.BOLD : 0) | (italic ? Font.ITALIC : 0), font.getSize());
+		fontMetrics = Toolkit.getDefaultToolkit().getFontMetrics(lastStyledFont);
+		return fontMetrics;
+	}
+
+	/**
+	 * Sets the foreground color and font of the specified graphics context to
+	 * that specified in this style.
+	 * 
+	 * @param gfx
+	 *            The graphics context
+	 * @param font
+	 *            The font to add the styles to
+	 */
+	public void setGraphicsFlags(Graphics gfx, Font font) {
+		Font _font = getStyledFont(font);
+		gfx.setFont(_font);
+		gfx.setColor(color);
+	}
+
+	/**
+	 * Returns a string representation of this object.
+	 */
+	public String toString() {
+		return getClass().getName() + "[color=" + color + (italic ? ",italic" : "") + (bold ? ",bold" : "") + "]";
+	}
+
+	// private members
+	private Color color;
+
+	private boolean italic;
+
+	private boolean bold;
+
+	private Font lastStyledFont;
+
+	private FontMetrics fontMetrics;
+}
+
+
+spring.kafka.producer.value-serializer=org.springframework.kafka.support.serializer.JsonSerializer
+spring.kafka.producer.properties.spring.json.type.mapping=cat:com.mycat.Cat,hat:com.myhat.Hat
+
+
+senderProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+senderProps.put(JsonSerializer.TYPE_MAPPINGS, "cat:com.mycat.Cat, hat:com.myhat.hat");
+...
+consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+consumerProps.put(JsonDeSerializer.TYPE_MAPPINGS, "cat:com.yourcat.Cat, hat:com.yourhat.hat");
+
+
+
+producerProps.put(DelegatingSerializer.SERIALIZATION_SELECTOR_CONFIG,
+    "thing1:com.example.MyThing1Serializer, thing2:com.example.MyThing2Serializer")
+
+consumerProps.put(DelegatingDeserializer.SERIALIZATION_SELECTOR_CONFIG,
+    "thing1:com.example.MyThing1Deserializer, thing2:com.example.MyThing2Deserializer")
+==============================================================================================================
+@Bean
+public ConcurrentKafkaListenerContainerFactory kafkaListenerContainerFactory() {
+    ConcurrentKafkaListenerContainerFactory<String, String> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+    ...
+    factory.getContainerProperties().setIdleEventInterval(60000L);
+    ...
+    return factory;
+}
+@Bean
+public KafkaMessageListenerContainer(ConsumerFactory<String, String> consumerFactory) {
+    ContainerProperties containerProps = new ContainerProperties("topic1", "topic2");
+    ...
+    containerProps.setIdleEventInterval(60000L);
+    ...
+    KafkaMessageListenerContainer<String, String> container = new KafKaMessageListenerContainer<>(...);
+    return container;
+}
+
+
+public class Listener {
+
+    @KafkaListener(id = "qux", topics = "annotated")
+    public void listen4(@Payload String foo, Acknowledgment ack) {
+        ...
+    }
+
+    @EventListener(condition = "event.listenerId.startsWith('qux-')")
+    public void eventHandler(ListenerContainerIdleEvent event) {
+        ...
+    }
+}
+==============================================================================================================
+/*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*\
+   G E N E R A T O R   C R A F T E D
+\*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*/
+
+
+
+import java.io.Serializable;
+
+import java.util.Collection;
+
+/**
+ * Helper to replace reflective array access.
+ */
+interface ArrayType<T> {
+    @SuppressWarnings("unchecked")
+    static <T> ArrayType<T> obj() { return (ArrayType<T>) ObjectArrayType.INSTANCE; }
+
+    Class<T> type();
+    int lengthOf(Object array);
+    T getAt(Object array, int index);
+
+    Object empty();
+    void setAt(Object array, int index, T value) throws ClassCastException;
+    Object copy(Object array, int arraySize, int sourceFrom, int destinationFrom, int size);
+
+    @SuppressWarnings("unchecked")
+    static <T> ArrayType<T> of(Object array)  { return of((Class<T>) array.getClass().getComponentType()); }
+    static <T> ArrayType<T> of(Class<T> type) { return !type.isPrimitive() ? obj() : ofPrimitive(type); }
+    @SuppressWarnings("unchecked")
+    static <T> ArrayType<T> ofPrimitive(Class<T> type) {
+        if (boolean.class == type) {
+            return (ArrayType<T>) BooleanArrayType.INSTANCE;
+        } else if (byte.class == type) {
+            return (ArrayType<T>) ByteArrayType.INSTANCE;
+        } else if (char.class == type) {
+            return (ArrayType<T>) CharArrayType.INSTANCE;
+        } else if (double.class == type) {
+            return (ArrayType<T>) DoubleArrayType.INSTANCE;
+        } else if (float.class == type) {
+            return (ArrayType<T>) FloatArrayType.INSTANCE;
+        } else if (int.class == type) {
+            return (ArrayType<T>) IntArrayType.INSTANCE;
+        } else if (long.class == type) {
+            return (ArrayType<T>) LongArrayType.INSTANCE;
+        } else if (short.class == type) {
+            return (ArrayType<T>) ShortArrayType.INSTANCE;
+        } else {
+            throw new IllegalArgumentException(String.valueOf(type));
+        }
+    }
+
+    default Object newInstance(int length) { return copy(empty(), length); }
+
+    /** System.arrayCopy with same source and destination */
+    default Object copyRange(Object array, int from, int to) {
+        final int length = to - from;
+        return copy(array, length, from, 0, length);
+    }
+
+    /** Repeatedly group an array into equal sized sub-trees */
+    default Object grouped(Object array, int groupSize) {
+        final int arrayLength = lengthOf(array);
+        final Object results = obj().newInstance(1 + ((arrayLength - 1) / groupSize));
+        obj().setAt(results, 0, copyRange(array, 0, groupSize));
+
+        for (int start = groupSize, i = 1; start < arrayLength; i++) {
+            final int nextLength = Math.min(groupSize, arrayLength - (i * groupSize));
+            obj().setAt(results, i, copyRange(array, start, start + nextLength));
+            start += nextLength;
+        }
+
+        return results;
+    }
+
+    /** clone the source and set the value at the given position */
+    default Object copyUpdate(Object array, int index, T element) {
+        final Object copy = copy(array, index + 1);
+        setAt(copy, index, element);
+        return copy;
+    }
+
+    default Object copy(Object array, int minLength) {
+        final int arrayLength = lengthOf(array);
+        final int length = Math.max(arrayLength, minLength);
+        return copy(array, length, 0, 0, arrayLength);
+    }
+
+    /** clone the source and keep everything after the index (pre-padding the values with null) */
+    default Object copyDrop(Object array, int index) {
+        final int length = lengthOf(array);
+        return copy(array, length, index, index, length - index);
+    }
+
+    /** clone the source and keep everything before and including the index */
+    default Object copyTake(Object array, int lastIndex) {
+        return copyRange(array, 0, lastIndex + 1);
+    }
+
+    /** Create a single element array */
+    default Object asArray(T element) {
+        final Object result = newInstance(1);
+        setAt(result, 0, element);
+        return result;
+    }
+
+    /** Store the content of an iterator in an array */
+    static Object[] asArray(java.util.Iterator<?> it, int length) {
+        final Object[] array = new Object[length];
+        for (int i = 0; i < length; i++) {
+            array[i] = it.next();
+        }
+        return array;
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T> T asPrimitives(Class<?> primitiveClass, Iterable<?> values) {
+        final Object[] array = Array.ofAll(values).toJavaArray();
+        final ArrayType<T> type = of((Class<T>) primitiveClass);
+        final Object results = type.newInstance(array.length);
+        for (int i = 0; i < array.length; i++) {
+            type.setAt(results, i, (T) array[i]);
+        }
+        return (T) results;
+    }
+
+    final class BooleanArrayType implements ArrayType<Boolean>, Serializable {
+        private static final long serialVersionUID = 1L;
+        static final BooleanArrayType INSTANCE = new BooleanArrayType();
+        static final boolean[] EMPTY = new boolean[0];
+
+        private static boolean[] cast(Object array) { return (boolean[]) array; }
+
+        @Override
+        public Class<Boolean> type() { return boolean.class; }
+
+        @Override
+        public boolean[] empty() { return EMPTY; }
+
+        @Override
+        public int lengthOf(Object array) { return (array != null) ? cast(array).length : 0; }
+
+        @Override
+        public Boolean getAt(Object array, int index) { return cast(array)[index]; }
+
+        @Override
+        public void setAt(Object array, int index, Boolean value) throws ClassCastException {
+            if (value != null) {
+                cast(array)[index] = value;
+            } else {
+                throw new ClassCastException();
+            }
+        }
+
+        @Override
+        public Object copy(Object array, int arraySize, int sourceFrom, int destinationFrom, int size) {
+            return (size > 0)
+                    ? copyNonEmpty(array, arraySize, sourceFrom, destinationFrom, size)
+                    : new boolean[arraySize];
+        }
+        private static Object copyNonEmpty(Object array, int arraySize, int sourceFrom, int destinationFrom, int size) {
+            final boolean[] result = new boolean[arraySize];
+            System.arraycopy(array, sourceFrom, result, destinationFrom, size); /* has to be near the object allocation to avoid zeroing out the array */
+            return result;
+        }
+    }
+
+    final class ByteArrayType implements ArrayType<Byte>, Serializable {
+        private static final long serialVersionUID = 1L;
+        static final ByteArrayType INSTANCE = new ByteArrayType();
+        static final byte[] EMPTY = new byte[0];
+
+        private static byte[] cast(Object array) { return (byte[]) array; }
+
+        @Override
+        public Class<Byte> type() { return byte.class; }
+
+        @Override
+        public byte[] empty() { return EMPTY; }
+
+        @Override
+        public int lengthOf(Object array) { return (array != null) ? cast(array).length : 0; }
+
+        @Override
+        public Byte getAt(Object array, int index) { return cast(array)[index]; }
+
+        @Override
+        public void setAt(Object array, int index, Byte value) throws ClassCastException {
+            if (value != null) {
+                cast(array)[index] = value;
+            } else {
+                throw new ClassCastException();
+            }
+        }
+
+        @Override
+        public Object copy(Object array, int arraySize, int sourceFrom, int destinationFrom, int size) {
+            return (size > 0)
+                    ? copyNonEmpty(array, arraySize, sourceFrom, destinationFrom, size)
+                    : new byte[arraySize];
+        }
+        private static Object copyNonEmpty(Object array, int arraySize, int sourceFrom, int destinationFrom, int size) {
+            final byte[] result = new byte[arraySize];
+            System.arraycopy(array, sourceFrom, result, destinationFrom, size); /* has to be near the object allocation to avoid zeroing out the array */
+            return result;
+        }
+    }
+
+    final class CharArrayType implements ArrayType<Character>, Serializable {
+        private static final long serialVersionUID = 1L;
+        static final CharArrayType INSTANCE = new CharArrayType();
+        static final char[] EMPTY = new char[0];
+
+        private static char[] cast(Object array) { return (char[]) array; }
+
+        @Override
+        public Class<Character> type() { return char.class; }
+
+        @Override
+        public char[] empty() { return EMPTY; }
+
+        @Override
+        public int lengthOf(Object array) { return (array != null) ? cast(array).length : 0; }
+
+        @Override
+        public Character getAt(Object array, int index) { return cast(array)[index]; }
+
+        @Override
+        public void setAt(Object array, int index, Character value) throws ClassCastException {
+            if (value != null) {
+                cast(array)[index] = value;
+            } else {
+                throw new ClassCastException();
+            }
+        }
+
+        @Override
+        public Object copy(Object array, int arraySize, int sourceFrom, int destinationFrom, int size) {
+            return (size > 0)
+                    ? copyNonEmpty(array, arraySize, sourceFrom, destinationFrom, size)
+                    : new char[arraySize];
+        }
+        private static Object copyNonEmpty(Object array, int arraySize, int sourceFrom, int destinationFrom, int size) {
+            final char[] result = new char[arraySize];
+            System.arraycopy(array, sourceFrom, result, destinationFrom, size); /* has to be near the object allocation to avoid zeroing out the array */
+            return result;
+        }
+    }
+
+    final class DoubleArrayType implements ArrayType<Double>, Serializable {
+        private static final long serialVersionUID = 1L;
+        static final DoubleArrayType INSTANCE = new DoubleArrayType();
+        static final double[] EMPTY = new double[0];
+
+        private static double[] cast(Object array) { return (double[]) array; }
+
+        @Override
+        public Class<Double> type() { return double.class; }
+
+        @Override
+        public double[] empty() { return EMPTY; }
+
+        @Override
+        public int lengthOf(Object array) { return (array != null) ? cast(array).length : 0; }
+
+        @Override
+        public Double getAt(Object array, int index) { return cast(array)[index]; }
+
+        @Override
+        public void setAt(Object array, int index, Double value) throws ClassCastException {
+            if (value != null) {
+                cast(array)[index] = value;
+            } else {
+                throw new ClassCastException();
+            }
+        }
+
+        @Override
+        public Object copy(Object array, int arraySize, int sourceFrom, int destinationFrom, int size) {
+            return (size > 0)
+                    ? copyNonEmpty(array, arraySize, sourceFrom, destinationFrom, size)
+                    : new double[arraySize];
+        }
+        private static Object copyNonEmpty(Object array, int arraySize, int sourceFrom, int destinationFrom, int size) {
+            final double[] result = new double[arraySize];
+            System.arraycopy(array, sourceFrom, result, destinationFrom, size); /* has to be near the object allocation to avoid zeroing out the array */
+            return result;
+        }
+    }
+
+    final class FloatArrayType implements ArrayType<Float>, Serializable {
+        private static final long serialVersionUID = 1L;
+        static final FloatArrayType INSTANCE = new FloatArrayType();
+        static final float[] EMPTY = new float[0];
+
+        private static float[] cast(Object array) { return (float[]) array; }
+
+        @Override
+        public Class<Float> type() { return float.class; }
+
+        @Override
+        public float[] empty() { return EMPTY; }
+
+        @Override
+        public int lengthOf(Object array) { return (array != null) ? cast(array).length : 0; }
+
+        @Override
+        public Float getAt(Object array, int index) { return cast(array)[index]; }
+
+        @Override
+        public void setAt(Object array, int index, Float value) throws ClassCastException {
+            if (value != null) {
+                cast(array)[index] = value;
+            } else {
+                throw new ClassCastException();
+            }
+        }
+
+        @Override
+        public Object copy(Object array, int arraySize, int sourceFrom, int destinationFrom, int size) {
+            return (size > 0)
+                    ? copyNonEmpty(array, arraySize, sourceFrom, destinationFrom, size)
+                    : new float[arraySize];
+        }
+        private static Object copyNonEmpty(Object array, int arraySize, int sourceFrom, int destinationFrom, int size) {
+            final float[] result = new float[arraySize];
+            System.arraycopy(array, sourceFrom, result, destinationFrom, size); /* has to be near the object allocation to avoid zeroing out the array */
+            return result;
+        }
+    }
+
+    final class IntArrayType implements ArrayType<Integer>, Serializable {
+        private static final long serialVersionUID = 1L;
+        static final IntArrayType INSTANCE = new IntArrayType();
+        static final int[] EMPTY = new int[0];
+
+        private static int[] cast(Object array) { return (int[]) array; }
+
+        @Override
+        public Class<Integer> type() { return int.class; }
+
+        @Override
+        public int[] empty() { return EMPTY; }
+
+        @Override
+        public int lengthOf(Object array) { return (array != null) ? cast(array).length : 0; }
+
+        @Override
+        public Integer getAt(Object array, int index) { return cast(array)[index]; }
+
+        @Override
+        public void setAt(Object array, int index, Integer value) throws ClassCastException {
+            if (value != null) {
+                cast(array)[index] = value;
+            } else {
+                throw new ClassCastException();
+            }
+        }
+
+        @Override
+        public Object copy(Object array, int arraySize, int sourceFrom, int destinationFrom, int size) {
+            return (size > 0)
+                    ? copyNonEmpty(array, arraySize, sourceFrom, destinationFrom, size)
+                    : new int[arraySize];
+        }
+        private static Object copyNonEmpty(Object array, int arraySize, int sourceFrom, int destinationFrom, int size) {
+            final int[] result = new int[arraySize];
+            System.arraycopy(array, sourceFrom, result, destinationFrom, size); /* has to be near the object allocation to avoid zeroing out the array */
+            return result;
+        }
+    }
+
+    final class LongArrayType implements ArrayType<Long>, Serializable {
+        private static final long serialVersionUID = 1L;
+        static final LongArrayType INSTANCE = new LongArrayType();
+        static final long[] EMPTY = new long[0];
+
+        private static long[] cast(Object array) { return (long[]) array; }
+
+        @Override
+        public Class<Long> type() { return long.class; }
+
+        @Override
+        public long[] empty() { return EMPTY; }
+
+        @Override
+        public int lengthOf(Object array) { return (array != null) ? cast(array).length : 0; }
+
+        @Override
+        public Long getAt(Object array, int index) { return cast(array)[index]; }
+
+        @Override
+        public void setAt(Object array, int index, Long value) throws ClassCastException {
+            if (value != null) {
+                cast(array)[index] = value;
+            } else {
+                throw new ClassCastException();
+            }
+        }
+
+        @Override
+        public Object copy(Object array, int arraySize, int sourceFrom, int destinationFrom, int size) {
+            return (size > 0)
+                    ? copyNonEmpty(array, arraySize, sourceFrom, destinationFrom, size)
+                    : new long[arraySize];
+        }
+        private static Object copyNonEmpty(Object array, int arraySize, int sourceFrom, int destinationFrom, int size) {
+            final long[] result = new long[arraySize];
+            System.arraycopy(array, sourceFrom, result, destinationFrom, size); /* has to be near the object allocation to avoid zeroing out the array */
+            return result;
+        }
+    }
+
+    final class ShortArrayType implements ArrayType<Short>, Serializable {
+        private static final long serialVersionUID = 1L;
+        static final ShortArrayType INSTANCE = new ShortArrayType();
+        static final short[] EMPTY = new short[0];
+
+        private static short[] cast(Object array) { return (short[]) array; }
+
+        @Override
+        public Class<Short> type() { return short.class; }
+
+        @Override
+        public short[] empty() { return EMPTY; }
+
+        @Override
+        public int lengthOf(Object array) { return (array != null) ? cast(array).length : 0; }
+
+        @Override
+        public Short getAt(Object array, int index) { return cast(array)[index]; }
+
+        @Override
+        public void setAt(Object array, int index, Short value) throws ClassCastException {
+            if (value != null) {
+                cast(array)[index] = value;
+            } else {
+                throw new ClassCastException();
+            }
+        }
+
+        @Override
+        public Object copy(Object array, int arraySize, int sourceFrom, int destinationFrom, int size) {
+            return (size > 0)
+                    ? copyNonEmpty(array, arraySize, sourceFrom, destinationFrom, size)
+                    : new short[arraySize];
+        }
+        private static Object copyNonEmpty(Object array, int arraySize, int sourceFrom, int destinationFrom, int size) {
+            final short[] result = new short[arraySize];
+            System.arraycopy(array, sourceFrom, result, destinationFrom, size); /* has to be near the object allocation to avoid zeroing out the array */
+            return result;
+        }
+    }
+
+    final class ObjectArrayType implements ArrayType<Object>, Serializable {
+        private static final long serialVersionUID = 1L;
+        static final ObjectArrayType INSTANCE = new ObjectArrayType();
+        static final Object[] EMPTY = new Object[0];
+
+        private static Object[] cast(Object array) { return (Object[]) array; }
+
+        @Override
+        public Class<Object> type() { return Object.class; }
+
+        @Override
+        public Object[] empty() { return EMPTY; }
+
+        @Override
+        public int lengthOf(Object array) { return (array != null) ? cast(array).length : 0; }
+
+        @Override
+        public Object getAt(Object array, int index) { return cast(array)[index]; }
+
+        @Override
+        public void setAt(Object array, int index, Object value) {
+            cast(array)[index] = value;
+        }
+
+        @Override
+        public Object copy(Object array, int arraySize, int sourceFrom, int destinationFrom, int size) {
+            return (size > 0)
+                    ? copyNonEmpty(array, arraySize, sourceFrom, destinationFrom, size)
+                    : new Object[arraySize];
+        }
+        private static Object copyNonEmpty(Object array, int arraySize, int sourceFrom, int destinationFrom, int size) {
+            final Object[] result = new Object[arraySize];
+            System.arraycopy(array, sourceFrom, result, destinationFrom, size); /* has to be near the object allocation to avoid zeroing out the array */
+            return result;
+        }
+    }
+}
+==============================================================================================================
+static {
+    EmbeddedKafkaHolder.getEmbeddedKafka().addTopics(topic1, topic2);
+}
+
+private static EmbeddedKafkaRule embeddedKafka = EmbeddedKafkaHolder.getEmbeddedKafka();
+==============================================================================================================
+Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("testT", "false", embeddedKafka);
+DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<Integer, String>(
+        consumerProps);
+Consumer<Integer, String> consumer = cf.createConsumer();
+embeddedKafka.consumeFromAllEmbeddedTopics(consumer);
+
+<int-kafka:outbound-channel-adapter id="kafkaOutboundChannelAdapter"
+                                    kafka-template="template"
+                                    auto-startup="false"
+                                    channel="inputToKafka"
+                                    topic="foo"
+                                    sync="false"
+                                    message-key-expression="'bar'"
+                                    send-failure-channel="failures"
+                                    send-success-channel="successes"
+                                    error-message-strategy="ems"
+                                    partition-id-expression="2">
+</int-kafka:outbound-channel-adapter>
+
+<bean id="template" class="org.springframework.kafka.core.KafkaTemplate">
+    <constructor-arg>
+        <bean class="org.springframework.kafka.core.DefaultKafkaProducerFactory">
+            <constructor-arg>
+                <map>
+                    <entry key="bootstrap.servers" value="localhost:9092" />
+                    ... <!-- more producer properties -->
+                </map>
+            </constructor-arg>
+        </bean>
+    </constructor-arg>
+</bean>
+
+
+
+@Bean
+public KafkaMessageDrivenChannelAdapter<String, String>
+            adapter(KafkaMessageListenerContainer<String, String> container) {
+    KafkaMessageDrivenChannelAdapter<String, String> kafkaMessageDrivenChannelAdapter =
+            new KafkaMessageDrivenChannelAdapter<>(container, ListenerMode.record);
+    kafkaMessageDrivenChannelAdapter.setOutputChannel(received());
+    return kafkaMessageDrivenChannelAdapter;
+}
+
+@Bean
+public KafkaMessageListenerContainer<String, String> container() throws Exception {
+    ContainerProperties properties = new ContainerProperties(this.topic);
+    // set more properties
+    return new KafkaMessageListenerContainer<>(consumerFactory(), properties);
+}
+
+@Bean
+public ConsumerFactory<String, String> consumerFactory() {
+    Map<String, Object> props = new HashMap<>();
+    props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, this.brokerAddress);
+    // set more properties
+    return new DefaultKafkaConsumerFactory<>(props);
+}
+==============================================================================================================
+@Bean
+public KafkaListenerContainerFactory<ConcurrentMessageListenerContainer<Integer, String>>
+        kafkaListenerContainerFactory() {
+    ConcurrentKafkaListenerContainerFactory<Integer, String> factory =
+            new ConcurrentKafkaListenerContainerFactory<>();
+    ...
+    factory.getContainerProperties().setBatchErrorHandler(myBatchErrorHandler);
+    ...
+    return factory;
+}
+==============================================================================================================
+@KafkaListener(id="validated", topics = "annotated35", errorHandler = "validationErrorHandler",
+      containerFactory = "kafkaJsonListenerContainerFactory")
+public void validatedListener(@Payload @Valid ValidatedClass val) {
+    ...
+}
+
+@Bean
+public KafkaListenerErrorHandler validationErrorHandler() {
+    return (m, e) -> {
+        ...
+    };
+}
+
+
+@Configuration
+@EnableKafka
+public class Config implements KafkaListenerConfigurer {
+
+    @Autowired
+    private LocalValidatorFactoryBean validator;
+    ...
+
+    @Override
+    public void configureKafkaListeners(KafkaListenerEndpointRegistrar registrar) {
+      registrar.setValidator(this.validator);
+    }
+}
+==============================================================================================================
+@Bean
+public ConcurrentKafkaListenerContainerFactory<Integer, String> kafkaListenerContainerFactory() {
+    ConcurrentKafkaListenerContainerFactory<Integer, String> factory =
+        new ConcurrentKafkaListenerContainerFactory<>();
+    factory.setConsumerFactory(cf());
+    factory.setReplyTemplate(template());
+    factory.setReplyHeadersConfigurer(new ReplyHeadersConfigurer() {
+
+      @Override
+      public boolean shouldCopy(String headerName, Object headerValue) {
+        return false;
+      }
+
+      @Override
+      public Map<String, Object> additionalHeaders() {
+        return Collections.singletonMap("qux", "fiz");
+      }
+
+    });
+    return factory;
+}
+==============================================================================================================
+@Configuration
+@EnableKafka
+@EnableKafkaStreams
+public static class KafkaStreamsConfig {
+
+    @Bean(name = KafkaStreamsDefaultConfiguration.DEFAULT_STREAMS_CONFIG_BEAN_NAME)
+    public KafkaStreamsConfiguration kStreamsConfigs() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(StreamsConfig.APPLICATION_ID_CONFIG, "testStreams");
+        props.put(StreamsConfig.KEY_SERDE_CLASS_CONFIG, Serdes.Integer().getClass().getName());
+        props.put(StreamsConfig.VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
+        props.put(StreamsConfig.TIMESTAMP_EXTRACTOR_CLASS_CONFIG, WallclockTimestampExtractor.class.getName());
+        return new KafkaStreamsConfiguration(props);
+    }
+
+    @Bean
+    public KStream<Integer, String> kStream(StreamsBuilder kStreamBuilder) {
+        KStream<Integer, String> stream = kStreamBuilder.stream("streamingTopic1");
+        stream
+                .mapValues(String::toUpperCase)
+                .groupByKey()
+                .reduce((String value1, String value2) -> value1 + value2,
+                		TimeWindows.of(1000),
+                		"windowStore")
+                .toStream()
+                .map((windowedId, value) -> new KeyValue<>(windowedId.key(), value))
+                .filter((i, s) -> s.length() > 40)
+                .to("streamingTopic2");
+
+        stream.print();
+
+        return stream;
+    }
+
+}
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
 ==============================================================================================================
 :host,
 :root {
