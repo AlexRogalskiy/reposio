@@ -10172,8 +10172,773 @@ public class ValidateCode {
         Random r = new Random();
         return new Color(r.nextInt(255), r.nextInt(255), r.nextInt(255));
     }
+}
+----------------------------------------------------------------------------------------
+:host,
+
+:root {
+  --scrollbar-color: var(--opera-dark-scrollbar-color);
+
+  --scrollbar-hover-color: var(--opera-dark-scrollbar-hover-color);
 
 }
+
+ 
+
+:host-context(html.dark-theme) {
+  --scrollbar-color: var(--opera-light-scrollbar-color);
+
+  --scrollbar-hover-color: var(--opera-light-scrollbar-hover-color);
+
+}
+
+ 
+
+::-webkit-scrollbar {
+  height: 12px;
+
+  width: 12px;
+
+}
+
+ 
+
+::-webkit-scrollbar-thumb {
+  background-clip: padding-box;
+
+  background-color: var(--scrollbar-color);
+
+  border: 2px solid transparent;
+
+  border-radius: 10px;
+
+}
+
+ 
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-hover-color);
+
+}
+
+ 
+
+::-webkit-scrollbar-corner {
+  background-color: transparent;
+
+}
+
+ 
+
+var restman = restman || {};
+
+restman.ui = restman.ui || {};
+
+ 
+
+(function() {
+    'use strict';
+
+ 
+
+    restman.ui.editors = {
+        _editors: {},
+
+ 
+
+        create: function(textareaId, readonly) {
+            var options = { 'lineNumbers': true, 'matchBrackets': true }
+
+            if (readonly) {
+                options['readOnly'] = true;
+
+            }
+
+            restman.ui.editors._editors[textareaId] = CodeMirror.fromTextArea($(textareaId)[0], options);
+
+            return textareaId;
+
+        },
+
+ 
+
+        get: function(id) {
+            return restman.ui.editors._editors[id];
+
+        },
+
+ 
+
+        setValue: function(id, value) {
+            var e = restman.ui.editors.get(id);
+
+            e.setValue(value);
+
+            e.refresh();
+
+        }
+
+    };
+
+})();
+----------------------------------------------------------------------------------------
+[class^="icon-"]:before, [class*=" icon-"]:before {
+
+    /* use !important to prevent issues with browser extensions that change fonts */
+
+    font-family: 'icomoon' !important;
+
+    speak: none;
+
+    font-style: normal;
+
+    font-weight: normal;
+
+    font-variant: normal;
+
+    text-transform: none;
+
+    line-height: 1;
+
+ 
+
+    /* Better Font Rendering =========== */
+
+    -webkit-font-smoothing: antialiased;
+
+    -moz-osx-font-smoothing: grayscale;
+
+}
+----------------------------------------------------------------------------------------
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxProcessor;
+import reactor.core.publisher.Mono;
+import reactor.core.publisher.ReplayProcessor;
+import reactor.core.publisher.UnicastProcessor;
+import reactor.core.scheduler.Schedulers;
+import ru.lanwen.micronaut.commands.AccountCommand;
+import ru.lanwen.micronaut.events.AccountEvent;
+
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import java.util.concurrent.atomic.AtomicInteger;
+
+@Slf4j
+@Singleton
+@RequiredArgsConstructor
+public class EventStream {
+
+    @Inject
+    final AccountAggregator accountAggregator;
+
+    @Inject
+    final TransactionsAggregator transactionsAggregator;
+
+    @Getter
+    AtomicInteger offset = new AtomicInteger(0);
+
+    FluxProcessor<AccountCommand, AccountCommand> commandsProcessor = UnicastProcessor.create();
+
+    FluxProcessor<AccountEvent, AccountEvent> eventsProcessor = ReplayProcessor.create(Integer.MAX_VALUE);
+
+    @PostConstruct
+    public void init() {
+        commandsProcessor
+                .publishOn(Schedulers.newSingle("commands"))
+                .flatMap(command -> Flux.concat(
+                        transactionsAggregator.process(command),
+                        accountAggregator.process(command)
+                ))
+                .delayUntil(event -> Flux.concat(
+                        accountAggregator.accept(event),
+                        transactionsAggregator.accept(event)
+                ))
+                .doOnNext(event -> offset.getAndIncrement())
+                .subscribe(eventsProcessor);
+    }
+
+    public Mono<Void> submit(AccountCommand command) {
+        return Mono.fromRunnable(() -> commandsProcessor.onNext(command));
+    }
+
+    public Flux<AccountEvent> events() {
+        return eventsProcessor.take(offset.get());
+    }
+}
+----------------------------------------------------------------------------------------
+
+	public static WebClient buildWebClient(String url) {
+		ReactorClientHttpConnector connector = new ReactorClientHttpConnector(
+				options -> options.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 3000));
+		return WebClient.builder().clientConnector(connector).baseUrl(url).build();
+	}
+	
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.data.mongodb.core.ReactiveMongoOperations;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.server.SecurityWebFilterChain;
+
+import ch.xxx.trader.PasswordEncryption;
+import reactor.core.publisher.Mono;
+
+//@EnableWebSecurity
+//@EnableWebFluxSecurity
+public class WebfluxSecurityConfig {
+	
+	@Autowired
+	private ReactiveMongoOperations operations;
+	@Autowired
+	private PasswordEncryption passwordEncryption;
+	
+	@Bean
+	public ReactiveUserDetailsService userDetailsRepository() {
+		return new ReactiveUserDetailsService() {
+			
+			@Override
+			public Mono<UserDetails> findByUsername(String username) {
+				Query query = new Query();
+				query.addCriteria(Criteria.where("userId").is(username));
+				return operations.findOne(query, UserDetails.class);
+			}
+		};
+	}			
+	
+	@Bean
+	public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
+		http
+			.authorizeExchange()
+				.anyExchange().authenticated()
+				.and()
+			.httpBasic();
+		return http.build();
+	}
+}
+----------------------------------------------------------------------------------------
+final LoggerContext factory = (LoggerContext) LoggerFactory.getILoggerFactory();
+final Logger root = factory.getLogger(Logger.ROOT_LOGGER_NAME);
+
+final InstrumentedAppender metrics = new InstrumentedAppender(registry);
+metrics.setContext(root.getLoggerContext());
+metrics.start();
+root.addAppender(metrics);
+----------------------------------------------------------------------------------------
+import com.cloudant.client.api.ClientBuilder;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.web.SpringBootServletInitializer;
+import org.springframework.context.annotation.Bean;
+
+import com.cloudant.client.api.CloudantClient;
+import com.cloudant.client.api.Database;
+import org.springframework.context.annotation.Profile;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.binary.StringUtils;
+
+
+@SpringBootApplication
+public class Application extends SpringBootServletInitializer {
+
+	private final static String KUBE_CLOUDANT_SECRETS_FILE = "/etc/cloudant-secrets/binding";
+
+	public static void main(String[] args) throws Exception {
+		SpringApplication.run(Application.class, args);
+	}
+
+
+	@Profile("kubernetes")
+	@Bean
+	/*
+	 * Load the CloudantClient from the Kubernetes Secrets file.
+	 * This method is only loaded when the kubernetes profile is activated
+	 */
+	public CloudantClient client() throws IOException {
+
+		String secrets = readKubeSecretsFiles();
+		String secretsJson = StringUtils.newStringUtf8(Base64.decodeBase64(secrets));
+		ObjectMapper mapper = new ObjectMapper();
+		Map<String, Object> map = new HashMap<String, Object>();
+
+		// convert JSON string to Map
+		map = mapper.readValue(secretsJson, new TypeReference<Map<String, String>>(){});
+
+		String username = (String) map.get("username");
+		String password = (String) map.get("password");
+		String url = "http://" + map.get("username") + ".cloudant.com";
+
+		return ClientBuilder.url(new URL(url))
+				.username(username)
+				.password(password)
+				.build();
+	}
+
+	@Bean
+	public Database account(CloudantClient cloudant) throws MalformedURLException {
+		return cloudant.database("account", true);
+	}
+
+	private String readKubeSecretsFiles() throws IOException {
+		BufferedReader br = new BufferedReader(new FileReader(KUBE_CLOUDANT_SECRETS_FILE));
+
+		StringBuilder sb = new StringBuilder();
+		String line = br.readLine();
+
+		while (line != null) {
+			sb.append(line);
+			sb.append(System.lineSeparator());
+			line = br.readLine();
+		}
+		String everything = sb.toString();
+		br.close();
+
+		return everything;
+	}
+}
+----------------------------------------------------------------------------------------
+import com.ixortalk.aws.cognito.boot.filter.AwsCognitoIdTokenProcessor;
+import com.ixortalk.aws.cognito.boot.filter.AwsCognitoJwtAuthenticationFilter;
+import com.nimbusds.jose.jwk.source.JWKSource;
+import com.nimbusds.jose.jwk.source.RemoteJWKSet;
+import com.nimbusds.jose.proc.JWSKeySelector;
+import com.nimbusds.jose.proc.JWSVerificationKeySelector;
+import com.nimbusds.jose.util.DefaultResourceRetriever;
+import com.nimbusds.jose.util.ResourceRetriever;
+import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
+import com.nimbusds.jwt.proc.DefaultJWTProcessor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Scope;
+import org.springframework.context.annotation.ScopedProxyMode;
+
+import java.net.MalformedURLException;
+import java.net.URL;
+
+import static com.nimbusds.jose.JWSAlgorithm.RS256;
+
+@Configuration
+@ConditionalOnClass({AwsCognitoJwtAuthenticationFilter.class, AwsCognitoIdTokenProcessor.class})
+@EnableConfigurationProperties({AwsCognitoJtwConfiguration.class})
+public class AwsCognitoAutoConfiguration {
+
+    @Bean
+    @Scope(value="request", proxyMode= ScopedProxyMode.TARGET_CLASS)
+    public AwsCognitoCredentialsHolder awsCognitoCredentialsHolder() {
+        return new AwsCognitoCredentialsHolder();
+    }
+
+    @Bean
+    public AwsCognitoIdTokenProcessor awsCognitoIdTokenProcessor() { return new AwsCognitoIdTokenProcessor(); }
+
+    @Bean
+    public JwtAuthenticationProvider jwtAuthenticationProvider() { return new JwtAuthenticationProvider(); }
+
+
+    @Bean
+    public AwsCognitoJwtAuthenticationFilter awsCognitoJwtAuthenticationFilter() {
+        return new AwsCognitoJwtAuthenticationFilter(awsCognitoIdTokenProcessor());
+    }
+
+    @Autowired
+    private AwsCognitoJtwConfiguration awsCognitoJtwConfiguration;
+
+    @Bean
+    public ConfigurableJWTProcessor jwtProcessor() throws MalformedURLException {
+        ResourceRetriever resourceRetriever = new DefaultResourceRetriever(awsCognitoJtwConfiguration.getConnectionTimeout(), awsCognitoJtwConfiguration.getReadTimeout());
+        URL jwkSetURL = new URL(awsCognitoJtwConfiguration.getJwkUrl());
+        JWKSource keySource = new RemoteJWKSet(jwkSetURL, resourceRetriever);
+        ConfigurableJWTProcessor jwtProcessor = new DefaultJWTProcessor();
+        JWSKeySelector keySelector = new JWSVerificationKeySelector(RS256, keySource);
+        jwtProcessor.setJWSKeySelector(keySelector);
+        return jwtProcessor;
+    }
+}
+
+    public static String fileContent(final String dirPrefix, final String fileName) {
+        String name = null;
+        try {
+            name = dirPrefix + "/" + fileName;
+            return IOUtils.toString(FileUtil.class.getClassLoader().getResourceAsStream(name), UTF_8);
+        } catch (Exception e) {
+            throw new RuntimeException("Error reading file " + name + ": " + e.getMessage(), e);
+        }
+    }
+----------------------------------------------------------------------------------------
+	public static ImmutableSortedMap.Builder<String, String> create()
+	{
+		return ImmutableSortedMap.<String, String>naturalOrder();
+	}
+----------------------------------------------------------------------------------------
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import org.apache.bval.jsr303.ApacheValidationProvider;
+import com.max256.abhot.core.http.rest.BeanValidationException;
+
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
+public class DataPointDeserializer extends JsonDeserializer<List<DataPointRequest>>
+{
+	private static final Validator VALIDATOR = Validation.byProvider(ApacheValidationProvider.class).configure().buildValidatorFactory().getValidator();
+
+	@Override
+	public List<DataPointRequest> deserialize(JsonParser parser, DeserializationContext deserializationContext) throws IOException
+{
+		List<DataPointRequest> datapoints = new ArrayList<DataPointRequest>();
+
+		JsonToken token = parser.nextToken();
+		if (token != JsonToken.START_ARRAY )
+			throw deserializationContext.mappingException("Invalid data point syntax.");
+
+	while(token != null && token != JsonToken.END_ARRAY)
+		{
+		 	parser.nextToken();
+			long timestamp = parser.getLongValue();
+
+			parser.nextToken();
+			String value = parser.getText();
+
+			DataPointRequest dataPointRequest = new DataPointRequest(timestamp, value);
+
+			validateObject(dataPointRequest);
+			datapoints.add(dataPointRequest);
+
+			token = parser.nextToken();
+			if (token != JsonToken.END_ARRAY)
+				throw deserializationContext.mappingException("Invalid data point syntax.");
+
+			token = parser.nextToken();
+		}
+
+		return datapoints;
+	}
+
+	private void validateObject(Object request) throws BeanValidationException
+	{
+		// validate object using the bean validation framework
+		Set<ConstraintViolation<Object>> violations = VALIDATOR.validate(request);
+		if (!violations.isEmpty()) {
+			throw new BeanValidationException(violations);
+		}
+	}
+}
+----------------------------------------------------------------------------------------
+import com.max256.abhot.core.DataPoint;
+import com.max256.abhot.core.datastore.DataPointGroup;
+
+
+/**
+ * DataPointHelper actually is DataPoint abstract class
+ * @author fbf
+ *
+ */
+public abstract class DataPointHelper implements DataPoint
+{
+	protected long m_timestamp;
+	private DataPointGroup m_dataPointGroup;
+
+	public DataPointHelper(long timestamp)
+	{
+		m_timestamp = timestamp;
+	}
+
+	/**
+	 Get the timestamp for this data point in milliseconds
+	 @return timestamp
+	 */
+	public long getTimestamp()
+	{
+		return m_timestamp;
+	}
+
+	@Override
+	public boolean equals(Object o)
+	{
+		if (this == o) return true;
+		if (!(o instanceof DataPointHelper)) return false;
+
+		DataPointHelper that = (DataPointHelper) o;
+
+		if (m_timestamp != that.m_timestamp) return false;
+
+		return true;
+	}
+
+	@Override
+	public int hashCode()
+	{
+		return (int) (m_timestamp ^ (m_timestamp >>> 32));
+	}
+
+	@Override
+	public String toString()
+	{
+		return "DataPointHelper{" +
+				"m_timestamp=" + m_timestamp +
+				'}';
+	}
+
+	/**
+	 Returns the data point group for this data point if one is set.
+	 Some aggregators may strip off this information
+
+	 @return The DataPointGroup or null if one is not set.
+	 */
+	@Override
+	public DataPointGroup getDataPointGroup()
+	{
+		return m_dataPointGroup;
+	}
+
+	@Override
+	public void setDataPointGroup(DataPointGroup dataPointGroup)
+	{
+		m_dataPointGroup = dataPointGroup;
+	}
+}
+
+import java.io.DataOutput;
+import java.io.IOException;
+
+import org.joda.time.DateTime;
+import org.json.JSONException;
+import org.json.JSONWriter;
+
+
+public class DoubleDataPoint extends DataPointHelper
+{
+	private double m_value;
+
+	public DoubleDataPoint(long timestamp, double value)
+	{
+		super(timestamp);
+		m_value = value;
+	}
+
+	@Override
+	public double getDoubleValue()
+	{
+		return (m_value);
+	}
+
+	/*@Override
+	public ByteBuffer toByteBuffer()
+	{
+		return DoubleDataPointFactoryImpl.writeToByteBuffer(this);
+	}*/
+
+	@Override
+	public void writeValueToBuffer(DataOutput buffer) throws IOException
+	{
+		DoubleDataPointFactoryImpl.writeToByteBuffer(buffer, this);
+	}
+
+	@Override
+	public void writeValueToJson(JSONWriter writer) throws JSONException
+	{	
+		//in kairosdb 1.1.3 is a bug : m_value != m_value??? 
+		if (Double.isInfinite(m_value))
+			throw new IllegalStateException("not a number or Infinity:" + m_value + " data point=" + this);
+
+		writer.value(m_value);
+	}
+
+	@Override
+	public String getApiDataType()
+	{
+		return API_DOUBLE;
+	}
+
+	@Override
+	public String getDataStoreDataType()
+	{
+		return DoubleDataPointFactoryImpl.DST_DOUBLE;
+	}
+
+	@Override
+	public boolean isLong()
+	{
+		return false;
+	}
+
+	@Override
+	public long getLongValue()
+	{
+		return (long)m_value;
+	}
+
+	@Override
+	public boolean isDouble()
+	{
+		return true;
+	}
+
+	@Override
+	public boolean equals(Object o)
+	{
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		DoubleDataPoint that = (DoubleDataPoint) o;
+
+		if (Double.compare(that.m_value, m_value) != 0) return false;
+
+		return true;
+	}
+
+	@Override
+	public int hashCode()
+	{
+		long temp = Double.doubleToLongBits(m_value);
+		return (int) (temp ^ (temp >>> 32));
+	}
+
+	@Override
+	public String toString() {
+		return "DoubleDataPoint ["
+				+ "m_timestamp=" + new DateTime(m_timestamp) +
+				"m_value=" + m_value + "]";
+	}
+	
+}
+
+import org.json.JSONException;
+import org.json.JSONWriter;
+import com.max256.abhot.core.aggregator.DataGapsMarkingAggregator;
+
+import java.io.DataOutput;
+import java.io.IOException;
+
+/**
+ * kairosdb 1.1.3 NullDataPoint hava exist bug ,this class have not finished
+ * @author fbf
+ *
+ */
+@Deprecated
+public class NullDataPoint extends DataPointHelper
+{
+	public static final String API_TYPE = "null";
+
+	public NullDataPoint(long timestamp)
+	{
+		super(timestamp);
+	}
+
+
+	@Override
+	public String getDataStoreDataType()
+	{
+		return NullDataPointFactory.DATASTORE_TYPE;
+	}
+
+	@Override
+	public void writeValueToBuffer(DataOutput buffer) throws IOException
+	{
+		// write nothing - only used for query results
+	}
+
+	@Override
+	public void writeValueToJson(JSONWriter writer) throws JSONException
+	{
+		writer.value(null);
+	}
+
+	@Override
+	public boolean isLong()
+	{
+		return false;
+	}
+
+	@Override
+	public long getLongValue()
+	{
+		throw new IllegalArgumentException("No aggregator can be chained after " + DataGapsMarkingAggregator.class.getName());
+	}
+
+	@Override
+	public boolean isDouble()
+	{
+		return false;
+	}
+
+	@Override
+	public double getDoubleValue()
+	{
+		throw new IllegalArgumentException("No aggregator can be chained after " + DataGapsMarkingAggregator.class.getName());
+	}
+
+	@Override
+	public String getApiDataType()
+	{
+		return API_TYPE;
+	}
+}
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
