@@ -11380,10 +11380,2135 @@ public class NullDataPoint extends DataPointHelper
 
 })(jQuery);
 ----------------------------------------------------------------------------------------
+The description of Brain It On!
+
+Deceptively challenging physics puzzles for your brain!
+
+ 
+
+Draw shapes to solve challenging physics puzzles. They're not as easy as they look. Care to give one a try?
+
+ 
+
+◆ Dozens of brain busting physics puzzles, with more being added all the time
+
+◆ Compete with your friends for the Brain It On! crown
+
+◆ Multiple ways to solve each puzzle, can you find the best solution?
+
+◆ Share your unique solutions and compare with your friends
+
+ 
+
+All the levels can be unlocked for free by earning stars in previous levels. You can always find dozens of new player created free levels each day on the community screen. You can also purchase the game to remove all ads, unlock all hints, unlock levels early, and unlock the level editor.
+
+ 
+
+Please note: purchasing the "No Popup Ads" option just removes the ads between levels, purchasing the "Full Game" will also remove the ads to get hints.
+
+ 
+
+If you like this game, please rate it and leave a comment. As an indie developer your support is greatly appreciated. Thank you for your help! If you don't like something in the game, please email me at support@brainitongame.com and tell me why. I want to hear your feedback and comments so I can continue to make this game better.
+
+ 
+
+You can find me on Twitter at @orbitalnine, see the latest news on the Facebook page at http://www.facebook.com/brainitongame, or get all the details on the website: http://brainitongame.com
+
+ 
+
+I hope you enjoy Brain It On!
+
+Show less
+
+Brain It On! 1.6.18 Update
+
+2019-12-05
+
+- Fixes Google Play Games login problem on older devices
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of Memory Games
+
+Memory Games: Brain Training are logic games to train your memory and attention. While playing our brain games, you not only get a lot of fun, but also gradually improve your memory, attention and concentration. We offer 21 logic games to train your memory.
+
+ 
+
+Brain Games Online
+
+Have fun challenging your friends and random opponents around the world in the brain games online! Train your logic and reasoning skills and experience a true joy of victory by playing and winning online! Make you online rating be among the world's best! Onwards to new victories in our new online mode!
+
+ 
+
+Over 1 000 000 users have chosen to train their IQ and memory with our app. Join the ever expanding brain training programs (brain games) and give your cognitive skills a boost! Try it now!
+
+ 
+
+The features of our memory games:
+
+- simple and useful logic games
+
+- easy to train your memory
+
+- you can play without internet connection on the way to work or home
+
+- require the minimum of your time a day, 2-5 minutes of training are enough
+
+ 
+
+Games For Training Your Memory
+
+ 
+
+Free games for training memory - it’s not only useful but also is a easy and fun way to train your visual memory. Some games are easier but some might feel challenging at first. But wait and you’ll be amazed with your progress and finesse!
+
+ 
+
+Memory Grid. The most straightforward and beginner-friendly game for training memory. All you need is to memorize the positions of green cells. What can be simpler, right? The game board will contain green cells. You need to memorize their positions. After cells get hidden you’ll need to click on the green cells positions to uncover them. If you make a mistake - use replay or hint to complete the level. Number of green cells and game board size gets increased with each level which makes later levels of the game challenging even for experienced players.
+
+ 
+
+As soon as you feel comfortable with simpler games and want more challenge move on to more challenging free games for training your memory: logic games, Rotating Grid, Memory Hex, Who’s new? Count ’em all, Follow the Path, Image Vortex, Catch them and others.
+
+ 
+
+Our games allow you to train your visual memory as well as track your progress. And the game form with ratings and challenged keeps the process engaging and fun all the way as you train.
+
+ 
+
+Games For Training Your Mind
+
+ 
+
+Our games are designed to increase your brain performance. Our brain can not be stretched. If doesn’t contract as your leg muscles as you walk. But the more you exercise your brain the more neural connections are created in your brain. The more your brain activity - the more oxygen rich blood gets there.
+
+ 
+
+If a person exercises the brain not often - existing connections get weaker, brain gets less oxygen and starts to work slower. Health of intellect directly depends on brain neural network state.
+
+ 
+
+How to improve your logic? It's very simple, install our application and train your memory every day while playing.
+
+Show less
+
+Memory Games 3.6.35 Update
+
+2019-05-12
+
+More bug fixes and related optimizations. :)
+
+ 
+
+Thanks as always for playing Memory Games! Get in touch with us at contact@maplemedia.io if you need help or would like to provide feedback.
+
+ 
+
+ 
+
+ 
+
+The description of brain : code - the hardest puzzle
+
+Are you ready for something interesting?
+
+-If no, this logic game is not for you.
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+Are you still here?
+
+-Great! Your brain : code game is started.*
+
+ 
+
+ 
+
+brain : code is a game with 30 unique puzzles.
+
+Why only 30 puzzles? Sounds easy? - Only 10% of you will complete all of them.
+
+(By the way +20 more puzzles are coming soon)
+
+ 
+
+What about gameplay?
+
+Yes, this is the most interesting part.
+
+You need to control gaming process and solve puzzles using commands.
+
+NO TAPS ALLOWED!
+
+Joke.
+
+You can interact with views(move, rotate) and control in-game animations.
+
+At your disposal will be 15 commands.(ex: /text,
+
+/rotate, /move, etc. )
+
+To solve all puzzles you need to use all of this commands.
+
+ 
+
+***SYNTAX***
+
+∙ Each command should start from slash.
+
+Example: /menu
+
+∙ Commands, which have parameters, should have colon after command name.
+
+Example: /rotate:90
+
+∙ To run command hit run! button. You can run only one command at once.
+
+ 
+
+***SAY NO TO ADS***
+
+No ads during gaming process. At all. You can watch ad only if you want to get a hint.
+
+ 
+
+***DISCLAIMER***
+
+brain : code is a hard game. Don't give up if you can't complete some puzzles. Just ask for help in comments:)
+
+ 
+
+ 
+
+ 
+
+----------------------------
+
+---- A problem has been detected and description has been shut down
+
+-----
+
+-----
+
+---- FATAL_DESCRIPTION_ERROR
+
+---- If this is the first time you've seen this error, just skip it.
+
+---- If you reading description again, this information can be useful for you.
+
+---- Technical information:
+
+----
+
+---- STOP 0x000LVL09 (Bad level checksum)
+
+---- REASON !@!#%*(!):+=%
+
+----
+
+---- Beginning dump of description.
+
+---- Description dump complete.
+
+---- Contact our technical support group in comments for further assistance.
+
+-----
+
+-----
+
+----------------------------
+
+ 
+
+ 
+
+ 
+
+*part of game puzzle is in the description.
+
+ 
+
+ 
+
+ 
+
+The description of CogniFit Brain Fitness
+
+Patented Scientific Technology. Choose CogniFit, the only brain training and brain games app that allows you to evaluate and improve your memory and cognitive skills in a professional and fun way. Test your brain and learn more about your cognitive abilities and cognitive function. CogniFit is the world's leading application for brain games to evaluate and improve cognitive skills.
+
+ 
+
+CogniFit stimulates and rehabilitates your cognitive functions with memory games, puzzles, reasoning games, educational games, and learning games to challenge your brain. Compare your cognitive skills with the rest of the global population. Assessing and improving cognitive function starts with a scientific application, like CogniFit.
+
+ 
+
+Discover validated psychometric tests to identify potential risks of suffering from cognitive impairments or mental illness. It evaluates and trains memory, attention, concentration, executive functions, reasoning, planning, mental agility, coordination and many other essential cognitive abilities. This simple and user-friendly app is perfect for children, adults, and seniors of all ages.
+
+ 
+
+This complete neuropsychological brain game app can evaluate and train the cognitive skills of healthy individuals and stimulate the brain function in people who suffer some type of cognitive decline or impairment (Dementia, Alzheimer's, Parkinson's, Multiple Sclerosis, Memory or Concentration Problems, Insomnia, Brain Injuries, Learning Disorders, ADHD, Dyslexia, etc.)
+
+ 
+
+It includes:
+
+- Brain games programs to train the brain.
+
+- Brain challenges, brain teasers, and exercises that will test your logic.
+
+- Brain games to improve memory.
+
+- Brain games to improve executive functions and reasoning.
+
+- Mental challenges to train and improve attention and concentration.
+
+- Mental agility games to improve coordination and planning.
+
+- Specific brain training programs for people who suffer some type of cognitive impairment (Dementia, Parkinson's, Memory Loss, Alzheimer's, Multiple Sclerosis, Brain Injuries, Cancer patients, Chemo-Fog, Depression, Dyslexia, ADHD, Dyscalculia, etc.).
+
+- Learning games and educational games for kids.
+
+- Memory games for kids.
+
+- Specific exercises and brain games for kids with learning disabilities (ADHD Test, dyslexia test, dyscalculia test).
+
+- Online tests to evaluate cognitive skills and their relationship with different cognitive disorders and mental illnesses (Parkinson, Insomnia, Depression)
+
+- Leading and effective technology used by the scientific community, universities, hospitals, families, and medical centers around the world.
+
+ 
+
+Terms and Conditions: https://www.cognifit.com/terms-and-conditions
+
+Privacy Policy: https://www.cognifit.com/privacy-policy
+
+Show less
+
+ 
+
+ 
+
+ 
+
+The description of Leetcode Algorithm Coding, Java Interview Offline
+
+∙ Are you looking for a new job in tech industry but don't know how to prepare for Java coding/programming interview questions?
+
+∙ Would you like to improve your algorithm and data structures problem solving skills as a software engineer?
+
+∙ Do you have very little time to learn various algorithm problems?
+
+∙ Are you afraid of forgetting the coding/programming interview questions and answers you have learnt previously?
+
+ 
+
+APAS is here to help!
+
+ 
+
+What is APAS?
+
+APAS is short for algorithm problems and solutions. This coding/programming interview app helps you access and learn interview questions offline on an Android device anywhere anytime!
+
+ 
+
+Currently it features algorithms and data structures interview problems from Leetcode. You can grasp how to answer Java coding interview questions easily with this APP as long as you know some Java basics!
+
+ 
+
+Features
+
+❤️ More than 400 most common Leetcode coding/programming interview questions on algorithms, data structures, and even system designs!
+
+❤️ New Leetcode problems are updated every now and then and you will get notified!
+
+❤️ Each Leetcode algorithms and data structures problem has a clean, detailed problem description and one or more Java solutions!
+
+❤️ Each solution is syntax-highlighted with line number, and can expand to full screen!
+
+❤️ Review a problem based on best spaced repetition intervals to gain long-term memory!
+
+❤️ Mock interviews: generate a problem set as a quiz. Time's limited for each problem. Just like real coding interviews!
+
+❤️ You can also mark a problem and read it later!
+
+❤️ You can also take notes of a problem!
+
+❤️ You are able to search any Leetcode problem quickly with its name or id!
+
+❤️ Problems are categorized by different levels or various topics!
+
+❤️ Dark theme support for less battery usage and long time reading at night!
+
+❤️ One simple switch to turn on offline mode so that you are totally free from network!
+
+ 
+
+All Java solutions are based on this popular Github repo that has close to 1500 stars! https://github.com/FreeTymeKiyan/LeetCode-Sol-Res
+
+ 
+
+Some of the solutions are also available in python or c++!
+
+ 
+
+If you have any feedbacks, please comment or send an email in the app or to zhuzhubusi@gmail.com . I will get back to you and address the issues ASAP.
+
+ 
+
+A list of data structures covered
+
+∙ String
+
+∙ Array
+
+∙ Stack
+
+∙ Queue
+
+∙ Hash Table
+
+∙ Map
+
+∙ Linked List
+
+∙ Heap
+
+∙ Tree
+
+∙ Trie
+
+∙ Binary Indexed Tree
+
+∙ Segment Tree
+
+∙ Binary Search Tree
+
+∙ Union Find
+
+∙ Graph
+
+∙ Geometry
+
+ 
+
+A list of algorithms covered
+
+∙ Binary Search
+
+∙ Divide and Conquer
+
+∙ Recursion
+
+∙ Dynamic Programming
+
+∙ Memoization
+
+∙ Backtracking
+
+∙ Greedy
+
+∙ Sorting
+
+∙ Topological Sort
+
+∙ Breadth-first Search
+
+∙ Depth-first Search
+
+∙ Reservoir Sampling
+
+∙ Rejection Sampling
+
+∙ Two pointers
+
+∙ Bit Operations
+
+∙ Minimax
+
+∙ Random
+
+Show less
+
+Leetcode Algorithm Coding, Java Interview Offline 4.0.0 Update
+
+2019-11-03
+
+Major new feature: Mock Interview!
+
+ 
+
+After all the learning and reviewing, how do we verify if we have grasped an algorithm or not? By doing mocks!
+
+ 
+
+Mock interview gives you a random problem set as a quiz. Just like a real interview, there is a time limit for each problem. And you need to come up with a solution within that period.
+
+ 
+
+If it's a bit hard, no worries, just practice more and you'll get there. If you feel mocks are easy, then congrats! Be confident with any coding interviews!
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of Learn DS & Algo, Programming Interview Preparation
+
+GeeksforGeeks is a one-stop destination for programmers. The app features 20000+ Programming Questions, 40,000+ Articles, and interview experiences of top companies such as Google, Amazon, Microsoft, Samsung, Facebook, Adobe, Flipkart, etc. Join the community of over 1 million geeks who are mastering new skills in programming languages like C, C++, Java, Python, PHP, C#, JavaScript etc. For exam aspirants preparing for GATE, UGC NET, ISRO there are previous year papers and aptitude questions. Whether you are a student looking to start your career or an experienced professional looking to switch jobs, GeeksforGeeks has your back.
+
+ 
+
+Features:
+
+ 
+
+∙ Feed - Personalized Feed Based on your interests.
+
+ 
+
+∙ Search - Search Data structures or Algorithms or other computer science related topics.
+
+ 
+
+∙ Share an article – Share any articles with your friends over WhatsApp, email, text message etc.
+
+ 
+
+∙ Latest Articles - Articles to keep your knowledge up to date with latest topics.
+
+ 
+
+∙ Offline Reading - Download articles and read them even while travelling or without data.
+
+ 
+
+∙ Interview Experiences - Interview experiences of candidates in top companies like Adobe, Microsoft Amazon, Google, etc. will definitely help you to bag your dream job.
+
+ 
+
+∙ Night Mode - Night mode to help you reduce the eye strain and further improves the user experience while studying on your mobile device for long hours.
+
+ 
+
+∙ Quizzes - Practice Quiz consisting of Multiple Choice Questions to assess your knowledge on Programming, Data Structures, Algorithms, C++, PHP, Java, Python, SQL, GATE, UGC-NET, HTML, C#, OS, DBMS, Theory of Computation, Computer Organization and Architecture, Engineering Mathematics, Aptitude and Reasoning, Puzzles etc.
+
+ 
+
+Topics covered:
+
+ 
+
+Data Structures
+
+- Array
+
+- Linked List
+
+- Stack
+
+- Queue
+
+- Binary Tree
+
+- Binary Search Tree
+
+- Heap
+
+- Hashing
+
+- Graph
+
+- Matrix
+
+- Trie
+
+- Segment Tree
+
+ 
+
+Algorithms
+
+- Analysis of Algorithms
+
+- Searching
+
+- Sorting
+
+-Backtracking
+
+- Dynamic Programming
+
+- Greedy Algorithms
+
+- Pattern Searching
+
+- String Algorithms
+
+- Mathematical Algo
+
+- Geometric Algo
+
+- Graph Algorithms
+
+- Divide and Conquer
+
+ 
+
+Languages
+
+- C
+
+- C++
+
+- Java
+
+- Python
+
+- C#
+
+- Scala
+
+- Perl
+
+- PHP
+
+- JavaScript
+
+- jQuery
+
+- SQL
+
+- HTML
+
+- CSS
+
+ 
+
+GATE
+
+- Data Structures and Algorithms
+
+- Operating Systems
+
+- DBMS
+
+- Computer Networks
+
+- Engineering Mathematics
+
+- Digital Logic
+
+- Computer Organization and Architecture
+
+- Aptitude
+
+- Previous Year Papers
+
+ 
+
+CS Subjects
+
+- Engineering Mathematics
+
+- Operating Systems
+
+- Computer Networks
+
+- DBMS
+
+- Compiler Design
+
+- Theory of Computation
+
+- Software Engineering
+
+- Computer Organization and Architecture
+
+- Microprocessor
+
+- Web Technology
+
+- Machine Learning
+
+- Computer Graphics
+
+ 
+
+Tutorials
+
+- C Programming Tutorials
+
+- Java Tutorials
+
+- PHP Tutorials
+
+- HTML Tutorials
+
+- CSS Tutorials
+
+- SQL Tutorials
+
+- Angular JS Tutorials
+
+- DBMS (Database Management System) Tutorials
+
+- JavaScript Tutorials
+
+- Computer Networks Tutorials
+
+- Theory of Computation and Automata Tutorials
+
+- Engineering Mathematics Tutorials
+
+ 
+
+Advanced Computer Subjects Tutorials
+
+- Machine Learning
+
+- Security and Attacks
+
+- Digital Image Processing
+
+- Fuzzy Logic
+
+- Data Warehouse & Data Mining
+
+ 
+
+Entrance Exam Preparations
+
+- GATE
+
+- UGC NET
+
+- ISRO
+
+- Aptitude
+
+ 
+
+Company Wise Interview Preparation
+
+- Amazon
+
+- Google
+
+- Microsoft
+
+- Facebook
+
+- Adobe
+
+- Oracle
+
+- Flipkart
+
+- Samsung
+
+- Goldman Sachs
+
+- D E Shaw
+
+- Cisco
+
+- Visa
+
+- Paytm
+
+- Morgan Stanley
+
+- Ola Cabs
+
+- SAP Labs
+
+- Hike
+
+- Zoho
+
+- TCS
+
+- Wipro
+
+- HCL
+
+- Accenture
+
+- Infosys
+
+- IBM
+
+- Cognizant
+
+ 
+
+Other Topics
+
+- Puzzles
+
+- Quizzes
+
+- MCQs (Multiple Choice Questions)
+
+- GBlog (Technology related articles)
+
+- Coding Problems with solutions
+
+ 
+
+ 
+
+The description of Data Structures and Algorithms
+
+New Update: Algnote supports OFFLINE now!
+
+ 
+
+Algnote lets developers or CS students easily review data structures and algorithms from theory, implementation to coding problems. If you are a programmer looking for your first programming job and preparing for coding interviews, or a student who is preparing for exams about data structures and algorithms, this app could be a right fit for you.All the algorithms and data structures are implemented in Java. Therefore, if you want to use the Algnote to learn coding, please make sure you are comfortable with Java.
+
+ 
+
+Currently Algnote has the following sections:
+
+- Array
+
+- String
+
+- Linked List
+
+- Stack
+
+- Queue
+
+- Hash Table
+
+- Tree
+
+- Graph
+
+- Searching
+
+- Sorting
+
+- Recursion
+
+- Dynamic Programming
+
+- Math
+
+- Bit Manipulation
+
+ 
+
+Each section contains the theory notes to help users to understand the concepts and several coding problems to improve their familiarity to the algorithms or data structures. Most of the coding problems are selected from Leetcode and implemented by the developer. Some problems have multiple solutions and compare the pos and crons of different algorithms.
+
+ 
+
+Although currently Algnote focuses on algorithms and data structures but we plan to extend the app to have more other content, from basic language tutorials to high level architecture knowledges.
+
+ 
+
+Some words from the developer of this app:
+
+ 
+
+Note that all these notes were done by me with some references to some textbooks or online coding questions I did before. They are not as accurate as a textbook. As this is a very early release, there are definitely some issues in the notes and I am trying my best to find them and correct them. I will keep optimizing the content and functionality to make it better every day. If you find any issue when you are using it, it will be much appreciated if you could send a message to marcyliew@gmail.com.
+
+ 
+
+Currently all the content of this app was prepared when I just graduated from university and was preparing for coding interviews. At that time I was pretty confident that I could get a good job as I had done many projects in school and I was very good at building web and mobile applications.
+
+ 
+
+However, things did not go as I expected. During the interviews, the interviewers asked me to write codes to solve problems on the whiteboard. Many times, I got stuck on the problems and could not figure out a single solution. Even when I completed a solution and felt happy, the interviewers often immediately pointed out the problem of my code. Not efficient enough, use too much memory space, or did not consider the boundary situations. I felt disappointed to myself.
+
+ 
+
+Fortunately, I got a pretty good offer from a company and started my career as a web developer. But even now I still feel hard to complete these algorithms questions.
+
+ 
+
+I know preparing for coding interviews is not easy, but it is not that hard. It is just a process that we need to go through to become good developers.
+
+ 
+
+These are all the purposes of this app. I use it every day to review my knowledges on algorithms and data structures. I hope it could not only help myself, but also help more developers who are fighting for their careers.
+
+Show less
+
+Data Structures and Algorithms 2.0.3 Update
+
+2016-11-30
+
+1. Fix bugs and unused permissions
+
+2. Improve performance and stability
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of Algorithms
+
+Enjoy watching, trying, and learning with this guide to algorithms. The wide-ranging field of algorithms is explained clearly and concisely with animations. Deepen your understanding by exploring concepts in "Sim Mode". Also includes algorithms closer to home involving encryption and security. Come on, let's take a journey into the world of algorithms!
+
+ 
+
+ 
+
+==== Categories and Included Topics ====
+
+ 
+
+[ Sort ]
+
+Bubble Sort, Heap Sort, Quicksort ... (6 topics)
+
+ 
+
+[ Clustering ]
+
+k-means Algorithm
+
+ 
+
+[ List Search ]
+
+Linear Search, Binary Search
+
+ 
+
+[ Graph Search ]
+
+Breadth-First Search, Dijkstra's Algorithm, A* algorithm ... (5 topics)
+
+ 
+
+[ Math ]
+
+Euclidian Algorithm, Primality Test
+
+ 
+
+[ Data Compression ]
+
+Run-Length Encoding, Huffman Coding
+
+ 
+
+[ Security ]
+
+Hash Functions, Public-Key Cryptosystem, Diffie-Hellman Key Exchange, Digital Certificates ... (10 topics)
+
+ 
+
+[ Data Structures ]
+
+Lists, Stacks, Heaps, Binary Search Trees ... (7 topics)
+
+ 
+
+[ The Web ]
+
+PageRank
+
+ 
+
+[ Recursion ]
+
+Tower of Hanoi
+
+ 
+
+ 
+
+==== Recommended for... ====
+
+ 
+
+[ People in the IT and software industries ]
+
+ 
+
+Whether it be website creation or website management, game development or system development, when using a computer to work as a team or work with clients, a broad knowledge of programming and information security is essential.
+
+With "Algorithms: Explained and Animated", you can firmly strengthen that fundamental knowledge.
+
+ 
+
+ 
+
+[ People interested in programming and information technology ]
+
+ 
+
+While there are many technical books on programming and the internet, their simple drawings and long explanations don't facilitate learning as much as they do boredom. With "Algorithms: Explained and Animated", anything from complex data structures like "hash tables" and "heaps" to information security topics like the "public-key cryptosystem" and "digital certificates" can be easily understood with animations.
+
+ 
+
+ 
+
+[ Experienced programmers and engineers ]
+
+ 
+
+When using standard methods like libraries, the more basic the concept, the more impenetrable it can seem. You might also find yourself struggling to explain concepts to a less-experienced colleague. For times like those, use "Algorithms: Explained and Animated" to keep your skills from getting rusty.
+
+ 
+
+ 
+
+==== Downloading and Viewing All of the Algorithms ====
+
+ 
+
+This app is free to download. A portion of the app's topics can be viewed after choosing to "Purchase all algorithms".
+
+ 
+
+ 
+
+==== On Tablet ====
+
+ 
+
+This app is also compatible for use on tablet.
+
+ 
+
+ 
+
+==== Supported languages ====
+
+ 
+
+- English
+
+- Español (Spanish)
+
+- Português (Portuguese)
+
+- 中文 (简体字) (Chinese (Simplified))
+
+- Русский (Russian)
+
+- 日本語 (Japanese)
+
+- 한국어 (Korean)
+
+Show less
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+www.prghub.com
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of JSOne
+
+Learn JavaScript's important concepts especially for Interviews. We use oneLiner approach for important concepts. The oneLiner makes JavaScript's important concepts easier to understand and keep them in mind.
+
+Data Structure and Algorithms questions and frequently asked coding questions are also included.
+
+The concepts have easy explanation with sample code.
+
+The app contains collection of frequently asked questions in JavaScript interviews.
+
+Full content is available offline and the content is frequently updated.
+
+The Content is developed by experienced professionals working full time in JavaScript.
+
+The content also serve the purpose of advanced tutorial on JavaScript.
+
+ 
+
+The app also includes some data structure and algorithms questions in JavaScript (in development) along with webapp design thinking for interviews. There are also coding questions frequently asked in the interviews.
+
+ 
+
+For Interview Questions on HTML and CSS please try our app UiOne on Play Store.
+
+https://play.google.com/store/apps/details?id=com.gamesmint.uione
+
+ 
+
+ 
+
+ 
+
+Den of Geeks
+
+This app contains Computer Science related articles/videos primarily from YouTube and will be covering other platforms as well.
+
+ 
+
+This app helps you a lot for preparing for IT interviews as well to enhance your design skills
+
+ 
+
+In the Design Section, we have added videos for the following topics
+
+1. Whatsapp/Facebook Messenger Design
+
+2. Twitter Design
+
+3. Netflix Design
+
+4. Tiny URL
+
+5. Uber/Ola Design
+
+6. Rate Limiter Design
+
+7. Book My Show Design
+
+8. Facebook NewsFeed Design
+
+9. Youtube Design
+
+10. Sharding, Consistent Hashing, Scaling
+
+11. SQL Vs NoSql
+
+12. Horizontal Vs. Vertical Scaling
+
+and many others
+
+ 
+
+In Frontend Section we have added videos for following topics
+
+1. JavaScript Interview Question and Concepts
+
+2. Android
+
+3. React/Redux
+
+ 
+
+In the Programming Section, we have added videos for following topics
+
+1. How to start programming
+
+2. Famous DS/Algo Questions
+
+3. DP
+
+4. Explanation of Basic Algorithms
+
+ 
+
+Amazon Interview Questions
+
+Facebook Interview Questions
+
+Microsoft Interview Questions
+
+Google Interview Questions
+
+Dynamic Programming
+
+OOPS Design Pattern
+
+Head First Design Pattern
+
+Array, Trees, Linked List, Hash Maps, Binary Trees, BST
+
+Coding Problems
+
+Python, Java, NodeJS, Golang, C, C++
+
+Algorithm Design and Problem Solving
+
+ 
+
+System Analysis And Design
+
+Time Complexity Calculation
+
+Big O notation
+
+Greedy
+
+Divide & Conquer
+
+Binary Search
+
+Backtrack
+
+Recursion
+
+Object oriented Design
+
+Technical Interview questions and answers
+
+Interview skills
+
+ 
+
+Placement Interview Experience
+
+Crack IT Interview
+
+Cracking technical Interview
+
+Js Interview Question & Answers
+
+Android Interview Question & Answers
+
+Computer Interview Ques & Answers
+
+Technical Interview Quest & Answers
+
+ 
+
+Resources --
+
+Geeks For Geeks
+
+Cracking the Coding Interview
+
+Career Cup
+
+Donne Martin
+
+Leet Code
+
+Educative io
+
+Pluralsight
+
+Grokking system design
+
+Gaurav Sen videos
+
+Akshay Saini videos
+
+Tushar Roy videos
+
+Narendra L videos
+
+Rachit Jain videos
+
+ 
+
+ 
+
+ 
+
+Will keep on adding more content regularly.
+
+ 
+
+ 
+
+The content for which "Geeks Den" doesn't have the copyrights are showcased by embedding the youtube links, which would, in turn, help the content owners to have more views on their youtube videos.
+
+ 
+
+Note: If you also make such awesome videos and want to screen your content OR If you have any other channel or videos in mind which should be added. Please contact us at devlab.feedback@gmail.com. We would Love to hear from you.
+
+ 
+
+Disclaimer: Geeks Den doesn't own or host the above content. It only catalogs the content and redirects to the content aggregators or hosting services such as Youtube. It is not an alternative to watch paid content for free nor affiliated with any of the on above platforms.
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of CodeGym
+
+Learn Java programming from scratch on your smartphone with the educational quest game from creators of CodeGym. The course consists of 1200 tasks and 600 mini-lectures.
+
+ 
+
+If you dream of becoming a programmer, but you’re short of time for learning on courses with a demanding schedule, here’s a solution. With this app, you can devote as much time for your learning as you have, and practice wherever you want. Even 30 minutes a day would be enough for reading a couple of lectures or solving a few tasks :)
+
+ 
+
+Our Java programming course is designed in a playing format and includes four quests. Each quest consists of 10 levels with lectures and tasks. Imagine you play a game and skill-up your character along with actually learning how to code!
+
+ 
+
+Of course, it’s quite a tough task to write dozens of code lines on your smartphone. With this aim in view, we’ve developed a fully-featured system of auto expands and tips to help you code faster. After you write the solution, send it for review and get instant verification.
+
+ 
+
+There’s a whole lot of Java tasks in the course, such as:
+
+ 
+
+- Writing your code;
+
+- Fixing existing code;
+
+- Self-consistent mini-projects and games.
+
+ 
+
+If you run into sticky points while solving any task, feel free to ask for a hint in the help section and get advice from other students or course developers.
+
+ 
+
+We save your progress, so you can return to learning any minute and continue with solving tasks or reading lectures.
+
+ 
+
+Learn Java fundamentals the right way — through coding practice!
+
+ 
+
+ 
+
+ 
+
+The description of Interview Question and Answers
+
+Looking for Job Interview Questions with Answers App ? You're at the right place.
+
+ 
+
+Placecom - "Interview Guide" provides you a wide range of Interview questions (with smart answers) that an organization demands from candidates.
+
+ 
+
+★★★ Features ★★★
+
+ 
+
+★ 40 Most Important Interview Questions covered for each Subject Areas ( Total 500+ Questions )
+
+★ 14 Different Subjects covered
+
+- General (HR)
+
+- Java
+
+- .NET
+
+- PHP
+
+- DBMS
+
+- Data Structure
+
+- Finance
+
+- Marketing
+
+- Electronics
+
+- C/C++
+
+- Networking
+
+- Software Testing
+
+- Android
+
+- Unix
+
+★ Useful for Freshers & Experienced Professionals
+
+★ GD Tips & Topics
+
+★ Free Resume Sample & Review
+
+★ Best Interview Guide & Aptitude Preparation
+
+★ Logical Reasoning, Verbal, Maths, Puzzles covered with a sample paper, easily downloadable.
+
+★ Easy to use GUI and Navigation Controls
+
+★ Simply Fast and Requires NO Internet Connection
+
+★ Best for preparing your resume before Interview
+
+★ Helps you rehearse/practice own answers & compare them
+
+★ Answers important interview tips like
+
+- What to do when you don't know the Answer ?
+
+- What to wear on the day of Interview ?
+
+★ Strong Services & We do really work on your feedback..!!
+
+ 
+
+The app is an attempt to distribute the well-appraised Placecom Books, that will instill you with the confidence that you need to endure most difficult interviews. These most asked Job Interview Questions and Answers are the result of 2 years of research in recruitment field. App also includes Job Interview Tips on designing a resume and wearing clothes on the day of Interview. This Best "INTERVIEW GUIDE" is unique in that it helps you master the most commonly asked Technical Interview Questions and HR Interview Questions, instilling you with the confidence that you need to endure the most difficult of job interviews.
+
+ 
+
+It's a FREE Interview App and will remain FREE forever. Use this "INTERVIEW GUIDE" as much as possible to excel at your Job Interviews.
+
+ 
+
+We look forward to your review & suggestions. We're open for feedback from almost every social media & email.
+
+ 
+
+★ Google : www.goo.gl/qpUER3
+
+★ Facebook : www.facebook.com/placecomapp
+
+★ Twitter : www.twitter.com/placecomapp
+
+★ LinkedIn : www.linkedin.com/placecomapp
+
+ 
+
+We hope this simple HR Interview Preparation Guide & FREE Resume Preparation helps you strengthen your Interview Preparation.
+
+ 
+
+ 
+
+The description of Interview Skills
+
+If you are looking an app for sharping your technical skills as well as your mind capabilities than Interview Skills is for you. Interview Skills has All Engineering Stream & MBA related frequently asked interview questions & answer, Aptitude, Mathematical formulas, Quizzes, puzzles, GK & some useful tips that helps you to crack your interviews as well as your competitive exams. Interview Skills may be useful for you to get the success.
+
+ 
+
+The Interview Skills is useful for fresher as well experienced employees to improve their interview skills & sharp their mind capability. It’s a most effective time saver app for those who make a deep research on searching interview related queries & aptitude questions on web & play quizzes and solve puzzles also. It’s material design and colourful themes definitely catch your eyes.
+
+ 
+
+Features:
+
+This app totally offline, so you can practice your interview related questions, aptitude, play quiz & solve puzzles anywhere, anytime without internet.
+
+frequently asked interview questions & answers,
+
+best for practice for competitive exams,
+
+Mathematics formulas
+
+Aptitude questions with detailed solution
+
+Quizzes & Puzzles
+
+GK & Some Tips
+
+Almost all types Job related solution in single place
+
+ 
+
+Interviews Skills Covered 7 useful Subjects:
+
+Aptitude Questions & Formulas
+
+Mathematics Formulas
+
+Computer Science
+
+Mechanical Engineer
+
+Electronics Engineer
+
+Electrical Engineer
+
+Chemical Engineer
+
+MBA
+
+Soft Skills
+
+Quizzes
+
+Puzzles
+
+GK
+
+Interview Tips
+
+ 
+
+Topics covered in Computer Science
+
+General Questions
+
+Engineering Topics:
+
+Computer Science
+
+14 Different Programming languages covered
+
+C
+
+C++
+
+JAVA
+
+Android
+
+Kotlin
+
+Objective C
+
+Swift
+
+.NET
+
+PHP
+
+Node.js
+
+Angular JS
+
+MySql
+
+SEO
+
+Quality Analyst
+
+ 
+
+Mechanical Engineer
+
+Electronics Engineer
+
+Electrical Engineer
+
+Chemical Engineer
+
+ 
+
+Topics covered in MBA
+
+General Questions
+
+Finanace
+
+Marketing
+
+ 
+
+Regular updates
+
+ 
+
+What's new in next release:
+
+I'm working on making UI more responsive and add some new questions, quizzes and puzzles or some new useful features.
+
+ 
+
+We try to provide more useful new feature in every new version
+
+We look forward to your reviews and suggestion to make this app more helpful for all the users. We're open for feedback any time.
+
+ 
+
+You can Follow us on Facebook/Instagram for latest updates https://www.facebook.com/interview.skills01
+
+https://www.instagram.com/interview.skills
+
+ 
+
+ 
+
+ 
+
+ 
+
+What's new in next release:
+
+I'm working on making UI more responsive and add some new questions, quizzes and puzzles or some new useful features.
+
+ 
+
+We try to provide more useful new feature in every new version
+
+We look forward to your reviews and suggestion to make this app more helpful for all the users. We're open for feedback any time.
+
+ 
+
+You can Follow us on Facebook/Instagram for latest updates https://www.facebook.com/interview.skills01
+
+https://www.instagram.com/interview.skills
+
+Show less
+
+Interview Skills 3.4 Update
+
+2019-10-30
+
+Update Booklets and migrate to Android x
+
+ 
+
+ 
+
+ 
+
+The description of DATA STRUCTURE MADE EASY
+
+CS students easily review data structures and algorithms from theory, implementation to coding problems. If you are a programmer looking for your first programming job and preparing for coding interviews, or a student who is preparing for exams about data structures, this app could be a right fit for you.All the algorithms and data structures are implemented in C++ or C or python. Therefore, if you want to use the App to learn coding, please make sure you are comfortable with these languages.
+
+ 
+
+Currently this app has the following sections:
+
+- Array
+
+- String
+
+- Linked List
+
+- Stack
+
+- Queue
+
+- Tree
+
+- Graph
+
+- Interviews Questions
+
+ 
+
+Each section contains the theory notes to help users to understand the concepts and several coding problems to improve their familiarity to the data structures.
+
+ 
+
+Although currently we focuses on data structures but we plan to extend the app to have more other content, from basic language tutorials to high level architecture knowledges.
+
+ 
+
+Some words from the developer of this app:
+
+ 
+
+Note that all these notes were done by me with some references to some textbooks or online coding questions I did before. They are not as accurate as a textbook. As this is a very early release, there are definitely some issues in the notes and I am trying my best to find them and correct them. I will keep optimizing the content and functionality to make it better every day. If you find any issue when you are using it, it will be much appreciated if you could send a message to anilabha911@gmail.com.
+
+ 
+
+Currently all the content of this app was prepared when I just graduated from university and was preparing for coding interviews. At that time I was pretty confident that I could get a good job as I had done many projects in school and I was very good at building web and mobile applications.
+
+ 
+
+However, things did not go as I expected. During the interviews, the interviewers asked me to write codes to solve problems on the whiteboard. Many times, I got stuck on the problems and could not figure out a single solution. Even when I completed a solution and felt happy, the interviewers often immediately pointed out the problem of my code. Not efficient enough, use too much memory space, or did not consider the boundary situations. I felt disappointed to myself.
+
+ 
+
+Fortunately, I got a pretty good offer from a company and started my career as a web developer. But even now I still feel hard to complete these algorithms questions.
+
+ 
+
+I know preparing for coding interviews is not easy, but it is not that hard. It is just a process that we need to go through to become good developers.
+
+ 
+
+These are all the purposes of this app. I use it every day to review my knowledges on data structures. I hope it could not only help myself, but also help more developers who are fighting for their careers.
+
+ 
+
+ 
+
+ 
+
+The description of Enki
+
+The #1 app to learn data science, learn to code, stay on top of tech trends, or to keep improving as a developer! Topics include SQL, Data Science, JavaScript, Python, Blockchain, CSS, HTML, Security, git, CompSci fundamentals, Linux and Java.
+
+ 
+
+Make progress through the structured curriculum in each topic. Quickly and easily discover new ideas, practice new concepts, and answer interactive quizzes.
+
+ 
+
+Over 1 million people have used Enki to learn data science, new technical topics, to learn to code, or to fill in knowledge gaps in topics they're familiar with already. If you use the app for a few weeks you’ll see the results for yourself.
+
+ 
+
+Here's what Enki users are saying in the reviews:
+
+ 
+
+"The best programming app out there, UX is god class"
+
+ 
+
+"So far I am learning a lot of new information! The small daily tasks really keep you focused and on track while not consuming all your time. It's a good format."
+
+ 
+
+"I love this app, helps me learn on a daily basis and keeps me accountable for being on point when it comes to coding"
+
+ 
+
+"Quick workouts are great for learning how to code on my lunch breaks."
+
+ 
+
+"Wonderful app, really, well designed and all workouts are perfectly designed, ads are not disruptive and the text is perfectly comprehensible. Even beginners can understand what is written in all workouts (provided they select the beginner level). Recommended for everyone, from programming masters to beginners!"
+
+ 
+
+To learn more, visit www.enki.com
+
+ 
+
+ 
+
+ 
+
+The description of Algorithm Visualizer
+
+Algorithm Visualizer lets you visualize various algorithms and data structures.
+
+ 
+
+Algorithm visualizer is completely free and ad-free.
+
+ 
+
+Currently the following visualizations are available -
+
+- Binary Search
+
+- Breadth first search and depth first search graph traversal
+
+- Dijkstara and Bellman Ford graph search
+
+- Sorting (Insertion sort and Bubble sort)
+
+- Binary Search Tree (Search and create)
+
+- Linked List (Insert, delete, traverse)
+
+- Stack (Push, pop, peek)
+
+ 
+
+Descriptions, complexities and references are also provided along with the code for the visualization and implementation.
+
+ 
+
+Algorithm Visualizer is open source and is available on Github - https://github.com/naman14/AlgorithmVisualizer-Android
+
+Show less
+
+ 
+
+ 
+
+ 
+
+The description of Daily Programmer
+
+An app for coders, developers or students: daily coding challenges for learning, refreshing or just for fun!
+
+ 
+
+Features difficulty filtering, syntax highlighting, a dark theme and a responsive layout for phones, tablets and desktops.
+
+ 
+
+LEARN WITH THE COMMUNITY - We have an active Telegram group and a Discord server where we chat about coding and other nerd things, join! Look into the app for the invite links.
+
+ 
+
+FREE & OPEN SOURCE - The entire project is free and open source, come and contribute! https://github.com/avivace/dailyProgrammer
+
+ 
+
+WEB UNIVERSAL VERSION - You can access the application from any device and any browser going to https://avivace.ovh/dp_zero/
+
+ 
+
+A material design frontend to /r/dailyprogrammer challenges providing exclusive features.
+
+Show less
+
+Daily Programmer 1.2 Update
+
+2017-03-16
+
+Fixed a bug preventing the use of local storage for the app preferences.
 ----------------------------------------------------------------------------------------
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.ixortalk.aws.cognito.boot.config.JwtAutoConfiguration;
+import com.ixortalk.aws.cognito.boot.config.JwtIdTokenCredentialsHolder;
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.JWSHeader;
+import com.nimbusds.jose.JWSObject;
+import com.nimbusds.jose.JWSSigner;
+import com.nimbusds.jose.Payload;
+import com.nimbusds.jose.crypto.RSASSASigner;
+import com.nimbusds.jose.jwk.RSAKey;
+import com.nimbusds.jose.proc.BadJOSEException;
+import com.nimbusds.jwt.proc.BadJWTException;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.ConfigFileApplicationContextInitializer;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.web.WebAppConfiguration;
+
+import java.text.ParseException;
+
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.ixortalk.aws.cognito.boot.filter.util.FileUtil.jsonFile;
+import static org.apache.http.HttpStatus.SC_OK;
+import static org.assertj.core.api.Assertions.assertThat;
+
+@RunWith(SpringRunner.class)
+@WebAppConfiguration
+@ContextConfiguration(classes = JwtAutoConfiguration.class,initializers = ConfigFileApplicationContextInitializer.class)
+public class AwsCognitoIdTokenProcessorTest {
+
+    private static final String KNOWN_KID = "1486832567";
+    private static final String UNKNOWN_KID = "000000000";
+    @Rule
+    public WireMockRule wireMockRule = new WireMockRule(65432);
+
+    protected static final String JWKS = jsonFile("jwk/keys.json");
+
+    @Autowired
+    private AwsCognitoIdTokenProcessor awsCognitoIdTokenProcessor;
+
+    @Autowired
+    private JwtIdTokenCredentialsHolder jwtIdTokenCredentialsHolder;
+
+    private MockHttpServletRequest request = new MockHttpServletRequest();
+
+    private MockHttpServletResponse response = new MockHttpServletResponse();
+
+    private Authentication userAuthentication = new UsernamePasswordAuthenticationToken("marissa", "koala");
+
+    @Before
+    public void init() {
+        setupJwkResource(JWKS);
+    }
+
+    @After
+    public void clear() {
+        SecurityContextHolder.clearContext();
+    }
+
+    @Test(expected = ParseException.class)
+    public void whenAuthorizationHeaderWithInvalidJWTValueProvidedParseExceptionOccurs() throws Exception {
+        request.addHeader("Authorization", "Invalid JWT");
+        awsCognitoIdTokenProcessor.getAuthentication(request);
+    }
+
+    @Test(expected = ParseException.class)
+    public void whenAuthorizationHeaderWithEmptyJWTValueProvidedParseExceptionOccurs() throws Exception {
+        request.addHeader("Authorization", "");
+        awsCognitoIdTokenProcessor.getAuthentication(request);
+    }
+
+    @Test
+    public void whenNoAuthorizationHeaderProvidedParseExceptionOccurs() throws Exception {
+        assertThat(awsCognitoIdTokenProcessor.getAuthentication(request)).isNull();
+    }
+
+    @Test(expected = ParseException.class)
+    public void whenUnsignedAuthorizationHeaderProvidedParseExceptionOccurs() throws Exception {
+        request.addHeader("Authorization", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTMzNywidXNlcm5hbWUiOiJqb2huLmRvZSJ9");
+        assertThat(awsCognitoIdTokenProcessor.getAuthentication(request)).isNull();
+    }
+
+
+    @Test(expected = BadJOSEException.class)
+    public void whenSignedJWTWithoutMatchingKeyInAuthorizationHeaderProvidedParseExceptionOccurs() throws Exception {
+        request.addHeader("Authorization", newJwtToken(UNKNOWN_KID,"role1").serialize());
+        assertThat(awsCognitoIdTokenProcessor.getAuthentication(request)).isNull();
+    }
+
+    @Test
+    public void whenSignedJWTWithMatchingKeyInAuthorizationHeaderProvidedAuthenticationIsReturned() throws Exception {
+        request.addHeader("Authorization", newJwtToken(KNOWN_KID,"role1").serialize());
+        Authentication authentication =  awsCognitoIdTokenProcessor.getAuthentication(request);
+        assertThat(authentication.isAuthenticated()).isTrue();
+    }
+
+    @Test(expected = BadJWTException.class)
+    public void whenExpiredJWTWithMatchingKeyInAuthorizationHeaderProvidedAuthenticationIsReturned() throws Exception {
+        request.addHeader("Authorization", newJwtToken(KNOWN_KID,"expired").serialize());
+        awsCognitoIdTokenProcessor.getAuthentication(request);
+    }
+
+
+    protected void setupJwkResource(String assetResponse) {
+        wireMockRule.stubFor(get(urlEqualTo("/.well-known/jwks.json"))
+                .willReturn(
+                        aResponse()
+                                .withBody(assetResponse)
+                                .withStatus(SC_OK)
+                ));
+    }
+
+    private JWSObject newJwtToken(String kid,String role) throws Exception {
+
+        RSAKey rsaKey = RSAKey.parse(jsonFile("jwk/private_key.json"));
+        JWSSigner signer = new RSASSASigner(rsaKey);
+
+        JWSObject jwsObject = new JWSObject(
+                new JWSHeader.Builder(JWSAlgorithm.RS256).keyID(kid).build(),
+                new Payload(jsonFile("jwk/payload-" + role + ".json")));
+
+        jwsObject.sign(signer);
+
+        return jwsObject;
+
+    }
+}
 ----------------------------------------------------------------------------------------
+    <plugin>
+                    <groupId>org.sonatype.plugins</groupId>
+                    <artifactId>nexus-staging-maven-plugin</artifactId>
+                    <version>1.6.8</version>
+                    <extensions>true</extensions>
+                    <configuration>
+                        <serverId>ossrh</serverId>
+                        <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                        <autoreleaseafterclose>true</autoreleaseafterclose>
+                    </configuration>
+                </plugin
 ----------------------------------------------------------------------------------------
+import java.util.ArrayList;
+import java.util.List;
+import java.util.TreeMap;
+
+public enum Server {
+    ENUM_DEFAULT;
+
+
+    private static TreeMap<String, Server> valueMap = new TreeMap<String, Server>();
+    private String value;
+
+    static {
+        ENUM_DEFAULT.value = "default";
+
+        valueMap.put("default", ENUM_DEFAULT);
+    }
+
+    /**
+     * Returns the enum member associated with the given string value
+     * @return The enum member against the given string value */
+    @com.fasterxml.jackson.annotation.JsonCreator
+    public static Server fromString(String toConvert) {
+        return valueMap.get(toConvert);
+    }
+
+    /**
+     * Returns the string value associated with the enum member
+     * @return The string value against enum member */
+    @com.fasterxml.jackson.annotation.JsonValue
+    public String value() {
+        return value;
+    }
+        
+    /**
+     * Get string representation of this enum
+     */
+    @Override
+    public String toString() {
+        return value.toString();
+    }
+
+    /**
+     * Convert list of Server values to list of string values
+     * @param toConvert The list of Server values to convert
+     * @return List of representative string values */
+    public static List<String> toValue(List<Server> toConvert) {
+        if(toConvert == null)
+            return null;
+        List<String> convertedValues = new ArrayList<String>();
+        for (Server enumValue : toConvert) {
+            convertedValues.add(enumValue.value);
+        }
+        return convertedValues;
+    }
+}
 ----------------------------------------------------------------------------------------
+import com.squareup.moshi.internal.Util;
+import java.io.ObjectInputStream;
+import java.io.ObjectStreamClass;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
+/**
+ * Magic that creates instances of arbitrary concrete classes. Derived from Gson's UnsafeAllocator
+ * and ConstructorConstructor classes.
+ *
+ * @author Joel Leitch
+ * @author Jesse Wilson
+ */
+abstract class ClassFactory<T> {
+  abstract T newInstance() throws
+      InvocationTargetException, IllegalAccessException, InstantiationException;
+
+  public static <T> ClassFactory<T> get(final Class<?> rawType) {
+    // Try to find a no-args constructor. May be any visibility including private.
+    try {
+      final Constructor<?> constructor = rawType.getDeclaredConstructor();
+      constructor.setAccessible(true);
+      return new ClassFactory<T>() {
+        @SuppressWarnings("unchecked") // T is the same raw type as is requested
+        @Override public T newInstance() throws IllegalAccessException, InvocationTargetException,
+            InstantiationException {
+          Object[] args = null;
+          return (T) constructor.newInstance(args);
+        }
+        @Override public String toString() {
+          return rawType.getName();
+        }
+      };
+    } catch (NoSuchMethodException ignored) {
+      // No no-args constructor. Fall back to something more magical...
+    }
+
+    // Try the JVM's Unsafe mechanism.
+    // public class Unsafe {
+    //   public Object allocateInstance(Class<?> type);
+    // }
+    try {
+      Class<?> unsafeClass = Class.forName("sun.misc.Unsafe");
+      Field f = unsafeClass.getDeclaredField("theUnsafe");
+      f.setAccessible(true);
+      final Object unsafe = f.get(null);
+      final Method allocateInstance = unsafeClass.getMethod("allocateInstance", Class.class);
+      return new ClassFactory<T>() {
+        @SuppressWarnings("unchecked")
+        @Override public T newInstance() throws InvocationTargetException, IllegalAccessException {
+          return (T) allocateInstance.invoke(unsafe, rawType);
+        }
+        @Override public String toString() {
+          return rawType.getName();
+        }
+      };
+    } catch (IllegalAccessException e) {
+      throw new AssertionError();
+    } catch (ClassNotFoundException | NoSuchMethodException | NoSuchFieldException ignored) {
+      // Not the expected version of the Oracle Java library!
+    }
+
+    // Try (post-Gingerbread) Dalvik/libcore's ObjectStreamClass mechanism.
+    // public class ObjectStreamClass {
+    //   private static native int getConstructorId(Class<?> c);
+    //   private static native Object newInstance(Class<?> instantiationClass, int methodId);
+    // }
+    try {
+      Method getConstructorId = ObjectStreamClass.class.getDeclaredMethod(
+          "getConstructorId", Class.class);
+      getConstructorId.setAccessible(true);
+      final int constructorId = (Integer) getConstructorId.invoke(null, Object.class);
+      final Method newInstance = ObjectStreamClass.class.getDeclaredMethod("newInstance",
+          Class.class, int.class);
+      newInstance.setAccessible(true);
+      return new ClassFactory<T>() {
+        @SuppressWarnings("unchecked")
+        @Override public T newInstance() throws InvocationTargetException, IllegalAccessException {
+          return (T) newInstance.invoke(null, rawType, constructorId);
+        }
+        @Override public String toString() {
+          return rawType.getName();
+        }
+      };
+    } catch (IllegalAccessException e) {
+      throw new AssertionError();
+    } catch (InvocationTargetException e) {
+      throw Util.rethrowCause(e);
+    } catch (NoSuchMethodException ignored) {
+      // Not the expected version of Dalvik/libcore!
+    }
+
+    // Try (pre-Gingerbread) Dalvik/libcore's ObjectInputStream mechanism.
+    // public class ObjectInputStream {
+    //   private static native Object newInstance(
+    //     Class<?> instantiationClass, Class<?> constructorClass);
+    // }
+    try {
+      final Method newInstance = ObjectInputStream.class.getDeclaredMethod(
+          "newInstance", Class.class, Class.class);
+      newInstance.setAccessible(true);
+      return new ClassFactory<T>() {
+        @SuppressWarnings("unchecked")
+        @Override public T newInstance() throws InvocationTargetException, IllegalAccessException {
+          return (T) newInstance.invoke(null, rawType, Object.class);
+        }
+        @Override public String toString() {
+          return rawType.getName();
+        }
+      };
+    } catch (Exception ignored) {
+    }
+
+    throw new IllegalArgumentException("cannot construct instances of " + rawType.getName());
+  }
+}
+----------------------------------------------------------------------------------------
+  @Override
+  public void applyToParams(List<Pair> queryParams, Map<String, String> headerParams) {
+    if (username == null && password == null) {
+      return;
+    }
+    String str = (username == null ? "" : username) + ":" + (password == null ? "" : password);
+    try {
+      headerParams.put("Authorization", "Basic " + Base64.encodeToString(str.getBytes("UTF-8"), false));
+    } catch (UnsupportedEncodingException e) {
+      throw new RuntimeException(e);
+    }
+  }
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
