@@ -13510,11 +13510,456 @@ abstract class ClassFactory<T> {
     }
   }
 ----------------------------------------------------------------------------------------
+import java.util.Locale;
+
+import static com.squareup.protoparser.Utils.checkNotNull;
+
+/**
+ * Representation of a scalar, map, or named type. While this class is an interface, only the
+ * included implementations are supported.
+ */
+public interface DataType {
+  enum Kind {
+    /** Type is a {@link ScalarType}. */
+    SCALAR,
+    /** Type is a {@link MapType}. */
+    MAP,
+    /** Type is a {@link NamedType}. */
+    NAMED
+  }
+
+  /** The kind of this type (and therefore implementing class). */
+  Kind kind();
+
+  enum ScalarType implements DataType {
+    ANY,
+    BOOL,
+    BYTES,
+    DOUBLE,
+    FLOAT,
+    FIXED32,
+    FIXED64,
+    INT32,
+    INT64,
+    SFIXED32,
+    SFIXED64,
+    SINT32,
+    SINT64,
+    STRING,
+    UINT32,
+    UINT64;
+
+    @Override public Kind kind() {
+      return Kind.SCALAR;
+    }
+
+    @Override public String toString() {
+      return name().toLowerCase(Locale.US);
+    }
+  }
+
+  final class MapType implements DataType {
+    public static MapType create(DataType keyType, DataType valueType) {
+      return new MapType(checkNotNull(keyType, "keyType"), checkNotNull(valueType, "valueType"));
+    }
+
+    private final DataType keyType;
+    private final DataType valueType;
+
+    private MapType(DataType keyType, DataType valueType) {
+      this.keyType = keyType;
+      this.valueType = valueType;
+    }
+
+    @Override public Kind kind() {
+      return Kind.MAP;
+    }
+
+    public DataType keyType() {
+      return keyType;
+    }
+
+    public DataType valueType() {
+      return valueType;
+    }
+
+    @Override public String toString() {
+      return "map<" + keyType + ", " + valueType + ">";
+    }
+
+    @Override public boolean equals(Object obj) {
+      if (obj == this) return true;
+      if (!(obj instanceof MapType)) return false;
+      MapType other = (MapType) obj;
+      return keyType.equals(other.keyType) && valueType.equals(other.valueType);
+    }
+
+    @Override public int hashCode() {
+      return keyType.hashCode() * 37 + valueType.hashCode();
+    }
+  }
+
+  final class NamedType implements DataType {
+    public static NamedType create(String name) {
+      return new NamedType(checkNotNull(name, "name"));
+    }
+
+    private final String name;
+
+    private NamedType(String name) {
+      this.name = name;
+    }
+
+    public String name() {
+      return name;
+    }
+
+    @Override public Kind kind() {
+      return Kind.NAMED;
+    }
+
+    @Override public String toString() {
+      return name;
+    }
+
+    @Override public boolean equals(Object obj) {
+      if (obj == this) return true;
+      if (!(obj instanceof NamedType)) return false;
+      NamedType other = (NamedType) obj;
+      return name.equals(other.name);
+    }
+
+    @Override public int hashCode() {
+      return name.hashCode();
+    }
+  }
+}
 ----------------------------------------------------------------------------------------
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementCreator;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.stereotype.Repository;
+
+import srt.data.domain.management.User;
+
+@Repository
+public class SimpleUserRepositoryImpl implements IUserRepository {
+	
+	private JdbcTemplate jdbc;
+	private KeyHolder keyHolder;
+	
+	private static final UserRowMapper ROWMAPPER = new UserRowMapper();
+	
+	@Autowired
+	public SimpleUserRepositoryImpl(JdbcTemplate jdbc, KeyHolder keyHolder) {
+		this.jdbc = jdbc;
+		this.keyHolder = keyHolder;
+	}
+
+	@Override
+	public User getUserByUserId(Long userId) {
+		List<User> userList = jdbc.query(new StringBuilder(UserRowMapper.SELECT_WITH_NO_CRITERIA).append(UserRowMapper.SELECT_CRITERIA_BY_USERID).toString(), ROWMAPPER, userId);
+		if (userList == null || userList.size() == 0) {
+			return null;
+		}
+		return userList.get(0);
+	}
+
+	@Override
+	public User getUsersByUserName(String userName) {
+		List<User> users=jdbc.query(new StringBuilder(UserRowMapper.SELECT_WITH_NO_CRITERIA).append(UserRowMapper.SELECT_CRITERIA_BY_USERNAME).toString(), ROWMAPPER, userName);
+		if(users!=null && users.size()>0){
+			return users.get(0);
+		}
+		return null;
+	}
+
+	@Override
+	public int addUser(User user) {
+		int rows = jdbc.update(new PreparedStatementCreator() {
+			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
+				String sql="INSERT INTO Users (userName, userDescription, password) VALUES (?,?,?)";
+		        PreparedStatement ps=con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+		        ps.setString(1,user.getUserName());
+		        ps.setString(2, user.getUserDescription());
+		        ps.setString(3, user.getPassword());
+		        return ps;
+			}
+		}, keyHolder);
+		Long userId=keyHolder.getKey().longValue();
+		user.setUserId(userId);
+		return rows;
+	}
+
+	@Override
+	public int updateUser(User user) {
+		Long userId = user.getUserId();
+		if (userId == null || userId < 0) {
+			return -1;
+		}
+		return jdbc.update("UPDATE Users set userName=?, userDescription=? WHERE userId=?", user.getUserName(), user.getUserDescription(), userId);
+	}
+
+	@Override
+	public int removeUserByUserId(Long userId) {
+		if(userId==null || userId<0){
+			return -1;
+		}
+		return jdbc.update("DELETE FROM Users WHERE userId=?", userId);
+	}
+	
+	public static class UserRowMapper implements RowMapper<User> {
+
+		public static final StringBuilder SELECT_WITH_NO_CRITERIA = new StringBuilder(
+				"SELECT userId, userName, userDescription, password FROM Users");
+		public static final StringBuilder SELECT_CRITERIA_BY_USERID = new StringBuilder(" WHERE userId=?");
+		public static final StringBuilder SELECT_CRITERIA_BY_USERNAME = new StringBuilder(" WHERE userName=?");
+		
+		public User mapRow(ResultSet rs, int rowNum) throws SQLException {
+			User user = new User();
+			user.setUserId(rs.getLong(1));
+			user.setUserName(rs.getString(2));
+			user.setUserDescription(rs.getString(3));
+			user.setPassword(rs.getString(4));
+			return user;
+		}
+
+	}
+
+}
 ----------------------------------------------------------------------------------------
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.stereotype.Repository;
+
+import srt.data.domain.Module;
+
+@Repository
+public class SimpleModuleRepository implements IModuleRepository{
+
+	@Autowired
+	private MongoTemplate mongo;
+	
+	@Override
+	public void updateModule(Module module) {
+		mongo.findAndModify(Query.query(Criteria.where("id").is(module.getId())), 
+				Update.update("name", module.getName())
+					.set("description", module.getDescription())
+					.set("status", module.getStatus())
+					.set("parentModuleId", module.getParentModuleId())
+					.set("subModuleIdList", module.getSubModuleIdList())
+					.set("attachmentPathList", module.getAttachmentPathList()), 
+				Module.class);
+	}
+
+	@Override
+	public void addModule(Module module) {
+		mongo.insert(module);	
+	}
+
+	@Override
+	public List<Module> getAllModules(){
+		return mongo.findAll(Module.class);
+	}
+	
+	@Override
+	public Module getModuleByModuleId(String moduleId) {
+		return mongo.findById(moduleId, Module.class);
+	}
+
+	@Override
+	public void removeModuleByModuleId(String moduleId) {
+		mongo.findAndRemove(Query.query(Criteria.where("id").is(moduleId)), Module.class);
+	}
+
+}
+
 ----------------------------------------------------------------------------------------
+import org.apache.http.client.HttpClient;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.ssl.SSLContexts;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.client.ClientHttpRequestFactory;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.web.client.DefaultResponseErrorHandler;
+import org.springframework.web.client.RestTemplate;
+import springfox.documentation.builders.PathSelectors;
+import springfox.documentation.builders.RequestHandlerSelectors;
+import springfox.documentation.spi.DocumentationType;
+import springfox.documentation.spring.web.plugins.Docket;
+import springfox.documentation.swagger2.annotations.EnableSwagger2;
+
+import javax.net.ssl.SSLContext;
+
+@SpringBootApplication
+@EnableSwagger2
+public class ServerApplication {
+    @Value("${server.ssl.trust-store-password}")
+    private String trustStorePassword;
+    @Value("${server.ssl.trust-store}")
+    private Resource trustResource;
+    @Value("${server.ssl.key-store-password}")
+    private String keyStorePassword;
+    @Value("${server.ssl.key-password}")
+    private String keyPassword;
+    @Value("${server.ssl.key-store}")
+    private Resource keyStore;
+
+    public static void main(String[] args) {
+        SpringApplication.run(ServerApplication.class, args);
+    }
+
+    @Bean
+    public Docket api() {
+        return new Docket(DocumentationType.SWAGGER_2)
+                .select()
+                .apis(RequestHandlerSelectors.any())
+                .paths(PathSelectors.any())
+                .build();
+    }
+
+    @Bean
+    public RestTemplate restTemplate() throws Exception {
+        RestTemplate restTemplate = new RestTemplate(clientHttpRequestFactory());
+        restTemplate.setErrorHandler(
+                new DefaultResponseErrorHandler() {
+                    @Override
+                    protected boolean hasError(HttpStatus statusCode) {
+                        return false;
+                    }
+                });
+
+        return restTemplate;
+    }
+
+    private ClientHttpRequestFactory clientHttpRequestFactory() throws Exception {
+        return new HttpComponentsClientHttpRequestFactory(httpClient());
+    }
+
+    private HttpClient httpClient() throws Exception {
+        // Load our keystore and truststore containing certificates that we trust.
+        SSLContext sslcontext =
+                SSLContexts.custom().loadTrustMaterial(trustResource.getFile(), trustStorePassword.toCharArray())
+                        .loadKeyMaterial(keyStore.getFile(), keyStorePassword.toCharArray(),
+                                keyPassword.toCharArray()).build();
+        SSLConnectionSocketFactory sslConnectionSocketFactory =
+                new SSLConnectionSocketFactory(sslcontext, new NoopHostnameVerifier());
+        return HttpClients.custom().setSSLSocketFactory(sslConnectionSocketFactory).build();
+    }
+}
 ----------------------------------------------------------------------------------------
+public class ClientHttpRequestFactorySupplier implements Supplier<ClientHttpRequestFactory> {
+
+	private static final Map<String, String> REQUEST_FACTORY_CANDIDATES;
+
+	static {
+		Map<String, String> candidates = new LinkedHashMap<>();
+		candidates.put("org.apache.http.client.HttpClient",
+				"org.springframework.http.client.HttpComponentsClientHttpRequestFactory");
+		candidates.put("okhttp3.OkHttpClient", "org.springframework.http.client.OkHttp3ClientHttpRequestFactory");
+		REQUEST_FACTORY_CANDIDATES = Collections.unmodifiableMap(candidates);
+	}
+
+	@Override
+	public ClientHttpRequestFactory get() {
+		for (Map.Entry<String, String> candidate : REQUEST_FACTORY_CANDIDATES.entrySet()) {
+			ClassLoader classLoader = getClass().getClassLoader();
+			if (ClassUtils.isPresent(candidate.getKey(), classLoader)) {
+				Class<?> factoryClass = ClassUtils.resolveClassName(candidate.getValue(), classLoader);
+				return (ClientHttpRequestFactory) BeanUtils.instantiateClass(factoryClass);
+			}
+		}
+		return new SimpleClientHttpRequestFactory();
+	}
+
+}
 ----------------------------------------------------------------------------------------
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
+
+/**
+ * In-memory fake authentication provider.
+ * 
+ * @author Andreas Kluth
+ */
+@Component
+public class FakeAuthenticationProvider implements AuthenticationProvider {
+
+  private static final String HARD_CODED_SUPER_SECRET_NAME = "admin";
+
+  private static final String HARD_CODED_SUPER_SECRET_PW = "adm1n";
+
+  private final String saltedAndHashedSecret;
+
+  private final PasswordEncoder passwordEncoder = NoOpPasswordEncoder.getInstance();
+
+  /**
+   * Creates a new instance of {@link FakeAuthenticationProvider}.
+   * 
+   * @param encoder
+   *          to hash and salt passwords.
+   */
+  public FakeAuthenticationProvider() {
+    saltedAndHashedSecret = passwordEncoder.encode(HARD_CODED_SUPER_SECRET_PW);
+  }
+
+  @Override
+  public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+    String name = authentication.getName();
+    String password = authentication.getCredentials().toString();
+
+    if (isValidUser(name, password)) {
+      List<GrantedAuthority> grantedAuths = new ArrayList<>();
+      grantedAuths.add(new SimpleGrantedAuthority("USER"));
+      return new UsernamePasswordAuthenticationToken(name, password, grantedAuths);
+    }
+
+    throw new BadCredentialsException("Invalid password or user name.");
+  }
+
+  @Override
+  public boolean supports(Class<?> authentication) {
+    return authentication.equals(UsernamePasswordAuthenticationToken.class);
+  }
+
+  private boolean isValidUser(String name, String password) {
+    return HARD_CODED_SUPER_SECRET_NAME.equalsIgnoreCase(name)
+        && passwordEncoder.matches(password, saltedAndHashedSecret);
+  }
+
+}
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
