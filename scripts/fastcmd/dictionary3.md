@@ -14297,9 +14297,490 @@ public class JsonResponseHandler{
 		
 	}
 }
+
+    @Autowired
+    DataSource dataSource;
+ 
+    @Autowired
+    private ApplicationContext applicationContext;
+     
+    @Autowired
+    private TriggerListner triggerListner;
+
+    @Autowired
+    private JobsListener jobsListener;
+    
+    /**
+     * create scheduler
+     */
+    @Bean
+    public SchedulerFactoryBean schedulerFactoryBean() throws IOException {
+ 
+        SchedulerFactoryBean factory = new SchedulerFactoryBean();
+        factory.setOverwriteExistingJobs(true);
+        factory.setDataSource(dataSource);
+        factory.setQuartzProperties(quartzProperties());
+        
+        //Register listeners to get notification on Trigger misfire etc
+        factory.setGlobalTriggerListeners(triggerListner);
+        factory.setGlobalJobListeners(jobsListener);
+        
+        AutowiringSpringBeanJobFactory jobFactory = new AutowiringSpringBeanJobFactory();
+        jobFactory.setApplicationContext(applicationContext);
+        factory.setJobFactory(jobFactory);
+        
+        return factory;
+    }
+ 
+    /**
+     * Configure quartz using properties file
+     */
+    @Bean
+    public Properties quartzProperties() throws IOException {
+        PropertiesFactoryBean propertiesFactoryBean = new PropertiesFactoryBean();
+        propertiesFactoryBean.setLocation(new ClassPathResource("/quartz.properties"));
+        propertiesFactoryBean.afterPropertiesSet();
+        return propertiesFactoryBean.getObject();
+    }
 ----------------------------------------------------------------------------------------
+var path = require('path');
+var webpack = require('webpack');
+var HtmlWebpackPlugin = require('html-webpack-plugin');
+var CopyWebpackPlugin = require('copy-webpack-plugin');
+var ExtractTextPlugin = require('extract-text-webpack-plugin');
+
+module.exports = {
+
+  entry: {
+    'app': './src/main.ts',
+    'polyfills': [
+      'core-js/es6',
+      'core-js/es7/reflect',
+      'zone.js/dist/zone'
+    ]
+  },
+  output: {
+    path: './target',
+    filename: '[name].bundle.js'
+  },
+  module: {
+    loaders: [
+      {test: /\.component.ts$/, loader: 'ts!angular2-template'},
+      {test: /\.ts$/, exclude: /\.component.ts$/, loader: 'ts'},
+      {test: /\.html$/, loader: 'raw'},
+      {test: /\.css$/, include: path.resolve('src/resources/vendor'), loader: 'raw'},
+      {test: /\.css$/, include: path.resolve('src/resources/vendor'), loader: ExtractTextPlugin.extract('style', 'css')},
+	  {test: /\.css$/, include: path.resolve('node_modules'), loader: ExtractTextPlugin.extract('style', 'css')},
+      {test: /\.(png|jpe?g|gif|svg|woff|woff2|ttf|eot|ico)$/, loader: 'file?name=fonts/[name].[ext]'}
+    ]
+  },
+  resolve: {
+    extensions: ['', '.js', '.ts', '.html', '.css']
+  },
+  devServer: {
+    proxy: {
+      "**": "http://localhost:7080"
+    }
+  },
+  plugins: [
+    new webpack.optimize.CommonsChunkPlugin({
+      name: 'polyfills'
+    }),
+    new HtmlWebpackPlugin({
+      template: './src/index.html'
+    }),
+    new webpack.DefinePlugin({
+      app: {
+        environment: JSON.stringify(process.env.APP_ENVIRONMENT || 'development')
+      }
+    }),
+    new ExtractTextPlugin('[name].css'),
+	new webpack.ProvidePlugin({
+		$: 'jquery',
+		jquery: 'jquery',
+		jQuery: 'jquery'
+    })
+  ]
+};
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.view.tiles3.TilesConfigurer;
+
+/**
+ * Unit tests were failing because could not locate tiles.xml, so swap out the configurer with
+ * one that knows the relative location of the file.
+ * 
+ * @author Mark Meany
+ */
+@Configuration
+public class TestConfigurtaion {
+
+    /**
+     * Configure tiles using a filesystem location for the configuration file rather than a
+     * URL based location.
+     * 
+     * @return tiles configurer
+     */
+	@Bean
+	public TilesConfigurer tilesConfigurer() {
+		TilesConfigurer configurer = new TilesConfigurer();
+		configurer.setDefinitions(new String[] { "file:src/main/webapp/WEB-INF/tiles/tiles.xml" });
+		configurer.setCheckRefresh(true);
+		return configurer;
+	}
+}
+
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.authentication.configurers.GlobalAuthenticationConfigurerAdapter;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.common.DefaultOAuth2AccessToken;
+import org.springframework.security.oauth2.common.OAuth2AccessToken;
+import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
+import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
+import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
+import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
+import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.security.oauth2.provider.token.TokenStore;
+import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
+import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
+import org.springframework.security.oauth2.provider.token.store.KeyStoreKeyFactory;
+
+import com.kristijangeorgiev.spring.boot.oauth2.jwt.model.entity.User;
+
+@Configuration
+@EnableAuthorizationServer
+public class OAuth2Configuration extends AuthorizationServerConfigurerAdapter {
+
+	@Autowired
+	@Qualifier("authenticationManagerBean")
+	private AuthenticationManager authenticationManager;
+
+	// TODO externalize token related data to configuration, store clients in DB
+	@Override
+	public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
+		clients.inMemory().withClient("webapp").authorizedGrantTypes("implicit", "refresh_token", "password")
+				.authorities("ROLE_TRUSTED").resourceIds("ms/user").scopes("read", "write").autoApprove(true)
+				.accessTokenValiditySeconds(60000).refreshTokenValiditySeconds(60000).and().withClient("server")
+				.secret("secret").authorizedGrantTypes("refresh_token", "authorization_code")
+				.authorities("ROLE_TRUSTED").resourceIds("app/admin").scopes("read", "write").autoApprove(true);
+	}
+
+	/*
+	 * The endpoints can only be accessed by a not logged in user or a user with
+	 * the specified role
+	 */
+	// TODO externalise configuration
+	@Override
+	public void configure(AuthorizationServerSecurityConfigurer oauthServer) throws Exception {
+		oauthServer.tokenKeyAccess("isAnonymous() || hasAuthority('ROLE_TRUSTED')")
+				.checkTokenAccess("hasAuthority('ROLE_TRUSTED')");
+	}
+
+	@Override
+	public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+		endpoints.tokenStore(tokenStore()).tokenEnhancer(jwtAccessTokenConverter())
+				.authenticationManager(authenticationManager);
+	}
+
+	@Bean
+	public TokenStore tokenStore() {
+		return new JwtTokenStore(jwtAccessTokenConverter());
+	}
+
+	// TODO encrypt password
+	@Bean
+	protected JwtAccessTokenConverter jwtAccessTokenConverter() {
+		JwtAccessTokenConverter converter = new CustomTokenEnhancer();
+		converter.setKeyPair(
+				new KeyStoreKeyFactory(new ClassPathResource("jwt.jks"), "password".toCharArray()).getKeyPair("jwt"));
+		return converter;
+	}
+
+	/*
+	 * Add custom user principal information to the JWT token
+	 */
+	// TODO additional information fields should be get from configuration
+	protected static class CustomTokenEnhancer extends JwtAccessTokenConverter {
+		@Override
+		public OAuth2AccessToken enhance(OAuth2AccessToken accessToken, OAuth2Authentication authentication) {
+			User user = (User) authentication.getPrincipal();
+
+			Map<String, Object> info = new LinkedHashMap<String, Object>(accessToken.getAdditionalInformation());
+
+			info.put("email", user.getEmail());
+
+			DefaultOAuth2AccessToken customAccessToken = new DefaultOAuth2AccessToken(accessToken);
+
+			// Get the authorities from the user
+			Set<GrantedAuthority> authoritiesSet = new HashSet<>(authentication.getAuthorities());
+
+			// Generate String array
+			String[] authorities = new String[authoritiesSet.size()];
+
+			int i = 0;
+			for (GrantedAuthority authority : authoritiesSet)
+				authorities[i++] = authority.getAuthority();
+
+			info.put("authorities", authorities);
+			customAccessToken.setAdditionalInformation(info);
+
+			return super.enhance(customAccessToken, authentication);
+		}
+	}
+
+	/*
+	 * Setup the refresh_token functionality to work with the custom
+	 * UserDetailsService
+	 */
+	@Configuration
+	protected static class GlobalAuthenticationManagerConfiguration extends GlobalAuthenticationConfigurerAdapter {
+		@Autowired
+		private UserDetailsService userDetailsService;
+
+		@Autowired
+		private PasswordEncoder passwordEncoder;
+
+		@Override
+		public void init(AuthenticationManagerBuilder auth) throws Exception {
+			auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder);
+		}
+	}
+}
 ----------------------------------------------------------------------------------------
+import java.util.List;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+
+import org.hibernate.annotations.Where;
+import org.hibernate.annotations.WhereJoinTable;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+/**
+ * 
+ * <h2>Role</h2>
+ * 
+ * @author Kristijan Georgiev
+ * 
+ *         Role entity
+ *
+ */
+
+@Entity
+@Setter
+@Getter
+@NoArgsConstructor
+public class Role extends BaseIdEntity {
+
+	private static final long serialVersionUID = 1L;
+
+	@NotNull
+	@Size(min = 6, max = 60)
+	private String name;
+
+	/*
+	 * Get all permissions associated with the Role that are not deleted
+	 */
+	@ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+	@JoinTable(name = "permission_role", joinColumns = {
+			@JoinColumn(name = "role_id", referencedColumnName = "id") }, inverseJoinColumns = {
+					@JoinColumn(name = "permission_id", referencedColumnName = "id") })
+	@WhereJoinTable(clause = NOT_DELETED)
+	@Where(clause = NOT_DELETED)
+	private List<Permission> permissions;
+
+}
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.kristijangeorgiev.spring.boot.oauth2.jwt.model.entity.User;
+
+/**
+ * 
+ * @author Kristijan Georgiev
+ * 
+ *         UserRepository with custom methods for finding an active User by
+ *         username or email
+ *
+ */
+
+@Repository
+@Transactional
+public interface UserRepository extends JpaRepository<User, Long> {
+
+	@Query("SELECT u FROM User u WHERE (u.deletedOn > CURRENT_TIMESTAMP OR u.deletedOn IS NULL) AND u.username = :username")
+	User findActiveByUsername(@Param("username") String username);
+
+	@Query("SELECT u FROM User u WHERE (u.deletedOn > CURRENT_TIMESTAMP OR u.deletedOn IS NULL) AND u.email = :email")
+	User findActiveByEmail(@Param("email") String email);
+
+}
+
+import com.km.entity.Info;
+import com.km.entity.User;
+import com.km.service.UserService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.stereotype.Service;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * <p></p>
+ * Created by zhezhiyong@163.com on 2017/9/21.
+ */
+@Service
+@Slf4j
+public class UserServiceImpl implements UserService {
+
+    private Map<Long, User> userMap = new HashMap<>();
+    private Map<Long, Info> infoMap = new HashMap<>();
+
+    public UserServiceImpl() {
+        userMap.put(1L, new User(1L, "aaa", "666666"));
+        userMap.put(2L, new User(2L, "bbb", "666666"));
+        userMap.put(3L, new User(3L, "ccc", "666666"));
+        infoMap.put(1L, new Info("18559198715", "福州市"));
+    }
+
+    @Override
+    public List list() {
+        return Arrays.asList(userMap.values().toArray());
+    }
+
+    @Override
+    @Cacheable(value = "user", key = "'user'.concat(#id.toString())")
+    public User findUserById(Long id) {
+        log.info("findUserById query from db, id: {}", id);
+        return userMap.get(id);
+    }
+
+    @Override
+    @Cacheable(value = "info", key = "'info'.concat(#id.toString())")
+    public User findInfoById(Long id) {
+        log.info("findInfoById query from db, id: {}", id);
+        return userMap.get(id);
+    }
+
+    @Override
+    @CachePut(value = "user", key = "'user'.concat(#user.id.toString())")
+    public void update(User user) {
+        log.info("update db, user: {}", user.toString());
+        userMap.put(user.getId(), user);
+    }
+
+    @Override
+    @CacheEvict(value = "user", key = "'user'.concat(#id.toString())")
+    public void remove(Long id) {
+        log.info("remove from db, id: {}", id);
+        userMap.remove(id);
+    }
+}
 ----------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
+
+import com.butterfly.redis.generator.client.JedisClient;
+import com.butterfly.redis.generator.properties.JedisProperties;
+import com.google.common.base.Strings;
+
+/**
+ * @Description
+ * @author butterfly
+ * @date 2017年8月3日 下午1:51:16
+ */
+@Configuration  
+@PropertySource(value = "classpath:jedis.properties")
+@EnableConfigurationProperties(JedisProperties.class)// 开启属性注入,通过@autowired注入   
+@ConditionalOnClass(JedisClient.class) // 判断这个类是否在classpath中存在  
+public class JedisSpringConfig {
+	
+	/**
+	 * 属性配置对象
+	 */
+	@Autowired
+	private JedisProperties prop;
+
+	
+	/**
+	 * @Description 
+	 * 
+	 * @author butterfly
+	 * @return
+	 */
+	@Bean(name = "jedisPool")
+	public JedisPool jedisPool() {
+		JedisPoolConfig config = new JedisPoolConfig();
+		config.setMaxTotal(prop.getMaxTotal());
+		config.setMaxIdle(prop.getMaxIdle());
+		config.setMaxWaitMillis(prop.getMaxWait());
+		config.setTestOnBorrow(prop.getTestOnBorrow());
+		JedisPool jedisPool = null;
+		if (!Strings.isNullOrEmpty(prop.getPassword())) {
+			jedisPool = new JedisPool(config, prop.getHost(), prop.getPort(), prop.getTimeout(), prop.getPassword());
+		} else {
+			jedisPool = new JedisPool(config, prop.getHost(), prop.getPort(), prop.getTimeout());
+		}
+		return jedisPool;
+	}
+
+	
+	/**
+	 * @Description 
+	 * 
+	 * @author butterfly
+	 * @param pool
+	 * @return
+	 */
+	@Bean
+	@ConditionalOnMissingBean(JedisClient.class) // 容器中如果没有RedisClient这个类,那么自动配置这个RedisClient
+	public JedisClient redisClient(@Qualifier("jedisPool") JedisPool pool) {
+		JedisClient jedisClient = new JedisClient();
+		jedisClient.setJedisPool(pool);
+		return jedisClient;
+	}
+}
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
