@@ -13961,7 +13961,342 @@ public class FakeAuthenticationProvider implements AuthenticationProvider {
 
 }
 ----------------------------------------------------------------------------------------
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+
+// tag::slimmed[]
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+@Document()
+public class Team {
+
+	@Id
+	private BigInteger id;
+
+	private String name;
+
+	@DBRef
+	private List<Teammate> members;
+// end::slimmed[]
+
+	private Team() {
+		members = new ArrayList<>();
+	}
+
+	public Team(String name) {
+		this();
+		this.name = name;
+	}
+
+	public BigInteger getId() {
+		return id;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public List<Teammate> getMembers() {
+		return members;
+	}
+
+	public void setMembers(List<Teammate> members) {
+		this.members = members;
+	}
+}
+
+import org.apache.catalina.connector.Connector;
+import org.apache.coyote.http11.Http11NioProtocol;
+import org.springframework.boot.context.embedded.EmbeddedServletContainerFactory;
+import org.springframework.boot.context.embedded.tomcat.TomcatEmbeddedServletContainerFactory;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.util.ResourceUtils;
+
+import java.io.FileNotFoundException;
+
+@Configuration
+public class SecureTomcatConfiguration {
+
+	@Bean
+	public EmbeddedServletContainerFactory servletContainer()
+			throws FileNotFoundException {
+		TomcatEmbeddedServletContainerFactory f =
+				new TomcatEmbeddedServletContainerFactory();
+		f.addAdditionalTomcatConnectors(createSslConnector());
+		return f;
+	}
+
+	private Connector createSslConnector() throws FileNotFoundException {
+		Connector connector = new Connector(Http11NioProtocol.class.getName());
+		Http11NioProtocol protocol =
+				(Http11NioProtocol)connector.getProtocolHandler();
+		connector.setPort(8443);
+		connector.setSecure(true);
+		connector.setScheme("https");
+		protocol.setSSLEnabled(true);
+		protocol.setKeyAlias("learningspringboot");
+		protocol.setKeystorePass("password");
+		protocol.setKeystoreFile(ResourceUtils
+			.getFile("src/main/resources/tomcat.keystore")
+			.getAbsolutePath());
+		protocol.setSslProtocol("TLS");
+		return connector;
+	}
+
+}
 ----------------------------------------------------------------------------------------
+import org.springframework.hateoas.ResourceSupport;
+
+import java.time.LocalDateTime;
+
+public class BananaResource extends ResourceSupport {
+  public LocalDateTime pickedAt;
+  public Boolean peeled;
+}
+
+
+import com.stelligent.domain.Banana;
+import org.springframework.hateoas.mvc.ResourceAssemblerSupport;
+import org.springframework.stereotype.Component;
+
+import java.util.Objects;
+
+/**
+ * A ResourceAssembler to convert a Banana domain object into a HATEOAS Resource (with links)
+ */
+@Component
+public class BananaResourceAssembler extends ResourceAssemblerSupport<Banana, BananaResource> {
+  public BananaResourceAssembler() {
+    super(BananaController.class, BananaResource.class);
+  }
+
+  /**
+   * Convert a Banana into a BananaResource and add links to the resource
+   *
+   * @param banana The Banana domain object
+   * @return A BananaResource representation of the Banana
+   * @throws NullPointerException if banana is null
+   */
+  public BananaResource toResource(Banana banana) throws NullPointerException {
+    if(Objects.isNull(banana)) {
+      throw new NullPointerException();
+    }
+
+    BananaResource bananaResource = createResourceWithId(banana.getId(), banana); // adds a "self" link
+    bananaResource.pickedAt = banana.getPickedAt();
+    bananaResource.peeled = banana.getPeeled();
+    return bananaResource;
+  }
+}
+
+import com.stelligent.domain.Banana;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.hateoas.Link;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import static org.mockito.MockitoAnnotations.initMocks;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest()
+public class BananaResourceAssemblerTest {
+  @Autowired
+  private WebApplicationContext context;
+
+  private MockMvc mockMvc;
+
+  @InjectMocks
+  private BananaResourceAssembler bananaResourceAssembler;
+
+  @Before
+  public void setUp() {
+
+    initMocks(this);
+    this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context).build();
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void testToResourceWithNull() {
+    bananaResourceAssembler.toResource(null);
+  }
+
+  @Test
+  public void testToResource() {
+    Banana banana = new Banana();
+    banana.setId(100L);
+    banana.setPeeled(true);
+    banana.setPickedAt(LocalDateTime.now());
+    BananaResource bananaResource = bananaResourceAssembler.toResource(banana);
+
+    Assert.assertEquals("peeled",banana.getPeeled(), bananaResource.peeled);
+    Assert.assertEquals("picked at",banana.getPickedAt(), bananaResource.pickedAt);
+
+    List<Link> links = bananaResource.getLinks();
+    Assert.assertEquals("links size",1,links.size());
+    Assert.assertEquals("links rel","self",links.get(0).getRel());
+    Assert.assertEquals("links href","http://localhost/bananas/100",links.get(0).getHref());
+  }
+}
+
+import org.springframework.hateoas.Identifiable;
+import java.time.LocalDateTime;
+
+/**
+ * Domain model representing the Milkshake object
+ */
+public class Milkshake implements Identifiable<Long>{
+  private Long id;
+  private Flavor flavor;
+
+  public enum Flavor {
+    Banana
+  }
+
+  public Long getId() {
+    return id;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
+  }
+
+  public Flavor getFlavor() {
+    return flavor;
+  }
+
+  public void setFlavor(Flavor flavor) {
+    this.flavor = flavor;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    Milkshake milkshake = (Milkshake) o;
+
+    return id != null ? id.equals(milkshake.id) : milkshake.id == null;
+
+  }
+
+  @Override
+  public int hashCode() {
+    return id != null ? id.hashCode() : 0;
+  }
+}
+
+/**
+ * Created by luotuo on 17-6-7.
+ */
+public class Constant {
+    public enum ResourceType {
+        PROJECT("project"),
+        TASK("task"),
+        REPORT("report");
+
+        public String getTypeName() {
+            return typeName;
+        }
+
+        private String typeName;
+        ResourceType(String typeName) {
+            this.typeName = typeName;
+        }
+    }
+
+    public enum ControllerType {
+        GET("get"),
+        EDIT("edit"),
+        DELETE("delete"),
+        ADD("add");
+
+        public String getTypeName() {
+            return typeName;
+        }
+
+        private String typeName;
+        ControllerType(String typeName) { this.typeName = typeName; }
+    }
+
+    public enum UserRoleType {
+        AUDITMAN("audit_man"),
+        AUDITLEADER("audit_leader"),
+        PROJECTMANAGER("project_manager"),
+        BUSINESSMANAGER("business_manager"),
+        REVIEWER("reviewer");
+        public String getTypeName() {
+            return typeName;
+        }
+
+        private String typeName;
+        UserRoleType(String typeName) { this.typeName = typeName; }
+    }
+}
+
+import java.io.IOException;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.ResponseHandler;
+import org.apache.http.util.EntityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.jwcq.wechat.utils.JsonUtil;
+
+public class JsonResponseHandler{
+
+	private static Logger logger = LoggerFactory.getLogger(JsonResponseHandler.class);
+
+	public static <T> ResponseHandler<T> createResponseHandler(final Class<T> clazz){
+		return new JsonResponseHandlerImpl<T>(null,clazz);
+	}
+
+	public static class JsonResponseHandlerImpl<T> extends LocalResponseHandler implements ResponseHandler<T> {
+		
+		private Class<T> clazz;
+		
+		public JsonResponseHandlerImpl(String uriId, Class<T> clazz) {
+			this.uriId = uriId;
+			this.clazz = clazz;
+		}
+
+		@Override
+		public T handleResponse(HttpResponse response)
+				throws ClientProtocolException, IOException {
+			int status = response.getStatusLine().getStatusCode();
+            if (status >= 200 && status < 300) {
+                HttpEntity entity = response.getEntity();
+                String str = EntityUtils.toString(entity,"utf-8");
+                logger.info("URI[{}] elapsed time:{} ms RESPONSE DATA:{}",super.uriId,System.currentTimeMillis()-super.startTime,str);
+                return JsonUtil.parseObject(str, clazz);
+            } else {
+                throw new ClientProtocolException("Unexpected response status: " + status);
+            }
+		}
+		
+	}
+}
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
