@@ -14781,8 +14781,201 @@ public class JedisSpringConfig {
 		return jedisClient;
 	}
 }
+
+ @PreAuthorize("isAuthenticated() && hasPermission(#user, 'WRITE') && #user != null")
 ----------------------------------------------------------------------------------------
+package com.synerzip.template.springboot;
+
+import cucumber.api.CucumberOptions;
+import cucumber.api.junit.Cucumber;
+import org.junit.runner.RunWith;
+
+/**
+ * @author rohitghatol
+ *
+ */
+@RunWith(Cucumber.class)
+@CucumberOptions(format={"pretty",
+		  "html:target/test-report",
+			"json:target/test-report.json",
+			"junit:target/test-report.xml"})
+public class RunCukesTest {
+}
 ----------------------------------------------------------------------------------------
+import org.springframework.security.core.GrantedAuthority;
+
+/**
+ * 系统内置角色
+ */
+public enum SysRole implements GrantedAuthority {
+
+	// 系统 - 普通用户
+	ROLE_USER("普通用户") {
+		@Override
+		public String getAuthority() {
+			return "ROLE_USER";
+		}
+	},
+	// 系统 - 管理员
+	ROLE_MGR("管理员") {
+		@Override
+		public String getAuthority() {
+			return "ROLE_MGR";
+		}
+	},
+	// 系统 - 超级管理员
+	ROLE_ADMIN("超级管理员") {
+		@Override
+		public String getAuthority() {
+			return "ROLE_ADMIN";
+		}
+	};
+
+	private final String displayName;
+
+	SysRole(String value) {
+		displayName = value;
+	}
+
+	public String getCode() {
+		return name();
+	}
+
+	public String getDisplayName() {
+		return displayName;
+	}
+
+}
+----------------------------------------------------------------------------------------
+import in.clouthink.daas.sbb.account.domain.model.SysRole;
+import in.clouthink.daas.sbb.rbac.model.Resource;
+import in.clouthink.daas.sbb.rbac.service.PermissionService;
+import in.clouthink.daas.sbb.rbac.service.ResourceService;
+import in.clouthink.daas.sbb.rbac.support.matcher.ResourceMatchers;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.web.FilterInvocation;
+import org.springframework.security.web.access.expression.WebSecurityExpressionRoot;
+
+import java.util.Collection;
+
+/**
+ */
+public class RbacWebSecurityExpressionRoot extends WebSecurityExpressionRoot {
+
+	private FilterInvocation filterInvocation;
+
+	private PermissionService permissionService;
+
+	private ResourceService resourceService;
+
+	public RbacWebSecurityExpressionRoot(Authentication a,
+										 FilterInvocation fi,
+										 PermissionService permissionService,
+										 ResourceService resourceService) {
+		super(a, fi);
+		this.filterInvocation = fi;
+		this.permissionService = permissionService;
+		this.resourceService = resourceService;
+	}
+
+	public boolean isPassRbacCheck() {
+		Collection<? extends GrantedAuthority> authorities = extractAuthorities(authentication);
+		//no permission if the request is not from system role user
+		if (!authorities.contains(SysRole.ROLE_USER)) {
+			return false;
+		}
+		//the admin role will get the permission automatically
+		if (authorities.contains(SysRole.ROLE_ADMIN)) {
+			return true;
+		}
+
+		// Attempt to find a matching granted authority
+		String requestUrl = filterInvocation.getRequestUrl();
+		Resource resource = resourceService.getFirstMatchedResource(ResourceMatchers.matchAntPath(requestUrl));
+		if (resource != null) {
+			for (GrantedAuthority authority : authorities) {
+				if (permissionService.isGranted(resource.getCode(), authority)) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	Collection<? extends GrantedAuthority> extractAuthorities(Authentication authentication) {
+		return authentication.getAuthorities();
+	}
+
+}
+
+
+import in.clouthink.daas.sbb.rbac.service.PermissionService;
+import in.clouthink.daas.sbb.rbac.service.ResourceService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.expression.SecurityExpressionOperations;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.web.FilterInvocation;
+import org.springframework.security.web.access.expression.DefaultWebSecurityExpressionHandler;
+
+/**
+ * How to configure
+ * <p>
+ * http.authorizeRequests()
+ * .accessDecisionManager(accessDecisionManager())
+ * .antMatchers("put the wanted url here")
+ * .access("passRbacCheck")
+ * <p>
+ */
+public class RbacWebSecurityExpressionHandler extends DefaultWebSecurityExpressionHandler {
+
+	@Autowired
+	private PermissionService permissionService;
+
+	@Autowired
+	private ResourceService resourceService;
+
+	@Override
+	public SecurityExpressionOperations createSecurityExpressionRoot(Authentication authentication,
+																	 FilterInvocation fi) {
+		RbacWebSecurityExpressionRoot root = new RbacWebSecurityExpressionRoot(authentication,
+																			   fi,
+																			   permissionService,
+																			   resourceService);
+		root.setPermissionEvaluator(getPermissionEvaluator());
+		root.setRoleHierarchy(getRoleHierarchy());
+		return root;
+	}
+
+}
+
+	@JsonDeserialize(contentAs = PrivilegedResourceWithChildren.class)
+	public List<PrivilegedResourceWithChildren> getChildren() {
+		return children;
+	}
+----------------------------------------------------------------------------------------
+import in.clouthink.daas.sbb.menu.annotation.Action;
+import in.clouthink.daas.sbb.menu.annotation.EnableMenu;
+import in.clouthink.daas.sbb.menu.annotation.Menu;
+import in.clouthink.daas.sbb.menu.annotation.Metadata;
+import org.springframework.context.annotation.Configuration;
+
+
+/**
+ * @author dz
+ */
+@Configuration
+@EnableMenu(pluginId = "plugin:menu:setting",
+			extensionPointId = "extension:menu:system",
+			menu = {@Menu(code = "menu:dashboard:setting",
+						  name = "系统设置",
+						  order = 2020,
+						  patterns = {"/api/settings/system**", "/api/settings/system/**"},
+						  actions = {@Action(code = "retrieve", name = "查看"), @Action(code = "update", name = "修改")},
+						  metadata = {@Metadata(key = "state", value = "dashboard.systemSetting.list")})})
+public class SystemSettingMenuConfiguration {
+}
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
