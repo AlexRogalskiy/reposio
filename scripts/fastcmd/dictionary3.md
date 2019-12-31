@@ -14977,6 +14977,203 @@ import org.springframework.context.annotation.Configuration;
 public class SystemSettingMenuConfiguration {
 }
 ----------------------------------------------------------------------------------------
+wget https://dl.influxdata.com/kapacitor/releases/kapacitor_1.5.3_amd64.deb
+sudo dpkg -i kapacitor_1.5.3_amd64.deb
+----------------------------------------------------------------------------------------
+import org.junit.Ignore;
+
+import java.util.concurrent.Callable;
+
+@Ignore("Not a test")
+public class CountDown implements Callable<Integer> {
+
+    private int countDown;
+
+    public CountDown(int countDown) {
+        this.countDown = countDown;
+    }
+
+    public Integer call() throws Exception {
+        return countDown--;
+    }
+
+    public Integer get() {
+        return countDown;
+    }
+}
+----------------------------------------------------------------------------------------
+import java.util.Optional;
+
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.security.access.prepost.PreAuthorize;
+
+/**
+ * Spring Data interface with secured methods
+ *
+ * @author Craig Walls
+ * @author Greg Turnquist
+ */
+public interface FlightRepository extends CrudRepository<Flight, Long> {
+
+	@Override
+	@PreAuthorize("#oauth2.hasScope('read')")
+	Iterable<Flight> findAll();
+
+	@Override
+	@PreAuthorize("#oauth2.hasScope('read')")
+	Optional<Flight> findById(Long aLong);
+
+	@Override
+	@PreAuthorize("#oauth2.hasScope('write')")
+	<S extends Flight> S save(S entity);
+
+}
+----------------------------------------------------------------------------------------
+import org.springframework.security.oauth2.client.OAuth2RestTemplate;
+
+/**
+ * Callback for customizing the rest template used to fetch user details if authentication
+ * is done via OAuth2 access tokens. The default should be fine for most providers, but
+ * occasionally you might need to add additional interceptors, or change the request
+ * authenticator (which is how the token gets attached to outgoing requests). The rest
+ * template that is being customized here is <i>only</i> used internally to carry out
+ * authentication (in the SSO or Resource Server use cases).
+ *
+ * @author Dave Syer
+ * @since 1.3.0
+ */
+@FunctionalInterface
+public interface UserInfoRestTemplateCustomizer {
+
+	/**
+	 * Customize the rest template before it is initialized.
+	 * @param template the rest template
+	 */
+	void customize(OAuth2RestTemplate template);
+
+}
+
+import org.springframework.boot.autoconfigure.condition.ConditionMessage;
+import org.springframework.boot.autoconfigure.condition.ConditionOutcome;
+import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
+import org.springframework.context.annotation.ConditionContext;
+import org.springframework.core.type.AnnotatedTypeMetadata;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+
+/**
+ * Condition that checks for {@link EnableOAuth2Sso} on a
+ * {@link WebSecurityConfigurerAdapter}.
+ *
+ * @author Dave Syer
+ */
+class EnableOAuth2SsoCondition extends SpringBootCondition {
+
+	@Override
+	public ConditionOutcome getMatchOutcome(ConditionContext context,
+			AnnotatedTypeMetadata metadata) {
+		String[] enablers = context.getBeanFactory()
+				.getBeanNamesForAnnotation(EnableOAuth2Sso.class);
+		ConditionMessage.Builder message = ConditionMessage
+				.forCondition("@EnableOAuth2Sso Condition");
+		for (String name : enablers) {
+			if (context.getBeanFactory().isTypeMatch(name,
+					WebSecurityConfigurerAdapter.class)) {
+				return ConditionOutcome.match(message
+						.found("@EnableOAuth2Sso annotation on WebSecurityConfigurerAdapter")
+						.items(name));
+			}
+		}
+		return ConditionOutcome.noMatch(message.didNotFind(
+				"@EnableOAuth2Sso annotation " + "on any WebSecurityConfigurerAdapter")
+				.atAll());
+	}
+
+}
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+import org.springframework.boot.autoconfigure.security.oauth2.resource.ResourceServerTokenServicesConfiguration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableOAuth2Client;
+
+/**
+ * Enable OAuth2 Single Sign On (SSO). If there is an existing
+ * {@link WebSecurityConfigurerAdapter} provided by the user and annotated with
+ * {@code @EnableOAuth2Sso}, it is enhanced by adding an authentication filter and an
+ * authentication entry point. If the user only has {@code @EnableOAuth2Sso} but not on a
+ * WebSecurityConfigurerAdapter then one is added with all paths secured.
+ *
+ * @author Dave Syer
+ * @since 1.3.0
+ */
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@EnableOAuth2Client
+@EnableConfigurationProperties(OAuth2SsoProperties.class)
+@Import({ OAuth2SsoDefaultConfiguration.class, OAuth2SsoCustomConfiguration.class,
+		ResourceServerTokenServicesConfiguration.class })
+public @interface EnableOAuth2Sso {
+
+}
+----------------------------------------------------------------------------------------
+	private static class TokenInfoCondition extends SpringBootCondition {
+
+		@Override
+		public ConditionOutcome getMatchOutcome(ConditionContext context,
+				AnnotatedTypeMetadata metadata) {
+			ConditionMessage.Builder message = ConditionMessage
+					.forCondition("OAuth TokenInfo Condition");
+			Environment environment = context.getEnvironment();
+			Boolean preferTokenInfo = environment.getProperty(
+					"security.oauth2.resource.prefer-token-info", Boolean.class);
+			if (preferTokenInfo == null) {
+				preferTokenInfo = environment
+						.resolvePlaceholders("${OAUTH2_RESOURCE_PREFERTOKENINFO:true}")
+						.equals("true");
+			}
+			String tokenInfoUri = environment
+					.getProperty("security.oauth2.resource.token-info-uri");
+			String userInfoUri = environment
+					.getProperty("security.oauth2.resource.user-info-uri");
+			if (!StringUtils.hasLength(userInfoUri)
+					&& !StringUtils.hasLength(tokenInfoUri)) {
+				return ConditionOutcome
+						.match(message.didNotFind("user-info-uri property").atAll());
+			}
+			if (StringUtils.hasLength(tokenInfoUri) && preferTokenInfo) {
+				return ConditionOutcome
+						.match(message.foundExactly("preferred token-info-uri property"));
+			}
+			return ConditionOutcome.noMatch(message.didNotFind("token info").atAll());
+		}
+
+	}
+	
+		private int countBeans(Class<?> type) {
+		return BeanFactoryUtils.beanNamesForTypeIncludingAncestors(this.beanFactory, type,
+				true, false).length;
+	}
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
