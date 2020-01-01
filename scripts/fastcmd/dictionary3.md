@@ -15123,6 +15123,1342 @@ public @interface EnableOAuth2Sso {
 
 }
 ----------------------------------------------------------------------------------------
+var path = require('path')
+var webpack = require('webpack')
+
+module.exports = {
+    entry: './src/main.js',
+    output: {
+        path: path.resolve(__dirname, './dist'),
+        publicPath: '/dist/',
+        filename: 'build.js'
+    },
+    module: {
+        loaders: [
+            {
+                test: /\.vue$/,
+                loader: 'vue-loader'
+            },
+            {
+                test: /\.js$/,
+                loader: 'babel-loader',
+                exclude: /node_modules/
+            },
+            {
+                test: /\.css$/,
+                loader: 'style-loader!css-loader'
+            },
+            {
+                test: /\.(eot|svg|ttf|woff|woff2)(\?\S*)?$/,
+                loader: 'file-loader'
+            },
+            {
+                test: /\.(png|jpe?g|gif|svg)(\?\S*)?$/,
+                loader: 'file-loader',
+                query: {
+                    name: '[name].[ext]?[hash]'
+                }
+            }
+        ]
+    },
+    resolve: {
+        alias: {
+            'vue$': 'vue/dist/vue.esm.js',
+            '@': path.resolve('src'),
+            'src': path.resolve(__dirname, '../src'),
+            'assets': path.resolve(__dirname, '../src/assets'),
+            'components': path.resolve(__dirname, '../src/components'),
+            'views': path.resolve(__dirname, '../src/views'),
+            'styles': path.resolve(__dirname, '../src/styles'),
+            'api': path.resolve(__dirname, '../src/api'),
+            'utils': path.resolve(__dirname, '../src/utils'),
+            'store': path.resolve(__dirname, '../src/store'),
+            'router': path.resolve(__dirname, '../src/router'),
+            'mock': path.resolve(__dirname, '../src/mock'),
+            'vendor': path.resolve(__dirname, '../src/vendor'),
+            'static': path.resolve(__dirname, '../static')
+        }
+    },
+    devServer: {
+        historyApiFallback: true,
+        noInfo: true
+    },
+    devtool: '#eval-source-map'
+}
+
+if (process.env.NODE_ENV === 'production') {
+    module.exports.devtool = '#source-map'
+    // http://vue-loader.vuejs.org/en/workflow/production.html
+    module.exports.plugins = (module.exports.plugins || []).concat([
+        new webpack.DefinePlugin({
+            'process.env': {
+                NODE_ENV: '"production"'
+            }
+        }),
+        new webpack.optimize.UglifyJsPlugin({
+            compress: {
+                warnings: false
+            }
+        })
+    ])
+}
+----------------------------------------------------------------------------------------
+import java.io.IOException;
+import java.io.Reader;
+import java.util.Arrays;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * An implementation of CharSequence that is tuned to be used specifically by {@link LexerImpl}. It
+ * is possible to advance through the sequence without allocating a copy and it is possible to
+ * perform regex matches from the logical beginning of the remaining un-tokenized source. This class
+ * will also standardize newline characters from different architectures.
+ *
+ * @author mbosecke
+ */
+public class TemplateSource implements CharSequence {
+
+  private final Logger logger = LoggerFactory.getLogger(TemplateSource.class);
+
+  /**
+   * The characters found within the template.
+   */
+  private char source[];
+
+  /**
+   * Number of characters stored in source array remaining to be tokenized
+   */
+  private int size = 0;
+
+  /**
+   * Default capacity
+   */
+  private static final int DEFAULT_CAPACITY = 1024;
+
+  /**
+   * An index of the first character for the remaining un-tokenized source.
+   */
+  private int offset = 0;
+
+  /**
+   * Tracking the line number that we are currently tokenizing.
+   */
+  private int lineNumber = 1;
+
+  /**
+   * Filename of the template
+   */
+  private final String filename;
+
+  /**
+   * Constructor
+   *
+   * @param reader Reader provided by the Loader
+   * @param filename Filename of the template
+   * @throws IOException Exceptions thrown from the reader
+   */
+  public TemplateSource(Reader reader, String filename) throws IOException {
+    this.filename = filename;
+    this.source = new char[DEFAULT_CAPACITY];
+    copyReaderIntoCharArray(reader);
+  }
+
+  /**
+   * Read the contents of the template into the internal char[].
+   */
+  private void copyReaderIntoCharArray(Reader reader) throws IOException {
+    char[] buffer = new char[1024 * 4];
+    int amountJustRead;
+    while ((amountJustRead = reader.read(buffer)) != -1) {
+
+      ensureCapacity(size + amountJustRead);
+      append(buffer, amountJustRead);
+    }
+    reader.close();
+  }
+
+  /**
+   * Append characters to the internal array.
+   */
+  private void append(char[] characters, int amount) {
+    System.arraycopy(characters, 0, source, size, amount);
+    size += amount;
+  }
+
+  /**
+   * Ensure that the internal array has a minimum capacity.
+   */
+  private void ensureCapacity(int minCapacity) {
+    if (source.length - minCapacity < 0) {
+      grow(minCapacity);
+    }
+  }
+
+  /**
+   * Grow the internal array to at least the desired minimum capacity.
+   */
+  private void grow(int minCapacity) {
+    int oldCapacity = source.length;
+
+    /*
+     * double the capacity of the array and if that's not enough, just use
+     * the minCapacity
+     */
+    int newCapacity = Math.max(oldCapacity << 1, minCapacity);
+
+    this.source = Arrays.copyOf(source, newCapacity);
+  }
+
+  /**
+   * Moves the start index a certain amount. While traversing this amount we will count how many
+   * newlines have been encountered.
+   *
+   * @param amount Amount of characters to advance by
+   */
+  public void advance(int amount) {
+	logger.debug("Advancing amoun: {}", amount);
+    int index = 0;
+    while (index < amount) {
+      int sizeOfNewline = advanceThroughNewline(index);
+
+      if (sizeOfNewline > 0) {
+        index += sizeOfNewline;
+      } else {
+        index++;
+      }
+    }
+
+    this.size -= amount;
+    this.offset += amount;
+  }
+
+  public void advanceThroughWhitespace() {
+    int index = 0;
+    while (Character.isWhitespace(this.charAt(index))) {
+      int sizeOfNewline = advanceThroughNewline(index);
+      if (sizeOfNewline > 0) {
+        index += sizeOfNewline;
+      } else {
+        index++;
+      }
+    }
+    logger.debug("Advanced through {} characters of whitespace.", index);
+    this.size -= index;
+    this.offset += index;
+  }
+
+  /**
+   * Advances through possible newline character and returns how many characters were used to
+   * represent the newline (windows uses two characters to represent one newline).
+   *
+   * @param index The index of the potential newline character
+   */
+  private int advanceThroughNewline(int index) {
+    char character = this.charAt(index);
+    int numOfCharacters = 0;
+
+    // windows newline
+    if ('\r' == character && '\n' == this.charAt(index + 1)) {
+
+      this.lineNumber++;
+      numOfCharacters = 2;
+
+      // various other newline characters
+    } else if ('\n' == character || '\r' == character || '\u0085' == character
+        || '\u2028' == character
+        || '\u2029' == character) {
+
+      this.lineNumber++;
+      numOfCharacters = 1;
+    }
+    return numOfCharacters;
+  }
+
+  public String substring(int start, int end) {
+    return new String(Arrays.copyOfRange(source, this.offset + start, this.offset + end));
+  }
+
+  public String substring(int end) {
+    return new String(Arrays.copyOfRange(source, offset, offset + end));
+  }
+
+  @Override
+  public int length() {
+    return size;
+  }
+
+  @Override
+  public char charAt(int index) {
+    return source[offset + index];
+  }
+
+  @Override
+  public CharSequence subSequence(int start, int end) {
+    return new String(Arrays.copyOfRange(source, this.offset + start, this.offset + end));
+  }
+
+  public String toString() {
+    return new String(Arrays.copyOfRange(source, offset, offset + size));
+  }
+
+  public int getLineNumber() {
+    return lineNumber;
+  }
+
+  public String getFilename() {
+    return filename;
+  }
+}
+----------------------------------------------------------------------------------------
+/**
+ * <p>See ISO 18004:2006, 6.5.1. This enum encapsulates the four error correction levels
+ * defined by the QR code standard.</p>
+ *
+ * @author Sean Owen
+ * @since 5.0.2
+ */
+public final class ErrorCorrectionLevel {
+
+    // No, we can't use an enum here. J2ME doesn't support it.
+
+    /**
+     * L = ~7% correction
+     */
+    public static final ErrorCorrectionLevel L = new ErrorCorrectionLevel(0, 0x01, "L");
+    /**
+     * M = ~15% correction
+     */
+    public static final ErrorCorrectionLevel M = new ErrorCorrectionLevel(1, 0x00, "M");
+    /**
+     * Q = ~25% correction
+     */
+    public static final ErrorCorrectionLevel Q = new ErrorCorrectionLevel(2, 0x03, "Q");
+    /**
+     * H = ~30% correction
+     */
+    public static final ErrorCorrectionLevel H = new ErrorCorrectionLevel(3, 0x02, "H");
+
+    private static final ErrorCorrectionLevel[] FOR_BITS = {M, L, H, Q};
+
+    private final int ordinal;
+    private final int bits;
+    private final String name;
+
+    private ErrorCorrectionLevel(int ordinal, int bits, String name) {
+        this.ordinal = ordinal;
+        this.bits = bits;
+        this.name = name;
+    }
+
+    public int ordinal() {
+        return ordinal;
+    }
+
+    public int getBits() {
+        return bits;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String toString() {
+        return name;
+    }
+
+    /**
+     * @param bits int containing the two bits encoding a QR Code's error correction level
+     * @return {@link ErrorCorrectionLevel} representing the encoded error correction level
+     */
+    public static ErrorCorrectionLevel forBits(int bits) {
+        if (bits < 0 || bits >= FOR_BITS.length) {
+            throw new IllegalArgumentException();
+        }
+        return FOR_BITS[bits];
+    }
+
+}
+/**
+ * A class which wraps a 2D array of bytes. The default usage is signed. If you want to use it as a
+ * unsigned container, it's up to you to do byteValue & 0xff at each location.
+ * <p>
+ * JAVAPORT: The original code was a 2D array of ints, but since it only ever gets assigned
+ * -1, 0, and 1, I'm going to use less memory and go with bytes.
+ *
+ * @author dswitkin@google.com (Daniel Switkin)
+ * @since 5.0.2
+ */
+public final class ByteMatrix {
+
+    private final byte[][] bytes;
+    private final int width;
+    private final int height;
+
+    public ByteMatrix(int width, int height) {
+        bytes = new byte[height][width];
+        this.width = width;
+        this.height = height;
+    }
+
+    public int getHeight() {
+        return height;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public byte get(int x, int y) {
+        return bytes[y][x];
+    }
+
+    public byte[][] getArray() {
+        return bytes;
+    }
+
+    public void set(int x, int y, byte value) {
+        bytes[y][x] = value;
+    }
+
+    public void set(int x, int y, int value) {
+        bytes[y][x] = (byte) value;
+    }
+
+    public void clear(byte value) {
+        for (int y = 0; y < height; ++y) {
+            for (int x = 0; x < width; ++x) {
+                bytes[y][x] = value;
+            }
+        }
+    }
+
+    public String toString() {
+        StringBuffer result = new StringBuffer(2 * width * height + 2);
+        for (int y = 0; y < height; ++y) {
+            for (int x = 0; x < width; ++x) {
+                switch (bytes[y][x]) {
+                    case 0:
+                        result.append(" 0");
+                        break;
+                    case 1:
+                        result.append(" 1");
+                        break;
+                    default:
+                        result.append("  ");
+                        break;
+                }
+            }
+            result.append('\n');
+        }
+
+        return result.toString();
+    }
+
+}
+
+/**
+ * <p>This class contains utility methods for performing mathematical operations over
+ * the Galois Field GF(256). Operations use a given primitive polynomial in calculations.</p>
+ * <p>
+ * <p>Throughout this package, elements of GF(256) are represented as an <code>int</code>
+ * for convenience and speed (but at the cost of memory).
+ * Only the bottom 8 bits are really used.</p>
+ *
+ * @author Sean Owen
+ * @since 5.0.2
+ */
+public final class GF256 {
+
+    public static final GF256 QR_CODE_FIELD = new GF256(0x011D); // x^8 + x^4 + x^3 + x^2 + 1
+    public static final GF256 DATA_MATRIX_FIELD = new GF256(0x012D); // x^8 + x^5 + x^3 + x^2 + 1
+
+    private final int[] expTable;
+    private final int[] logTable;
+    private final GF256Poly zero;
+    private final GF256Poly one;
+
+    /**
+     * Create a representation of GF(256) using the given primitive polynomial.
+     *
+     * @param primitive irreducible polynomial whose coefficients are represented by
+     *                  the bits of an int, where the least-significant bit represents the constant
+     *                  coefficient
+     */
+    private GF256(int primitive) {
+        expTable = new int[256];
+        logTable = new int[256];
+        int x = 1;
+        for (int i = 0; i < 256; i++) {
+            expTable[i] = x;
+            x <<= 1; // x = x * 2; we're assuming the generator alpha is 2
+            if (x >= 0x100) {
+                x ^= primitive;
+            }
+        }
+        for (int i = 0; i < 255; i++) {
+            logTable[expTable[i]] = i;
+        }
+        // logTable[0] == 0 but this should never be used
+        zero = new GF256Poly(this, new int[]{0});
+        one = new GF256Poly(this, new int[]{1});
+    }
+
+    GF256Poly getZero() {
+        return zero;
+    }
+
+    GF256Poly getOne() {
+        return one;
+    }
+
+    /**
+     * @return the monomial representing coefficient * x^degree
+     */
+    GF256Poly buildMonomial(int degree, int coefficient) {
+        if (degree < 0) {
+            throw new IllegalArgumentException();
+        }
+        if (coefficient == 0) {
+            return zero;
+        }
+        int[] coefficients = new int[degree + 1];
+        coefficients[0] = coefficient;
+        return new GF256Poly(this, coefficients);
+    }
+
+    /**
+     * Implements both addition and subtraction -- they are the same in GF(256).
+     *
+     * @return sum/difference of a and b
+     */
+    static int addOrSubtract(int a, int b) {
+        return a ^ b;
+    }
+
+    /**
+     * @return 2 to the power of a in GF(256)
+     */
+    int exp(int a) {
+        return expTable[a];
+    }
+
+    /**
+     * @return base 2 log of a in GF(256)
+     */
+    int log(int a) {
+        if (a == 0) {
+            throw new IllegalArgumentException();
+        }
+        return logTable[a];
+    }
+
+    /**
+     * @return multiplicative inverse of a
+     */
+    int inverse(int a) {
+        if (a == 0) {
+            throw new ArithmeticException();
+        }
+        return expTable[255 - logTable[a]];
+    }
+
+    /**
+     * @param a
+     * @param b
+     * @return product of a and b in GF(256)
+     */
+    int multiply(int a, int b) {
+        if (a == 0 || b == 0) {
+            return 0;
+        }
+        if (a == 1) {
+            return b;
+        }
+        if (b == 1) {
+            return a;
+        }
+        return expTable[(logTable[a] + logTable[b]) % 255];
+    }
+
+}
+
+
+
+/**
+ * @author satorux@google.com (Satoru Takabayashi) - creator
+ * @author dswitkin@google.com (Daniel Switkin) - ported from C++
+ * @since 5.0.2
+ */
+public final class MaskUtil {
+
+    private MaskUtil() {
+        // do nothing
+    }
+
+    // Apply mask penalty rule 1 and return the penalty. Find repetitive cells with the same color and
+    // give penalty to them. Example: 00000 or 11111.
+    public static int applyMaskPenaltyRule1(ByteMatrix matrix) {
+        return applyMaskPenaltyRule1Internal(matrix, true) + applyMaskPenaltyRule1Internal(matrix, false);
+    }
+
+    // Apply mask penalty rule 2 and return the penalty. Find 2x2 blocks with the same color and give
+    // penalty to them.
+    public static int applyMaskPenaltyRule2(ByteMatrix matrix) {
+        int penalty = 0;
+        byte[][] array = matrix.getArray();
+        int width = matrix.getWidth();
+        int height = matrix.getHeight();
+        for (int y = 0; y < height - 1; ++y) {
+            for (int x = 0; x < width - 1; ++x) {
+                int value = array[y][x];
+                if (value == array[y][x + 1] && value == array[y + 1][x] && value == array[y + 1][x + 1]) {
+                    penalty += 3;
+                }
+            }
+        }
+        return penalty;
+    }
+
+    // Apply mask penalty rule 3 and return the penalty. Find consecutive cells of 00001011101 or
+    // 10111010000, and give penalty to them.  If we find patterns like 000010111010000, we give
+    // penalties twice (i.e. 40 * 2).
+    public static int applyMaskPenaltyRule3(ByteMatrix matrix) {
+        int penalty = 0;
+        byte[][] array = matrix.getArray();
+        int width = matrix.getWidth();
+        int height = matrix.getHeight();
+        for (int y = 0; y < height; ++y) {
+            for (int x = 0; x < width; ++x) {
+                // Tried to simplify following conditions but failed.
+                if (x + 6 < width &&
+                        array[y][x] == 1 &&
+                        array[y][x + 1] == 0 &&
+                        array[y][x + 2] == 1 &&
+                        array[y][x + 3] == 1 &&
+                        array[y][x + 4] == 1 &&
+                        array[y][x + 5] == 0 &&
+                        array[y][x + 6] == 1 &&
+                        ((x + 10 < width &&
+                                array[y][x + 7] == 0 &&
+                                array[y][x + 8] == 0 &&
+                                array[y][x + 9] == 0 &&
+                                array[y][x + 10] == 0) ||
+                                (x - 4 >= 0 &&
+                                        array[y][x - 1] == 0 &&
+                                        array[y][x - 2] == 0 &&
+                                        array[y][x - 3] == 0 &&
+                                        array[y][x - 4] == 0))) {
+                    penalty += 40;
+                }
+                if (y + 6 < height &&
+                        array[y][x] == 1 &&
+                        array[y + 1][x] == 0 &&
+                        array[y + 2][x] == 1 &&
+                        array[y + 3][x] == 1 &&
+                        array[y + 4][x] == 1 &&
+                        array[y + 5][x] == 0 &&
+                        array[y + 6][x] == 1 &&
+                        ((y + 10 < height &&
+                                array[y + 7][x] == 0 &&
+                                array[y + 8][x] == 0 &&
+                                array[y + 9][x] == 0 &&
+                                array[y + 10][x] == 0) ||
+                                (y - 4 >= 0 &&
+                                        array[y - 1][x] == 0 &&
+                                        array[y - 2][x] == 0 &&
+                                        array[y - 3][x] == 0 &&
+                                        array[y - 4][x] == 0))) {
+                    penalty += 40;
+                }
+            }
+        }
+        return penalty;
+    }
+
+    // Apply mask penalty rule 4 and return the penalty. Calculate the ratio of dark cells and give
+    // penalty if the ratio is far from 50%. It gives 10 penalty for 5% distance. Examples:
+    // -   0% => 100
+    // -  40% =>  20
+    // -  45% =>  10
+    // -  50% =>   0
+    // -  55% =>  10
+    // -  55% =>  20
+    // - 100% => 100
+    public static int applyMaskPenaltyRule4(ByteMatrix matrix) {
+        int numDarkCells = 0;
+        byte[][] array = matrix.getArray();
+        int width = matrix.getWidth();
+        int height = matrix.getHeight();
+        for (int y = 0; y < height; ++y) {
+            for (int x = 0; x < width; ++x) {
+                if (array[y][x] == 1) {
+                    numDarkCells += 1;
+                }
+            }
+        }
+        int numTotalCells = matrix.getHeight() * matrix.getWidth();
+        double darkRatio = (double) numDarkCells / numTotalCells;
+        return Math.abs((int) (darkRatio * 100 - 50)) / 5 * 10;
+    }
+
+    // Return the mask bit for "getMaskPattern" at "x" and "y". See 8.8 of JISX0510:2004 for mask
+    // pattern conditions.
+    public static boolean getDataMaskBit(int maskPattern, int x, int y) {
+        if (!QRCode.isValidMaskPattern(maskPattern)) {
+            throw new IllegalArgumentException("Invalid mask pattern");
+        }
+        int intermediate, temp;
+        switch (maskPattern) {
+            case 0:
+                intermediate = (y + x) & 0x1;
+                break;
+            case 1:
+                intermediate = y & 0x1;
+                break;
+            case 2:
+                intermediate = x % 3;
+                break;
+            case 3:
+                intermediate = (y + x) % 3;
+                break;
+            case 4:
+                intermediate = ((y >>> 1) + (x / 3)) & 0x1;
+                break;
+            case 5:
+                temp = y * x;
+                intermediate = (temp & 0x1) + (temp % 3);
+                break;
+            case 6:
+                temp = y * x;
+                intermediate = (((temp & 0x1) + (temp % 3)) & 0x1);
+                break;
+            case 7:
+                temp = y * x;
+                intermediate = (((temp % 3) + ((y + x) & 0x1)) & 0x1);
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid mask pattern: " + maskPattern);
+        }
+        return intermediate == 0;
+    }
+
+    // Helper function for applyMaskPenaltyRule1. We need this for doing this calculation in both
+    // vertical and horizontal orders respectively.
+    private static int applyMaskPenaltyRule1Internal(ByteMatrix matrix, boolean isHorizontal) {
+        int penalty = 0;
+        int numSameBitCells = 0;
+        int prevBit = -1;
+        // Horizontal mode:
+        //   for (int i = 0; i < matrix.height(); ++i) {
+        //     for (int j = 0; j < matrix.width(); ++j) {
+        //       int bit = matrix.get(i, j);
+        // Vertical mode:
+        //   for (int i = 0; i < matrix.width(); ++i) {
+        //     for (int j = 0; j < matrix.height(); ++j) {
+        //       int bit = matrix.get(j, i);
+        int iLimit = isHorizontal ? matrix.getHeight() : matrix.getWidth();
+        int jLimit = isHorizontal ? matrix.getWidth() : matrix.getHeight();
+        byte[][] array = matrix.getArray();
+        for (int i = 0; i < iLimit; ++i) {
+            for (int j = 0; j < jLimit; ++j) {
+                int bit = isHorizontal ? array[i][j] : array[j][i];
+                if (bit == prevBit) {
+                    numSameBitCells += 1;
+                    // Found five repetitive cells with the same color (bit).
+                    // We'll give penalty of 3.
+                    if (numSameBitCells == 5) {
+                        penalty += 3;
+                    } else if (numSameBitCells > 5) {
+                        // After five repetitive cells, we'll add the penalty one
+                        // by one.
+                        penalty += 1;
+                    }
+                } else {
+                    numSameBitCells = 1;  // Include the cell itself.
+                    prevBit = bit;
+                }
+            }
+            numSameBitCells = 0;  // Clear at each row/column.
+        }
+        return penalty;
+    }
+
+}
+----------------------------------------------------------------------------------------
+import com.lowagie.text.BadElementException;
+import com.lowagie.text.ExceptionConverter;
+import com.lowagie.text.Image;
+import com.lowagie.text.Rectangle;
+import com.lowagie.text.pdf.PdfContentByte;
+import com.lowagie.text.pdf.codec.CCITTG4Encoder;
+import org.paradise.itext.qrcode.ByteMatrix;
+import org.paradise.itext.qrcode.EncodeHintType;
+import org.paradise.itext.qrcode.QRCodeWriter;
+import org.paradise.itext.qrcode.WriterException;
+
+import java.awt.*;
+import java.util.Map;
+
+/**
+ * Created by terrence on 10/06/2016.
+ */
+public class BarcodeQRCode {
+
+    ByteMatrix bm;
+
+    /**
+     * Creates the QR barcode. The barcode is always created with the smallest possible size and is then stretched
+     * to the width and height given. Set the width and height to 1 to get an unscaled barcode.
+     *
+     * @param content the text to be encoded
+     * @param width the barcode width
+     * @param height the barcode height
+     * @param hints modifiers to change the way the barcode is create. They can be EncodeHintType.ERROR_CORRECTION
+     * and EncodeHintType.CHARACTER_SET. For EncodeHintType.ERROR_CORRECTION the values can be ErrorCorrectionLevel.L, M, Q, H.
+     * For EncodeHintType.CHARACTER_SET the values are strings and can be Cp437, Shift_JIS and ISO-8859-1 to ISO-8859-16.
+     * You can also use UTF-8, but correct behaviour is not guaranteed as Unicode is not supported in QRCodes.
+     * The default value is ISO-8859-1.
+     *
+     * @throws WriterException
+     */
+    public BarcodeQRCode(String content, int width, int height, Map<EncodeHintType,Object> hints) {
+
+        try {
+            QRCodeWriter qc = new QRCodeWriter();
+            bm = qc.encode(content, width, height, hints);
+        } catch (WriterException ex) {
+            throw new ExceptionConverter(ex);
+        }
+    }
+
+    private byte[] getBitMatrix() {
+
+        int width = bm.getWidth();
+        int height = bm.getHeight();
+        int stride = (width + 7) / 8;
+        byte[] b = new byte[stride * height];
+        byte[][] mt = bm.getArray();
+
+        for (int y = 0; y < height; ++y) {
+            byte[] line = mt[y];
+            for (int x = 0; x < width; ++x) {
+                if (line[x] != 0) {
+                    int offset = stride * y + x / 8;
+                    b[offset] |= (byte)(0x80 >> (x % 8));
+                }
+            }
+        }
+
+        return b;
+    }
+
+    /**
+     * Gets an <CODE>Image</CODE> with the barcode.
+     *
+     * @return the barcode <CODE>Image</CODE>
+     * @throws BadElementException on error
+     */
+    public Image getImage() throws BadElementException {
+
+        byte[] b = getBitMatrix();
+        byte g4[] = CCITTG4Encoder.compress(b, bm.getWidth(), bm.getHeight());
+
+        return Image.getInstance(bm.getWidth(), bm.getHeight(), false, Image.CCITTG4, Image.CCITT_BLACKIS1, g4, null);
+    }
+
+
+    // AWT related methods (remove this if you port to Android / GAE)
+
+    /** Creates a <CODE>java.awt.Image</CODE>.
+     *
+     * @param foreground the color of the bars
+     * @param background the color of the background
+     *
+     * @return the image
+     */
+    public java.awt.Image createAwtImage(java.awt.Color foreground, java.awt.Color background) {
+
+        int f = foreground.getRGB();
+        int g = background.getRGB();
+
+        int width = bm.getWidth();
+        int height = bm.getHeight();
+        int pix[] = new int[width * height];
+        byte[][] mt = bm.getArray();
+
+        for (int y = 0; y < height; ++y) {
+            byte[] line = mt[y];
+            for (int x = 0; x < width; ++x) {
+                pix[y * width + x] = line[x] == 0 ? f : g;
+            }
+        }
+
+        java.awt.Canvas canvas = new java.awt.Canvas();
+        java.awt.Image img = canvas.createImage(new java.awt.image.MemoryImageSource(width, height, pix, 0, width));
+
+        return img;
+    }
+
+    /**
+     *
+     * @param cb
+     * @param foreground
+     * @param moduleSide
+     */
+    public void placeBarcode(PdfContentByte cb, Color foreground, float moduleSide) {
+
+        int width = bm.getWidth();
+        int height = bm.getHeight();
+        byte[][] mt = bm.getArray();
+
+        cb.setColorFill(foreground);
+
+        for (int y = 0; y < height; ++y) {
+            byte[] line = mt[y];
+            for (int x = 0; x < width; ++x) {
+                if (line[x] == 0) {
+                    cb.rectangle(x * moduleSide, (height - y - 1) * moduleSide, moduleSide, moduleSide);
+                }
+            }
+        }
+
+        cb.fill();
+    }
+
+    /**
+     * Gets the size of the barcode grid.
+     */
+    public Rectangle getBarcodeSize() {
+
+        return new Rectangle(0, 0, bm.getWidth(), bm.getHeight());
+    }
+
+}
+----------------------------------------------------------------------------------------
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.module.paranamer.ParanamerModule;
+import com.fasterxml.jackson.module.paranamer.ParanamerOnJacksonAnnotationIntrospector;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+import static org.junit.Assert.assertEquals;
+
+/**
+ * Created by terrence on 20/07/2016.
+ */
+public class JacksonModuleBaseTest {
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
+
+    private String JSON = "{\"name\":\"Bob\", \"age\":40}";
+
+    private ObjectMapper objectMapper;
+
+
+    @Test
+    public void testWithoutModule() throws Exception {
+
+        thrown.expect(JsonMappingException.class);
+        thrown.expectMessage("has no property name annotation");
+
+        new ObjectMapper().readValue(JSON, CreatorBean.class);
+    }
+
+    @Test
+    public void testParanamerModule() throws Exception {
+
+        objectMapper = new ObjectMapper().registerModule(new ParanamerModule());
+
+        CreatorBean bean = objectMapper.readValue(JSON, CreatorBean.class);
+
+        assertEquals("Bob", bean.getName());
+        assertEquals(40, bean.getAge());
+    }
+
+    @Test
+    public void testParanamerOnJacksonAnnotationIntrospector() throws Exception {
+
+        objectMapper = new ObjectMapper().setAnnotationIntrospector(new ParanamerOnJacksonAnnotationIntrospector());
+
+        CreatorBean bean = objectMapper.readValue(JSON, CreatorBean.class);
+
+        assertEquals("Bob", bean.getName());
+        assertEquals(40, bean.getAge());
+    }
+
+}
+
+class CreatorBean {
+
+    private final int age;
+    private final String name;
+
+    @JsonCreator
+    public CreatorBean(int age, String name) {
+        this.age = age;
+        this.name = name;
+    }
+
+    public int getAge() {
+        return age;
+    }
+
+    public String getName() {
+        return name;
+    }
+}
+----------------------------------------------------------------------------------------
+    @Bean
+    @ConditionalOnBean(JolokiaEndpoint.class)
+    @ConditionalOnExposedEndpoint(name = "jolokia")
+    public SimpleUrlHandlerMapping hawtioUrlMapping(final EndpointPathResolver pathResolver) {
+        final String jolokiaPath = pathResolver.resolve("jolokia");
+        final String hawtioPath = pathResolver.resolve("hawtio");
+
+        final SilentSimpleUrlHandlerMapping mapping = new SilentSimpleUrlHandlerMapping();
+        final Map<String, Object> urlMap = new HashMap<>();
+
+        if (!hawtioPath.isEmpty()) {
+            final String hawtioJolokiaPath = pathResolver.resolveUrlMapping("hawtio", "jolokia", "**");
+            urlMap.put(
+                hawtioJolokiaPath,
+                new JolokiaForwardingController(hawtioPath + "/jolokia", jolokiaPath));
+            mapping.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        } else {
+            urlMap.put(SilentSimpleUrlHandlerMapping.DUMMY, null);
+        }
+
+        mapping.setUrlMap(urlMap);
+        return mapping;
+    }
+----------------------------------------------------------------------------------------
+/**
+ * Receives notifications from an observable stream of messages.
+ *
+ * <p>It is used by both the client stubs and service implementations for sending or receiving
+ * stream messages. It is used for all {@link io.grpc.MethodDescriptor.MethodType}, including
+ * {@code UNARY} calls.  For outgoing messages, a {@code StreamObserver} is provided by the GRPC
+ * library to the application. For incoming messages, the application implements the
+ * {@code StreamObserver} and passes it to the GRPC library for receiving.
+ *
+ * <p>Implementations are expected to be
+ * <a href="http://www.ibm.com/developerworks/library/j-jtp09263/">thread-compatible</a>.
+ * Separate {@code StreamObserver}s do
+ * not need to be synchronized together; incoming and outgoing directions are independent.
+ * Since individual {@code StreamObserver}s are not thread-safe, if multiple threads will be
+ * writing to a {@code StreamObserver} concurrently, the application must synchronize calls.
+ */
+public interface StreamObserver<V>  {
+  /**
+   * Receives a value from the stream.
+   *
+   * <p>Can be called many times but is never called after {@link #onError(Throwable)} or {@link
+   * #onCompleted()} are called.
+   *
+   * <p>Unary calls must invoke onNext at most once.  Clients may invoke onNext at most once for
+   * server streaming calls, but may receive many onNext callbacks.  Servers may invoke onNext at
+   * most once for client streaming calls, but may receive many onNext callbacks.
+   *
+   * <p>If an exception is thrown by an implementation the caller is expected to terminate the
+   * stream by calling {@link #onError(Throwable)} with the caught exception prior to
+   * propagating it.
+   *
+   * @param value the value passed to the stream
+   */
+  void onNext(V value);
+
+  /**
+   * Receives a terminating error from the stream.
+   *
+   * <p>May only be called once and if called it must be the last method called. In particular if an
+   * exception is thrown by an implementation of {@code onError} no further calls to any method are
+   * allowed.
+   *
+   * <p>{@code t} should be a {@link io.grpc.StatusException} or {@link
+   * io.grpc.StatusRuntimeException}, but other {@code Throwable} types are possible. Callers should
+   * generally convert from a {@link io.grpc.Status} via {@link io.grpc.Status#asException()} or
+   * {@link io.grpc.Status#asRuntimeException()}. Implementations should generally convert to a
+   * {@code Status} via {@link io.grpc.Status#fromThrowable(Throwable)}.
+   *
+   * @param t the error occurred on the stream
+   */
+  void onError(Throwable t);
+
+  /**
+   * Receives a notification of successful stream completion.
+   *
+   * <p>May only be called once and if called it must be the last method called. In particular if an
+   * exception is thrown by an implementation of {@code onCompleted} no further calls to any method
+   * are allowed.
+   */
+  void onCompleted();
+}
+----------------------------------------------------------------------------------------
+    @LastModifiedDate
+    @Type(type = "org.jadira.usertype.dateandtime.joda.PersistentDateTime")
+    @Column(name = "last_modified_date")
+    @JsonIgnore
+    private DateTime lastModifiedDate = DateTime.now();
+----------------------------------------------------------------------------------------
+	<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <fork>true</fork>
+                    <mainClass>${start-class}</mainClass>
+                    <jvmArguments>-Xms512m -Xmx1024m -Xdebug
+                        -Xrunjdwp:server=y,transport=dt_socket,address=${debug.port},suspend=n
+                        -Denv=${project.build.testOutputDirectory}/application</jvmArguments>
+
+                </configuration>
+			</plugin>
+----------------------------------------------------------------------------------------
+events {
+  worker_connections  4096;  ## Default: 1024
+}
+
+http {
+  server {
+    listen 80;
+    default_type application/octet-stream;
+
+    location ~ ^/(api|oauth) {
+      proxy_pass http://todo-rest:8080;
+    }
+
+    location / {
+      gzip on;
+      gzip_proxied any;
+      gzip_buffers 16 8k;
+      gzip_types text/plain application/javascript application/x-javascript text/javascript text/xml text/css;
+      gzip_vary on;
+
+      root   /usr/share/nginx/html;
+      index  index.html index.htm;
+      include /etc/nginx/mime.types;
+    }
+
+  }
+}
+
+  @Before
+  public void init() throws KeyStoreException, NoSuchAlgorithmException, KeyManagementException {
+    SSLContextBuilder builder = new SSLContextBuilder();
+    // trust self signed certificate
+    builder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
+    SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(
+        builder.build());
+    final HttpClient httpClient = HttpClients.custom().setSSLSocketFactory(
+        sslConnectionSocketFactory).build();
+
+    restTemplate = new TestRestTemplate();
+    restTemplate.setRequestFactory(new HttpComponentsClientHttpRequestFactory(httpClient) {
+      @Override
+      protected HttpContext createHttpContext(HttpMethod httpMethod, URI uri) {
+        HttpClientContext context = HttpClientContext.create();
+        RequestConfig.Builder builder = RequestConfig.custom()
+            .setCookieSpec(CookieSpecs.IGNORE_COOKIES)
+            .setAuthenticationEnabled(false).setRedirectsEnabled(false)
+            .setConnectTimeout(1000).setConnectionRequestTimeout(1000).setSocketTimeout(1000);
+        context.setRequestConfig(builder.build());
+        return context;
+      }
+    });
+  }
+----------------------------------------------------------------------------------------
+import com.piggymetrics.notification.domain.Recipient;
+import org.springframework.data.mongodb.repository.Query;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface RecipientRepository extends CrudRepository<Recipient, String> {
+
+	Recipient findByAccountName(String name);
+
+	@Query("{ $and: [ {scheduledNotifications.BACKUP.active: true }, { $where: 'this.scheduledNotifications.BACKUP.lastNotified < " +
+			"new Date(new Date().setDate(new Date().getDate() - this.scheduledNotifications.BACKUP.frequency ))' }] }")
+	List<Recipient> findReadyForBackup();
+
+	@Query("{ $and: [ {scheduledNotifications.REMIND.active: true }, { $where: 'this.scheduledNotifications.REMIND.lastNotified < " +
+			"new Date(new Date().setDate(new Date().getDate() - this.scheduledNotifications.REMIND.frequency ))' }] }")
+	List<Recipient> findReadyForRemind();
+
+}
+----------------------------------------------------------------------------------------
+    private SearchQuery getCitySearchQuery(Integer pageNumber, Integer pageSize,String searchContent) {
+        // 短语匹配到的搜索词，求和模式累加权重分
+        // 权重分查询 https://www.elastic.co/guide/cn/elasticsearch/guide/current/function-score-query.html
+        //   - 短语匹配 https://www.elastic.co/guide/cn/elasticsearch/guide/current/phrase-matching.html
+        //   - 字段对应权重分设置，可以优化成 enum
+        //   - 由于无相关性的分值默认为 1 ，设置权重分最小值为 10
+        FunctionScoreQueryBuilder functionScoreQueryBuilder = QueryBuilders.functionScoreQuery()
+                .add(QueryBuilders.matchPhraseQuery("name", searchContent),
+                ScoreFunctionBuilders.weightFactorFunction(1000))
+                .add(QueryBuilders.matchPhraseQuery("description", searchContent),
+                ScoreFunctionBuilders.weightFactorFunction(500))
+                .scoreMode(SCORE_MODE_SUM).setMinScore(MIN_SCORE);
+
+        // 分页参数
+        Pageable pageable = new PageRequest(pageNumber, pageSize);
+        return new NativeSearchQueryBuilder()
+                .withPageable(pageable)
+                .withQuery(functionScoreQueryBuilder).build();
+    }
+	
+	import org.apache.ibatis.annotations.*;
+import org.spring.springboot.domain.City;
+
+/**
+ * 城市 DAO 接口类
+ *
+ * Created by xchunzhao on 02/05/2017.
+ */
+@Mapper // 标志为 Mybatis 的 Mapper
+public interface CityDao {
+
+    /**
+     * 根据城市名称，查询城市信息
+     *
+     * @param cityName 城市名
+     */
+    @Select("SELECT * FROM city")
+    // 返回 Map 结果集
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "provinceId", column = "province_id"),
+            @Result(property = "cityName", column = "city_name"),
+            @Result(property = "description", column = "description"),
+    })
+    City findByName(@Param("cityName") String cityName);
+}
+
+    @Bean(name = "validator")
+    @ConditionalOnMissingBean(Validator.class)
+    public Validator validator() {
+        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+        return factory.getValidator();
+    }
+----------------------------------------------------------------------------------------
+/**
+ *  Welcome to your gulpfile!
+ *  The gulp tasks are split into several files in the gulp directory
+ *  because putting it all here was too long
+ */
+
+'use strict';
+
+var gulp = require('gulp');
+var wrench = require('wrench');
+
+/**
+ *  This will load all js or coffee files in the gulp directory
+ *  in order to load all gulp tasks
+ */
+wrench.readdirSyncRecursive('./gulp').filter(function(file) {
+  return (/\.(js|coffee)$/i).test(file);
+}).map(function(file) {
+  require('./gulp/' + file);
+});
+
+
+/**
+ *  Default task clean temporaries directories and launch the
+ *  main optimization build task
+ */
+gulp.task('default', ['clean'], function () {
+  gulp.start('build');
+});
+----------------------------------------------------------------------------------------
+#!/bin/bash
+if [ $# -ne 3 ]
+then
+  echo "Usage: `basename $0` <lastName> <firstName> <birthday>"
+  exit 1
+fi
+
+curl -i \
+    -v \
+    -S \
+    -s \
+    -H "Content-Type:application/json" \
+    -H "Transfer-Encoding: chunked" \
+    -X POST \
+    -d "{ \"lastName\": \"$1\", \"firstName\":\"$2\", \"birthday\": \"$3\" }" \
+    "http://127.0.0.1:9090/prototype/api/persons/create"
+
+echo ""
+echo ""
+----------------------------------------------------------------------------------------
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.treeleafj.xdoc.filter.ClassFilter;
+
+/**
+ * Created by leaf on 2017/4/3 0003.
+ */
+public class SpringClassFilter implements ClassFilter {
+
+    @Override
+    public boolean filter(Class<?> classz) {
+        if (classz.getAnnotation(RequestMapping.class) != null
+                || classz.getAnnotation(Controller.class) != null
+                || classz.getAnnotation(RestController.class) != null) {
+            return true;
+        }
+        return false;
+    }
+}
+----------------------------------------------------------------------------------------
+import io.pebbletemplates.benchmark.model.Stock;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
+
+@Fork(5)
+@Warmup(iterations = 5, time = 1)
+@Measurement(iterations = 10, time = 1)
+@BenchmarkMode(Mode.Throughput)
+@OutputTimeUnit(TimeUnit.SECONDS)
+@State(Scope.Benchmark)
+public class BaseBenchmark {
+
+    protected Map<String, Object> getContext() {
+        Map<String, Object> context = new HashMap<>();
+        context.put("items", Stock.dummyItems());
+        return context;
+    }
+
+}
+----------------------------------------------------------------------------------------
+    @Override
+    protected Filter[] getServletFilters() {
+        CharacterEncodingFilter encodingFilter = new CharacterEncodingFilter();
+        encodingFilter.setEncoding("UTF-8");
+        encodingFilter.setForceEncoding(true);
+
+        return new Filter[] { encodingFilter };
+    }
+
+----------------------------------------------------------------------------------------
 	private static class TokenInfoCondition extends SpringBootCondition {
 
 		@Override
