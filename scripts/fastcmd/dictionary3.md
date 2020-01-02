@@ -16349,6 +16349,33 @@ public interface CityDao {
         return factory.getValidator();
     }
 ----------------------------------------------------------------------------------------
+    // disable page caching
+        httpSecurity
+                .headers()
+                .frameOptions().sameOrigin()  // required to set for H2 else H2 Console will be blank.
+                .cacheControl();
+----------------------------------------------------------------------------------------
+	@HystrixCommand(fallbackMethod = "getFallbackCommentsForTask", commandProperties = {
+			@HystrixProperty(name = "execution.isolation.strategy", value = "SEMAPHORE"),
+			@HystrixProperty(name = "circuitBreaker.requestVolumeThreshold", value = "10"),
+			@HystrixProperty(name = "circuitBreaker.sleepWindowInMilliseconds", value = "1000") })
+	public CommentCollectionResource getCommentsForTask(String taskId) {
+		// Get the comments for this task
+		return restTemplate.getForObject(String.format("http://comments-webservice/comments/%s", taskId),
+				CommentCollectionResource.class);
+
+	}
+----------------------------------------------------------------------------------------
+    @Bean
+    public Config hazelcastConfig() {
+        return new Config().setProperty("hazelcast.jmx", "true")
+                           .addMapConfig(new MapConfig("spring-boot-admin-application-eventstore").setBackupCount(1)
+                                                                                                  .setEvictionPolicy(
+                                                                                                          EvictionPolicy.NONE))
+                           .addListConfig(new ListConfig("spring-boot-admin-event-eventstore").setBackupCount(1)
+                                                                                              .setMaxSize(1000));
+    }
+----------------------------------------------------------------------------------------
 /**
  *  Welcome to your gulpfile!
  *  The gulp tasks are split into several files in the gulp directory
