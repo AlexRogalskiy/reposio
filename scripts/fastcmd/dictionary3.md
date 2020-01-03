@@ -16366,6 +16366,517 @@ public interface CityDao {
 
 	}
 ----------------------------------------------------------------------------------------
+/**
+ * Abstraction for hash code generation and equality comparison.
+ */
+public interface HashingStrategy<T> {
+    /**
+     * Generate a hash code for {@code obj}.
+     * <p>
+     * This method must obey the same relationship that {@link java.lang.Object#hashCode()} has with
+     * {@link java.lang.Object#equals(Object)}:
+     * <ul>
+     * <li>Calling this method multiple times with the same {@code obj} should return the same result</li>
+     * <li>If {@link #equals(Object, Object)} with parameters {@code a} and {@code b} returns {@code true}
+     * then the return value for this method for parameters {@code a} and {@code b} must return the same result</li>
+     * <li>If {@link #equals(Object, Object)} with parameters {@code a} and {@code b} returns {@code false}
+     * then the return value for this method for parameters {@code a} and {@code b} does <strong>not</strong> have to
+     * return different results results. However this property is desirable.</li>
+     * <li>if {@code obj} is {@code null} then this method return {@code 0}</li>
+     * </ul>
+     */
+    int hashCode(T obj);
+
+    /**
+     * Returns {@code true} if the arguments are equal to each other and {@code false} otherwise.
+     * This method has the following restrictions:
+     * <ul>
+     * <li><i>reflexive</i> - {@code equals(a, a)} should return true</li>
+     * <li><i>symmetric</i> - {@code equals(a, b)} returns {@code true} iff {@code equals(b, a)} returns
+     * {@code true}</li>
+     * <li><i>transitive</i> - if {@code equals(a, b)} returns {@code true} and {@code equals(a, c)} returns
+     * {@code true} then {@code equals(b, c)} should also return {@code true}</li>
+     * <li><i>consistent</i> - {@code equals(a, b)} should return the same result when called multiple times
+     * assuming {@code a} and {@code b} remain unchanged relative to the comparison criteria</li>
+     * <li>if {@code a} and {@code b} are both {@code null} then this method returns {@code true}</li>
+     * <li>if {@code a} is {@code null} and {@code b} is non-{@code null}, or {@code a} is non-{@code null} and
+     * {@code b} is {@code null} then this method returns {@code false}</li>
+     * </ul>
+     */
+    boolean equals(T a, T b);
+
+    /**
+     * A {@link HashingStrategy} which delegates to java's {@link Object#hashCode()}
+     * and {@link Object#equals(Object)}.
+     */
+    @SuppressWarnings("rawtypes")
+    HashingStrategy JAVA_HASHER = new HashingStrategy() {
+        @Override
+        public int hashCode(Object obj) {
+            return obj != null ? obj.hashCode() : 0;
+        }
+
+        @Override
+        public boolean equals(Object a, Object b) {
+            return (a == b) || (a != null && a.equals(b));
+        }
+    };
+}
+----------------------------------------------------------------------------------------
+import org.apache.catalina.startup.Tomcat;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+@ConditionalOnClass(Tomcat.class)
+@ConditionalOnProperty(name = "log-tomcat-version", matchIfMissing = true)
+public class LogTomcatVersionAutoConfiguration {
+
+	private static Log logger = LogFactory
+			.getLog(LogTomcatVersionAutoConfiguration.class);
+
+	@PostConstruct
+	public void logTomcatVersion() {
+		logger.info("\n\n\nTomcat v"
+				+ Tomcat.class.getPackage().getImplementationVersion() + "\n\n");
+	}
+
+}
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.rest.core.config.RepositoryRestConfiguration;
+import org.springframework.data.rest.webmvc.config.RepositoryRestMvcConfiguration;
+
+@Configuration
+public class SimpleRepositoryRestMvcConfiguration extends RepositoryRestMvcConfiguration {
+
+	@Override
+	protected void configureRepositoryRestConfiguration(
+			RepositoryRestConfiguration config) {
+		config.exposeIdsFor(Person.class);
+	}
+
+}
+
+import org.springframework.hateoas.Link;
+import org.springframework.hateoas.Resource;
+import org.springframework.hateoas.ResourceProcessor;
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.web.util.UriComponents;
+
+@Component
+public class PersonResourceProcessor implements ResourceProcessor<Resource<Person>> {
+
+	@Override
+	public Resource<Person> process(Resource<Person> resource) {
+		String id = Long.toString(resource.getContent().getId());
+		UriComponents uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath()
+				.path("/people/{id}/photo").buildAndExpand(id);
+		String uri = uriComponents.toUriString();
+		resource.add(new Link(uri, "photo"));
+		return resource;
+	}
+
+}
+
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.JobExecution;
+import org.springframework.batch.core.JobParametersBuilder;
+import org.springframework.batch.core.Step;
+import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
+import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.StepScope;
+import org.springframework.batch.core.launch.JobLauncher;
+import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
+import org.springframework.batch.item.database.JdbcBatchItemWriter;
+import org.springframework.batch.item.file.FlatFileItemReader;
+import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
+import org.springframework.batch.item.file.mapping.DefaultLineMapper;
+import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+import javax.sql.DataSource;
+import java.io.File;
+import java.util.List;
+
+@Configuration
+@EnableBatchProcessing
+public class BatchConfiguration {
+
+    @Bean
+    @StepScope
+    FlatFileItemReader<Person> flatFileItemReader(@Value("#{jobParameters[file]}") File file) {
+        FlatFileItemReader<Person> r = new FlatFileItemReader<>();
+        r.setResource(new FileSystemResource(file));
+        r.setLineMapper(new DefaultLineMapper<Person>() {
+            {
+                this.setLineTokenizer(new DelimitedLineTokenizer(",") {
+                    {
+                        this.setNames(new String[]{"first", "last", "email"});
+                    }
+                });
+                this.setFieldSetMapper(new BeanWrapperFieldSetMapper<Person>() {
+                    {
+                        this.setTargetType(Person.class);
+                    }
+                });
+            }
+        });
+        return r;
+    }
+
+    @Bean
+    JdbcBatchItemWriter<Person> jdbcBatchItemWriter(DataSource h2) {
+        JdbcBatchItemWriter<Person> w = new JdbcBatchItemWriter<>();
+        w.setDataSource(h2);
+        w.setSql("insert into PEOPLE( first, last, email) values ( :first, :last, :email )");
+        w.setItemSqlParameterSourceProvider(new BeanPropertyItemSqlParameterSourceProvider<>());
+        return w;
+    }
+
+    @Bean
+    Job personEtl(JobBuilderFactory jobBuilderFactory,
+            StepBuilderFactory stepBuilderFactory,
+            FlatFileItemReader<Person> reader,
+            JdbcBatchItemWriter<Person> writer
+    ) {
+
+        Step step = stepBuilderFactory.get("file-to-database")
+                .<Person, Person>chunk(5)
+                .reader(reader)
+                .writer(writer)
+                .build();
+
+        return jobBuilderFactory.get("etl")
+                .start(step)
+                .build();
+    }
+
+    //@Bean
+    CommandLineRunner runner(JobLauncher launcher,
+                             Job job,
+                             @Value("${file}") File in,
+                             JdbcTemplate jdbcTemplate) {
+        return args -> {
+
+            JobExecution execution = launcher.run(job,
+                    new JobParametersBuilder()
+                            .addString("file", in.getAbsolutePath())
+                            .toJobParameters());
+
+            System.out.println("execution status: " + execution.getExitStatus().toString());
+
+            List<Person> personList = jdbcTemplate.query("select * from PEOPLE", (resultSet, i) -> new Person(resultSet.getString("first"),
+                    resultSet.getString("last"),
+                    resultSet.getString("email")));
+
+            personList.forEach(System.out::println);
+
+        };
+
+    }
+
+}
+
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.JobExecution;
+import org.springframework.batch.core.JobParameters;
+import org.springframework.batch.core.JobParametersBuilder;
+import org.springframework.batch.core.launch.JobLauncher;
+import org.springframework.batch.integration.launch.JobLaunchRequest;
+import org.springframework.batch.integration.launch.JobLaunchingGateway;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.integration.dsl.IntegrationFlow;
+import org.springframework.integration.dsl.IntegrationFlows;
+import org.springframework.integration.dsl.channel.MessageChannels;
+import org.springframework.integration.dsl.file.Files;
+import org.springframework.integration.transformer.GenericTransformer;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.io.File;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+@Configuration
+public class IntegrationConfiguration {
+
+    @Bean
+    MessageChannel files() {
+        return MessageChannels.direct().get();
+    }
+
+    @RestController
+    public static class FileNameRestController {
+
+        private final MessageChannel files;
+
+        @RequestMapping(method = RequestMethod.GET, value = "/files")
+        void triggerJobForFile(@RequestParam String file) {
+
+            Message<File> fileMessage = MessageBuilder.withPayload(new File(file))
+                    .build();
+            this.files.send(fileMessage);
+        }
+
+        @Autowired
+        public FileNameRestController(MessageChannel files) {
+            this.files = files;
+        }
+    }
+
+    @Bean
+    IntegrationFlow batchJobFlow(Job job,
+                                 JdbcTemplate jdbcTemplate,
+                                 JobLauncher launcher,
+                                 MessageChannel files) {
+
+        return IntegrationFlows.from(files)
+                .transform((GenericTransformer<Object,JobLaunchRequest>) file -> {
+                    System.out.println(file.toString());
+                    System.out.println(file.getClass());
+                    return null ;
+                })
+                .transform((GenericTransformer<File, JobLaunchRequest>) file -> {
+                    JobParameters jp = new JobParametersBuilder()
+                            .addString("file", file.getAbsolutePath())
+                            .toJobParameters();
+                    return new JobLaunchRequest(job, jp);
+                })
+                .handle(new JobLaunchingGateway(launcher))
+                .handle(JobExecution.class, (payload, headers) -> {
+                    System.out.println("job execution status: " + payload.getExitStatus().toString());
+
+                    List<Person> personList = jdbcTemplate.query("select * from PEOPLE",
+                            (resultSet, i) -> new Person(resultSet.getString("first"),
+                                    resultSet.getString("last"),
+                                    resultSet.getString("email")));
+
+                    personList.forEach(System.out::println);
+                    return null;
+                })
+                .get();
+
+    }
+
+    @Bean
+    IntegrationFlow incomingFiles(@Value("${HOME}/Desktop/in") File dir) {
+
+        return IntegrationFlows.from(
+                Files.inboundAdapter(dir)
+                        .preventDuplicates()
+                        .autoCreateDirectory(true),
+                poller -> poller.poller(spec -> spec.fixedRate(1, TimeUnit.SECONDS)))
+                .channel( this.files())
+                .get();
+
+    }
+}
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import org.springframework.amqp.rabbit.core.RabbitMessagingTemplate;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
+
+@Component
+public class Producer implements CommandLineRunner {
+
+	private final RabbitMessagingTemplate messagingTemplate;
+
+	public Producer(RabbitMessagingTemplate messagingTemplate) {
+		this.messagingTemplate = messagingTemplate;
+	}
+
+	@Override
+	public void run(String... args) throws Exception {
+		Notification notification = new Notification(UUID.randomUUID().toString(),
+				"Hello, world!", new Date());
+
+		Map<String, Object> headers = new HashMap<>();
+		headers.put("notification-id", notification.getId());
+
+		this.messagingTemplate.convertAndSend(MessagingApplication.NOTIFICATIONS,
+				notification, headers, message -> {
+					System.out.println("sending " + message.getPayload().toString());
+					return message;
+				});
+	}
+
+}
+
+import org.springframework.amqp.core.AmqpAdmin;
+import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.DirectExchange;
+import org.springframework.amqp.core.Queue;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+
+@SpringBootApplication
+public class MessagingApplication {
+
+	public static final String NOTIFICATIONS = "notifications";
+
+	@Bean
+	public InitializingBean prepareQueues(AmqpAdmin amqpAdmin) {
+		return () -> {
+			Queue queue = new Queue(NOTIFICATIONS, true);
+			DirectExchange exchange = new DirectExchange(NOTIFICATIONS);
+			Binding binding = BindingBuilder.bind(queue).to(exchange).with(NOTIFICATIONS);
+			amqpAdmin.declareQueue(queue);
+			amqpAdmin.declareExchange(exchange);
+			amqpAdmin.declareBinding(binding);
+
+		};
+	}
+
+	public static void main(String[] args) {
+		SpringApplication.run(MessagingApplication.class, args);
+	}
+
+}
+
+import java.util.Collection;
+
+import org.springframework.cloud.netflix.feign.FeignClient;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+
+@FeignClient("contact-service")
+public interface ContactClient {
+
+	@RequestMapping(method = RequestMethod.GET, value = "/{userId}/contacts")
+	Collection<Contact> getContacts(@PathVariable("userId") String userId);
+
+}
+
+import reactor.Environment;
+import reactor.rx.Stream;
+import reactor.rx.Streams;
+
+import org.springframework.stereotype.Component;
+
+@Component
+public class PassportService {
+
+	private final Environment environment;
+
+	private final ContactClient contactClient;
+
+	private final BookmarkClient bookmarkClient;
+
+	public PassportService(Environment environment, ContactClient contactClient,
+			BookmarkClient bookmarkClient) {
+		this.environment = environment;
+		this.contactClient = contactClient;
+		this.bookmarkClient = bookmarkClient;
+	}
+
+	public Stream<Bookmark> getBookmarks(String userId) {
+		return Streams.<Bookmark>create(subscriber -> {
+			this.bookmarkClient.getBookmarks(userId).forEach(subscriber::onNext);
+			subscriber.onComplete();
+		}).dispatchOn(this.environment, Environment.cachedDispatcher()).log("bookmarks");
+	}
+
+	public Stream<Contact> getContacts(String userId) {
+		return Streams.<Contact>create(subscriber -> {
+			this.contactClient.getContacts(userId).forEach(subscriber::onNext);
+			subscriber.onComplete();
+		}).dispatchOn(this.environment, Environment.cachedDispatcher()).log("contacts");
+	}
+
+	public Stream<Passport> getPassport(String userId, Stream<Contact> contacts,
+			Stream<Bookmark> bookmarks) {
+		return Streams.zip(contacts.buffer(), bookmarks.buffer(),
+				tuple -> new Passport(userId, tuple.getT1(), tuple.getT2()));
+	}
+}
+----------------------------------------------------------------------------------------
+protoc --java_out=. *.proto
+
+option java_outer_classname = "PbDemoProto";
+
+option optimize_for = SPEED;
+option java_generic_services = true;
+
+message MsgFields {
+
+}
+
+message Login_C2S {
+    required int64 timestamp = 1;
+}
+
+message Login_S2C {
+    required int64 timestamp = 1;
+}
+
+service LoginService {
+    rpc login (Login_C2S) returns (Login_S2C);
+}
+
+----------------------------------------------------------------------------------------
+
+    private static boolean isPowerOfTwo(int val) {
+        return (val & -val) == val;
+    }
+----------------------------------------------------------------------------------------
+/**
+ * @author teaey(xiaofei.wxf)
+ * @since 1.0.3
+ */
+public enum ApnsGateway {
+    DEVELOPMENT("gateway.sandbox.push.apple.com", 2195),
+    PRODUCTION("gateway.push.apple.com", 2195),
+    RESTFUL_DEVELOPMENT("api.development.push.apple.com", 443),
+    RESTFUL_PRODUCTION("api.push.apple.com", 443),
+    RESTFUL_DEVELOPMENT_BAK("api.development.push.apple.com", 2197),
+    RESTFUL_PRODUCTION_BAK("api.push.apple.com", 2197);
+    private final String host;
+    private final int port;
+
+    ApnsGateway(String host, int port) {
+        this.host = host;
+        this.port = port;
+    }
+
+    public String host() {
+        return this.host;
+    }
+
+    public int port() {
+        return this.port;
+    }
+}
+----------------------------------------------------------------------------------------
     @Bean
     public Config hazelcastConfig() {
         return new Config().setProperty("hazelcast.jmx", "true")
