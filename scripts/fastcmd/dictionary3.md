@@ -16820,6 +16820,561 @@ public class PassportService {
 	}
 }
 ----------------------------------------------------------------------------------------
+var car = {};
+Object.defineProperty(car, 'doors', {
+ writable: true,
+ configurable: true,
+ enumerable: true,
+ value: 4
+});
+Object.defineProperty(car, 'wheels', {
+ writable: true,
+ configurable: true,
+ enumerable: true,
+ value: 4
+});
+Object.defineProperty(car, 'secretTrackingDeviceEnabled', {
+ enumerable: false,
+ value: true
+});
+// => doors
+// => wheels
+for (var x in car) {
+ console.log(x);
+}
+
+var box = Object.create({}, {
+ openLid: {
+ value: function () {
+ return "nothing";
+ },
+ enumerable: true
+ },
+ openSecretCompartment: {
+ value: function () {
+ return 'treasure';
+ },
+ enumerable: false
+ }
+});
+
+var Car = function (wheelCount) {
+ this.odometer = 0;
+ this.wheels = wheelCount || 4;
+};
+Car.prototype.drive = function (miles) {
+ this.odometer += miles;
+ return this.odometer;
+};
+var tesla = new Car();
+// => true
+console.log(Object.getPrototypeOf(tesla) === Car.prototype);
+// => true
+console.log(tesla.__proto__ === Car.prototype);
+
+var dispatcher = {
+ join: function (before, after) {
+ return before + ':' + after
+ },
+ sum: function () {
+ var args = Array.prototype.slice.call(arguments);
+ return args.reduce(function (previousValue, currentValue, index, array) {
+ return previousValue + currentValue;
+ });
+ }
+};
+var proxy = {
+ relay: function (method) {
+ var args;
+ args = Array.prototype.splice.call(arguments, 1);
+ return dispatcher[method].apply(dispatcher, args);
+ }
+};
+// => bar:baz
+console.log(proxy.relay('join', 'bar', 'baz'));
+// => 28
+console.log(proxy.relay('sum', 1, 2, 3, 4, 5, 6, 7));
+
+
+
+var dispatcher = {
+ join: function (before, after) {
+ return before + ':' + after
+ },
+ sum: function () {
+ var args = Array.prototype.slice.call(arguments);
+ return args.reduce(function (previousValue, currentValue, index, array) {
+ return previousValue + currentValue;
+ });
+ }
+};
+var proxy = {
+ relay: function (method) {
+ var args;
+ args = Array.prototype.splice.call(arguments, 1);
+ return dispatcher[method].apply(dispatcher, args);
+ }
+};
+----------------------------------------------------------------------------------------
+import androidx.annotation.Nullable;
+
+/**
+ * Utilities for generating 64-bit long IDs from types such as {@link CharSequence}.
+ */
+public final class IdUtils {
+  private IdUtils() {
+  }
+
+  /**
+   * Hash a long into 64 bits instead of the normal 32. This uses a xor shift implementation to
+   * attempt psuedo randomness so object ids have an even spread for less chance of collisions.
+   * <p>
+   * From http://stackoverflow.com/a/11554034
+   * <p>
+   * http://www.javamex.com/tutorials/random_numbers/xorshift.shtml
+   */
+  public static long hashLong64Bit(long value) {
+    value ^= (value << 21);
+    value ^= (value >>> 35);
+    value ^= (value << 4);
+    return value;
+  }
+
+  /**
+   * Hash a string into 64 bits instead of the normal 32. This allows us to better use strings as a
+   * model id with less chance of collisions. This uses the FNV-1a algorithm for a good mix of speed
+   * and distribution.
+   * <p>
+   * Performance comparisons found at http://stackoverflow.com/a/1660613
+   * <p>
+   * Hash implementation from http://www.isthe.com/chongo/tech/comp/fnv/index.html#FNV-1a
+   */
+  public static long hashString64Bit(@Nullable CharSequence str) {
+    if (str == null) {
+      return 0;
+    }
+
+    long result = 0xcbf29ce484222325L;
+    final int len = str.length();
+    for (int i = 0; i < len; i++) {
+      result ^= str.charAt(i);
+      result *= 0x100000001b3L;
+    }
+    return result;
+  }
+}
+----------------------------------------------------------------------------------------
+import io.netty.buffer.ByteBuf;
+import lombok.extern.slf4j.Slf4j;
+
+import java.nio.ByteOrder;
+
+@Slf4j
+public final class Murmur3 {
+    private static final int C1 = 0xcc9e2d51;
+    private static final int C2 = 0x1b873593;
+
+    public static int hash32(ByteBuf data) {
+        return hash32(data, data.readerIndex(), data.readableBytes(), 0);
+    }
+
+    public static int hash32(ByteBuf data, final int offset, final int length) {
+        return hash32(data, offset, length, 0);
+    }
+
+    @SuppressWarnings("OverlyLongMethod")
+    public static int hash32(ByteBuf data, final int offset, final int length, final int seed) {
+        final ByteBuf ordered = data.order(ByteOrder.LITTLE_ENDIAN);
+
+        int h = seed;
+
+        final int len4 = length >>> 2;
+        final int end4 = offset + (len4 << 2);
+
+        for (int i = offset; i < end4; i += 4) {
+            int k = ordered.getInt(i);
+
+            k *= C1;
+            k = k << 15 | k >>> 17;
+            k *= C2;
+
+            h ^= k;
+            h = h << 13 | h >>> 19;
+            h = h * 5 + 0xe6546b64;
+        }
+
+        int k = 0;
+        switch (length & 3) {
+            case 3:
+                k = (ordered.getByte(end4 + 2) & 0xff) << 16;
+            case 2:
+                k |= (ordered.getByte(end4 + 1) & 0xff) << 8;
+            case 1:
+                k |= ordered.getByte(end4) & 0xff;
+
+                k *= C1;
+                k = (k << 15) | (k >>> 17);
+                k *= C2;
+                h ^= k;
+        }
+
+        h ^= length;
+        h ^= h >>> 16;
+        h *= 0x85ebca6b;
+        h ^= h >>> 13;
+        h *= 0xc2b2ae35;
+        h ^= h >>> 16;
+
+        return h;
+    }
+}
+----------------------------------------------------------------------------------------
+public class Staircase {
+
+    // Complete the staircase function below.
+    static void staircase(int n) {
+        String str = "#";
+        for (int i = 0; i < n; i++) {
+            System.out.printf("%" + n + "s\n", str);
+            str += "#";
+        }
+    }
+
+    private static final Scanner scanner = new Scanner(System.in);
+
+    public static void main(String[] args) {
+        int n = scanner.nextInt();
+        scanner.skip("(\r\n|[\n\r\u2028\u2029\u0085])?");
+
+        staircase(n);
+
+        scanner.close();
+    }
+
+}
+----------------------------------------------------------------------------------------
+import br.com.devmanfredi.engineering.dto.SquadDTO;
+import br.com.devmanfredi.engineering.entity.Squad;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Mappings;
+import org.mapstruct.ReportingPolicy;
+
+import java.util.List;
+
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface SquadMapper {
+    @Mappings({
+            @Mapping(source = "id", target = "id"),
+            //@Mapping(source = "collaboratorName", target = "collaborators.fullName")
+    })
+    Squad map(SquadDTO squadDTO);
+
+    List<Squad> map(List<SquadDTO> squadDTOS);
+
+    SquadDTO toDTO(Squad squad);
+}
+import br.com.devmanfredi.engineering.dto.CollaboratorDTO;
+import br.com.devmanfredi.engineering.entity.Collaborator;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Mappings;
+import org.mapstruct.ReportingPolicy;
+
+import java.util.List;
+
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface CollaboratorMapper {
+
+    @Mappings({
+            @Mapping(source = "id", target = "id"),
+            @Mapping(source = "squadId", target = "squad.id"),
+            @Mapping(source = "email", target = "email"),
+            @Mapping(source = "fullName", target = "fullName"),
+            @Mapping(source = "nickName", target = "nickName"),
+            @Mapping(source = "password", target = "password"),
+            @Mapping(source = "salary", target = "salary"),
+            @Mapping(source = "level", target = "level"),
+            @Mapping(source = "office", target = "office")
+    })
+    Collaborator map(CollaboratorDTO collaboratorDTO);
+    List<Collaborator> map(List<CollaboratorDTO> collaboratorDTOS);
+
+    CollaboratorDTO toDTO(Collaborator collaborator);
+
+    List<CollaboratorDTO> toListDTO(List<Collaborator> collaborators);
+}
+
+ @Modifying(clearAutomatically = true)
+    @Transactional
+    @Query("UPDATE Log a SET a.toFile = true WHERE a.id =:id")
+    void toFile(@Param("id") Long id);
+	
+	String db = "jdbc:hsqldb:hsql://localhost:" + String.valueOf(port) + "/xdb";
+----------------------------------------------------------------------------------------
+import com.intellij.psi.util.PsiUtil;
+import lombok.experimental.UtilityClass;
+
+/**
+ * Created by 1 on 12.05.2018.
+ */
+@UtilityClass
+public class LombokAnnotationsUtils {
+    private static final String LOMBOK_PROTECTED_ACCESS = "lombok.AccessLevel.PROTECTED";
+    private static final String LOMBOK_PUBLIC_ACCESS = "";
+    private static final String LOMBOK_PRIVATE_ACCESS = "lombok.AccessLevel.PRIVATE";
+    private static final String LOMBOK_PACKAGE_ACCESS = "lombok.AccessLevel.PACKAGE";
+
+    public static final String LOMBOK_GETTER = "lombok.Getter";
+    public static final String LOMBOK_NO_ARGS_CONSTRUCTOR = "lombok.NoArgsConstructor";
+    private static final String LOMBOK_SETTER = "lombok.Setter";
+
+
+    private static String createSingleAttribute(String attribute) {
+        return "(" + attribute + ")";
+    }
+
+    private static String getSimpleAccessAttribute(int accessLevel) {
+        switch (accessLevel) {
+            case PsiUtil.ACCESS_LEVEL_PRIVATE:
+                return createSingleAttribute(LOMBOK_PRIVATE_ACCESS);
+            case PsiUtil.ACCESS_LEVEL_PACKAGE_LOCAL:
+                return createSingleAttribute(LOMBOK_PACKAGE_ACCESS);
+            case PsiUtil.ACCESS_LEVEL_PROTECTED:
+                return createSingleAttribute(LOMBOK_PROTECTED_ACCESS);
+            default:
+                return LOMBOK_PUBLIC_ACCESS;
+        }
+    }
+
+    public static String getGetterAnnotation(int accessLevel) {
+        return LOMBOK_GETTER + getSimpleAccessAttribute(accessLevel);
+    }
+
+    public static String getSetterAnnotation(int accessLevel) {
+        return LOMBOK_SETTER + getSimpleAccessAttribute(accessLevel);
+    }
+
+    public static String getNoArgConstructorAnnotation(int accessLevel) {
+        return LOMBOK_NO_ARGS_CONSTRUCTOR + getAccessAttribute(accessLevel);
+    }
+
+    private static String getAccessAttribute(int accessLevel) {
+
+        switch (accessLevel) {
+            case PsiUtil.ACCESS_LEVEL_PRIVATE:
+                return "(access = " + LOMBOK_PRIVATE_ACCESS + ")";
+            case PsiUtil.ACCESS_LEVEL_PACKAGE_LOCAL:
+                return "(access = " + LOMBOK_PACKAGE_ACCESS + ")";
+            case PsiUtil.ACCESS_LEVEL_PROTECTED:
+                return "(access = " + LOMBOK_PROTECTED_ACCESS + ")";
+            default:
+                return LOMBOK_PUBLIC_ACCESS;
+        }
+    }
+}
+----------------------------------------------------------------------------------------
+import java.util.Arrays;
+
+/**
+ * <br/>
+ * <p/>
+ * <p/>
+ *
+ * @author Charles Prud'homme
+ * @since 17 aug 2010
+ */
+public class StatisticUtils {
+
+    protected StatisticUtils() {
+    }
+
+    public static int sum(int... values) {
+        int sum = 0;
+        for (int i = 0; i < values.length; i++) {
+            sum += values[i];
+        }
+        return sum;
+    }
+
+    public static long sum(long... values) {
+        long sum = 0L;
+        for (int i = 0; i < values.length; i++) {
+            sum += values[i];
+        }
+        return sum;
+    }
+
+    public static float sum(float... values) {
+        float sum = 0.0f;
+        for (int i = 0; i < values.length; i++) {
+            sum += values[i];
+        }
+        return sum;
+    }
+
+    public static double sum(double... values) {
+        double sum = 0.0;
+        for (int i = 0; i < values.length; i++) {
+            sum += values[i];
+        }
+        return sum;
+    }
+
+    public static double mean(int... values) {
+        return sum(values) / values.length;
+    }
+
+    public static float mean(long... values) {
+        return sum(values) / values.length;
+    }
+
+    public static double mean(float... values) {
+        return sum(values) / values.length;
+    }
+
+    public static double mean(double... values) {
+        return sum(values) / values.length;
+    }
+
+
+    public static double standarddeviation(int... values) {
+        double mean = mean(values);
+        double[] psd = new double[values.length];
+        for (int i = 0; i < values.length; i++) {
+            psd[i] = Math.pow(values[i] - mean, 2.0);
+        }
+        return Math.sqrt(mean(psd));
+    }
+
+    public static double standarddeviation(long... values) {
+        double mean = mean(values);
+        double[] psd = new double[values.length];
+        for (int i = 0; i < values.length; i++) {
+            psd[i] = Math.pow(values[i] - mean, 2.0);
+        }
+        return Math.sqrt(mean(psd));
+    }
+
+    public static float standarddeviation(float... values) {
+        double mean = mean(values);
+        double[] psd = new double[values.length];
+        for (int i = 0; i < values.length; i++) {
+            psd[i] = Math.pow(values[i] - mean, 2.0);
+        }
+        return (float) Math.sqrt(mean(psd));
+    }
+
+    public static int[] prepare(int... values) {
+        Arrays.sort(values);
+        int[] back = new int[values.length - 2];
+        System.arraycopy(values, 1, back, 0, back.length);
+        return back;
+    }
+
+    public static long[] prepare(long... values) {
+        Arrays.sort(values);
+        long[] back = new long[values.length - 2];
+        System.arraycopy(values, 1, back, 0, back.length);
+        return back;
+    }
+
+    public static float[] prepare(float... values) {
+        Arrays.sort(values);
+        float[] back = new float[values.length - 2];
+        System.arraycopy(values, 1, back, 0, back.length);
+        return back;
+    }
+
+    public static long binomialCoefficients(int n, int k) {
+
+        long Ank = 1;
+
+        if (k < 0 || k > n) {
+            return 0;
+        }
+
+        long i = n - k + 1;
+        while (i <= n && Ank >= 0) {
+            Ank = Ank * i;
+            i = i + 1;
+        }
+        if (Ank < 0) return Integer.MAX_VALUE;
+        return Ank;
+    }
+
+}
+----------------------------------------------------------------------------------------
+<dependency>
+    <groupId>io.github.graphql-java</groupId>
+    <artifactId>graphql-java-annotations</artifactId>
+    <version>7.2.1</version>
+</dependency>
+#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+#  EXCEPTION_ACCESS_VIOLATION (0xc0000005) at pc=0x0000000075e90940, pid=6788, tid=0x0000000000004358
+#
+# JRE version: Java(TM) SE Runtime Environment (8.0_221-b11) (build 1.8.0_221-b11)
+# Java VM: Java HotSpot(TM) 64-Bit Server VM (25.221-b11 mixed mode windows-amd64 compressed oops)
+# Problematic frame:
+# V  [jvm.dll+0xb0940]
+#
+# Failed to write core dump. Minidumps are not enabled by default on client versions of Windows
+#
+# An error report file with more information is saved as:
+# C:\Users\Alex\Documents\pem-message\common2\hs_err_pid6788.log
+#
+# If you would like to submit a bug report, please visit:
+#   http://bugreport.java.com/bugreport/crash.jsp
+#
+
+Process finished with exit code 1
+----------------------------------------------------------------------------------------
+import com.xcar.model.DTO.BankslipDTO;
+import com.xcar.model.DTO.BankslipListDTO;
+import com.xcar.model.entity.Bankslip;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Mappings;
+import org.mapstruct.ReportingPolicy;
+
+import java.util.List;
+
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface BankslipMapper {
+
+    @Mappings({
+            @Mapping(source = "id", target = "id"),
+            @Mapping(source = "due_date", target = "due_date"),
+            @Mapping(source = "total_in_cents", target = "total_in_cents"),
+            @Mapping(source = "customer", target = "customer")
+    })
+    BankslipListDTO toListDto(Bankslip bankslip);
+    List<BankslipListDTO> toListBankslipDTO(List<Bankslip> bankslips);
+
+    /*@Mappings({
+            @Mapping(source = "due_date", target = "due_date"),
+            @Mapping(source = "total_in_cents", target = "total_in_cents"),
+            @Mapping(source = "customer", target = "customer"),
+            @Mapping(source = "status", target = "status")
+    })
+    BankslipDTO toDTO(Bankslip bankslip);
+    List<BankslipDTO> toDTOlList(List<Bankslip> bankslips);*/
+
+    @Mappings({
+            @Mapping(source = "due_date", target = "due_date"),
+            @Mapping(source = "total_in_cents", target = "total_in_cents"),
+            @Mapping(source = "customer", target = "customer"),
+            @Mapping(source = "status", target = "status"),
+            @Mapping(target = "createdAt", source = ""),
+            @Mapping(target = "fine", source = ""),
+            @Mapping(target = "id", source = ""),
+            @Mapping(target = "updatedAT", source = "")
+    })
+    Bankslip toEntity(BankslipDTO bankslipDTO);
+}
+----------------------------------------------------------------------------------------
 protoc --java_out=. *.proto
 
 option java_outer_classname = "PbDemoProto";
