@@ -40,6 +40,100 @@ Given a step that is executed after each successful scenario
 Outcome: FAILURE 
 Given a step that is executed after each failed scenario
 -----------------------------------------------------------------------------------------
+def bubble_sort(list):
+    sorted_list = list[:]
+    is_sorted = False
+    while is_sorted == False:
+        swaps = 0
+        for i in range(len(list) - 1):
+        if sorted_list[i] > sorted_list[i + 1]: # swap
+            temp = sorted_list[i]
+            sorted_list[i] = sorted_list[i + 1]
+            sorted_list[i + 1] = temp
+            swaps += 1
+            print(swaps)
+        if swaps == 0:
+        is_sorted = True
+    return sorted_list
+
+print(bubble_sort([2, 1, 3]))
+
+function fibonacci(n,memo) {
+    memo = memo || {}
+    if (memo[n]) {
+        return memo[n]
+    }
+    if (n <= 1) {
+        return 1
+    }
+    return memo[n] = fibonacci(n - 1, memo) + fibonacci(n - 2, memo)
+}
+-----------------------------------------------------------------------------------------
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.util.Set;
+
+import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.RoundEnvironment;
+import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.annotation.processing.SupportedSourceVersion;
+import javax.lang.model.SourceVersion;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.TypeElement;
+import javax.tools.Diagnostic;
+import javax.tools.FileObject;
+
+@SupportedAnnotationTypes("com.ifedorenko.sample.proc.SampleAnnotation")
+@SupportedSourceVersion(SourceVersion.RELEASE_7)
+public class SampleProcessor extends AbstractProcessor {
+
+  @Override
+  public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+    for (Element element : roundEnv.getElementsAnnotatedWith(SampleAnnotation.class)) {
+      try {
+        TypeElement cls = (TypeElement) element;
+        SampleAnnotation ann = cls.getAnnotation(SampleAnnotation.class);
+        PackageElement pkg = (PackageElement) cls.getEnclosingElement();
+        String clsSimpleName = ann.prefix() + cls.getSimpleName();
+        String pkgName = pkg.getQualifiedName().toString();
+        String clsQualifiedName = pkgName + "." + clsSimpleName;
+        FileObject sourceFile = processingEnv.getFiler().createSourceFile(clsQualifiedName, cls);
+        try (BufferedWriter w = new BufferedWriter(sourceFile.openWriter())) {
+          w.append("package ").append(pkgName).append(";");
+          w.newLine();
+          w.append("public class ").append(clsSimpleName);
+          w.append("{}");
+        }
+      } catch (IOException e) {
+        e.printStackTrace();
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, e.getMessage(), element);
+      }
+    }
+    return false; // not "claimed" so multiple processors can be tested
+  }
+
+}
+-----------------------------------------------------------------------------------------
+npm install -g @cloudflare/wrangler
+wrangler config
+wrangler generate hello
+cd hello
+wrangler subdomain world
+wrangler publish
+-----------------------------------------------------------------------------------------
+<img srcset="https://ik.imagekit.io/demo/resp-img/image1.jpg?tr=w-320,dpr-1 1x,
+             https://ik.imagekit.io/demo/resp-img/image1.jpg?tr=w-320,dpr-2 2x,
+             https://ik.imagekit.io/demo/resp-img/image1.jpg?tr=w-320,dpr-3 3x" 
+      src="https://ik.imagekit.io/demo/resp-img/image1.jpg?tr=w-320,dpr-3" 
+      alt="DPR responsive image tag" />
+	  
+<picture>
+    <source media="(min-width: 1081px)" srcset="https://ik.imagekit.io/demo/resp-img/image1.jpg?tr=w-800">
+    <source media="(min-width: 721px)" srcset="https://ik.imagekit.io/demo/resp-img/image1.jpg?tr=w-500,h-400,fo-auto">
+    <img src="https://ik.imagekit.io/demo/resp-img/image1.jpg?tr=w-320,h-320,fo-auto" />
+</picture>	  
+-----------------------------------------------------------------------------------------
 npm install -g native-css
 npm install native-css
 
@@ -17305,6 +17399,122 @@ public class StatisticUtils {
 
 }
 ----------------------------------------------------------------------------------------
+import org.springframework.validation.Errors;
+import org.springframework.validation.ValidationUtils;
+import org.springframework.validation.Validator;
+
+import br.com.casadocodigo.loja.models.Produto;
+
+public class ProdutoValidation implements Validator {
+
+    @Override
+    public boolean supports(Class<?> clazz) {
+        return Produto.class.isAssignableFrom(clazz);
+    }
+
+    @Override
+    public void validate(Object target, Errors errors) {
+        ValidationUtils.rejectIfEmpty(errors, "titulo", "field.required");
+        ValidationUtils.rejectIfEmpty(errors, "descricao", "field.required");
+        
+        Produto produto = (Produto) target;
+        if(produto.getPaginas() <= 0) {
+            errors.rejectValue("paginas", "field.required");
+        }
+    }
+}
+----------------------------------------------------------------------------------------
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
+
+public class ServletInitializer extends SpringBootServletInitializer {
+
+	@Override
+	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+		return application.sources(RouteprojectApplication.class);
+	}
+
+}
+
+----------------------------------------------------------------------------------------
+# initialize project for submodules usage
+git submodule init
+
+# add submodule
+git submodule add https://github.com/OleksandrKucherenko/autoproxy.git modules/autoproxy
+
+# update project recursively and pull all submodules
+git submodule update --init --recursive
+
+git submodule update --init
+# if there are nested submodules:
+git submodule update --init --recursive
+
+# download up to 8 submodules at once
+git submodule update --init --recursive --jobs 8
+git clone --recursive --jobs 8 [URL to Git repo]
+# short version
+git submodule update --init --recursive -j 8
+
+# pull all changes in the repo including changes in the submodules
+git pull --recurse-submodules
+
+# pull all changes for the submodules
+git submodule update --remote
+
+git submodule foreach 'git reset --hard'
+# including nested submodules
+git submodule foreach --recursive 'git reset --hard'
+
+
+git submodule deinit -f — mymodule
+
+rm -rf .git/modules/mymodule
+
+git rm -f mymodule
+----------------------------------------------------------------------------------------
+/*
+--jdbc:postgresql://localhost:5432/sampledb
+--PostgreSQL Password for database superuser
+--PostgreSQL Port
+--5432
+postgres
+*********************
+*/
+
+DROP DATABASE IF EXISTS hibernatedb;
+
+CREATE DATABASE hibernatedb;
+
+-- \connect hibernatedb;
+
+DROP TABLE IF EXISTS users;
+CREATE TABLE users
+(
+    id SERIAL NOT NULL,
+    username VARCHAR(50) NOT NULL, 
+    login_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    login_time TIME NOT NULL DEFAULT CURRENT_TIME,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,    
+    CONSTRAINT pk_id PRIMARY KEY(id),
+    CONSTRAINT idx_username UNIQUE(username)    
+);
+
+SELECT * FROM users;
+
+/*
+INSERT INTO users(username, login_date, login_time, created_at, updated_at)
+VALUES('Foo', '2016-11-06', '10:49:35', '2016-11-06 10:49:35.0', '2016-11-06 10:49:35.0');
+SELECT * FROM users;
+*/
+----------------------------------------------------------------------------------------
+<dependency>
+	<groupId>com.github.wnameless.json</groupId>
+	<artifactId>json-bean-populator</artifactId>
+	<version>0.3.0</version>
+</dependency>
+
 <dependency>
     <groupId>io.github.graphql-java</groupId>
     <artifactId>graphql-java-annotations</artifactId>
