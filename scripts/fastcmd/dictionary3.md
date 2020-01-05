@@ -115,12 +115,1344 @@ public class SampleProcessor extends AbstractProcessor {
 
 }
 -----------------------------------------------------------------------------------------
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.lang.annotation.ElementType;
+import java.lang.reflect.InvocationTargetException;
+
+class AnotTest {
+    public static void main(String... args) {
+        AnnotationTest at = new AnnotationTest();
+        for (Method m : at.getClass().getMethods()) {
+           MethodXY mXY = (MethodXY)m.getAnnotation(MethodXY.class);
+           if (mXY != null) {
+               if (mXY.x() == 3 && mXY.y() == 2){
+                   try {
+                       m.invoke(at);
+                   } catch (IllegalAccessException e) {
+                       //do nothing;
+                   } catch (InvocationTargetException o) {
+                       //do nothing;
+                   }
+               }
+           }
+        }
+    }
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.METHOD)
+    static public @interface MethodXY {
+        public int x();
+        public int y();
+    }
+
+    static class AnnotationTest {
+        @MethodXY(x=5, y=5)
+        public void myMethodA() {
+            System.out.println("boo");
+        }
+
+        @MethodXY(x=3, y=2)
+        public void myMethodB() {
+            System.out.println("foo");
+        }
+    }
+}
+-----------------------------------------------------------------------------------------
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
+// Similar to Optional but can contain null value
+public class Maybe<T> {
+    final T value;
+
+    final boolean hasValue;
+
+    private Maybe(T value, boolean hasValue) {
+        this.value = value;
+        this.hasValue = hasValue;
+    }
+
+    public static <T> Maybe<T> just(T value) {
+        return new Maybe(value, true);
+    }
+
+    public static <T> Maybe<T> nothing() {
+        return new Maybe(null, false);
+    }
+
+    public boolean isJust() {
+        return hasValue;
+    }
+
+    public boolean isNothing() {
+        return !hasValue;
+    }
+
+    public <N> Maybe<N> map(Function<? super T, ? extends N> funct) {
+        if (hasValue) {
+            return new Maybe(funct.apply(value), true);
+        }
+        return Maybe.nothing();
+    }
+
+    public T orElse(T fallback) {
+        if (hasValue) {
+            return value;
+        }
+        return fallback;
+    }
+
+    public <X extends Throwable> T orElseThrow(Supplier<? extends X> ex) throws X {
+        if (!hasValue) {
+            throw ex.get();
+        }
+        return value;
+    }
+
+    public T get() {
+        if (!hasValue) {
+            throw new NoSuchElementException();
+        }
+        return value;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 41 * hash + Objects.hashCode(this.value);
+        hash = 41 * hash + (this.hasValue ? 1 : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Maybe<?> other = (Maybe<?>) obj;
+        if (this.hasValue != other.hasValue) {
+            return false;
+        }
+        if (!Objects.equals(this.value, other.value)) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "Maybe{" + "value=" + value + ", hasValue=" + hasValue + '}';
+    }
+}
+-----------------------------------------------------------------------------------------
 npm install -g @cloudflare/wrangler
 wrangler config
 wrangler generate hello
 cd hello
 wrangler subdomain world
 wrangler publish
+-----------------------------------------------------------------------------------------
+spring.datasource.url=jdbc:derby:memory:spring-ddd-bank-db;create=true
+-----------------------------------------------------------------------------------------
+		<dependency>
+			<groupId>org.springframework.session</groupId>
+			<artifactId>spring-session-core</artifactId>
+			<version>${spring-session.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.data</groupId>
+			<artifactId>spring-data-mongodb</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>org.mongodb</groupId>
+					<artifactId>mongo-java-driver</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>jcl-over-slf4j</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<dependency>
+			<groupId>org.mongodb</groupId>
+			<artifactId>mongodb-driver</artifactId>
+			<version>${mongo.version}</version>
+			<optional>true</optional>
+		</dependency>
+		
+		
+			<dependency>
+			<groupId>org.mongodb</groupId>
+			<artifactId>mongodb-driver-async</artifactId>
+			<version>${mongo.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.mongodb</groupId>
+			<artifactId>mongodb-driver-reactivestreams</artifactId>
+			<version>${mongo-reactivestreams.version}</version>
+			<scope>test</scope>
+		</dependency>
+		
+			<dependency>
+			<groupId>de.flapdoodle.embed</groupId>
+			<artifactId>de.flapdoodle.embed.mongo</artifactId>
+			<version>${flapdoodle.version}</version>
+			<scope>test</scope>
+		</dependency>
+		
+		
+			<dependency>
+			<groupId>io.projectreactor</groupId>
+			<artifactId>reactor-core</artifactId>
+			<optional>true</optional>
+		</dependency>
+-----------------------------------------------------------------------------------------
+import reactor.core.publisher.Flux;
+
+import org.springframework.data.mongodb.repository.Tailable;
+import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+
+/**
+ * @author Mark Paluch
+ */
+public interface LoginEventRepository extends ReactiveCrudRepository<LoginEvent, String> {
+
+	@Tailable
+	Flux<LoginEvent> findPeopleBy();
+}
+
+    /**
+     * An intereptor that pushes the current user UserDetails object into the request as an attribute
+     * named 'currentUser'.
+     * 
+     * @author Mark Meany
+     */
+    protected class UserDetailInterceptor extends HandlerInterceptorAdapter {
+        @Override
+        public boolean preHandle(final HttpServletRequest request, final HttpServletResponse response, final Object handler) throws Exception {
+            final Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null) {
+                if (!(auth instanceof AnonymousAuthenticationToken)) {
+                    if (auth.getPrincipal() != null) {
+                        request.setAttribute("currentUser", auth.getPrincipal());
+                    }
+                }
+            }
+            return super.preHandle(request, response, handler);
+
+import org.springframework.boot.web.reactive.context.ReactiveWebApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.reactive.config.ViewResolverRegistry;
+import org.springframework.web.reactive.config.WebFluxConfigurer;
+import org.springframework.web.reactive.result.view.freemarker.FreeMarkerConfigurer;
+
+@Configuration
+public class WebConfig implements WebFluxConfigurer {
+
+	@Bean
+	public FreeMarkerConfigurer freeMarkerConfigurer(ReactiveWebApplicationContext applicationContext) {
+
+		FreeMarkerConfigurer configurer = new FreeMarkerConfigurer();
+
+		configurer.setTemplateLoaderPath("classpath:/templates/");
+		configurer.setResourceLoader(applicationContext);
+
+		return configurer;
+	}
+
+	@Override
+	public void configureViewResolvers(ViewResolverRegistry registry) {
+		registry.freeMarker();
+	}
+}
+-----------------------------------------------------------------------------------------
+import org.apache.tiles.Attribute;
+import org.apache.tiles.AttributeContext;
+import org.apache.tiles.preparer.ViewPreparer;
+import org.apache.tiles.request.Request;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.servlet.view.tiles3.SpringBeanPreparerFactory;
+import org.springframework.web.servlet.view.tiles3.TilesConfigurer;
+import org.springframework.web.servlet.view.tiles3.TilesView;
+import org.springframework.web.servlet.view.tiles3.TilesViewResolver;
+
+/**
+ * Tiles configuration.
+ * 
+ * References: http://docs.spring.io/spring/docs/4.0.6.RELEASE/spring-framework-reference/html/view.html#view-tiles-integrate
+ * 
+ * @author Mark Meany
+ */
+@Configuration
+public class ConfigurationForTiles {
+
+    /**
+     * Initialise Tiles on application startup and identify the location of the tiles configuration file, tiles.xml.
+     * 
+     * @return tiles configurer
+     */
+    @Bean
+    public TilesConfigurer tilesConfigurer() {
+        final TilesConfigurer configurer = new TilesConfigurer();
+        configurer.setDefinitions(new String[] { "WEB-INF/tiles/tiles.xml" });
+        configurer.setCheckRefresh(true);
+        
+        // Provide Spring Beans as view preparers
+        configurer.setPreparerFactoryClass(SpringBeanPreparerFactory.class);
+        
+        return configurer;
+    }
+
+    /**
+     * A Tiles View Preparer that makes the authenticated user object available as an attribute called user.
+     * 
+     * @return
+     */
+    @Bean
+    public UsernamePreparer usernamePreparer() {
+        return new UsernamePreparer();
+    }
+    
+    /**
+     * Introduce a Tiles view resolver, this is a convenience implementation that extends URLBasedViewResolver.
+     * 
+     * @return tiles view resolver
+     */
+    @Bean
+    public TilesViewResolver tilesViewResolver() {
+        final TilesViewResolver resolver = new TilesViewResolver();
+        resolver.setViewClass(TilesView.class);
+        return resolver;
+    }
+    
+    /**
+     * A View Preparer that queries the spring security context. If it finds an authenticated user object
+     * then it makes it available as a cascading attribute that can be accessed in a view thus:
+     * 
+     * <tiles:getAsString name="user" />
+     * 
+     * @author Mark Meany
+     */
+    protected class UsernamePreparer implements ViewPreparer {
+
+        @Override
+        public void execute(Request arg0, AttributeContext arg1) {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (!(auth instanceof AnonymousAuthenticationToken)) {
+                final UserDetails userDetails = (UserDetails) auth.getPrincipal();
+                arg1.putAttribute("user", new Attribute("signed in as " + userDetails.getUsername()), true);
+            } else {
+                arg1.putAttribute("user", new Attribute("not signed in"), true);
+            }
+        }
+    }
+}
+-----------------------------------------------------------------------------------------
+import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
+
+import java.io.IOException;
+
+import org.elasticsearch.client.Client;
+import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
+import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
+
+@Configuration
+@EnableElasticsearchRepositories(basePackages = "org.phstudy.sample.repository")
+public class ElasticsearchConfig {
+	@Bean
+	ElasticsearchOperations elasticsearchTemplate() throws IOException {
+
+		// transport client
+		Settings settings = ImmutableSettings.settingsBuilder()
+		        .put("cluster.name", "elasticsearch")
+		        .put("username","myname")
+		        .put("password","mypassword").build();
+		        
+		 Client client = new TransportClient(settings)
+	        .addTransportAddress(new InetSocketTransportAddress("192.168.73.186", 9300));
+		 
+		 return new ElasticsearchTemplate(client);
+
+		// node client
+		//		return new ElasticsearchTemplate(nodeBuilder()
+		//				.local(true)
+		//				.settings(
+		//						ImmutableSettings.settingsBuilder()
+		//								.put("cluster.name", "elasticsearch")
+		//								.put("username", "myname")
+		//								.put("password", "mypassword").build()).node()
+		//				.client());
+	}
+}
+-----------------------------------------------------------------------------------------
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.rest.core.annotation.HandleAfterCreate;
+import org.springframework.data.rest.core.annotation.HandleAfterDelete;
+import org.springframework.data.rest.core.annotation.HandleAfterSave;
+import org.springframework.data.rest.core.annotation.RepositoryEventHandler;
+import org.springframework.security.acls.domain.BasePermission;
+import org.springframework.security.acls.domain.GrantedAuthoritySid;
+import org.springframework.security.acls.domain.PrincipalSid;
+
+import sample.sdr.auth.bean.AbstractSecuredEntity;
+import sample.sdr.auth.bean.Book;
+import sample.sdr.auth.dao.SecurityACLDAO;
+import sample.sdr.auth.security.SecurityUtil;
+
+@RepositoryEventHandler(Book.class)
+public class BookHandler {
+	private static Logger logger = LoggerFactory.getLogger(BookHandler.class);
+
+	@Autowired
+	private SecurityACLDAO securityACLDAO;
+	
+	@HandleAfterCreate
+	public void afterCreate(Book book) {
+		logger.debug("afterCreate:{}", book.toString());
+		addACL(book);
+	}
+
+	@HandleAfterSave
+	public void handleAfterSave(Book book) {
+		logger.debug("afterSave:{}", book.toString());
+	}
+	
+	@HandleAfterDelete
+	public void handleAfterDelete(Book book) {
+		removeACL(book);
+	}
+	
+	private void addACL(AbstractSecuredEntity type) {
+		if(type != null) {
+			securityACLDAO.addPermission(type, new PrincipalSid(SecurityUtil.getUsername()), BasePermission.ADMINISTRATION);
+			securityACLDAO.addPermission(type, new PrincipalSid(SecurityUtil.getUsername()), BasePermission.READ);
+			securityACLDAO.addPermission(type, new PrincipalSid(SecurityUtil.getUsername()), BasePermission.WRITE);
+			securityACLDAO.addPermission(type, new PrincipalSid(SecurityUtil.getUsername()), BasePermission.DELETE);
+		
+			securityACLDAO.addPermission(type, new GrantedAuthoritySid("ROLE_ADMIN"), BasePermission.ADMINISTRATION);
+		}		
+	}
+
+	private void removeACL(AbstractSecuredEntity type) {
+		//TBD
+	}
+}
+
+
+-- default admin user, pwd: admin123
+INSERT INTO userentity(id, enabled, password, username) VALUES(nextval('hibernate_sequence'),'true','$2a$10$Isti6gH/65twVovOwzDz5eryiJeRv3OLPwsihq9lTcij5UG/wIiVO','admin');
+
+INSERT INTO roleentity(id, authority) VALUES(nextval('hibernate_sequence'),'ROLE_ADMIN');
+
+INSERT INTO userentity_roleentity(users_id, roles_id) VALUES(1,2);
+
+import demo.constraint.UniqueSecondary;
+import demo.form.secondary.SecondaryForm;
+import demo.repository.secondary.SecondaryRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import javax.validation.ConstraintValidator;
+import javax.validation.ConstraintValidatorContext;
+
+public class UniqueSecondaryConstraintValidator implements ConstraintValidator<UniqueSecondary, String> {
+
+	@Autowired
+	private SecondaryRepository secondaryRepository;
+
+	@Override
+	public void initialize(UniqueSecondary constraintAnnotation) {
+		// Nothing to do in initialize
+	}
+
+	@Override
+	public boolean isValid(String value, ConstraintValidatorContext context) {
+		if (value == null) {
+			return false;
+		}
+		return secondaryRepository.findByNameIgnoreCase(value) == null;
+	}
+
+}
+
+import demo.constraint.validator.UniquePrimaryConstraintValidator;
+import org.hibernate.validator.constraints.NotEmpty;
+
+import javax.validation.Constraint;
+import javax.validation.Payload;
+import java.lang.annotation.*;
+
+@NotEmpty
+@Target(ElementType.FIELD)
+@Retention(RetentionPolicy.RUNTIME)
+@Constraint(validatedBy = UniquePrimaryConstraintValidator.class)
+@Documented
+public @interface UniquePrimary {
+
+	String message() default "Primary already exists";
+
+	Class<?>[] groups() default {};
+
+	Class<? extends Payload>[] payload() default {};
+
+}
+-----------------------------------------------------------------------------------------
+import React, { ReactNode } from "react";
+import { makeStyles } from "@material-ui/core/styles";
+import Link, { LinkProps } from "@material-ui/core/Link";
+import { Link as RouterLink } from "react-navi";
+
+const useStyles = makeStyles(theme => ({
+  link: {
+    marginRight: theme.spacing(1),
+    cursor: "pointer"
+  }
+}));
+
+interface Props {
+  to: string;
+  children: ReactNode;
+}
+
+function SimpleLink(props: Props) {
+  const { to, children, ...restProps } = props;
+  return (
+    <a {...restProps} href={to}>
+      {children}
+    </a>
+  );
+}
+
+function IconLink(props: LinkProps) {
+  return (
+    <Link {...props} component={RouterLink}>
+      !SomeIcon
+    </Link>
+  );
+}
+
+export default function ButtonRouter() {
+  const classes = useStyles();
+  return (
+    <>
+      <Link className={classes.link}>Plain</Link>
+
+      <Link className={classes.link} component={SimpleLink}>
+        !Simple
+      </Link>
+
+      <Link
+        className={classes.link}
+        to="https://github.com"
+        component={SimpleLink}
+      >
+        Simple
+      </Link>
+
+      <Link className={classes.link} component={RouterLink}>
+        !Navi Router
+      </Link>
+
+      <Link
+        className={classes.link}
+        href="https://frontarm.com/navi"
+        component={RouterLink}
+      >
+        Navi Router
+      </Link>
+
+      <IconLink />
+    </>
+  );
+}
+-----------------------------------------------------------------------------------------
+import com.github.springtestdbunit.DbUnitTestExecutionListener;
+import org.junit.runner.RunWith;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestExecutionListeners;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
+import org.springframework.test.context.support.DirtiesContextTestExecutionListener;
+import org.springframework.test.context.transaction.TransactionalTestExecutionListener;
+
+/**
+ * Created on 22/11/16.
+ *
+ * @author Reda.Housni-Alaoui
+ */
+@TestExecutionListeners({
+  DependencyInjectionTestExecutionListener.class,
+  DirtiesContextTestExecutionListener.class,
+  TransactionalTestExecutionListener.class,
+  DbUnitTestExecutionListener.class
+})
+@RunWith(SpringRunner.class)
+@ContextConfiguration(classes = {DataRepositoryConfiguration.class})
+@DirtiesContext
+public abstract class BaseTest {
+
+  public static final String DATASET =
+      "classpath:com/cosium/spring/data/jpa/entity/graph/dataset.xml";
+}
+-----------------------------------------------------------------------------------------
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+
+/**
+ * Metrics friendly {@link ScheduledThreadPoolExecutor} extension.
+ */
+public class MeteredScheduledThreadPoolExecutor extends ScheduledThreadPoolExecutor {
+   private final String poolName;
+   private final MeterRegistry meterRegistry;
+   private final ThreadLocal<Instant> taskExecutionTimer = new ThreadLocal<>();
+
+   public MeteredScheduledThreadPoolExecutor(
+      String poolName,
+      int corePoolSize,
+      MeterRegistry meterRegistry
+   ) {
+      super(corePoolSize);
+      this.poolName = poolName;
+      this.meterRegistry = meterRegistry;
+      registerGauges();
+   }
+
+   @Override
+   protected void beforeExecute(Thread thread, Runnable task) {
+      super.beforeExecute(thread, task);
+      taskExecutionTimer.set(Instant.now());
+   }
+
+   @Override
+   protected void afterExecute(Runnable task, Throwable throwable) {
+      Instant start = taskExecutionTimer.get();
+      Timer timer = meterRegistry.timer(meterName("task.time"));
+      timer.record(Duration.between(start, Instant.now()));
+
+      super.afterExecute(task, throwable);
+      if (throwable == null && task instanceof Future<?> && ((Future<?>) task).isDone()) {
+         try {
+            ((Future<?>) task).get();
+         } catch (CancellationException ce) {
+            throwable = ce;
+         } catch (ExecutionException ee) {
+            throwable = ee.getCause();
+         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+         }
+      }
+      if (throwable != null) {
+         Counter failedTasksCounter = meterRegistry.counter(meterName("failed.tasks"));
+         failedTasksCounter.increment();
+      } else {
+         Counter successfulTasksCounter = meterRegistry.counter(meterName("successful.tasks"));
+         successfulTasksCounter.increment();
+      }
+   }
+
+   private void registerGauges() {
+      meterRegistry.gauge(meterName("size"), this.getCorePoolSize());
+      meterRegistry.gauge(meterName("active"), this.getActiveCount());
+      meterRegistry.gauge(meterName("queue.size"), getQueue().size());
+   }
+
+   private String meterName(String s) {
+      return "pool.scheduled." + poolName + "." + s;
+   }
+}
+
+@EnableHypermediaSupport(type = { HypermediaType.HAL })
+
+import org.springframework.hateoas.Resource;
+import org.springframework.hateoas.mvc.ControllerLinkBuilder;
+
+import sample.halforms.controller.TaskController;
+import sample.halforms.model.Task;
+
+public class TaskResource extends Resource<Task> {
+
+	TaskResource(Task task) {
+		super(task);
+
+		add(ControllerLinkBuilder.linkTo(ControllerLinkBuilder.methodOn(TaskController.class).read(task.getId()))
+				.withSelfRel());
+
+		add(ControllerLinkBuilder
+				.linkTo(ControllerLinkBuilder.methodOn(TaskController.class).edit(task.getId(), new Task()))
+				.withRel("tasks"));
+
+		add(ControllerLinkBuilder.linkTo(ControllerLinkBuilder.methodOn(TaskController.class).list())
+				.withRel("previous"));
+
+	}
+
+}
+
+import org.springframework.hateoas.mvc.ResourceAssemblerSupport;
+
+import sample.halforms.controller.TaskController;
+import sample.halforms.model.Task;
+
+public class TaskResourceAssembler extends ResourceAssemblerSupport<Task, TaskResource> {
+
+	public TaskResourceAssembler() {
+		super(TaskController.class, TaskResource.class);
+	}
+
+	@Override
+	public TaskResource toResource(Task task) {
+		return new TaskResource(task);
+	}
+
+}
+
+import java.util.Set;
+
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.OneToMany;
+
+import org.springframework.data.rest.core.annotation.RestResource;
+import org.springframework.hateoas.core.Relation;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+@Entity
+@Relation(value = "category", collectionRelation = "categories")
+@RestResource(exported = false)
+public class Category extends AbstractEntity {
+
+	private String name;
+
+	private String description;
+
+	@OneToMany(mappedBy = "category", fetch = FetchType.LAZY, orphanRemoval = true)
+	@JsonIgnore
+	private Set<Task> tasks;
+
+	public Category() {
+	}
+
+	@JsonCreator
+	public Category(@JsonProperty("name") String name, @JsonProperty("description") String description) {
+		this.name = name;
+		this.description = description;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public Set<Task> getTasks() {
+		return tasks;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+}
+-----------------------------------------------------------------------------------------
+import java.util.Set;
+
+import org.springframework.data.rest.core.config.Projection;
+
+@Projection(name = "vetWithSpecialty", types = { Vet.class })
+public interface VetWithSpecialty {
+
+	String getFirstName();
+
+	String getLastName();
+
+	Set<Specialty> getSpecialties();
+}
+-----------------------------------------------------------------------------------------
+import javax.inject.Inject;
+import javax.sql.DataSource;
+import org.apache.commons.dbcp.BasicDataSource;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.core.env.Environment;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+import org.springframework.jndi.JndiObjectFactoryBean;
+
+/**
+ * Different configurations for different stages.
+ *
+ * In development stage using an embedded database to get better performance.
+ *
+ * In production, container managed DataSource is highly recommended.
+ *
+ * @author Hantsy Bai<hantsy@gmail.com>
+ *
+ */
+@Configuration
+public class DataSourceConfig {
+
+    private static final String ENV_JDBC_PASSWORD = "jdbc.password";
+    private static final String ENV_JDBC_USERNAME = "jdbc.username";
+    private static final String ENV_JDBC_URL = "jdbc.url";
+
+    @Inject
+    private Environment env;
+
+    @Bean
+    @Profile("dev")
+    public DataSource dataSource() {
+        return new EmbeddedDatabaseBuilder()
+                .setType(EmbeddedDatabaseType.H2)
+                .build();
+    }
+
+    @Bean
+    @Profile("staging")
+    public DataSource testDataSource() {
+        BasicDataSource bds = new BasicDataSource();
+        bds.setDriverClassName("com.mysql.jdbc.Driver");
+        bds.setUrl(env.getProperty(ENV_JDBC_URL));
+        bds.setUsername(env.getProperty(ENV_JDBC_USERNAME));
+        bds.setPassword(env.getProperty(ENV_JDBC_PASSWORD));
+        return bds;
+    }
+
+    @Bean
+    @Profile("prod")
+    public DataSource prodDataSource() {
+        JndiObjectFactoryBean ds = new JndiObjectFactoryBean();
+        ds.setLookupOnStartup(true);
+        ds.setJndiName("jdbc/postDS");
+        ds.setCache(true);
+
+        return (DataSource) ds.getObject();
+    }
+
+}
+
+@Configuration
+@EnableWebMvc
+@ComponentScan(
+        basePackageClasses = {Constants.class},
+        useDefaultFilters = false,
+        includeFilters = {
+            @Filter(
+                    type = FilterType.ANNOTATION,
+                    value = {
+                        Controller.class,
+                        RestController.class,
+                        ControllerAdvice.class
+                    }
+            )
+        }
+)
+-----------------------------------------------------------------------------------------
+/**
+ * A Base 64 codec implementation.
+ * 
+ * @author Hanson Char
+ */
+class Base64Codec implements Codec {
+    private static final int OFFSET_OF_a = 'a' - 26;
+    private static final int OFFSET_OF_0 = '0' - 52;
+    private static final int OFFSET_OF_PLUS = '+' - 62;
+    private static final int OFFSET_OF_SLASH = '/' - 63;
+    
+    private static final int MASK_2BITS = (1 << 2) - 1;
+    private static final int MASK_4BITS = (1 << 4) - 1;
+    private static final int MASK_6BITS = (1 << 6) - 1;
+    // Alphabet as defined at http://www.ietf.org/rfc/rfc4648.txt
+    private static final byte PAD = '=';
+    
+    private static class LazyHolder {
+        private static final byte[] DECODED = decodeTable();
+        
+        private static byte[] decodeTable() {
+            final byte[] dest = new byte['z'+1];
+            
+            for (int i=0; i <= 'z'; i++) 
+            {
+                if (i >= 'A' && i <= 'Z')
+                    dest[i] = (byte)(i - 'A');
+                else if (i >= '0' && i <= '9')
+                    dest[i] = (byte)(i - OFFSET_OF_0);
+                else if (i == '+')
+                    dest[i] = (byte)(i - OFFSET_OF_PLUS);
+                else if (i == '/')
+                    dest[i] = (byte)(i - OFFSET_OF_SLASH);
+                else if (i >= 'a' && i <= 'z')
+                    dest[i] = (byte)(i - OFFSET_OF_a);
+                else 
+                    dest[i] = -1;
+            }
+            return dest;
+        }
+    }
+
+    private final byte[] ALPAHBETS;
+
+    Base64Codec() {
+        ALPAHBETS = CodecUtils.toBytesDirect("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
+    }
+    
+    protected Base64Codec(byte[] alphabets) {
+        ALPAHBETS = alphabets;
+    }
+
+    public byte[] encode(byte[] src) {
+        final int num3bytes = src.length / 3;
+        final int remainder = src.length % 3;
+        
+        if (remainder == 0)
+        {
+            byte[] dest = new byte[num3bytes * 4];
+    
+            for (int s=0,d=0; s < src.length; s+=3, d+=4)
+                encode3bytes(src, s, dest, d);
+            return dest;
+        }
+        
+        byte[] dest = new byte[(num3bytes+1) * 4];
+        int s=0, d=0;
+        
+        for (; s < src.length-remainder; s+=3, d+=4)
+            encode3bytes(src, s, dest, d);
+        
+        switch(remainder) {
+            case 1:
+                encode1byte(src, s, dest, d);
+                break;
+            case 2:
+                encode2bytes(src, s, dest, d);
+                break;
+        }
+        return dest;
+    }
+    
+    void encode3bytes(byte[] src, int s, byte[] dest, int d) {
+        // operator precedence in descending order: >>> or <<, &, |
+        byte p;
+        dest[d++] = (byte)ALPAHBETS[(p=src[s++]) >>> 2 & MASK_6BITS];                         // 6 
+        dest[d++] = (byte)ALPAHBETS[(p & MASK_2BITS) << 4 | (p=src[s++]) >>> 4 & MASK_4BITS]; // 2 4
+        dest[d++] = (byte)ALPAHBETS[(p & MASK_4BITS) << 2 | (p=src[s]) >>> 6 & MASK_2BITS];   //   4 2
+        dest[d] = (byte)ALPAHBETS[p & MASK_6BITS];                                            //     6
+        return;
+    }
+    
+    void encode2bytes(byte[] src, int s, byte[] dest, int d) {
+        // operator precedence in descending order: >>> or <<, &, |
+        byte p;
+        dest[d++] = (byte)ALPAHBETS[(p=src[s++]) >>> 2 & MASK_6BITS];                         // 6 
+        dest[d++] = (byte)ALPAHBETS[(p & MASK_2BITS) << 4 | (p=src[s]) >>> 4 & MASK_4BITS];   // 2 4
+        dest[d++] = (byte)ALPAHBETS[(p & MASK_4BITS) << 2];                                   //   4
+        dest[d] = PAD;
+        return;
+    }
+    
+    void encode1byte(byte[] src, int s, byte[] dest, int d) {
+        // operator precedence in descending order: >>> or <<, &, |
+        byte p;
+        dest[d++] = (byte)ALPAHBETS[(p=src[s]) >>> 2 & MASK_6BITS];                           // 6 
+        dest[d++] = (byte)ALPAHBETS[(p & MASK_2BITS) << 4];                                   // 2
+        dest[d++] = PAD;
+        dest[d] = PAD;
+        return;
+    }
+    
+    void decode4bytes(byte[] src, int s, byte[] dest, int d) {
+        int p=0;
+        // operator precedence in descending order: >>> or <<, &, |
+        dest[d++] = (byte)
+                    (
+                        pos(src[s++]) << 2
+                        | (p=pos(src[s++])) >>> 4 & MASK_2BITS
+                    )
+                    ;                                               // 6 2
+        dest[d++] = (byte)
+                    (
+                        (p & MASK_4BITS) << 4 
+                        | (p=pos(src[s++])) >>> 2 & MASK_4BITS
+                    )
+                    ;                                               //   4 4
+        dest[d] = (byte)
+                    (
+                        (p & MASK_2BITS) << 6
+                        | pos(src[s])
+                    )
+                    ;                                               //     2 6
+        return;
+    }
+    
+    /**
+     * @param n the number of final quantum in bytes to decode into.  Ranges from 1 to 3, inclusive.
+     */
+    void decode1to3bytes(int n, byte[] src, int s, byte[] dest, int d) {
+        int p=0;
+        // operator precedence in descending order: >>> or <<, &, |
+        dest[d++] = (byte)
+                    (
+                        pos(src[s++]) << 2
+                        | (p=pos(src[s++])) >>> 4 & MASK_2BITS
+                    )
+                    ;                                               // 6 2
+        if (n == 1) {
+            CodecUtils.sanityCheckLastPos(p, MASK_4BITS);
+            return;
+        }
+        
+        dest[d++] = (byte)
+                    (
+                        (p & MASK_4BITS) << 4 
+                        | (p=pos(src[s++])) >>> 2 & MASK_4BITS
+                    )
+                    ;                                               //   4 4
+        if (n == 2) {
+        	CodecUtils.sanityCheckLastPos(p, MASK_2BITS);
+            return;
+        }
+        
+        dest[d] = (byte)
+                    (
+                        (p & MASK_2BITS) << 6
+                        | pos(src[s])
+                    )
+                    ;                                               //     2 6
+        return;
+    }
+
+    public byte[] decode(byte[] src, final int length) 
+    {
+        if (length % 4 != 0)
+            throw new IllegalArgumentException
+            ("Input is expected to be encoded in multiple of 4 bytes but found: " + length);
+
+        int pads=0;
+        int last = length-1;
+        
+        // max possible padding in b64 encoding is 2
+        for (; pads < 2 && last > -1; last--, pads++) {
+            if (src[last] != PAD)
+                break;
+        }
+        
+        final int fq; // final quantum in unit of bytes
+        
+        switch(pads) {
+            case 0:
+                fq=3;
+                break; // final quantum of encoding input is an integral multiple of 24 bits
+            case 1:
+                fq=2;
+                break; // final quantum of encoding input is exactly 16 bits
+            case 2:
+                fq=1;
+                break; // final quantum of encoding input is exactly 8 bits
+            default:
+                throw new Error("Impossible");
+        }
+        final byte[] dest = new byte[length / 4 * 3 - (3-fq)]; 
+        int s=0, d=0;
+        
+        // % has a higher precedence than - than <
+        for (; d < dest.length - fq%3; s+=4,d+=3)
+            decode4bytes(src, s, dest, d);
+
+        if (fq < 3)
+            decode1to3bytes(fq, src, s, dest, d);
+        return dest;
+    }
+    
+    protected int pos(byte in) {
+        int pos = LazyHolder.DECODED[in];
+        
+        if (pos > -1)
+            return pos;
+        throw new IllegalArgumentException("Invalid base 64 character: \'" + (char)in + "\'");
+    }
+}
+-----------------------------------------------------------------------------------------
+import java.util.concurrent.TimeUnit;
+import javax.cache.CacheManager;
+
+import org.ehcache.config.CacheConfiguration;
+import org.ehcache.config.builders.CacheConfigurationBuilder;
+import org.ehcache.config.builders.ResourcePoolsBuilder;
+import org.ehcache.config.units.EntryUnit;
+import org.ehcache.expiry.Duration;
+import org.ehcache.expiry.Expirations;
+import org.ehcache.jsr107.Eh107Configuration;
+
+import org.springframework.boot.autoconfigure.cache.JCacheManagerCustomizer;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+
+/**
+ * Cache could be disable in unit test.
+ */
+@Configuration
+@EnableCaching
+@Profile("production")
+public class CacheConfig {
+
+    @Bean
+    public JCacheManagerCustomizer cacheManagerCustomizer() {
+        return new JCacheManagerCustomizer() {
+            @Override
+            public void customize(CacheManager cacheManager) {
+                CacheConfiguration<Object, Object> config = CacheConfigurationBuilder
+                    .newCacheConfigurationBuilder(Object.class, Object.class,
+                        ResourcePoolsBuilder.newResourcePoolsBuilder()
+                            .heap(100, EntryUnit.ENTRIES))
+                    .withExpiry(Expirations.timeToLiveExpiration(Duration.of(60, TimeUnit.SECONDS)))
+                    .build();
+                cacheManager.createCache("vets", Eh107Configuration.fromEhcacheCacheConfiguration(config));
+            }
+        };
+    }
+
+}
+-----------------------------------------------------------------------------------------
+# Usage: regenerate-tags filename
+#
+# filename must be line-separated pairs of <tag>,<commit description>
+#
+# delete all existing tags
+git tag | xargs -L 1 | xargs git push origin --delete
+git tag | xargs -L 1 | xargs git tag --delete
+
+# read each line from file
+file=$1
+while IFS=',' read -r tag description
+do
+  echo $tag
+  git log --branches=* --grep="^$description$" --pretty=format:"%h" | xargs git tag "$tag"
+done < "$file"
+
+# push tags to remote
+git push --tags
+-----------------------------------------------------------------------------------------
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.batch.core.StepContribution;
+import org.springframework.batch.core.scope.context.ChunkContext;
+import org.springframework.batch.core.step.tasklet.Tasklet;
+import org.springframework.batch.repeat.RepeatStatus;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+public class HiveJdbcTasklet implements Tasklet {
+
+	private static final Log log = LogFactory.getLog(HiveJdbcTasklet.class);
+
+	private JdbcTemplate template;
+	
+	private String outputPath;
+	
+	public void setJdbcTemplate(JdbcTemplate template) {
+		this.template = template;
+	}
+
+	public void setOutputPath(String outputPath) {
+		this.outputPath = outputPath;
+	}
+
+	public RepeatStatus execute(StepContribution stepContribution, ChunkContext context)
+			throws Exception {
+
+		log.info("Hive JDBC Task Running");
+		
+		String tableDdl = "create external table if not exists tweetdata (value STRING) LOCATION '/tweets/input'";
+		String query = "select r.retweetedUser, '\t', count(r.retweetedUser) as count " +
+					" from tweetdata j " +
+					" lateral view json_tuple(j.value, 'retweet', 'retweetedStatus') t as retweet, retweetedStatus " + 
+					" lateral view json_tuple(t.retweetedStatus, 'fromUser') r as retweetedUser " +
+					" where t.retweet = 'true' " +
+					" group by r.retweetedUser order by count desc limit 10";
+		String results = "insert overwrite directory '" + outputPath + "/hiveout'";
+		
+		template.execute(tableDdl);
+
+		template.execute(results + " " + query);
+
+		return null;
+	}
+}
+-----------------------------------------------------------------------------------------
+    public
+    @Bean
+    EntityManagerFactory customEntityManagerFactory(DataSource dataSource) {
+        HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
+        vendorAdapter.setGenerateDdl(false); // turn off with Discriminator strategy so far!
+        LocalContainerEntityManagerFactoryBean factory = new LocalContainerEntityManagerFactoryBean();
+        factory.setJpaVendorAdapter(vendorAdapter);
+        factory.setPackagesToScan(TenancySampleApplication.class.getPackage().getName());
+        factory.setDataSource(dataSource);
+        factory.getJpaPropertyMap().put(Environment.DIALECT, PostgreSQL9Dialect.class.getName());
+        factory.getJpaPropertyMap().put(Environment.MULTI_TENANT, MultiTenancyStrategy.DISCRIMINATOR);
+        factory.getJpaPropertyMap().put(Environment.MULTI_TENANT_IDENTIFIER_RESOLVER, new TenantHolder());
+        factory.afterPropertiesSet();
+        return factory.getObject();
+    }
+-----------------------------------------------------------------------------------------
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.util.WebUtils;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+/**
+ * I got this code from here:
+ * https://spring.io/guides/tutorials/spring-security-and-angular-js/
+ */
+public class CsrfHeaderFilter extends OncePerRequestFilter {
+    @Override
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
+        CsrfToken csrf = (CsrfToken) request.getAttribute(CsrfToken.class
+                .getName());
+        if (csrf != null) {
+            Cookie cookie = WebUtils.getCookie(request, "XSRF-TOKEN");
+            String token = csrf.getToken();
+            if (cookie==null || token!=null && !token.equals(cookie.getValue())) {
+                cookie = new Cookie("XSRF-TOKEN", token);
+                cookie.setPath("/");
+                response.addCookie(cookie);
+            }
+        }
+        filterChain.doFilter(request, response);
+    }
+}
+-----------------------------------------------------------------------------------------
+    public static String getRandomUsers() {
+        final String words = "Andrea:Juan:Isaac:Sandra:Michael:Annabel";
+        String[] wordsAsArray = words.split(":");
+        int index = new Random().nextInt(wordsAsArray.length);
+
+        return wordsAsArray[index];
+    }
+	
+	import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.web.support.SpringBootServletInitializer;
+
+public class ServletInitializer extends SpringBootServletInitializer {
+
+    @Override
+    protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+        return application.sources(ExampleEnversApplication.class);
+    }
+
+}
+-----------------------------------------------------------------------------------------
+import org.springframework.hateoas.PagedResources;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties
+public class PagedCities extends PagedResources<City> {
+
+}
+-----------------------------------------------------------------------------------------
+
+/**
+ * Credits for this class goes to user aioobe on stackoverflow.com
+ * Source: http://stackoverflow.com/questions/4454630/j2me-calculate-the-the-distance-between-2-latitude-and-longitude
+ */
+public class TrigMath {
+
+    static final double sq2p1 = 2.414213562373095048802e0;
+    static final double sq2m1 = .414213562373095048802e0;
+    static final double p4 = .161536412982230228262e2;
+    static final double p3 = .26842548195503973794141e3;
+    static final double p2 = .11530293515404850115428136e4;
+    static final double p1 = .178040631643319697105464587e4;
+    static final double p0 = .89678597403663861959987488e3;
+    static final double q4 = .5895697050844462222791e2;
+    static final double q3 = .536265374031215315104235e3;
+    static final double q2 = .16667838148816337184521798e4;
+    static final double q1 = .207933497444540981287275926e4;
+    static final double q0 = .89678597403663861962481162e3;
+    static final double PIO2 = 1.5707963267948966135E0;
+
+    private static double mxatan(double arg) {
+        double argsq = arg * arg, value;
+
+        value = ((((p4 * argsq + p3) * argsq + p2) * argsq + p1) * argsq + p0);
+        value = value / (((((argsq + q4) * argsq + q3) * argsq + q2) * argsq + q1) * argsq + q0);
+        return value * arg;
+    }
+
+    private static double msatan(double arg) {
+        return arg < sq2m1 ? mxatan(arg)
+             : arg > sq2p1 ? PIO2 - mxatan(1 / arg)
+             : PIO2 / 2 + mxatan((arg - 1) / (arg + 1));
+    }
+
+    public static double atan(double arg) {
+        return arg > 0 ? msatan(arg) : -msatan(-arg);
+    }
+
+    public static double atan2(double arg1, double arg2) {
+        if (arg1 + arg2 == arg1)
+            return arg1 >= 0 ? PIO2 : -PIO2;
+        arg1 = atan(arg1 / arg2);
+        return arg2 < 0 ? arg1 <= 0 ? arg1 + Math.PI : arg1 - Math.PI : arg1;
+    }
+}
 -----------------------------------------------------------------------------------------
 <img srcset="https://ik.imagekit.io/demo/resp-img/image1.jpg?tr=w-320,dpr-1 1x,
              https://ik.imagekit.io/demo/resp-img/image1.jpg?tr=w-320,dpr-2 2x,

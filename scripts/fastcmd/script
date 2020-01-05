@@ -19,6 +19,96 @@ console.log(proxy.relay('join', 'bar', 'baz'));
 console.log(proxy.relay('sum', 1, 2, 3, 4, 5, 6, 7));
 
 ===========================================================================================================================
+yarn config set network-timeout 300000
+===========================================================================================================================
+function directions(...args) {
+ var [start, ...remaining] = args
+ var [finish, ...stops] = remaining.reverse()
+
+ console.log(`drive through ${args.length} towns`)
+ console.log(`start in ${start}`)
+ console.log(`the destination is ${finish}`)
+ console.log(`stopping ${stops.length} times in between`)
+}
+directions(
+ "Truckee",
+ "Tahoe City",
+ "Sunnyside",
+ "Homewood",
+ "Tahoma"
+)
+
+git config --system core.longpaths true
+
+var createScream = function(logger) {
+ return function(message) {
+ logger(message.toUpperCase() + "!!!")
+ }
+}
+const scream = createScream(message => console.log(message))
+scream('functions can be returned from other functions')
+scream('createScream returns a function')
+scream('scream invokes that returned function')
+
+const addColor = (title, list) => [...list, {title}]
+
+===========================================================================================================================
+import java.util.Collections;
+import java.util.Map;
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Reference;
+import org.springframework.data.redis.core.RedisHash;
+import org.springframework.data.redis.core.index.Indexed;
+
+import lombok.Data;
+
+@Data
+@RedisHash("persons")
+class Person {
+
+	@Id String id;
+	@Indexed String firstname;
+	String lastname;
+
+	Map<String, String> attributes = Collections.emptyMap();
+
+	City city;
+
+	@Reference Person mother;
+}
+
+npm install --save react react-dom @types/react @types/react-dom
+===========================================================================================================================
+https://github.com/liabru/matter-js
+
+mvn versions:display-dependency-updates
+mvn versions:display-plugin-updates
+
+relay-compiler --src ./src --schema ./schema.graphql
+===========================================================================================================================
+const editName = (oldName, name, arr) =>
+ arr.map(item => {
+ if (item.name === oldName) {
+ return {
+ ...item,
+ name
+ }
+ } else {
+ return item
+ }
+ })
+===========================================================================================================================
+import React, { FunctionComponent } from "react";
+import { RouteComponentProps } from "@reach/router";
+
+type Props = { component: FunctionComponent } & RouteComponentProps;
+
+const Route: FunctionComponent<Props> = ({ component: Component, ...rest }) => (
+  <Component {...rest} />
+);
+
+export default Route;
 
 // Option 3: Use a fat arrow to supply the lexical this.
 var VendingMachine = function () {
@@ -35,6 +125,9 @@ var popMachine = new VendingMachine();
 // => 'Spite'
 console.log(popMachine.dispense());
 
+npm install -g rollup
+
+typings install --global mocha
 ===========================================================================================================================
 // => 10
 [1, 2, 3, 4].reduceRight(function(curr, val) curr + val);
@@ -792,6 +885,27 @@ const timer = () => {
 }
 
 timer();
+===========================================================================================================================
+
+===========================================================================================================================
+npm config set msvs_version 2017
+npm install --global --production windows-build-tools
+node-gyp configure
+node-gyp configure --msvs_version=2015
+node-gyp build
+
+npm config set [--global] devdir /tmp/.gyp
+
+npm install --global node-gyp@latest
+npm prefix -g | % {npm config set node_gyp "$_\node_modules\node-gyp\bin\node-gyp.js"}
+
+choco unistall nodejs
+rd /s %AppData%\npm\
+rd /s %AppData%\npm\
+choco install nodejs
+npm install -g npm@latest
+npm install -g node-gyp@latest
+npm install -g typescript@latest
 ===========================================================================================================================
 import React, { Component } from 'react';
 import axios from 'axios';
