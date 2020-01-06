@@ -81,6 +81,7 @@ class Person {
 npm install --save react react-dom @types/react @types/react-dom
 ===========================================================================================================================
 https://github.com/liabru/matter-js
+npm view webpack version
 
 mvn versions:display-dependency-updates
 mvn versions:display-plugin-updates

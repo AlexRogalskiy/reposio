@@ -1219,6 +1219,37 @@ class Base64Codec implements Codec {
     }
 }
 -----------------------------------------------------------------------------------------
+graphql create my-app --boilerplate react-fullstack-basic
+
+npm i webpack webpack-cli -D
+-----------------------------------------------------------------------------------------
+	@Bean
+	public BackendIdConverter roleUserIdConverter() {
+		return new BackendIdConverter() {
+
+			@Override
+			public boolean supports(Class<?> delimiter) {
+				return RoleUser.class.equals(delimiter);
+			}
+
+			@Override
+			public String toRequestId(Serializable id, Class<?> entityType) {
+				RoleUserPK pk = (RoleUserPK) id;
+				return parseUrl(pk.getRoleId(), pk.getUserId());
+			}
+
+			@Override
+			public Serializable fromRequestId(String id, Class<?> entityType) {
+				if (id == null)
+					return null;
+
+				String[] parts = id.split(DELIMITER);
+
+				return new RoleUserPK(Long.parseLong(parts[0]), Long.parseLong(parts[1]));
+			}
+		};
+	}
+-----------------------------------------------------------------------------------------
 import java.util.concurrent.TimeUnit;
 import javax.cache.CacheManager;
 
