@@ -5312,6 +5312,54 @@ public class SessionHandlerInterceptor extends HandlerInterceptorAdapter {
         }
     }
 }
+
+    @Id
+    @GenericGenerator(name="snowflake",strategy = SnowflakeGenerator.TYPE)
+    @GeneratedValue(generator = "snowflake")
+    private PK id;
+==============================================================================================================
+<?xml version="1.0" encoding="utf-8" ?>
+<sqls xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns="http://www.slyak.com/schema/templatequery"
+      xsi:schemaLocation="http://www.slyak.com/schema/templatequery http://www.slyak.com/schema/templatequery.xsd">
+
+    <sql name="findByContent">
+        <![CDATA[
+          SELECT * FROM t_sample WHERE 1=1
+          <#if content??>
+            AND content LIKE :content
+          </#if>
+        ]]>
+    </sql>
+    <sql name="countContent">
+        <![CDATA[
+          SELECT count(*) FROM t_sample WHERE 1=1
+          <#if content??>
+            AND content LIKE :content
+          </#if>
+        ]]>
+    </sql>
+    <sql name="findDtos">
+        <![CDATA[
+          SELECT id,content as contentShow FROM t_sample
+        ]]>
+    </sql>
+    <sql name="findByTemplateQueryObject">
+        <![CDATA[
+          SELECT * FROM t_sample WHERE 1=1
+          <#if content??>
+            AND content LIKE :content
+          </#if>
+        ]]>
+    </sql>
+</sqls>
+==============================================================================================================
+@NamedNativeQuery(name = "Manufacturer.getAllThatSellAcoustics", 
+		query = "SELECT m.id, m.name, m.foundedDate, m.averageYearlySales, m.location_id as headquarters_id, m.active "
+	    + "FROM Manufacturer m "
+		+ "LEFT JOIN Model mod ON (m.id = mod.manufacturer_id) "
+		+ "LEFT JOIN ModelType mt ON (mt.id = mod.modeltype_id) "
+	    + "WHERE (mt.name = ?)", resultClass = Manufacturer.class)
 ==============================================================================================================
         <dependency>
             <groupId>org.springframework.cloud</groupId>
