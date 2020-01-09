@@ -36548,7 +36548,6 @@ public class CityESServiceImpl implements CityService {
         Page<City> searchPageResults = cityRepository.search(searchQuery);
         return searchPageResults.getContent();
     }
-
 }
 --------------------------------------------------------------------------------------------------------
 import com.google.common.base.Predicate;
@@ -38903,7 +38902,6 @@ public class MybatisTestIntegrationTest {
     this.thrown.expect(NoSuchBeanDefinitionException.class);
     this.applicationContext.getBean(ExampleComponent.class);
   }
-
 }
 --------------------------------------------------------------------------------------------------------
 	@HystrixCommand(fallbackMethod = "getFallbackCommentsForTask", commandProperties = {
@@ -39658,7 +39656,6 @@ public interface BlogMapper {
               "where vid = #{bv.vid}"
       })
       void updateBlogView(@Param("bv") BlogView blogView);
-
 }
 --------------------------------------------------------------------------------------------------------
 public enum Types {

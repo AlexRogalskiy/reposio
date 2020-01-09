@@ -40,6 +40,1463 @@ Given a step that is executed after each successful scenario
 Outcome: FAILURE 
 Given a step that is executed after each failed scenario
 -----------------------------------------------------------------------------------------
+def bubble_sort(list):
+    sorted_list = list[:]
+    is_sorted = False
+    while is_sorted == False:
+        swaps = 0
+        for i in range(len(list) - 1):
+        if sorted_list[i] > sorted_list[i + 1]: # swap
+            temp = sorted_list[i]
+            sorted_list[i] = sorted_list[i + 1]
+            sorted_list[i + 1] = temp
+            swaps += 1
+            print(swaps)
+        if swaps == 0:
+        is_sorted = True
+    return sorted_list
+
+print(bubble_sort([2, 1, 3]))
+
+function fibonacci(n,memo) {
+    memo = memo || {}
+    if (memo[n]) {
+        return memo[n]
+    }
+    if (n <= 1) {
+        return 1
+    }
+    return memo[n] = fibonacci(n - 1, memo) + fibonacci(n - 2, memo)
+}
+-----------------------------------------------------------------------------------------
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.util.Set;
+
+import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.RoundEnvironment;
+import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.annotation.processing.SupportedSourceVersion;
+import javax.lang.model.SourceVersion;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.TypeElement;
+import javax.tools.Diagnostic;
+import javax.tools.FileObject;
+
+@SupportedAnnotationTypes("com.ifedorenko.sample.proc.SampleAnnotation")
+@SupportedSourceVersion(SourceVersion.RELEASE_7)
+public class SampleProcessor extends AbstractProcessor {
+
+  @Override
+  public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+    for (Element element : roundEnv.getElementsAnnotatedWith(SampleAnnotation.class)) {
+      try {
+        TypeElement cls = (TypeElement) element;
+        SampleAnnotation ann = cls.getAnnotation(SampleAnnotation.class);
+        PackageElement pkg = (PackageElement) cls.getEnclosingElement();
+        String clsSimpleName = ann.prefix() + cls.getSimpleName();
+        String pkgName = pkg.getQualifiedName().toString();
+        String clsQualifiedName = pkgName + "." + clsSimpleName;
+        FileObject sourceFile = processingEnv.getFiler().createSourceFile(clsQualifiedName, cls);
+        try (BufferedWriter w = new BufferedWriter(sourceFile.openWriter())) {
+          w.append("package ").append(pkgName).append(";");
+          w.newLine();
+          w.append("public class ").append(clsSimpleName);
+          w.append("{}");
+        }
+      } catch (IOException e) {
+        e.printStackTrace();
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, e.getMessage(), element);
+      }
+    }
+    return false; // not "claimed" so multiple processors can be tested
+  }
+
+}
+-----------------------------------------------------------------------------------------
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.lang.annotation.ElementType;
+import java.lang.reflect.InvocationTargetException;
+
+class AnotTest {
+    public static void main(String... args) {
+        AnnotationTest at = new AnnotationTest();
+        for (Method m : at.getClass().getMethods()) {
+           MethodXY mXY = (MethodXY)m.getAnnotation(MethodXY.class);
+           if (mXY != null) {
+               if (mXY.x() == 3 && mXY.y() == 2){
+                   try {
+                       m.invoke(at);
+                   } catch (IllegalAccessException e) {
+                       //do nothing;
+                   } catch (InvocationTargetException o) {
+                       //do nothing;
+                   }
+               }
+           }
+        }
+    }
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.METHOD)
+    static public @interface MethodXY {
+        public int x();
+        public int y();
+    }
+
+    static class AnnotationTest {
+        @MethodXY(x=5, y=5)
+        public void myMethodA() {
+            System.out.println("boo");
+        }
+
+        @MethodXY(x=3, y=2)
+        public void myMethodB() {
+            System.out.println("foo");
+        }
+    }
+}
+-----------------------------------------------------------------------------------------
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
+// Similar to Optional but can contain null value
+public class Maybe<T> {
+    final T value;
+
+    final boolean hasValue;
+
+    private Maybe(T value, boolean hasValue) {
+        this.value = value;
+        this.hasValue = hasValue;
+    }
+
+    public static <T> Maybe<T> just(T value) {
+        return new Maybe(value, true);
+    }
+
+    public static <T> Maybe<T> nothing() {
+        return new Maybe(null, false);
+    }
+
+    public boolean isJust() {
+        return hasValue;
+    }
+
+    public boolean isNothing() {
+        return !hasValue;
+    }
+
+    public <N> Maybe<N> map(Function<? super T, ? extends N> funct) {
+        if (hasValue) {
+            return new Maybe(funct.apply(value), true);
+        }
+        return Maybe.nothing();
+    }
+
+    public T orElse(T fallback) {
+        if (hasValue) {
+            return value;
+        }
+        return fallback;
+    }
+
+    public <X extends Throwable> T orElseThrow(Supplier<? extends X> ex) throws X {
+        if (!hasValue) {
+            throw ex.get();
+        }
+        return value;
+    }
+
+    public T get() {
+        if (!hasValue) {
+            throw new NoSuchElementException();
+        }
+        return value;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 41 * hash + Objects.hashCode(this.value);
+        hash = 41 * hash + (this.hasValue ? 1 : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Maybe<?> other = (Maybe<?>) obj;
+        if (this.hasValue != other.hasValue) {
+            return false;
+        }
+        if (!Objects.equals(this.value, other.value)) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "Maybe{" + "value=" + value + ", hasValue=" + hasValue + '}';
+    }
+}
+-----------------------------------------------------------------------------------------
+npm install -g @cloudflare/wrangler
+wrangler config
+wrangler generate hello
+cd hello
+wrangler subdomain world
+wrangler publish
+-----------------------------------------------------------------------------------------
+spring.datasource.url=jdbc:derby:memory:spring-ddd-bank-db;create=true
+-----------------------------------------------------------------------------------------
+		<dependency>
+			<groupId>org.springframework.session</groupId>
+			<artifactId>spring-session-core</artifactId>
+			<version>${spring-session.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.data</groupId>
+			<artifactId>spring-data-mongodb</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>org.mongodb</groupId>
+					<artifactId>mongo-java-driver</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>jcl-over-slf4j</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<dependency>
+			<groupId>org.mongodb</groupId>
+			<artifactId>mongodb-driver</artifactId>
+			<version>${mongo.version}</version>
+			<optional>true</optional>
+		</dependency>
+		
+		
+			<dependency>
+			<groupId>org.mongodb</groupId>
+			<artifactId>mongodb-driver-async</artifactId>
+			<version>${mongo.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.mongodb</groupId>
+			<artifactId>mongodb-driver-reactivestreams</artifactId>
+			<version>${mongo-reactivestreams.version}</version>
+			<scope>test</scope>
+		</dependency>
+		
+			<dependency>
+			<groupId>de.flapdoodle.embed</groupId>
+			<artifactId>de.flapdoodle.embed.mongo</artifactId>
+			<version>${flapdoodle.version}</version>
+			<scope>test</scope>
+		</dependency>
+		
+		
+			<dependency>
+			<groupId>io.projectreactor</groupId>
+			<artifactId>reactor-core</artifactId>
+			<optional>true</optional>
+		</dependency>
+-----------------------------------------------------------------------------------------
+import reactor.core.publisher.Flux;
+
+import org.springframework.data.mongodb.repository.Tailable;
+import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+
+/**
+ * @author Mark Paluch
+ */
+public interface LoginEventRepository extends ReactiveCrudRepository<LoginEvent, String> {
+
+	@Tailable
+	Flux<LoginEvent> findPeopleBy();
+}
+
+    /**
+     * An intereptor that pushes the current user UserDetails object into the request as an attribute
+     * named 'currentUser'.
+     * 
+     * @author Mark Meany
+     */
+    protected class UserDetailInterceptor extends HandlerInterceptorAdapter {
+        @Override
+        public boolean preHandle(final HttpServletRequest request, final HttpServletResponse response, final Object handler) throws Exception {
+            final Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null) {
+                if (!(auth instanceof AnonymousAuthenticationToken)) {
+                    if (auth.getPrincipal() != null) {
+                        request.setAttribute("currentUser", auth.getPrincipal());
+                    }
+                }
+            }
+            return super.preHandle(request, response, handler);
+
+import org.springframework.boot.web.reactive.context.ReactiveWebApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.reactive.config.ViewResolverRegistry;
+import org.springframework.web.reactive.config.WebFluxConfigurer;
+import org.springframework.web.reactive.result.view.freemarker.FreeMarkerConfigurer;
+
+@Configuration
+public class WebConfig implements WebFluxConfigurer {
+
+	@Bean
+	public FreeMarkerConfigurer freeMarkerConfigurer(ReactiveWebApplicationContext applicationContext) {
+
+		FreeMarkerConfigurer configurer = new FreeMarkerConfigurer();
+
+		configurer.setTemplateLoaderPath("classpath:/templates/");
+		configurer.setResourceLoader(applicationContext);
+
+		return configurer;
+	}
+
+	@Override
+	public void configureViewResolvers(ViewResolverRegistry registry) {
+		registry.freeMarker();
+	}
+}
+-----------------------------------------------------------------------------------------
+import org.apache.tiles.Attribute;
+import org.apache.tiles.AttributeContext;
+import org.apache.tiles.preparer.ViewPreparer;
+import org.apache.tiles.request.Request;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.servlet.view.tiles3.SpringBeanPreparerFactory;
+import org.springframework.web.servlet.view.tiles3.TilesConfigurer;
+import org.springframework.web.servlet.view.tiles3.TilesView;
+import org.springframework.web.servlet.view.tiles3.TilesViewResolver;
+
+/**
+ * Tiles configuration.
+ * 
+ * References: http://docs.spring.io/spring/docs/4.0.6.RELEASE/spring-framework-reference/html/view.html#view-tiles-integrate
+ * 
+ * @author Mark Meany
+ */
+@Configuration
+public class ConfigurationForTiles {
+
+    /**
+     * Initialise Tiles on application startup and identify the location of the tiles configuration file, tiles.xml.
+     * 
+     * @return tiles configurer
+     */
+    @Bean
+    public TilesConfigurer tilesConfigurer() {
+        final TilesConfigurer configurer = new TilesConfigurer();
+        configurer.setDefinitions(new String[] { "WEB-INF/tiles/tiles.xml" });
+        configurer.setCheckRefresh(true);
+        
+        // Provide Spring Beans as view preparers
+        configurer.setPreparerFactoryClass(SpringBeanPreparerFactory.class);
+        
+        return configurer;
+    }
+
+    /**
+     * A Tiles View Preparer that makes the authenticated user object available as an attribute called user.
+     * 
+     * @return
+     */
+    @Bean
+    public UsernamePreparer usernamePreparer() {
+        return new UsernamePreparer();
+    }
+    
+    /**
+     * Introduce a Tiles view resolver, this is a convenience implementation that extends URLBasedViewResolver.
+     * 
+     * @return tiles view resolver
+     */
+    @Bean
+    public TilesViewResolver tilesViewResolver() {
+        final TilesViewResolver resolver = new TilesViewResolver();
+        resolver.setViewClass(TilesView.class);
+        return resolver;
+    }
+    
+    /**
+     * A View Preparer that queries the spring security context. If it finds an authenticated user object
+     * then it makes it available as a cascading attribute that can be accessed in a view thus:
+     * 
+     * <tiles:getAsString name="user" />
+     * 
+     * @author Mark Meany
+     */
+    protected class UsernamePreparer implements ViewPreparer {
+
+        @Override
+        public void execute(Request arg0, AttributeContext arg1) {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (!(auth instanceof AnonymousAuthenticationToken)) {
+                final UserDetails userDetails = (UserDetails) auth.getPrincipal();
+                arg1.putAttribute("user", new Attribute("signed in as " + userDetails.getUsername()), true);
+            } else {
+                arg1.putAttribute("user", new Attribute("not signed in"), true);
+            }
+        }
+    }
+}
+-----------------------------------------------------------------------------------------
+import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
+
+import java.io.IOException;
+
+import org.elasticsearch.client.Client;
+import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
+import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
+
+@Configuration
+@EnableElasticsearchRepositories(basePackages = "org.phstudy.sample.repository")
+public class ElasticsearchConfig {
+	@Bean
+	ElasticsearchOperations elasticsearchTemplate() throws IOException {
+
+		// transport client
+		Settings settings = ImmutableSettings.settingsBuilder()
+		        .put("cluster.name", "elasticsearch")
+		        .put("username","myname")
+		        .put("password","mypassword").build();
+		        
+		 Client client = new TransportClient(settings)
+	        .addTransportAddress(new InetSocketTransportAddress("192.168.73.186", 9300));
+		 
+		 return new ElasticsearchTemplate(client);
+
+		// node client
+		//		return new ElasticsearchTemplate(nodeBuilder()
+		//				.local(true)
+		//				.settings(
+		//						ImmutableSettings.settingsBuilder()
+		//								.put("cluster.name", "elasticsearch")
+		//								.put("username", "myname")
+		//								.put("password", "mypassword").build()).node()
+		//				.client());
+	}
+}
+-----------------------------------------------------------------------------------------
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.rest.core.annotation.HandleAfterCreate;
+import org.springframework.data.rest.core.annotation.HandleAfterDelete;
+import org.springframework.data.rest.core.annotation.HandleAfterSave;
+import org.springframework.data.rest.core.annotation.RepositoryEventHandler;
+import org.springframework.security.acls.domain.BasePermission;
+import org.springframework.security.acls.domain.GrantedAuthoritySid;
+import org.springframework.security.acls.domain.PrincipalSid;
+
+import sample.sdr.auth.bean.AbstractSecuredEntity;
+import sample.sdr.auth.bean.Book;
+import sample.sdr.auth.dao.SecurityACLDAO;
+import sample.sdr.auth.security.SecurityUtil;
+
+@RepositoryEventHandler(Book.class)
+public class BookHandler {
+	private static Logger logger = LoggerFactory.getLogger(BookHandler.class);
+
+	@Autowired
+	private SecurityACLDAO securityACLDAO;
+	
+	@HandleAfterCreate
+	public void afterCreate(Book book) {
+		logger.debug("afterCreate:{}", book.toString());
+		addACL(book);
+	}
+
+	@HandleAfterSave
+	public void handleAfterSave(Book book) {
+		logger.debug("afterSave:{}", book.toString());
+	}
+	
+	@HandleAfterDelete
+	public void handleAfterDelete(Book book) {
+		removeACL(book);
+	}
+	
+	private void addACL(AbstractSecuredEntity type) {
+		if(type != null) {
+			securityACLDAO.addPermission(type, new PrincipalSid(SecurityUtil.getUsername()), BasePermission.ADMINISTRATION);
+			securityACLDAO.addPermission(type, new PrincipalSid(SecurityUtil.getUsername()), BasePermission.READ);
+			securityACLDAO.addPermission(type, new PrincipalSid(SecurityUtil.getUsername()), BasePermission.WRITE);
+			securityACLDAO.addPermission(type, new PrincipalSid(SecurityUtil.getUsername()), BasePermission.DELETE);
+		
+			securityACLDAO.addPermission(type, new GrantedAuthoritySid("ROLE_ADMIN"), BasePermission.ADMINISTRATION);
+		}		
+	}
+
+	private void removeACL(AbstractSecuredEntity type) {
+		//TBD
+	}
+}
+
+
+-- default admin user, pwd: admin123
+INSERT INTO userentity(id, enabled, password, username) VALUES(nextval('hibernate_sequence'),'true','$2a$10$Isti6gH/65twVovOwzDz5eryiJeRv3OLPwsihq9lTcij5UG/wIiVO','admin');
+
+INSERT INTO roleentity(id, authority) VALUES(nextval('hibernate_sequence'),'ROLE_ADMIN');
+
+INSERT INTO userentity_roleentity(users_id, roles_id) VALUES(1,2);
+
+import demo.constraint.UniqueSecondary;
+import demo.form.secondary.SecondaryForm;
+import demo.repository.secondary.SecondaryRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import javax.validation.ConstraintValidator;
+import javax.validation.ConstraintValidatorContext;
+
+public class UniqueSecondaryConstraintValidator implements ConstraintValidator<UniqueSecondary, String> {
+
+	@Autowired
+	private SecondaryRepository secondaryRepository;
+
+	@Override
+	public void initialize(UniqueSecondary constraintAnnotation) {
+		// Nothing to do in initialize
+	}
+
+	@Override
+	public boolean isValid(String value, ConstraintValidatorContext context) {
+		if (value == null) {
+			return false;
+		}
+		return secondaryRepository.findByNameIgnoreCase(value) == null;
+	}
+
+}
+
+import demo.constraint.validator.UniquePrimaryConstraintValidator;
+import org.hibernate.validator.constraints.NotEmpty;
+
+import javax.validation.Constraint;
+import javax.validation.Payload;
+import java.lang.annotation.*;
+
+@NotEmpty
+@Target(ElementType.FIELD)
+@Retention(RetentionPolicy.RUNTIME)
+@Constraint(validatedBy = UniquePrimaryConstraintValidator.class)
+@Documented
+public @interface UniquePrimary {
+
+	String message() default "Primary already exists";
+
+	Class<?>[] groups() default {};
+
+	Class<? extends Payload>[] payload() default {};
+
+}
+-----------------------------------------------------------------------------------------
+import React, { ReactNode } from "react";
+import { makeStyles } from "@material-ui/core/styles";
+import Link, { LinkProps } from "@material-ui/core/Link";
+import { Link as RouterLink } from "react-navi";
+
+const useStyles = makeStyles(theme => ({
+  link: {
+    marginRight: theme.spacing(1),
+    cursor: "pointer"
+  }
+}));
+
+interface Props {
+  to: string;
+  children: ReactNode;
+}
+
+function SimpleLink(props: Props) {
+  const { to, children, ...restProps } = props;
+  return (
+    <a {...restProps} href={to}>
+      {children}
+    </a>
+  );
+}
+
+function IconLink(props: LinkProps) {
+  return (
+    <Link {...props} component={RouterLink}>
+      !SomeIcon
+    </Link>
+  );
+}
+
+export default function ButtonRouter() {
+  const classes = useStyles();
+  return (
+    <>
+      <Link className={classes.link}>Plain</Link>
+
+      <Link className={classes.link} component={SimpleLink}>
+        !Simple
+      </Link>
+
+      <Link
+        className={classes.link}
+        to="https://github.com"
+        component={SimpleLink}
+      >
+        Simple
+      </Link>
+
+      <Link className={classes.link} component={RouterLink}>
+        !Navi Router
+      </Link>
+
+      <Link
+        className={classes.link}
+        href="https://frontarm.com/navi"
+        component={RouterLink}
+      >
+        Navi Router
+      </Link>
+
+      <IconLink />
+    </>
+  );
+}
+-----------------------------------------------------------------------------------------
+import com.github.springtestdbunit.DbUnitTestExecutionListener;
+import org.junit.runner.RunWith;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestExecutionListeners;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
+import org.springframework.test.context.support.DirtiesContextTestExecutionListener;
+import org.springframework.test.context.transaction.TransactionalTestExecutionListener;
+
+/**
+ * Created on 22/11/16.
+ *
+ * @author Reda.Housni-Alaoui
+ */
+@TestExecutionListeners({
+  DependencyInjectionTestExecutionListener.class,
+  DirtiesContextTestExecutionListener.class,
+  TransactionalTestExecutionListener.class,
+  DbUnitTestExecutionListener.class
+})
+@RunWith(SpringRunner.class)
+@ContextConfiguration(classes = {DataRepositoryConfiguration.class})
+@DirtiesContext
+public abstract class BaseTest {
+
+  public static final String DATASET =
+      "classpath:com/cosium/spring/data/jpa/entity/graph/dataset.xml";
+}
+-----------------------------------------------------------------------------------------
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+
+/**
+ * Metrics friendly {@link ScheduledThreadPoolExecutor} extension.
+ */
+public class MeteredScheduledThreadPoolExecutor extends ScheduledThreadPoolExecutor {
+   private final String poolName;
+   private final MeterRegistry meterRegistry;
+   private final ThreadLocal<Instant> taskExecutionTimer = new ThreadLocal<>();
+
+   public MeteredScheduledThreadPoolExecutor(
+      String poolName,
+      int corePoolSize,
+      MeterRegistry meterRegistry
+   ) {
+      super(corePoolSize);
+      this.poolName = poolName;
+      this.meterRegistry = meterRegistry;
+      registerGauges();
+   }
+
+   @Override
+   protected void beforeExecute(Thread thread, Runnable task) {
+      super.beforeExecute(thread, task);
+      taskExecutionTimer.set(Instant.now());
+   }
+
+   @Override
+   protected void afterExecute(Runnable task, Throwable throwable) {
+      Instant start = taskExecutionTimer.get();
+      Timer timer = meterRegistry.timer(meterName("task.time"));
+      timer.record(Duration.between(start, Instant.now()));
+
+      super.afterExecute(task, throwable);
+      if (throwable == null && task instanceof Future<?> && ((Future<?>) task).isDone()) {
+         try {
+            ((Future<?>) task).get();
+         } catch (CancellationException ce) {
+            throwable = ce;
+         } catch (ExecutionException ee) {
+            throwable = ee.getCause();
+         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+         }
+      }
+      if (throwable != null) {
+         Counter failedTasksCounter = meterRegistry.counter(meterName("failed.tasks"));
+         failedTasksCounter.increment();
+      } else {
+         Counter successfulTasksCounter = meterRegistry.counter(meterName("successful.tasks"));
+         successfulTasksCounter.increment();
+      }
+   }
+
+   private void registerGauges() {
+      meterRegistry.gauge(meterName("size"), this.getCorePoolSize());
+      meterRegistry.gauge(meterName("active"), this.getActiveCount());
+      meterRegistry.gauge(meterName("queue.size"), getQueue().size());
+   }
+
+   private String meterName(String s) {
+      return "pool.scheduled." + poolName + "." + s;
+   }
+}
+
+@EnableHypermediaSupport(type = { HypermediaType.HAL })
+
+import org.springframework.hateoas.Resource;
+import org.springframework.hateoas.mvc.ControllerLinkBuilder;
+
+import sample.halforms.controller.TaskController;
+import sample.halforms.model.Task;
+
+public class TaskResource extends Resource<Task> {
+
+	TaskResource(Task task) {
+		super(task);
+
+		add(ControllerLinkBuilder.linkTo(ControllerLinkBuilder.methodOn(TaskController.class).read(task.getId()))
+				.withSelfRel());
+
+		add(ControllerLinkBuilder
+				.linkTo(ControllerLinkBuilder.methodOn(TaskController.class).edit(task.getId(), new Task()))
+				.withRel("tasks"));
+
+		add(ControllerLinkBuilder.linkTo(ControllerLinkBuilder.methodOn(TaskController.class).list())
+				.withRel("previous"));
+
+	}
+
+}
+
+import org.springframework.hateoas.mvc.ResourceAssemblerSupport;
+
+import sample.halforms.controller.TaskController;
+import sample.halforms.model.Task;
+
+public class TaskResourceAssembler extends ResourceAssemblerSupport<Task, TaskResource> {
+
+	public TaskResourceAssembler() {
+		super(TaskController.class, TaskResource.class);
+	}
+
+	@Override
+	public TaskResource toResource(Task task) {
+		return new TaskResource(task);
+	}
+
+}
+
+import java.util.Set;
+
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.OneToMany;
+
+import org.springframework.data.rest.core.annotation.RestResource;
+import org.springframework.hateoas.core.Relation;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+@Entity
+@Relation(value = "category", collectionRelation = "categories")
+@RestResource(exported = false)
+public class Category extends AbstractEntity {
+
+	private String name;
+
+	private String description;
+
+	@OneToMany(mappedBy = "category", fetch = FetchType.LAZY, orphanRemoval = true)
+	@JsonIgnore
+	private Set<Task> tasks;
+
+	public Category() {
+	}
+
+	@JsonCreator
+	public Category(@JsonProperty("name") String name, @JsonProperty("description") String description) {
+		this.name = name;
+		this.description = description;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public Set<Task> getTasks() {
+		return tasks;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+}
+-----------------------------------------------------------------------------------------
+import java.util.Set;
+
+import org.springframework.data.rest.core.config.Projection;
+
+@Projection(name = "vetWithSpecialty", types = { Vet.class })
+public interface VetWithSpecialty {
+
+	String getFirstName();
+
+	String getLastName();
+
+	Set<Specialty> getSpecialties();
+}
+-----------------------------------------------------------------------------------------
+import javax.inject.Inject;
+import javax.sql.DataSource;
+import org.apache.commons.dbcp.BasicDataSource;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.core.env.Environment;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+import org.springframework.jndi.JndiObjectFactoryBean;
+
+/**
+ * Different configurations for different stages.
+ *
+ * In development stage using an embedded database to get better performance.
+ *
+ * In production, container managed DataSource is highly recommended.
+ *
+ * @author Hantsy Bai<hantsy@gmail.com>
+ *
+ */
+@Configuration
+public class DataSourceConfig {
+
+    private static final String ENV_JDBC_PASSWORD = "jdbc.password";
+    private static final String ENV_JDBC_USERNAME = "jdbc.username";
+    private static final String ENV_JDBC_URL = "jdbc.url";
+
+    @Inject
+    private Environment env;
+
+    @Bean
+    @Profile("dev")
+    public DataSource dataSource() {
+        return new EmbeddedDatabaseBuilder()
+                .setType(EmbeddedDatabaseType.H2)
+                .build();
+    }
+
+    @Bean
+    @Profile("staging")
+    public DataSource testDataSource() {
+        BasicDataSource bds = new BasicDataSource();
+        bds.setDriverClassName("com.mysql.jdbc.Driver");
+        bds.setUrl(env.getProperty(ENV_JDBC_URL));
+        bds.setUsername(env.getProperty(ENV_JDBC_USERNAME));
+        bds.setPassword(env.getProperty(ENV_JDBC_PASSWORD));
+        return bds;
+    }
+
+    @Bean
+    @Profile("prod")
+    public DataSource prodDataSource() {
+        JndiObjectFactoryBean ds = new JndiObjectFactoryBean();
+        ds.setLookupOnStartup(true);
+        ds.setJndiName("jdbc/postDS");
+        ds.setCache(true);
+
+        return (DataSource) ds.getObject();
+    }
+
+}
+
+@Configuration
+@EnableWebMvc
+@ComponentScan(
+        basePackageClasses = {Constants.class},
+        useDefaultFilters = false,
+        includeFilters = {
+            @Filter(
+                    type = FilterType.ANNOTATION,
+                    value = {
+                        Controller.class,
+                        RestController.class,
+                        ControllerAdvice.class
+                    }
+            )
+        }
+)
+-----------------------------------------------------------------------------------------
+/**
+ * A Base 64 codec implementation.
+ * 
+ * @author Hanson Char
+ */
+class Base64Codec implements Codec {
+    private static final int OFFSET_OF_a = 'a' - 26;
+    private static final int OFFSET_OF_0 = '0' - 52;
+    private static final int OFFSET_OF_PLUS = '+' - 62;
+    private static final int OFFSET_OF_SLASH = '/' - 63;
+    
+    private static final int MASK_2BITS = (1 << 2) - 1;
+    private static final int MASK_4BITS = (1 << 4) - 1;
+    private static final int MASK_6BITS = (1 << 6) - 1;
+    // Alphabet as defined at http://www.ietf.org/rfc/rfc4648.txt
+    private static final byte PAD = '=';
+    
+    private static class LazyHolder {
+        private static final byte[] DECODED = decodeTable();
+        
+        private static byte[] decodeTable() {
+            final byte[] dest = new byte['z'+1];
+            
+            for (int i=0; i <= 'z'; i++) 
+            {
+                if (i >= 'A' && i <= 'Z')
+                    dest[i] = (byte)(i - 'A');
+                else if (i >= '0' && i <= '9')
+                    dest[i] = (byte)(i - OFFSET_OF_0);
+                else if (i == '+')
+                    dest[i] = (byte)(i - OFFSET_OF_PLUS);
+                else if (i == '/')
+                    dest[i] = (byte)(i - OFFSET_OF_SLASH);
+                else if (i >= 'a' && i <= 'z')
+                    dest[i] = (byte)(i - OFFSET_OF_a);
+                else 
+                    dest[i] = -1;
+            }
+            return dest;
+        }
+    }
+
+    private final byte[] ALPAHBETS;
+
+    Base64Codec() {
+        ALPAHBETS = CodecUtils.toBytesDirect("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
+    }
+    
+    protected Base64Codec(byte[] alphabets) {
+        ALPAHBETS = alphabets;
+    }
+
+    public byte[] encode(byte[] src) {
+        final int num3bytes = src.length / 3;
+        final int remainder = src.length % 3;
+        
+        if (remainder == 0)
+        {
+            byte[] dest = new byte[num3bytes * 4];
+    
+            for (int s=0,d=0; s < src.length; s+=3, d+=4)
+                encode3bytes(src, s, dest, d);
+            return dest;
+        }
+        
+        byte[] dest = new byte[(num3bytes+1) * 4];
+        int s=0, d=0;
+        
+        for (; s < src.length-remainder; s+=3, d+=4)
+            encode3bytes(src, s, dest, d);
+        
+        switch(remainder) {
+            case 1:
+                encode1byte(src, s, dest, d);
+                break;
+            case 2:
+                encode2bytes(src, s, dest, d);
+                break;
+        }
+        return dest;
+    }
+    
+    void encode3bytes(byte[] src, int s, byte[] dest, int d) {
+        // operator precedence in descending order: >>> or <<, &, |
+        byte p;
+        dest[d++] = (byte)ALPAHBETS[(p=src[s++]) >>> 2 & MASK_6BITS];                         // 6 
+        dest[d++] = (byte)ALPAHBETS[(p & MASK_2BITS) << 4 | (p=src[s++]) >>> 4 & MASK_4BITS]; // 2 4
+        dest[d++] = (byte)ALPAHBETS[(p & MASK_4BITS) << 2 | (p=src[s]) >>> 6 & MASK_2BITS];   //   4 2
+        dest[d] = (byte)ALPAHBETS[p & MASK_6BITS];                                            //     6
+        return;
+    }
+    
+    void encode2bytes(byte[] src, int s, byte[] dest, int d) {
+        // operator precedence in descending order: >>> or <<, &, |
+        byte p;
+        dest[d++] = (byte)ALPAHBETS[(p=src[s++]) >>> 2 & MASK_6BITS];                         // 6 
+        dest[d++] = (byte)ALPAHBETS[(p & MASK_2BITS) << 4 | (p=src[s]) >>> 4 & MASK_4BITS];   // 2 4
+        dest[d++] = (byte)ALPAHBETS[(p & MASK_4BITS) << 2];                                   //   4
+        dest[d] = PAD;
+        return;
+    }
+    
+    void encode1byte(byte[] src, int s, byte[] dest, int d) {
+        // operator precedence in descending order: >>> or <<, &, |
+        byte p;
+        dest[d++] = (byte)ALPAHBETS[(p=src[s]) >>> 2 & MASK_6BITS];                           // 6 
+        dest[d++] = (byte)ALPAHBETS[(p & MASK_2BITS) << 4];                                   // 2
+        dest[d++] = PAD;
+        dest[d] = PAD;
+        return;
+    }
+    
+    void decode4bytes(byte[] src, int s, byte[] dest, int d) {
+        int p=0;
+        // operator precedence in descending order: >>> or <<, &, |
+        dest[d++] = (byte)
+                    (
+                        pos(src[s++]) << 2
+                        | (p=pos(src[s++])) >>> 4 & MASK_2BITS
+                    )
+                    ;                                               // 6 2
+        dest[d++] = (byte)
+                    (
+                        (p & MASK_4BITS) << 4 
+                        | (p=pos(src[s++])) >>> 2 & MASK_4BITS
+                    )
+                    ;                                               //   4 4
+        dest[d] = (byte)
+                    (
+                        (p & MASK_2BITS) << 6
+                        | pos(src[s])
+                    )
+                    ;                                               //     2 6
+        return;
+    }
+    
+    /**
+     * @param n the number of final quantum in bytes to decode into.  Ranges from 1 to 3, inclusive.
+     */
+    void decode1to3bytes(int n, byte[] src, int s, byte[] dest, int d) {
+        int p=0;
+        // operator precedence in descending order: >>> or <<, &, |
+        dest[d++] = (byte)
+                    (
+                        pos(src[s++]) << 2
+                        | (p=pos(src[s++])) >>> 4 & MASK_2BITS
+                    )
+                    ;                                               // 6 2
+        if (n == 1) {
+            CodecUtils.sanityCheckLastPos(p, MASK_4BITS);
+            return;
+        }
+        
+        dest[d++] = (byte)
+                    (
+                        (p & MASK_4BITS) << 4 
+                        | (p=pos(src[s++])) >>> 2 & MASK_4BITS
+                    )
+                    ;                                               //   4 4
+        if (n == 2) {
+        	CodecUtils.sanityCheckLastPos(p, MASK_2BITS);
+            return;
+        }
+        
+        dest[d] = (byte)
+                    (
+                        (p & MASK_2BITS) << 6
+                        | pos(src[s])
+                    )
+                    ;                                               //     2 6
+        return;
+    }
+
+    public byte[] decode(byte[] src, final int length) 
+    {
+        if (length % 4 != 0)
+            throw new IllegalArgumentException
+            ("Input is expected to be encoded in multiple of 4 bytes but found: " + length);
+
+        int pads=0;
+        int last = length-1;
+        
+        // max possible padding in b64 encoding is 2
+        for (; pads < 2 && last > -1; last--, pads++) {
+            if (src[last] != PAD)
+                break;
+        }
+        
+        final int fq; // final quantum in unit of bytes
+        
+        switch(pads) {
+            case 0:
+                fq=3;
+                break; // final quantum of encoding input is an integral multiple of 24 bits
+            case 1:
+                fq=2;
+                break; // final quantum of encoding input is exactly 16 bits
+            case 2:
+                fq=1;
+                break; // final quantum of encoding input is exactly 8 bits
+            default:
+                throw new Error("Impossible");
+        }
+        final byte[] dest = new byte[length / 4 * 3 - (3-fq)]; 
+        int s=0, d=0;
+        
+        // % has a higher precedence than - than <
+        for (; d < dest.length - fq%3; s+=4,d+=3)
+            decode4bytes(src, s, dest, d);
+
+        if (fq < 3)
+            decode1to3bytes(fq, src, s, dest, d);
+        return dest;
+    }
+    
+    protected int pos(byte in) {
+        int pos = LazyHolder.DECODED[in];
+        
+        if (pos > -1)
+            return pos;
+        throw new IllegalArgumentException("Invalid base 64 character: \'" + (char)in + "\'");
+    }
+}
+-----------------------------------------------------------------------------------------
+graphql create my-app --boilerplate react-fullstack-basic
+
+npm i webpack webpack-cli -D
+-----------------------------------------------------------------------------------------
+	@Bean
+	public BackendIdConverter roleUserIdConverter() {
+		return new BackendIdConverter() {
+
+			@Override
+			public boolean supports(Class<?> delimiter) {
+				return RoleUser.class.equals(delimiter);
+			}
+
+			@Override
+			public String toRequestId(Serializable id, Class<?> entityType) {
+				RoleUserPK pk = (RoleUserPK) id;
+				return parseUrl(pk.getRoleId(), pk.getUserId());
+			}
+
+			@Override
+			public Serializable fromRequestId(String id, Class<?> entityType) {
+				if (id == null)
+					return null;
+
+				String[] parts = id.split(DELIMITER);
+
+				return new RoleUserPK(Long.parseLong(parts[0]), Long.parseLong(parts[1]));
+			}
+		};
+	}
+-----------------------------------------------------------------------------------------
+import java.util.concurrent.TimeUnit;
+import javax.cache.CacheManager;
+
+import org.ehcache.config.CacheConfiguration;
+import org.ehcache.config.builders.CacheConfigurationBuilder;
+import org.ehcache.config.builders.ResourcePoolsBuilder;
+import org.ehcache.config.units.EntryUnit;
+import org.ehcache.expiry.Duration;
+import org.ehcache.expiry.Expirations;
+import org.ehcache.jsr107.Eh107Configuration;
+
+import org.springframework.boot.autoconfigure.cache.JCacheManagerCustomizer;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+
+/**
+ * Cache could be disable in unit test.
+ */
+@Configuration
+@EnableCaching
+@Profile("production")
+public class CacheConfig {
+
+    @Bean
+    public JCacheManagerCustomizer cacheManagerCustomizer() {
+        return new JCacheManagerCustomizer() {
+            @Override
+            public void customize(CacheManager cacheManager) {
+                CacheConfiguration<Object, Object> config = CacheConfigurationBuilder
+                    .newCacheConfigurationBuilder(Object.class, Object.class,
+                        ResourcePoolsBuilder.newResourcePoolsBuilder()
+                            .heap(100, EntryUnit.ENTRIES))
+                    .withExpiry(Expirations.timeToLiveExpiration(Duration.of(60, TimeUnit.SECONDS)))
+                    .build();
+                cacheManager.createCache("vets", Eh107Configuration.fromEhcacheCacheConfiguration(config));
+            }
+        };
+    }
+
+}
+-----------------------------------------------------------------------------------------
+# Usage: regenerate-tags filename
+#
+# filename must be line-separated pairs of <tag>,<commit description>
+#
+# delete all existing tags
+git tag | xargs -L 1 | xargs git push origin --delete
+git tag | xargs -L 1 | xargs git tag --delete
+
+# read each line from file
+file=$1
+while IFS=',' read -r tag description
+do
+  echo $tag
+  git log --branches=* --grep="^$description$" --pretty=format:"%h" | xargs git tag "$tag"
+done < "$file"
+
+# push tags to remote
+git push --tags
+-----------------------------------------------------------------------------------------
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.batch.core.StepContribution;
+import org.springframework.batch.core.scope.context.ChunkContext;
+import org.springframework.batch.core.step.tasklet.Tasklet;
+import org.springframework.batch.repeat.RepeatStatus;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+public class HiveJdbcTasklet implements Tasklet {
+
+	private static final Log log = LogFactory.getLog(HiveJdbcTasklet.class);
+
+	private JdbcTemplate template;
+	
+	private String outputPath;
+	
+	public void setJdbcTemplate(JdbcTemplate template) {
+		this.template = template;
+	}
+
+	public void setOutputPath(String outputPath) {
+		this.outputPath = outputPath;
+	}
+
+	public RepeatStatus execute(StepContribution stepContribution, ChunkContext context)
+			throws Exception {
+
+		log.info("Hive JDBC Task Running");
+		
+		String tableDdl = "create external table if not exists tweetdata (value STRING) LOCATION '/tweets/input'";
+		String query = "select r.retweetedUser, '\t', count(r.retweetedUser) as count " +
+					" from tweetdata j " +
+					" lateral view json_tuple(j.value, 'retweet', 'retweetedStatus') t as retweet, retweetedStatus " + 
+					" lateral view json_tuple(t.retweetedStatus, 'fromUser') r as retweetedUser " +
+					" where t.retweet = 'true' " +
+					" group by r.retweetedUser order by count desc limit 10";
+		String results = "insert overwrite directory '" + outputPath + "/hiveout'";
+		
+		template.execute(tableDdl);
+
+		template.execute(results + " " + query);
+
+		return null;
+	}
+}
+-----------------------------------------------------------------------------------------
+    public
+    @Bean
+    EntityManagerFactory customEntityManagerFactory(DataSource dataSource) {
+        HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
+        vendorAdapter.setGenerateDdl(false); // turn off with Discriminator strategy so far!
+        LocalContainerEntityManagerFactoryBean factory = new LocalContainerEntityManagerFactoryBean();
+        factory.setJpaVendorAdapter(vendorAdapter);
+        factory.setPackagesToScan(TenancySampleApplication.class.getPackage().getName());
+        factory.setDataSource(dataSource);
+        factory.getJpaPropertyMap().put(Environment.DIALECT, PostgreSQL9Dialect.class.getName());
+        factory.getJpaPropertyMap().put(Environment.MULTI_TENANT, MultiTenancyStrategy.DISCRIMINATOR);
+        factory.getJpaPropertyMap().put(Environment.MULTI_TENANT_IDENTIFIER_RESOLVER, new TenantHolder());
+        factory.afterPropertiesSet();
+        return factory.getObject();
+    }
+-----------------------------------------------------------------------------------------
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.util.WebUtils;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+/**
+ * I got this code from here:
+ * https://spring.io/guides/tutorials/spring-security-and-angular-js/
+ */
+public class CsrfHeaderFilter extends OncePerRequestFilter {
+    @Override
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
+        CsrfToken csrf = (CsrfToken) request.getAttribute(CsrfToken.class
+                .getName());
+        if (csrf != null) {
+            Cookie cookie = WebUtils.getCookie(request, "XSRF-TOKEN");
+            String token = csrf.getToken();
+            if (cookie==null || token!=null && !token.equals(cookie.getValue())) {
+                cookie = new Cookie("XSRF-TOKEN", token);
+                cookie.setPath("/");
+                response.addCookie(cookie);
+            }
+        }
+        filterChain.doFilter(request, response);
+    }
+}
+-----------------------------------------------------------------------------------------
+    public static String getRandomUsers() {
+        final String words = "Andrea:Juan:Isaac:Sandra:Michael:Annabel";
+        String[] wordsAsArray = words.split(":");
+        int index = new Random().nextInt(wordsAsArray.length);
+
+        return wordsAsArray[index];
+    }
+	
+	import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.web.support.SpringBootServletInitializer;
+
+public class ServletInitializer extends SpringBootServletInitializer {
+
+    @Override
+    protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+        return application.sources(ExampleEnversApplication.class);
+    }
+
+}
+-----------------------------------------------------------------------------------------
+import org.springframework.hateoas.PagedResources;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties
+public class PagedCities extends PagedResources<City> {
+
+}
+-----------------------------------------------------------------------------------------
+
+/**
+ * Credits for this class goes to user aioobe on stackoverflow.com
+ * Source: http://stackoverflow.com/questions/4454630/j2me-calculate-the-the-distance-between-2-latitude-and-longitude
+ */
+public class TrigMath {
+
+    static final double sq2p1 = 2.414213562373095048802e0;
+    static final double sq2m1 = .414213562373095048802e0;
+    static final double p4 = .161536412982230228262e2;
+    static final double p3 = .26842548195503973794141e3;
+    static final double p2 = .11530293515404850115428136e4;
+    static final double p1 = .178040631643319697105464587e4;
+    static final double p0 = .89678597403663861959987488e3;
+    static final double q4 = .5895697050844462222791e2;
+    static final double q3 = .536265374031215315104235e3;
+    static final double q2 = .16667838148816337184521798e4;
+    static final double q1 = .207933497444540981287275926e4;
+    static final double q0 = .89678597403663861962481162e3;
+    static final double PIO2 = 1.5707963267948966135E0;
+
+    private static double mxatan(double arg) {
+        double argsq = arg * arg, value;
+
+        value = ((((p4 * argsq + p3) * argsq + p2) * argsq + p1) * argsq + p0);
+        value = value / (((((argsq + q4) * argsq + q3) * argsq + q2) * argsq + q1) * argsq + q0);
+        return value * arg;
+    }
+
+    private static double msatan(double arg) {
+        return arg < sq2m1 ? mxatan(arg)
+             : arg > sq2p1 ? PIO2 - mxatan(1 / arg)
+             : PIO2 / 2 + mxatan((arg - 1) / (arg + 1));
+    }
+
+    public static double atan(double arg) {
+        return arg > 0 ? msatan(arg) : -msatan(-arg);
+    }
+
+    public static double atan2(double arg1, double arg2) {
+        if (arg1 + arg2 == arg1)
+            return arg1 >= 0 ? PIO2 : -PIO2;
+        arg1 = atan(arg1 / arg2);
+        return arg2 < 0 ? arg1 <= 0 ? arg1 + Math.PI : arg1 - Math.PI : arg1;
+    }
+}
+-----------------------------------------------------------------------------------------
+<img srcset="https://ik.imagekit.io/demo/resp-img/image1.jpg?tr=w-320,dpr-1 1x,
+             https://ik.imagekit.io/demo/resp-img/image1.jpg?tr=w-320,dpr-2 2x,
+             https://ik.imagekit.io/demo/resp-img/image1.jpg?tr=w-320,dpr-3 3x" 
+      src="https://ik.imagekit.io/demo/resp-img/image1.jpg?tr=w-320,dpr-3" 
+      alt="DPR responsive image tag" />
+	  
+<picture>
+    <source media="(min-width: 1081px)" srcset="https://ik.imagekit.io/demo/resp-img/image1.jpg?tr=w-800">
+    <source media="(min-width: 721px)" srcset="https://ik.imagekit.io/demo/resp-img/image1.jpg?tr=w-500,h-400,fo-auto">
+    <img src="https://ik.imagekit.io/demo/resp-img/image1.jpg?tr=w-320,h-320,fo-auto" />
+</picture>	  
+-----------------------------------------------------------------------------------------
 npm install -g native-css
 npm install native-css
 
@@ -9338,7 +10795,7 @@ import java.util.List;
 public class AuthenticationInterceptor extends HandlerInterceptorAdapter {
 
     @Autowired
-    UserDao userDao;
+    private UserDao userDao;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws IOException {
@@ -15122,6 +16579,2551 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.E
 public @interface EnableOAuth2Sso {
 
 }
+----------------------------------------------------------------------------------------
+var path = require('path')
+var webpack = require('webpack')
+
+module.exports = {
+    entry: './src/main.js',
+    output: {
+        path: path.resolve(__dirname, './dist'),
+        publicPath: '/dist/',
+        filename: 'build.js'
+    },
+    module: {
+        loaders: [
+            {
+                test: /\.vue$/,
+                loader: 'vue-loader'
+            },
+            {
+                test: /\.js$/,
+                loader: 'babel-loader',
+                exclude: /node_modules/
+            },
+            {
+                test: /\.css$/,
+                loader: 'style-loader!css-loader'
+            },
+            {
+                test: /\.(eot|svg|ttf|woff|woff2)(\?\S*)?$/,
+                loader: 'file-loader'
+            },
+            {
+                test: /\.(png|jpe?g|gif|svg)(\?\S*)?$/,
+                loader: 'file-loader',
+                query: {
+                    name: '[name].[ext]?[hash]'
+                }
+            }
+        ]
+    },
+    resolve: {
+        alias: {
+            'vue$': 'vue/dist/vue.esm.js',
+            '@': path.resolve('src'),
+            'src': path.resolve(__dirname, '../src'),
+            'assets': path.resolve(__dirname, '../src/assets'),
+            'components': path.resolve(__dirname, '../src/components'),
+            'views': path.resolve(__dirname, '../src/views'),
+            'styles': path.resolve(__dirname, '../src/styles'),
+            'api': path.resolve(__dirname, '../src/api'),
+            'utils': path.resolve(__dirname, '../src/utils'),
+            'store': path.resolve(__dirname, '../src/store'),
+            'router': path.resolve(__dirname, '../src/router'),
+            'mock': path.resolve(__dirname, '../src/mock'),
+            'vendor': path.resolve(__dirname, '../src/vendor'),
+            'static': path.resolve(__dirname, '../static')
+        }
+    },
+    devServer: {
+        historyApiFallback: true,
+        noInfo: true
+    },
+    devtool: '#eval-source-map'
+}
+
+if (process.env.NODE_ENV === 'production') {
+    module.exports.devtool = '#source-map'
+    // http://vue-loader.vuejs.org/en/workflow/production.html
+    module.exports.plugins = (module.exports.plugins || []).concat([
+        new webpack.DefinePlugin({
+            'process.env': {
+                NODE_ENV: '"production"'
+            }
+        }),
+        new webpack.optimize.UglifyJsPlugin({
+            compress: {
+                warnings: false
+            }
+        })
+    ])
+}
+----------------------------------------------------------------------------------------
+import java.io.IOException;
+import java.io.Reader;
+import java.util.Arrays;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * An implementation of CharSequence that is tuned to be used specifically by {@link LexerImpl}. It
+ * is possible to advance through the sequence without allocating a copy and it is possible to
+ * perform regex matches from the logical beginning of the remaining un-tokenized source. This class
+ * will also standardize newline characters from different architectures.
+ *
+ * @author mbosecke
+ */
+public class TemplateSource implements CharSequence {
+
+  private final Logger logger = LoggerFactory.getLogger(TemplateSource.class);
+
+  /**
+   * The characters found within the template.
+   */
+  private char source[];
+
+  /**
+   * Number of characters stored in source array remaining to be tokenized
+   */
+  private int size = 0;
+
+  /**
+   * Default capacity
+   */
+  private static final int DEFAULT_CAPACITY = 1024;
+
+  /**
+   * An index of the first character for the remaining un-tokenized source.
+   */
+  private int offset = 0;
+
+  /**
+   * Tracking the line number that we are currently tokenizing.
+   */
+  private int lineNumber = 1;
+
+  /**
+   * Filename of the template
+   */
+  private final String filename;
+
+  /**
+   * Constructor
+   *
+   * @param reader Reader provided by the Loader
+   * @param filename Filename of the template
+   * @throws IOException Exceptions thrown from the reader
+   */
+  public TemplateSource(Reader reader, String filename) throws IOException {
+    this.filename = filename;
+    this.source = new char[DEFAULT_CAPACITY];
+    copyReaderIntoCharArray(reader);
+  }
+
+  /**
+   * Read the contents of the template into the internal char[].
+   */
+  private void copyReaderIntoCharArray(Reader reader) throws IOException {
+    char[] buffer = new char[1024 * 4];
+    int amountJustRead;
+    while ((amountJustRead = reader.read(buffer)) != -1) {
+
+      ensureCapacity(size + amountJustRead);
+      append(buffer, amountJustRead);
+    }
+    reader.close();
+  }
+
+  /**
+   * Append characters to the internal array.
+   */
+  private void append(char[] characters, int amount) {
+    System.arraycopy(characters, 0, source, size, amount);
+    size += amount;
+  }
+
+  /**
+   * Ensure that the internal array has a minimum capacity.
+   */
+  private void ensureCapacity(int minCapacity) {
+    if (source.length - minCapacity < 0) {
+      grow(minCapacity);
+    }
+  }
+
+  /**
+   * Grow the internal array to at least the desired minimum capacity.
+   */
+  private void grow(int minCapacity) {
+    int oldCapacity = source.length;
+
+    /*
+     * double the capacity of the array and if that's not enough, just use
+     * the minCapacity
+     */
+    int newCapacity = Math.max(oldCapacity << 1, minCapacity);
+
+    this.source = Arrays.copyOf(source, newCapacity);
+  }
+
+  /**
+   * Moves the start index a certain amount. While traversing this amount we will count how many
+   * newlines have been encountered.
+   *
+   * @param amount Amount of characters to advance by
+   */
+  public void advance(int amount) {
+	logger.debug("Advancing amoun: {}", amount);
+    int index = 0;
+    while (index < amount) {
+      int sizeOfNewline = advanceThroughNewline(index);
+
+      if (sizeOfNewline > 0) {
+        index += sizeOfNewline;
+      } else {
+        index++;
+      }
+    }
+
+    this.size -= amount;
+    this.offset += amount;
+  }
+
+  public void advanceThroughWhitespace() {
+    int index = 0;
+    while (Character.isWhitespace(this.charAt(index))) {
+      int sizeOfNewline = advanceThroughNewline(index);
+      if (sizeOfNewline > 0) {
+        index += sizeOfNewline;
+      } else {
+        index++;
+      }
+    }
+    logger.debug("Advanced through {} characters of whitespace.", index);
+    this.size -= index;
+    this.offset += index;
+  }
+
+  /**
+   * Advances through possible newline character and returns how many characters were used to
+   * represent the newline (windows uses two characters to represent one newline).
+   *
+   * @param index The index of the potential newline character
+   */
+  private int advanceThroughNewline(int index) {
+    char character = this.charAt(index);
+    int numOfCharacters = 0;
+
+    // windows newline
+    if ('\r' == character && '\n' == this.charAt(index + 1)) {
+
+      this.lineNumber++;
+      numOfCharacters = 2;
+
+      // various other newline characters
+    } else if ('\n' == character || '\r' == character || '\u0085' == character
+        || '\u2028' == character
+        || '\u2029' == character) {
+
+      this.lineNumber++;
+      numOfCharacters = 1;
+    }
+    return numOfCharacters;
+  }
+
+  public String substring(int start, int end) {
+    return new String(Arrays.copyOfRange(source, this.offset + start, this.offset + end));
+  }
+
+  public String substring(int end) {
+    return new String(Arrays.copyOfRange(source, offset, offset + end));
+  }
+
+  @Override
+  public int length() {
+    return size;
+  }
+
+  @Override
+  public char charAt(int index) {
+    return source[offset + index];
+  }
+
+  @Override
+  public CharSequence subSequence(int start, int end) {
+    return new String(Arrays.copyOfRange(source, this.offset + start, this.offset + end));
+  }
+
+  public String toString() {
+    return new String(Arrays.copyOfRange(source, offset, offset + size));
+  }
+
+  public int getLineNumber() {
+    return lineNumber;
+  }
+
+  public String getFilename() {
+    return filename;
+  }
+}
+----------------------------------------------------------------------------------------
+/**
+ * <p>See ISO 18004:2006, 6.5.1. This enum encapsulates the four error correction levels
+ * defined by the QR code standard.</p>
+ *
+ * @author Sean Owen
+ * @since 5.0.2
+ */
+public final class ErrorCorrectionLevel {
+
+    // No, we can't use an enum here. J2ME doesn't support it.
+
+    /**
+     * L = ~7% correction
+     */
+    public static final ErrorCorrectionLevel L = new ErrorCorrectionLevel(0, 0x01, "L");
+    /**
+     * M = ~15% correction
+     */
+    public static final ErrorCorrectionLevel M = new ErrorCorrectionLevel(1, 0x00, "M");
+    /**
+     * Q = ~25% correction
+     */
+    public static final ErrorCorrectionLevel Q = new ErrorCorrectionLevel(2, 0x03, "Q");
+    /**
+     * H = ~30% correction
+     */
+    public static final ErrorCorrectionLevel H = new ErrorCorrectionLevel(3, 0x02, "H");
+
+    private static final ErrorCorrectionLevel[] FOR_BITS = {M, L, H, Q};
+
+    private final int ordinal;
+    private final int bits;
+    private final String name;
+
+    private ErrorCorrectionLevel(int ordinal, int bits, String name) {
+        this.ordinal = ordinal;
+        this.bits = bits;
+        this.name = name;
+    }
+
+    public int ordinal() {
+        return ordinal;
+    }
+
+    public int getBits() {
+        return bits;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String toString() {
+        return name;
+    }
+
+    /**
+     * @param bits int containing the two bits encoding a QR Code's error correction level
+     * @return {@link ErrorCorrectionLevel} representing the encoded error correction level
+     */
+    public static ErrorCorrectionLevel forBits(int bits) {
+        if (bits < 0 || bits >= FOR_BITS.length) {
+            throw new IllegalArgumentException();
+        }
+        return FOR_BITS[bits];
+    }
+
+}
+/**
+ * A class which wraps a 2D array of bytes. The default usage is signed. If you want to use it as a
+ * unsigned container, it's up to you to do byteValue & 0xff at each location.
+ * <p>
+ * JAVAPORT: The original code was a 2D array of ints, but since it only ever gets assigned
+ * -1, 0, and 1, I'm going to use less memory and go with bytes.
+ *
+ * @author dswitkin@google.com (Daniel Switkin)
+ * @since 5.0.2
+ */
+public final class ByteMatrix {
+
+    private final byte[][] bytes;
+    private final int width;
+    private final int height;
+
+    public ByteMatrix(int width, int height) {
+        bytes = new byte[height][width];
+        this.width = width;
+        this.height = height;
+    }
+
+    public int getHeight() {
+        return height;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public byte get(int x, int y) {
+        return bytes[y][x];
+    }
+
+    public byte[][] getArray() {
+        return bytes;
+    }
+
+    public void set(int x, int y, byte value) {
+        bytes[y][x] = value;
+    }
+
+    public void set(int x, int y, int value) {
+        bytes[y][x] = (byte) value;
+    }
+
+    public void clear(byte value) {
+        for (int y = 0; y < height; ++y) {
+            for (int x = 0; x < width; ++x) {
+                bytes[y][x] = value;
+            }
+        }
+    }
+
+    public String toString() {
+        StringBuffer result = new StringBuffer(2 * width * height + 2);
+        for (int y = 0; y < height; ++y) {
+            for (int x = 0; x < width; ++x) {
+                switch (bytes[y][x]) {
+                    case 0:
+                        result.append(" 0");
+                        break;
+                    case 1:
+                        result.append(" 1");
+                        break;
+                    default:
+                        result.append("  ");
+                        break;
+                }
+            }
+            result.append('\n');
+        }
+
+        return result.toString();
+    }
+
+}
+
+/**
+ * <p>This class contains utility methods for performing mathematical operations over
+ * the Galois Field GF(256). Operations use a given primitive polynomial in calculations.</p>
+ * <p>
+ * <p>Throughout this package, elements of GF(256) are represented as an <code>int</code>
+ * for convenience and speed (but at the cost of memory).
+ * Only the bottom 8 bits are really used.</p>
+ *
+ * @author Sean Owen
+ * @since 5.0.2
+ */
+public final class GF256 {
+
+    public static final GF256 QR_CODE_FIELD = new GF256(0x011D); // x^8 + x^4 + x^3 + x^2 + 1
+    public static final GF256 DATA_MATRIX_FIELD = new GF256(0x012D); // x^8 + x^5 + x^3 + x^2 + 1
+
+    private final int[] expTable;
+    private final int[] logTable;
+    private final GF256Poly zero;
+    private final GF256Poly one;
+
+    /**
+     * Create a representation of GF(256) using the given primitive polynomial.
+     *
+     * @param primitive irreducible polynomial whose coefficients are represented by
+     *                  the bits of an int, where the least-significant bit represents the constant
+     *                  coefficient
+     */
+    private GF256(int primitive) {
+        expTable = new int[256];
+        logTable = new int[256];
+        int x = 1;
+        for (int i = 0; i < 256; i++) {
+            expTable[i] = x;
+            x <<= 1; // x = x * 2; we're assuming the generator alpha is 2
+            if (x >= 0x100) {
+                x ^= primitive;
+            }
+        }
+        for (int i = 0; i < 255; i++) {
+            logTable[expTable[i]] = i;
+        }
+        // logTable[0] == 0 but this should never be used
+        zero = new GF256Poly(this, new int[]{0});
+        one = new GF256Poly(this, new int[]{1});
+    }
+
+    GF256Poly getZero() {
+        return zero;
+    }
+
+    GF256Poly getOne() {
+        return one;
+    }
+
+    /**
+     * @return the monomial representing coefficient * x^degree
+     */
+    GF256Poly buildMonomial(int degree, int coefficient) {
+        if (degree < 0) {
+            throw new IllegalArgumentException();
+        }
+        if (coefficient == 0) {
+            return zero;
+        }
+        int[] coefficients = new int[degree + 1];
+        coefficients[0] = coefficient;
+        return new GF256Poly(this, coefficients);
+    }
+
+    /**
+     * Implements both addition and subtraction -- they are the same in GF(256).
+     *
+     * @return sum/difference of a and b
+     */
+    static int addOrSubtract(int a, int b) {
+        return a ^ b;
+    }
+
+    /**
+     * @return 2 to the power of a in GF(256)
+     */
+    int exp(int a) {
+        return expTable[a];
+    }
+
+    /**
+     * @return base 2 log of a in GF(256)
+     */
+    int log(int a) {
+        if (a == 0) {
+            throw new IllegalArgumentException();
+        }
+        return logTable[a];
+    }
+
+    /**
+     * @return multiplicative inverse of a
+     */
+    int inverse(int a) {
+        if (a == 0) {
+            throw new ArithmeticException();
+        }
+        return expTable[255 - logTable[a]];
+    }
+
+    /**
+     * @param a
+     * @param b
+     * @return product of a and b in GF(256)
+     */
+    int multiply(int a, int b) {
+        if (a == 0 || b == 0) {
+            return 0;
+        }
+        if (a == 1) {
+            return b;
+        }
+        if (b == 1) {
+            return a;
+        }
+        return expTable[(logTable[a] + logTable[b]) % 255];
+    }
+
+}
+
+
+
+/**
+ * @author satorux@google.com (Satoru Takabayashi) - creator
+ * @author dswitkin@google.com (Daniel Switkin) - ported from C++
+ * @since 5.0.2
+ */
+public final class MaskUtil {
+
+    private MaskUtil() {
+        // do nothing
+    }
+
+    // Apply mask penalty rule 1 and return the penalty. Find repetitive cells with the same color and
+    // give penalty to them. Example: 00000 or 11111.
+    public static int applyMaskPenaltyRule1(ByteMatrix matrix) {
+        return applyMaskPenaltyRule1Internal(matrix, true) + applyMaskPenaltyRule1Internal(matrix, false);
+    }
+
+    // Apply mask penalty rule 2 and return the penalty. Find 2x2 blocks with the same color and give
+    // penalty to them.
+    public static int applyMaskPenaltyRule2(ByteMatrix matrix) {
+        int penalty = 0;
+        byte[][] array = matrix.getArray();
+        int width = matrix.getWidth();
+        int height = matrix.getHeight();
+        for (int y = 0; y < height - 1; ++y) {
+            for (int x = 0; x < width - 1; ++x) {
+                int value = array[y][x];
+                if (value == array[y][x + 1] && value == array[y + 1][x] && value == array[y + 1][x + 1]) {
+                    penalty += 3;
+                }
+            }
+        }
+        return penalty;
+    }
+
+    // Apply mask penalty rule 3 and return the penalty. Find consecutive cells of 00001011101 or
+    // 10111010000, and give penalty to them.  If we find patterns like 000010111010000, we give
+    // penalties twice (i.e. 40 * 2).
+    public static int applyMaskPenaltyRule3(ByteMatrix matrix) {
+        int penalty = 0;
+        byte[][] array = matrix.getArray();
+        int width = matrix.getWidth();
+        int height = matrix.getHeight();
+        for (int y = 0; y < height; ++y) {
+            for (int x = 0; x < width; ++x) {
+                // Tried to simplify following conditions but failed.
+                if (x + 6 < width &&
+                        array[y][x] == 1 &&
+                        array[y][x + 1] == 0 &&
+                        array[y][x + 2] == 1 &&
+                        array[y][x + 3] == 1 &&
+                        array[y][x + 4] == 1 &&
+                        array[y][x + 5] == 0 &&
+                        array[y][x + 6] == 1 &&
+                        ((x + 10 < width &&
+                                array[y][x + 7] == 0 &&
+                                array[y][x + 8] == 0 &&
+                                array[y][x + 9] == 0 &&
+                                array[y][x + 10] == 0) ||
+                                (x - 4 >= 0 &&
+                                        array[y][x - 1] == 0 &&
+                                        array[y][x - 2] == 0 &&
+                                        array[y][x - 3] == 0 &&
+                                        array[y][x - 4] == 0))) {
+                    penalty += 40;
+                }
+                if (y + 6 < height &&
+                        array[y][x] == 1 &&
+                        array[y + 1][x] == 0 &&
+                        array[y + 2][x] == 1 &&
+                        array[y + 3][x] == 1 &&
+                        array[y + 4][x] == 1 &&
+                        array[y + 5][x] == 0 &&
+                        array[y + 6][x] == 1 &&
+                        ((y + 10 < height &&
+                                array[y + 7][x] == 0 &&
+                                array[y + 8][x] == 0 &&
+                                array[y + 9][x] == 0 &&
+                                array[y + 10][x] == 0) ||
+                                (y - 4 >= 0 &&
+                                        array[y - 1][x] == 0 &&
+                                        array[y - 2][x] == 0 &&
+                                        array[y - 3][x] == 0 &&
+                                        array[y - 4][x] == 0))) {
+                    penalty += 40;
+                }
+            }
+        }
+        return penalty;
+    }
+
+    // Apply mask penalty rule 4 and return the penalty. Calculate the ratio of dark cells and give
+    // penalty if the ratio is far from 50%. It gives 10 penalty for 5% distance. Examples:
+    // -   0% => 100
+    // -  40% =>  20
+    // -  45% =>  10
+    // -  50% =>   0
+    // -  55% =>  10
+    // -  55% =>  20
+    // - 100% => 100
+    public static int applyMaskPenaltyRule4(ByteMatrix matrix) {
+        int numDarkCells = 0;
+        byte[][] array = matrix.getArray();
+        int width = matrix.getWidth();
+        int height = matrix.getHeight();
+        for (int y = 0; y < height; ++y) {
+            for (int x = 0; x < width; ++x) {
+                if (array[y][x] == 1) {
+                    numDarkCells += 1;
+                }
+            }
+        }
+        int numTotalCells = matrix.getHeight() * matrix.getWidth();
+        double darkRatio = (double) numDarkCells / numTotalCells;
+        return Math.abs((int) (darkRatio * 100 - 50)) / 5 * 10;
+    }
+
+    // Return the mask bit for "getMaskPattern" at "x" and "y". See 8.8 of JISX0510:2004 for mask
+    // pattern conditions.
+    public static boolean getDataMaskBit(int maskPattern, int x, int y) {
+        if (!QRCode.isValidMaskPattern(maskPattern)) {
+            throw new IllegalArgumentException("Invalid mask pattern");
+        }
+        int intermediate, temp;
+        switch (maskPattern) {
+            case 0:
+                intermediate = (y + x) & 0x1;
+                break;
+            case 1:
+                intermediate = y & 0x1;
+                break;
+            case 2:
+                intermediate = x % 3;
+                break;
+            case 3:
+                intermediate = (y + x) % 3;
+                break;
+            case 4:
+                intermediate = ((y >>> 1) + (x / 3)) & 0x1;
+                break;
+            case 5:
+                temp = y * x;
+                intermediate = (temp & 0x1) + (temp % 3);
+                break;
+            case 6:
+                temp = y * x;
+                intermediate = (((temp & 0x1) + (temp % 3)) & 0x1);
+                break;
+            case 7:
+                temp = y * x;
+                intermediate = (((temp % 3) + ((y + x) & 0x1)) & 0x1);
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid mask pattern: " + maskPattern);
+        }
+        return intermediate == 0;
+    }
+
+    // Helper function for applyMaskPenaltyRule1. We need this for doing this calculation in both
+    // vertical and horizontal orders respectively.
+    private static int applyMaskPenaltyRule1Internal(ByteMatrix matrix, boolean isHorizontal) {
+        int penalty = 0;
+        int numSameBitCells = 0;
+        int prevBit = -1;
+        // Horizontal mode:
+        //   for (int i = 0; i < matrix.height(); ++i) {
+        //     for (int j = 0; j < matrix.width(); ++j) {
+        //       int bit = matrix.get(i, j);
+        // Vertical mode:
+        //   for (int i = 0; i < matrix.width(); ++i) {
+        //     for (int j = 0; j < matrix.height(); ++j) {
+        //       int bit = matrix.get(j, i);
+        int iLimit = isHorizontal ? matrix.getHeight() : matrix.getWidth();
+        int jLimit = isHorizontal ? matrix.getWidth() : matrix.getHeight();
+        byte[][] array = matrix.getArray();
+        for (int i = 0; i < iLimit; ++i) {
+            for (int j = 0; j < jLimit; ++j) {
+                int bit = isHorizontal ? array[i][j] : array[j][i];
+                if (bit == prevBit) {
+                    numSameBitCells += 1;
+                    // Found five repetitive cells with the same color (bit).
+                    // We'll give penalty of 3.
+                    if (numSameBitCells == 5) {
+                        penalty += 3;
+                    } else if (numSameBitCells > 5) {
+                        // After five repetitive cells, we'll add the penalty one
+                        // by one.
+                        penalty += 1;
+                    }
+                } else {
+                    numSameBitCells = 1;  // Include the cell itself.
+                    prevBit = bit;
+                }
+            }
+            numSameBitCells = 0;  // Clear at each row/column.
+        }
+        return penalty;
+    }
+
+}
+----------------------------------------------------------------------------------------
+import com.lowagie.text.BadElementException;
+import com.lowagie.text.ExceptionConverter;
+import com.lowagie.text.Image;
+import com.lowagie.text.Rectangle;
+import com.lowagie.text.pdf.PdfContentByte;
+import com.lowagie.text.pdf.codec.CCITTG4Encoder;
+import org.paradise.itext.qrcode.ByteMatrix;
+import org.paradise.itext.qrcode.EncodeHintType;
+import org.paradise.itext.qrcode.QRCodeWriter;
+import org.paradise.itext.qrcode.WriterException;
+
+import java.awt.*;
+import java.util.Map;
+
+/**
+ * Created by terrence on 10/06/2016.
+ */
+public class BarcodeQRCode {
+
+    ByteMatrix bm;
+
+    /**
+     * Creates the QR barcode. The barcode is always created with the smallest possible size and is then stretched
+     * to the width and height given. Set the width and height to 1 to get an unscaled barcode.
+     *
+     * @param content the text to be encoded
+     * @param width the barcode width
+     * @param height the barcode height
+     * @param hints modifiers to change the way the barcode is create. They can be EncodeHintType.ERROR_CORRECTION
+     * and EncodeHintType.CHARACTER_SET. For EncodeHintType.ERROR_CORRECTION the values can be ErrorCorrectionLevel.L, M, Q, H.
+     * For EncodeHintType.CHARACTER_SET the values are strings and can be Cp437, Shift_JIS and ISO-8859-1 to ISO-8859-16.
+     * You can also use UTF-8, but correct behaviour is not guaranteed as Unicode is not supported in QRCodes.
+     * The default value is ISO-8859-1.
+     *
+     * @throws WriterException
+     */
+    public BarcodeQRCode(String content, int width, int height, Map<EncodeHintType,Object> hints) {
+
+        try {
+            QRCodeWriter qc = new QRCodeWriter();
+            bm = qc.encode(content, width, height, hints);
+        } catch (WriterException ex) {
+            throw new ExceptionConverter(ex);
+        }
+    }
+
+    private byte[] getBitMatrix() {
+
+        int width = bm.getWidth();
+        int height = bm.getHeight();
+        int stride = (width + 7) / 8;
+        byte[] b = new byte[stride * height];
+        byte[][] mt = bm.getArray();
+
+        for (int y = 0; y < height; ++y) {
+            byte[] line = mt[y];
+            for (int x = 0; x < width; ++x) {
+                if (line[x] != 0) {
+                    int offset = stride * y + x / 8;
+                    b[offset] |= (byte)(0x80 >> (x % 8));
+                }
+            }
+        }
+
+        return b;
+    }
+
+    /**
+     * Gets an <CODE>Image</CODE> with the barcode.
+     *
+     * @return the barcode <CODE>Image</CODE>
+     * @throws BadElementException on error
+     */
+    public Image getImage() throws BadElementException {
+
+        byte[] b = getBitMatrix();
+        byte g4[] = CCITTG4Encoder.compress(b, bm.getWidth(), bm.getHeight());
+
+        return Image.getInstance(bm.getWidth(), bm.getHeight(), false, Image.CCITTG4, Image.CCITT_BLACKIS1, g4, null);
+    }
+
+
+    // AWT related methods (remove this if you port to Android / GAE)
+
+    /** Creates a <CODE>java.awt.Image</CODE>.
+     *
+     * @param foreground the color of the bars
+     * @param background the color of the background
+     *
+     * @return the image
+     */
+    public java.awt.Image createAwtImage(java.awt.Color foreground, java.awt.Color background) {
+
+        int f = foreground.getRGB();
+        int g = background.getRGB();
+
+        int width = bm.getWidth();
+        int height = bm.getHeight();
+        int pix[] = new int[width * height];
+        byte[][] mt = bm.getArray();
+
+        for (int y = 0; y < height; ++y) {
+            byte[] line = mt[y];
+            for (int x = 0; x < width; ++x) {
+                pix[y * width + x] = line[x] == 0 ? f : g;
+            }
+        }
+
+        java.awt.Canvas canvas = new java.awt.Canvas();
+        java.awt.Image img = canvas.createImage(new java.awt.image.MemoryImageSource(width, height, pix, 0, width));
+
+        return img;
+    }
+
+    /**
+     *
+     * @param cb
+     * @param foreground
+     * @param moduleSide
+     */
+    public void placeBarcode(PdfContentByte cb, Color foreground, float moduleSide) {
+
+        int width = bm.getWidth();
+        int height = bm.getHeight();
+        byte[][] mt = bm.getArray();
+
+        cb.setColorFill(foreground);
+
+        for (int y = 0; y < height; ++y) {
+            byte[] line = mt[y];
+            for (int x = 0; x < width; ++x) {
+                if (line[x] == 0) {
+                    cb.rectangle(x * moduleSide, (height - y - 1) * moduleSide, moduleSide, moduleSide);
+                }
+            }
+        }
+
+        cb.fill();
+    }
+
+    /**
+     * Gets the size of the barcode grid.
+     */
+    public Rectangle getBarcodeSize() {
+
+        return new Rectangle(0, 0, bm.getWidth(), bm.getHeight());
+    }
+
+}
+----------------------------------------------------------------------------------------
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.module.paranamer.ParanamerModule;
+import com.fasterxml.jackson.module.paranamer.ParanamerOnJacksonAnnotationIntrospector;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+import static org.junit.Assert.assertEquals;
+
+/**
+ * Created by terrence on 20/07/2016.
+ */
+public class JacksonModuleBaseTest {
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
+
+    private String JSON = "{\"name\":\"Bob\", \"age\":40}";
+
+    private ObjectMapper objectMapper;
+
+
+    @Test
+    public void testWithoutModule() throws Exception {
+
+        thrown.expect(JsonMappingException.class);
+        thrown.expectMessage("has no property name annotation");
+
+        new ObjectMapper().readValue(JSON, CreatorBean.class);
+    }
+
+    @Test
+    public void testParanamerModule() throws Exception {
+
+        objectMapper = new ObjectMapper().registerModule(new ParanamerModule());
+
+        CreatorBean bean = objectMapper.readValue(JSON, CreatorBean.class);
+
+        assertEquals("Bob", bean.getName());
+        assertEquals(40, bean.getAge());
+    }
+
+    @Test
+    public void testParanamerOnJacksonAnnotationIntrospector() throws Exception {
+
+        objectMapper = new ObjectMapper().setAnnotationIntrospector(new ParanamerOnJacksonAnnotationIntrospector());
+
+        CreatorBean bean = objectMapper.readValue(JSON, CreatorBean.class);
+
+        assertEquals("Bob", bean.getName());
+        assertEquals(40, bean.getAge());
+    }
+
+}
+
+class CreatorBean {
+
+    private final int age;
+    private final String name;
+
+    @JsonCreator
+    public CreatorBean(int age, String name) {
+        this.age = age;
+        this.name = name;
+    }
+
+    public int getAge() {
+        return age;
+    }
+
+    public String getName() {
+        return name;
+    }
+}
+----------------------------------------------------------------------------------------
+    @Bean
+    @ConditionalOnBean(JolokiaEndpoint.class)
+    @ConditionalOnExposedEndpoint(name = "jolokia")
+    public SimpleUrlHandlerMapping hawtioUrlMapping(final EndpointPathResolver pathResolver) {
+        final String jolokiaPath = pathResolver.resolve("jolokia");
+        final String hawtioPath = pathResolver.resolve("hawtio");
+
+        final SilentSimpleUrlHandlerMapping mapping = new SilentSimpleUrlHandlerMapping();
+        final Map<String, Object> urlMap = new HashMap<>();
+
+        if (!hawtioPath.isEmpty()) {
+            final String hawtioJolokiaPath = pathResolver.resolveUrlMapping("hawtio", "jolokia", "**");
+            urlMap.put(
+                hawtioJolokiaPath,
+                new JolokiaForwardingController(hawtioPath + "/jolokia", jolokiaPath));
+            mapping.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        } else {
+            urlMap.put(SilentSimpleUrlHandlerMapping.DUMMY, null);
+        }
+
+        mapping.setUrlMap(urlMap);
+        return mapping;
+    }
+----------------------------------------------------------------------------------------
+/**
+ * Receives notifications from an observable stream of messages.
+ *
+ * <p>It is used by both the client stubs and service implementations for sending or receiving
+ * stream messages. It is used for all {@link io.grpc.MethodDescriptor.MethodType}, including
+ * {@code UNARY} calls.  For outgoing messages, a {@code StreamObserver} is provided by the GRPC
+ * library to the application. For incoming messages, the application implements the
+ * {@code StreamObserver} and passes it to the GRPC library for receiving.
+ *
+ * <p>Implementations are expected to be
+ * <a href="http://www.ibm.com/developerworks/library/j-jtp09263/">thread-compatible</a>.
+ * Separate {@code StreamObserver}s do
+ * not need to be synchronized together; incoming and outgoing directions are independent.
+ * Since individual {@code StreamObserver}s are not thread-safe, if multiple threads will be
+ * writing to a {@code StreamObserver} concurrently, the application must synchronize calls.
+ */
+public interface StreamObserver<V>  {
+  /**
+   * Receives a value from the stream.
+   *
+   * <p>Can be called many times but is never called after {@link #onError(Throwable)} or {@link
+   * #onCompleted()} are called.
+   *
+   * <p>Unary calls must invoke onNext at most once.  Clients may invoke onNext at most once for
+   * server streaming calls, but may receive many onNext callbacks.  Servers may invoke onNext at
+   * most once for client streaming calls, but may receive many onNext callbacks.
+   *
+   * <p>If an exception is thrown by an implementation the caller is expected to terminate the
+   * stream by calling {@link #onError(Throwable)} with the caught exception prior to
+   * propagating it.
+   *
+   * @param value the value passed to the stream
+   */
+  void onNext(V value);
+
+  /**
+   * Receives a terminating error from the stream.
+   *
+   * <p>May only be called once and if called it must be the last method called. In particular if an
+   * exception is thrown by an implementation of {@code onError} no further calls to any method are
+   * allowed.
+   *
+   * <p>{@code t} should be a {@link io.grpc.StatusException} or {@link
+   * io.grpc.StatusRuntimeException}, but other {@code Throwable} types are possible. Callers should
+   * generally convert from a {@link io.grpc.Status} via {@link io.grpc.Status#asException()} or
+   * {@link io.grpc.Status#asRuntimeException()}. Implementations should generally convert to a
+   * {@code Status} via {@link io.grpc.Status#fromThrowable(Throwable)}.
+   *
+   * @param t the error occurred on the stream
+   */
+  void onError(Throwable t);
+
+  /**
+   * Receives a notification of successful stream completion.
+   *
+   * <p>May only be called once and if called it must be the last method called. In particular if an
+   * exception is thrown by an implementation of {@code onCompleted} no further calls to any method
+   * are allowed.
+   */
+  void onCompleted();
+}
+----------------------------------------------------------------------------------------
+    @LastModifiedDate
+    @Type(type = "org.jadira.usertype.dateandtime.joda.PersistentDateTime")
+    @Column(name = "last_modified_date")
+    @JsonIgnore
+    private DateTime lastModifiedDate = DateTime.now();
+----------------------------------------------------------------------------------------
+	<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <fork>true</fork>
+                    <mainClass>${start-class}</mainClass>
+                    <jvmArguments>-Xms512m -Xmx1024m -Xdebug
+                        -Xrunjdwp:server=y,transport=dt_socket,address=${debug.port},suspend=n
+                        -Denv=${project.build.testOutputDirectory}/application</jvmArguments>
+
+                </configuration>
+			</plugin>
+----------------------------------------------------------------------------------------
+events {
+  worker_connections  4096;  ## Default: 1024
+}
+
+http {
+  server {
+    listen 80;
+    default_type application/octet-stream;
+
+    location ~ ^/(api|oauth) {
+      proxy_pass http://todo-rest:8080;
+    }
+
+    location / {
+      gzip on;
+      gzip_proxied any;
+      gzip_buffers 16 8k;
+      gzip_types text/plain application/javascript application/x-javascript text/javascript text/xml text/css;
+      gzip_vary on;
+
+      root   /usr/share/nginx/html;
+      index  index.html index.htm;
+      include /etc/nginx/mime.types;
+    }
+
+  }
+}
+
+  @Before
+  public void init() throws KeyStoreException, NoSuchAlgorithmException, KeyManagementException {
+    SSLContextBuilder builder = new SSLContextBuilder();
+    // trust self signed certificate
+    builder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
+    SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(
+        builder.build());
+    final HttpClient httpClient = HttpClients.custom().setSSLSocketFactory(
+        sslConnectionSocketFactory).build();
+
+    restTemplate = new TestRestTemplate();
+    restTemplate.setRequestFactory(new HttpComponentsClientHttpRequestFactory(httpClient) {
+      @Override
+      protected HttpContext createHttpContext(HttpMethod httpMethod, URI uri) {
+        HttpClientContext context = HttpClientContext.create();
+        RequestConfig.Builder builder = RequestConfig.custom()
+            .setCookieSpec(CookieSpecs.IGNORE_COOKIES)
+            .setAuthenticationEnabled(false).setRedirectsEnabled(false)
+            .setConnectTimeout(1000).setConnectionRequestTimeout(1000).setSocketTimeout(1000);
+        context.setRequestConfig(builder.build());
+        return context;
+      }
+    });
+  }
+----------------------------------------------------------------------------------------
+import com.piggymetrics.notification.domain.Recipient;
+import org.springframework.data.mongodb.repository.Query;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface RecipientRepository extends CrudRepository<Recipient, String> {
+
+	Recipient findByAccountName(String name);
+
+	@Query("{ $and: [ {scheduledNotifications.BACKUP.active: true }, { $where: 'this.scheduledNotifications.BACKUP.lastNotified < " +
+			"new Date(new Date().setDate(new Date().getDate() - this.scheduledNotifications.BACKUP.frequency ))' }] }")
+	List<Recipient> findReadyForBackup();
+
+	@Query("{ $and: [ {scheduledNotifications.REMIND.active: true }, { $where: 'this.scheduledNotifications.REMIND.lastNotified < " +
+			"new Date(new Date().setDate(new Date().getDate() - this.scheduledNotifications.REMIND.frequency ))' }] }")
+	List<Recipient> findReadyForRemind();
+
+}
+----------------------------------------------------------------------------------------
+    private SearchQuery getCitySearchQuery(Integer pageNumber, Integer pageSize,String searchContent) {
+        // 短语匹配到的搜索词，求和模式累加权重分
+        // 权重分查询 https://www.elastic.co/guide/cn/elasticsearch/guide/current/function-score-query.html
+        //   - 短语匹配 https://www.elastic.co/guide/cn/elasticsearch/guide/current/phrase-matching.html
+        //   - 字段对应权重分设置，可以优化成 enum
+        //   - 由于无相关性的分值默认为 1 ，设置权重分最小值为 10
+        FunctionScoreQueryBuilder functionScoreQueryBuilder = QueryBuilders.functionScoreQuery()
+                .add(QueryBuilders.matchPhraseQuery("name", searchContent),
+                ScoreFunctionBuilders.weightFactorFunction(1000))
+                .add(QueryBuilders.matchPhraseQuery("description", searchContent),
+                ScoreFunctionBuilders.weightFactorFunction(500))
+                .scoreMode(SCORE_MODE_SUM).setMinScore(MIN_SCORE);
+
+        // 分页参数
+        Pageable pageable = new PageRequest(pageNumber, pageSize);
+        return new NativeSearchQueryBuilder()
+                .withPageable(pageable)
+                .withQuery(functionScoreQueryBuilder).build();
+    }
+	
+	import org.apache.ibatis.annotations.*;
+import org.spring.springboot.domain.City;
+
+/**
+ * 城市 DAO 接口类
+ *
+ * Created by xchunzhao on 02/05/2017.
+ */
+@Mapper // 标志为 Mybatis 的 Mapper
+public interface CityDao {
+
+    /**
+     * 根据城市名称，查询城市信息
+     *
+     * @param cityName 城市名
+     */
+    @Select("SELECT * FROM city")
+    // 返回 Map 结果集
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "provinceId", column = "province_id"),
+            @Result(property = "cityName", column = "city_name"),
+            @Result(property = "description", column = "description"),
+    })
+    City findByName(@Param("cityName") String cityName);
+}
+
+    @Bean(name = "validator")
+    @ConditionalOnMissingBean(Validator.class)
+    public Validator validator() {
+        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+        return factory.getValidator();
+    }
+----------------------------------------------------------------------------------------
+    // disable page caching
+        httpSecurity
+                .headers()
+                .frameOptions().sameOrigin()  // required to set for H2 else H2 Console will be blank.
+                .cacheControl();
+----------------------------------------------------------------------------------------
+	@HystrixCommand(fallbackMethod = "getFallbackCommentsForTask", commandProperties = {
+			@HystrixProperty(name = "execution.isolation.strategy", value = "SEMAPHORE"),
+			@HystrixProperty(name = "circuitBreaker.requestVolumeThreshold", value = "10"),
+			@HystrixProperty(name = "circuitBreaker.sleepWindowInMilliseconds", value = "1000") })
+	public CommentCollectionResource getCommentsForTask(String taskId) {
+		// Get the comments for this task
+		return restTemplate.getForObject(String.format("http://comments-webservice/comments/%s", taskId),
+				CommentCollectionResource.class);
+
+	}
+----------------------------------------------------------------------------------------
+/**
+ * Abstraction for hash code generation and equality comparison.
+ */
+public interface HashingStrategy<T> {
+    /**
+     * Generate a hash code for {@code obj}.
+     * <p>
+     * This method must obey the same relationship that {@link java.lang.Object#hashCode()} has with
+     * {@link java.lang.Object#equals(Object)}:
+     * <ul>
+     * <li>Calling this method multiple times with the same {@code obj} should return the same result</li>
+     * <li>If {@link #equals(Object, Object)} with parameters {@code a} and {@code b} returns {@code true}
+     * then the return value for this method for parameters {@code a} and {@code b} must return the same result</li>
+     * <li>If {@link #equals(Object, Object)} with parameters {@code a} and {@code b} returns {@code false}
+     * then the return value for this method for parameters {@code a} and {@code b} does <strong>not</strong> have to
+     * return different results results. However this property is desirable.</li>
+     * <li>if {@code obj} is {@code null} then this method return {@code 0}</li>
+     * </ul>
+     */
+    int hashCode(T obj);
+
+    /**
+     * Returns {@code true} if the arguments are equal to each other and {@code false} otherwise.
+     * This method has the following restrictions:
+     * <ul>
+     * <li><i>reflexive</i> - {@code equals(a, a)} should return true</li>
+     * <li><i>symmetric</i> - {@code equals(a, b)} returns {@code true} iff {@code equals(b, a)} returns
+     * {@code true}</li>
+     * <li><i>transitive</i> - if {@code equals(a, b)} returns {@code true} and {@code equals(a, c)} returns
+     * {@code true} then {@code equals(b, c)} should also return {@code true}</li>
+     * <li><i>consistent</i> - {@code equals(a, b)} should return the same result when called multiple times
+     * assuming {@code a} and {@code b} remain unchanged relative to the comparison criteria</li>
+     * <li>if {@code a} and {@code b} are both {@code null} then this method returns {@code true}</li>
+     * <li>if {@code a} is {@code null} and {@code b} is non-{@code null}, or {@code a} is non-{@code null} and
+     * {@code b} is {@code null} then this method returns {@code false}</li>
+     * </ul>
+     */
+    boolean equals(T a, T b);
+
+    /**
+     * A {@link HashingStrategy} which delegates to java's {@link Object#hashCode()}
+     * and {@link Object#equals(Object)}.
+     */
+    @SuppressWarnings("rawtypes")
+    HashingStrategy JAVA_HASHER = new HashingStrategy() {
+        @Override
+        public int hashCode(Object obj) {
+            return obj != null ? obj.hashCode() : 0;
+        }
+
+        @Override
+        public boolean equals(Object a, Object b) {
+            return (a == b) || (a != null && a.equals(b));
+        }
+    };
+}
+----------------------------------------------------------------------------------------
+import org.apache.catalina.startup.Tomcat;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+@ConditionalOnClass(Tomcat.class)
+@ConditionalOnProperty(name = "log-tomcat-version", matchIfMissing = true)
+public class LogTomcatVersionAutoConfiguration {
+
+	private static Log logger = LogFactory
+			.getLog(LogTomcatVersionAutoConfiguration.class);
+
+	@PostConstruct
+	public void logTomcatVersion() {
+		logger.info("\n\n\nTomcat v"
+				+ Tomcat.class.getPackage().getImplementationVersion() + "\n\n");
+	}
+
+}
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.rest.core.config.RepositoryRestConfiguration;
+import org.springframework.data.rest.webmvc.config.RepositoryRestMvcConfiguration;
+
+@Configuration
+public class SimpleRepositoryRestMvcConfiguration extends RepositoryRestMvcConfiguration {
+
+	@Override
+	protected void configureRepositoryRestConfiguration(
+			RepositoryRestConfiguration config) {
+		config.exposeIdsFor(Person.class);
+	}
+
+}
+
+import org.springframework.hateoas.Link;
+import org.springframework.hateoas.Resource;
+import org.springframework.hateoas.ResourceProcessor;
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.web.util.UriComponents;
+
+@Component
+public class PersonResourceProcessor implements ResourceProcessor<Resource<Person>> {
+
+	@Override
+	public Resource<Person> process(Resource<Person> resource) {
+		String id = Long.toString(resource.getContent().getId());
+		UriComponents uriComponents = ServletUriComponentsBuilder.fromCurrentContextPath()
+				.path("/people/{id}/photo").buildAndExpand(id);
+		String uri = uriComponents.toUriString();
+		resource.add(new Link(uri, "photo"));
+		return resource;
+	}
+
+}
+
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.JobExecution;
+import org.springframework.batch.core.JobParametersBuilder;
+import org.springframework.batch.core.Step;
+import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
+import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.StepScope;
+import org.springframework.batch.core.launch.JobLauncher;
+import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
+import org.springframework.batch.item.database.JdbcBatchItemWriter;
+import org.springframework.batch.item.file.FlatFileItemReader;
+import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
+import org.springframework.batch.item.file.mapping.DefaultLineMapper;
+import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+import javax.sql.DataSource;
+import java.io.File;
+import java.util.List;
+
+@Configuration
+@EnableBatchProcessing
+public class BatchConfiguration {
+
+    @Bean
+    @StepScope
+    FlatFileItemReader<Person> flatFileItemReader(@Value("#{jobParameters[file]}") File file) {
+        FlatFileItemReader<Person> r = new FlatFileItemReader<>();
+        r.setResource(new FileSystemResource(file));
+        r.setLineMapper(new DefaultLineMapper<Person>() {
+            {
+                this.setLineTokenizer(new DelimitedLineTokenizer(",") {
+                    {
+                        this.setNames(new String[]{"first", "last", "email"});
+                    }
+                });
+                this.setFieldSetMapper(new BeanWrapperFieldSetMapper<Person>() {
+                    {
+                        this.setTargetType(Person.class);
+                    }
+                });
+            }
+        });
+        return r;
+    }
+
+    @Bean
+    JdbcBatchItemWriter<Person> jdbcBatchItemWriter(DataSource h2) {
+        JdbcBatchItemWriter<Person> w = new JdbcBatchItemWriter<>();
+        w.setDataSource(h2);
+        w.setSql("insert into PEOPLE( first, last, email) values ( :first, :last, :email )");
+        w.setItemSqlParameterSourceProvider(new BeanPropertyItemSqlParameterSourceProvider<>());
+        return w;
+    }
+
+    @Bean
+    Job personEtl(JobBuilderFactory jobBuilderFactory,
+            StepBuilderFactory stepBuilderFactory,
+            FlatFileItemReader<Person> reader,
+            JdbcBatchItemWriter<Person> writer
+    ) {
+
+        Step step = stepBuilderFactory.get("file-to-database")
+                .<Person, Person>chunk(5)
+                .reader(reader)
+                .writer(writer)
+                .build();
+
+        return jobBuilderFactory.get("etl")
+                .start(step)
+                .build();
+    }
+
+    //@Bean
+    CommandLineRunner runner(JobLauncher launcher,
+                             Job job,
+                             @Value("${file}") File in,
+                             JdbcTemplate jdbcTemplate) {
+        return args -> {
+
+            JobExecution execution = launcher.run(job,
+                    new JobParametersBuilder()
+                            .addString("file", in.getAbsolutePath())
+                            .toJobParameters());
+
+            System.out.println("execution status: " + execution.getExitStatus().toString());
+
+            List<Person> personList = jdbcTemplate.query("select * from PEOPLE", (resultSet, i) -> new Person(resultSet.getString("first"),
+                    resultSet.getString("last"),
+                    resultSet.getString("email")));
+
+            personList.forEach(System.out::println);
+
+        };
+
+    }
+
+}
+
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.JobExecution;
+import org.springframework.batch.core.JobParameters;
+import org.springframework.batch.core.JobParametersBuilder;
+import org.springframework.batch.core.launch.JobLauncher;
+import org.springframework.batch.integration.launch.JobLaunchRequest;
+import org.springframework.batch.integration.launch.JobLaunchingGateway;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.integration.dsl.IntegrationFlow;
+import org.springframework.integration.dsl.IntegrationFlows;
+import org.springframework.integration.dsl.channel.MessageChannels;
+import org.springframework.integration.dsl.file.Files;
+import org.springframework.integration.transformer.GenericTransformer;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.io.File;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+@Configuration
+public class IntegrationConfiguration {
+
+    @Bean
+    MessageChannel files() {
+        return MessageChannels.direct().get();
+    }
+
+    @RestController
+    public static class FileNameRestController {
+
+        private final MessageChannel files;
+
+        @RequestMapping(method = RequestMethod.GET, value = "/files")
+        void triggerJobForFile(@RequestParam String file) {
+
+            Message<File> fileMessage = MessageBuilder.withPayload(new File(file))
+                    .build();
+            this.files.send(fileMessage);
+        }
+
+        @Autowired
+        public FileNameRestController(MessageChannel files) {
+            this.files = files;
+        }
+    }
+
+    @Bean
+    IntegrationFlow batchJobFlow(Job job,
+                                 JdbcTemplate jdbcTemplate,
+                                 JobLauncher launcher,
+                                 MessageChannel files) {
+
+        return IntegrationFlows.from(files)
+                .transform((GenericTransformer<Object,JobLaunchRequest>) file -> {
+                    System.out.println(file.toString());
+                    System.out.println(file.getClass());
+                    return null ;
+                })
+                .transform((GenericTransformer<File, JobLaunchRequest>) file -> {
+                    JobParameters jp = new JobParametersBuilder()
+                            .addString("file", file.getAbsolutePath())
+                            .toJobParameters();
+                    return new JobLaunchRequest(job, jp);
+                })
+                .handle(new JobLaunchingGateway(launcher))
+                .handle(JobExecution.class, (payload, headers) -> {
+                    System.out.println("job execution status: " + payload.getExitStatus().toString());
+
+                    List<Person> personList = jdbcTemplate.query("select * from PEOPLE",
+                            (resultSet, i) -> new Person(resultSet.getString("first"),
+                                    resultSet.getString("last"),
+                                    resultSet.getString("email")));
+
+                    personList.forEach(System.out::println);
+                    return null;
+                })
+                .get();
+
+    }
+
+    @Bean
+    IntegrationFlow incomingFiles(@Value("${HOME}/Desktop/in") File dir) {
+
+        return IntegrationFlows.from(
+                Files.inboundAdapter(dir)
+                        .preventDuplicates()
+                        .autoCreateDirectory(true),
+                poller -> poller.poller(spec -> spec.fixedRate(1, TimeUnit.SECONDS)))
+                .channel( this.files())
+                .get();
+
+    }
+}
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import org.springframework.amqp.rabbit.core.RabbitMessagingTemplate;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
+
+@Component
+public class Producer implements CommandLineRunner {
+
+	private final RabbitMessagingTemplate messagingTemplate;
+
+	public Producer(RabbitMessagingTemplate messagingTemplate) {
+		this.messagingTemplate = messagingTemplate;
+	}
+
+	@Override
+	public void run(String... args) throws Exception {
+		Notification notification = new Notification(UUID.randomUUID().toString(),
+				"Hello, world!", new Date());
+
+		Map<String, Object> headers = new HashMap<>();
+		headers.put("notification-id", notification.getId());
+
+		this.messagingTemplate.convertAndSend(MessagingApplication.NOTIFICATIONS,
+				notification, headers, message -> {
+					System.out.println("sending " + message.getPayload().toString());
+					return message;
+				});
+	}
+
+}
+
+import org.springframework.amqp.core.AmqpAdmin;
+import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.DirectExchange;
+import org.springframework.amqp.core.Queue;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+
+@SpringBootApplication
+public class MessagingApplication {
+
+	public static final String NOTIFICATIONS = "notifications";
+
+	@Bean
+	public InitializingBean prepareQueues(AmqpAdmin amqpAdmin) {
+		return () -> {
+			Queue queue = new Queue(NOTIFICATIONS, true);
+			DirectExchange exchange = new DirectExchange(NOTIFICATIONS);
+			Binding binding = BindingBuilder.bind(queue).to(exchange).with(NOTIFICATIONS);
+			amqpAdmin.declareQueue(queue);
+			amqpAdmin.declareExchange(exchange);
+			amqpAdmin.declareBinding(binding);
+
+		};
+	}
+
+	public static void main(String[] args) {
+		SpringApplication.run(MessagingApplication.class, args);
+	}
+
+}
+
+import java.util.Collection;
+
+import org.springframework.cloud.netflix.feign.FeignClient;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+
+@FeignClient("contact-service")
+public interface ContactClient {
+
+	@RequestMapping(method = RequestMethod.GET, value = "/{userId}/contacts")
+	Collection<Contact> getContacts(@PathVariable("userId") String userId);
+
+}
+
+import reactor.Environment;
+import reactor.rx.Stream;
+import reactor.rx.Streams;
+
+import org.springframework.stereotype.Component;
+
+@Component
+public class PassportService {
+
+	private final Environment environment;
+
+	private final ContactClient contactClient;
+
+	private final BookmarkClient bookmarkClient;
+
+	public PassportService(Environment environment, ContactClient contactClient,
+			BookmarkClient bookmarkClient) {
+		this.environment = environment;
+		this.contactClient = contactClient;
+		this.bookmarkClient = bookmarkClient;
+	}
+
+	public Stream<Bookmark> getBookmarks(String userId) {
+		return Streams.<Bookmark>create(subscriber -> {
+			this.bookmarkClient.getBookmarks(userId).forEach(subscriber::onNext);
+			subscriber.onComplete();
+		}).dispatchOn(this.environment, Environment.cachedDispatcher()).log("bookmarks");
+	}
+
+	public Stream<Contact> getContacts(String userId) {
+		return Streams.<Contact>create(subscriber -> {
+			this.contactClient.getContacts(userId).forEach(subscriber::onNext);
+			subscriber.onComplete();
+		}).dispatchOn(this.environment, Environment.cachedDispatcher()).log("contacts");
+	}
+
+	public Stream<Passport> getPassport(String userId, Stream<Contact> contacts,
+			Stream<Bookmark> bookmarks) {
+		return Streams.zip(contacts.buffer(), bookmarks.buffer(),
+				tuple -> new Passport(userId, tuple.getT1(), tuple.getT2()));
+	}
+}
+----------------------------------------------------------------------------------------
+var car = {};
+Object.defineProperty(car, 'doors', {
+ writable: true,
+ configurable: true,
+ enumerable: true,
+ value: 4
+});
+Object.defineProperty(car, 'wheels', {
+ writable: true,
+ configurable: true,
+ enumerable: true,
+ value: 4
+});
+Object.defineProperty(car, 'secretTrackingDeviceEnabled', {
+ enumerable: false,
+ value: true
+});
+// => doors
+// => wheels
+for (var x in car) {
+ console.log(x);
+}
+
+var box = Object.create({}, {
+ openLid: {
+ value: function () {
+ return "nothing";
+ },
+ enumerable: true
+ },
+ openSecretCompartment: {
+ value: function () {
+ return 'treasure';
+ },
+ enumerable: false
+ }
+});
+
+var Car = function (wheelCount) {
+ this.odometer = 0;
+ this.wheels = wheelCount || 4;
+};
+Car.prototype.drive = function (miles) {
+ this.odometer += miles;
+ return this.odometer;
+};
+var tesla = new Car();
+// => true
+console.log(Object.getPrototypeOf(tesla) === Car.prototype);
+// => true
+console.log(tesla.__proto__ === Car.prototype);
+
+var dispatcher = {
+ join: function (before, after) {
+ return before + ':' + after
+ },
+ sum: function () {
+ var args = Array.prototype.slice.call(arguments);
+ return args.reduce(function (previousValue, currentValue, index, array) {
+ return previousValue + currentValue;
+ });
+ }
+};
+var proxy = {
+ relay: function (method) {
+ var args;
+ args = Array.prototype.splice.call(arguments, 1);
+ return dispatcher[method].apply(dispatcher, args);
+ }
+};
+// => bar:baz
+console.log(proxy.relay('join', 'bar', 'baz'));
+// => 28
+console.log(proxy.relay('sum', 1, 2, 3, 4, 5, 6, 7));
+
+
+
+var dispatcher = {
+ join: function (before, after) {
+ return before + ':' + after
+ },
+ sum: function () {
+ var args = Array.prototype.slice.call(arguments);
+ return args.reduce(function (previousValue, currentValue, index, array) {
+ return previousValue + currentValue;
+ });
+ }
+};
+var proxy = {
+ relay: function (method) {
+ var args;
+ args = Array.prototype.splice.call(arguments, 1);
+ return dispatcher[method].apply(dispatcher, args);
+ }
+};
+----------------------------------------------------------------------------------------
+import androidx.annotation.Nullable;
+
+/**
+ * Utilities for generating 64-bit long IDs from types such as {@link CharSequence}.
+ */
+public final class IdUtils {
+  private IdUtils() {
+  }
+
+  /**
+   * Hash a long into 64 bits instead of the normal 32. This uses a xor shift implementation to
+   * attempt psuedo randomness so object ids have an even spread for less chance of collisions.
+   * <p>
+   * From http://stackoverflow.com/a/11554034
+   * <p>
+   * http://www.javamex.com/tutorials/random_numbers/xorshift.shtml
+   */
+  public static long hashLong64Bit(long value) {
+    value ^= (value << 21);
+    value ^= (value >>> 35);
+    value ^= (value << 4);
+    return value;
+  }
+
+  /**
+   * Hash a string into 64 bits instead of the normal 32. This allows us to better use strings as a
+   * model id with less chance of collisions. This uses the FNV-1a algorithm for a good mix of speed
+   * and distribution.
+   * <p>
+   * Performance comparisons found at http://stackoverflow.com/a/1660613
+   * <p>
+   * Hash implementation from http://www.isthe.com/chongo/tech/comp/fnv/index.html#FNV-1a
+   */
+  public static long hashString64Bit(@Nullable CharSequence str) {
+    if (str == null) {
+      return 0;
+    }
+
+    long result = 0xcbf29ce484222325L;
+    final int len = str.length();
+    for (int i = 0; i < len; i++) {
+      result ^= str.charAt(i);
+      result *= 0x100000001b3L;
+    }
+    return result;
+  }
+}
+----------------------------------------------------------------------------------------
+import io.netty.buffer.ByteBuf;
+import lombok.extern.slf4j.Slf4j;
+
+import java.nio.ByteOrder;
+
+@Slf4j
+public final class Murmur3 {
+    private static final int C1 = 0xcc9e2d51;
+    private static final int C2 = 0x1b873593;
+
+    public static int hash32(ByteBuf data) {
+        return hash32(data, data.readerIndex(), data.readableBytes(), 0);
+    }
+
+    public static int hash32(ByteBuf data, final int offset, final int length) {
+        return hash32(data, offset, length, 0);
+    }
+
+    @SuppressWarnings("OverlyLongMethod")
+    public static int hash32(ByteBuf data, final int offset, final int length, final int seed) {
+        final ByteBuf ordered = data.order(ByteOrder.LITTLE_ENDIAN);
+
+        int h = seed;
+
+        final int len4 = length >>> 2;
+        final int end4 = offset + (len4 << 2);
+
+        for (int i = offset; i < end4; i += 4) {
+            int k = ordered.getInt(i);
+
+            k *= C1;
+            k = k << 15 | k >>> 17;
+            k *= C2;
+
+            h ^= k;
+            h = h << 13 | h >>> 19;
+            h = h * 5 + 0xe6546b64;
+        }
+
+        int k = 0;
+        switch (length & 3) {
+            case 3:
+                k = (ordered.getByte(end4 + 2) & 0xff) << 16;
+            case 2:
+                k |= (ordered.getByte(end4 + 1) & 0xff) << 8;
+            case 1:
+                k |= ordered.getByte(end4) & 0xff;
+
+                k *= C1;
+                k = (k << 15) | (k >>> 17);
+                k *= C2;
+                h ^= k;
+        }
+
+        h ^= length;
+        h ^= h >>> 16;
+        h *= 0x85ebca6b;
+        h ^= h >>> 13;
+        h *= 0xc2b2ae35;
+        h ^= h >>> 16;
+
+        return h;
+    }
+}
+----------------------------------------------------------------------------------------
+public class Staircase {
+
+    // Complete the staircase function below.
+    static void staircase(int n) {
+        String str = "#";
+        for (int i = 0; i < n; i++) {
+            System.out.printf("%" + n + "s\n", str);
+            str += "#";
+        }
+    }
+
+    private static final Scanner scanner = new Scanner(System.in);
+
+    public static void main(String[] args) {
+        int n = scanner.nextInt();
+        scanner.skip("(\r\n|[\n\r\u2028\u2029\u0085])?");
+
+        staircase(n);
+
+        scanner.close();
+    }
+
+}
+----------------------------------------------------------------------------------------
+import br.com.devmanfredi.engineering.dto.SquadDTO;
+import br.com.devmanfredi.engineering.entity.Squad;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Mappings;
+import org.mapstruct.ReportingPolicy;
+
+import java.util.List;
+
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface SquadMapper {
+    @Mappings({
+            @Mapping(source = "id", target = "id"),
+            //@Mapping(source = "collaboratorName", target = "collaborators.fullName")
+    })
+    Squad map(SquadDTO squadDTO);
+
+    List<Squad> map(List<SquadDTO> squadDTOS);
+
+    SquadDTO toDTO(Squad squad);
+}
+import br.com.devmanfredi.engineering.dto.CollaboratorDTO;
+import br.com.devmanfredi.engineering.entity.Collaborator;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Mappings;
+import org.mapstruct.ReportingPolicy;
+
+import java.util.List;
+
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface CollaboratorMapper {
+
+    @Mappings({
+            @Mapping(source = "id", target = "id"),
+            @Mapping(source = "squadId", target = "squad.id"),
+            @Mapping(source = "email", target = "email"),
+            @Mapping(source = "fullName", target = "fullName"),
+            @Mapping(source = "nickName", target = "nickName"),
+            @Mapping(source = "password", target = "password"),
+            @Mapping(source = "salary", target = "salary"),
+            @Mapping(source = "level", target = "level"),
+            @Mapping(source = "office", target = "office")
+    })
+    Collaborator map(CollaboratorDTO collaboratorDTO);
+    List<Collaborator> map(List<CollaboratorDTO> collaboratorDTOS);
+
+    CollaboratorDTO toDTO(Collaborator collaborator);
+
+    List<CollaboratorDTO> toListDTO(List<Collaborator> collaborators);
+}
+
+ @Modifying(clearAutomatically = true)
+    @Transactional
+    @Query("UPDATE Log a SET a.toFile = true WHERE a.id =:id")
+    void toFile(@Param("id") Long id);
+	
+	String db = "jdbc:hsqldb:hsql://localhost:" + String.valueOf(port) + "/xdb";
+----------------------------------------------------------------------------------------
+import com.intellij.psi.util.PsiUtil;
+import lombok.experimental.UtilityClass;
+
+/**
+ * Created by 1 on 12.05.2018.
+ */
+@UtilityClass
+public class LombokAnnotationsUtils {
+    private static final String LOMBOK_PROTECTED_ACCESS = "lombok.AccessLevel.PROTECTED";
+    private static final String LOMBOK_PUBLIC_ACCESS = "";
+    private static final String LOMBOK_PRIVATE_ACCESS = "lombok.AccessLevel.PRIVATE";
+    private static final String LOMBOK_PACKAGE_ACCESS = "lombok.AccessLevel.PACKAGE";
+
+    public static final String LOMBOK_GETTER = "lombok.Getter";
+    public static final String LOMBOK_NO_ARGS_CONSTRUCTOR = "lombok.NoArgsConstructor";
+    private static final String LOMBOK_SETTER = "lombok.Setter";
+
+
+    private static String createSingleAttribute(String attribute) {
+        return "(" + attribute + ")";
+    }
+
+    private static String getSimpleAccessAttribute(int accessLevel) {
+        switch (accessLevel) {
+            case PsiUtil.ACCESS_LEVEL_PRIVATE:
+                return createSingleAttribute(LOMBOK_PRIVATE_ACCESS);
+            case PsiUtil.ACCESS_LEVEL_PACKAGE_LOCAL:
+                return createSingleAttribute(LOMBOK_PACKAGE_ACCESS);
+            case PsiUtil.ACCESS_LEVEL_PROTECTED:
+                return createSingleAttribute(LOMBOK_PROTECTED_ACCESS);
+            default:
+                return LOMBOK_PUBLIC_ACCESS;
+        }
+    }
+
+    public static String getGetterAnnotation(int accessLevel) {
+        return LOMBOK_GETTER + getSimpleAccessAttribute(accessLevel);
+    }
+
+    public static String getSetterAnnotation(int accessLevel) {
+        return LOMBOK_SETTER + getSimpleAccessAttribute(accessLevel);
+    }
+
+    public static String getNoArgConstructorAnnotation(int accessLevel) {
+        return LOMBOK_NO_ARGS_CONSTRUCTOR + getAccessAttribute(accessLevel);
+    }
+
+    private static String getAccessAttribute(int accessLevel) {
+
+        switch (accessLevel) {
+            case PsiUtil.ACCESS_LEVEL_PRIVATE:
+                return "(access = " + LOMBOK_PRIVATE_ACCESS + ")";
+            case PsiUtil.ACCESS_LEVEL_PACKAGE_LOCAL:
+                return "(access = " + LOMBOK_PACKAGE_ACCESS + ")";
+            case PsiUtil.ACCESS_LEVEL_PROTECTED:
+                return "(access = " + LOMBOK_PROTECTED_ACCESS + ")";
+            default:
+                return LOMBOK_PUBLIC_ACCESS;
+        }
+    }
+}
+----------------------------------------------------------------------------------------
+import java.util.Arrays;
+
+/**
+ * <br/>
+ * <p/>
+ * <p/>
+ *
+ * @author Charles Prud'homme
+ * @since 17 aug 2010
+ */
+public class StatisticUtils {
+
+    protected StatisticUtils() {
+    }
+
+    public static int sum(int... values) {
+        int sum = 0;
+        for (int i = 0; i < values.length; i++) {
+            sum += values[i];
+        }
+        return sum;
+    }
+
+    public static long sum(long... values) {
+        long sum = 0L;
+        for (int i = 0; i < values.length; i++) {
+            sum += values[i];
+        }
+        return sum;
+    }
+
+    public static float sum(float... values) {
+        float sum = 0.0f;
+        for (int i = 0; i < values.length; i++) {
+            sum += values[i];
+        }
+        return sum;
+    }
+
+    public static double sum(double... values) {
+        double sum = 0.0;
+        for (int i = 0; i < values.length; i++) {
+            sum += values[i];
+        }
+        return sum;
+    }
+
+    public static double mean(int... values) {
+        return sum(values) / values.length;
+    }
+
+    public static float mean(long... values) {
+        return sum(values) / values.length;
+    }
+
+    public static double mean(float... values) {
+        return sum(values) / values.length;
+    }
+
+    public static double mean(double... values) {
+        return sum(values) / values.length;
+    }
+
+
+    public static double standarddeviation(int... values) {
+        double mean = mean(values);
+        double[] psd = new double[values.length];
+        for (int i = 0; i < values.length; i++) {
+            psd[i] = Math.pow(values[i] - mean, 2.0);
+        }
+        return Math.sqrt(mean(psd));
+    }
+
+    public static double standarddeviation(long... values) {
+        double mean = mean(values);
+        double[] psd = new double[values.length];
+        for (int i = 0; i < values.length; i++) {
+            psd[i] = Math.pow(values[i] - mean, 2.0);
+        }
+        return Math.sqrt(mean(psd));
+    }
+
+    public static float standarddeviation(float... values) {
+        double mean = mean(values);
+        double[] psd = new double[values.length];
+        for (int i = 0; i < values.length; i++) {
+            psd[i] = Math.pow(values[i] - mean, 2.0);
+        }
+        return (float) Math.sqrt(mean(psd));
+    }
+
+    public static int[] prepare(int... values) {
+        Arrays.sort(values);
+        int[] back = new int[values.length - 2];
+        System.arraycopy(values, 1, back, 0, back.length);
+        return back;
+    }
+
+    public static long[] prepare(long... values) {
+        Arrays.sort(values);
+        long[] back = new long[values.length - 2];
+        System.arraycopy(values, 1, back, 0, back.length);
+        return back;
+    }
+
+    public static float[] prepare(float... values) {
+        Arrays.sort(values);
+        float[] back = new float[values.length - 2];
+        System.arraycopy(values, 1, back, 0, back.length);
+        return back;
+    }
+
+    public static long binomialCoefficients(int n, int k) {
+
+        long Ank = 1;
+
+        if (k < 0 || k > n) {
+            return 0;
+        }
+
+        long i = n - k + 1;
+        while (i <= n && Ank >= 0) {
+            Ank = Ank * i;
+            i = i + 1;
+        }
+        if (Ank < 0) return Integer.MAX_VALUE;
+        return Ank;
+    }
+
+}
+----------------------------------------------------------------------------------------
+import org.springframework.validation.Errors;
+import org.springframework.validation.ValidationUtils;
+import org.springframework.validation.Validator;
+
+import br.com.casadocodigo.loja.models.Produto;
+
+public class ProdutoValidation implements Validator {
+
+    @Override
+    public boolean supports(Class<?> clazz) {
+        return Produto.class.isAssignableFrom(clazz);
+    }
+
+    @Override
+    public void validate(Object target, Errors errors) {
+        ValidationUtils.rejectIfEmpty(errors, "titulo", "field.required");
+        ValidationUtils.rejectIfEmpty(errors, "descricao", "field.required");
+        
+        Produto produto = (Produto) target;
+        if(produto.getPaginas() <= 0) {
+            errors.rejectValue("paginas", "field.required");
+        }
+    }
+}
+----------------------------------------------------------------------------------------
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
+
+public class ServletInitializer extends SpringBootServletInitializer {
+
+	@Override
+	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+		return application.sources(RouteprojectApplication.class);
+	}
+
+}
+
+----------------------------------------------------------------------------------------
+# initialize project for submodules usage
+git submodule init
+
+# add submodule
+git submodule add https://github.com/OleksandrKucherenko/autoproxy.git modules/autoproxy
+
+# update project recursively and pull all submodules
+git submodule update --init --recursive
+
+git submodule update --init
+# if there are nested submodules:
+git submodule update --init --recursive
+
+# download up to 8 submodules at once
+git submodule update --init --recursive --jobs 8
+git clone --recursive --jobs 8 [URL to Git repo]
+# short version
+git submodule update --init --recursive -j 8
+
+# pull all changes in the repo including changes in the submodules
+git pull --recurse-submodules
+
+# pull all changes for the submodules
+git submodule update --remote
+
+git submodule foreach 'git reset --hard'
+# including nested submodules
+git submodule foreach --recursive 'git reset --hard'
+
+
+git submodule deinit -f — mymodule
+
+rm -rf .git/modules/mymodule
+
+git rm -f mymodule
+----------------------------------------------------------------------------------------
+/*
+--jdbc:postgresql://localhost:5432/sampledb
+--PostgreSQL Password for database superuser
+--PostgreSQL Port
+--5432
+postgres
+*********************
+*/
+
+DROP DATABASE IF EXISTS hibernatedb;
+
+CREATE DATABASE hibernatedb;
+
+-- \connect hibernatedb;
+
+DROP TABLE IF EXISTS users;
+CREATE TABLE users
+(
+    id SERIAL NOT NULL,
+    username VARCHAR(50) NOT NULL, 
+    login_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    login_time TIME NOT NULL DEFAULT CURRENT_TIME,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,    
+    CONSTRAINT pk_id PRIMARY KEY(id),
+    CONSTRAINT idx_username UNIQUE(username)    
+);
+
+SELECT * FROM users;
+
+/*
+INSERT INTO users(username, login_date, login_time, created_at, updated_at)
+VALUES('Foo', '2016-11-06', '10:49:35', '2016-11-06 10:49:35.0', '2016-11-06 10:49:35.0');
+SELECT * FROM users;
+*/
+----------------------------------------------------------------------------------------
+<dependency>
+	<groupId>com.github.wnameless.json</groupId>
+	<artifactId>json-bean-populator</artifactId>
+	<version>0.3.0</version>
+</dependency>
+
+<dependency>
+    <groupId>io.github.graphql-java</groupId>
+    <artifactId>graphql-java-annotations</artifactId>
+    <version>7.2.1</version>
+</dependency>
+#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+#  EXCEPTION_ACCESS_VIOLATION (0xc0000005) at pc=0x0000000075e90940, pid=6788, tid=0x0000000000004358
+#
+# JRE version: Java(TM) SE Runtime Environment (8.0_221-b11) (build 1.8.0_221-b11)
+# Java VM: Java HotSpot(TM) 64-Bit Server VM (25.221-b11 mixed mode windows-amd64 compressed oops)
+# Problematic frame:
+# V  [jvm.dll+0xb0940]
+#
+# Failed to write core dump. Minidumps are not enabled by default on client versions of Windows
+#
+# An error report file with more information is saved as:
+# C:\Users\Alex\Documents\pem-message\common2\hs_err_pid6788.log
+#
+# If you would like to submit a bug report, please visit:
+#   http://bugreport.java.com/bugreport/crash.jsp
+#
+
+Process finished with exit code 1
+----------------------------------------------------------------------------------------
+import com.xcar.model.DTO.BankslipDTO;
+import com.xcar.model.DTO.BankslipListDTO;
+import com.xcar.model.entity.Bankslip;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Mappings;
+import org.mapstruct.ReportingPolicy;
+
+import java.util.List;
+
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface BankslipMapper {
+
+    @Mappings({
+            @Mapping(source = "id", target = "id"),
+            @Mapping(source = "due_date", target = "due_date"),
+            @Mapping(source = "total_in_cents", target = "total_in_cents"),
+            @Mapping(source = "customer", target = "customer")
+    })
+    BankslipListDTO toListDto(Bankslip bankslip);
+    List<BankslipListDTO> toListBankslipDTO(List<Bankslip> bankslips);
+
+    /*@Mappings({
+            @Mapping(source = "due_date", target = "due_date"),
+            @Mapping(source = "total_in_cents", target = "total_in_cents"),
+            @Mapping(source = "customer", target = "customer"),
+            @Mapping(source = "status", target = "status")
+    })
+    BankslipDTO toDTO(Bankslip bankslip);
+    List<BankslipDTO> toDTOlList(List<Bankslip> bankslips);*/
+
+    @Mappings({
+            @Mapping(source = "due_date", target = "due_date"),
+            @Mapping(source = "total_in_cents", target = "total_in_cents"),
+            @Mapping(source = "customer", target = "customer"),
+            @Mapping(source = "status", target = "status"),
+            @Mapping(target = "createdAt", source = ""),
+            @Mapping(target = "fine", source = ""),
+            @Mapping(target = "id", source = ""),
+            @Mapping(target = "updatedAT", source = "")
+    })
+    Bankslip toEntity(BankslipDTO bankslipDTO);
+}
+----------------------------------------------------------------------------------------
+protoc --java_out=. *.proto
+
+option java_outer_classname = "PbDemoProto";
+
+option optimize_for = SPEED;
+option java_generic_services = true;
+
+message MsgFields {
+
+}
+
+message Login_C2S {
+    required int64 timestamp = 1;
+}
+
+message Login_S2C {
+    required int64 timestamp = 1;
+}
+
+service LoginService {
+    rpc login (Login_C2S) returns (Login_S2C);
+}
+
+----------------------------------------------------------------------------------------
+
+    private static boolean isPowerOfTwo(int val) {
+        return (val & -val) == val;
+    }
+----------------------------------------------------------------------------------------
+/**
+ * @author teaey(xiaofei.wxf)
+ * @since 1.0.3
+ */
+public enum ApnsGateway {
+    DEVELOPMENT("gateway.sandbox.push.apple.com", 2195),
+    PRODUCTION("gateway.push.apple.com", 2195),
+    RESTFUL_DEVELOPMENT("api.development.push.apple.com", 443),
+    RESTFUL_PRODUCTION("api.push.apple.com", 443),
+    RESTFUL_DEVELOPMENT_BAK("api.development.push.apple.com", 2197),
+    RESTFUL_PRODUCTION_BAK("api.push.apple.com", 2197);
+    private final String host;
+    private final int port;
+
+    ApnsGateway(String host, int port) {
+        this.host = host;
+        this.port = port;
+    }
+
+    public String host() {
+        return this.host;
+    }
+
+    public int port() {
+        return this.port;
+    }
+}
+----------------------------------------------------------------------------------------
+    @Bean
+    public Config hazelcastConfig() {
+        return new Config().setProperty("hazelcast.jmx", "true")
+                           .addMapConfig(new MapConfig("spring-boot-admin-application-eventstore").setBackupCount(1)
+                                                                                                  .setEvictionPolicy(
+                                                                                                          EvictionPolicy.NONE))
+                           .addListConfig(new ListConfig("spring-boot-admin-event-eventstore").setBackupCount(1)
+                                                                                              .setMaxSize(1000));
+    }
+----------------------------------------------------------------------------------------
+/**
+ *  Welcome to your gulpfile!
+ *  The gulp tasks are split into several files in the gulp directory
+ *  because putting it all here was too long
+ */
+
+'use strict';
+
+var gulp = require('gulp');
+var wrench = require('wrench');
+
+/**
+ *  This will load all js or coffee files in the gulp directory
+ *  in order to load all gulp tasks
+ */
+wrench.readdirSyncRecursive('./gulp').filter(function(file) {
+  return (/\.(js|coffee)$/i).test(file);
+}).map(function(file) {
+  require('./gulp/' + file);
+});
+
+
+/**
+ *  Default task clean temporaries directories and launch the
+ *  main optimization build task
+ */
+gulp.task('default', ['clean'], function () {
+  gulp.start('build');
+});
+----------------------------------------------------------------------------------------
+#!/bin/bash
+if [ $# -ne 3 ]
+then
+  echo "Usage: `basename $0` <lastName> <firstName> <birthday>"
+  exit 1
+fi
+
+curl -i \
+    -v \
+    -S \
+    -s \
+    -H "Content-Type:application/json" \
+    -H "Transfer-Encoding: chunked" \
+    -X POST \
+    -d "{ \"lastName\": \"$1\", \"firstName\":\"$2\", \"birthday\": \"$3\" }" \
+    "http://127.0.0.1:9090/prototype/api/persons/create"
+
+echo ""
+echo ""
+----------------------------------------------------------------------------------------
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.treeleafj.xdoc.filter.ClassFilter;
+
+/**
+ * Created by leaf on 2017/4/3 0003.
+ */
+public class SpringClassFilter implements ClassFilter {
+
+    @Override
+    public boolean filter(Class<?> classz) {
+        if (classz.getAnnotation(RequestMapping.class) != null
+                || classz.getAnnotation(Controller.class) != null
+                || classz.getAnnotation(RestController.class) != null) {
+            return true;
+        }
+        return false;
+    }
+}
+----------------------------------------------------------------------------------------
+import io.pebbletemplates.benchmark.model.Stock;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
+
+@Fork(5)
+@Warmup(iterations = 5, time = 1)
+@Measurement(iterations = 10, time = 1)
+@BenchmarkMode(Mode.Throughput)
+@OutputTimeUnit(TimeUnit.SECONDS)
+@State(Scope.Benchmark)
+public class BaseBenchmark {
+
+    protected Map<String, Object> getContext() {
+        Map<String, Object> context = new HashMap<>();
+        context.put("items", Stock.dummyItems());
+        return context;
+    }
+
+}
+----------------------------------------------------------------------------------------
+    @Override
+    protected Filter[] getServletFilters() {
+        CharacterEncodingFilter encodingFilter = new CharacterEncodingFilter();
+        encodingFilter.setEncoding("UTF-8");
+        encodingFilter.setForceEncoding(true);
+
+        return new Filter[] { encodingFilter };
+    }
+
 ----------------------------------------------------------------------------------------
 	private static class TokenInfoCondition extends SpringBootCondition {
 

@@ -4129,6 +4129,1924 @@ interface ArrayType<T> {
     }
 }
 ==============================================================================================================
+branches:
+  only:
+  - master
+  - /^(\d+\.){2}(\d+){1}(\.[a-zA-Z\d]+)?$/
+  - hawkular-1275
+==============================================================================================================
+<?xml version='1.0' encoding='utf-8'?>
+<Context>
+    <WatchedResource>WEB-INF/web.xml</WatchedResource>
+ 
+ 
+ 
+    <Resource
+            factory="org.apache.tomcat.jdbc.pool.DataSourceFactory"
+            name="jdbc/tomcatDataSource"
+            auth="Container"
+            type="javax.sql.DataSource"
+            initialSize="1"
+            maxActive="20"
+            maxIdle="3"
+            minIdle="1"
+            maxWait="5000"
+            username="josediaz"
+            password="josediaz"
+            driverClassName="org.postgresql.Driver"
+            validationQuery="SELECT 'OK'"
+            testWhileIdle="true"
+            testOnBorrow="true"
+            numTestsPerEvictionRun="5"
+            timeBetweenEvictionRunsMillis="30000"
+            minEvictableIdleTimeMillis="60000"
+            url="jdbc:postgresql://localhost:5432/uaiContacts" />
+ 
+</Context>
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.integration.dsl.IntegrationFlow;
+import org.springframework.integration.dsl.IntegrationFlows;
+import org.springframework.integration.dsl.SourcePollingChannelAdapterSpec;
+import org.springframework.integration.dsl.kafka.Kafka;
+import org.springframework.integration.dsl.kafka.KafkaHighLevelConsumerMessageSourceSpec;
+import org.springframework.integration.dsl.support.Consumer;
+import org.springframework.integration.kafka.support.ZookeeperConnect;
+
+import de.codecentric.ebss.service.OrderEntryService;
+
+@Configuration
+public class CommoditiesReservationConsumerConfiguration {
+
+	private Log log = LogFactory.getLog(getClass());
+
+	@Autowired 
+	private OrderEntryService orderEntryService;
+	
+	@Autowired
+	private KafkaConfig kafkaConfig;
+
+	@Bean
+	IntegrationFlow consumer() {
+
+		log.info("starting consumer..");
+
+		KafkaHighLevelConsumerMessageSourceSpec messageSourceSpec = Kafka
+				.inboundChannelAdapter(
+						new ZookeeperConnect(this.kafkaConfig
+								.getZookeeperAddress()))
+				.consumerProperties(
+						props -> props.put("auto.offset.reset", "smallest")
+								.put("auto.commit.interval.ms", "100"))
+				.addConsumer(
+						"myGroup",
+						metadata -> metadata
+								.consumerTimeout(100)
+								.topicStreamMap(
+										m -> m.put(this.kafkaConfig.getTopic(),
+												1)).maxMessages(1)
+								.valueDecoder(String::new));
+
+		Consumer<SourcePollingChannelAdapterSpec> endpointConfigurer = e -> e.poller(p -> p.fixedDelay(100));
+
+		return IntegrationFlows
+				.from(messageSourceSpec, endpointConfigurer)
+				.<Map<String, ConcurrentHashMap<String, String>>> handle(
+						(payload, headers) -> {
+							payload.entrySet().forEach(
+									e -> orderEntryService.createOrderEntryFromJson(e.getValue()));
+							return null;
+						}).get();
+	}
+}
+==============================================================================================================
+import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.solr.core.query.result.FacetPage;
+import org.springframework.data.solr.core.query.result.HighlightPage;
+import org.springframework.data.solr.repository.Boost;
+import org.springframework.data.solr.repository.Facet;
+import org.springframework.data.solr.repository.Highlight;
+import org.springframework.data.solr.repository.Query;
+import org.springframework.data.solr.repository.SolrCrudRepository;
+
+import com.mscharhag.solr.document.Book;
+
+public interface BookRepository extends SolrCrudRepository<Book, String> {
+
+	List<Book> findByName(String name);
+	
+	Page<Book> findByNameOrDescription(@Boost(2) String name, String description, Pageable pageable);
+
+	@Query("name:?0")
+	@Facet(fields = { "categories_txt" }, limit = 5)
+	FacetPage<Book> findByNameAndFacetOnCategories(String name, Pageable page);
+	
+	@Highlight(prefix = "<highlight>", postfix = "</highlight>")
+	HighlightPage<Book> findByDescription(String description, Pageable pageable);
+	
+}
+
+import org.apache.solr.client.solrj.SolrServer;
+import org.apache.solr.client.solrj.impl.HttpSolrServer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.data.solr.core.SolrTemplate;
+import org.springframework.data.solr.repository.config.EnableSolrRepositories;
+
+@ComponentScan
+@EnableSolrRepositories("com.mscharhag.solr.repository")
+public class Application {
+
+	@Bean
+	public SolrServer solrServer() {
+		return new HttpSolrServer("http://localhost:8983/solr");
+	}
+
+	@Bean
+	public SolrTemplate solrTemplate(SolrServer server) throws Exception {
+		return new SolrTemplate(server);
+	}
+}
+==============================================================================================================
+    /**
+     * This inner class configures a WebSecurityConfigurerAdapter instance for
+     * the Spring Actuator web service context paths.
+     * 
+     * @author Matt Warman
+     */
+    @Configuration
+    @Order(2)
+    public static class ActuatorWebSecurityConfigurerAdapter
+            extends WebSecurityConfigurerAdapter {
+
+        @Override
+        protected void configure(HttpSecurity http) throws Exception {
+
+            // @formatter:off
+            
+            http
+              .antMatcher("/actuators/**")
+                .authorizeRequests()
+                  .anyRequest().hasRole("SYSADMIN")
+              .and()
+              .httpBasic()
+              .and()
+              .sessionManagement()
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+              .and()
+              .csrf()
+                .disable();
+            
+            // @formatter:on
+
+        }
+
+    }
+	
+	import java.util.Collection;
+import java.util.Date;
+
+import org.example.ws.model.Role;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+/**
+ * The RoleRepository interface is a Spring Data JPA data repository for Role
+ * entities. The RoleRepository provides all the data access behaviors exposed
+ * by <code>JpaRepository</code> and additional custom behaviors may be defined
+ * in this interface.
+ * 
+ * @author Matt Warman
+ */
+@Repository
+public interface RoleRepository extends JpaRepository<Role, Long> {
+
+    /**
+     * Query for a collection of Role entities by the effectiveAt and expiresAt
+     * attribute values. Order the collection by the value of the ordinal
+     * attribute.
+     * 
+     * Uses the Query Method approach to search the database.
+     * 
+     * @param effectiveAt A Date effectiveAt attribute value.
+     * @param expiresAt A Date expiresAt attribute value.
+     * @return A Collection of Role entity model classes.
+     */
+    Collection<Role> findByEffectiveAtBeforeAndExpiresAtAfterOrExpiresAtNullOrderByOrdinalAsc(
+            Date effectiveAt, Date expiresAt);
+
+    /**
+     * Query for a collection of Role entities by the effectiveAt and expiresAt
+     * attribute values. Order the collection by the value of the ordinal
+     * attribute.
+     * 
+     * Uses a Query annotated JPQL statement to search the database.
+     *
+     * @param effectiveAt A Date effectiveAt attribute value.
+     * @return A Collection of Role entity model classes.
+     */
+    @Query("SELECT r FROM Role r WHERE r.effectiveAt <= :effectiveAt AND (r.expiresAt IS NULL OR r.expiresAt > :effectiveAt) ORDER BY r.ordinal ASC")
+    Collection<Role> findAllEffective(@Param("effectiveAt") Date effectiveAt);
+
+    /**
+     * Query for a single Role entity by the code, effectiveAt, and expiresAt
+     * attribute values.
+     * 
+     * Uses the Query Method approach to search the database.
+     * 
+     * @param code A String code attribute value.
+     * @param effectiveAt A Date effectiveAt attribute value.
+     * @param expiresAt A Date expiresAt attribute value.
+     * @return A Role object or <code>null</code> if not found.
+     */
+    Role findByCodeAndEffectiveAtBeforeAndExpiresAtAfterOrExpiresAtNull(
+            String code, Date effectiveAt, Date expiresAt);
+
+    /**
+     * Query for a single Role entity by the code, effectiveAt, and expiresAt
+     * attribute values.
+     * 
+     * Uses a Query annotated JPQL statement to search the database.
+     * 
+     * @param code A String code attribute value.
+     * @param effectiveAt A Date effectiveAt attribute value.
+     * @return A Role object or <code>null</code> if not found.
+     */
+    @Query("SELECT r FROM Role r WHERE r.code = :code AND r.effectiveAt <= :effectiveAt AND (r.expiresAt IS NULL OR r.expiresAt > :effectiveAt)")
+    Role findByCodeAndEffective(@Param("code") String code,
+            @Param("effectiveAt") Date effectiveAt);
+
+}
+==============================================================================================================
+import javax.imageio.IIOImage;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageOutputStream;
+
+import org.apache.commons.io.FilenameUtils;
+import org.springframework.util.Assert;
+
+import com.google.common.io.Files;
+
+public class ImageHelper {
+
+	/** 背景颜色 */
+	private static final Color BACKGROUND_COLOR = Color.white;
+
+	/** 目标图片品质(取值范围: 0 - 100) */
+	private static final int DEST_QUALITY = 88;
+
+	public static void zoom(File srcFile, File destFile, int destWidth, int destHeight) {
+		Assert.notNull(srcFile);
+		Assert.notNull(destFile);
+		Assert.state(destWidth > 0);
+		Assert.state(destHeight > 0);
+
+		Graphics2D graphics2D = null;
+		ImageOutputStream imageOutputStream = null;
+		ImageWriter imageWriter = null;
+		try {
+			BufferedImage srcBufferedImage = ImageIO.read(srcFile);
+			int srcWidth = srcBufferedImage.getWidth();
+			int srcHeight = srcBufferedImage.getHeight();
+			
+			if(srcWidth < destWidth || srcHeight < destHeight) {
+				Files.copy(srcFile, destFile);
+				return;
+			}
+			
+			int width = destWidth;
+			int height = destHeight;
+			if (srcHeight >= srcWidth) {
+				width = (int) Math.round(((destHeight * 1.0 / srcHeight) * srcWidth));
+			} else {
+				height = (int) Math.round(((destWidth * 1.0 / srcWidth) * srcHeight));
+			}
+			BufferedImage destBufferedImage = new BufferedImage(destWidth, destHeight, BufferedImage.TYPE_INT_RGB);
+			graphics2D = destBufferedImage.createGraphics();
+			graphics2D.setBackground(BACKGROUND_COLOR);
+			graphics2D.clearRect(0, 0, destWidth, destHeight);
+			graphics2D.drawImage(srcBufferedImage.getScaledInstance(width, height, Image.SCALE_SMOOTH),
+					(destWidth / 2) - (width / 2), (destHeight / 2) - (height / 2), null);
+
+			imageOutputStream = ImageIO.createImageOutputStream(destFile);
+			imageWriter = ImageIO.getImageWritersByFormatName(FilenameUtils.getExtension(destFile.getName())).next();
+			imageWriter.setOutput(imageOutputStream);
+			ImageWriteParam imageWriteParam = imageWriter.getDefaultWriteParam();
+			imageWriteParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+			imageWriteParam.setCompressionQuality((float) (DEST_QUALITY / 100.0));
+			imageWriter.write(null, new IIOImage(destBufferedImage, null, null), imageWriteParam);
+			imageOutputStream.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			if (graphics2D != null) {
+				graphics2D.dispose();
+			}
+			if (imageWriter != null) {
+				imageWriter.dispose();
+			}
+			if (imageOutputStream != null) {
+				try {
+					imageOutputStream.close();
+				} catch (IOException e) {
+				}
+			}
+		}
+
+	}
+
+}
+
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.imageio.ImageIO;
+
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.EncodeHintType;
+import com.google.zxing.MultiFormatWriter;
+import com.google.zxing.common.BitMatrix;
+
+public class QrCodeHelper {
+	public static void writeToFile(String contents, int width, int height, File file) {
+		Map<EncodeHintType, Object> hints = new HashMap<>();
+		hints.put(EncodeHintType.CHARACTER_SET, "utf-8");
+
+		try {
+			BitMatrix bitMatrix = new MultiFormatWriter().encode(contents, BarcodeFormat.QR_CODE, width, height, hints);
+			writeToFile(bitMatrix, "png", file);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static void writeToStream(String contents, int width, int height, OutputStream outputStream) {
+		Map<EncodeHintType, Object> hints = new HashMap<>();
+		hints.put(EncodeHintType.CHARACTER_SET, "utf-8");
+
+		try {
+			BitMatrix bitMatrix = new MultiFormatWriter().encode(contents, BarcodeFormat.QR_CODE, width, height, hints);
+			writeToStream(bitMatrix, "png", outputStream);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private static final int BLACK = 0xFF000000;
+	private static final int WHITE = 0xFFFFFFFF;
+
+	private static BufferedImage toBufferedImage(BitMatrix matrix) {
+		int width = matrix.getWidth();
+		int height = matrix.getHeight();
+		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		for (int x = 0; x < width; x++) {
+			for (int y = 0; y < height; y++) {
+				image.setRGB(x, y, matrix.get(x, y) ? BLACK : WHITE);
+			}
+		}
+		return image;
+	}
+
+	private static void writeToFile(BitMatrix matrix, String format, File file) throws IOException {
+		BufferedImage image = toBufferedImage(matrix);
+		if (!ImageIO.write(image, format, file)) {
+			throw new IOException("Could not write an image of format " + format + " to " + file);
+		}
+	}
+
+	private static void writeToStream(BitMatrix matrix, String format, OutputStream stream) throws IOException {
+		BufferedImage image = toBufferedImage(matrix);
+		if (!ImageIO.write(image, format, stream)) {
+			throw new IOException("Could not write an image of format " + format);
+		}
+	}
+}
+==============================================================================================================
+import java.util.Collection;
+import java.util.Set;
+
+import org.apache.shiro.cache.Cache;
+import org.apache.shiro.cache.CacheException;
+import org.infinispan.commons.api.BasicCache;
+import org.springframework.util.Assert;
+
+public class ShiroCache<K, V> implements Cache<K, V> {
+
+	private final BasicCache<K, V> nativeCache;
+
+	public ShiroCache(final BasicCache<K, V> nativeCache) {
+		Assert.notNull(nativeCache, "A non-null Infinispan cache implementation is required");
+		this.nativeCache = nativeCache;
+	}
+
+	@Override
+	public V get(K key) throws CacheException {
+		return this.nativeCache.get(key);
+	}
+
+	@Override
+	public V put(K key, V value) throws CacheException {
+		return this.nativeCache.put(key, value);
+	}
+
+	@Override
+	public V remove(K key) throws CacheException {
+		return this.nativeCache.remove(key);
+	}
+
+	@Override
+	public void clear() throws CacheException {
+		this.nativeCache.clear();
+	}
+
+	@Override
+	public int size() {
+		return this.nativeCache.size();
+	}
+
+	@Override
+	public Set<K> keys() {
+		return this.nativeCache.keySet();
+	}
+
+	@Override
+	public Collection<V> values() {
+		return this.nativeCache.values();
+	}
+
+}
+==============================================================================================================
+import org.apache.shiro.cache.CacheManager;
+import org.apache.shiro.mgt.RememberMeManager;
+import org.apache.shiro.mgt.SecurityManager;
+import org.apache.shiro.session.mgt.ExecutorServiceSessionValidationScheduler;
+import org.apache.shiro.session.mgt.SessionManager;
+import org.apache.shiro.session.mgt.SessionValidationScheduler;
+import org.apache.shiro.session.mgt.eis.EnterpriseCacheSessionDAO;
+import org.apache.shiro.session.mgt.eis.JavaUuidSessionIdGenerator;
+import org.apache.shiro.session.mgt.eis.SessionDAO;
+import org.apache.shiro.session.mgt.eis.SessionIdGenerator;
+import org.apache.shiro.spring.LifecycleBeanPostProcessor;
+import org.apache.shiro.web.mgt.CookieRememberMeManager;
+import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
+import org.apache.shiro.web.servlet.Cookie;
+import org.apache.shiro.web.servlet.SimpleCookie;
+import org.apache.shiro.web.session.mgt.DefaultWebSessionManager;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.config.MethodInvokingFactoryBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import com.whenling.module.security.shiro.cache.infinispan.ShiroCacheManager;
+
+/**
+ * 安全配置
+ * 
+ * @作者 孔祥溪
+ * @博客 http://ken.whenling.com
+ * @创建时间 2016年3月1日 下午7:08:55
+ */
+@Configuration
+public class SecurityConfiguration {
+
+	@Value("#{T(org.apache.shiro.codec.Base64).decode('asdqwe123')}")
+	private byte[] cipherKey;
+
+	@Bean
+	public SecurityManager securityManager() {
+		DefaultWebSecurityManager securityManager = new DefaultWebSecurityManager();
+		securityManager.setCacheManager(shiroCacheManager());
+//		securityManager.setSessionManager(sessionManager());
+//		securityManager.setRememberMeManager(rememberMeManager());
+		// securityManager.setRealm(databaseRealm());
+		return securityManager;
+	}
+
+	@Bean
+	public RememberMeManager rememberMeManager() {
+		CookieRememberMeManager rememberMeManager = new CookieRememberMeManager();
+		rememberMeManager.setCipherKey(cipherKey);
+		rememberMeManager.setCookie(rememberMeCookie());
+		return rememberMeManager;
+	}
+
+	// @Bean
+	// public Cookie sessionIdCookie() {
+	// SimpleCookie cookie = new SimpleCookie("sid");
+	// cookie.setMaxAge(-1);
+	// return cookie;
+	// }
+
+	@Bean
+	public Cookie rememberMeCookie() {
+		SimpleCookie cookie = new SimpleCookie("rememberMe");
+		cookie.setHttpOnly(true);
+		cookie.setMaxAge(31536000);
+		return cookie;
+	}
+
+	@Bean
+	public SessionManager sessionManager() {
+		DefaultWebSessionManager sessionManager = new DefaultWebSessionManager();
+		sessionManager.setGlobalSessionTimeout(1000 * 60 * 30);
+		sessionManager.setDeleteInvalidSessions(true);
+		sessionManager.setSessionValidationSchedulerEnabled(true);
+		SessionValidationScheduler sessionValidationScheduler = new ExecutorServiceSessionValidationScheduler(sessionManager);
+		sessionManager.setSessionValidationScheduler(sessionValidationScheduler);
+		sessionManager.setSessionDAO(sessionDAO());
+//		sessionManager.setSessionIdCookieEnabled(true);
+//		sessionManager.setSessionIdCookie(sessionIdCookie());
+		return sessionManager;
+	}
+
+	@Bean
+	public SessionDAO sessionDAO() {
+		EnterpriseCacheSessionDAO sessionDAO = new EnterpriseCacheSessionDAO();
+		sessionDAO.setActiveSessionsCacheName("sessionCache");
+		sessionDAO.setSessionIdGenerator(sessionIdGenerator());
+		return sessionDAO;
+	}
+
+	@Bean
+	public SessionIdGenerator sessionIdGenerator() {
+		JavaUuidSessionIdGenerator sessionIdGenerator = new JavaUuidSessionIdGenerator();
+		return sessionIdGenerator;
+	}
+
+	@Bean
+	public MethodInvokingFactoryBean setSecurityManager() {
+		MethodInvokingFactoryBean factoryBean = new MethodInvokingFactoryBean();
+		factoryBean.setStaticMethod("org.apache.shiro.SecurityUtils.setSecurityManager");
+		factoryBean.setArguments(new Object[] { securityManager() });
+		return factoryBean;
+	}
+
+	@Bean(name = "lifecycleBeanPostProcessor")
+	public LifecycleBeanPostProcessor lifecycleBeanPostProcessor() {
+		return new LifecycleBeanPostProcessor();
+	}
+
+	@Bean
+	public CacheManager shiroCacheManager() {
+		ShiroCacheManager shiroCacheManager = new ShiroCacheManager();
+		return shiroCacheManager;
+	}
+
+}
+==============================================================================================================
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+
+import com.google.common.io.Closeables;
+
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.JedisShardInfo;
+import redis.clients.jedis.Pipeline;
+import redis.clients.jedis.ShardedJedis;
+import redis.clients.jedis.ShardedJedisPipeline;
+import redis.clients.jedis.ShardedJedisPool;
+import redis.clients.jedis.Transaction;
+
+public class RedisExample {
+
+	public static void main(String[] args) {
+		new RedisExample().testNormal();
+	}
+
+	// 普通同步方式
+	public void testNormal() {// 12.526秒
+		Jedis jedis = new Jedis("120.25.241.144", 6379);
+		jedis.auth("b840fc02d52404542994");
+
+		long start = System.currentTimeMillis();
+		for (int i = 0; i < 1000; i++) {
+			jedis.set("n" + i, "n" + i);
+			System.out.println(i);
+		}
+		long end = System.currentTimeMillis();
+		System.out.println("共花费：" + (end - start) / 1000.0 + "秒");
+
+		jedis.disconnect();
+		try {
+			Closeables.close(jedis, true);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	// 事务方式(Transactions)
+	public void testTrans() {// 0.304秒
+		Jedis jedis = new Jedis("120.25.241.144", 6379);
+		jedis.auth("b840fc02d52404542994");
+
+		long start = System.currentTimeMillis();
+		Transaction tx = jedis.multi();
+		for (int i = 0; i < 1000; i++) {
+			tx.set("n" + i, "n" + i);
+			System.out.println(i);
+		}
+		tx.exec();
+		long end = System.currentTimeMillis();
+		System.out.println("共花费：" + (end - start) / 1000.0 + "秒");
+
+		jedis.disconnect();
+		try {
+			Closeables.close(jedis, true);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	// 管道(Pipelining)
+	public void testPipelined() {// 0.076秒
+		Jedis jedis = new Jedis("120.25.241.144", 6379);
+		jedis.auth("b840fc02d52404542994");
+
+		long start = System.currentTimeMillis();
+		Pipeline pipeline = jedis.pipelined();
+		for (int i = 0; i < 1000; i++) {
+			pipeline.set("n" + i, "n" + i);
+			System.out.println(i);
+		}
+		pipeline.syncAndReturnAll();
+		long end = System.currentTimeMillis();
+		System.out.println("共花费：" + (end - start) / 1000.0 + "秒");
+
+		jedis.disconnect();
+		try {
+			Closeables.close(jedis, true);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	// 管道中调用事务
+	public void testCombPipelineTrans() {// 0.099秒
+		Jedis jedis = new Jedis("120.25.241.144", 6379);
+		jedis.auth("b840fc02d52404542994");
+
+		long start = System.currentTimeMillis();
+		Pipeline pipeline = jedis.pipelined();
+		pipeline.multi();
+		for (int i = 0; i < 1000; i++) {
+			pipeline.set("n" + i, "n" + i);
+			System.out.println(i);
+		}
+		pipeline.exec();
+		pipeline.syncAndReturnAll();
+		long end = System.currentTimeMillis();
+		System.out.println("共花费：" + (end - start) / 1000.0 + "秒");
+
+		jedis.disconnect();
+		try {
+			Closeables.close(jedis, true);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	// 分布式直连同步调用
+	public void testShardNormal() {// 13.619秒
+		JedisShardInfo jedis = new JedisShardInfo("120.25.241.144", 6379);
+		jedis.setPassword("b840fc02d52404542994");
+
+		List<JedisShardInfo> shards = Arrays.asList(jedis);
+		ShardedJedis sharding = new ShardedJedis(shards);
+
+		long start = System.currentTimeMillis();
+		for (int i = 0; i < 1000; i++) {
+			sharding.set("n" + i, "n" + i);
+			System.out.println(i);
+		}
+		long end = System.currentTimeMillis();
+		System.out.println("共花费：" + (end - start) / 1000.0 + "秒");
+
+		sharding.disconnect();
+		try {
+			Closeables.close(sharding, true);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	// 分布式直连异步调用
+	public void testShardPipelined() {// 0.127秒
+		JedisShardInfo jedis = new JedisShardInfo("120.25.241.144", 6379);
+		jedis.setPassword("b840fc02d52404542994");
+
+		List<JedisShardInfo> shards = Arrays.asList(jedis);
+		ShardedJedis sharding = new ShardedJedis(shards);
+		ShardedJedisPipeline pipeline = sharding.pipelined();
+
+		long start = System.currentTimeMillis();
+		for (int i = 0; i < 1000; i++) {
+			pipeline.set("n" + i, "n" + i);
+			System.out.println(i);
+		}
+		pipeline.syncAndReturnAll();
+		long end = System.currentTimeMillis();
+		System.out.println("共花费：" + (end - start) / 1000.0 + "秒");
+
+		sharding.disconnect();
+		try {
+			Closeables.close(sharding, true);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	// 分布式连接池同步调用
+	public void testShardSimplePool() {// 12.642秒
+		JedisShardInfo jedis = new JedisShardInfo("120.25.241.144", 6379);
+		jedis.setPassword("b840fc02d52404542994");
+
+		List<JedisShardInfo> shards = Arrays.asList(jedis);
+		ShardedJedisPool pool = new ShardedJedisPool(new JedisPoolConfig(), shards);
+
+		ShardedJedis sharding = pool.getResource();
+
+		long start = System.currentTimeMillis();
+		for (int i = 0; i < 1000; i++) {
+			sharding.set("n" + i, "n" + i);
+			System.out.println(i);
+		}
+		long end = System.currentTimeMillis();
+		System.out.println("共花费：" + (end - start) / 1000.0 + "秒");
+
+		sharding.disconnect();
+		pool.destroy();
+		try {
+			Closeables.close(sharding, true);
+			Closeables.close(pool, true);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	// 分布式连接池异步调用
+	public void testShardPipelinnedPool() {// 0.124秒
+		JedisShardInfo jedis = new JedisShardInfo("120.25.241.144", 6379);
+		jedis.setPassword("b840fc02d52404542994");
+
+		List<JedisShardInfo> shards = Arrays.asList(jedis);
+		ShardedJedisPool pool = new ShardedJedisPool(new JedisPoolConfig(), shards);
+
+		ShardedJedis sharding = pool.getResource();
+		ShardedJedisPipeline pipeline = sharding.pipelined();
+
+		long start = System.currentTimeMillis();
+		for (int i = 0; i < 1000; i++) {
+			pipeline.set("n" + i, "n" + i);
+			System.out.println(i);
+		}
+		pipeline.syncAndReturnAll();
+		long end = System.currentTimeMillis();
+		System.out.println("共花费：" + (end - start) / 1000.0 + "秒");
+
+		sharding.disconnect();
+		pool.destroy();
+
+		try {
+			Closeables.close(sharding, true);
+			Closeables.close(pool, true);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
+}
+==============================================================================================================
+import org.springframework.beans.factory.config.PlaceholderConfigurerSupport;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.ComponentScan.Filter;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+
+import com.whenling.module.base.config.ConfigurationPropertySourcesPlaceholderConfigurer;
+import com.whenling.module.base.config.StaticConfigurationSupplier;
+
+/**
+ * serlvet配置
+ * 
+ * @作者 孔祥溪
+ * @博客 http://ken.whenling.com
+ * @创建时间 2016年1月6日 上午12:00:05
+ */
+@Configuration
+@ComponentScan(basePackages = { "com.whenling" }, useDefaultFilters = false, includeFilters = { @Filter({ Controller.class }),
+		@Filter({ ServletSupport.class }) }, nameGenerator = FullBeanNameGenerator.class)
+@EnableWebMvc
+@EnableAspectJAutoProxy
+public class ServletConfiguration {
+
+	@Bean
+	public static PlaceholderConfigurerSupport placeholderConfigurer() {
+		return new ConfigurationPropertySourcesPlaceholderConfigurer(StaticConfigurationSupplier.getConfiguration());
+	}
+}
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.core.task.TaskExecutor;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+
+/**
+ * 根配置
+ * 
+ * @作者 孔祥溪
+ * @博客 http://ken.whenling.com
+ * @创建时间 2016年1月5日 下午11:59:47
+ */
+@Configuration
+@ComponentScan(basePackages = { "com.whenling" }, excludeFilters = {
+		@ComponentScan.Filter(value = Controller.class, type = FilterType.ANNOTATION),
+		@ComponentScan.Filter(value = EnableWebMvc.class, type = FilterType.ANNOTATION),
+		@ComponentScan.Filter(value = ServletSupport.class, type = FilterType.ANNOTATION) })
+@EnableAspectJAutoProxy
+public class RootConfiguration {
+
+	@Bean
+	public TaskExecutor taskExecutor() {
+		ThreadPoolTaskExecutor threadPoolTaskExecutor = new ThreadPoolTaskExecutor();
+		threadPoolTaskExecutor.setCorePoolSize(5);
+		threadPoolTaskExecutor.setMaxPoolSize(50);
+		threadPoolTaskExecutor.setQueueCapacity(1000);
+		threadPoolTaskExecutor.setKeepAliveSeconds(60);
+		return threadPoolTaskExecutor;
+	}
+}
+==============================================================================================================
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.web.util.WebUtils;
+
+/**
+ * web工具
+ * 
+ * @作者 孔祥溪
+ * @博客 http://ken.whenling.com
+ * @创建时间 2016年3月1日 下午4:49:04
+ */
+public class WebHelper {
+
+	static String phoneReg = "\\b(ip(hone|od)|android|opera m(ob|in)i" + "|windows (phone|ce)|blackberry"
+			+ "|s(ymbian|eries60|amsung)|p(laybook|alm|rofile/midp" + "|laystation portable)|nokia|fennec|htc[-_]"
+			+ "|mobile|up.browser|[1-4][0-9]{2}x[1-4][0-9]{2})\\b";
+	static String tableReg = "\\b(ipad|tablet|(Nexus 7)|up.browser" + "|[1-4][0-9]{2}x[1-4][0-9]{2})\\b";
+
+	// 移动设备正则匹配：手机端、平板
+	static Pattern phonePat = Pattern.compile(phoneReg, Pattern.CASE_INSENSITIVE);
+	static Pattern tablePat = Pattern.compile(tableReg, Pattern.CASE_INSENSITIVE);
+
+	public static boolean isAjax(HttpServletRequest request) {
+		return (request.getHeader("X-Requested-With") != null
+				&& "XMLHttpRequest".equals(request.getHeader("X-Requested-With").toString()));
+	}
+
+	/**
+	 * 判断是否是手机访问
+	 */
+	public static boolean isMobileAccess(HttpServletRequest request) {
+		boolean isFromMobile = false;
+		// 检查是否已经记录访问方式（移动端或pc端）
+		Object ua = WebUtils.getSessionAttribute(request, "ua");
+		if (null == ua) {
+			try {
+				String userAgent = request.getHeader("USER-AGENT").toLowerCase();
+				if (null == userAgent) {
+					userAgent = "";
+				}
+				isFromMobile = checkUserAgent(userAgent);
+				// 判断是否为移动端访问
+				if (isFromMobile) {
+					WebUtils.setSessionAttribute(request, "ua", "mobile");
+				} else {
+					WebUtils.setSessionAttribute(request, "ua", "pc");
+				}
+			} catch (Exception e) {
+			}
+		} else {
+			isFromMobile = ua.equals("mobile");
+		}
+
+		return isFromMobile;
+	}
+
+	private static boolean checkUserAgent(String userAgent) {
+		if (null == userAgent) {
+			userAgent = "";
+		}
+		// 匹配
+		Matcher matcherPhone = phonePat.matcher(userAgent);
+		Matcher matcherTable = tablePat.matcher(userAgent);
+		if (matcherPhone.find() || matcherTable.find()) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+}
+==============================================================================================================
+@Value("${hibernate.query.substitutions?:true 1, false 0}")
+jpaProperties.put("hibernate.cache.infinispan.cfg", hibernateCacheInfinispanCfg);
+jpaProperties.put("javax.persistence.sharedCache.mode", javaxPersistenceSharedCacheMode);
+==============================================================================================================
+<configuration>
+    <conversionRule conversionWord="a" converterClass="com.sap.core.js.logging.converter.ACHPatternConverter"/>
+    <conversionRule conversionWord="b" converterClass="com.sap.core.js.logging.converter.BundleNamePatternConverter"/>
+    <conversionRule conversionWord="s" converterClass="com.sap.core.js.logging.converter.DSRPatternConverter"/>
+    <conversionRule conversionWord="z" converterClass="com.sap.core.js.logging.converter.SpaceApplPatternConverter"/>
+    <conversionRule conversionWord="u" converterClass="com.sap.core.js.logging.converter.UserPatternConverter"/>
+    <conversionRule conversionWord="o" converterClass="com.sap.core.js.logging.converter.UTFOffsetPatternConverter"/>
+
+    <jmxConfigurator/>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="STDOUT"/>
+    </root>
+</configuration>
+==============================================================================================================
+@Override
+	public int compareTo(ProductImage o) {
+		return new CompareToBuilder().append(getSortNo(), o.getSortNo()).toComparison();
+	}
+	
+import java.util.List;
+import java.util.Set;
+
+import javax.persistence.EntityManager;
+import javax.persistence.FlushModeType;
+import javax.persistence.PersistenceContext;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+
+import com.whenling.extension.mall.product.model.Goods;
+import com.whenling.extension.mall.product.model.Product;
+
+public class ProductRepositoryImpl implements ProductRepositoryCustom {
+
+	@PersistenceContext
+	protected EntityManager entityManager;
+
+	@Override
+	public List<Product> findByGoodsWithExcludes(Goods goods, Set<Product> excludes) {
+		CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+		CriteriaQuery<Product> criteriaQuery = criteriaBuilder.createQuery(Product.class);
+		Root<Product> root = criteriaQuery.from(Product.class);
+		criteriaQuery.select(root);
+		Predicate restrictions = criteriaBuilder.conjunction();
+		if (goods != null) {
+			restrictions = criteriaBuilder.and(restrictions, criteriaBuilder.equal(root.get("goods"), goods));
+		}
+		if (excludes != null && !excludes.isEmpty()) {
+			restrictions = criteriaBuilder.and(restrictions, criteriaBuilder.not(root.in(excludes)));
+		}
+		criteriaQuery.where(restrictions);
+		return entityManager.createQuery(criteriaQuery).setFlushMode(FlushModeType.COMMIT).getResultList();
+	}
+
+}
+
+@Digits(integer = 12, fraction = 3)
+private static final String MOBILE_PHONE_NUMBER_PATTERN = "^$|^0{0,1}(13[0-9]|15[0-9]|14[0-9]|17[0-9]|18[0-9])[0-9]{8}$";
+==============================================================================================================
+import java.sql.SQLException;
+import java.util.Properties;
+
+import javax.sql.DataSource;
+
+import org.hibernate.SessionFactory;
+import org.hibernate.cfg.Environment;
+import org.hibernate.jpa.HibernateEntityManagerFactory;
+import org.hibernate.tool.hbm2ddl.MultipleLinesSqlCommandExtractor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.data.jpa.datatables.repository.DataTablesRepositoryFactoryBean;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+import org.springframework.orm.jpa.AbstractEntityManagerFactoryBean;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.transaction.PlatformTransactionManager;
+
+/**
+ * Spring JavaConfig configuration for general infrastructure.
+ */
+@Configuration
+@EnableJpaRepositories(repositoryFactoryBeanClass = DataTablesRepositoryFactoryBean.class,
+    basePackages = { "org.springframework.data.jpa.datatables.model", "org.springframework.data.jpa.datatables.repository" })
+public class Config {
+
+  @Bean
+  @Profile({"default", "h2"})
+  public DataSource dataSource_H2() throws SQLException {
+    return new EmbeddedDatabaseBuilder().setType(EmbeddedDatabaseType.H2).build();
+  }
+
+  @Bean
+  @Profile("mysql")
+  public DataSource dataSource_MySQL() throws SQLException {
+    DriverManagerDataSource dataSource = new DriverManagerDataSource();
+    dataSource.setDriverClassName("com.mysql.jdbc.Driver");
+    dataSource.setUrl("jdbc:mysql://127.0.0.1/test");
+    dataSource.setUsername("root");
+    dataSource.setPassword("");
+    return dataSource;
+  }
+
+  @Bean
+  @Profile("pgsql")
+  public DataSource dataSource_PostgreSQL() throws SQLException {
+    DriverManagerDataSource dataSource = new DriverManagerDataSource();
+    dataSource.setDriverClassName("org.postgresql.Driver");
+    dataSource.setUrl("jdbc:postgresql://127.0.0.1/test");
+    dataSource.setUsername("postgres");
+    dataSource.setPassword("");
+    return dataSource;
+  }
+
+  @Bean
+  public PlatformTransactionManager transactionManager() throws SQLException {
+    return new JpaTransactionManager();
+  }
+
+  @Bean
+  public AbstractEntityManagerFactoryBean entityManagerFactory(DataSource dataSource)
+      throws SQLException {
+
+    HibernateJpaVendorAdapter jpaVendorAdapter = new HibernateJpaVendorAdapter();
+    jpaVendorAdapter.setGenerateDdl(true);
+
+    LocalContainerEntityManagerFactoryBean bean = new LocalContainerEntityManagerFactoryBean();
+    bean.setJpaVendorAdapter(jpaVendorAdapter);
+    bean.setPackagesToScan(Config.class.getPackage().getName());
+    bean.setDataSource(dataSource);
+
+    return bean;
+  }
+
+  @Bean
+  public SessionFactory sessionFactory(AbstractEntityManagerFactoryBean entityManagerFactory)
+      throws SQLException {
+    return ((HibernateEntityManagerFactory) entityManagerFactory.getObject()).getSessionFactory();
+  }
+
+}
+==============================================================================================================
+var gulp = require('gulp');
+var url = require('url');
+var proxy = require('proxy-middleware');
+var templateCache = require('gulp-angular-templatecache');
+var browserSync = require("browser-sync").create();
+
+$ = require('gulp-load-plugins')();
+
+gulp.task('clean', function () {
+    return gulp.src(['dist/', '.tmp/'])
+            .pipe($.clean());
+});
+
+gulp.task('templates', function () {
+    return gulp.src('app/views/**/*.html')
+            .pipe(templateCache({module: 'exampleApp.templates', standalone: true}))
+            .pipe($.wrap('(function () {<%=contents%>}());'))
+            .pipe(gulp.dest('.tmp/scripts/'));
+});
+
+gulp.task('serve', ['templates'], function () {
+    var proxyOptions = url.parse('http://localhost:9000/api');
+    proxyOptions.route = '/api';
+    browserSync.init({
+        notify: false,
+        // Customize the Browsersync console logging prefix
+        logPrefix: 'WSK',
+        // Allow scroll syncing across breakpoints
+        //scrollElementMapping: ['main', '.mdl-layout'],
+        // Run as an https by uncommenting 'https: true'
+        // Note: this uses an unsigned certificate which on first access
+        //       will present a certificate warning in the browser.
+        // https: true,
+        server: {
+            baseDir: ['.tmp', 'app'],
+            middleware: [proxy(proxyOptions)]
+        },
+        port: 3000
+    });
+
+    gulp.watch(['app/**/*.html', 'app/styles/**/*.{scss,css}', 'app/scripts/**/*.js', 'app/images/**/*'], ['templates', browserSync.reload]);
+//  gulp.watch(['app/styles/**/*.{scss,css}'], ['styles', browserSync.reload]);
+//  gulp.watch(['app/scripts/**/*.js'], ['lint', 'scripts']);
+//  gulp.watch(['app/images/**/*'], browserSync.reload);
+});
+
+gulp.task('copy-fonts', function () {
+    gulp.src(
+            [
+                'bower_components/font-awesome/fonts/*.*',
+                'bower_components/bootstrap-material-design/fonts/*.*',
+                'bower_components/bootstrap/fonts/*.*'
+            ],
+            {cwd: 'app/'})
+            .pipe(gulp.dest('dist/fonts/'));
+});
+
+gulp.task('copy-images', function () {
+    gulp.src(['images/**'],
+            {cwd: 'app/'})
+            .pipe($.cache($.imagemin({optimizationLevel: 5, progressive: true, interlaced: true})))
+            .pipe(gulp.dest('dist/images/'));
+});
+
+gulp.task('copy-i18n', function () {
+    gulp.src(['i18n/**'],{cwd: 'app/'})
+            .pipe(gulp.dest('dist/i18n/'));
+});
+
+gulp.task('copy', ['copy-fonts', 'copy-images', 'copy-i18n'], function () {});
+
+//gulp.task('less', function () {
+//  return gulp.src(['bower_components/bootstrap/less/bootstrap.less', 'bower_components/font-awesome/less/font-awesome.less'])
+//    .pipe($.less())
+//    .pipe($.concat())
+//    .pipe(gulp.dest('./tmp/styles'));
+//});
+//
+//var sass = require('gulp-ruby-sass');
+//gulp.task('sass', function() {
+//    return sass('src/scss/style.scss', {style: 'compressed'})
+//        .pipe(rename({suffix: '.min'}))
+//        .pipe(gulp.dest('build/css'));
+//});
+
+gulp.task('usemin', ['copy'], function () {
+    return gulp.src('app/index.html')
+            .pipe($.usemin({
+                css: [
+                    $.minifyCss(),
+                    'concat',
+                    $.rev()
+                ],
+                appcss: [
+                    $.minifyCss(),
+                    $.rev()
+                ],
+                js: [
+                    $.uglify(),
+                    $.rev()
+                ],
+                ngjs: [
+                    $.stripDebug(),
+                    $.ngAnnotate(),
+                    //'concat'
+                    $.uglify(),
+                    $.rev()
+                ],
+                tpljs: [
+                    $.ngAnnotate(),
+                    $.uglify(),
+                    $.rev()
+                ]
+            }))
+            .pipe(gulp.dest('dist/'));
+});
+// Tell Gulp what to do when we type "gulp" into the terminal
+gulp.task('default', function (cb) {
+    $.sequence('clean', 'templates', 'usemin')(cb);
+});
+==============================================================================================================
+user  nginx;
+worker_processes  1;
+
+error_log  /var/log/nginx/error.log warn;
+pid        /var/run/nginx.pid;
+
+events {
+    worker_connections  1024;
+}
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log  /var/log/nginx/access.log  main;
+
+    sendfile        on;
+    #tcp_nopush     on;
+
+    keepalive_timeout  65;
+
+    gzip  on;
+
+    include /etc/nginx/conf.d/*.conf;
+
+    server {
+        listen 80;
+        server_name atseashop.com;
+        return 301 https://$host$request_uri;
+    }
+
+    server {
+        listen 443;
+        ssl on;
+        ssl_certificate /run/secrets/revprox_cert;
+        ssl_certificate_key /run/secrets/revprox_key;
+        server_name atseashop.com;
+        access_log /dev/stdout;
+        error_log /dev/stderr;
+
+        location / {
+            proxy_pass http://appserver:8080;
+        }
+    }
+}
+
+    @ElementCollection
+    @MapKeyColumn(name="productid")
+    @Column(name = "productsordered")
+    @CollectionTable(name="orderquantities", joinColumns=@JoinColumn(name="orderid"))
+    Map<Integer, Integer> productsOrdered = new HashMap<Integer, Integer>();
+==============================================================================================================
+    public static void main(String[] args) {
+        SpringApplication.run(MultipleSourceMain.class, args);
+    }
+
+
+    /**
+     * 第一个数据源
+     * @return 数据源实例
+     */
+    @Bean(name = "primaryDataSource")
+    @Qualifier("primaryDataSource")
+    @ConfigurationProperties(prefix = "spring.datasource.primary")
+    public DataSource primaryDataSource() {
+        return DataSourceBuilder.create().build();
+    }
+
+    /**
+     * 第二个数据源
+     * @return 数据源实例
+     */
+    @Bean(name = "secondaryDataSource")
+    @Qualifier("secondaryDataSource")
+    @Primary
+    @ConfigurationProperties(prefix = "spring.datasource.secondary")
+    public DataSource secondaryDataSource() {
+        return DataSourceBuilder.create().build();
+    }
+
+    /**
+     * 第一个JDBC模板
+     * @param dataSource dataSource
+     * @return JDBC模板
+     */
+    @Bean(name = "primaryJdbcTemplate")
+    public JdbcTemplate primaryJdbcTemplate(
+            @Qualifier("primaryDataSource") DataSource dataSource) {
+        return new JdbcTemplate(dataSource);
+    }
+
+    /**
+     * 第二个JDBC模板
+     * @param dataSource dataSource
+     * @return JDBC模板
+     */
+    @Bean(name = "secondaryJdbcTemplate")
+    public JdbcTemplate secondaryJdbcTemplate(
+            @Qualifier("secondaryDataSource") DataSource dataSource) {
+        return new JdbcTemplate(dataSource);
+    }
+	
+	import info.xiaomo.mybatis.domain.User;
+import org.apache.ibatis.annotations.*;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * @author : xiaomo
+ */
+@Mapper
+public interface UserMapper {
+
+    @Results({
+            @Result(property = "name", column = "name"),
+            @Result(property = "age", column = "age")
+    })
+
+    /**
+     * 根据名字查
+     * @param name
+     * @return user
+     */
+    @Select("SELECT * FROM USER WHERE NAME = #{name}")
+    User findByName(@Param("name") String name);
+
+    /**
+     * 插入
+     *
+     * @param name
+     * @param age
+     * @return
+     */
+    @Insert("INSERT INTO USER(NAME, AGE) VALUES(#{name}, #{age})")
+    int insert(@Param("name") String name, @Param("age") Integer age);
+
+    /**
+     * 查所有
+     *
+     * @return
+     */
+    @Select("SELECT * FROM USER WHERE 1=1")
+    List<User> findAll();
+
+    /**
+     * 更新
+     *
+     * @param user
+     */
+    @Update("UPDATE USER SET age=#{age} WHERE name=#{name}")
+    void update(User user);
+
+    /**
+     * 删除
+     *
+     * @param id
+     */
+    @Delete("DELETE FROM USER WHERE id =#{id}")
+    void delete(Long id);
+
+    /**
+     * 添加
+     *
+     * @param user
+     * @return
+     */
+    @Insert("INSERT INTO USER(name, age) VALUES(#{name}, #{age})")
+    int insertByUser(User user);
+
+    /**
+     * 添加
+     *
+     * @param map
+     * @return
+     */
+    @Insert("INSERT INTO user(name, age) VALUES(#{name,jdbcType=VARCHAR}, #{age,jdbcType=INTEGER})")
+    int insertByMap(Map<String, Object> map);
+
+}
+==============================================================================================================
+import com.hellokoding.auth.model.User;
+import com.hellokoding.auth.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.validation.Errors;
+import org.springframework.validation.ValidationUtils;
+import org.springframework.validation.Validator;
+
+@Component
+public class UserValidator implements Validator {
+    @Autowired
+    private UserService userService;
+
+    @Override
+    public boolean supports(Class<?> aClass) {
+        return User.class.equals(aClass);
+    }
+
+    @Override
+    public void validate(Object o, Errors errors) {
+        User user = (User) o;
+
+        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "username", "NotEmpty");
+        if (user.getUsername().length() < 6 || user.getUsername().length() > 32) {
+            errors.rejectValue("username", "Size.userForm.username");
+        }
+        if (userService.findByUsername(user.getUsername()) != null) {
+            errors.rejectValue("username", "Duplicate.userForm.username");
+        }
+
+        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "password", "NotEmpty");
+        if (user.getPassword().length() < 8 || user.getPassword().length() > 32) {
+            errors.rejectValue("password", "Size.userForm.password");
+        }
+
+        if (!user.getPasswordConfirm().equals(user.getPassword())) {
+            errors.rejectValue("passwordConfirm", "Diff.userForm.passwordConfirm");
+        }
+    }
+}
+==============================================================================================================
+    @Bean
+    public Jackson2ObjectMapperBuilder objectMapperBuilder(JsonComponentModule jsonComponentModule) {
+   
+        Jackson2ObjectMapperBuilder builder = new Jackson2ObjectMapperBuilder();
+            builder
+    //                .serializerByType(ZonedDateTime.class, new JsonSerializer<ZonedDateTime>() {
+    //                    @Override
+    //                    public void serialize(ZonedDateTime zonedDateTime, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
+    //                        jsonGenerator.writeString(DateTimeFormatter.ISO_ZONED_DATE_TIME.format(zonedDateTime));
+    //                    }
+    //                })
+                .serializationInclusion(JsonInclude.Include.NON_EMPTY)
+                .featuresToDisable(
+                        SerializationFeature.WRITE_DATES_AS_TIMESTAMPS,
+                        DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES,
+                        DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES
+                )
+                .featuresToEnable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+                .indentOutput(true)
+                .modulesToInstall(jsonComponentModule);
+    
+        return builder;
+    } 
+==============================================================================================================
+/**
+ * <p>Copyright (c) 2014 ZhaoQian.All Rights Reserved.</p>
+ * @author <a href="zhaoqianjava@foxmail.com">ZhaoQian</a>
+ */
+package org.zhaoqian.security.shiro.authc.token;
+
+import org.apache.shiro.authc.UsernamePasswordToken;
+
+/**
+ * @author Credo
+ * @date: 2014年8月1日
+ */
+public class CaptchaUsernamePasswordToken extends UsernamePasswordToken
+{
+
+	private static final long serialVersionUID = -4746028009681958929L;
+
+	private String kaptcha;
+
+	public CaptchaUsernamePasswordToken(String username, char[] password, boolean rememberMe, String host, String kaptcha)
+	{
+		super(username, password, rememberMe, host);
+		this.kaptcha = kaptcha;
+	}
+
+	public String getKaptcha()
+	{
+		return kaptcha;
+	}
+
+	public void setKaptcha(String kaptcha)
+	{
+		this.kaptcha = kaptcha;
+	}
+
+}
+==============================================================================================================
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.solr.core.query.Query.Operator;
+import org.springframework.data.solr.core.query.result.FacetPage;
+import org.springframework.data.solr.core.query.result.HighlightPage;
+import org.springframework.data.solr.repository.Facet;
+import org.springframework.data.solr.repository.Highlight;
+import org.springframework.data.solr.repository.Query;
+import org.springframework.data.solr.repository.SolrCrudRepository;
+import org.springframework.data.solr.showcase.product.model.Product;
+
+/**
+ * @author Christoph Strobl
+ */
+interface ProductRepository extends SolrCrudRepository<Product, String> {
+
+	@Highlight(prefix = "<b>", postfix = "</b>")
+	@Query(fields = { SearchableProductDefinition.ID_FIELD_NAME, SearchableProductDefinition.NAME_FIELD_NAME,
+			SearchableProductDefinition.PRICE_FIELD_NAME, SearchableProductDefinition.FEATURES_FIELD_NAME,
+			SearchableProductDefinition.AVAILABLE_FIELD_NAME }, defaultOperator = Operator.AND)
+	HighlightPage<Product> findByNameIn(Collection<String> names, Pageable page);
+
+	@Facet(fields = { SearchableProductDefinition.NAME_FIELD_NAME })
+	FacetPage<Product> findByNameStartsWith(Collection<String> nameFragments, Pageable pagebale);
+
+}
+==============================================================================================================
+		<executions>
+					<execution>
+						<goals>
+							<goal>test-process</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>target/generated-sources/java</outputDirectory>
+							<processor>com.querydsl.apt.jpa.JPAAnnotationProcessor</processor>
+						</configuration>
+					</execution>
+				</executions>
+==============================================================================================================
+import com.hazelcast.query.Predicate;
+
+import java.io.Serializable;
+import java.util.Map;
+
+import org.apache.shiro.session.Session;
+
+/**
+ * Hazelcast query predicate for Shiro session attributes.
+ */
+public class SessionAttributePredicate<T> implements
+        Predicate<Serializable, Session> {
+
+    private final String attributeName;
+    private final T attributeValue;
+
+    public SessionAttributePredicate(String attributeName, T attributeValue) {
+        this.attributeName = attributeName;
+        this.attributeValue = attributeValue;
+    }
+
+    public String getAttributeName() {
+        return attributeName;
+    }
+
+    public T getAttributeValue() {
+        return attributeValue;
+    }
+
+    @Override
+    public boolean apply(Map.Entry<Serializable, Session> sessionEntry) {
+        final T attribute = (T) sessionEntry.getValue().getAttribute(attributeName);
+        return attribute.equals(attributeValue);
+    }
+
+}
+==============================================================================================================
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.regions.Region;
+import com.amazonaws.regions.Regions;
+import com.google.common.base.Supplier;
+import io.searchbox.client.JestClientFactory;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.cloud.aws.core.region.RegionProvider;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.util.StringUtils;
+import vc.inreach.aws.request.AWSSigner;
+import vc.inreach.aws.request.AWSSigningRequestInterceptor;
+
+/**
+ * Jest Elasticsearch for signing request on AWS configuration.
+ * @author Julien Roy
+ */
+@Configuration
+@ConditionalOnClass(AWSSigner.class)
+@AutoConfigureAfter(name = "org.springframework.cloud.aws.autoconfigure.context.ContextRegionProviderAutoConfiguration")
+public class ElasticsearchJestAWSAutoConfiguration {
+
+	private static final String AWS_SERVICE = "es";
+	private static final Supplier<LocalDateTime> CLOCK = () -> LocalDateTime.now(ZoneOffset.UTC);
+
+	@Autowired
+	private ElasticsearchJestProperties properties;
+
+	@Autowired
+	@Qualifier("elasticsearchJestAwsRegion")
+	private String regionName;
+
+	@Bean
+	@ConditionalOnMissingBean(AWSCredentialsProvider.class)
+	public AWSCredentialsProvider awsCredentialsProvider() {
+		return new DefaultAWSCredentialsProviderChain();
+	}
+
+	@Bean
+	public JestClientFactory jestClientFactory(AWSCredentialsProvider credentialsProvider) {
+
+		final AWSSigner awsSigner = new AWSSigner(credentialsProvider, getRegion(), AWS_SERVICE, CLOCK);
+
+		final AWSSigningRequestInterceptor requestInterceptor = new AWSSigningRequestInterceptor(awsSigner);
+		return new JestClientFactory() {
+			@Override
+			protected HttpClientBuilder configureHttpClient(HttpClientBuilder builder) {
+				builder.addInterceptorLast(requestInterceptor);
+				return builder;
+			}
+			@Override
+			protected HttpAsyncClientBuilder configureHttpClient(HttpAsyncClientBuilder builder) {
+				builder.addInterceptorLast(requestInterceptor);
+				return builder;
+			}
+		};
+	}
+
+	/**
+	 * Return configured region if exist, else try to use auto-discovered region.
+	 * @return Region name
+	 */
+	private String getRegion() {
+		// Use specific user configuration
+		if (StringUtils.hasText(properties.getAwsRegion())) {
+			return properties.getAwsRegion();
+		}
+
+		return regionName;
+	}
+
+	@ConditionalOnMissingBean(name = "elasticsearchJestAwsRegion")
+	@Bean(name = "elasticsearchJestAwsRegion")
+	public String regionFromEC2() {
+
+		// Try to determine current region ( work on EC2 instance )
+		Region region = Regions.getCurrentRegion();
+		if (region != null) {
+			return region.getName();
+		}
+
+		// Nothing else , back to default
+		return Regions.DEFAULT_REGION.getName();
+	}
+
+	@ConditionalOnClass(RegionProvider.class)
+	@ConditionalOnBean(RegionProvider.class)
+	private final static class RegionFromSpringCloudConfiguration {
+
+		@Bean(name = "elasticsearchJestAwsRegion")
+		public String regionFromSpringCloud(RegionProvider regionProvider) {
+
+			// Try to use SpringCloudAWS region
+			return regionProvider.getRegion().getName();
+		}
+	}
+}
+
+@Document(indexName = "test-product-index", type = "test-product-type", shards = 1, replicas = 0, refreshInterval = "-1")
+==============================================================================================================
+import org.springframework.validation.Errors;
+import org.springframework.validation.Validator;
+
+/**
+ * @author volodymyr.tsukur
+ */
+public class AdValidator implements Validator {
+
+    @Override
+    public boolean supports(Class<?> clazz) {
+        return Ad.class.isAssignableFrom(clazz);
+    }
+
+    @Override
+    public void validate(Object target, Errors errors) {
+        Ad ad = (Ad) target;
+        if (ad.getAmount().intValue() <= 0) {
+            errors.rejectValue("amount", "Ad.amount.not.positive", "Amount should be positive");
+        }
+    }
+
+}
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
+import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
+
+public class SessionHandlerInterceptor extends HandlerInterceptorAdapter {
+
+    @Autowired
+    private SessionData sessionData;
+
+    @Override
+    public boolean preHandle(final HttpServletRequest request, final HttpServletResponse response, final Object handler) throws Exception {
+        // Register functionality is authorized for anonymous user
+    	if (request.getMethod().equals(HttpMethod.POST.toString()) && request.getRequestURI().indexOf("/account") > 0) {
+        	return true;
+        }
+    	
+    	if (sessionData.getUser() == null) {
+        	response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+            return false;
+        } else {
+            return true;
+        }
+    }
+}
+
+    @Id
+    @GenericGenerator(name="snowflake",strategy = SnowflakeGenerator.TYPE)
+    @GeneratedValue(generator = "snowflake")
+    private PK id;
+==============================================================================================================
+<?xml version="1.0" encoding="utf-8" ?>
+<sqls xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns="http://www.slyak.com/schema/templatequery"
+      xsi:schemaLocation="http://www.slyak.com/schema/templatequery http://www.slyak.com/schema/templatequery.xsd">
+
+    <sql name="findByContent">
+        <![CDATA[
+          SELECT * FROM t_sample WHERE 1=1
+          <#if content??>
+            AND content LIKE :content
+          </#if>
+        ]]>
+    </sql>
+    <sql name="countContent">
+        <![CDATA[
+          SELECT count(*) FROM t_sample WHERE 1=1
+          <#if content??>
+            AND content LIKE :content
+          </#if>
+        ]]>
+    </sql>
+    <sql name="findDtos">
+        <![CDATA[
+          SELECT id,content as contentShow FROM t_sample
+        ]]>
+    </sql>
+    <sql name="findByTemplateQueryObject">
+        <![CDATA[
+          SELECT * FROM t_sample WHERE 1=1
+          <#if content??>
+            AND content LIKE :content
+          </#if>
+        ]]>
+    </sql>
+</sqls>
+==============================================================================================================
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
+import org.springframework.data.elasticsearch.annotations.Document;
+
+@Document(indexName = "topqueries", type = "custquery", indexStoreType = "fs", shards = 1, replicas = 0, refreshInterval = "-1")
+public class CustomerTopQuery {
+
+	@Id
+	private String id;
+	@Version
+	private Long version;
+
+	private Long customerId;
+
+	private String queryString;
+
+	private int count;
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public Long getVersion() {
+		return version;
+	}
+
+	public void setVersion(Long version) {
+		this.version = version;
+	}
+
+	public Long getCustomerId() {
+		return customerId;
+	}
+
+	public void setCustomerId(Long customerId) {
+		this.customerId = customerId;
+	}
+
+	public String getQueryString() {
+		return queryString;
+	}
+
+	public void setQueryString(String queryString) {
+		this.queryString = queryString;
+	}
+
+	public int getCount() {
+		return count;
+	}
+
+	public void setCount(int count) {
+		this.count = count;
+	}
+}
+==============================================================================================================
+@NamedNativeQuery(name = "Manufacturer.getAllThatSellAcoustics", 
+		query = "SELECT m.id, m.name, m.foundedDate, m.averageYearlySales, m.location_id as headquarters_id, m.active "
+	    + "FROM Manufacturer m "
+		+ "LEFT JOIN Model mod ON (m.id = mod.manufacturer_id) "
+		+ "LEFT JOIN ModelType mt ON (mt.id = mod.modeltype_id) "
+	    + "WHERE (mt.name = ?)", resultClass = Manufacturer.class)
+==============================================================================================================
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-aws</artifactId>
+            <version>${springcloudaws}</version>
+            <optional>true</optional>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.amazonaws</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-actuator</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-core</artifactId>
+            <version>${aws}</version>
+            <optional>true</optional>
+        </dependency>
+==============================================================================================================
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+
+@Configuration
+@EnableWebSecurity
+public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
+  @Override
+  protected void configure(final AuthenticationManagerBuilder auth) throws Exception {
+    auth.inMemoryAuthentication()
+      .withUser("admin")
+      .password("{noop}password") //{noop} makes sure that the password encoder doesn't do anything
+      .roles("USER", "ADMIN") // Role of the user
+      .and()
+      .withUser("user")
+      .password("{noop}password")
+      .credentialsExpired(true)
+      .accountExpired(true)
+      .accountLocked(true)
+      .roles("USER");
+  }
+
+  @Override
+  protected void configure(final HttpSecurity http) throws Exception {
+    http.authorizeRequests().antMatchers("/css/**").permitAll();
+    http.authorizeRequests().anyRequest().fullyAuthenticated().and()
+      .formLogin()
+      .loginPage("/login")
+      .failureUrl("/login?error").permitAll();
+  }
+}
+==============================================================================================================
 static {
     EmbeddedKafkaHolder.getEmbeddedKafka().addTopics(topic1, topic2);
 }

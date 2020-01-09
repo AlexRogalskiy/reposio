@@ -1,0 +1,1559 @@
+var dispatcher = {
+ join: function (before, after) {
+ return before + ':' + after
+ },
+ sum: function (...rest) {
+ return rest.reduce(function (previousValue, currentValue, index, array) {
+ return previousValue + currentValue;
+ });
+ }
+};
+var proxy = {
+ relay: function (method, ...goodies) {
+ return dispatcher[method].apply(dispatcher, goodies);
+ }
+};
+// => bar:baz
+console.log(proxy.relay('join', 'bar', 'baz'));
+// => 28
+console.log(proxy.relay('sum', 1, 2, 3, 4, 5, 6, 7));
+
+===========================================================================================================================
+yarn config set network-timeout 300000
+===========================================================================================================================
+function directions(...args) {
+ var [start, ...remaining] = args
+ var [finish, ...stops] = remaining.reverse()
+
+ console.log(`drive through ${args.length} towns`)
+ console.log(`start in ${start}`)
+ console.log(`the destination is ${finish}`)
+ console.log(`stopping ${stops.length} times in between`)
+}
+directions(
+ "Truckee",
+ "Tahoe City",
+ "Sunnyside",
+ "Homewood",
+ "Tahoma"
+)
+
+git config --system core.longpaths true
+
+var createScream = function(logger) {
+ return function(message) {
+ logger(message.toUpperCase() + "!!!")
+ }
+}
+const scream = createScream(message => console.log(message))
+scream('functions can be returned from other functions')
+scream('createScream returns a function')
+scream('scream invokes that returned function')
+
+const addColor = (title, list) => [...list, {title}]
+
+===========================================================================================================================
+import java.util.Collections;
+import java.util.Map;
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Reference;
+import org.springframework.data.redis.core.RedisHash;
+import org.springframework.data.redis.core.index.Indexed;
+
+import lombok.Data;
+
+@Data
+@RedisHash("persons")
+class Person {
+
+	@Id String id;
+	@Indexed String firstname;
+	String lastname;
+
+	Map<String, String> attributes = Collections.emptyMap();
+
+	City city;
+
+	@Reference Person mother;
+}
+
+npm install --save react react-dom @types/react @types/react-dom
+===========================================================================================================================
+https://github.com/liabru/matter-js
+npm view webpack version
+
+mvn versions:display-dependency-updates
+mvn versions:display-plugin-updates
+
+relay-compiler --src ./src --schema ./schema.graphql
+===========================================================================================================================
+const editName = (oldName, name, arr) =>
+ arr.map(item => {
+ if (item.name === oldName) {
+ return {
+ ...item,
+ name
+ }
+ } else {
+ return item
+ }
+ })
+===========================================================================================================================
+import React, { FunctionComponent } from "react";
+import { RouteComponentProps } from "@reach/router";
+
+type Props = { component: FunctionComponent } & RouteComponentProps;
+
+const Route: FunctionComponent<Props> = ({ component: Component, ...rest }) => (
+  <Component {...rest} />
+);
+
+export default Route;
+
+// Option 3: Use a fat arrow to supply the lexical this.
+var VendingMachine = function () {
+ this.stock = ["Sgt. Pepper", "Choke", "Spite"];
+ return {
+ dispense: () => {
+ if (this.stock.length > 0) {
+ return this.stock.pop();
+ }
+ }
+ };
+};
+var popMachine = new VendingMachine();
+// => 'Spite'
+console.log(popMachine.dispense());
+
+npm install -g rollup
+
+typings install --global mocha
+===========================================================================================================================
+// => 10
+[1, 2, 3, 4].reduceRight(function(curr, val) curr + val);
+Using the new fat arrow syntax in ES 6, you can save even more characters.
+// => 10
+[1,2,3,4].reduceRight((curr, val) => curr + val);
+===========================================================================================================================
+// The cornerstone, an `each` implementation, aka `forEach`.
+ // Handles objects with the built-in `forEach`, arrays, and raw objects.
+ // Delegates to **ECMAScript 5**'s native `forEach` if available.
+ var each = _.each = _.forEach = function(obj, iterator, context) {
+ if (obj == null) return;
+ if (nativeForEach && obj.forEach === nativeForEach) {
+ obj.forEach(iterator, context);
+ } else if (obj.length === +obj.length) {
+ for (var i = 0, l = obj.length; i < l; i++) {
+ if (iterator.call(context, obj[i], i, obj) === breaker) return;
+ }
+ } else {
+ for (var key in obj) {
+ if (_.has(obj, key)) {
+ if (iterator.call(context, obj[key], key, obj) === breaker) return;
+ }
+ }
+ }
+ };
+ // Return the results of applying the iterator to each element.
+ // Delegates to **ECMAScript 5**'s native `map` if available.
+ _.map = _.collect = function(obj, iterator, context) {
+ var results = [];
+ if (obj == null) return results;
+ if (nativeMap && obj.map === nativeMap) return obj.map(iterator, context);
+ each(obj, function(value, index, list) {
+ results.push(iterator.call(context, value, index, list));
+ });
+ return results;
+ };
+You can use the _.map() like this:
+// => [2,3,6]
+var doubled = _.map([1, 2, 3], function(num){ return num * this.multiplier; }, {multiplier : 2});
+===========================================================================================================================
+https://www.programcreek.com/java-api-examples/index.php?project_name=paulcwarren%2Fspring-content#
+===========================================================================================================================
+var Car, proxy, tesla;
+Car = function() {
+ this.start = function() {
+ return console.log("car started");
+ };
+ this.turnKey = function() {
+ var carKey;
+ carKey = document.getElementById("carKey");
+ carKey.onclick = proxy(function(event) {
+ this.start();
+ }, this);
+ };
+ return this;
+};
+// Use a closure to bind the outer scope's reference to this into the newly created inner scope.
+proxy = function(callback, self) {
+ return function() {
+ return callback.apply(self, arguments);
+ };
+};
+tesla = new Car();
+// Once a user click's the #carKey element they will see "car started"
+tesla.turnKey();
+===========================================================================================================================
+var getUniqueId = (function() {
+ var id = 0;
+ return function(element) {
+ if (!element.id) {
+ element.id = 'generated-uid-' + id++;
+ }
+ return element.id;
+ };
+})();
+var elementWithId = document.createElement('p');
+elementWithId.id = 'foo-bar';
+var elementWithoutId = document.createElement('p');
+===========================================================================================================================
+// Create a closure
+var SecretStore = (function() {
+ var data, secret, newSecret;
+ // Emulation of a private variables and functions
+ data = 'secret';
+ secret = function() {
+ return data;
+ }
+ newSecret = function(newValue) {
+ data = newValue;
+ return secret();
+ }
+ // Return an object literal which is the only way to access the private data.
+ return {
+ getSecret: secret,
+ setSecret: newSecret,
+ };
+})();
+var secret = SecretStore;
+// => "secret"
+console.log(secret.getSecret());
+// => "foo"
+console.log(secret.setSecret("foo"));
+// => "foo"
+console.log(secret.getSecret());
+===========================================================================================================================
+var ToPrimitive;
+ToPrimitive = function (obj) {
+ var funct, functions, val, _i, _len;
+ functions = ["valueOf", "toString"];
+ if (typeof obj === "object") {
+ if (obj instanceof Date) {
+ functions = ["toString", "valueOf"];
+ }
+ for (_i = 0, _len = functions.length; _i < _len; _i++) {
+ funct = functions[_i];
+ if (typeof obj[funct] === "function") {
+ val = obj[funct]();
+ if (typeof val === "string" || typeof val === "number" || typeof val ===
+"boolean") {
+ return val;
+ }
+ }
+ }
+ throw new Error("DefaultValue is ambigious.");
+ }
+ return obj;
+};
+
+// => 1 (as string)
+console.log(ToPrimitive([1]));
+// => Thu Jul 11 2013 15:55:11 GMT-0500 (CDT)
+console.log(ToPrimitive(new Date()));
+===========================================================================================================================
+var Car = function(){
+ var args = Array.prototype.slice.call(arguments);
+ this.name = args[0] || 'tesla'
+ this.mpg = args[1] || 100
+ this.mph = args[2] || 80
+
+ // => Volt
+ console.log(this.name);
+
+ // => 90
+ console.log(this.mpg);
+
+ // => 80
+ console.log(this.mph);
+}
+new Car('Volt',90);
+===========================================================================================================================
+var GradientFactory = (function () {
+ var _beginColor = {
+ red: 0,
+ green: 0,
+ blue: 0
+ };
+ var _endColor = {
+ red: 255,
+ green: 255,
+ blue: 255
+ };
+ var _colorStops = 24;
+ var _colors = [];
+ var _colorKeys = ['red', 'green', 'blue'];
+ var _rgbToHex = function (r, g, b) {
+ return '#' + _byteToHex(r) + _byteToHex(g) + _byteToHex(b);
+ };
+ var _byteToHex = function (n) {
+ var hexVals = "0123456789ABCDEF";
+ return String(hexVals.substr((n >> 4) & 0x0F, 1)) + hexVals.substr(n & 0x0F, 1);
+ };
+ var _parseColor = function (color) {
+ if ((color).toString() === "[object Object]") {
+ return color;
+ } else {
+ color = (color.charAt(0) == "#") ? color.substring(1, 7) : color;
+ return {
+ red: parseInt((color).substring(0, 2), 16),
+ green: parseInt((color).substring(2, 4), 16),
+ blue: parseInt((color).substring(4, 6), 16)
+ };
+ }
+ };
+ var _generate = function (opts) {
+ var _colors = [];
+ var options = opts || {};
+ var diff = {
+ red: 0,
+ green: 0,
+ blue: 0
+ };
+ var len = _colorKeys.length;
+ var pOffset = 0;
+ if (typeof (options.from) !== 'undefined') {
+ _beginColor = _parseColor(options.from);
+ }
+ if (typeof (options.to) !== 'undefined') {
+ _endColor = _parseColor(options.to);
+ }
+ if (typeof (options.stops) !== 'undefined') {
+ _colorStops = options.stops;
+ }
+ colorStops = Math.max(1, _colorStops - 1);
+ for (var x = 0; x < _colorStops; x++) {
+ pOffset = parseFloat(x, 10) / _colorStops;
+ for (var y = 0; y < len; y++) {
+ diff[_colorKeys[y]] = _endColor[_colorKeys[y]] - _beginColor[_colorKeys[y]];
+ diff[_colorKeys[y]] = (diff[_colorKeys[y]] * pOffset) + _beginColor[_colorKeys[y]];
+ }
+ _colors.push(_rgbToHex(diff.red, diff.green, diff.blue));
+ }
+ _colors.push(_rgbToHex(_endColor.red, _endColor.green, _endColor.blue));
+ return _colors;
+ };
+ return {
+ generate: _generate
+ };
+}).call(this);
+// From hex to hex
+// => ["#000000", "#262626", "#4C4C4C", "#727272", "#999999"]
+console.log(GradientFactory.generate({
+ from: '#000000',
+ to: '#999999',
+ stops: 5
+}));
+// From color object to hex
+// => ["#C0FFEE", "#CFFFF2", "#DFFFF6", "#EFFFFA", "#FFFFFF"]
+console.log(GradientFactory.generate({
+ from: {
+ red: 192,
+ green: 255,
+ blue: 238
+ },
+ to: {
+ red: 255,
+ green: 255,
+ blue: 255
+ },
+ stops: 5
+}));
+===========================================================================================================================
+var signsMatch = function (x, y) {
+ return !((x ^ y) < 0);
+};
+
+var light = {
+ on: 1,
+ toggle: function () {
+ return this.on ^= 1;
+ }
+};
+
+var sign = function(x) {
+ return (x >> 31) | ((-x) >>> 31);
+};
+===========================================================================================================================
+function aurebesh(alphabet) {
+  var code = 'A=\'\',B=!A+A,C=!B+A,D=A+{},E=B[A++],' +
+    'F=B[G=A],H=++G+A,I=D[G+H],B[I+=D[A]+(B.C+D)[A]' +
+    '+C[H]+E+F+B[G]+I+E+D[A]+F][I](C[A]+C[G]+B[H]+F+E+"(A)")()';
+
+  if (!alphabet || !alphabet.length) {
+    return 'Please enter at least one character.';
+  }
+
+  if (typeof alphabet == 'string') {
+    var separator = alphabet.indexOf(',') < 0 ? '' : ',';
+    alphabet = alphabet.split(separator);
+  }
+
+  var invalid = alphabet.filter(function(char) {
+    var valid = true;
+
+    try {
+      eval(`${char} = 1`);
+    } catch (e) {
+      valid = false;
+    }
+    return !valid;
+  });
+
+  if (invalid.length) {
+    return `Invalid identifier name: ${invalid}. <br>
+      Read more here:
+      https://mathiasbynens.be/notes/javascript-identifiers`;
+  }
+
+  alphabet = alphabet.filter(function(char, index) {
+    return index <= alphabet.indexOf(char);
+  });
+
+  while (alphabet.length < 9) {
+    alphabet.forEach(function(a) {
+      alphabet.forEach(function(b) {
+        if (alphabet.indexOf(a + b) === -1) {
+          alphabet.push(a + b);
+        }
+      });
+    });
+  }
+
+  code = code.replace(/[A-Z]/g, function(char) {
+    return alphabet[char.charCodeAt(0) - 65];
+  });
+
+  return code;
+}
+
+var alphabets = {
+  'Aurebesh': 'ロコYㅣᗐΞΔᐳㅡ',
+  'Katakana': 'アウセヌネハヘホミ',
+  'Greek': 'πβεγμτφθλ',
+  'Hangul': 'ᅺᅻᅼᅽᅾᅿᆀᆁᆂᆃ',
+  'Thai': 'กวอซฝคงญฒ',
+  'Cyrillic': 'БДИЖЩЗЛЮФ',
+  'Gurmukhi': 'ਗਨਹਤਕੲਲੜਵ',
+  'Hebrew': 'אבגדהוחטכ',
+  'Javanese': 'ꦊꦄꦌꦍꦎꦏꦐꦑꦒ',
+  'Yi': 'ꆇꉄꉦꊗꀻꃋꆚꋕꐍ',
+  'Telugu': 'జ్ఞా,తె,లు,గు,ణి,తా,ము,రా,బ,కి',
+  'Runes': 'ᚦᚢᚠᚻᛉᛊᛇᛟᛞ',
+  'Carian': '𐊾,𐋂,𐊼,𐊧,𐋀,𐊫,𐋇,𐊦,𐊣',
+  'Diacritical Marks': 'ò́̂,o̖̔̕,o̞̟̠,ò́̂̃,o̖̗̔̕,o̡̞̟̠,o̡̢̞̟̠̣,o̖̗̘̙̔̕,ò́̂̃̄',
+  'Arabic': 'غػؼؽؾؿـفق',
+  'Buginese': 'ᨆᨊᨎᨂᨇᨋᨏᨃᨅ',
+  'ᐳㅣᐸ': 'ᐳᐸㅣ',
+  'ooo': 'òŏôǒöőõȯōȍ',
+  'reserved': '𝖻𝗋𝖾𝖺𝗄,𝗍𝗁𝗋𝗈𝗐,𝖼𝖺𝗍𝖼𝗁,𝖼𝗈𝗇𝗌𝗍,𝗏𝖺𝗋,𝗋𝖾𝗍𝗎𝗋𝗇,𝖽𝖾𝖿𝖺𝗎𝗅𝗍,𝗍𝗁𝗂𝗌,𝗏𝗈𝗂𝖽',
+  'Deutsch': 'Ä,ja,nein,ö,Ü,sch,Schnitzel,Bier,ß',
+  'SPACE': '_',
+  'Solfège': 'Do,Re,Mi,Fa,Sol,La,Si',
+  'XXX': 'xX',
+  'Roman': 'IVXLCDM',
+  'Kannada': 'ಠಉನಊಝಏೡಖತ',
+  'Icelandic': 'ÞÐÓÆÝHÉTÍ',
+  'Tifinagh': 'ⴼⵊⵏⵂⵗⵓⴻⵐⵜ',
+  'Vai': 'ꔀꕐꖠꔢꖈꖕꔈꔉꔁ',
+  'Ogham': 'ᚁᚆᚂᚇᚃᚈ',
+  'Symbols': '_ʽːᆢ〱〳ㅡㅣㆍ',
+  'Kanji': '㒓㒲㒳㒴㒵㒶㒷㒸㒺',
+  'ABC': 'ABCDEFGHI',
+  'Emoticons': ['ó‿ó', 'σ_σ', 'δﺡό', 'סּ_סּ', 'ಠ_ಠ', 'ö‿o', 'oﺡo', 'σ_o', 'ಠ‿ಠ'],
+  'Slash': '〳',
+  'Filler': 'ﾠ,ﾠ‌,ﾠ‌‌,ﾠ‌‌‌,ﾠ‌‌‌‌,ﾠ‌‌‌‌‌,ﾠ‌‌‌‌‌‌,ﾠ‌‌‌‌‌‌‌'
+};
+
+var output = document.getElementById('output');
+
+Object.keys(alphabets).forEach(function(name) {
+  var alphabet = alphabets[name],
+    translation = aurebesh(alphabet);
+
+  output.innerHTML += `<article>
+    <h3>${name}</h3>
+    <div class="alphabet">//&nbsp;${alphabet}</div>
+    <div>${translation}</div>
+    </article>`;
+});
+
+var input = document.getElementById('your-input'),
+  preview = document.getElementById('your-output');
+
+input.addEventListener('keyup', function() {
+  var value = input.value;
+  preview.innerHTML = aurebesh(value);
+  document.location.hash = escape(value);
+});
+
+var hash = document.location.hash;
+if (hash) {
+  var value = unescape(hash.slice(1));
+  input.value = value;
+  preview.innerHTML = aurebesh(value);
+}
+===========================================================================================================================
+Q = require('q');
+// Simulates a long running process
+var sleep = function(ms) {
+ return function(callback) {
+ setTimeout(callback, ms);
+ };
+};
+// Using Continuation Passing Style.
+var squareCPS = function(num, callback){
+ sleep(1000).call(this, function(){
+ callback(num * num);
+ });
+};
+// => 100000000
+squareCPS(10, function(num){
+ squareCPS(num, function(num){
+ squareCPS(num, function(num){
+ console.log(num);
+ });
+ });
+});
+// Using Promises.
+var square = function(num) {
+ var later = Q.defer();
+ sleep(1000).call(this, function() {
+ later.resolve(num * num);
+ });
+ return later.promise;
+};
+// => 100000000
+square(10)
+.then(square)
+.then(square)
+.then(function(total){
+ console.log(total);
+});
+
+Q.allSettled([
+ square(10),
+ square(20),
+ square(30)
+]).then(function(results){
+ results.forEach(function (result) {
+ // => 100
+ // => 400
+ // => 900
+ console.log(result.value);
+ });
+});
+===========================================================================================================================
+var sequence, sq;
+sq = function* (initialValue) {
+ var current, num, step;
+ num = initialValue || 2;
+ step = 0;
+  while (true) {
+ current = num * step++;
+ yield current
+ }
+};
+sequence = sq(20);
+// => 0
+console.log(sequence.next().value);
+// => 20
+console.log(sequence.next().value);
+// => 40
+console.log(sequence.next().value);
+// => 60
+console.log(sequence.next().value);
+
+var a, alphabet, sequence;
+alphabet = function*() {
+ var charCode = 65;
+ while (charCode < 91) {
+ yield String.fromCharCode(charCode++);
+ }
+ throw new Error("StopIteration")
+};
+sequence = alphabet();
+a = 0;
+while (a < 27) {
+ try {
+  // => a..z
+ console.log(sequence.next().value);
+ } catch (e) {
+ // => [Error: StopIteration]
+ console.log(e);
+ }
+ a++;
+}
+
+var letter, alphabet, sequence;
+function* alphabet() {
+ var charCode = 65;
+ while (charCode < 91) {
+ yield String.fromCharCode(charCode++);
+ }
+};
+sequence = alphabet(),
+letter = sequence.next();
+while (!letter.done) {
+ // => A..Z
+ console.log(letter.value);
+ letter = sequence.next();
+}
+
+function* sub(n) {
+ while (n) {
+ console.log(n--);
+ yield sleep(10);
+ }
+}
+// => Prints "Start", "[10..1]","End" on individual lines.
+run(function* () {
+ console.log("Start");
+ yield* sub(10);
+ console.log("End");
+});
+===========================================================================================================================
+// index.html
+<html>
+<head>
+<title>index</title>
+</head>
+<body>
+<script type="text/javascript" charset="utf-8">
+addEventListener("DOMContentLoaded", (function() {
+ var canvas, ctx, imageData, requestAnimationFrame, worker;
+ // get the correct animationFrame handler
+ requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
+window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
+ window.requestAnimationFrame = requestAnimationFrame;
+ // add a canvas element and create a rendering context
+ canvas = document.createElement("canvas");
+ document.getElementsByTagName("body")[0].appendChild(canvas);
+  canvas.height = canvas.width = 400;
+ ctx = canvas.getContext("2d");
+ imageData = ctx.createImageData(canvas.width, canvas.height);
+ // create a new web worker instance
+ worker = new Worker("worker.js");
+ worker.onmessage = function(e) {
+ ctx.putImageData(e.data.pixels, 0, 0);
+ // once the canvas is ready for another frame request it from the worker
+ window.requestAnimationFrame(function() {
+ worker.postMessage({
+ pixels: ctx.getImageData(0, 0, canvas.width, canvas.height),
+ seed: e.data.seed
+ });
+ });
+ };
+ // seed the worker process.
+ worker.postMessage({
+ pixels: ctx.getImageData(0, 0, canvas.width, canvas.height),
+ seed: +new Date()
+ });
+}), false);
+</script>
+</body>
+</html>
+// worker.js
+setPixel = function() {
+ var index;
+ index = (x + y * imageData.width) * 4;
+ imageData.data[index + 0] = r;
+ imageData.data[index + 1] = g;
+ imageData.data[index + 2] = b;
+ imageData.data[index + 3] = 255;
+};
+onmessage = function(event) {
+ var b, d, g, height, imageData, pos, r, seed, t, width, x, x2, xoff, y, y2, yoff;
+ pos = 0;
+ imageData = event.data.pixels;
+ seed = event.data.seed;
+ width = imageData.width;
+ height = imageData.height;
+ xoff = width / 2;
+ yoff = height / 2;
+ y = 0;
+ while (y < height) {
+ x = 0;
+  while (x < width) {
+ x2 = x - xoff;
+ y2 = y - yoff;
+ d = Math.sqrt(x2 * x2 + y2 * y2);
+ t = Math.sin(d / 6.0 * (+new Date() - seed) / 5000);
+ r = t * 200 + y;
+ g = t * 200 - y;
+ b = t * 255 - x / height;
+ imageData.data[pos++] = Math.max(0, Math.min(255, r));
+ imageData.data[pos++] = Math.max(0, Math.min(255, g));
+ imageData.data[pos++] = Math.max(0, Math.min(255, b));
+ imageData.data[pos++] = 255;
+ x++;
+ }
+ y++;
+ }
+ postMessage({
+ pixels: imageData,
+ seed: seed
+ });
+};
+===========================================================================================================================
+var blobTheBuilder, winUrl, worker;
+winUrl = window.URL || window.webkitURL;
+blobTheBuilder = new Blob(["self.onmessage=function(e){postMessage(Math.round(Math.sqrt(e.data)))}"]);
+worker = new Worker(winUrl.createObjectURL(blobTheBuilder));
+worker.onmessage = function (e) {
+ return console.log(e.data);
+};
+// Find the closest square root of a number
+// => 6
+worker.postMessage(42);
+===========================================================================================================================
+var serial = require("serialport"),
+ raddress = /usb|acm|com/i,
+ pin = 13;
+serial.list(function(err, result) {
+ var read = new Buffer(0),
+ address, port, bite;
+ if (result.length) {
+ address = result.filter(function(val) {
+ // Match only address that Arduino cares about
+ // ttyUSB#, cu.usbmodem#, COM#
+ if (raddress.test(val.comName)) {
+ return val;
+ }
+ }).map(function(val) {
+ return val.comName;
+ })[0];
+ port = new serial.SerialPort(address, {
+ baudrate: 57600,
+ buffersize: 1
+ });
+ port.on("open", function() {
+ var bite;
+ function loop() {
+ port.write([pin, (bite ^= 0x01)]);
+ }
+ setInterval(loop, 500);
+ });
+ } else {
+ console.log("No valid port found");
+ }
+});
+
+/**
+ * Sample script to blink LED 13
+ */
+console.log('blink start ...');
+var pin = 13;
+var firmata = require('firmata');
+var board = new firmata.Board('/dev/cu.usbmodem1411', function(err) {
+ var bite;
+
+ board.pinMode(pin, board.MODES.OUTPUT);
+ function loop() {
+ board.digitalWrite([pin, (bite ^= 0x01)]);
+ }
+ setInterval(loop, 500);
+});
+
+
+var five = require("johnny-five"),
+ board = new five.Board();
+board.on("ready", function() {
+ (new five.Led(13)).strobe();
+});
+===========================================================================================================================
+npm -g install js-beautify
+
+;(function () {
+ "use strict";
+ var foo = findStrictly();
+})();
+
+var findStrictly = function() {
+ "use strict";
+}
+
+;(function( window, document, undefined) {
+ // My Awesome Library
+ ...
+})(this, document);
+===========================================================================================================================
+square = (x) -> x * x
+Depending on your CoffeeScript compiler settings, it compiles the previous line to something like this:
+(function() {
+ var square;
+ square = function(x) {
+ return x * x;
+ };
+}).call(this)
+===========================================================================================================================
+/* Written in Mocha */
+var assert = require("assert")
+describe('truth test', function(){
+ it('should know that true is equal to true', function(){
+ assert.equal(true, true);
+ })
+})
+/* Written in QUnit */
+test( "truth test", function() {
+ ok( true === true, "is true!" );
+});
+/* Written In Jasmine */
+describe("truth test", function() {
+ it("should know true is equal to true", function() {
+ expect(true).toBe(true);
+ });
+});
+===========================================================================================================================
+npm install jshint -g
+npm install -g esprima
+npm install complexity-report
+npm install -g istanbul
+
+Add prettier to your project:
+yarn add prettier --dev --exact
+Verify by running against a file:
+yarn prettier --write src/index.js
+Run prettier when commiting files:
+yarn add pretty-quick husky --dev
+Then add this config to package.json:
+{ "husky": { "hooks": { "pre-commit": "pretty-quick --staged" } } }
+
+npm install -g native-css
+npm install native-css
+
+native-css <input> <output>
+
+$ cd /path/to/your/source/root
+$ istanbul cover test.js
+===========================================================================================================================
+const circle = (radius = 1) => {
+  const profile = {};
+  const pi = 22/7;
+  profile.diameter = 2_pi_radius;
+  profile.circumference = pi_radius_2;
+  profile.area = pi_radius^2;
+  profile.volume = 4/3_pi_radius^3;
+
+  console.log('This circle has a radius of: %d cm', radius);
+  console.log('This circle has a circumference of: %f cm', profile.diameter);
+  console.log('This circle has an area of: %i cm^2', profile.area);
+  console.log('The profile of this cirlce is: %o', profile);
+  console.log('Diameter %d, Area: %f, Circumference %i', profile.diameter, profile.area, profile.circumference)
+}
+
+const workoutLog = { Monday: { push: 'Incline Bench Press', pull: 'Deadlift'}, Wednesday: { push: 'Weighted Dips', pull: 'Barbell Rows'}};
+console.table(workoutLog);
+
+const getOccurences = (word = 'foolish') => {
+  const phrase = `Oh me! Oh life! of the questions of these recurring, Of the endless trains of the faithless, of cities fill’d with the foolish, Of myself forever reproaching myself, for who more foolish than I, and who more faithless?`;
+
+  let count = 0;
+  const wordsFromPhraseArray = phrase.replace(/[,.!?]/igm, '').split(' ');
+  wordsFromPhraseArray.forEach((element, idx) => {
+    if (element === word) {
+      count ++;
+      console.count(word);
+      console.countReset(word);
+    }
+  });
+  return count;
+}
+
+getOccurences();
+
+const users = ['Vivaldi', 'Beethoven', 'Ludovico'];
+
+const loop = (array) => {
+  array.forEach((element, idx) => {
+    console.log(element);
+  })
+}
+
+const timer = () => {
+  console.time('timerLabel');
+  loop(users);
+  console.timeEnd('timerLabel');
+}
+
+timer();
+===========================================================================================================================
+
+===========================================================================================================================
+npm config set msvs_version 2017
+npm install --global --production windows-build-tools
+node-gyp configure
+node-gyp configure --msvs_version=2015
+node-gyp build
+
+npm config set [--global] devdir /tmp/.gyp
+
+npm install --global node-gyp@latest
+npm prefix -g | % {npm config set node_gyp "$_\node_modules\node-gyp\bin\node-gyp.js"}
+
+choco unistall nodejs
+rd /s %AppData%\npm\
+rd /s %AppData%\npm\
+choco install nodejs
+npm install -g npm@latest
+npm install -g node-gyp@latest
+npm install -g typescript@latest
+===========================================================================================================================
+import React, { Component } from 'react';
+import axios from 'axios';
+
+class App extends Component {
+  state = {
+    data: [],
+    error: '',
+  };
+
+  componentDidMount() {     
+    axios
+      .get('https://api.coinmarketcap.com/v1/ticker/?limit=1')
+      .then(res => this.setState({ data: res.data }))
+      .catch(error => this.setState({ error }));
+  }
+
+  render () {
+    return (
+      <div className="App">
+        <ul>
+          {this.state.data.map(el => (
+            <li>
+              {el.name}: {el.price_usd}
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+}
+
+export default App;
+===========================================================================================================================
+var makeCounter = function() {
+  var privateCounter = 0;
+  function changeBy(val) {
+    privateCounter += val;
+  }
+  return {
+    increment: function() {
+      changeBy(1);
+    },
+    decrement: function() {
+      changeBy(-1);
+    },
+    value: function() {
+      return privateCounter;
+    }
+  }
+};
+
+===========================================================================================================================
+/*globals define, module */
+
+// This module contains functions for converting milliseconds
+// to and from CSS time strings.
+
+(function (globals) {
+    'use strict';
+
+    var regex = /^([\-\+]?[0-9]+(\.[0-9]+)?)(m?s)$/,
+
+    functions = {
+        from: from,
+        to: to
+    };
+
+    exportFunctions();
+
+    // Public function `from`.
+    //
+    // Returns the number of milliseconds represented by a
+    // CSS time string.
+    function from (cssTime) {
+        var matches = regex.exec(cssTime);
+
+        if (matches === null) {
+            throw new Error('Invalid CSS time');
+        }
+
+        return parseFloat(matches[1]) * (matches[3] === 's' ? 1000 : 1);
+    }
+
+    // Public function `to`.
+    //
+    // Returns a CSS time string representing the number
+    // of milliseconds passed in the arguments.
+    function to (milliseconds) {
+        if (typeof milliseconds !== 'number' || isNaN(milliseconds)) {
+            throw new Error('Invalid milliseconds');
+        }
+
+        return milliseconds + 'ms';
+    }
+
+    function exportFunctions () {
+        if (typeof define === 'function' && define.amd) {
+            define(function () {
+                return functions;
+            });
+        } else if (typeof module !== 'undefined' && module !== null && module.exports) {
+            module.exports = functions;
+        } else {
+            globals.cssTime = functions;
+        }
+    }
+}(this));
+===========================================================================================================================
+function flipSign(val) {
+ return ~ (val - 1);
+}
+===========================================================================================================================
+// for use with Node-style callbacks...
+var async = require("async");
+
+var obj = {dev: "/dev.json", test: "/test.json", prod: "/prod.json"};
+var configs = {};
+
+async.forEachOf(obj, (value, key, callback) => {
+    fs.readFile(__dirname + value, "utf8", (err, data) => {
+        if (err) return callback(err);
+        try {
+            configs[key] = JSON.parse(data);
+        } catch (e) {
+            return callback(e);
+        }
+        callback();
+    });
+}, err => {
+    if (err) console.error(err.message);
+    // configs is now a map of JSON data
+    doSomethingWith(configs);
+});
+var async = require("async");
+
+// ...or ES2017 async functions
+async.mapLimit(urls, 5, async function(url) {
+    const response = await fetch(url)
+    return response.body
+}, (err, results) => {
+    if (err) throw err
+    // results is now an array of the response bodies
+    console.log(results)
+})
+===========================================================================================================================
+//
+// Variables
+// -----------------------------------------
+
+$balloon-bg:             fade-out(#111, .1) !default;
+$balloon-base-size:      10px !default;
+$balloon-arrow-height:   6px;
+
+
+//
+// Mixins
+// -----------------------------------------
+
+@mixin svg-arrow ($color, $position: up) {
+
+  $degrees: 0;
+  $height:  6px;
+  $width:   18px;
+
+  @if ($position == down) {
+    $degrees: 180 18 6;
+    } @else if ($position == left) {
+      $degrees: -90 18 18;
+      $width: 6px;
+      $height: 18px;
+      } @else if ($position == right) {
+        $degrees: 90 6 6;
+        $width: 6px;
+        $height: 18px;
+      }
+
+      background: no-repeat url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http://www.w3.org/2000/svg%22%20width%3D%22#{$width * 2}%22%20height%3D%22#{$height * 2}%22%3E%3Cpath%20fill%3D%22#{$color}%22%20transform%3D%22rotate(#{$degrees})%22%20d%3D%22M2.658,0.000%20C-13.615,0.000%2050.938,0.000%2034.662,0.000%20C28.662,0.000%2023.035,12.002%2018.660,12.002%20C14.285,12.002%208.594,0.000%202.658,0.000%20Z%22/%3E%3C/svg%3E');
+      background-size: 100% auto;
+      width: $width;
+      height: $height;
+    }
+
+    @mixin transition ($args...) {
+      -webkit-transition: $args;
+      -moz-transition: $args;
+      -ms-transition: $args;
+      -o-transition: $args;
+      transition: $args;
+    }
+
+    @mixin transform ($val) {
+      -webkit-transform: $val;
+      -moz-transform: $val;
+      -ms-transform: $val;
+      transform: $val;
+    }
+
+    @mixin transform-origin ($val) {
+      -webkit-transform-origin: $val;
+      -moz-transform-origin: $val;
+      -ms-transform-origin: $val;
+      transform-origin: $val;
+    }
+
+    @mixin opacity ($trans) {
+      filter: alpha(opactiy=($trans * 100));
+      -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=#{$trans * 100})";
+      -moz-opacity: $trans;
+      -khtml-opacity: $trans;
+      opacity: $trans;
+    }
+
+    @mixin base-effects () {
+      @include opacity(0);
+      pointer-events: none;
+      @include transition(all .18s ease-out .18s);
+    }
+
+    @mixin no-effects () {
+      @include transition(none);
+    }
+
+    @mixin normalized-text() {
+      font-family: sans-serif !important;
+      font-weight: normal !important;
+      font-style: normal !important;
+      text-shadow: none !important;
+      font-size: $balloon-base-size + 2 !important;
+    }
+
+
+//
+// Styles
+// -----------------------------------------
+
+// IE 11 button bugfix
+button[data-balloon] {
+  overflow: visible;
+}
+
+[data-balloon] {
+  position: relative; // alt. absolute or fixed
+
+  // Fixing iOS Safari event issue.
+  // More info at: https://goo.gl/w8JF4W
+  cursor: pointer;
+
+  &:after {
+    @include base-effects();
+    @include normalized-text();
+    background: $balloon-bg;
+    border-radius: 4px;
+    color: #fff;
+    content: attr(data-balloon);
+    padding: .5em 1em;
+    position: absolute;
+    white-space: nowrap;
+    z-index: 10;
+  }
+
+  &:before {
+    @include svg-arrow($balloon-bg);
+    @include base-effects();
+
+    content: '';
+    position: absolute;
+    z-index: 10;
+  }
+
+  &:hover, &[data-balloon-visible] {
+    &:before,
+    &:after {
+      @include opacity(1);
+      pointer-events: auto;
+    }
+  }
+  
+  &:not([data-balloon-pos]) {
+      &:after {
+        bottom: 100%;
+        left: 50%;
+        margin-bottom: 5px + $balloon-arrow-height;
+        @include transform(translate(-50%, 10px));
+        @include transform-origin(top);
+      }
+      &:before {
+        bottom: 100%;
+        left: 50%;
+        margin-bottom: 5px;
+        @include transform(translate(-50%, 10px));
+        @include transform-origin(top);
+      }
+
+      &:hover, &[data-balloon-visible] {
+        &:after {
+          @include transform(translate(-50%, 0));
+        }
+
+        &:before {
+          @include transform(translate(-50%, 0));
+        }
+      }
+  }
+
+  &.font-awesome:after {
+    font-family: FontAwesome;
+  }
+
+  &[data-balloon-break] {
+    &:after {
+      white-space: pre;
+    }
+  }
+
+  &[data-balloon-blunt] {
+    &:before,
+    &:after {
+      @include no-effects();
+    }
+  }
+
+  &[data-balloon-pos="up"] {
+    &:after {
+      bottom: 100%;
+      left: 50%;
+      margin-bottom: 5px + $balloon-arrow-height;
+      @include transform(translate(-50%, 10px));
+      @include transform-origin(top);
+    }
+    &:before {
+      bottom: 100%;
+      left: 50%;
+      margin-bottom: 5px;
+      @include transform(translate(-50%, 10px));
+      @include transform-origin(top);
+    }
+
+    &:hover, &[data-balloon-visible] {
+      &:after {
+        @include transform(translate(-50%, 0));
+      }
+
+      &:before {
+        @include transform(translate(-50%, 0));
+      }
+    }
+  }
+
+  &[data-balloon-pos="up-left"] {
+    &:after {
+      bottom: 100%;
+      left: 0;
+      margin-bottom: 5px + $balloon-arrow-height;
+      @include transform(translate(0, 10px));
+      @include transform-origin(top);
+    }
+    &:before {
+      bottom: 100%;
+      left: 5px;
+      margin-bottom: 5px;
+      @include transform(translate(0, 10px));
+      @include transform-origin(top);
+    }
+
+    &:hover, &[data-balloon-visible] {
+      &:after {
+        @include transform(translate(0, 0));
+      }
+
+      &:before {
+        @include transform(translate(0, 0));
+      }
+    }
+  }
+
+  &[data-balloon-pos="up-right"] {
+    &:after {
+      bottom: 100%;
+      right: 0;
+      margin-bottom: 5px + $balloon-arrow-height;
+      @include transform(translate(0, 10px));
+      @include transform-origin(top);
+    }
+    &:before {
+      bottom: 100%;
+      right: 5px;
+      margin-bottom: 5px;
+      @include transform(translate(0, 10px));
+      @include transform-origin(top);
+    }
+
+    &:hover, &[data-balloon-visible] {
+      &:after {
+        @include transform(translate(0, 0));
+      }
+
+      &:before {
+        @include transform(translate(0, 0));
+      }
+    }
+  }
+
+  &[data-balloon-pos='down'] {
+    &:after {
+      left: 50%;
+      margin-top: 5px + $balloon-arrow-height;
+      top: 100%;
+      @include transform(translate(-50%, -10px));
+    }
+
+    &:before {
+      @include svg-arrow($balloon-bg, 'down');
+
+      left: 50%;
+      margin-top: 5px;
+      top: 100%;
+      @include transform(translate(-50%, -10px));
+    }
+
+    &:hover, &[data-balloon-visible] {
+      &:after {
+        @include transform(translate(-50%, 0));
+      }
+
+      &:before {
+        @include transform(translate(-50%, 0));
+      }
+    }
+  }
+
+  &[data-balloon-pos='down-left'] {
+    &:after {
+      left: 0;
+      margin-top: 5px + $balloon-arrow-height;
+      top: 100%;
+      @include transform(translate(0, -10px));
+    }
+
+    &:before {
+      @include svg-arrow($balloon-bg, 'down');
+
+      left: 5px;
+      margin-top: 5px;
+      top: 100%;
+      @include transform(translate(0, -10px));
+    }
+
+    &:hover, &[data-balloon-visible] {
+      &:after {
+        @include transform(translate(0, 0));
+      }
+
+      &:before {
+        @include transform(translate(0, 0));
+      }
+    }
+  }
+
+  &[data-balloon-pos='down-right'] {
+    &:after {
+      right: 0;
+      margin-top: 5px + $balloon-arrow-height;
+      top: 100%;
+      @include transform(translate(0, -10px));
+    }
+
+    &:before {
+      @include svg-arrow($balloon-bg, 'down');
+
+      right: 5px;
+      margin-top: 5px;
+      top: 100%;
+      @include transform(translate(0, -10px));
+    }
+
+    &:hover, &[data-balloon-visible] {
+      &:after {
+        @include transform(translate(0, 0));
+      }
+
+      &:before {
+        @include transform(translate(0, 0));
+      }
+    }
+  }
+
+  &[data-balloon-pos='left'] {
+    &:after {
+      margin-right: 5px + $balloon-arrow-height;
+      right: 100%;
+      top: 50%;
+      @include transform(translate(10px, -50%));
+    }
+
+    &:before {
+      @include svg-arrow($balloon-bg, 'left');
+
+      margin-right: 5px;
+      right: 100%;
+      top: 50%;
+      @include transform(translate(10px, -50%));
+    }
+
+    &:hover, &[data-balloon-visible] {
+      &:after {
+        @include transform(translate(0, -50%));
+      }
+
+      &:before {
+        @include transform(translate(0, -50%));
+      }
+    }
+
+  }
+
+  &[data-balloon-pos='right'] {
+    &:after {
+
+      left: 100%;
+      margin-left: 5px + $balloon-arrow-height;
+      top: 50%;
+      @include transform(translate(-10px, -50%));
+    }
+
+    &:before {
+      @include svg-arrow($balloon-bg, 'right');
+
+      left: 100%;
+      margin-left: 5px;
+      top: 50%;
+      @include transform(translate(-10px, -50%));
+    }
+
+    &:hover, &[data-balloon-visible] {
+      &:after {
+        @include transform(translate(0, -50%));
+      }
+
+      &:before {
+        @include transform(translate(0, -50%));
+      }
+    }
+  }
+
+  &[data-balloon-length='small'] {
+    &:after {
+      white-space: normal;
+      width: 80px;
+    }
+  }
+
+  &[data-balloon-length='medium'] {
+    &:after {
+      white-space: normal;
+      width: 150px;
+    }
+  }
+
+  &[data-balloon-length='large'] {
+    &:after {
+      white-space: normal;
+      width: 260px;
+    }
+  }
+
+  &[data-balloon-length='xlarge'] {
+    &:after {
+      white-space: normal;
+      width: 380px;
+
+      @media screen and (max-width: 768px) {
+        white-space: normal;
+        width: 90vw;
+      }
+    }
+  }
+
+  &[data-balloon-length='fit'] {
+    &:after {
+      white-space: normal;
+      width: 100%;
+    }
+  }
+}
+===========================================================================================================================
+const transaction = {};
+
+const handler = {
+  set(target, prop, value) {
+    if(prop === 'actualPay' && typeof value === "number" && value > 0) {
+      value = value * 0.97;
+    }
+    target[prop] = value;
+  }
+};
+
+const proxy = new Proxy(transaction, handler);
+proxy.actualPay = 1000;
+console.log(proxy.actualPay); //Returns '970'
+
+
+ const proxyObj = new Proxy({
+    firstName: 'John',
+    lastName: 'Doe',
+}, {
+  get(targetObj, property) {
+    console.log(`getting the ${property} property: ${targetObj[property]}`);
+  }
+});
+
+proxyObj.firstName; //Returns -> getting the firstName: John
+proxyObj.lastName;// Returns -> getting the lastName property: Doe
+proxyObj.age = 23; 
+console.log(proxyObj.age);// Returns -> getting the age property: 23
+
+function* getCurrency() {
+  console.log('the generator function has started');
+  const currencies = ['NGN', 'USD', 'EUR', 'GBP', 'CAD'];
+  for (const currency of currencies) {
+    yield currency;
+  }
+  console.log('the generator function has ended');
+}
+
+const iterator = getCurrency();
+
+console.log(iterator.next()); 
+===========================================================================================================================
+===========================================================================================================================
+===========================================================================================================================
+===========================================================================================================================
+===========================================================================================================================
+===========================================================================================================================
+===========================================================================================================================
+===========================================================================================================================
+===========================================================================================================================
+===========================================================================================================================
+===========================================================================================================================
+===========================================================================================================================
+===========================================================================================================================
+===========================================================================================================================
+===========================================================================================================================
+===========================================================================================================================
+===========================================================================================================================
+===========================================================================================================================
+
+
