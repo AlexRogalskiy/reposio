@@ -5151,6 +5151,576 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
 @Digits(integer = 12, fraction = 3)
 private static final String MOBILE_PHONE_NUMBER_PATTERN = "^$|^0{0,1}(13[0-9]|15[0-9]|14[0-9]|17[0-9]|18[0-9])[0-9]{8}$";
 ==============================================================================================================
+import java.sql.SQLException;
+import java.util.Properties;
+
+import javax.sql.DataSource;
+
+import org.hibernate.SessionFactory;
+import org.hibernate.cfg.Environment;
+import org.hibernate.jpa.HibernateEntityManagerFactory;
+import org.hibernate.tool.hbm2ddl.MultipleLinesSqlCommandExtractor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.data.jpa.datatables.repository.DataTablesRepositoryFactoryBean;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+import org.springframework.orm.jpa.AbstractEntityManagerFactoryBean;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.transaction.PlatformTransactionManager;
+
+/**
+ * Spring JavaConfig configuration for general infrastructure.
+ */
+@Configuration
+@EnableJpaRepositories(repositoryFactoryBeanClass = DataTablesRepositoryFactoryBean.class,
+    basePackages = { "org.springframework.data.jpa.datatables.model", "org.springframework.data.jpa.datatables.repository" })
+public class Config {
+
+  @Bean
+  @Profile({"default", "h2"})
+  public DataSource dataSource_H2() throws SQLException {
+    return new EmbeddedDatabaseBuilder().setType(EmbeddedDatabaseType.H2).build();
+  }
+
+  @Bean
+  @Profile("mysql")
+  public DataSource dataSource_MySQL() throws SQLException {
+    DriverManagerDataSource dataSource = new DriverManagerDataSource();
+    dataSource.setDriverClassName("com.mysql.jdbc.Driver");
+    dataSource.setUrl("jdbc:mysql://127.0.0.1/test");
+    dataSource.setUsername("root");
+    dataSource.setPassword("");
+    return dataSource;
+  }
+
+  @Bean
+  @Profile("pgsql")
+  public DataSource dataSource_PostgreSQL() throws SQLException {
+    DriverManagerDataSource dataSource = new DriverManagerDataSource();
+    dataSource.setDriverClassName("org.postgresql.Driver");
+    dataSource.setUrl("jdbc:postgresql://127.0.0.1/test");
+    dataSource.setUsername("postgres");
+    dataSource.setPassword("");
+    return dataSource;
+  }
+
+  @Bean
+  public PlatformTransactionManager transactionManager() throws SQLException {
+    return new JpaTransactionManager();
+  }
+
+  @Bean
+  public AbstractEntityManagerFactoryBean entityManagerFactory(DataSource dataSource)
+      throws SQLException {
+
+    HibernateJpaVendorAdapter jpaVendorAdapter = new HibernateJpaVendorAdapter();
+    jpaVendorAdapter.setGenerateDdl(true);
+
+    LocalContainerEntityManagerFactoryBean bean = new LocalContainerEntityManagerFactoryBean();
+    bean.setJpaVendorAdapter(jpaVendorAdapter);
+    bean.setPackagesToScan(Config.class.getPackage().getName());
+    bean.setDataSource(dataSource);
+
+    return bean;
+  }
+
+  @Bean
+  public SessionFactory sessionFactory(AbstractEntityManagerFactoryBean entityManagerFactory)
+      throws SQLException {
+    return ((HibernateEntityManagerFactory) entityManagerFactory.getObject()).getSessionFactory();
+  }
+
+}
+==============================================================================================================
+var gulp = require('gulp');
+var url = require('url');
+var proxy = require('proxy-middleware');
+var templateCache = require('gulp-angular-templatecache');
+var browserSync = require("browser-sync").create();
+
+$ = require('gulp-load-plugins')();
+
+gulp.task('clean', function () {
+    return gulp.src(['dist/', '.tmp/'])
+            .pipe($.clean());
+});
+
+gulp.task('templates', function () {
+    return gulp.src('app/views/**/*.html')
+            .pipe(templateCache({module: 'exampleApp.templates', standalone: true}))
+            .pipe($.wrap('(function () {<%=contents%>}());'))
+            .pipe(gulp.dest('.tmp/scripts/'));
+});
+
+gulp.task('serve', ['templates'], function () {
+    var proxyOptions = url.parse('http://localhost:9000/api');
+    proxyOptions.route = '/api';
+    browserSync.init({
+        notify: false,
+        // Customize the Browsersync console logging prefix
+        logPrefix: 'WSK',
+        // Allow scroll syncing across breakpoints
+        //scrollElementMapping: ['main', '.mdl-layout'],
+        // Run as an https by uncommenting 'https: true'
+        // Note: this uses an unsigned certificate which on first access
+        //       will present a certificate warning in the browser.
+        // https: true,
+        server: {
+            baseDir: ['.tmp', 'app'],
+            middleware: [proxy(proxyOptions)]
+        },
+        port: 3000
+    });
+
+    gulp.watch(['app/**/*.html', 'app/styles/**/*.{scss,css}', 'app/scripts/**/*.js', 'app/images/**/*'], ['templates', browserSync.reload]);
+//  gulp.watch(['app/styles/**/*.{scss,css}'], ['styles', browserSync.reload]);
+//  gulp.watch(['app/scripts/**/*.js'], ['lint', 'scripts']);
+//  gulp.watch(['app/images/**/*'], browserSync.reload);
+});
+
+gulp.task('copy-fonts', function () {
+    gulp.src(
+            [
+                'bower_components/font-awesome/fonts/*.*',
+                'bower_components/bootstrap-material-design/fonts/*.*',
+                'bower_components/bootstrap/fonts/*.*'
+            ],
+            {cwd: 'app/'})
+            .pipe(gulp.dest('dist/fonts/'));
+});
+
+gulp.task('copy-images', function () {
+    gulp.src(['images/**'],
+            {cwd: 'app/'})
+            .pipe($.cache($.imagemin({optimizationLevel: 5, progressive: true, interlaced: true})))
+            .pipe(gulp.dest('dist/images/'));
+});
+
+gulp.task('copy-i18n', function () {
+    gulp.src(['i18n/**'],{cwd: 'app/'})
+            .pipe(gulp.dest('dist/i18n/'));
+});
+
+gulp.task('copy', ['copy-fonts', 'copy-images', 'copy-i18n'], function () {});
+
+//gulp.task('less', function () {
+//  return gulp.src(['bower_components/bootstrap/less/bootstrap.less', 'bower_components/font-awesome/less/font-awesome.less'])
+//    .pipe($.less())
+//    .pipe($.concat())
+//    .pipe(gulp.dest('./tmp/styles'));
+//});
+//
+//var sass = require('gulp-ruby-sass');
+//gulp.task('sass', function() {
+//    return sass('src/scss/style.scss', {style: 'compressed'})
+//        .pipe(rename({suffix: '.min'}))
+//        .pipe(gulp.dest('build/css'));
+//});
+
+gulp.task('usemin', ['copy'], function () {
+    return gulp.src('app/index.html')
+            .pipe($.usemin({
+                css: [
+                    $.minifyCss(),
+                    'concat',
+                    $.rev()
+                ],
+                appcss: [
+                    $.minifyCss(),
+                    $.rev()
+                ],
+                js: [
+                    $.uglify(),
+                    $.rev()
+                ],
+                ngjs: [
+                    $.stripDebug(),
+                    $.ngAnnotate(),
+                    //'concat'
+                    $.uglify(),
+                    $.rev()
+                ],
+                tpljs: [
+                    $.ngAnnotate(),
+                    $.uglify(),
+                    $.rev()
+                ]
+            }))
+            .pipe(gulp.dest('dist/'));
+});
+// Tell Gulp what to do when we type "gulp" into the terminal
+gulp.task('default', function (cb) {
+    $.sequence('clean', 'templates', 'usemin')(cb);
+});
+==============================================================================================================
+user  nginx;
+worker_processes  1;
+
+error_log  /var/log/nginx/error.log warn;
+pid        /var/run/nginx.pid;
+
+events {
+    worker_connections  1024;
+}
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log  /var/log/nginx/access.log  main;
+
+    sendfile        on;
+    #tcp_nopush     on;
+
+    keepalive_timeout  65;
+
+    gzip  on;
+
+    include /etc/nginx/conf.d/*.conf;
+
+    server {
+        listen 80;
+        server_name atseashop.com;
+        return 301 https://$host$request_uri;
+    }
+
+    server {
+        listen 443;
+        ssl on;
+        ssl_certificate /run/secrets/revprox_cert;
+        ssl_certificate_key /run/secrets/revprox_key;
+        server_name atseashop.com;
+        access_log /dev/stdout;
+        error_log /dev/stderr;
+
+        location / {
+            proxy_pass http://appserver:8080;
+        }
+    }
+}
+
+    @ElementCollection
+    @MapKeyColumn(name="productid")
+    @Column(name = "productsordered")
+    @CollectionTable(name="orderquantities", joinColumns=@JoinColumn(name="orderid"))
+    Map<Integer, Integer> productsOrdered = new HashMap<Integer, Integer>();
+==============================================================================================================
+    public static void main(String[] args) {
+        SpringApplication.run(MultipleSourceMain.class, args);
+    }
+
+
+    /**
+     * 第一个数据源
+     * @return 数据源实例
+     */
+    @Bean(name = "primaryDataSource")
+    @Qualifier("primaryDataSource")
+    @ConfigurationProperties(prefix = "spring.datasource.primary")
+    public DataSource primaryDataSource() {
+        return DataSourceBuilder.create().build();
+    }
+
+    /**
+     * 第二个数据源
+     * @return 数据源实例
+     */
+    @Bean(name = "secondaryDataSource")
+    @Qualifier("secondaryDataSource")
+    @Primary
+    @ConfigurationProperties(prefix = "spring.datasource.secondary")
+    public DataSource secondaryDataSource() {
+        return DataSourceBuilder.create().build();
+    }
+
+    /**
+     * 第一个JDBC模板
+     * @param dataSource dataSource
+     * @return JDBC模板
+     */
+    @Bean(name = "primaryJdbcTemplate")
+    public JdbcTemplate primaryJdbcTemplate(
+            @Qualifier("primaryDataSource") DataSource dataSource) {
+        return new JdbcTemplate(dataSource);
+    }
+
+    /**
+     * 第二个JDBC模板
+     * @param dataSource dataSource
+     * @return JDBC模板
+     */
+    @Bean(name = "secondaryJdbcTemplate")
+    public JdbcTemplate secondaryJdbcTemplate(
+            @Qualifier("secondaryDataSource") DataSource dataSource) {
+        return new JdbcTemplate(dataSource);
+    }
+	
+	import info.xiaomo.mybatis.domain.User;
+import org.apache.ibatis.annotations.*;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * @author : xiaomo
+ */
+@Mapper
+public interface UserMapper {
+
+    @Results({
+            @Result(property = "name", column = "name"),
+            @Result(property = "age", column = "age")
+    })
+
+    /**
+     * 根据名字查
+     * @param name
+     * @return user
+     */
+    @Select("SELECT * FROM USER WHERE NAME = #{name}")
+    User findByName(@Param("name") String name);
+
+    /**
+     * 插入
+     *
+     * @param name
+     * @param age
+     * @return
+     */
+    @Insert("INSERT INTO USER(NAME, AGE) VALUES(#{name}, #{age})")
+    int insert(@Param("name") String name, @Param("age") Integer age);
+
+    /**
+     * 查所有
+     *
+     * @return
+     */
+    @Select("SELECT * FROM USER WHERE 1=1")
+    List<User> findAll();
+
+    /**
+     * 更新
+     *
+     * @param user
+     */
+    @Update("UPDATE USER SET age=#{age} WHERE name=#{name}")
+    void update(User user);
+
+    /**
+     * 删除
+     *
+     * @param id
+     */
+    @Delete("DELETE FROM USER WHERE id =#{id}")
+    void delete(Long id);
+
+    /**
+     * 添加
+     *
+     * @param user
+     * @return
+     */
+    @Insert("INSERT INTO USER(name, age) VALUES(#{name}, #{age})")
+    int insertByUser(User user);
+
+    /**
+     * 添加
+     *
+     * @param map
+     * @return
+     */
+    @Insert("INSERT INTO user(name, age) VALUES(#{name,jdbcType=VARCHAR}, #{age,jdbcType=INTEGER})")
+    int insertByMap(Map<String, Object> map);
+
+}
+==============================================================================================================
+import com.hellokoding.auth.model.User;
+import com.hellokoding.auth.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.validation.Errors;
+import org.springframework.validation.ValidationUtils;
+import org.springframework.validation.Validator;
+
+@Component
+public class UserValidator implements Validator {
+    @Autowired
+    private UserService userService;
+
+    @Override
+    public boolean supports(Class<?> aClass) {
+        return User.class.equals(aClass);
+    }
+
+    @Override
+    public void validate(Object o, Errors errors) {
+        User user = (User) o;
+
+        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "username", "NotEmpty");
+        if (user.getUsername().length() < 6 || user.getUsername().length() > 32) {
+            errors.rejectValue("username", "Size.userForm.username");
+        }
+        if (userService.findByUsername(user.getUsername()) != null) {
+            errors.rejectValue("username", "Duplicate.userForm.username");
+        }
+
+        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "password", "NotEmpty");
+        if (user.getPassword().length() < 8 || user.getPassword().length() > 32) {
+            errors.rejectValue("password", "Size.userForm.password");
+        }
+
+        if (!user.getPasswordConfirm().equals(user.getPassword())) {
+            errors.rejectValue("passwordConfirm", "Diff.userForm.passwordConfirm");
+        }
+    }
+}
+==============================================================================================================
+    @Bean
+    public Jackson2ObjectMapperBuilder objectMapperBuilder(JsonComponentModule jsonComponentModule) {
+   
+        Jackson2ObjectMapperBuilder builder = new Jackson2ObjectMapperBuilder();
+            builder
+    //                .serializerByType(ZonedDateTime.class, new JsonSerializer<ZonedDateTime>() {
+    //                    @Override
+    //                    public void serialize(ZonedDateTime zonedDateTime, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
+    //                        jsonGenerator.writeString(DateTimeFormatter.ISO_ZONED_DATE_TIME.format(zonedDateTime));
+    //                    }
+    //                })
+                .serializationInclusion(JsonInclude.Include.NON_EMPTY)
+                .featuresToDisable(
+                        SerializationFeature.WRITE_DATES_AS_TIMESTAMPS,
+                        DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES,
+                        DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES
+                )
+                .featuresToEnable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+                .indentOutput(true)
+                .modulesToInstall(jsonComponentModule);
+    
+        return builder;
+    } 
+==============================================================================================================
+/**
+ * <p>Copyright (c) 2014 ZhaoQian.All Rights Reserved.</p>
+ * @author <a href="zhaoqianjava@foxmail.com">ZhaoQian</a>
+ */
+package org.zhaoqian.security.shiro.authc.token;
+
+import org.apache.shiro.authc.UsernamePasswordToken;
+
+/**
+ * @author Credo
+ * @date: 2014年8月1日
+ */
+public class CaptchaUsernamePasswordToken extends UsernamePasswordToken
+{
+
+	private static final long serialVersionUID = -4746028009681958929L;
+
+	private String kaptcha;
+
+	public CaptchaUsernamePasswordToken(String username, char[] password, boolean rememberMe, String host, String kaptcha)
+	{
+		super(username, password, rememberMe, host);
+		this.kaptcha = kaptcha;
+	}
+
+	public String getKaptcha()
+	{
+		return kaptcha;
+	}
+
+	public void setKaptcha(String kaptcha)
+	{
+		this.kaptcha = kaptcha;
+	}
+
+}
+==============================================================================================================
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.solr.core.query.Query.Operator;
+import org.springframework.data.solr.core.query.result.FacetPage;
+import org.springframework.data.solr.core.query.result.HighlightPage;
+import org.springframework.data.solr.repository.Facet;
+import org.springframework.data.solr.repository.Highlight;
+import org.springframework.data.solr.repository.Query;
+import org.springframework.data.solr.repository.SolrCrudRepository;
+import org.springframework.data.solr.showcase.product.model.Product;
+
+/**
+ * @author Christoph Strobl
+ */
+interface ProductRepository extends SolrCrudRepository<Product, String> {
+
+	@Highlight(prefix = "<b>", postfix = "</b>")
+	@Query(fields = { SearchableProductDefinition.ID_FIELD_NAME, SearchableProductDefinition.NAME_FIELD_NAME,
+			SearchableProductDefinition.PRICE_FIELD_NAME, SearchableProductDefinition.FEATURES_FIELD_NAME,
+			SearchableProductDefinition.AVAILABLE_FIELD_NAME }, defaultOperator = Operator.AND)
+	HighlightPage<Product> findByNameIn(Collection<String> names, Pageable page);
+
+	@Facet(fields = { SearchableProductDefinition.NAME_FIELD_NAME })
+	FacetPage<Product> findByNameStartsWith(Collection<String> nameFragments, Pageable pagebale);
+
+}
+==============================================================================================================
+		<executions>
+					<execution>
+						<goals>
+							<goal>test-process</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>target/generated-sources/java</outputDirectory>
+							<processor>com.querydsl.apt.jpa.JPAAnnotationProcessor</processor>
+						</configuration>
+					</execution>
+				</executions>
+==============================================================================================================
+import com.hazelcast.query.Predicate;
+
+import java.io.Serializable;
+import java.util.Map;
+
+import org.apache.shiro.session.Session;
+
+/**
+ * Hazelcast query predicate for Shiro session attributes.
+ */
+public class SessionAttributePredicate<T> implements
+        Predicate<Serializable, Session> {
+
+    private final String attributeName;
+    private final T attributeValue;
+
+    public SessionAttributePredicate(String attributeName, T attributeValue) {
+        this.attributeName = attributeName;
+        this.attributeValue = attributeValue;
+    }
+
+    public String getAttributeName() {
+        return attributeName;
+    }
+
+    public T getAttributeValue() {
+        return attributeValue;
+    }
+
+    @Override
+    public boolean apply(Map.Entry<Serializable, Session> sessionEntry) {
+        final T attribute = (T) sessionEntry.getValue().getAttribute(attributeName);
+        return attribute.equals(attributeValue);
+    }
+
+}
+==============================================================================================================
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
@@ -5353,6 +5923,65 @@ public class SessionHandlerInterceptor extends HandlerInterceptorAdapter {
         ]]>
     </sql>
 </sqls>
+==============================================================================================================
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
+import org.springframework.data.elasticsearch.annotations.Document;
+
+@Document(indexName = "topqueries", type = "custquery", indexStoreType = "fs", shards = 1, replicas = 0, refreshInterval = "-1")
+public class CustomerTopQuery {
+
+	@Id
+	private String id;
+	@Version
+	private Long version;
+
+	private Long customerId;
+
+	private String queryString;
+
+	private int count;
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public Long getVersion() {
+		return version;
+	}
+
+	public void setVersion(Long version) {
+		this.version = version;
+	}
+
+	public Long getCustomerId() {
+		return customerId;
+	}
+
+	public void setCustomerId(Long customerId) {
+		this.customerId = customerId;
+	}
+
+	public String getQueryString() {
+		return queryString;
+	}
+
+	public void setQueryString(String queryString) {
+		this.queryString = queryString;
+	}
+
+	public int getCount() {
+		return count;
+	}
+
+	public void setCount(int count) {
+		this.count = count;
+	}
+}
 ==============================================================================================================
 @NamedNativeQuery(name = "Manufacturer.getAllThatSellAcoustics", 
 		query = "SELECT m.id, m.name, m.foundedDate, m.averageYearlySales, m.location_id as headquarters_id, m.active "

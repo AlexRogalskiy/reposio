@@ -10795,7 +10795,7 @@ import java.util.List;
 public class AuthenticationInterceptor extends HandlerInterceptorAdapter {
 
     @Autowired
-    UserDao userDao;
+    private UserDao userDao;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws IOException {
