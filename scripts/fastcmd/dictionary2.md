@@ -28079,6 +28079,13 @@ https://mvnrepository.com/search?q=com.mysema.querydsl
             </executions>
         </plugin>
 --------------------------------------------------------------------------------------------------------
+"C:\Program Files\Java\jdk1.8.0_191\bin\java.exe" 
+-ea 
+-Xms1g 
+-Xmx1500m 
+-Xss256k 
+-Didea.test.cyclic.buffer.size=1048576
+--------------------------------------------------------------------------------------------------------
 <servers>
   <server>
     <id>sonatype-nexus-snapshots</id>
