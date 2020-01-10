@@ -7499,6 +7499,81 @@ public class ResponseRule implements Rule {
 import io.github.benas.randombeans.EnhancedRandomBuilder;
 import io.github.benas.randombeans.api.EnhancedRandom;
 ==============================================================================================================
+import io.codearte.props2yaml.Props2YAML;
+import org.yaml.snakeyaml.Yaml;
+
+/**
+ * Utility for converting a String of comma delimited property values to YAML.
+ *
+ * @author Ilayaperumal Gopinathan
+ * @author Mark Pollack
+ */
+public abstract class YmlUtils {
+
+	public static String convertFromCsvToYaml(String propertiesAsString) {
+		String stringToConvert = propertiesAsString.replaceAll(",", "\n");
+		String yamlString = Props2YAML.fromContent(stringToConvert).convert();
+		// validate the yaml can be parsed
+		Yaml yaml = new Yaml();
+		yaml.load(yamlString);
+		return yamlString;
+	}
+}
+==============================================================================================================
+spring.jmx.default-domain=domain-${RANDOM:1}
+spring.jmx.enabled=false
+==============================================================================================================
+import java.io.Serializable;
+
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
+/**
+ * 实体基类,重写toString,hashCode,equals方法.
+ * 
+ * @author Credo
+ * @date: 2014年8月12日
+ */
+public class BaseModel implements Serializable
+{
+
+	private static final long serialVersionUID = 6494888277191966864L;
+
+	@Override
+	public String toString()
+	{
+		return ToStringBuilder.reflectionToString(this);
+	}
+
+	@Override
+	public int hashCode()
+	{
+		return HashCodeBuilder.reflectionHashCode(this);
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		return EqualsBuilder.reflectionEquals(this, obj);
+	}
+}
+
+
+
+    @Transient
+    public String getViewRoles() {
+        StringBuilder sb = new StringBuilder();
+
+        for (Iterator<Role> it = getRoles().iterator(); it.hasNext();) {
+            sb.append(it.next().getName());
+            if (it.hasNext())
+                sb.append(", ");
+        }
+
+        return sb.toString();
+    }
+==============================================================================================================
 @echo off
 setlocal
 set _RunOnceValue=%~d0%\Windows10Upgrade\Windows10UpgraderApp.exe /SkipSelfUpdate
