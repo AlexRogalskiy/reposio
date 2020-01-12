@@ -4709,7 +4709,6 @@ public class SecurityConfiguration {
 		ShiroCacheManager shiroCacheManager = new ShiroCacheManager();
 		return shiroCacheManager;
 	}
-
 }
 ==============================================================================================================
 import java.io.IOException;
@@ -7711,6 +7710,1190 @@ public class ThymeleafConfiguration implements ApplicationContextAware {
 
 
 </infinispan>
+==============================================================================================================
+import java.security.MessageDigest;
+
+/**
+ * md5加密工具类
+ * @author Jeff Xu
+ * @since 2015-12-09
+ */
+public class Md5Util {
+	
+	//十六进制下数字到字符的映射数组  
+    private final static String[] hexDigits = {"0", "1", "2", "3", "4",  
+        "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"};  
+      
+    /** * 把inputString加密     */  
+    public static String generatePassword(String inputString){  
+        return encodeByMD5(inputString);  
+    }  
+      
+      /** 
+       * 验证输入的密码是否正确 
+     * @param password    加密后的密码 
+     * @param inputString    输入的字符串 
+     * @return    验证结果，TRUE:正确 FALSE:错误 
+     */  
+    public static boolean validatePassword(String password, String inputString){  
+        if(password.equalsIgnoreCase(encodeByMD5(inputString))){  
+            return true;  
+        } else{  
+            return false;  
+        }  
+    }  
+    /**  对字符串进行MD5加密     */  
+    private static String encodeByMD5(String originString){  
+        if (originString != null){  
+            try{  
+                //创建具有指定算法名称的信息摘要  
+                MessageDigest md = MessageDigest.getInstance("MD5");  
+                //使用指定的字节数组对摘要进行最后更新，然后完成摘要计算  
+                byte[] results = md.digest(originString.getBytes());  
+                //将得到的字节数组变成字符串返回  
+                String resultString = byteArrayToHexString(results);  
+                return resultString.toUpperCase();  
+            } catch(Exception ex){  
+                ex.printStackTrace();  
+            }  
+        }  
+        return null;  
+    }  
+      
+    /**  
+     * 转换字节数组为十六进制字符串 
+     * @param     字节数组 
+     * @return    十六进制字符串 
+     */  
+    private static String byteArrayToHexString(byte[] b){  
+        StringBuffer resultSb = new StringBuffer();  
+        for (int i = 0; i < b.length; i++){  
+            resultSb.append(byteToHexString(b[i]));  
+        }  
+        return resultSb.toString();  
+    }  
+      
+    /** 将一个字节转化成十六进制形式的字符串     */  
+    private static String byteToHexString(byte b){  
+        int n = b;  
+        if (n < 0)  
+            n = 256 + n;  
+        int d1 = n / 16;  
+        int d2 = n % 16;  
+        return hexDigits[d1] + hexDigits[d2];  
+    } 
+    
+    public static void main(String[] args){
+    	System.out.println(Md5Util.validatePassword("454E908651395FB737E9B8048993C95D", "zhangdanfeng"));
+    }
+}
+==============================================================================================================
+python -m django --version
+pipenv install -e git+https://github.com/requests/requests.git#egg=requests
+pip freeze > requirements.txt
+pipenv lock -r
+pip install -r requirements.txt
+pipenv install -r dev-requirements.txt --dev
+$ pipenv lock -r > requirements.txt
+$ pipenv lock -r -d > dev-requirements.txt
+
+python -m pip install --user pipenv
+$ pipenv shell --three
+$ pipenv install django-cors-headers
+
+
+pipenv install django
+pipenv install djangorestframework
+pipenv install django-cors-headers
+django-admin.py startproject backend
+python manage.py migrate
+python manage.py runserver
+pipenv run python app/manage.py runserver
+
+https://dev.to/yukinagae/your-first-guide-to-getting-started-with-pipenv-50bn
+https://www.techiediaries.com/pipenv-tutorial/
+==============================================================================================================
+import org.springframework.hateoas.VndErrors;
+
+/**
+ * A Java exception that wraps the serialized {@link VndErrors} object.
+ *
+ * @author Eric Bottard
+ * @author Mark Fisher
+ */
+@SuppressWarnings("serial")
+public class DataFlowClientException extends RuntimeException {
+
+	private VndErrors vndErrors;
+
+	public DataFlowClientException(VndErrors error) {
+		this.vndErrors = error;
+	}
+
+	@Override
+	public String getMessage() {
+		StringBuilder builder = new StringBuilder();
+		for (VndErrors.VndError e : vndErrors) {
+			builder.append(e.getMessage()).append('\n');
+		}
+		return builder.toString();
+	}
+}
+
+import java.io.IOException;
+import java.util.List;
+
+import org.springframework.hateoas.VndErrors;
+import org.springframework.hateoas.VndErrors.VndError;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.client.ClientHttpResponse;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.web.client.DefaultResponseErrorHandler;
+import org.springframework.web.client.HttpMessageConverterExtractor;
+import org.springframework.web.client.ResponseExtractor;
+
+/**
+ * Extension of {@link DefaultResponseErrorHandler} that knows how to de-serialize a
+ * {@link VndError} structure.
+ *
+ * @author Eric Bottard
+ * @author Gunnar Hillert
+ */
+public class VndErrorResponseErrorHandler extends DefaultResponseErrorHandler {
+
+	private ResponseExtractor<VndErrors> vndErrorsExtractor;
+
+	private ResponseExtractor<VndError> vndErrorExtractor;
+
+	public VndErrorResponseErrorHandler(List<HttpMessageConverter<?>> messageConverters) {
+		vndErrorsExtractor = new HttpMessageConverterExtractor<VndErrors>(VndErrors.class, messageConverters);
+		vndErrorExtractor = new HttpMessageConverterExtractor<VndError>(VndError.class, messageConverters);
+	}
+
+	@Override
+	public void handleError(ClientHttpResponse response) throws IOException {
+		VndErrors vndErrors = null;
+		try {
+			if (HttpStatus.FORBIDDEN.equals(response.getStatusCode())) {
+				vndErrors = new VndErrors(vndErrorExtractor.extractData(response));
+			}
+			else {
+				vndErrors = vndErrorsExtractor.extractData(response);
+			}
+		}
+		catch (Exception e) {
+			super.handleError(response);
+		}
+		throw new DataFlowClientException(vndErrors);
+	}
+}
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import org.springframework.cloud.dataflow.rest.Version;
+import org.springframework.hateoas.ResourceSupport;
+
+/**
+ * Describes the other available resource endpoints, as well as provides information about
+ * the server itself, such as API revision number.
+ *
+ * @author Eric Bottard
+ */
+public class RootResource extends ResourceSupport {
+
+	private Integer apiRevision;
+
+	// For JSON un-marshalling
+	private RootResource() {
+	}
+
+	public RootResource(int apiRevision) {
+		this.apiRevision = apiRevision;
+	}
+
+	@JsonProperty(Version.REVISION_KEY)
+	public Integer getApiRevision() {
+		return apiRevision;
+	}
+
+	public void setApiRevision(int apiRevision) {
+		this.apiRevision = apiRevision;
+	}
+}
+
+import org.springframework.hateoas.PagedResources;
+import org.springframework.hateoas.ResourceSupport;
+
+/**
+ * Rest resource for an app registration.
+ *
+ * @author Glenn Renfro
+ * @author Mark Fisher
+ * @author Patrick Peralta
+ */
+public class AppRegistrationResource extends ResourceSupport {
+
+	/**
+	 * App name.
+	 */
+	private String name;
+
+	/**
+	 * App type.
+	 */
+	private String type;
+
+	/**
+	 * URI for app resource, such as {@code maven://groupId:artifactId:version}.
+	 */
+	private String uri;
+
+	/**
+	 * App version.
+	 */
+	private String version;
+
+	/**
+	 * Is default app version for all (name, type) applications
+	 */
+	private Boolean defaultVersion;
+
+
+	/**
+	 * Default constructor for serialization frameworks.
+	 */
+	protected AppRegistrationResource() {
+	}
+
+	public AppRegistrationResource(String name, String type, String uri) {
+		this(name, type, null, uri, false);
+	}
+
+	/**
+	 * Construct a {@code AppRegistrationResource}.
+	 *
+	 * @param name app name
+	 * @param type app type
+	 * @param version app version
+	 * @param uri uri for app resource
+	 * @param defaultVersion is this application selected to the be default version in DSL
+	 */
+	public AppRegistrationResource(String name, String type, String version, String uri, Boolean defaultVersion) {
+		this.name = name;
+		this.type = type;
+		this.version = version;
+		this.uri = uri;
+		this.defaultVersion = defaultVersion;
+	}
+
+	/**
+	 * @return the name of the app
+	 */
+	public String getName() {
+		return name;
+	}
+
+	/**
+	 * @return type type of the app
+	 */
+	public String getType() {
+		return type;
+	}
+
+	/**
+	 * @return type URI for the app resource
+	 */
+	public String getUri() {
+		return uri;
+	}
+
+	/**
+	 * @return version of the app
+	 */
+	public String getVersion() {
+		return version;
+	}
+
+	/**
+	 * @return if this app selected to be the default
+	 */
+	public Boolean getDefaultVersion() {
+		return defaultVersion;
+	}
+
+	/**
+	 * Dedicated subclass to workaround type erasure.
+	 */
+	public static class Page extends PagedResources<AppRegistrationResource> {
+	}
+
+}
+import java.util.Map;
+
+import org.springframework.hateoas.ResourceSupport;
+
+/**
+ * REST representation for an AppInstanceStatus.
+ *
+ * @author Eric Bottard
+ * @author Mark Fisher
+ */
+public class AppInstanceStatusResource extends ResourceSupport {
+
+	private String instanceId;
+
+	private String state;
+
+	private Map<String, String> attributes;
+
+	private AppInstanceStatusResource() {
+		// noarg constructor for serialization
+	}
+
+	public AppInstanceStatusResource(String instanceId, String state, Map<String, String> attributes) {
+		this.instanceId = instanceId;
+		this.state = state;
+		this.attributes = attributes;
+	}
+
+	public String getInstanceId() {
+		return instanceId;
+	}
+
+	public void setInstanceId(String instanceId) {
+		this.instanceId = instanceId;
+	}
+
+	public String getState() {
+		return state;
+	}
+
+	public void setState(String state) {
+		this.state = state;
+	}
+
+	public Map<String, String> getAttributes() {
+		return attributes;
+	}
+
+	public void setAttributes(Map<String, String> attributes) {
+		this.attributes = attributes;
+	}
+}
+import org.springframework.batch.core.StepExecution;
+import org.springframework.hateoas.PagedResources;
+import org.springframework.hateoas.ResourceSupport;
+import org.springframework.util.Assert;
+
+/**
+ * @author Glenn Renfro
+ */
+public class StepExecutionResource extends ResourceSupport {
+
+	private final Long jobExecutionId;
+
+	private final StepExecution stepExecution;
+
+	private final String stepType;
+
+	/**
+	 * Create a new StepExecutionResource
+	 *
+	 * @param jobExecutionId the job execution id, must not be null
+	 * @param stepExecution the step execution, must not be null
+	 * @param stepType the step type
+	 */
+	public StepExecutionResource(Long jobExecutionId, StepExecution stepExecution, String stepType) {
+
+		Assert.notNull(jobExecutionId, "jobExecutionId must not be null.");
+		Assert.notNull(stepExecution, "stepExecution must not be null.");
+
+		this.stepExecution = stepExecution;
+		this.jobExecutionId = jobExecutionId;
+		this.stepType = stepType;
+	}
+
+	/**
+	 * Default constructor to be used by Jackson.
+	 */
+	private StepExecutionResource() {
+		this.stepExecution = null;
+		this.jobExecutionId = null;
+		this.stepType = null;
+	}
+
+	/**
+	 * @return The jobExecutionId, which will never be null
+	 */
+	public Long getJobExecutionId() {
+		return this.jobExecutionId;
+	}
+
+	/**
+	 * @return The stepExecution, which will never be null
+	 */
+	public StepExecution getStepExecution() {
+		return stepExecution;
+	}
+
+	public String getStepType() {
+		return this.stepType;
+	}
+
+	public static class Page extends PagedResources<StepExecutionResource> {
+	}
+
+}
+==============================================================================================================
+import javax.xml.bind.annotation.XmlRootElement;
+
+import org.atteo.classindex.ClassIndex;
+import org.atteo.moonshine.TopLevelService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.inject.AbstractModule;
+import com.google.inject.Module;
+import com.google.inject.Singleton;
+
+/**
+ * Registers application modules that are annotated with {@link GlobalModule}
+ */
+@XmlRootElement(name = "global-modules")
+@Singleton
+public class GlobalModulesService extends TopLevelService {
+	private final static Logger logger = LoggerFactory.getLogger(GlobalModulesService.class);
+
+	@Override
+	public Module configure() {
+		return new AbstractModule() {
+			@Override
+			protected void configure() {
+				for (Class<?> moduleClass : ClassIndex.getAnnotated(GlobalModule.class)) {
+					if (!Module.class.isAssignableFrom(moduleClass)) {
+						throw new IllegalStateException("Class " + moduleClass.getName()
+								+ " is annotated as @" + GlobalModule.class.getSimpleName()
+								+ " but doesn't implement "
+								+ Module.class.getCanonicalName());
+					}
+
+					logger.trace("Found @AppModule [{}].", moduleClass.getName());
+					Module module;
+					try {
+						module = (Module)moduleClass.newInstance();
+					} catch (IllegalAccessException | InstantiationException e) {
+						throw new IllegalStateException("Could not instantiate AppModule {}" + moduleClass.getName(),
+								e);
+					}
+					install(module);
+				}
+			}
+		};
+	}
+}
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+import javax.inject.Singleton;
+
+import org.atteo.classindex.IndexAnnotated;
+
+/**
+ * MBean marker interface.
+ *
+ * <p>
+ * Any annotated classes will be discovered and registered by {@link JMX} service as MBean.
+ * By convention any such class should implement an interface with the same name
+ * with the suffix <i>MBean</i> added (see <a href="http://download.oracle.com/javase/tutorial/jmx/mbeans/standard.html">JMX tutorial</a>).
+ * </p>
+ * <p>
+ * Additionally annotated class will be registered in Guice with {@link Singleton} scope.
+ */
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@IndexAnnotated
+public @interface MBean {
+	/**
+	 * Name that the MBean will be registered with.
+	 * <p>
+	 * If not specified, one will be generated based on full class name of the annotated class.
+	 * </p>
+	 */
+	String name() default "";
+}
+==============================================================================================================
+import com.google.inject.AbstractModule;
+import com.google.inject.Module;
+import com.google.inject.Provider;
+import com.google.inject.persist.PersistService;
+import com.google.inject.servlet.RequestScoped;
+import com.orientechnologies.orient.core.config.OGlobalConfiguration;
+import com.orientechnologies.orient.core.db.document.ODatabaseDocumentPool;
+import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
+import org.atteo.config.XmlDefaultValue;
+import org.atteo.moonshine.TopLevelService;
+
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement(name = "orientdb")
+public class OrientDb extends TopLevelService {
+	@XmlElement(name = "url")
+	@XmlDefaultValue("local:${dataHome}/orientdb")
+	private String url;
+
+	@XmlElement(name = "autocreate")
+	@XmlDefaultValue("true")
+	private Boolean autocreate;
+
+	@XmlElement
+	@XmlDefaultValue("admin")
+	private String username;
+
+	@XmlElement
+	@XmlDefaultValue("admin")
+	private String password;
+
+	@XmlElement(name = "pool-timeout")
+	@XmlDefaultValue("600000")
+	private Integer poolTimeout;
+
+	private PersistService persistService;
+
+	private Provider<ODatabaseDocumentTx> provider = new Provider<ODatabaseDocumentTx>() {
+		@Override
+		public ODatabaseDocumentTx get() {
+			return ODatabaseDocumentPool.global().acquire(url, username, password);
+		}
+	};
+
+	public String getUrl() {
+		return url;
+	}
+
+	public String getUsername() {
+		return username;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+
+	public Boolean getAutocreate() {
+		return autocreate;
+	}
+
+	@Override
+	public Module configure() {
+		return new AbstractModule() {
+			@Override
+			protected void configure() {
+				OGlobalConfiguration.CLIENT_CONNECT_POOL_WAIT_TIMEOUT.setValue(poolTimeout);
+				bind(ODatabaseDocumentTx.class).toProvider(provider).in(RequestScoped.class);
+			}
+		};
+	}
+
+	@Override
+	public void start() {
+		if (getAutocreate()) {
+			ODatabaseDocumentTx db = new ODatabaseDocumentTx(url);
+			if (!db.exists()) {
+				db.create();
+			}
+			db.close();
+		}
+	}
+
+	@Override
+	public void stop() {
+	}
+}
+
+import javax.inject.Inject;
+import javax.sql.DataSource;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlIDREF;
+import javax.xml.bind.annotation.XmlRootElement;
+
+import org.atteo.moonshine.database.DatabaseService;
+import org.atteo.moonshine.jta.JtaDataSourceWrapper;
+import org.atteo.moonshine.jta.JtaService;
+import org.atteo.moonshine.jta.PoolOptions;
+import org.atteo.moonshine.services.ImportService;
+import org.postgresql.ds.PGSimpleDataSource;
+import org.postgresql.ds.common.BaseDataSource;
+import org.postgresql.xa.PGXADataSource;
+
+import com.google.inject.AbstractModule;
+import com.google.inject.Module;
+import com.google.inject.Provider;
+import com.google.inject.Scopes;
+
+/**
+ * Connects to the PostgreSQL database.
+ */
+@XmlRootElement(name = "postgresql")
+public class PostgreSQLService extends DatabaseService {
+	@ImportService
+	@XmlIDREF
+	@XmlElement
+	private JtaService jta;
+
+	/**
+	 * Sets the name of the PostgreSQL database, running on the server identified by the serverName property.
+	 */
+	@XmlElement(required = true)
+	private String databaseName;
+
+	/**
+	 * Sets the name of the host the PostgreSQL database is running on. The default value is localhost.
+	 */
+	@XmlElement
+	private String serverName;
+
+	/**
+	 * Sets the port which the PostgreSQL server is listening on for TCP/IP connections.
+	 */
+	@XmlElement
+	private Integer portNumber;
+
+	/**
+	 * Database user.
+	 */
+	@XmlElement
+	private String user = "";
+
+	/**
+	 * Database password.
+	 */
+	@XmlElement
+	private String password = "";
+
+	/**
+	 * Connection pool options.
+	 */
+	@XmlElement
+	private PoolOptions pool;
+
+	@XmlElement
+	private String testQuery = "select 1";
+
+	@Inject
+	private JtaDataSourceWrapper wrapper;
+
+	private DataSource dataSource;
+
+	private class DataSourceProvider implements Provider<DataSource> {
+		@Inject
+		private JtaDataSourceWrapper wrapper;
+
+		private void configure(BaseDataSource dataSource) {
+			dataSource.setDatabaseName(databaseName);
+			if (serverName != null) {
+				dataSource.setServerName(serverName);
+			}
+			if (portNumber != null) {
+				dataSource.setPortNumber(portNumber);
+			}
+
+			if (user != null) {
+				dataSource.setUser(user);
+			}
+
+			if (password != null) {
+				dataSource.setPassword(password);
+			}
+		}
+
+		@Override
+		public DataSource get() {
+			final PGSimpleDataSource migrationDataSource = new PGSimpleDataSource();
+			configure(migrationDataSource);
+			executeMigrations(migrationDataSource);
+
+			final PGXADataSource xaDataSource = new PGXADataSource();
+			configure(xaDataSource);
+
+			String name = "defaultDataSource";
+			if (getId() != null) {
+				name = getId();
+			}
+			dataSource = wrapper.wrap(name, xaDataSource, pool, testQuery);
+			return dataSource;
+		}
+	}
+
+	@Override
+	public Module configure() {
+		return new AbstractModule() {
+			@Override
+			
+			import java.util.List;
+import java.util.Map;
+
+import com.jeff.tianti.common.dao.CustomBaseSqlDaoImpl;
+import com.jeff.tianti.org.entity.Resource;
+
+public class ResourceDaoImpl extends CustomBaseSqlDaoImpl implements ResourceDaoCustom {
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<Resource> findMenuResource(Map<String, Object> params) {
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append("select r from Resource r where r.type in('module', 'page') ");
+		
+		Object deleteFlag = params.get("deleteFlag");
+		if(deleteFlag != null){
+			sb.append(" and r.deleteFlag = :deleteFlag ");
+		}
+
+		Object name = params.get("name");
+		if(name != null){
+			sb.append(" and r.name like :name ");
+		}
+		
+		sb.append(" order by r.orderNo ");
+		
+		return this.queryByMapParams(sb.toString(), params, null, null);
+	}
+
+}
+			protected void configure() {
+				bind(DataSource.class).toProvider(new DataSourceProvider()).in(Scopes.SINGLETON);
+			}
+		};
+	}
+
+	@Override
+	public void close() {
+		if (dataSource != null) {
+			wrapper.close(dataSource);
+		}
+	}
+}
+
+   private final Jackson2ResourceReader resourceReader;
+    private final Resource sourceData;
+
+    private ApplicationContext applicationContext;
+
+    public AlbumRepositoryPopulator() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        resourceReader = new Jackson2ResourceReader(mapper);
+        sourceData = new ClassPathResource("albums.json");
+    }
+==============================================================================================================
+#!/bin/sh
+#
+# Copyright (c) 2012-2015 Andrea Selva
+#
+
+echo "                                                                         "
+echo "  ___  ___                       _   _        ___  ________ _____ _____  "
+echo "  |  \/  |                      | | | |       |  \/  |  _  |_   _|_   _| "
+echo "  | .  . | ___   __ _ _   _  ___| |_| |_ ___  | .  . | | | | | |   | |   "
+echo "  | |\/| |/ _ \ / _\ | | | |/ _ \ __| __/ _ \ | |\/| | | | | | |   | |   "
+echo "  | |  | | (_) | (_| | |_| |  __/ |_| ||  __/ | |  | \ \/' / | |   | |   "
+echo "  \_|  |_/\___/ \__, |\__,_|\___|\__|\__\___| \_|  |_/\_/\_\ \_/   \_/   "
+echo "                   | |                                                   "
+echo "                   |_|                                                   "
+echo "                                                                         "
+
+
+cd "$(dirname "$0")"
+
+# resolve links - $0 may be a softlink
+PRG="$0"
+
+while [ -h "$PRG" ]; do
+  ls=`ls -ld "$PRG"`
+  link=`expr "$ls" : '.*-> \(.*\)$'`
+  if expr "$link" : '/.*' > /dev/null; then
+    PRG="$link"
+  else
+    PRG=`dirname "$PRG"`/"$link"
+  fi
+done
+
+# Get standard environment variables
+PRGDIR=`dirname "$PRG"`
+
+# Only set MOQUETTE_HOME if not already set
+[ -f "$MOQUETTE_HOME"/bin/moquette.sh ] || MOQUETTE_HOME=`cd "$PRGDIR/.." ; pwd`
+export MOQUETTE_HOME
+
+# Set JavaHome if it exists
+if [ -f "${JAVA_HOME}/bin/java" ]; then 
+   JAVA=${JAVA_HOME}/bin/java
+else
+   JAVA=java
+fi
+export JAVA
+
+LOG_FILE=$MOQUETTE_HOME/config/moquette-log.properties
+MOQUETTE_PATH=$MOQUETTE_HOME/
+#LOG_CONSOLE_LEVEL=info
+#LOG_FILE_LEVEL=fine
+JAVA_OPTS_SCRIPT="-XX:+HeapDumpOnOutOfMemoryError -Djava.awt.headless=true"
+
+## Use the Hotspot garbage-first collector.
+JAVA_OPTS="$JAVA_OPTS -XX:+UseG1GC"
+
+## Have the JVM do less remembered set work during STW, instead
+## preferring concurrent GC. Reduces p99.9 latency.
+JAVA_OPTS="$JAVA_OPTS -XX:G1RSetUpdatingPauseTimePercent=5"
+
+## Main G1GC tunable: lowering the pause target will lower throughput and vise versa.
+## 200ms is the JVM default and lowest viable setting
+## 1000ms increases throughput. Keep it smaller than the timeouts.
+JAVA_OPTS="$JAVA_OPTS -XX:MaxGCPauseMillis=500"
+
+## Optional G1 Settings
+
+# Save CPU time on large (>= 16GB) heaps by delaying region scanning
+# until the heap is 70% full. The default in Hotspot 8u40 is 40%.
+#JAVA_OPTS="$JAVA_OPTS -XX:InitiatingHeapOccupancyPercent=70"
+
+# For systems with > 8 cores, the default ParallelGCThreads is 5/8 the number of logical cores.
+# Otherwise equal to the number of cores when 8 or less.
+# Machines with > 10 cores should try setting these to <= full cores.
+#JAVA_OPTS="$JAVA_OPTS -XX:ParallelGCThreads=16"
+
+# By default, ConcGCThreads is 1/4 of ParallelGCThreads.
+# Setting both to the same value can reduce STW durations.
+#JAVA_OPTS="$JAVA_OPTS -XX:ConcGCThreads=16"
+
+### GC logging options -- uncomment to enable
+
+JAVA_OPTS="$JAVA_OPTS -XX:+PrintGCDetails"
+JAVA_OPTS="$JAVA_OPTS -XX:+PrintGCDateStamps"
+JAVA_OPTS="$JAVA_OPTS -XX:+PrintHeapAtGC"
+JAVA_OPTS="$JAVA_OPTS -XX:+PrintTenuringDistribution"
+JAVA_OPTS="$JAVA_OPTS -XX:+PrintGCApplicationStoppedTime"
+JAVA_OPTS="$JAVA_OPTS -XX:+PrintPromotionFailure"
+#JAVA_OPTS="$JAVA_OPTS -XX:PrintFLSStatistics=1"
+#JAVA_OPTS="$JAVA_OPTS -Xloggc:/var/log/moquette/gc.log"
+JAVA_OPTS="$JAVA_OPTS -XX:+UseGCLogFileRotation"
+JAVA_OPTS="$JAVA_OPTS -XX:NumberOfGCLogFiles=10"
+JAVA_OPTS="$JAVA_OPTS -XX:GCLogFileSize=10M"
+
+$JAVA -server $JAVA_OPTS $JAVA_OPTS_SCRIPT -Dlog4j.configuration="file:$LOG_FILE" -Dmoquette.path="$MOQUETTE_PATH" -cp "$MOQUETTE_HOME/lib/*" io.moquette.server.Server
+
+
+language: java
+jdk:
+  - openjdk12
+before_cache:
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+cache:
+  directories:
+    - $HOME/.gradle/caches/
+    - $HOME/.gradle/wrapper/
+
+script:
+    - ./gradlew install test
+==============================================================================================================
+https://www.programcreek.com/java-api-examples/index.php?project_name=JesseFarebro%2Fandroid-mqtt#
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+
+#!/bin/bash
+
+#
+# Start H2 database and console
+#
+
+if [ ! -e ~/tmp/mop.jar ]; then
+	wget http://mop.fusesource.org/repo/release/org/fusesource/mop/mop-core/1.0-m1/mop-core-1.0-m1.jar -O ~/tmp/mop.jar
+fi
+
+
+echo "Database URL for tests:"
+echo ""
+echo " jdbc:h2:target/test-home/database;AUTO_SERVER=TRUE"
+echo ""
+
+cd "$( dirname "${BASH_SOURCE[0]}" )"
+
+mkdir -p target/database
+
+java -jar ~/tmp/mop.jar exec com.h2database:h2:1.3.161 org.h2.tools.Console -webPort 8089
+==============================================================================================================
+git pull upstream master
+mvn -DautoVersionSubmodules=true clean package release:prepare
+mvn release:perform
+
+   <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers</artifactId>
+                <version>${testcontainers.version}</version>
+            </dependency>
+     <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${testcontainers.version}</version>
+            </dependency>
+			
+  <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+		
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  evaluation_interval: 15s
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+      scheme: http
+      timeout: 10s
+scrape_configs:
+  - job_name: prometheus
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets:
+          - localhost:9090
+  - job_name: spring-actuator
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    metrics_path: /actuator/prometheus
+    scheme: http
+    static_configs:
+      - targets: ['host.docker.internal:8080'] # works on docker for mac and windows, linux https://github.com/docker/for-linux/issues/264
+	
+
+import java.util.concurrent.TimeUnit;
+
+import org.infinispan.Cache;
+
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.binder.cache.CacheMeterBinder;
+
+/**
+ * Implements {@link CacheMeterBinder} to expose Infinispan embedded metrics
+ *
+ * @author Katia Aresti, karesti@redhat.com
+ * @since 2.1
+ */
+public class InfinispanCacheMeterBinder extends CacheMeterBinder {
+
+   private final Cache cache;
+
+   public InfinispanCacheMeterBinder(Cache cache, Iterable<Tag> tags) {
+      super(cache, cache.getName(), tags);
+      this.cache = cache;
+   }
+
+   @Override
+   protected Long size() {
+      if (cache == null) return 0L;
+
+      return cache.getAdvancedCache().getStats().getTotalNumberOfEntries();
+   }
+
+   @Override
+   protected long hitCount() {
+      if (cache == null) return 0L;
+
+      return cache.getAdvancedCache().getStats().getHits();
+   }
+
+   @Override
+   protected Long missCount() {
+      if (cache == null) return 0L;
+
+      return cache.getAdvancedCache().getStats().getMisses();
+   }
+
+   @Override
+   protected Long evictionCount() {
+      if (cache == null) return 0L;
+
+      return cache.getAdvancedCache().getStats().getEvictions();
+   }
+
+   @Override
+   protected long putCount() {
+      if (cache == null) return 0L;
+
+      return cache.getAdvancedCache().getStats().getStores();
+   }
+
+   @Override
+   protected void bindImplementationSpecificMetrics(MeterRegistry registry) {
+      if (cache == null) return;
+
+      Gauge.builder("cache.start", cache, cache -> cache.getAdvancedCache().getStats().getTimeSinceStart())
+            .baseUnit(TimeUnit.SECONDS.name())
+            .tags(getTagsWithCacheName())
+            .description("Time elapsed since start")
+            .register(registry);
+
+      Gauge.builder("cache.reset", cache, cache -> cache.getAdvancedCache().getStats().getTimeSinceReset())
+            .baseUnit(TimeUnit.SECONDS.name())
+            .tags(getTagsWithCacheName())
+            .description("Time elapsed since the last statistics reset")
+            .register(registry);
+
+      memory(registry);
+      averages(registry);
+   }
+
+   private void memory(MeterRegistry registry) {
+      Gauge.builder("cache.memory.size", cache, cache -> cache.getAdvancedCache().getStats().getCurrentNumberOfEntriesInMemory())
+            .tags(getTagsWithCacheName())
+            .description("Number of entries currently in the cache, excluding passivated entries")
+            .register(registry);
+
+      if (cache.getCacheConfiguration().memory().evictionStrategy().isEnabled()) {
+         Gauge.builder("cache.memory.used", cache, cache -> cache.getAdvancedCache().getStats().getDataMemoryUsed())
+               .tags(getTagsWithCacheName())
+               .description("Provides how much memory the current eviction algorithm estimates is in use for data")
+               .register(registry);
+      }
+
+      Gauge.builder("cache.memory.offHeap", cache, cache -> cache.getAdvancedCache().getStats().getOffHeapMemoryUsed())
+            .tags(getTagsWithCacheName())
+            .description("The amount of off-heap memory used by this cache")
+            .register(registry);
+   }
+
+   private void averages(MeterRegistry registry) {
+      Gauge.builder("cache.puts.latency", cache, cache -> cache.getAdvancedCache().getStats().getAverageWriteTime())
+            .baseUnit(TimeUnit.MILLISECONDS.name())
+            .tags(getTagsWithCacheName())
+            .description("Cache puts")
+            .register(registry);
+
+      Gauge.builder("cache.gets.latency", cache, cache -> cache.getAdvancedCache().getStats().getAverageReadTime())
+            .baseUnit(TimeUnit.MILLISECONDS.name())
+            .tags(getTagsWithCacheName())
+            .description("Cache gets")
+            .register(registry);
+
+      Gauge.builder("cache.removes.latency", cache, cache -> cache.getAdvancedCache().getStats().getAverageRemoveTime())
+            .baseUnit(TimeUnit.MILLISECONDS.name())
+            .tags(getTagsWithCacheName())
+            .description("Cache removes")
+            .register(registry);
+   }
+}
+
+
+
+import io.micrometer.core.instrument.binder.cache.JCacheMetrics;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.actuate.metrics.cache.CacheMeterBinderProvider;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.cache.Cache;
+import org.springframework.stereotype.Component;
+
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.binder.MeterBinder;
+
+/**
+ * When actuate dependency is found in the classpath, this component links Infinispan cache metrics with Actuator
+ *
+ * @author Katia Aresti, karesti@redtat.com
+ * @since 2.1
+ */
+@Component
+@Qualifier(InfinispanCacheMeterBinderProvider.NAME)
+@ConditionalOnClass(name = "org.springframework.boot.actuate.metrics.cache.CacheMeterBinderProvider")
+@ConditionalOnProperty(value = "infinispan.embedded.enabled", havingValue = "true", matchIfMissing = true)
+public class InfinispanCacheMeterBinderProvider implements CacheMeterBinderProvider<Cache> {
+
+   public static final String NAME = "infinispanCacheMeterBinderProvider";
+
+   @Override
+   public MeterBinder getMeterBinder(Cache cache, Iterable<Tag> tags) {
+      Object nativeCache = cache.getNativeCache();
+      MeterBinder meterBinder = null;
+      if (nativeCache instanceof org.infinispan.Cache) {
+         meterBinder = new InfinispanCacheMeterBinder((org.infinispan.Cache) nativeCache, tags);
+      } else {
+         if (nativeCache instanceof javax.cache.Cache){ // for caches like org.infinispan.jcache.embedded.JCache
+            meterBinder = new JCacheMetrics((javax.cache.Cache) nativeCache, tags);
+         }
+      }
+      return meterBinder;
+   }
+}
+
+
+private List<Parameter> readParameters(final OperationContext context) {
+ List<ResolvedMethodParameter> methodParameters = context.getParameters();
+ List<Parameter> parameters = newArrayList();
+ for (ResolvedMethodParameter methodParameter : methodParameters) {
+  ResolvedType alternate = context.alternateFor(methodParameter.getParameterType());
+  if (!shouldIgnore(methodParameter, alternate, context.getIgnorableParameterTypes())) {
+   ParameterContext parameterContext = new ParameterContext(methodParameter,
+     new ParameterBuilder(),
+     context.getDocumentationContext(),
+     context.getGenericsNamingStrategy(),
+     context);
+   if (shouldExpand(methodParameter, alternate)) {
+    parameters.addAll(
+      expander.expand(
+        new ExpansionContext("", alternate, context)));
+   } else {
+    parameters.add(pluginsManager.parameter(parameterContext));
+   }
+  }
+ }
+ return FluentIterable.from(parameters).filter(not(hiddenParams())).toList();
+}
+
+==============================================================================================================
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+org.infinispan.spring.starter.embedded.InfinispanEmbeddedAutoConfiguration,\
+org.infinispan.spring.starter.embedded.InfinispanEmbeddedCacheManagerAutoConfiguration
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
 ==============================================================================================================
 <plugin>
     <groupId>org.jbehave</groupId>
