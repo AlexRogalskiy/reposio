@@ -8604,6 +8604,500 @@ script:
 ==============================================================================================================
 https://www.programcreek.com/java-api-examples/index.php?project_name=JesseFarebro%2Fandroid-mqtt#
 ==============================================================================================================
+git config --global push.default matching
+git config --global push.default simple
+==============================================================================================================
+import static java.lang.String.format;
+import static java.lang.System.currentTimeMillis;
+import static java.lang.System.identityHashCode;
+import static org.apache.maven.plugins.annotations.LifecyclePhase.POST_INTEGRATION_TEST;
+import static org.apache.maven.plugins.annotations.ResolutionScope.TEST;
+
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.kaazing.k3po.driver.internal.RobotServer;
+
+@Mojo(name = "stop", defaultPhase = POST_INTEGRATION_TEST, requiresDependencyResolution = TEST)
+public class StopMojo extends AbstractMojo {
+
+    protected void executeImpl() throws MojoExecutionException {
+
+        RobotServer server = getServer();
+        if (server == null) {
+            getLog().error(format("K3PO not running"));
+        }
+        else {
+            try {
+                long checkpoint = currentTimeMillis();
+                server.stop();
+                float duration = (currentTimeMillis() - checkpoint) / 1000.0f;
+                getLog().debug(format("K3PO [%08x] stopped in %.3fsec", identityHashCode(server), duration));
+
+                setServer(null);
+            }
+            catch (Exception e) {
+                throw new MojoExecutionException(format("K3PO [%08x] failed to stop", identityHashCode(server)), e);
+            }
+        }
+    }
+}
+import static java.lang.String.format;
+import static java.lang.System.currentTimeMillis;
+import static java.lang.Thread.currentThread;
+import static org.apache.maven.plugins.annotations.LifecyclePhase.PRE_INTEGRATION_TEST;
+import static org.apache.maven.plugins.annotations.ResolutionScope.TEST;
+import static org.jboss.netty.logging.InternalLoggerFactory.setDefaultFactory;
+
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.maven.artifact.DependencyResolutionRequiredException;
+import org.apache.maven.model.Dependency;
+import org.apache.maven.model.Plugin;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.kaazing.k3po.driver.internal.RobotServer;
+import org.kaazing.k3po.maven.plugin.internal.logging.MavenLoggerFactory;
+
+/**
+ * Start K3PO
+ */
+@Mojo(name = "start", defaultPhase = PRE_INTEGRATION_TEST, requiresDependencyResolution = TEST)
+public class StartMojo extends AbstractMojo {
+
+    @Parameter(defaultValue = "true", property = "maven.k3po.daemon")
+    private boolean daemon;
+
+    @Parameter(name = "control", defaultValue = "tcp://localhost:11642")
+    private URI controlURI;
+
+    @Parameter(defaultValue = "src/test/scripts")
+    private File scriptDir;
+
+    @Parameter(defaultValue = "false", property = "maven.k3po.verbose")
+    private boolean verbose;
+
+    @Parameter(property = "basedir")
+    private File workingDirectory;
+
+    public URI getControl() {
+        return controlURI;
+    }
+
+    public void setControl(URI controlURI) {
+        this.controlURI = controlURI;
+    }
+
+    @Override
+    protected void executeImpl() throws MojoExecutionException {
+
+        final ClassLoader contextClassLoader = currentThread().getContextClassLoader();
+
+        try {
+            Log log = getLog();
+            if (log.isDebugEnabled()) {
+                log.debug(format("Setting System property \"user.dir\" to [%s]", workingDirectory.getAbsolutePath()));
+            }
+            System.setProperty("user.dir", workingDirectory.getAbsolutePath());
+
+            ClassLoader testClassLoader = createTestClassLoader();
+
+            RobotServer server = new RobotServer(getControl(), verbose, testClassLoader);
+
+            Map<?, ?> pluginsAsMap = project.getBuild().getPluginsAsMap();
+            Plugin plugin = (Plugin) pluginsAsMap.get("org.kaazing:k3po-maven-plugin");
+            if (plugin != null)
+            {
+                for (Dependency dependency : plugin.getDependencies())
+                {
+                    if (project.getGroupId().equals(dependency.getGroupId()) &&
+                            project.getArtifactId().equals(dependency.getArtifactId()) &&
+                            project.getVersion().equals(dependency.getVersion()))
+                    {
+                        // load extensions from project
+                        currentThread().setContextClassLoader(testClassLoader);
+                    }
+                }
+            }
+
+            // TODO: detect Maven version to determine logger factory
+            //         3.0 -> MavenLoggerFactory
+            //         3.1 -> Slf4JLoggerFactory
+            // see http://brettporter.wordpress.com/2010/10/05/creating-a-custom-build-extension-for-maven-3-0/
+
+            // note: using SLf4J for Robot breaks in Maven 3.0 at runtime
+            // setDefaultFactory(new Slf4JLoggerFactory());
+
+            // use Maven3 logger for Robot when started via plugin
+            setDefaultFactory(new MavenLoggerFactory(log));
+
+            long checkpoint = currentTimeMillis();
+            server.start();
+            float duration = (currentTimeMillis() - checkpoint) / 1000.0f;
+            if (log.isDebugEnabled()) {
+                String version = (plugin != null) ? plugin.getVersion() : "unknown";
+                if (!daemon) {
+                    log.debug(format("K3PO [%s] started in %.3fsec (CTRL+C to stop)", version, duration));
+                }
+                else {
+                    log.debug(format("K3PO [%s] started in %.3fsec", version, duration));
+                }
+            } else {
+                if (!daemon) {
+                    log.info("K3PO started (CTRL+C to stop)");
+                }
+                else {
+                    log.info("K3PO started");
+                }
+            }
+
+            setServer(server);
+
+            if (!daemon) {
+                server.join();
+            }
+        }
+        catch (Exception e) {
+            throw new MojoExecutionException("K3PO failed to start", e);
+        }
+        finally
+        {
+            currentThread().setContextClassLoader(contextClassLoader);
+        }
+    }
+
+    private ClassLoader createTestClassLoader()
+            throws DependencyResolutionRequiredException, MalformedURLException {
+        List<URL> scriptPath = new LinkedList<>();
+        if (scriptDir != null) {
+            scriptPath.add(scriptDir.getAbsoluteFile().toURI().toURL());
+        }
+        for (Object scriptPathEntry : project.getTestClasspathElements()) {
+            URI scriptPathURI = new File(scriptPathEntry.toString()).getAbsoluteFile().toURI();
+            scriptPath.add(scriptPathURI.toURL());
+        }
+
+        ClassLoader parent = getClass().getClassLoader();
+        return new URLClassLoader(scriptPath.toArray(new URL[scriptPath.size()]), parent);
+    }
+}
+
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProject;
+import org.kaazing.k3po.driver.internal.RobotServer;
+
+/**
+ * Abstract base class for Robot goals
+ */
+public abstract class AbstractMojo extends org.apache.maven.plugin.AbstractMojo {
+
+    private static final ThreadLocal<RobotServer> ROBOT_SERVER = new ThreadLocal<>();
+
+    @Parameter(defaultValue = "${project}", readonly = true)
+    protected MavenProject project;
+
+    @Parameter(defaultValue = "false", property = "skipTests")
+    private boolean skipTests;
+
+    @Parameter(defaultValue = "false", property = "skipITs")
+    private boolean skipITs;
+
+    @Override
+    public final void execute() throws MojoExecutionException, MojoFailureException {
+
+        if (skipTests || skipITs) {
+            getLog().info("Tests are skipped");
+            return;
+        }
+
+        executeImpl();
+    }
+
+    protected abstract void executeImpl() throws MojoExecutionException, MojoFailureException;
+
+    protected void setServer(RobotServer server) {
+        if (server == null) {
+            ROBOT_SERVER.remove();
+        }
+        else {
+            ROBOT_SERVER.set(server);
+        }
+    }
+
+    protected RobotServer getServer() {
+        return ROBOT_SERVER.get();
+    }
+
+}
+
+import org.apache.maven.plugin.logging.Log;
+import org.jboss.netty.logging.InternalLogger;
+import org.jboss.netty.logging.InternalLoggerFactory;
+
+public class MavenLoggerFactory extends InternalLoggerFactory {
+
+    private final Log logger;
+
+    public MavenLoggerFactory(Log logger) {
+        this.logger = logger;
+    }
+
+    @Override
+    public InternalLogger newInstance(String name) {
+        return new MavenLogger(logger);
+    }
+}
+
+==============================================================================================================
+tcpdump -i <interface> -s 0 -w <some-file>
+tshark -T pdml -r inputfile.cap -V -d tcp.port==8000,http | tee outputfile.pdml
+
+java -jar target/com.kaazing.k3po.pcap.converter-develop-SNAPSHOT-jar-with-dependencies.jar <tcpDumpFile> <pdmlFile>
+
+https://github.com/k3po/k3po/tree/develop/k3po.pcap.converter
+==============================================================================================================
+    @RequestMapping(value = "/sigfox/{deviceTypeId}", method = RequestMethod.POST)
+    public void handleSigfoxRequest(@PathVariable String deviceTypeId,
+                              @RequestHeader(TOKEN_HEADER) String token,
+                              @RequestBody String body) throws Exception {
+        service.processRequest(deviceTypeId, token, body);
+    }
+	
+	    public static void putToNode(ObjectNode node, KvEntry kv) {
+        switch (kv.getDataType()) {
+            case BOOLEAN:
+                node.put(kv.getKey(), kv.getBooleanValue().get());
+                break;
+            case STRING:
+                node.put(kv.getKey(), kv.getStrValue().get());
+                break;
+            case LONG:
+                node.put(kv.getKey(), kv.getLongValue().get());
+                break;
+            case DOUBLE:
+                node.put(kv.getKey(), kv.getDoubleValue().get());
+                break;
+        }
+    }
+	import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.thingsboard.server.common.data.kv.*;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Created by ashvayka on 19.01.17.
+ */
+public class JsonTools {
+
+    private static final ObjectMapper JSON = new ObjectMapper();
+
+    public static ObjectNode newNode() {
+        return JSON.createObjectNode();
+    }
+
+    public static byte[] toBytes(ObjectNode node) {
+        return toString(node).getBytes(StandardCharsets.UTF_8);
+    }
+
+    public static JsonNode fromString(String data) {
+        try {
+            return JSON.readTree(data);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String toString(JsonNode node) {
+        try {
+            return JSON.writeValueAsString(node);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void putToNode(ObjectNode node, KvEntry kv) {
+        switch (kv.getDataType()) {
+            case BOOLEAN:
+                node.put(kv.getKey(), kv.getBooleanValue().get());
+                break;
+            case STRING:
+                node.put(kv.getKey(), kv.getStrValue().get());
+                break;
+            case LONG:
+                node.put(kv.getKey(), kv.getLongValue().get());
+                break;
+            case DOUBLE:
+                node.put(kv.getKey(), kv.getDoubleValue().get());
+                break;
+        }
+    }
+
+    public static List<KvEntry> getKvEntries(JsonNode data) {
+        List<KvEntry> attributes = new ArrayList<>();
+        for (Iterator<Map.Entry<String, JsonNode>> it = data.fields(); it.hasNext(); ) {
+            Map.Entry<String, JsonNode> field = it.next();
+            String key = field.getKey();
+            JsonNode value = field.getValue();
+            if (value.isBoolean()) {
+                attributes.add(new BooleanDataEntry(key, value.asBoolean()));
+            } else if (value.isLong()) {
+                attributes.add(new LongDataEntry(key, value.asLong()));
+            } else if (value.isDouble()) {
+                attributes.add(new DoubleDataEntry(key, value.asDouble()));
+            } else {
+                attributes.add(new StringDataEntry(key, value.asText()));
+            }
+        }
+        return attributes;
+    }
+}
+==============================================================================================================
+import java.util.HashMap;
+import java.util.Map;
+
+public class MonitoredMap<K,V> extends HashMap<K,V> {
+    @Override
+    public V put(K k, V v) {
+        V ret = super.put(k, v);
+        PromMetrics.mqtt_sessions.set(this.size());
+        return ret;
+    }
+
+    @Override
+    public void putAll(Map<? extends K, ? extends V> map) {
+        super.putAll(map);
+        PromMetrics.mqtt_sessions.set(this.size());
+    }
+
+    @Override
+    public V remove(Object k) {
+        V ret = super.remove(k);
+        PromMetrics.mqtt_sessions.set(this.size());
+        return ret;
+    }
+}
+==============================================================================================================
+import java.util.List;
+
+/**
+ * Created by giova_000 on 19/02/2015.
+ */
+class TokenInfo {
+    private String authorizedUser;
+    private List<String> scope;
+    private Long expiryTime;
+    private String errorMsg;
+
+    String getAuthorizedUser() {
+        return authorizedUser;
+    }
+
+    void setAuthorizedUser(String authorizedUser) {
+        this.authorizedUser = authorizedUser;
+    }
+
+    List<String> getScope() {
+        return scope;
+    }
+
+    void setScope(List<String> scope) {
+        this.scope = scope;
+    }
+
+    Long getExpiryTime() {
+        return expiryTime;
+    }
+
+    void setExpiryTime(Long expiryTime) {
+        this.expiryTime = expiryTime;
+    }
+
+    String getErrorMsg() {
+        return errorMsg;
+    }
+
+    void setErrorMsg(String errorMsg) {
+        this.errorMsg = errorMsg;
+    }
+
+    @Override
+    public String toString() {
+        return authorizedUser +" ["+expiryTime+" "+scope+" "+errorMsg+"]";
+    }
+}
+
+confluent-hub install confluentinc/kafka-connect-mqtt:1.1.0-preview
+confluent-hub install confluentinc/kafka-connect-mqtt:1.2.3
+==============================================================================================================
+    private Pattern toRegexPattern(String subscribedTopic) {
+        String regexPattern = subscribedTopic;
+        regexPattern = regexPattern.replaceAll("#", ".*");
+        regexPattern = regexPattern.replaceAll("\\+", "[^/]*");
+        Pattern pattern = Pattern.compile(regexPattern);
+        return pattern;
+    }
+	
+import io.prometheus.client.CollectorRegistry;
+import io.prometheus.client.hotspot.DefaultExports;
+import io.prometheus.client.vertx.MetricsHandler;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.Router;
+
+/**
+ * Created by giovanni on 07/07/17.
+ */
+public class PromMetricsExporter extends AbstractVerticle {
+    @Override
+    public void start() throws Exception {
+        JsonObject conf = config().getJsonObject("prometheus_exporter", new JsonObject());
+        int httpPort = conf.getInteger("port", 9100);
+        String path = conf.getString("path", "/metrics");
+
+        DefaultExports.initialize();
+
+        Router router = Router.router(vertx);
+        router.route(path).handler(new MetricsHandler());
+        vertx.createHttpServer().requestHandler(router::accept).listen(httpPort);
+    }
+}
+
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
 ==============================================================================================================
 ==============================================================================================================
 ==============================================================================================================
