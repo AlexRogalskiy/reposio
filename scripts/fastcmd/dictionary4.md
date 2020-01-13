@@ -5717,8 +5717,47 @@ public class SessionAttributePredicate<T> implements
         final T attribute = (T) sessionEntry.getValue().getAttribute(attributeName);
         return attribute.equals(attributeValue);
     }
+}
+==============================================================================================================
+<build>
+    <plugins>
+        <plugin>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>2.22.2</version>
+            <configuration>
+                <groups>acceptance | !feature-a</groups>
+                <excludedGroups>integration, regression</excludedGroups>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+==============================================================================================================
+class WebServerDemo {
+
+    @RegisterExtension
+    static WebServerExtension server = WebServerExtension.builder()
+        .enableSecurity(false)
+        .build();
+
+    @Test
+    void getProductList() {
+        WebClient webClient = new WebClient();
+        String serverUrl = server.getServerUrl();
+        // Use WebClient to connect to web server using serverUrl and verify response
+        assertEquals(200, webClient.get(serverUrl + "/products").getResponseStatus());
+    }
 
 }
+
+-Djunit.jupiter.conditions.deactivate=org.junit.*DisabledCondition
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
 ==============================================================================================================
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
