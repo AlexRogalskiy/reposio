@@ -9047,6 +9047,208 @@ class TokenInfo {
 confluent-hub install confluentinc/kafka-connect-mqtt:1.1.0-preview
 confluent-hub install confluentinc/kafka-connect-mqtt:1.2.3
 ==============================================================================================================
+apply plugin: 'com.github.ben-manes.versions'
+
+subprojects {
+
+    apply plugin: 'java'
+    apply plugin: 'maven'
+
+    // Group Id
+    group 'com.github.longkerdandy'
+
+    // Version
+    version '1.1.0.Beta1-SNAPSHOT'
+
+    // JDK
+    sourceCompatibility = 1.8
+
+    // Encoding
+    tasks.withType(JavaCompile) { options.encoding = 'UTF-8' }
+
+    // Maven Repository
+    repositories {
+        mavenCentral();
+    }
+
+    // Dependencies
+    dependencies {
+        // apache commons
+        compile 'org.apache.commons:commons-lang3:3.4'
+        compile 'commons-configuration:commons-configuration:1.10'
+
+        // logger
+        compile 'org.slf4j:slf4j-api:1.7.21'
+        compile 'ch.qos.logback:logback-core:1.1.7'
+        compile 'ch.qos.logback:logback-classic:1.1.7'
+
+        // junit
+        testCompile 'junit:junit:4.12'
+
+        // mock
+        compile 'org.mockito:mockito-all:1.10.19'
+        compile 'org.easymock:easymock:3.4'
+    }
+}
+
+// gradle version plugin
+buildscript {
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'com.github.ben-manes:gradle-versions-plugin:0.13.0'
+    }
+}
+
+dependencyUpdates.resolutionStrategy = {
+    componentSelection { rules ->
+        rules.all { ComponentSelection selection ->
+            boolean rejected = ['alpha', 'beta', 'rc', 'cr', 'm'].any { qualifier ->
+                selection.candidate.version ==~ /(?i).*[.-]${qualifier}[.\d-]*/
+            }
+            if (rejected) {
+                selection.reject('Release candidate')
+            }
+        }
+    }
+}
+==============================================================================================================
+/**
+ * Redis Lua Script
+ */
+public class RedisLua {
+
+    // Increments the number stored at key by one with limit
+    // Reset to 0 if limit reached (exceeded)
+    //
+    // Keys 1. Key to be increased
+    // Args 1. Maximum number stored at key
+    // Returns Number stored at key after increment
+    public static final String INCRLIMIT =
+            "local cnt = redis.call('INCR', KEYS[1])\n" +
+                    "if tonumber(ARGV[1]) > 0 and cnt >= tonumber(ARGV[1])\n" +
+                    "then\n" +
+                    "   redis.call('SET', KEYS[1], '0')\n" +
+                    "end\n" +
+                    "return cnt";
+
+    // Insert the specified value at the tail of the list with length limit
+    // Removes the element at the head of the list if limit reached (exceeded)
+    //
+    // Keys 1. List pushed into
+    // Args 1. Value to be pushed
+    // Args 2. Maximum length of the list
+    // Returns The value popped from the list, or nil
+    public static final String RPUSHLIMIT =
+            "local cnt = redis.call('RPUSH', KEYS[1], ARGV[1])\n" +
+                    "if tonumber(ARGV[2]) > 0 and cnt > tonumber(ARGV[2])\n" +
+                    "then\n" +
+                    "   return redis.call('LPOP', KEYS[1])\n" +
+                    "end\n" +
+                    "return nil";
+
+    // Insert the specified value to the sorted set with length limit
+    // Removes the element at the head of the sorted set if limit reached (exceeded)
+    //
+    // Keys 1. Sorted Set added into
+    // Args 1. Value to be added
+    // Args 2. Maximum length of the sorted set
+    // Returns The number of elements added to the sorted sets,
+    // not including elements already existing for which the score was updated
+    public static final String ZADDLIMIT =
+            "local r = redis.call('ZADD', KEYS[1], ARGV[1], ARGV[2])\n" +
+                    "local cnt = redis.call('ZCARD', KEYS[1])\n" +
+                    "if tonumber(ARGV[3]) > 0 and cnt > tonumber(ARGV[3])\n" +
+                    "then\n" +
+                    "   redis.call('ZREMRANGEBYRANK', KEYS[1], 0, 0)\n" +
+                    "end\n" +
+                    "return r";
+
+    // Removes the specified key only if its current value is equal to the given value
+    //
+    // Keys 1. Key to be deleted
+    // Args 1. Value to be compared
+    // Returns 1 if key is removed, 0 if key untouched
+    public static final String CHECKDEL =
+            "if ARGV[1] == redis.call('GET', KEYS[1])\n" +
+                    "then\n" +
+                    "   redis.call('DEL', KEYS[1])\n" +
+                    "   return 1\n" +
+                    "end\n" +
+                    "return 0";
+}
+==============================================================================================================
+map.put(Environment.INDEXING_STRATEGY, "event");
+		map.put("hibernate.search.autoregister_listeners", true);
+		map.put("hibernate.search.default." + Environment.INDEX_MANAGER_IMPL_NAME, indexmanager);
+		map.put("hibernate.search.default.directory_provider", directory_provider);
+		map.put("hibernate.search.default.indexBase", indexBase);
+
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import org.eclipse.milo.opcua.sdk.client.api.identity.IdentityProvider;
+
+/**
+ * Created by ashvayka on 16.01.17.
+ */
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.PROPERTY,
+        property = "type")
+@JsonSubTypes({
+        @JsonSubTypes.Type(value = AnonymousIdentityProviderConfiguration.class, name = "anonymous"),
+        @JsonSubTypes.Type(value = UsernameIdentityProviderConfiguration.class, name = "username")})
+public interface IdentityProviderConfiguration {
+
+    IdentityProvider toProvider();
+
+}
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+<dependency>
+    <groupId>org.fusesource.mqtt-client</groupId>
+    <artifactId>mqtt-client</artifactId>
+    <version>1.16</version>
+</dependency>
+
+
+language: java
+before_deploy: "gradle jar addon"
+deploy:
+  provider: releases
+  api_key:
+    secure: BSI9PlQhhOMXUm2cr8YZs+yT5vX+dLyuPNpx8uvbO1R4TvnT2hZlVt4CDV3iQUNxMF5dD+1NIbZGKfXYk7bH2Ei8AGpiObhl7peFjX9wezqV5aRct2A3eS50mO7uzD3DOt7+6jcpVzTzwiNuzRkWRuSsOocTQc5kE4A5OfcAspY=
+  file: 
+    - "build/libs/hm2mqtt.jar"
+    - "build/distributions/hm2mqtt-addon.tar.gz"
+  skip_cleanup: true
+  on:
+    repo: owagner/hm2mqtt
+    tags: true
+    all_branches: true
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
     private Pattern toRegexPattern(String subscribedTopic) {
         String regexPattern = subscribedTopic;
         regexPattern = regexPattern.replaceAll("#", ".*");
