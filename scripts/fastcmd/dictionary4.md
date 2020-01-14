@@ -9219,6 +9219,118 @@ public class RedisLua {
                     "return 0";
 }
 ==============================================================================================================
+User-agent: Googlebot
+Disallow: /api/
+Disallow: /merchantTerms/
+Disallow: /login
+Disallow: /logout
+Disallow: /reservation/
+Disallow: /reset_password
+Disallow: /review/
+Disallow: /site/
+Disallow: /health/
+Disallow: /version/ 
+Disallow: */result
+Disallow: */user/
+Disallow: /forgot_password
+Disallow: */widget
+
+Disallow: /place/*/description
+Disallow: /place/*/beschreibung
+Disallow: /place/*/beschrijving
+Disallow: /place/*/description
+Disallow: /place/*/descrizione
+Disallow: /place/*/description
+Disallow: /place/*/kuvaus
+Disallow: /place/*/aciklamasi 
+
+Allow: /
+
+User-agent: *
+Disallow: /api/
+Disallow: /merchantTerms/
+Disallow: /checkout/
+Disallow: /forgot_password
+Disallow: /login
+Disallow: /logout
+Disallow: /reservation/
+Disallow: /reset_password
+Disallow: /review/
+Disallow: /site/
+Disallow: /user/
+Disallow: /pl/
+Disallow: /health/
+Disallow: /version/
+Disallow: */widget
+
+User-Agent: AdIdxBot
+Crawl-Delay: 15
+
+User-agent: Bingbot
+Disallow: /
+
+User-agent: MSNBot
+Disallow: /
+
+User-agent: MSNBot-Media
+Disallow: /
+
+User-Agent: MJ12bot
+Crawl-Delay: 15
+
+User-agent: AhrefsBot
+Crawl-Delay: 15
+
+User-agent: Yandex
+Disallow: /
+
+User-agent: Baiduspider
+Disallow: /
+
+User-agent: Naver
+Disallow: /
+
+User-agent: Yeti
+Disallow: /
+
+User-agent: BLEXBot
+Disallow: /
+
+User-agent: SEMrushBot
+Disallow: /
+
+User-agent: MegaIndex.ru
+Disallow: /
+
+User-agent: adscanner
+Disallow: /
+
+User-agent: iisbot
+Disallow: /
+
+Sitemap: https://www.quandoo.com.au/sitemap.xml
+==============================================================================================================
+  @Bean
+  public Docket api() {
+    return new Docket(DocumentationType.SWAGGER_2)
+        .apiInfo(apiInfo)
+        .select()
+        .apis(RequestHandlerSelectors.basePackage(
+            PaymentsController.class.getPackage().getName()
+        ))
+        .paths(PathSelectors.ant("/api/v1/payments" + "/**"))
+        .build()
+        .useDefaultResponseMessages(false)
+        .globalOperationParameters(
+            newArrayList(new ParameterBuilder()
+                .name("x-authorization")
+                .description("X-Authorization")
+                .modelRef(new ModelRef("string"))
+                .parameterType("header")
+                .required(false)
+                .build()));
+  }
+==============================================================================================================
 map.put(Environment.INDEXING_STRATEGY, "event");
 		map.put("hibernate.search.autoregister_listeners", true);
 		map.put("hibernate.search.default." + Environment.INDEX_MANAGER_IMPL_NAME, indexmanager);
