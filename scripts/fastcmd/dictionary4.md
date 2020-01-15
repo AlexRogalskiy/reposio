@@ -9696,8 +9696,6 @@ public class InfinispanCacheMeterBinder extends CacheMeterBinder {
    }
 }
 
-
-
 import io.micrometer.core.instrument.binder.cache.JCacheMetrics;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.actuate.metrics.cache.CacheMeterBinderProvider;
@@ -13732,7 +13730,80 @@ rm runtime-parent/runtime-core/src/main/java/com/speedment/runtime/core/internal
 ==============================================================================================================
 ==============================================================================================================
 ==============================================================================================================
+=======
+mvn sonar:help -Ddetail=true -Dgoal=<goal-name> 
+
+
+mvn sonar:sonar -Dsonar.host.url=http://localhost:9000 
+  -Dsonar.login=the-generated-token
 ==============================================================================================================
+@Configuration
+class ApolloConfig {
+
+    @Bean
+    @Profile( "!test" )
+    static ApolloClient.Builder prodClient( @Value( "${phdb.endpoint}" ) String graphqlEndpoint ) {
+        return ApolloClient.builder().serverUrl( graphqlEndpoint );
+    }
+
+    @Bean
+    @Profile( "test" )
+    static ApolloClient.Builder testClient(@Value( "${local.server.port}" ) int port ) {
+        return ApolloClient.builder();
+    }
+}
+
+@RunWith(SpringJUnit4ClassRunner.class)
+@SpringApplicationConfiguration(classes = Application.class)
+@WebAppConfiguration
+@IntegrationTest({"server.port=0"})
+public class CustomerControllerIT {
+  
+  @Value("${local.server.port}")
+  private int port;
+  private URL base;
+  private RestTemplate template;
+  @Autowired
+  private DataBuilder dataBuilder;
+  @Autowired
+  private CustomerRepository customerRepository;
+  private static final String JSON_CONTENT_TYPE = "application/json;charset=UTF-8";
+  
+  @RunWith(Cucumber.class)
+@CucumberOptions(
+ tags = {"@web"},
+ glue = {
+ "cucumber.runtime.java.spring.webappconfig",
+ "cucumber.runtime.java.spring.dirtiescontextconfig",
+ "com.robinelvin.rest.cucumber"
+ },
+ features = {"classpath:com/robinelvin/rest/cucumber/signup.feature"},
+ plugin = {"pretty"})
+public class RunCucumberTests {
+}
+
+
+https://docs.spring.io/spring-boot/docs/current/reference/html/spring-boot-features.html
+
+spring.main.lazy-initialization=true
+
+ public void onApplicationEvent(WebServerInitializedEvent event) { 
+ 	String propertyName = "local." + getName(event.getApplicationContext()) + ".port"; 
+ 	setPortProperty(event.getApplicationContext(), propertyName, 
+ 			event.getWebServer().getPort()); 
+ } 
+ 
+ StoryReporterBuilder builder = new StoryReporterBuilder() {
+    public StoryReporter reporterFor(String storyPath, Format format) {
+        switch (format) {
+        case TXT:
+            factory.useConfiguration(new FileConfiguration("text"));
+            return new TxtOutput(factory.createPrintStream(), new Properties(), 
+                                                new LocalizedKeywords(), true);                    
+        default:
+            return super.reporterFor(storyPath, format);
+        }
+    }
 ==============================================================================================================
 ==============================================================================================================
 ==============================================================================================================
