@@ -13517,6 +13517,221 @@ startxref
 724287
 %%EOF
 ==============================================================================================================
+/**
+ * Converts between different types of units.
+ */
+public class ConversionCalculator {
+
+    // constants for temperature conversion
+    private static final double BASE_FAHRENHEIT = 32.0;
+    private static final double CELSIUS_FAHRENHEIT_CONVERSION_FACTOR = 9.0/5.0;
+
+    // constants for litre to gallons
+    private static final double LITRE_TO_GALLON_MULTIPLIER = 0.264172;
+
+    // constant to raise radius by when calculating a circle
+    private static final double POWER_OF_RADIUS = 2.0;
+
+    /**
+     * Converts centigrade to fahrenheit.
+     * @param celsiusTemperature to convert
+     * @return fahrenheit temperature.
+     */
+    public Double celsiusToFahrenheit(Double celsiusTemperature) {
+        return (celsiusTemperature * CELSIUS_FAHRENHEIT_CONVERSION_FACTOR) + BASE_FAHRENHEIT;
+    }
+
+    /**
+     * Converts fahrenheit to centigrade
+     * @param fahrenheitTemperature to convert
+     * @return
+     */
+    public Double fahrenheitToCelsius(Double fahrenheitTemperature) {
+        return (fahrenheitTemperature - BASE_FAHRENHEIT) * CELSIUS_FAHRENHEIT_CONVERSION_FACTOR;
+    }
+
+    /**
+     * Converts a volume in litres to gallons.
+     * @param litreVolume to convert
+     * @return volume in gallons
+     */
+    public Double litresToGallons(Double litreVolume) {
+        return Math.ceil(litreVolume * LITRE_TO_GALLON_MULTIPLIER);
+    }
+
+    /**
+     * Converts a radius to the area of a circle
+     * @param radius of the circle
+     * @return area of the circle in the same unit
+     */
+    public Double radiusToAreaOfCircle(Double radius) {
+        return Math.PI * Math.pow(radius, POWER_OF_RADIUS);
+
+    }
+}
+==============================================================================================================
+pipeline {
+    agent any
+
+    stages {
+        stage('Build') {
+            steps {
+                //mvn '-Prelease clean install -DskipTests'
+                mvn 'clean install -DskipTests'
+            }
+        }
+
+        stage('Unit Test') {
+            steps {
+                //mvn '-Prelease test'
+                mvn 'test'
+            }
+        }
+
+        //stage('Integration Test') {
+        //    steps {
+        //        mvn 'verify -DskipUnitTests -Parq-wildfly-swarm '
+        //    }
+        //}
+    }
+    
+    post {
+        
+        always {
+            // Archive Unit and integration test results, if any
+            junit allowEmptyResults: true,
+                    testResults: '**/target/surefire-reports/TEST-*.xml, **/target/failsafe-reports/*.xml'
+            mailIfStatusChanged env.EMAIL_RECIPIENTS
+        }
+        success {
+             // Send Slack-notification if build succeeds
+            slackSend (color: "good", message: "Build success\nBuild: ${env.JOB_NAME} #${env.BUILD_NUMBER}\nURL: ${env.BUILD_URL}")
+        }
+        unstable {
+             // Send Slack-notification if build succeeds
+            slackSend (color: "warning", message: "Build unstable\nBuild: ${env.JOB_NAME} #${env.BUILD_NUMBER}\nURL: ${env.BUILD_URL}")
+        }
+        failure {
+            // Send Slack-notification if build fails
+            slackSend (color: "danger", message: "Build failed\nBuild: ${env.JOB_NAME} #${env.BUILD_NUMBER}\nURL: ${env.BUILD_URL}") 
+        }
+    }
+}
+
+def mailIfStatusChanged(String recipients) {
+    // Also send "back to normal" emails. Mailer seems to check build result, but SUCCESS is not set at this point.
+    if (currentBuild.currentResult == 'SUCCESS') {
+        currentBuild.result = 'SUCCESS'
+    }
+    step([$class: 'Mailer', recipients: recipients])
+}
+
+def mvn(def args) {
+    def mvnHome = tool 'M3'
+    def javaHome = tool 'JDK8'
+
+    // Apache Maven related side notes:
+    // --batch-mode : recommended in CI to inform maven to not run in interactive mode (less logs)
+    // -V : strongly recommended in CI, will display the JDK and Maven versions in use.
+    //      Very useful to be quickly sure the selected versions were the ones you think.
+    // -U : force maven to update snapshots each time (default : once an hour, makes no sense in CI).
+    // -Dsurefire.useFile=false : useful in CI. Displays test errors in the logs directly (instead of
+    //                            having to crawl the workspace files to see the cause).
+
+    // Advice: don't define M2_HOME in general. Maven will autodetect its root fine.
+    // See also
+    // https://github.com/jenkinsci/pipeline-examples/blob/master/pipeline-examples/maven-and-jdk-specific-version/mavenAndJdkSpecificVersion.groovy
+    withEnv(["JAVA_HOME=${javaHome}", "PATH+MAVEN=${mvnHome}/bin:${env.JAVA_HOME}/bin"]) {
+        sh "${mvnHome}/bin/mvn ${args} --batch-mode -V -U -e -Dsurefire.useFile=false"
+    }
+}
+==============================================================================================================
+ <dependency>
+    <groupId>org.sonarsource.scanner.maven</groupId>
+    <artifactId>sonar-maven-plugin</artifactId>
+    <version>3.7.0.1746</version>
+</dependency>
+
+#!/usr/bin/env bash
+# 
+#
+# Copyright (c) 2006-2019, Speedment, Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); You may not
+# use this file except in compliance with the License. You may obtain a copy of
+# the License at:
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations under
+# the License.
+#
+
+docker run -d --name sonarqube -p 9000:9000 sonarqube
+mvn sonar:sonar  -Dsonar.host.url=http://localhost:9000
+==============================================================================================================
+#Fail on any error
+set -e
+
+if [ $# -eq 0 ]
+  then
+    echo "Usage $0: version"
+    exit 1
+fi
+VERSION=$1
+
+mvn versions:set -DnewVersion="$VERSION"
+RETURN_BODY="return \"$VERSION\";"
+sed -i tmp "s/getImplementationVersion.*\}/getImplementationVersion() \{ $RETURN_BODY \}/g" runtime-parent/runtime-core/src/main/java/com/speedment/runtime/core/internal/component/InfoComponentImpl.java
+rm runtime-parent/runtime-core/src/main/java/com/speedment/runtime/core/internal/component/InfoComponentImpl.javatmp
+
+
+
+==============================================================================================================
+ * OrientDB orientDb = new OrientDB("remote:localhost","root","root");
+ * if(orientDb.createIfNotExists("test",ODatabaseType.MEMORY)){
+ *  ODatabaseDocument session = orientDb.open("test","admin","admin");
+ *  session.createClass("MyClass");
+ *  session.close();
+ * }
+ * ODatabaseDocument session = orientDb.open("test","writer","writer");
+ * //...
+ * session.close();
+ * orientDb.close();
+
+
+
+
+* OrientDB orientDb = ...
+ * if(!orientDb.exists("one")){
+ *  orientDb.create("one",ODatabaseType.PLOCAL);
+ * }
+ * if(orientDb.exists("two")){
+ *  orientDb.drop("two");
+ * }
+ * List&ltString&gt databases = orientDb.list();
+ * assertEquals(databases.size(),1);
+ * assertEquals(databases.get("0"),"one");
+
+
+   * OrientDB orientDb = new OrientDB("remote:localhost");
+   * ODatabaseDocument session = orientDb.open("test","admin","admin");
+   * //...
+   * session.close();
+   * orientDb.close();
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
 ==============================================================================================================
 ==============================================================================================================
 ==============================================================================================================

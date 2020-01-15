@@ -47028,3 +47028,637 @@ Screen Master 1.6.8.6 Update
 3. Other bug fixes and stability improvements
 
  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ The description of CrowdMag
+
+CrowdMag is a tool that measures the local magnetic field using your smartphone! The app displays the data as a graph or a map in units of nanotesla (nT; one nanotesla equals 10^−9 Tesla). The local magnetic field components measured by CrowdMag are the Z (downward component), H (horizontal intensity), and F (total intensity). Use CrowdMag for measuring magnetic data during your outdoor adventures or to conduct your own homegrown science! To perform your own experiments or analyze your observations, export your data as a CSV file. Optionally, your magnetic data may be shared with NOAA to help scientists understand more about Earth’s magnetic field!
+
+ 
+
+What is new!
+
+ 
+
+CrowdMag is going active! When you go out for a walk, run, or other outdoor activities, use CrowdMag to measure the magnetic data along your path and save the data as a “magtivity”. Save, list, export or delete magtivities to create a complete magnetic field map of your area. We particularly encourage you to share your magtivities with our research group at NOAA and to have multiple magtivities along the same path so that we can stack the data to reduce the noise.
+
+ 
+
+Getting a new phone? Don’t worry! You can now export a backup of your CrowdMag and save it on your computer. If you have to reset your phone, or switch to a new phone, you can now import your backup and continue using CrowdMag without losing your status for data contributed, areas covered, or magtivities completed.
+
+ 
+
+CrowdMag’s magnetic calculator provides magnetic variation (declination), the magnetic field’s dip angle, total magnetic field and other magnetic field components (as well as their associated uncertainties) based on the latest World Magnetic Model (WMM2020).
+
+ 
+
+CrowdMag Features:
+
+ 
+
+- Create your own magnetic activity (magtivity)
+
+- Customize recording frequency and location accuracy
+
+- Interactive Google Map provides a map of your magnetic data
+
+- Graph your data as a time series line chart
+
+- Check the quality of the data by comparing it with the WMM
+
+- Export your data as a CSV file
+
+- Clear stored data on your phone
+
+- Optionally share your data with NOAA
+
+- See generalized crowdsourced magnetic data from other users
+
+- Live magnetic compass
+
+- Current solar magnetic disturbance
+
+- Expected magnetic field calculator
+
+- Uses the most recent magnetic field model (WMM2020)
+
+- Export data via email, Google Drive and other options
+
+- Export CrowdMag backup to save your contributions' status and data
+
+- Import CrowdMag backup (works across different phone platforms)
+
+ 
+
+Visit https://ngdc.noaa.gov/geomag/crowdmag.shtml to see crowdsourced magnetic data.
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of Ninox
+
+Ninox is a user-friendly database that runs on all your devices. Create business apps for you and your team. With Ninox you can organize anything, optimize your work process and become more productive.
+
+ 
+
+Easily create business applications without writing a single line of code. Start with a template and adapt it to your application. Ninox is used by individuals, large and small businesses, startups, agencies in many areas: CRM, events, invoices, warehouse management, real estate and more.
+
+ 
+
+► CLEAR PURCHASING RECOMMENDATION
+
+ 
+
+"With Ninox, I have found an impressive companion for the growth of my business.
+
+Value for money could not be better. "
+
+- epicstudio -
+
+ 
+
+SO MUCH MORE THAN A DATABASE
+
+"This database is simply brilliant and really easy to use. And best of all , it's constantly evolving. "
+
+- trailer-man -
+
+ 
+
+EXCELLENT PRODUCT / FUNCTIONALITY
+
+" I've been working with Ninox since 2014 and I'm very excited about the intuitive user interface and functionality. The application is really great! "
+
+- arwis -
+
+ 
+
+► TEMPLATES
+
+∙ Inventory
+
+∙ Invoices and Accounting
+
+∙ Meetings and Events
+
+∙ CRM
+
+∙ And many more!
+
+ 
+
+► 100% CUSTOMIZABLE
+
+∙ Create forms, data fields and triggers
+
+∙ Links between tables
+
+∙ Calculations with visual formula editor
+
+ 
+
+► WORKING ON TEAM
+
+∙ Invite others to work together
+
+∙ Set role and rights
+
+∙ Real-time syncing on all devices
+
+ 
+
+► DATA FIELDS
+
+∙ Rich Text
+
+∙ Selections
+
+∙ Date / Time
+
+∙ And 15+ more!
+
+ 
+
+► YOUR DATABASE ON ALL DEVICES
+
+Ninox is available for
+
+∙ Android
+
+∙ iPhone
+
+∙ iPad
+
+∙ Mac
+
+∙ and on the web
+
+ 
+
+You can install Ninox on multiple devices. To keep all your devices in sync you can get a Ninox Cloud subscription which also gives you access to Ninox on the web.
+
+ 
+
+- Privacy Policy: https://ninoxdb.de/ninox/en/privacy.html
+
+ 
+
+- Terms of Use: https://ninoxdb.de/ninox/de/terms.html
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of Connect2SQL
+
+Connect2SQL is an all-in-one MySQL client, SQL Server client, Sybase client, and Postgres client for Android. It allows you to remotely connect to MySQL, Microsoft SQL, Sybase, and PostgreSQL servers directly from your phone or tablet. Execute any command with the help of basic SQL syntax highlighting and view the results in a fully scrollable grid. Save commonly used SQL statements and review the history of SQL statements executed.
+
+ 
+
+ 
+
+This application works as a...
+
+MySQL Client
+
+SQL Server Client (Microsoft SQL)
+
+Sybase Client (ASE only)
+
+Postgres Client
+
+ 
+
+ 
+
+FEATURES
+
+- Pattern lock security w/ encrypted data
+
+- Full execution availability
+
+- Quick keys [shortcuts]
+
+- Save queries per connection
+
+- History of queries executed
+
+- Placeholders for dynamic saved queries
+
+- Scrollable results with clipboard copy
+
+- Basic SQL syntax highlighting
+
+- Multiple ResultSet compatible
+
+- Built in pagination
+
+- SSH tunneling
+
+ 
+
+ 
+
+This application is completely open-sourced. Learn more at https://devlife.app/s/
+
+ 
+
+ 
+
+CAUTION: Use app with care. It does not have limitations on such commands as DROP, TRUNCATE, DELETE, etc. Anything you do will be done directly on the server. If you are not sure how, what, who, SQL is... this tool is probably not for you...
+
+Show less
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of Memento Database
+
+Memento Database is a powerful and user friendly tool designed for working with any data, making it possible to store, organize, calculate and visualize information. It is more convenient than spreadsheets, more flexible than specialized applications.
+
+ 
+
+If you are looking for a program to organize your personal affairs, hobbies, or small or medium sized business, Memento is the solution
+
+ 
+
+PERSONAL USE
+
+ 
+
+Memento can replace dozens of apps, helping you organize your life and increasing your efficiency.
+
+ 
+
+☆ Lists of tasks and goals
+
+☆ Personal finance and shopping
+
+☆ Contacts and events
+
+☆ Time management
+
+☆ Collections and hobbies - books, music, movies, games, board games, recipes and more
+
+☆ Travel planning
+
+☆ Medical and sports records
+
+☆ Studying
+
+☆ Home inventory
+
+ 
+
+See the use cases in the online catalogue. It contains thousands of templates from our community that you can improve upon, or create your own.
+
+ 
+
+BUSINESS USE
+
+ 
+
+Memento allows building any business management system to meet your unique requirements. This could include:
+
+ 
+
+☆ Inventory
+
+☆ Project management
+
+☆ Personnel management
+
+☆ Production management
+
+☆ Assets management
+
+☆ Products catalogue
+
+☆ CRM
+
+☆ Budget
+
+ 
+
+You can connect all the components of the application and build the logic of working with data in accordance with your business processes. The Memento cloud allows all of your employees to work with databases, and provides a flexible system of access control. Small businesses with Memento gets the opportunity to create an ERP at low cost.
+
+ 
+
+NON-PROFIT ORGANIZATIONS
+
+ 
+
+In addition to businesses, Memento is successfully used by non-profit organizations, including schools, hospitals, rescue services, charity funds, and libraries.
+
+ 
+
+TEAMWORK
+
+ 
+
+Memento allows the synchronizing of data with the cloud and provides the following tools for teamwork:
+
+ 
+
+☆ A flexible system of setting access rights up to the fields in the records
+
+☆ View the history of data changes made by other users
+
+☆ Comments to records in the database
+
+☆ Synchronization with Google Sheet
+
+ 
+
+If you work with sensitive information that should be stored only on your servers or exclusively in the territory of your country, then we have a self-hosted solution - Memento Private Server.
+
+ 
+
+OFFLINE
+
+ 
+
+Memento supports offline work. You can transfer data in the offline mode and synchronize it with the cloud later, when your devices connects to the Internet. By default your databases are not connected to the cloud, and are stored only on your device.
+
+ 
+
+WINDOWS & LINUX
+
+ 
+
+You can also work with your data on a PC. This is convenient, if you need to enter or analyze a large amount of information. In addition, the desktop version of the application provides a powerful reporting system based on Jasper Reports.
+
+ 
+
+KEY FEATURES
+
+ 
+
+∙ Dozens of types of fields, including text, integer, real, boolean, date/time, rating, checkboxes, radio buttons, currency, image, signature, file, audio, contact, calculation, JavaScript, geolocations with Google Maps coordinates, and others.
+
+∙ Performing Data analysis, including aggregation, charting, sorting, grouping, and filtering entries by any fields.
+
+∙ Displaying data in the form of a list, a set of cards, a table, on a map, or in a calendar.
+
+∙ Synchronization with Google Sheets.
+
+∙ Cloud storage and Teamwork.
+
+∙ Offline data entry.
+
+∙ Importing and exporting CSV files, permitting interoperation with popular programs like Microsoft Excel, Filemaker.
+
+∙ Populating database entries at the touch of a button with data from Web services and other sources.
+
+∙ Scripting in Javascript (fields, triggers, scripted data source).
+
+∙ Password protection.
+
+∙ Searching entries in database by barcode.
+
+∙ Reminders.
+
+ 
+
+Facebook: https://facebook.com/mementodatabase
+
+User Guide: http://help.mementodatabase.com
+
+Show less
+
+Memento Database 4.7.2 Update
+
+2019-11-30
+
+∙ Added ability to move or copy entries to another library.
+
+∙ New field type - User. This type of field allows selecting one or more Memento Cloud users.
+
+∙ Added ability to provide write/delete permissions based on the value of the "User" field.
+
+∙ Added ability to set the full name and avatar of a Memento Cloud user.
+
+∙ "JavaScript" and "Calculation" fields can now be hidden.
+
+∙ Added ability to combine field filtering conditions with the “OR” operation.
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of BenchMap
+
+BenchMap allows searching and viewing of National Geodetic Survey / NGS survey stations on an interactive map. Once a station is selected you can view the datasheet, view the Geocaching page, take photographs and record notes.
+
+ 
+
+On the map, you can filter the types of stations to display - like certain stabilities, horizontal/vertical orders, and destroyed/non-publishable status. You can also directly search for a PID, and have the map take you to the location of the station, and manually view the datasheet of a station.
+
+ 
+
+Once a station is found, you can take photographs of it, images being stored in a simple numbering scheme or be saved using the NGS's recommended photograph naming convention. Using the naming convention, each station's images are stored in their own folder, along with a notes text file if the you record any recovery notes for the station.
+
+ 
+
+Made for the professional surveyor and the geocache hunter (benchmark hunter!) out there in the wild.
+
+ 
+
+Note that the application will only display NGS survey marks. (No USGS stations or State stations at this time unless they are included in the NGS database.)
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of ircDDB remote
+
+With this application it is possible to control the ircDDB gateway software from Jonathan Naylor G4KLX remotely via an android device. You can connect and disconnect with your own ircDDB gateway to every D-star reflector, hotspot or call without holding your dstar transceiver.
+
+ 
+
+You can find a short manual on the following site:
+
+ 
+
+http://www.pa7lim.nl/ircddbremote/
+
+ 
+
+Many thanks to Michael VK5ZEA for making the promo video!
+
+ 
+
+ 
+
+The description of QField
+
+QField focuses on efficiently getting GIS field work done.
+
+The mobile GIS app from OPENGIS.ch combines a minimal design with sophisticated technology to get data from the field to the office in a comfortable and easy way.
+
+ 
+
+QField unleashes the full power of the QGIS styling engine to bring your customized maps to the field, collect attributes for features with configured edit widgets like value lists, checkboxes, free text or pictures taken with the device camera.
+
+ 
+
+QField is an open source project, the documentation, much more information, the source code and possibilities to support the project can be found at qfield.org (preferred) or by buying the QField for QGIS Karma edition app on the Play store.
+
+ 
+
+QField is built from ground up to be touch oriented and easy to use outside.
+
+ 
+
+It is based on a few paradigms
+
+● GPS centric
+
+● QGIS desktop compatible
+
+● Fully working when offlinehttp://www.opengis.ch/contact/
+
+● Synchronization capabilities
+
+● Project preparation on desktop
+
+● Few and large buttons
+
+● Mode-based work (Display, Digitizing, Measuring, Inspection,...)
+
+ 
+
+QField is future proof using the latest technologies such as Qt5, QtQuick 2 and OpenGL
+
+ 
+
+OPENGIS.ch is happy to help you with the implementation of missing features. Contact us at http://www.opengis.ch/contact/
+
+For bug reports please file an issue at https://github.com/opengisch/QField/issues
+
+ 
+
+ 
+
+ 
+
+http://policies.cranf.com
+
+ 
+
+ 
+
+To learn more about Geocortex Mobile Viewer and Geocortex Go visit www.geocortex.com/gxm
+
+ 
+
+The description of SSE - File/Text Encryption & Password Vault
+
+Secret Space Encryptor (S.S.E.)
+
+Universal encryption app - File Encryption, Text Encryption and Password Manager apps are integrated in the all-in-one solution.
+
+ 
+
+➤ File Encryptor: Securely encrypt your private and confidential files or whole folders. 🎥 ~ basic file encryption video tutorial: https://youtu.be/asLRhjkfImw
+
+ 
+
+➤ Text Encryptor: Keep your messages, notes, cryptocurrency keys (seeds, mnemonics), and other text information safe from unwanted readers. Use the internal database or just copy/paste to/from your favorite applications. A password is set for the current encryption/decryption session, and you may have an unlimited number of passwords for any purpose (notes, emails, social networking, communication with persons A, B, C, …). 🎥 ~ text encryption video tutorial: https://youtu.be/IK9Sxqr0uJU
+
+ 
+
+➤ Password Vault: Store and manage all passwords, PINs, and notes in one secure place protected by one master password. Import/Export function is available (compressed, fully encrypted .pwv file format or unencrypted, editable .xml file format).
+
+ 
+
+⬥ Algorithms: Everything is encrypted using strong encryption algorithms: AES (Rijndael) 256bit, RC6 256bit, Serpent 256bit, Blowfish 448bit, Twofish 256bit, GOST 256bit + Threefish 1024bit and SHACAL-2 512bit (for S.S.E. Pro Version) ciphers are available.
+
+⬥ Steganography: Text Encryptor contains a steganographic feature (concealing a text within an image - JPG). A steganographic algorithm (F5 algorithm) is used in combination with chosen symmetric cipher algorithm to make a final steganogram (JPEG image).
+
+⬥ Other Utils: Password Generator, Clipboard Cleaner, Algorithm Benchmark, …
+
+⬥ Minimal permissions. No ads.
+
+⬥ Cross-platform desktop versions (Windows, Linux, Mac OS X, …) of Text Encryptor and File Encryptor are available on: https://paranoiaworks.mobi
+
+⬥ Paranoia Text Encryption for iOS (iPhone/iPad/iPod) is available.
+
+⬥ An online (web-based) version of Text Encryptor (AES, client-side JavaScript) is available on: https://pteo.paranoiaworks.mobi
+
+ 
+
+This software is Open Source project – we have nothing to hide, so you can have securely hidden everything you need.
+
+ 
+
+Source codes: https://paranoiaworks.mobi/download
+
+Formats specifications: https://paranoiaworks.mobi/sse/formats_specifications.html
+
+More: https://paranoiaworks.mobi/sse
+
+ 
+
+If you notice any problems with this application, you are welcome to contact us via email. Comments do not allow us to communicate to you properly.
+
+ 
+
+★★★ FREQUENTLY ASKED QUESTIONS ★★★
+
+Issue: File Encryptor - My file(s) are still visible after the encryption.
+
+Answer: SSE File Encryptor works as an archiver (a new .enc file is created). You can delete/wipe the original file(s) after the encryption process is completed or it can be done automatically: Settings: File Encryptor → Wipe Source After Encryption
+
+ 
+
+Issue: Android 4.4 and higher - File Encryptor - External SD card (or USB drive) is read only (or isn't visible).
+
+Answer: Android 4.4 doesn't allow write access to the external SD card to any app except for preinstalled apps (preinstalled by device, or system image manufacturer). We can do nothing about this issue. The only solution is to root your device and change permissions ( for example: https://goo.gl/Ksk0Bm ) or upgrade to Android 5+ and use SAF mode ( https://goo.gl/fexsry ).
+
+Alternatively - Use the following directory (on your external SD card):
+
+Android/data/com.paranoiaworks.unicus.android.sse
+
+The app should have write permissions in this folder.
+
+ 
+
+★★★ !!! MORE FAQ !!! ★★★
+
+https://paranoiaworks.mobi/sse/FAQ
