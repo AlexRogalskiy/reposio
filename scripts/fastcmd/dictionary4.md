@@ -13271,6 +13271,224 @@ INSERT INTO `tblactivities` (`id`, `from`, `to`, `amount`, `dateTime`, `comment`
 (35, 3, 4, 325, '2012-10-19 18:20:58', 'Bank Activities'),
 (36, 3, 4, 325, '2012-10-19 18:31:46', 'Bank Activities');
 
+-----------------------------------------------------------
+groupId:artifactId:type:classifier
+
+https://maven.apache.org/plugins/maven-scm-publish-plugin/various-tips.html#Git_branch
+
+mvn scm-publish:publish-scm -Dscmpublish.pubScmUrl=scm:<scm-provider>... -Dscmpublish.content=...path-to-content...
+mvn site:stage
+ 
+git clone --branch maven-scm-1.11.2 https://gitbox.apache.org/repos/asf/maven-scm.git
+mvn release:prepare release:perform -B -Dusername=svnuid -Dpassword=svnpassword -DpreparationGoals="clean install"
+
+mvn scm:status
+mvn scm:bootstrap
+mvn scm:bootstrap -N
+mvn -DstartDate=YYYY-MM-DD -DendDate=YYYY-MM-DD scm:changelog
+mvn scm:changelog
+
+
+mvn scm:unedit
+mvn scm:validate
+
+mvn scm:status
+mvn scm:edit
+mvn scm:diff
+mvn -DstartRevision=<revision> -DendRevision=<revision> scm:diff
+mvn -Dtag="<tag name>" scm:tag
+mvn -DscmConnection="<scm url>" -DscmDeveloperConnection="<scm url>" scm:validate
+------------------------------------------------------------
+    <build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.8.0</version>
+            <configuration>
+                <source>${java.version}</source>
+                <target>${java.version}</target>
+                <annotationProcessorPaths>
+                    <path>
+                        <groupId>org.projectlombok</groupId>
+                        <artifactId>lombok</artifactId>
+                        <version>${lombok.version}</version>
+                    </path>
+                </annotationProcessorPaths>
+                <compilerArgs>
+                    <arg>-sourcepath</arg>
+                    <arg>${project.basedir}/src/main/java${path.separator}${project.basedir}/target/generated-sources/annotations${path.separator}/</arg>
+                </compilerArgs>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+
+ <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok-maven-plugin</artifactId>
+        <version>1.16.12.0</version>
+    </dependency>
+	
+<dependency>
+    <groupId>org.projectlombok</groupId>
+    <artifactId>lombok-maven-plugin</artifactId>
+    <version>1.18.10.0</version>
+</dependency>
+
+<plugin>
+                <artifactId>maven-scm-plugin</artifactId>
+                <version>1.9.5</version>
+                <configuration>
+                    <providerImplementations>
+                        <svn>javasvn</svn>
+                    </providerImplementations>
+                    <connectionUrl>scm:svn:https://..</connectionUrl>
+                    <username>user</username>
+                    <password>XXX</password>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.google.code.maven-scm-provider-svnjava</groupId>
+                        <artifactId>maven-scm-provider-svnjava</artifactId>
+                        <version>2.0.6</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.tmatesoft.svnkit</groupId>
+                        <artifactId>svnkit</artifactId>
+                        <version>1.7.11</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+To clone SVN repository: mvn -Djsse.enableSNIExtension=false scm:checkout
+
+To update it: mvn scm:update
+------------------------------------------------------------
+Initial creation of the branch has to be done manually, as a Git orphan branch:
+
+1. git checkout --orphan gh-pages to create the branch locally,
+
+2. rm .git/index ; git clean -fdx to clean the branch content and let it empy,
+
+3. copy an initial site content,
+
+4. commit and push: git add *, git commit -m "initial site content", git push
+------------------------------------------------------------
+  before_script:
+    - sed -i "s/GITLAB-CI-TOKEN/$CI_JOB_TOKEN/g" pom.xml
+  script: mvn package 
+  after_script:
+    - sed -i "s/$CI_JOB_TOKEN/GITLAB-CI-TOKEN/g" pom.xml
+------------------------------------------------------------
+import org.jbehave.core.configuration.MostUsefulConfiguration;
+import org.jbehave.core.io.LoadFromClasspath;
+import org.jbehave.core.parsers.RegexPrefixCapturingPatternParser;
+import org.jbehave.core.reporters.CrossReference;
+import org.jbehave.core.steps.ParameterConverters;
+import org.jbehave.core.steps.SilentStepMonitor;
+
+import java.text.SimpleDateFormat;
+
+public class TraderEmbedder extends Embedder {
+
+    @Override
+    public EmbedderControls embedderControls() {
+        return new EmbedderControls().doIgnoreFailureInStories(true).doIgnoreFailureInView(true);
+    }
+
+    @Override
+    public Configuration configuration() {
+        Class<? extends TraderEmbedder> embedderClass = this.getClass();
+        return new MostUsefulConfiguration()
+            .useStoryLoader(new LoadFromClasspath(embedderClass.getClassLoader()))
+            .useStoryReporterBuilder(new StoryReporterBuilder()
+                .withCodeLocation(CodeLocations.codeLocationFromClass(embedderClass))
+                .withDefaultFormats()
+                .withFormats(CONSOLE, TXT, HTML, XML)
+                .withCrossReference(new CrossReference()))
+            .useParameterConverters(new ParameterConverters().addConverters(new DateConverter(new SimpleDateFormat("yyyy-MM-dd"))))
+            .useStepPatternParser(new RegexPrefixCapturingPatternParser("$"))
+            .useStepMonitor(new SilentStepMonitor());
+    }
+
+    @Override
+    public InjectableStepsFactory stepsFactory() {
+        return new InstanceStepsFactory(this.configuration(), new TraderSteps(new TradingService()), new BeforeAfterSteps());
+    }
+}
+
+public class RemoteTraderStories extends TraderStories {
+ 
+    @Override
+    public Configuration configuration() {
+        return super.configuration()
+               .useStoryLoader(new LoadFromURL())
+               .useStoryReporterBuilder(
+                       new StoryReporterBuilder()
+                           .withCodeLocation(codeLocationFromURL("http://jbehave.org/reference/examples/stories/"))
+                           .withDefaultFormats()
+                           .withFormats(CONSOLE, TXT, HTML, XML));
+    }
+ 
+    @Override
+    protected List<String> storyPaths() {
+        // Specify story paths as remote URLs
+        String codeLocation = codeLocationFromURL("http://jbehave.org/reference/examples/stories/")
+                .toExternalForm();
+        return asList(codeLocation + "and_step.story");
+    }
+ 
+}
+------------------------------------------------------------
+            <!--<plugin>-->
+            <!--<groupId>org.apache.maven.plugins</groupId>-->
+            <!--<artifactId>maven-install-plugin</artifactId>-->
+            <!--<version>${maven-install-plugin.version}</version>-->
+            <!--<configuration>-->
+            <!--<groupId>com.paragon.mailingcontour</groupId>-->
+            <!--<artifactId>paragon.mailingcontour.commons</artifactId>-->
+            <!--<version>${paragon.mailingcontour.commons.version}</version>-->
+            <!--<classifier>tests</classifier>-->
+            <!--<packaging>jar</packaging>-->
+            <!--<file>${project.build.directory}/${project.artifactId}-${project.version}-tests.jar</file>-->
+            <!--<generatePom>true</generatePom>-->
+            <!--</configuration>-->
+            <!--<executions>-->
+            <!--<execution>-->
+            <!--<id>install-jar-lib</id>-->
+            <!--<goals>-->
+            <!--<goal>install-file</goal>-->
+            <!--</goals>-->
+            <!--<phase>validate</phase>-->
+            <!--</execution>-->
+            <!--</executions>-->
+            <!--</plugin>-->
+------------------------------------------------------------
+#!/bin/bash
+
+set -euo pipefail
+
+configureTravis() {
+  mkdir -p ~/.local
+  curl -sSL https://github.com/SonarSource/travis-utils/tarball/v55 | tar zx --strip-components 1 -C ~/.local
+  source ~/.local/bin/install
+}
+configureTravis
+
+export DEPLOY_PULL_REQUEST=true
+
+regular_mvn_build_deploy_analyze
+-- --------------------------------------------------------
+-- --------------------------------------------------------
+-- --------------------------------------------------------
+-- --------------------------------------------------------
+-- --------------------------------------------------------
+-- --------------------------------------------------------
+-- --------------------------------------------------------
+-- --------------------------------------------------------
+-- --------------------------------------------------------
+-- --------------------------------------------------------
+-- --------------------------------------------------------
 -- --------------------------------------------------------
 public StepsRunner() {
     super();
@@ -13440,6 +13658,25 @@ INSERT INTO `tblcities` (`id`, `name`) VALUES
 (1, 'WISTANSWICK'),
 (9, 'WRAXALL');
 
+-- --------------------------------------------------------
+<plugin>
+    <groupId>org.jbehave</groupId>
+    <artifactId>jbehave-maven-plugin</artifactId>
+    <version>[version]</version>
+    <executions>
+        <!-- define executions as normal -->
+        <metaFilters>
+            <metaFilter>"groovy: lang != 'java'"</metaFilter>
+        </metaFilters>
+    </executions>
+    <dependencies>
+        <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-all</artifactId>
+            <version>2.4.15</version>
+        </dependency>
+    </dependencies>
+</plugin>
 -- --------------------------------------------------------
 
 --
