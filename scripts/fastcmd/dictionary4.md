@@ -13440,6 +13440,9 @@ public class RemoteTraderStories extends TraderStories {
  
 }
 ------------------------------------------------------------
+ant -f jb_ant.xml -lib lib run-stories-as-paths
+
+------------------------------------------------------------
             <!--<plugin>-->
             <!--<groupId>org.apache.maven.plugins</groupId>-->
             <!--<artifactId>maven-install-plugin</artifactId>-->
@@ -13463,6 +13466,44 @@ public class RemoteTraderStories extends TraderStories {
             <!--</execution>-->
             <!--</executions>-->
             <!--</plugin>-->
+------------------------------------------------------------
+<pluginManagement>
+ <plugins>
+   <plugin>
+     <groupId>org.jbehave</groupId>
+     <artifactId>jbehave-maven-plugin</artifactId>
+     <version>2.0.1</version>
+   </plugin>
+ </plugins>
+</pluginManagement>
+<plugins>
+ <plugin>
+   <groupId>org.jbehave</groupId>
+   <artifactId>jbehave-maven-plugin</artifactId>
+   <executions>
+     <execution>
+       <id>run-scenarios-found</id>
+       <phase>test</phase>
+       <configuration>
+         <scenarioIncludes>
+           <scenarioInclude>**/scenario/**/*${test}.java</scenarioInclude>
+         </scenarioIncludes>
+         <scenarioExcludes>
+           <scenarioExclude>**/*Steps.java</scenarioExclude>
+         </scenarioExcludes>
+       </configuration>
+       <goals>
+         <goal>run-scenarios</goal>
+       </goals>
+     </execution>
+   </executions>
+ </plugin>
+</plugins>
+
+
+export MVN_OPTS="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8787 -Xnoagent -Djava.compiler=NONE" ; mvn -Dtest=MyTest clean test mvn -e -o -Dtest=MyTest -Dmaven.surefire.debug="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8787 -Xnoagent -Djava.compiler=NONE" clean test
+
+
 ------------------------------------------------------------
 #!/bin/bash
 
