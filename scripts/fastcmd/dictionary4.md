@@ -234,6 +234,524 @@ public class InitSteps {
 	}
 }
 ==============================================================================================================
+Set-ExecutionPolicy RemoteSigned -scope CurrentUser
+
+Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
+
+# or shorter
+iwr -useb get.scoop.sh | iex
+
+export MAVEN_OPTS="-Xmx1024m"
+export MAVEN_OPTS="$MAVEN_OPTS -Xmx1024m"
+
+        <plugin>
+            <groupId>org.jbehave</groupId>
+            <artifactId>jbehave-maven-plugin</artifactId>
+            <version>${jbehave.core.version}</version>
+            <executions>
+                <execution>
+                    <id>unpack-view-resources</id>
+                    <phase>process-resources</phase>
+                    <goals>
+                        <goal>unpack-view-resources</goal>
+                    </goals>
+                </execution>
+                <execution>
+                    <id>embeddable-stories</id>
+                    <phase>integration-test</phase>
+                    <configuration>
+                        <includes>
+                            <include>${embeddables}</include>
+                        </includes>
+                        <excludes/>
+                        <systemProperties>
+                            <property>
+                                <name>file.encoding</name>
+                                <value>${project.build.sourceEncoding}</value>
+                            </property>
+                        </systemProperties>
+                        <ignoreFailureInStories>true</ignoreFailureInStories>
+                        <ignoreFailureInView>false</ignoreFailureInView>
+                        <threads>1</threads>
+                        <metaFilters>
+                            <metaFilter/>
+                        </metaFilters>
+                    </configuration>
+                    <goals>
+                        <goal>run-stories-as-embeddables</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
+==============================================================================================================
+sudo apt-add-repository ppa:qameta/allure
+sudo apt-get update 
+sudo apt-get install allure
+==============================================================================================================
+mvn clean test - run your tests
+You can generate a report using one of the following command:
+
+mvn allure:serve
+Report will be generated into temp folder. Web server with results will start.
+
+mvn allure:report
+==============================================================================================================
+--add-modules java.xml.bind
+-XX:+IgnoreUnrecognizedVMOptions
+
+Должно работать норм, если создать файлик allure.properties и прописать в нем allure.results.directory=target/allure-results
+==============================================================================================================
+protoc --quickbuf_out= \
+    indent=4, \
+    input_order=quickbuf, \
+    replace_package=my.namespace.protobuf|my.namespace.quickbuf: \
+    ./path/to/generate`.
+	
+https://adityasridhar.com/posts/how-to-create-simple-rest-apis-with-springboot
+==============================================================================================================
+@Component
+@Aspect
+public class PublishingAspect {
+ 
+    private ApplicationEventPublisher eventPublisher;
+ 
+    @Autowired
+    public void setEventPublisher(ApplicationEventPublisher eventPublisher) {
+        this.eventPublisher = eventPublisher;
+    }
+ 
+    @Pointcut("@target(org.springframework.stereotype.Repository)")
+    public void repositoryMethods() {}
+ 
+    @Pointcut("execution(* *..create*(Long,..))")
+    public void firstLongParamMethods() {}
+ 
+    @Pointcut("repositoryMethods() && firstLongParamMethods()")
+    public void entityCreationMethods() {}
+ 
+    @AfterReturning(value = "entityCreationMethods()", returning = "entity")
+    public void logMethodCall(JoinPoint jp, Object entity) throws Throwable {
+        eventPublisher.publishEvent(new FooCreationEvent(entity));
+    }
+}
+==============================================================================================================
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.jms.DefaultJmsListenerContainerFactoryConfigurer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.jms.annotation.EnableJms;
+import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
+import org.springframework.jms.config.JmsListenerContainerFactory;
+import org.springframework.jms.support.converter.MappingJackson2MessageConverter;
+import org.springframework.jms.support.converter.MessageConverter;
+import org.springframework.jms.support.converter.MessageType;
+import org.springframework.scheduling.annotation.EnableScheduling;
+
+import javax.jms.ConnectionFactory;
+
+/**
+ * Created by User on 11/12/2016.
+ */
+
+@SpringBootApplication
+@EnableJms
+@EnableScheduling
+public class SpringBootWebApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(SpringBootWebApplication.class, args);
+    }
+
+    @Bean
+    public JmsListenerContainerFactory<?> myFactory(ConnectionFactory connectionFactory,
+                                                    DefaultJmsListenerContainerFactoryConfigurer configurer) {
+        DefaultJmsListenerContainerFactory factory = new DefaultJmsListenerContainerFactory();
+        // This provides all boot's default to this factory, including the message converter
+        configurer.configure(factory, connectionFactory);
+        // You could still override some of Boot's default if necessary.
+        return factory;
+    }
+
+    @Bean // Serialize message content to json using TextMessage
+    public MessageConverter jacksonJmsMessageConverter() {
+        MappingJackson2MessageConverter converter = new MappingJackson2MessageConverter();
+        converter.setTargetType(MessageType.TEXT);
+        converter.setTypeIdPropertyName("_type");
+        return converter;
+    }
+
+    /*public static void main(String[] args) {
+        // Launch the application
+        ConfigurableApplicationContext context = SpringApplication.run(Application.class, args);
+        JmsTemplate jmsTemplate = context.getBean(JmsTemplate.class);
+        // Send a message with a POJO - the template reuse the message converter
+        System.out.println("Sending an email message.");
+        jmsTemplate.convertAndSend("mailbox", "12345");
+    }*/
+}
+==============================================================================================================
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+import ro.fmi.rpg.interceptor.JWTInterceptor;
+import ro.fmi.rpg.interceptor.LoggerInterceptor;
+
+/**
+ * Created by User on 11/12/2016.
+ */
+@Configuration
+public class MvcConfig extends WebMvcConfigurerAdapter {
+
+    @Autowired
+    private JWTInterceptor jwtInterceptor;
+
+    @Autowired
+    private LoggerInterceptor loggerInterceptor;
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(loggerInterceptor).addPathPatterns("/**");
+        registry.addInterceptor(jwtInterceptor).addPathPatterns("/api/achievements");
+        registry.addInterceptor(jwtInterceptor).addPathPatterns("/api/categories");
+        registry.addInterceptor(jwtInterceptor).addPathPatterns("/api/tasks/**");
+        registry.addInterceptor(jwtInterceptor).addPathPatterns("/api/user");
+        registry.addInterceptor(jwtInterceptor).addPathPatterns("/api/friends/**");
+        registry.addInterceptor(jwtInterceptor).addPathPatterns("/api/alerts/**");
+        registry.addInterceptor(jwtInterceptor).addPathPatterns("/api/chart/**");
+    }
+
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/**")
+                .allowedMethods("PUT", "DELETE", "OPTIONS", "GET", "POST");
+    }
+
+}
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.web.bind.annotation.*;
+import ro.fmi.rpg.exception.RPGException;
+
+/**
+ * Created by User on 1/8/2017.
+ */
+@RestController
+public class TestSockCtrl {
+
+    @Autowired
+    private SimpMessagingTemplate template;
+
+    @RequestMapping(path = "/test/{topic}", method = RequestMethod.POST)
+    public void getLoggedInUser(@PathVariable("topic") String topic, @RequestBody String message) throws RPGException {
+        template.convertAndSend("/topic/" + topic, message);
+    }
+
+}
+
+https://github.com/cristirosu/rpg-scheduler-backend
+
+import javassist.NotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+import ro.fmi.rpg.exception.RPGException;
+import ro.fmi.rpg.service.TaskService;
+import ro.fmi.rpg.to.task.CategoryModel;
+import ro.fmi.rpg.to.task.TaskModel;
+
+import java.text.ParseException;
+import java.util.List;
+
+/**
+ * Created by User on 12/11/2016.
+ */
+@CrossOrigin
+@RestController
+@RequestMapping("/api")
+public class TaskController {
+
+    private Logger LOG = LoggerFactory.getLogger(AuthenticationController.class);
+
+    @Autowired
+    private TaskService taskService;
+
+    @CrossOrigin
+    @RequestMapping(path = "/tasks", method = RequestMethod.GET)
+    public List<TaskModel> getTasksWithCategories() throws RPGException, ParseException {
+        return taskService.getTasks();
+    }
+
+    @CrossOrigin
+    @RequestMapping(path = "/tasks", method = RequestMethod.PUT)
+    public List<TaskModel> updateTask(@RequestBody TaskModel taskModel) throws RPGException, ParseException {
+        return taskService.updateTask(taskModel);
+    }
+
+    @CrossOrigin
+    @RequestMapping(path = "/tasks/{taskId:.+}/status", method = RequestMethod.PUT)
+    public List<TaskModel> finishTask(@PathVariable("taskId") int taskId) throws RPGException, ParseException, NotFoundException {
+        return taskService.finishTask(taskId);
+    }
+
+    @CrossOrigin
+    @RequestMapping(path = "/tasks/{taskId:.+}", method = RequestMethod.DELETE)
+    public List<TaskModel> deleteTask(@PathVariable("taskId")int taskId) throws RPGException, ParseException, NotFoundException {
+        return taskService.deleteTask(taskId);
+    }
+
+    @PutMapping(path = "/tasks/{taskId:.+}/deadline")
+    public void updateTaskDeadline(@RequestBody TaskModel taskModel) throws ParseException {
+        taskService.updateTaskDeadline(taskModel);
+    }
+
+}
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+import ro.fmi.rpg.exception.RPGException;
+import ro.fmi.rpg.service.TaskService;
+import ro.fmi.rpg.to.login.LoginRequest;
+import ro.fmi.rpg.to.task.TaskModel;
+
+import java.util.List;
+
+/**
+ * Created by User on 12/19/2016.
+ */
+@RestController
+@RequestMapping("/api")
+public class SyncController {
+
+    @Autowired
+    private TaskService taskService;
+
+    @CrossOrigin
+    @RequestMapping(path = "/sync", method = RequestMethod.POST)
+    public List<TaskModel> getTasksForSync(@RequestBody LoginRequest loginRequest) throws RPGException {
+        return taskService.getTasksForSync(loginRequest.getEmail(), loginRequest.getPassword());
+    }
+
+}
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
+import ro.fmi.rpg.exception.RPGException;
+import ro.fmi.rpg.service.LeaderBoardService;
+import ro.fmi.rpg.service.friends.FriendsService;
+import ro.fmi.rpg.to.FriendModel;
+import ro.fmi.rpg.to.LeaderBoardModel;
+
+import java.util.List;
+
+/**
+ * Created by User on 1/8/2017.
+ */
+@RestController
+@RequestMapping("/api")
+public class FriendsController {
+
+    @Autowired
+    private FriendsService friendsService;
+
+    @Autowired
+    private LeaderBoardService leaderBoardService;
+
+    @RequestMapping(path = "/friends", method = RequestMethod.GET)
+    public List<FriendModel> getFriends() throws RPGException {
+        return friendsService.getFriends();
+    }
+
+    @RequestMapping(path = "/friends/{friendId}", method = RequestMethod.DELETE)
+    public void deleteFriend(@PathVariable("friendId") Integer friendId) throws RPGException {
+        friendsService.deleteFriend(friendId);
+    }
+
+    @RequestMapping(path = "/friends/request/{emailAddress:.+}", method = RequestMethod.POST)
+    public void addFriend(@PathVariable("emailAddress") String emailAddress) throws RPGException {
+        friendsService.addFriend(emailAddress);
+    }
+
+    @RequestMapping(path = "/friends/scoreBoard", method = RequestMethod.GET)
+    public List<LeaderBoardModel> getScoreBoard() throws RPGException {
+        return leaderBoardService.getLeaderBoard();
+    }
+
+}
+==============================================================================================================
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.stereotype.Service;
+import ro.fmi.rpg.dao.entity.User;
+
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
+
+/**
+ * Created by User on 11/13/2016.
+ */
+@Service
+public class EmailService {
+
+    private static final String FROM = "dumpaul33@gmail.com";
+
+    private Logger LOG = LoggerFactory.getLogger(EmailService.class);
+
+    @Value("${dev}")
+    private Boolean devMode;
+
+    @Autowired
+    private JavaMailSender javaMailSender;
+
+    public void send(EmailType emailType, User user) {
+        LOG.info("Trying to send email of type " + emailType + " to " + user.getEmail());
+        String emailContent = getEmailContent(emailType, user);
+        MimeMessage mail = javaMailSender.createMimeMessage();
+        try {
+            MimeMessageHelper helper = new MimeMessageHelper(mail, true);
+            helper.setTo(user.getEmail());
+            helper.setFrom(FROM);
+            helper.setSubject(emailType.getTitle());
+            helper.setText(emailContent);
+        } catch (MessagingException e) {
+            e.printStackTrace();
+        }
+        javaMailSender.send(mail);
+        LOG.info("Sent email to " + user.getEmail() + " for content \"" + emailContent + "\"");
+    }
+
+    public void sendEmailWithContent(EmailType emailType, User user, String content) {
+        LOG.info("Trying to send email of type " + emailType + " to " + user.getEmail());
+        MimeMessage mail = javaMailSender.createMimeMessage();
+        try {
+            MimeMessageHelper helper = new MimeMessageHelper(mail, true);
+            helper.setTo(user.getEmail());
+            helper.setFrom(FROM);
+            helper.setSubject(emailType.getTitle());
+            helper.setText(content);
+            helper.setText(content);
+        } catch (MessagingException e) {
+            e.printStackTrace();
+        }
+        javaMailSender.send(mail);
+        LOG.info("Sent email to " + user.getEmail() + " for content \"" + content + "\"");
+    }
+
+    private String getEmailContent(EmailType emailType, User user){
+        switch (emailType) {
+            case ACTIVATION_EMAIL: {
+                if(devMode){
+                    return "http://localhost:3000/#/activation/" + user.getId();
+                } else {
+                    return "http://cristi.red:8080/#/activation/" + user.getId();
+                }
+            }
+            default: {
+                return "Empty email";
+            }
+        }
+    }
+}
+
+@Scope(value= WebApplicationContext.SCOPE_SESSION, proxyMode = ScopedProxyMode.TARGET_CLASS)
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import ro.fmi.rpg.dao.entity.User;
+
+/**
+ * Created by User on 11/13/2016.
+ */
+public interface UserRepository extends JpaRepository<User, Integer> {
+
+    @Query("SELECT u FROM User u " +
+            " WHERE u.email = :email AND u.password = :password")
+    User findUserByEmailAndPassword(@Param("email") String email, @Param("password") String password);
+
+    @Query("SELECT u FROM User u " +
+            " WHERE u.email = :email")
+    User findUserByEmail(@Param("email") String email);
+
+}
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import ro.fmi.rpg.dao.entity.Task;
+
+import java.util.List;
+
+/**
+ * Created by User on 12/11/2016.
+ */
+public interface TaskRepository  extends JpaRepository<Task, Integer> {
+
+    @Query(" SELECT t FROM Task t " +
+            "LEFT JOIN FETCH t.category c " +
+            "INNER JOIN c.user u " +
+            "WHERE u.id = :userId")
+    List<Task> findUserTasks(@Param("userId") int userId);
+
+    @Query(" SELECT t FROM Task t " +
+            "LEFT JOIN FETCH t.category c " +
+            "LEFT JOIN FETCH c.user u")
+    List<Task> findAllLefJoinFetch();
+}
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import ro.fmi.rpg.dao.entity.UserFriend;
+import ro.fmi.rpg.to.FriendModel;
+import ro.fmi.rpg.to.LeaderBoardModel;
+
+import java.util.List;
+
+/**
+ * Created by User on 1/8/2017.
+ */
+public interface FriendsRepository extends JpaRepository<UserFriend, Integer>{
+
+    @Query(" SELECT new ro.fmi.rpg.to.FriendModel(f.id, f.firstName, f.lastName, c.level, c.experience, c.health, false, c.picture) " +
+            " FROM UserFriend uf " +
+            " INNER JOIN uf.friend f " +
+            " INNER JOIN f.character c " +
+            " WHERE uf.user.id = :userId")
+    List<FriendModel> getFriendsByUser(@Param("userId") Integer userId);
+
+    @Query(" SELECT uf FROM UserFriend uf " +
+            " WHERE (uf.friend.id = :friendId AND uf.user.id = :userId) OR (uf.friend.id = :userId AND uf.user.id = :friendId)")
+    List<UserFriend> findByFriendId(@Param("userId")Integer userId, @Param("friendId") Integer friendId);
+
+    @Query(" SELECT uf FROM UserFriend uf " +
+            " WHERE uf.friend.email = :email AND uf.user.id = :userId")
+    UserFriend findFriendByEmail(@Param("userId") Integer userId, @Param("email") String email);
+
+    @Query( " SELECT f.id FROM UserFriend uf " +
+            " INNER JOIN uf.friend f " +
+            " WHERE uf.user.id = :userId AND f.receivesToasts = '1'")
+    List<Integer> getFriendIdsByUser(@Param("userId") Integer id);
+
+    @Query( " SELECT new ro.fmi.rpg.to.LeaderBoardModel(f.firstName, f.lastName, c.picture, c.level, f.email) FROM UserFriend uf " +
+            " INNER JOIN uf.friend f " +
+            " INNER JOIN f.character c " +
+            " WHERE uf.user.id = :userId")
+    List<LeaderBoardModel> getScoreBoard(@Param("userId") Integer id);
+}
+==============================================================================================================
 <plugin>
     <groupId>org.apache.maven.plugins</groupId>
     <artifactId>maven-war-plugin</artifactId>
@@ -5103,6 +5621,144 @@ jpaProperties.put("javax.persistence.sharedCache.mode", javaxPersistenceSharedCa
         <appender-ref ref="STDOUT"/>
     </root>
 </configuration>
+==============================================================================================================
+pip install allure-pytest
+pytest --alluredir=/tmp/my_allure_results
+==============================================================================================================
+import com.trasier.wsdl.weather.GetWeatherRequest;
+import com.trasier.wsdl.weather.GetWeatherResponse;
+import org.springframework.ws.client.core.support.WebServiceGatewaySupport;
+import org.springframework.ws.soap.client.core.SoapActionCallback;
+
+public class WeatherWsClient extends WebServiceGatewaySupport {
+
+    public GetWeatherResponse getWeather(String cityCode) {
+        GetWeatherRequest request = new GetWeatherRequest();
+        request.setCityCode(cityCode);
+        return (GetWeatherResponse) getWebServiceTemplate()
+                .marshalSendAndReceive("http://localhost:8002/ws/weather", request,
+                        new SoapActionCallback("http://trasier.com/example/weather-web-service/GetWeatherRequest"));
+    }
+}
+
+import com.trasier.springboot.ping.WeatherWsClient;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.oxm.jaxb.Jaxb2Marshaller;
+import org.springframework.web.client.RestTemplate;
+
+@Configuration
+public class WeatherConfiguration {
+
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
+
+    @Bean
+    public Jaxb2Marshaller marshaller() {
+        Jaxb2Marshaller marshaller = new Jaxb2Marshaller();
+        marshaller.setContextPath("com.trasier.wsdl.weather");
+        return marshaller;
+    }
+
+    @Bean
+    public WeatherWsClient weatherWsClient(Jaxb2Marshaller marshaller) {
+        WeatherWsClient client = new WeatherWsClient();
+        client.setDefaultUri("http://localhost:8002/ws");
+        client.setMarshaller(marshaller);
+        client.setUnmarshaller(marshaller);
+        return client;
+    }
+
+}
+
+import com.trasier.example.weather_web_service.GetWeatherRequest;
+import com.trasier.example.weather_web_service.GetWeatherResponse;
+import com.trasier.example.weather_web_service.WeatherInfo;
+import com.trasier.springboot.pong.model.WeatherData;
+import com.trasier.springboot.pong.service.WeatherService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
+
+@Endpoint
+public class WeatherEndpoint {
+
+    private static final String NAMESPACE_URI = "http://trasier.com/example/weather-web-service";
+
+    private final WeatherService weatherService;
+
+    @Autowired
+    public WeatherEndpoint(WeatherService weatherService) {
+        this.weatherService = weatherService;
+    }
+
+    @PayloadRoot(namespace = NAMESPACE_URI, localPart = "getWeatherRequest")
+    @ResponsePayload
+    public GetWeatherResponse getWeather(@RequestPayload GetWeatherRequest request) {
+        WeatherData weatherData = weatherService.getWeather(request.getCityCode());
+
+        WeatherInfo weatherInfo = new WeatherInfo();
+        weatherInfo.setCity(weatherData.getStation().getName());
+        weatherInfo.setCityCode(weatherData.getStation().getCode());
+        weatherInfo.setTemperature(weatherData.getTemperature());
+        weatherInfo.setHumidity(weatherData.getHumidity());
+        weatherInfo.setPressure(weatherData.getQfePressure());
+        weatherInfo.setWindSpeed(weatherData.getWindSpeed());
+
+        GetWeatherResponse response = new GetWeatherResponse();
+        response.setWeatherInfo(weatherInfo);
+        return response;
+    }
+
+
+}
+
+        <dependency>
+            <groupId>io.opentracing.contrib</groupId>
+            <artifactId>opentracing-spring-cloud-starter-jaeger</artifactId>
+            <version>0.1.13</version>
+        </dependency>
+==============================================================================================================
+curl --data '' https://example.com/resource.cgi
+
+curl -X POST https://example.com/resource.cgi
+
+curl --request POST https://example.com/resource.cgi
+
+curl --tr-encoding -X POST -v -# -o output -T filename.dat \
+  http://example.com/resource.cgi
+  
+echo '{"text": "Hello **world**!"}' | curl -d @- https://api.github.com/markdown
+
+curl -d "username=admin&password=admin&submit=Login" --dump-header headers http://localhost/Login
+curl -L -b headers http://localhost/
+
+curl -v --data-ascii var=value http://example.com
+
+curl http://httpbin.org/post \
+    -H "User-Agent: Mozilla/2.2" \
+    -F param1=hello \
+    -F name=dinsdale \
+    -F name=piranha
+==============================================================================================================
+<profiles>
+  <profile>
+    <id>os-properties</id>
+    <properties>
+      <os.detected.name>linux</os.detected.name>
+      <os.detected.arch>x86_64</os.detected.arch>
+      <os.detected.classifier>linux-x86_64</os.detected.classifier>
+    </properties>
+  </profile>
+</profiles>
+
+<activeProfiles>
+  <activeProfile>os-properties</activeProfile>
+</activeProfiles>
 ==============================================================================================================
 @Override
 	public int compareTo(ProductImage o) {
@@ -13466,6 +14122,1006 @@ ant -f jb_ant.xml -lib lib run-stories-as-paths
             <!--</execution>-->
             <!--</executions>-->
             <!--</plugin>-->
+------------------------------------------------------------
+чтобы собрать надо иметь глобально установленную node-gyp и сделать
+
+sudo node-gyp clean configure build
+
+чтобы запустить надо сделать
+
+npm start
+------------------------------------------------------------
+ * <pre class="code">
+ * new SpringApplicationBuilder(Application.class).profiles(&quot;server&quot;)
+ * 		.properties(&quot;transport=local&quot;).run(args);
+ * </pre>
+------------------------------------------------------------
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.context.web.SpringBootServletInitializer;
+
+@SpringBootApplication
+public class ZoApplication extends SpringBootServletInitializer {
+
+	@Override
+    protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+        return application.sources(ZoApplication.class);
+    }
+	
+    public static void main(String[] args) {
+        SpringApplication.run(ZoApplication.class);
+    }
+}
+------------------------------------------------------------
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.persistence.CollectionTable;
+import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.MapKeyColumn;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+
+import com.whenling.centralize.model.User;
+import com.whenling.module.domain.model.SortEntity;
+
+@Entity
+@Table(name = "plugin_config")
+public class PluginConfig extends SortEntity<User, Long> {
+
+	private static final long serialVersionUID = 6374792677775419596L;
+
+	/** 插件ID */
+	@Column(nullable = false, updatable = false, unique = true, length = 100)
+	private String pluginId;
+
+	/** 是否启用 */
+	@Column(nullable = false)
+	private Boolean isEnabled;
+
+	/** 属性 */
+	@ElementCollection(fetch = FetchType.EAGER)
+	@CollectionTable(name = "deal_plugin_config_attribute")
+	@MapKeyColumn(name = "name", length = 100)
+	private Map<String, String> attributes = new HashMap<String, String>();
+
+	public String getPluginId() {
+		return pluginId;
+	}
+
+	public void setPluginId(String pluginId) {
+		this.pluginId = pluginId;
+	}
+
+	public Boolean getIsEnabled() {
+		return isEnabled;
+	}
+
+	public void setIsEnabled(Boolean isEnabled) {
+		this.isEnabled = isEnabled;
+	}
+
+	public Map<String, String> getAttributes() {
+		return attributes;
+	}
+
+	public void setAttributes(Map<String, String> attributes) {
+		this.attributes = attributes;
+	}
+
+	@Transient
+	public String getAttribute(String name) {
+		if (getAttributes() != null && name != null) {
+			return getAttributes().get(name);
+		} else {
+			return null;
+		}
+	}
+
+	@Transient
+	public void setAttribute(String name, String value) {
+		if (getAttributes() != null && name != null) {
+			getAttributes().put(name, value);
+		}
+	}
+}
+------------------------------------------------------------
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+
+import com.google.common.io.Closeables;
+
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.JedisShardInfo;
+import redis.clients.jedis.Pipeline;
+import redis.clients.jedis.ShardedJedis;
+import redis.clients.jedis.ShardedJedisPipeline;
+import redis.clients.jedis.ShardedJedisPool;
+import redis.clients.jedis.Transaction;
+
+public class RedisExample {
+
+	public static void main(String[] args) {
+		new RedisExample().testNormal();
+	}
+
+	// 普通同步方式
+	public void testNormal() {// 12.526秒
+		Jedis jedis = new Jedis("120.25.241.144", 6379);
+		jedis.auth("b840fc02d52404542994");
+
+		long start = System.currentTimeMillis();
+		for (int i = 0; i < 1000; i++) {
+			jedis.set("n" + i, "n" + i);
+			System.out.println(i);
+		}
+		long end = System.currentTimeMillis();
+		System.out.println("共花费：" + (end - start) / 1000.0 + "秒");
+
+		jedis.disconnect();
+		try {
+			Closeables.close(jedis, true);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	// 事务方式(Transactions)
+	public void testTrans() {// 0.304秒
+		Jedis jedis = new Jedis("120.25.241.144", 6379);
+		jedis.auth("b840fc02d52404542994");
+
+		long start = System.currentTimeMillis();
+		Transaction tx = jedis.multi();
+		for (int i = 0; i < 1000; i++) {
+			tx.set("n" + i, "n" + i);
+			System.out.println(i);
+		}
+		tx.exec();
+		long end = System.currentTimeMillis();
+		System.out.println("共花费：" + (end - start) / 1000.0 + "秒");
+
+		jedis.disconnect();
+		try {
+			Closeables.close(jedis, true);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	// 管道(Pipelining)
+	public void testPipelined() {// 0.076秒
+		Jedis jedis = new Jedis("120.25.241.144", 6379);
+		jedis.auth("b840fc02d52404542994");
+
+		long start = System.currentTimeMillis();
+		Pipeline pipeline = jedis.pipelined();
+		for (int i = 0; i < 1000; i++) {
+			pipeline.set("n" + i, "n" + i);
+			System.out.println(i);
+		}
+		pipeline.syncAndReturnAll();
+		long end = System.currentTimeMillis();
+		System.out.println("共花费：" + (end - start) / 1000.0 + "秒");
+
+		jedis.disconnect();
+		try {
+			Closeables.close(jedis, true);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	// 管道中调用事务
+	public void testCombPipelineTrans() {// 0.099秒
+		Jedis jedis = new Jedis("120.25.241.144", 6379);
+		jedis.auth("b840fc02d52404542994");
+
+		long start = System.currentTimeMillis();
+		Pipeline pipeline = jedis.pipelined();
+		pipeline.multi();
+		for (int i = 0; i < 1000; i++) {
+			pipeline.set("n" + i, "n" + i);
+			System.out.println(i);
+		}
+		pipeline.exec();
+		pipeline.syncAndReturnAll();
+		long end = System.currentTimeMillis();
+		System.out.println("共花费：" + (end - start) / 1000.0 + "秒");
+
+		jedis.disconnect();
+		try {
+			Closeables.close(jedis, true);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	// 分布式直连同步调用
+	public void testShardNormal() {// 13.619秒
+		JedisShardInfo jedis = new JedisShardInfo("120.25.241.144", 6379);
+		jedis.setPassword("b840fc02d52404542994");
+
+		List<JedisShardInfo> shards = Arrays.asList(jedis);
+		ShardedJedis sharding = new ShardedJedis(shards);
+
+		long start = System.currentTimeMillis();
+		for (int i = 0; i < 1000; i++) {
+			sharding.set("n" + i, "n" + i);
+			System.out.println(i);
+		}
+		long end = System.currentTimeMillis();
+		System.out.println("共花费：" + (end - start) / 1000.0 + "秒");
+
+		sharding.disconnect();
+		try {
+			Closeables.close(sharding, true);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	// 分布式直连异步调用
+	public void testShardPipelined() {// 0.127秒
+		JedisShardInfo jedis = new JedisShardInfo("120.25.241.144", 6379);
+		jedis.setPassword("b840fc02d52404542994");
+
+		List<JedisShardInfo> shards = Arrays.asList(jedis);
+		ShardedJedis sharding = new ShardedJedis(shards);
+		ShardedJedisPipeline pipeline = sharding.pipelined();
+
+		long start = System.currentTimeMillis();
+		for (int i = 0; i < 1000; i++) {
+			pipeline.set("n" + i, "n" + i);
+			System.out.println(i);
+		}
+		pipeline.syncAndReturnAll();
+		long end = System.currentTimeMillis();
+		System.out.println("共花费：" + (end - start) / 1000.0 + "秒");
+
+		sharding.disconnect();
+		try {
+			Closeables.close(sharding, true);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	// 分布式连接池同步调用
+	public void testShardSimplePool() {// 12.642秒
+		JedisShardInfo jedis = new JedisShardInfo("120.25.241.144", 6379);
+		jedis.setPassword("b840fc02d52404542994");
+
+		List<JedisShardInfo> shards = Arrays.asList(jedis);
+		ShardedJedisPool pool = new ShardedJedisPool(new JedisPoolConfig(), shards);
+
+		ShardedJedis sharding = pool.getResource();
+
+		long start = System.currentTimeMillis();
+		for (int i = 0; i < 1000; i++) {
+			sharding.set("n" + i, "n" + i);
+			System.out.println(i);
+		}
+		long end = System.currentTimeMillis();
+		System.out.println("共花费：" + (end - start) / 1000.0 + "秒");
+
+		sharding.disconnect();
+		pool.destroy();
+		try {
+			Closeables.close(sharding, true);
+			Closeables.close(pool, true);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	// 分布式连接池异步调用
+	public void testShardPipelinnedPool() {// 0.124秒
+		JedisShardInfo jedis = new JedisShardInfo("120.25.241.144", 6379);
+		jedis.setPassword("b840fc02d52404542994");
+
+		List<JedisShardInfo> shards = Arrays.asList(jedis);
+		ShardedJedisPool pool = new ShardedJedisPool(new JedisPoolConfig(), shards);
+
+		ShardedJedis sharding = pool.getResource();
+		ShardedJedisPipeline pipeline = sharding.pipelined();
+
+		long start = System.currentTimeMillis();
+		for (int i = 0; i < 1000; i++) {
+			pipeline.set("n" + i, "n" + i);
+			System.out.println(i);
+		}
+		pipeline.syncAndReturnAll();
+		long end = System.currentTimeMillis();
+		System.out.println("共花费：" + (end - start) / 1000.0 + "秒");
+
+		sharding.disconnect();
+		pool.destroy();
+
+		try {
+			Closeables.close(sharding, true);
+			Closeables.close(pool, true);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
+}
+
+mport java.util.Collections;
+import java.util.Map;
+
+import javax.servlet.ServletRequest;
+
+import org.springframework.core.MethodParameter;
+import org.springframework.core.convert.ConversionService;
+import org.springframework.core.convert.TypeDescriptor;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.util.ClassUtils;
+import org.springframework.util.StringUtils;
+import org.springframework.validation.DataBinder;
+import org.springframework.web.bind.ServletRequestDataBinder;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.support.WebDataBinderFactory;
+import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.method.annotation.ModelAttributeMethodProcessor;
+import org.springframework.web.servlet.HandlerMapping;
+import org.springframework.web.servlet.mvc.method.annotation.ServletRequestDataBinderFactory;
+
+import com.google.common.base.Strings;
+import com.whenling.module.domain.model.BaseEntity;
+import com.whenling.module.domain.service.EntityService;
+
+/**
+ * A Servlet-specific {@link ModelAttributeMethodProcessor} that applies data
+ * binding through a WebDataBinder of type {@link ServletRequestDataBinder}.
+ *
+ * <p>
+ * Also adds a fall-back strategy to instantiate the model attribute from a URI
+ * template variable or from a request parameter if the name matches the model
+ * attribute name and there is an appropriate type conversion strategy.
+ *
+ * @author Rossen Stoyanchev
+ * @since 3.1
+ */
+public class EntityModelAttributeMethodProcessor extends ModelAttributeMethodProcessor {
+
+	private EntityService entityService;
+	private ConversionService conversionService;
+
+	/**
+	 * @param annotationNotRequired
+	 *            if "true", non-simple method arguments and return values are
+	 *            considered model attributes with or without a
+	 *            {@code @ModelAttribute} annotation
+	 */
+	public EntityModelAttributeMethodProcessor(EntityService entityService, ConversionService conversionService, boolean annotationNotRequired) {
+		super(annotationNotRequired);
+		this.entityService = entityService;
+		this.conversionService = conversionService;
+	}
+
+	/**
+	 * Instantiate the model attribute from a URI template variable or from a
+	 * request parameter if the name matches to the model attribute name and if
+	 * there is an appropriate type conversion strategy. If none of these are
+	 * true delegate back to the base class.
+	 * 
+	 * @see #createAttributeFromRequestValue
+	 */
+	@Override
+	protected final Object createAttribute(String attributeName, MethodParameter methodParam,
+			WebDataBinderFactory binderFactory, NativeWebRequest request) throws Exception {
+
+		String value = getRequestValueForAttribute(attributeName, request);
+		if (value != null) {
+			Object attribute = createAttributeFromRequestValue(value, attributeName, methodParam, binderFactory,
+					request);
+			if (attribute != null) {
+				return attribute;
+			}
+		} else {
+			Class<?> parameterType = methodParam.getParameterType();
+			if (ClassUtils.isAssignable(BaseEntity.class, parameterType)) {
+				String id = request.getParameter("id");
+				if (!Strings.isNullOrEmpty(id)) {
+					return conversionService.convert(id, methodParam.getParameterType());
+				} else {
+					return entityService.getService(parameterType).newEntity();
+				}
+			}
+		}
+
+		return super.createAttribute(attributeName, methodParam, binderFactory, request);
+	}
+
+	/**
+	 * Obtain a value from the request that may be used to instantiate the model
+	 * attribute through type conversion from String to the target type.
+	 * <p>
+	 * The default implementation looks for the attribute name to match a URI
+	 * variable first and then a request parameter.
+	 * 
+	 * @param attributeName
+	 *            the model attribute name
+	 * @param request
+	 *            the current request
+	 * @return the request value to try to convert or {@code null}
+	 */
+	protected String getRequestValueForAttribute(String attributeName, NativeWebRequest request) {
+		Map<String, String> variables = getUriTemplateVariables(request);
+		if (StringUtils.hasText(variables.get(attributeName))) {
+			return variables.get(attributeName);
+		} else if (StringUtils.hasText(request.getParameter(attributeName))) {
+			return request.getParameter(attributeName);
+		} else {
+			return null;
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	protected final Map<String, String> getUriTemplateVariables(NativeWebRequest request) {
+		Map<String, String> variables = (Map<String, String>) request
+				.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE, RequestAttributes.SCOPE_REQUEST);
+		return (variables != null ? variables : Collections.<String, String> emptyMap());
+	}
+
+	/**
+	 * Create a model attribute from a String request value (e.g. URI template
+	 * variable, request parameter) using type conversion.
+	 * <p>
+	 * The default implementation converts only if there a registered
+	 * {@link Converter} that can perform the conversion.
+	 * 
+	 * @param sourceValue
+	 *            the source value to create the model attribute from
+	 * @param attributeName
+	 *            the name of the attribute, never {@code null}
+	 * @param methodParam
+	 *            the method parameter
+	 * @param binderFactory
+	 *            for creating WebDataBinder instance
+	 * @param request
+	 *            the current request
+	 * @return the created model attribute, or {@code null}
+	 * @throws Exception
+	 */
+	protected Object createAttributeFromRequestValue(String sourceValue, String attributeName,
+			MethodParameter methodParam, WebDataBinderFactory binderFactory, NativeWebRequest request)
+					throws Exception {
+
+		DataBinder binder = binderFactory.createBinder(request, null, attributeName);
+		ConversionService conversionService = binder.getConversionService();
+		if (conversionService != null) {
+			TypeDescriptor source = TypeDescriptor.valueOf(String.class);
+			TypeDescriptor target = new TypeDescriptor(methodParam);
+			if (conversionService.canConvert(source, target)) {
+				return binder.convertIfNecessary(sourceValue, methodParam.getParameterType(), methodParam);
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * This implementation downcasts {@link WebDataBinder} to
+	 * {@link ServletRequestDataBinder} before binding.
+	 * 
+	 * @see ServletRequestDataBinderFactory
+	 */
+	@Override
+	protected void bindRequestParameters(WebDataBinder binder, NativeWebRequest request) {
+		ServletRequest servletRequest = request.getNativeRequest(ServletRequest.class);
+		ServletRequestDataBinder servletBinder = (ServletRequestDataBinder) binder;
+		servletBinder.bind(servletRequest);
+	}
+}
+
+import java.net.URLDecoder;
+import java.util.List;
+
+import org.springframework.core.MethodParameter;
+import org.springframework.core.ResolvableType;
+import org.springframework.core.convert.ConversionService;
+import org.springframework.core.convert.support.DefaultConversionService;
+import org.springframework.data.querydsl.binding.QuerydslBinderCustomizer;
+import org.springframework.data.querydsl.binding.QuerydslBindings;
+import org.springframework.data.querydsl.binding.QuerydslBindingsFactory;
+import org.springframework.data.querydsl.binding.QuerydslPredicate;
+import org.springframework.data.querydsl.binding.QuerydslPredicateBuilder;
+import org.springframework.data.util.ClassTypeInformation;
+import org.springframework.data.util.TypeInformation;
+import org.springframework.data.web.querydsl.QuerydslPredicateArgumentResolver;
+import org.springframework.util.ClassUtils;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.bind.support.WebDataBinderFactory;
+import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.web.method.support.ModelAndViewContainer;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
+import com.mysema.query.types.Predicate;
+import com.whenling.module.web.controller.EntityController;
+
+public class DefaultPredicateArgumentResolver implements HandlerMethodArgumentResolver {
+
+	private final QuerydslBindingsFactory bindingsFactory;
+	private final QuerydslPredicateBuilder predicateBuilder;
+
+	/**
+	 * Creates a new {@link QuerydslPredicateArgumentResolver} using the given
+	 * {@link ConversionService}.
+	 * 
+	 * @param factory
+	 * @param conversionService
+	 *            defaults to {@link DefaultConversionService} if
+	 *            {@literal null}.
+	 */
+	public DefaultPredicateArgumentResolver(QuerydslBindingsFactory factory, ConversionService conversionService) {
+
+		this.bindingsFactory = factory;
+		this.predicateBuilder = new QuerydslPredicateBuilder(
+				conversionService == null ? new DefaultConversionService() : conversionService,
+				factory.getEntityPathResolver());
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.springframework.web.method.support.HandlerMethodArgumentResolver#
+	 * supportsParameter(org.springframework.core.MethodParameter)
+	 */
+	@Override
+	public boolean supportsParameter(MethodParameter parameter) {
+
+		if (Predicate.class.equals(parameter.getParameterType())) {
+			return true;
+		}
+
+		if (parameter.hasParameterAnnotation(QuerydslPredicate.class)) {
+			throw new IllegalArgumentException(
+					String.format("Parameter at position %s must be of type Predicate but was %s.",
+							parameter.getParameterIndex(), parameter.getParameterType()));
+		}
+
+		return false;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.springframework.web.method.support.HandlerMethodArgumentResolver#
+	 * resolveArgument(org.springframework.core.MethodParameter,
+	 * org.springframework.web.method.support.ModelAndViewContainer,
+	 * org.springframework.web.context.request.NativeWebRequest,
+	 * org.springframework.web.bind.support.WebDataBinderFactory)
+	 */
+	@Override
+	public Predicate resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
+			NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
+
+		MultiValueMap<String, String> parameters = new LinkedMultiValueMap<String, String>();
+
+		String filterString = webRequest.getParameter("filter");
+		if (!Strings.isNullOrEmpty(filterString)) {
+			filterString = URLDecoder.decode(filterString, "UTF-8");
+			Object filters = JSON.parse(filterString);
+
+			if (filters instanceof JSONArray) {
+				for (Object filter : (JSONArray) filters) {
+					if (filter instanceof JSONObject) {
+
+						String property = ((JSONObject) filter).getString("property");
+
+						Object value = ((JSONObject) filter).get("value");
+						List<String> valueList = null;
+						if (value instanceof JSONArray) {
+							valueList = Lists.transform((JSONArray) value, (jsonObject) -> {
+								return (String) jsonObject;
+							});
+						} else {
+							if (value != null) {
+								valueList = Lists.newArrayList(value.toString());
+							}
+						}
+
+						parameters.put(property, valueList);
+					}
+				}
+			}
+
+		}
+
+		QuerydslPredicate annotation = parameter.getParameterAnnotation(QuerydslPredicate.class);
+		TypeInformation<?> domainType = extractTypeInfo(parameter).getActualType();
+
+		@SuppressWarnings("rawtypes")
+		Class<? extends QuerydslBinderCustomizer> customizer = annotation == null ? null : annotation.bindings();
+		QuerydslBindings bindings = bindingsFactory.createBindingsFor(customizer, domainType);
+
+		return predicateBuilder.getPredicate(domainType, parameters, bindings);
+	}
+
+	/**
+	 * Obtains the domain type information from the given method parameter. Will
+	 * favor an explicitly registered on through
+	 * {@link QuerydslPredicate#root()} but use the actual type of the method's
+	 * return type as fallback.
+	 * 
+	 * @param parameter
+	 *            must not be {@literal null}.
+	 * @return
+	 */
+	static TypeInformation<?> extractTypeInfo(MethodParameter parameter) {
+
+		QuerydslPredicate annotation = parameter.getParameterAnnotation(QuerydslPredicate.class);
+
+		if (annotation != null && !Object.class.equals(annotation.root())) {
+			return ClassTypeInformation.from(annotation.root());
+		}
+
+		Class<?> containingClass = parameter.getContainingClass();
+		if (ClassUtils.isAssignable(EntityController.class, containingClass)) {
+			ResolvableType resolvableType = ResolvableType.forClass(containingClass);
+			return ClassTypeInformation.from(resolvableType.as(EntityController.class).getGeneric(0).resolve());
+		}
+
+		return detectDomainType(ClassTypeInformation.fromReturnTypeOf(parameter.getMethod()));
+	}
+
+	private static TypeInformation<?> detectDomainType(TypeInformation<?> source) {
+
+		if (source.getTypeArguments().isEmpty()) {
+			return source;
+		}
+
+		TypeInformation<?> actualType = source.getActualType();
+
+		if (source != actualType) {
+			return detectDomainType(actualType);
+		}
+
+		if (source instanceof Iterable) {
+			return source;
+		}
+
+		return detectDomainType(source.getComponentType());
+	}
+}
+
+    @EnableAspectJAutoProxy
+	
+	
+@Configuration
+@ComponentScan(basePackages = { "com.whenling" }, excludeFilters = {
+		@ComponentScan.Filter(value = Controller.class, type = FilterType.ANNOTATION),
+		@ComponentScan.Filter(value = EnableWebMvc.class, type = FilterType.ANNOTATION),
+		@ComponentScan.Filter(value = ServletSupport.class, type = FilterType.ANNOTATION) })
+@EnableAspectJAutoProxy
+------------------------------------------------------------
+const option = {
+    port: 848,
+    baseAuth: 'root:pwd', //get基本认证
+    dev: false, //是否打印详细日志
+    mongodb: 'mongodb://localhost/api',
+};
+const mime = require('mime-types');
+const http = require('http');
+const url = require('url');
+const fs = require('fs');
+const logger = require('log4js').getLogger('edc-server');
+const debug = logger.debug;
+const info = logger.info;
+const formidable = require('formidable');
+const mongoose = require('mongoose');
+mongoose.connect(option.mongodb, {useMongoClient: true});
+mongoose.Promise = global.Promise;
+const guid = function (time = 1) {
+    let result = '';
+    for (let i = 0; i < time; i++) {
+        result += (function () {
+            let c = new Date(),
+                b = c.getSeconds() + '',
+                d = c.getMinutes() + '',
+                e = c.getMilliseconds() + '';
+            for (let i = b.length, j = 2; i < j; i++) b = '0' + b;
+            for (let i = d.length, j = 2; i < j; i++) d = '0' + d;
+            for (let i = e.length, j = 3; i < j; i++) e = '0' + e;
+            return b + d + e + (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1) + (((1 + Math.random()) * 0x10000) | 0).toString(16);
+        })();
+    }
+    return result.toUpperCase();
+};
+const promise = function (fn, target) {
+    return (...args) => {
+        return new Promise((resolve, reject) => {
+            args.push(function(err, ...data){
+                if (err === null || err === undefined) return resolve.apply(this, data);
+                return reject(err);
+            });
+            fn.apply(target, args);
+        });
+    };
+};
+const Api = mongoose.model('Api', {
+    appname: String,
+    description: Array,
+    version: String,
+    clz: String
+});
+const FindApi = promise(Api.find,Api);
+const fs_readFile = promise(fs.readFile);
+const ejs = require('ejs');
+logger.debug = function () {
+    if (option.dev === true) debug.call(logger, Array.prototype.slice.call(arguments, 0));
+};
+logger.info = function () {
+    if (option.dev === true) info.call(logger, Array.prototype.slice.call(arguments, 0));
+};
+/**
+ * 打印response数据
+ * @param info
+ * @param contentType
+ * @param contentLength
+ * @param response
+ * @param status
+ * @param isFile
+ * @param result
+ * @param location
+ */
+const responseWrite = function ({info = '', contentType = 'text/plain;charset=utf-8', contentLength = 0, response, status = 200, isFile = false, result = false, location = false} = {}) {
+    let header = {
+        'Access-Control-Allow-Headers': 'X-File-Name, X-File-Type, X-File-Size, authorization',
+        'Access-Control-Allow-Methods': 'OPTIONS, HEAD, POST, GET',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Expose-Headers': 'X-Log, X-Reqid',
+        'Access-Control-Max-Age': '2592000',
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'Connection': 'keep-alive',
+        'Content-Type': contentType,
+        'Content-Length': contentLength,
+        'Date': new Date().toUTCString(),
+        'Pragma': 'no-cache',
+        'Server': 'nginx',
+        'X-Content-Type-Options': 'nosniff',
+        'X-Reqid': guid()
+    };
+    if (result !== false) {
+        header.result = result;
+    }
+    if (location !== false) {
+        header.Location = location;
+    }
+    if (info !== undefined) {
+        if (isFile === false) {
+            header['Content-Length'] = Buffer.byteLength(info.toString());
+            response.writeHead(status, header);
+            response.write(info);
+        } else {
+            response.writeHead(status, header);
+            response.write(info, 'binary');
+        }
+    }
+    return response.end();
+};
+const throwIf = (condition, message) => {
+    if (condition) throw message;
+};
+const callback_method = {
+    async 'post'(request, response) {
+        let form = new formidable.IncomingForm();
+        let parse = promise(form.parse, form);
+        let data = await parse(request);
+        try {
+            throwIf(!data.appname, '必须输入appname');
+            throwIf(!data.description, '必须输入description');
+            throwIf(!data.version, '必须输入version');
+            throwIf(!data.clz, '必须输入clz');
+        }
+        catch (e) {
+            return responseWrite({
+                response: response,
+                info: 'bad request',
+                status: 500
+            });
+        }
+        let apis = await FindApi({
+            appname : data.appname,
+            version : data.version
+        });
+        apis.forEach(async iapi => (promise(iapi.remove, iapi))());
+        let api = new Api(data);
+        try {
+            await (promise(api.save, api))();
+        } catch (e) {
+            throwIf(true, e);
+        }
+        responseWrite({
+            response: response,
+            info: 'success!'
+        });
+    },
+    async 'get'(request, response) {
+        let authorization = request.headers['authorization'];
+        if (!authorization || new Buffer(authorization.substr(6), 'base64').toString() !== option.baseAuth) {
+            response.writeHead(401, {
+                'content-Type': 'text/plain',
+                'WWW-Authenticate': "Basic realm='family'"
+            });
+            return response.end();
+        }
+        let fields = url.parse(request.url, true).query;
+        let appname = fields.appname;
+        let version = fields.version;
+
+
+        let apis = await FindApi({appname,version});
+        try {
+            throwIf(!apis.length, 'api不存在');
+        }
+        catch (e) {
+            return responseWrite({
+                response: response,
+                info: 'bad request',
+                status: 500
+            });
+        }
+
+        let html = await fs_readFile('api.html');
+        html = ejs.render(html.toString(),apis[0],{
+            cache : option.dev === false,
+            filename : "api"
+        });
+
+        return responseWrite({
+            response: response,
+            contentType: mime.contentType('html'),
+            info : html
+        });
+    }
+};
+/**
+ * http method core
+ * @param request
+ * @param response
+ * @returns {Promise.<void>}
+ */
+const callback = async function (request, response) {
+    let method = request.method.toLowerCase();
+    let req_url = decodeURIComponent(request.url);
+    let urlParse = url.parse(req_url, true);
+    let pathname_ = urlParse.pathname.replace(/%20|\.\.|\s/g, '');
+    if (pathname_ === '/favicon.ico') return responseWrite({
+        response: response,
+        contentType: mime.contentType('ico')
+    });
+    if (callback_method[method]) {
+        try {
+            callback_method[method](request, response);
+        }
+        catch (e) {
+            responseWrite({
+                response: response,
+                info: 'bad request',
+                status: 500
+            });
+        }
+    }
+    else {
+        responseWrite({
+            response: response,
+            info: 'error method',
+            status: 405
+        });
+    }
+};
+let server = http.createServer(callback);
+server.listen(option.port);
+logger.info(`listening: worker ${process.pid}, Address: /: ${option.port}`);
+
+{
+  "dependencies": {
+    "ejs": "^2.5.7",
+    "formidable": "^1.1.1",
+    "highlight.js": "^9.12.0",
+    "log4js": "^1.1.1",
+    "mime-types": "^2.1.15",
+    "mongoose": "^4.13.2",
+    "vue-highlight-component": "^1.0.0"
+  },
+  "name": "ApiServer"
+}
+
+@Entity
+@Table(name = "appusers")
+@NamedQuery(name="AppUser.findByUserName", query="SELECT u from AppUser u where LOWER(u.username) like LOWER(:username)")
+public class AppUser {}
+
+import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
+
+/**
+ * Servlet configuration class. (Java class equivalent to web.xml.)
+ * Detected automatically by SpringServletContainerInitializer,
+ * which is automatically called by any servlet.
+ * 
+ * @author Inka
+ */
+
+public class AppInitializer extends
+AbstractAnnotationConfigDispatcherServletInitializer {
+	@Override
+	protected Class<?>[] getRootConfigClasses() {
+		return new Class<?>[] { AppConfig.class };
+	}
+
+	@Override
+	protected Class<?>[] getServletConfigClasses() {
+		return null;
+	}
+	@Override
+	protected String[] getServletMappings() {
+		return new String[]{"/"};
+	}
+}
+------------------------------------------------------------
+import com.groupdocs.ui.config.ServerConfiguration;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.context.WebServerInitializedEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.stereotype.Component;
+
+/**
+ * Component for listening ApplicationContext event
+ */
+@Component
+public class ApplicationStartup implements ApplicationListener<WebServerInitializedEvent> {
+
+    @Autowired
+    private ServerConfiguration serverConfiguration;
+
+    /**
+     * This method is called during Spring's startup.
+     *
+     * @param event Event raised when an ApplicationContext gets initialized or
+     * refreshed.
+     */
+    public void onApplicationEvent(WebServerInitializedEvent event) {
+        // use this event for obtaining the local port of a running server
+        serverConfiguration.setHttpPort(event.getWebServer().getPort());
+    }
+
+} 
+------------------------------------------------------------
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.context.annotation.ComponentScan;
+
+@EnableAutoConfiguration
+@ComponentScan
+public class Application {
+
+    public static void main(String... args) {
+        new SpringApplicationBuilder()
+                .sources(Application.class)
+                .showBanner(false)
+                .run(args);
+    }
+}
 ------------------------------------------------------------
 <pluginManagement>
  <plugins>
