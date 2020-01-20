@@ -8188,6 +8188,96 @@ window.addEventListener('mousedown', evt => {
 
 }, true);
 ==============================================================================================================
+<plugin>
+  <groupId>org.apache.avro</groupId>
+  <artifactId>avro-maven-plugin</artifactId>
+  <version>1.7.6</version>
+  <executions>
+    <execution>
+      <phase>generate-test-sources</phase>
+      <goals>
+        <goal>protocol</goal>
+      </goals>
+      <configuration>
+        <testSourceDirectory>${project.basedir}/if/test</testSourceDirectory>
+        <testOutputDirectory>${project.basedir}/src/test</testOutputDirectory>
+      </configuration>
+    </execution>
+  </executions>
+</plugin>
+<plugin>
+  <groupId>org.apache.avro</groupId>
+  <artifactId>avro-maven-plugin</artifactId>
+  <version>${avro.version}</version>
+  <executions>
+    <execution>
+      <phase>generate-sources</phase>
+      <goals>
+        <goal>idl-protocol</goal>
+      </goals>
+    </execution>
+  </executions>
+  <configuration>
+    <outputDirectory>${project.basedir}/target/scala-${scala.binary.version}/src_managed/main/compiled_avro</outputDirectory>
+  </configuration>
+</plugin>
+<plugin>
+  <groupId>org.apache.avro</groupId>
+  <artifactId>avro-maven-plugin</artifactId>
+  <executions>
+    <execution>
+      <phase>generate-sources</phase>
+      <goals>
+        <goal>protocol</goal>
+      </goals>
+    </execution>
+  </executions>
+</plugin>
+<plugin>
+  <groupId>org.apache.avro</groupId>
+  <artifactId>avro-maven-plugin</artifactId>
+  <executions>
+    <execution>
+      <id>generate-avro-test-sources</id>
+      <phase>generate-test-sources</phase>
+      <goals>
+        <goal>schema</goal>
+      </goals>
+    </execution>
+  </executions>
+  <configuration>
+    <testOutputDirectory>${project.build.directory}/generated-test-sources/java</testOutputDirectory>
+  </configuration>
+</plugin>
+<plugin>
+  <groupId>org.apache.avro</groupId>
+  <artifactId>avro-maven-plugin</artifactId>
+  <executions>
+    <execution>
+      <id>generate-avro-test-sources</id>
+      <phase>generate-test-sources</phase>
+      <goals>
+        <goal>schema</goal>
+      </goals>
+    </execution>
+  </executions>
+  <configuration>
+    <testOutputDirectory>${project.build.directory}/generated-test-sources/java</testOutputDirectory>
+  </configuration>
+</plugin>
+<plugin>
+  <groupId>org.apache.avro</groupId>
+  <artifactId>avro-maven-plugin</artifactId>
+  <executions>
+    <execution>
+      <phase>generate-sources</phase>
+      <goals>
+        <goal>schema</goal>
+      </goals>
+    </execution>
+  </executions>
+</plugin>
+==============================================================================================================
 import java.util.ArrayList;
 import java.util.Collection;
 import org.mocksy.Request;
