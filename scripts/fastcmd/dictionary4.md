@@ -8278,6 +8278,64 @@ window.addEventListener('mousedown', evt => {
   </executions>
 </plugin>
 ==============================================================================================================
+<plugin>
+    <groupId>io.gatling</groupId>
+    <artifactId>gatling-maven-plugin</artifactId>
+    <version>3.0.1</version>
+    <configuration>
+        <resultsFolder>${project.build.directory}</resultsFolder>
+        <runMultipleSimulations>true</runMultipleSimulations>
+    </configuration>
+    <executions>
+        <execution>
+            <goals>
+                <goal>test</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+
+<plugin>
+    <groupId>net.alchim31.maven</groupId>
+    <artifactId>scala-maven-plugin</artifactId>
+    <version>4.3.0</version>
+    <configuration>
+        <scalaVersion>2.12.8</scalaVersion>
+    </configuration>
+    <executions>
+        <execution>
+            <id>scala-test-compile</id>
+            <phase>process-test-resources</phase>
+            <goals>
+                <goal>testCompile</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+
+
+
+<!-- Gatling test library dependencies -->
+<dependency>
+    <groupId>io.gatling.highcharts</groupId>
+    <artifactId>gatling-charts-highcharts</artifactId>
+    <version>3.0.2</version>
+    <scope>test</scope>
+</dependency>
+
+==============================================================================================================
+@GenericGenerator(
+        name = "wikiSequenceGenerator",
+        strategy = "org.hibernate.id.enhanced.SequenceStyleGenerator",
+        parameters = {
+                @Parameter(name = "sequence_name", value = "WIKI_SEQUENCE"),
+                @Parameter(name = "initial_value", value = "1000"),
+                @Parameter(name = "increment_size", value = "1")
+        }
+)
+@Id
+@GeneratedValue(generator = "wikiSequenceGenerator")
+==============================================================================================================
 import java.util.ArrayList;
 import java.util.Collection;
 import org.mocksy.Request;
@@ -8322,6 +8380,140 @@ public class ResponseRule implements Rule {
 }
 import io.github.benas.randombeans.EnhancedRandomBuilder;
 import io.github.benas.randombeans.api.EnhancedRandom;
+==============================================================================================================
+Date date = new GregorianCalendar(2018, 1, 1, 10, 15, 20).getTime();
+Locale.setDefault(new Locale("pl", "PL"));
+ 
+DateFormatSymbols dateFormatSymbols = new DateFormatSymbols();
+dateFormatSymbols.setWeekdays(new String[]{"A", "B", "C", "D", "E", "F", "G", "H"});
+SimpleDateFormat newDaysDateFormat = new SimpleDateFormat(
+  "EEEE-MMMM-yyyy HH:mm:ss:SSS", dateFormatSymbols);
+ 
+assertEquals("F-lutego-2018 10:15:20:000", newDaysDateFormat.format(date));
+
+
+
+
+Locale[] numberFormatLocales = NumberFormat.getAvailableLocales();
+Locale[] dateFormatLocales = DateFormat.getAvailableLocales();
+Locale[] locales = Locale.getAvailableLocales();
+
+Locale locale = new Locale.Builder()
+  .setLanguage("fr")
+  .setRegion("CA")
+  .setVariant("POSIX")
+  .setScript("Latn")
+  .build();
+
+@RestController
+@RequestMapping(value = "/api")
+public class MainController {
+
+   @GetMapping()
+   public String getMessage(@RequestParam("msg") String msg) {
+      return Translator.toLocale(msg);
+   }
+}
+==============================================================================================================
+pipeline {
+    agent { label 'java' }
+    environment {
+        SITE_DIRECTORY = 'build/docs/html5'
+    }
+    parameters {
+        string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Docker Image Tag')
+    }
+    stages {
+        stage('Build') {
+            steps {
+                sh './gradlew clean build'
+            }
+        }
+        stage('Demo') {
+            steps {
+                publishHTML([reportName  : 'Allure Docs', reportDir: env.SITE_DIRECTORY, reportFiles: 'index.html',
+                             reportTitles: '', allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false])
+            }
+        }
+        stage('Deploy') {
+            when { branch "master" }
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'qameta-ci_docker',
+                        usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh './gradlew publishDockerImage -PimageTag=${IMAGE_TAG}'
+                }
+            }
+        }
+    }
+    post {
+        always {
+            deleteDir()
+        }
+        failure {
+            slackSend message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} failed (<${env.BUILD_URL}|Open>)",
+                    color: 'danger', teamDomain: 'qameta', channel: 'allure', tokenCredentialId: 'allure-channel'
+        }
+    }
+}
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+  public static void main(String[] args) throws InterruptedException {
+        SpringApplication bootApp = new SpringApplication(ExampleMain.class);
+        bootApp.setBannerMode(Banner.Mode.OFF);
+        bootApp.setLogStartupInfo(false);
+        ConfigurableApplicationContext context = bootApp.run(args);
+        MyBean myBean = context.getBean(MyBean.class);
+        myBean.doSomething();
+    }
+==============================================================================================================
+package com.questionmarks.util;
+
+// ... imports
+
+public class DTOModelMapper extends RequestResponseBodyMethodProcessor {
+    // ...
+
+    @Override
+    public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
+        Object dto = super.resolveArgument(parameter, mavContainer, webRequest, binderFactory);
+        Object id = getEntityId(dto);
+        if (id == null) {
+            return modelMapper.map(dto, parameter.getParameterType());
+        } else {
+            Object persistedObject = entityManager.find(parameter.getParameterType(), id);
+            Check.notNull(persistedObject, "Exception.notFound",
+                    parameter.getParameterType().getSimpleName(), id);
+            modelMapper.map(dto, persistedObject);
+            return persistedObject;
+        }
+    }
+
+    // ...
+}
+==============================================================================================================
+public interface Message<T> {
+	T getPayload();
+	
+	MessageHeaders getHeaders();
+}
+
+www.apress.com/9781484212257
+https://semenindonesia.com/
 ==============================================================================================================
 import io.codearte.props2yaml.Props2YAML;
 import org.yaml.snakeyaml.Yaml;
