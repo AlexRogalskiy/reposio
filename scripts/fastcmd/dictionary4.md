@@ -5723,6 +5723,705 @@ public class WeatherEndpoint {
             <version>0.1.13</version>
         </dependency>
 ==============================================================================================================
+mvn gatling:test             // bound to test phase
+mvn gatling:integration-test // bound to integration-test phase
+==============================================================================================================
+
+mvn -Dgatling.simulationClass=computerdatabase.tenant.smoketest.Test clean gatling:test
+
+<build>
+    <plugins>
+        <plugin>
+            <groupId>net.alchim31.maven</groupId>
+            <artifactId>scala-maven-plugin</artifactId>
+            <version>3.2.2</version>
+        </plugin>
+        <plugin>
+            <groupId>io.gatling</groupId>
+            <artifactId>gatling-maven-plugin</artifactId>
+            <version>2.0.0</version>
+            <configuration>
+                <jvmArgs>
+                    <jvmArg>-Durl=http://localhost:9000</jvmArg>
+                    <jvmArg>-DnumberOfUsers=10</jvmArg>
+                    <jvmArg>-DnumberOfRepetitions=1</jvmArg>
+                    <jvmArg>-DdurationMinutes=1</jvmArg>
+                    <jvmArg>-DpauseBetweenRequestsMs=3000</jvmArg>
+                    <jvmArg>-Ddebug=true</jvmArg>
+                </jvmArgs>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+
+<plugin>
+  <groupId>io.gatling</groupId>
+  <artifactId>gatling-maven-plugin</artifactId>
+  <version>${gatling-maven-plugin.version}</version>
+  <configuration>
+    <configFolder>src/test/gatling/conf</configFolder>
+    <dataFolder>src/test/gatling/data</dataFolder>
+    <resultsFolder>target/gatling/results</resultsFolder>
+    <bodiesFolder>src/test/gatling/bodies</bodiesFolder>
+    <simulationsFolder>src/test/gatling/simulations</simulationsFolder>
+    <simulationClass>*</simulationClass>
+  </configuration>
+</plugin>
+<plugin>
+  <groupId>io.gatling</groupId>
+  <artifactId>gatling-maven-plugin</artifactId>
+  <version>${gatling-maven-plugin.version}</version>
+  <configuration>
+    <configFolder>src/test/gatling/conf</configFolder>
+    <dataFolder>src/test/gatling/data</dataFolder>
+    <resultsFolder>target/gatling/results</resultsFolder>
+    <bodiesFolder>src/test/gatling/bodies</bodiesFolder>
+    <simulationsFolder>src/test/gatling/simulations</simulationsFolder>
+    <runMultipleSimulations>true</runMultipleSimulations>
+  </configuration>
+</plugin>
+<plugin>
+  <groupId>io.gatling</groupId>
+  <artifactId>gatling-maven-plugin</artifactId>
+  <configuration>
+    <simulationClass>org.hawkular.inventory.loadtest.AgentSimulation</simulationClass>
+    <propagateSystemProperties>true</propagateSystemProperties>
+  </configuration>
+</plugin>
+
+mvn gatling:execute -Dgatling.simulationClass=com.automationrhapsody.gatling.simulations.original.ProductSimulation
+https://github.com/gatling/gatling/blob/master/gatling-core/src/main/resources/gatling-defaults.conf
+
+https://github.com/random-maven
+
+
+==============================================================================================================
+gatling.conf
+
+
+#########################
+# Gatling Configuration #
+#########################
+
+# This file contains all the settings configurable for Gatling with their default values
+
+gatling {
+  core {
+    #outputDirectoryBaseName = "" # The prefix for each simulation result folder (then suffixed by the report generation timestamp)
+    #runDescription = ""          # The description for this simulation run, displayed in each report
+    #encoding = "utf-8"           # Encoding to use throughout Gatling for file and string manipulation
+    #simulationClass = ""         # The FQCN of the simulation to run (when used in conjunction with noReports, the simulation for which assertions will be validated)
+    #elFileBodiesCacheMaxCapacity = 200        # Cache size for request body EL templates, set to 0 to disable
+    #rawFileBodiesCacheMaxCapacity = 200       # Cache size for request body Raw templates, set to 0 to disable
+    #rawFileBodiesInMemoryMaxSize = 1000       # Below this limit, raw file bodies will be cached in memory
+    #pebbleFileBodiesCacheMaxCapacity = 200    # Cache size for request body Peeble templates, set to 0 to disable
+    #shutdownTimeout = 5000                    # Milliseconds to wait for the actor system to shutdown
+    extract {
+      regex {
+        #cacheMaxCapacity = 200 # Cache size for the compiled regexes, set to 0 to disable caching
+      }
+      xpath {
+        #cacheMaxCapacity = 200 # Cache size for the compiled XPath queries,  set to 0 to disable caching
+      }
+      jsonPath {
+        #cacheMaxCapacity = 200 # Cache size for the compiled jsonPath queries, set to 0 to disable caching
+        #preferJackson = false  # When set to true, prefer Jackson over Boon for JSON-related operations
+      }
+      css {
+        #cacheMaxCapacity = 200 # Cache size for the compiled CSS selectors queries,  set to 0 to disable caching
+      }
+    }
+    directory {
+      #simulations = user-files/simulations # Directory where simulation classes are located (for bundle packaging only)
+      #resources = user-files/resources     # Directory where resources, such as feeder files and request bodies are located (for bundle packaging only)
+      #reportsOnly = ""                     # If set, name of report folder to look for in order to generate its report
+      #binaries = ""                        # If set, name of the folder where compiles classes are located: Defaults to GATLING_HOME/target.
+      #results = results                    # Name of the folder where all reports folder are located
+    }
+  }
+  charting {
+    #noReports = false       # When set to true, don't generate HTML reports
+    #maxPlotPerSeries = 1000 # Number of points per graph in Gatling reports
+    #useGroupDurationMetric = false  # Switch group timings from cumulated response time to group duration.
+    indicators {
+      #lowerBound = 800      # Lower bound for the requests' response time to track in the reports and the console summary
+      #higherBound = 1200    # Higher bound for the requests' response time to track in the reports and the console summary
+      #percentile1 = 50      # Value for the 1st percentile to track in the reports, the console summary and Graphite
+      #percentile2 = 75      # Value for the 2nd percentile to track in the reports, the console summary and Graphite
+      #percentile3 = 95      # Value for the 3rd percentile to track in the reports, the console summary and Graphite
+      #percentile4 = 99      # Value for the 4th percentile to track in the reports, the console summary and Graphite
+    }
+  }
+  http {
+    #fetchedCssCacheMaxCapacity = 200          # Cache size for CSS parsed content, set to 0 to disable
+    #fetchedHtmlCacheMaxCapacity = 200         # Cache size for HTML parsed content, set to 0 to disable
+    #perUserCacheMaxCapacity = 200             # Per virtual user cache size, set to 0 to disable
+    #warmUpUrl = "https://gatling.io"           # The URL to use to warm-up the HTTP stack (blank means disabled)
+    #enableGA = true                           # Very light Google Analytics, please support
+    ssl {
+      keyStore {
+        #type = ""      # Type of SSLContext's KeyManagers store
+        #file = ""      # Location of SSLContext's KeyManagers store
+        #password = ""  # Password for SSLContext's KeyManagers store
+        #algorithm = "" # Algorithm used SSLContext's KeyManagers store
+      }
+      trustStore {
+        #type = ""      # Type of SSLContext's TrustManagers store
+        #file = ""      # Location of SSLContext's TrustManagers store
+        #password = ""  # Password for SSLContext's TrustManagers store
+        #algorithm = "" # Algorithm used by SSLContext's TrustManagers store
+      }
+    }
+    ahc {
+      #connectTimeout = 10000                              # Timeout in millis for establishing a TCP socket
+      #handshakeTimeout = 10000                            # Timeout in millis for performing TLS handshake
+      #pooledConnectionIdleTimeout = 60000                 # Timeout in millis for a connection to stay idle in the pool
+      #maxRetry = 2                                        # Number of times that a request should be tried again
+      #requestTimeout = 60000                              # Timeout in millis for performing an HTTP request
+      #enableSni = true                                    # When set to true, enable Server Name indication (SNI)
+      #enableHostnameVerification = false                  # When set to true, enable hostname verification: SSLEngine.setHttpsEndpointIdentificationAlgorithm("HTTPS")
+      #useInsecureTrustManager = true                      # Use an insecure TrustManager that trusts all server certificates
+      #filterInsecureCipherSuites = true                   # Turn to false to not filter out insecure and weak cipher suites
+      #sslEnabledProtocols = [TLSv1.2, TLSv1.1, TLSv1]     # Array of enabled protocols for HTTPS, if empty use the JDK defaults
+      #sslEnabledCipherSuites = []                         # Array of enabled cipher suites for HTTPS, if empty use the AHC defaults
+      #sslSessionCacheSize = 0                             # SSLSession cache size, set to 0 to use JDK's default
+      #sslSessionTimeout = 0                               # SSLSession timeout in seconds, set to 0 to use JDK's default (24h)
+      #disableSslSessionResumption = false                 # if true, SSLSessions won't be resumed
+      #useOpenSsl = true                                   # if OpenSSL should be used instead of JSSE
+      #useNativeTransport = false                          # if native transport should be used instead of Java NIO (requires netty-transport-native-epoll, currently Linux only)
+      #enableZeroCopy = true                               # if zero-copy upload should be used if possible
+      #tcpNoDelay = true
+      #soReuseAddress = false
+      #allocator = "pooled"                            # switch to unpooled for unpooled ByteBufAllocator
+      #maxThreadLocalCharBufferSize = 200000           # Netty's default is 16k
+    }
+    dns {
+      #queryTimeout = 5000                             # Timeout in millis of each DNS query in millis
+      #maxQueriesPerResolve = 6                        # Maximum allowed number of DNS queries for a given name resolution
+    }
+  }
+  jms {
+    #replyTimeoutScanPeriod = 1000  # scan period for timedout reply messages
+  }
+  data {
+    #writers = [console, file]      # The list of DataWriters to which Gatling write simulation data (currently supported : console, file, graphite, jdbc)
+    console {
+      #light = false                # When set to true, displays a light version without detailed request stats
+      #writePeriod = 5              # Write interval, in seconds
+    }
+    file {
+      #bufferSize = 8192            # FileDataWriter's internal data buffer size, in bytes
+    }
+    leak {
+      #noActivityTimeout = 30  # Period, in seconds, for which Gatling may have no activity before considering a leak may be happening
+    }
+    graphite {
+      #light = false              # only send the all* stats
+      #host = "localhost"         # The host where the Carbon server is located
+      #port = 2003                # The port to which the Carbon server listens to (2003 is default for plaintext, 2004 is default for pickle)
+      #protocol = "tcp"           # The protocol used to send data to Carbon (currently supported : "tcp", "udp")
+      #rootPathPrefix = "gatling" # The common prefix of all metrics sent to Graphite
+      #bufferSize = 8192          # Internal data buffer size, in bytes
+      #writePeriod = 1            # Write period, in seconds
+    }
+  }
+}
+==============================================================================================================
+package test
+
+import io.gatling.core.Predef._
+import io.gatling.http.Predef._
+import scala.concurrent.duration._
+
+class BasicSimulation extends Simulation {
+
+  val httpProtocol = http
+    .baseUrl("http://computer-database.gatling.io") // Here is the root for all relative URLs
+    .acceptHeader("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8") // Here are the common headers
+    .acceptEncodingHeader("gzip, deflate")
+    .acceptLanguageHeader("en-US,en;q=0.5")
+    .userAgentHeader("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.8; rv:16.0) Gecko/20100101 Firefox/16.0")
+
+  val scn = scenario("Scenario Name") // A scenario is a chain of requests and pauses
+    .exec(http("request_1")
+      .get("/"))
+    .pause(7) // Note that Gatling has recorder real time pauses
+    .exec(http("request_2")
+      .get("/computers?f=macbook"))
+    .pause(2)
+    .exec(http("request_3")
+      .get("/computers/6"))
+    .pause(3)
+    .exec(http("request_4")
+      .get("/"))
+    .pause(2)
+    .exec(http("request_5")
+      .get("/computers?p=1"))
+    .pause(670 milliseconds)
+    .exec(http("request_6")
+      .get("/computers?p=2"))
+    .pause(629 milliseconds)
+    .exec(http("request_7")
+      .get("/computers?p=3"))
+    .pause(734 milliseconds)
+    .exec(http("request_8")
+      .get("/computers?p=4"))
+    .pause(5)
+    .exec(http("request_9")
+      .get("/computers/new"))
+    .pause(1)
+    .exec(http("request_10") // Here's an example of a POST request
+      .post("/computers")
+      .formParam("""name""", """Beautiful Computer""") // Note the triple double quotes: used in Scala for protecting a whole chain of characters (no need for backslash)
+      .formParam("""introduced""", """2012-05-30""")
+      .formParam("""discontinued""", """""")
+      .formParam("""company""", """37"""))
+
+  setUp(scn.inject(atOnceUsers(1)).protocols(httpProtocol))
+}
+
+package test
+
+import scala.concurrent.duration._
+
+import io.gatling.core.Predef._
+import io.gatling.core.structure.{ChainBuilder, ScenarioBuilder}
+import io.gatling.http.Predef._
+import io.gatling.http.protocol.HttpProtocolBuilder
+
+class LoadTest extends Simulation {
+
+  val httpProtocol: HttpProtocolBuilder = http
+    .baseUrl("http://localhost:8080")
+
+  object HelloWorldResource {
+    val get: ChainBuilder = exec(http("HelloWorld")
+      .get("/")
+      .basicAuth("user", "24gh39ugh0"))
+  }
+
+  val myScenario: ScenarioBuilder = scenario("RampUpUsers")
+    .exec(HelloWorldResource.get)
+
+  setUp(myScenario.inject(
+    incrementUsersPerSec(20)
+      .times(5)
+      .eachLevelLasting(5 seconds)
+      .separatedByRampsLasting(5 seconds)
+      .startingFrom(20)
+  )).protocols(httpProtocol)
+    .assertions(global.successfulRequests.percent.is(100))
+}
+
+
+
+            <plugin>
+                <groupId>io.gatling</groupId>
+                <artifactId>gatling-maven-plugin</artifactId>
+                <version>${maven-gatling-plugin.version}</version>
+                <configuration>
+                    <resultsFolder>${project.build.directory}</resultsFolder>
+                    <runMultipleSimulations>true</runMultipleSimulations>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>net.alchim31.maven</groupId>
+                <artifactId>scala-maven-plugin</artifactId>
+                <version>4.3.0</version>
+                <configuration>
+                    <scalaVersion>2.11.8</scalaVersion>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>scala-test-compile</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>testCompile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+			
+			    <dependencies>
+        <!-- Gatling test library dependencies -->
+        <dependency>
+            <groupId>io.gatling.highcharts</groupId>
+            <artifactId>gatling-charts-highcharts</artifactId>
+            <version>2.2.3</version>
+        </dependency>
+        <dependency>
+            <groupId>io.gatling</groupId>
+            <artifactId>gatling-core</artifactId>
+            <version>2.2.3</version>
+        </dependency>
+        <dependency>
+            <groupId>io.gatling</groupId>
+            <artifactId>gatling-app</artifactId>
+            <version>2.2.3</version>
+        </dependency>
+    </dependencies>
+	
+	
+	
+	            <plugin>
+                <groupId>io.gatling</groupId>
+                <artifactId>gatling-maven-plugin</artifactId>
+                <version>3.0.1</version>
+                <configuration>
+                    <resultsFolder>${project.build.directory}</resultsFolder>
+                    <runMultipleSimulations>true</runMultipleSimulations>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>net.alchim31.maven</groupId>
+                <artifactId>scala-maven-plugin</artifactId>
+                <version>4.3.0</version>
+                <configuration>
+                    <scalaVersion>2.11.8</scalaVersion>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>scala-test-compile</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>testCompile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+		
+		
+		
+		package simulation
+
+import scala.concurrent.duration._
+
+import io.gatling.core.Predef._
+import io.gatling.core.structure.{ChainBuilder, ScenarioBuilder}
+import io.gatling.http.Predef._
+import io.gatling.http.protocol.HttpProtocolBuilder
+
+class LoadTest extends Simulation {
+
+  val httpProtocol: HttpProtocolBuilder = http
+    .baseUrl("http://localhost:8080")
+
+  object HelloWorldResource {
+    val get: ChainBuilder = exec(http("HelloWorld")
+      .get("/")
+      .basicAuth("user", "24gh39ugh0"))
+  }
+
+  val myScenario: ScenarioBuilder = scenario("RampUpUsers")
+    .exec(HelloWorldResource.get)
+
+  setUp(myScenario.inject(
+    incrementUsersPerSec(20)
+      .times(5)
+      .eachLevelLasting(5 seconds)
+      .separatedByRampsLasting(5 seconds)
+      .startingFrom(20)
+  )).protocols(httpProtocol)
+    .assertions(global.successfulRequests.percent.is(100))
+}
+        <!-- Gatling test library dependencies -->
+        <dependency>
+            <groupId>io.gatling.highcharts</groupId>
+            <artifactId>gatling-charts-highcharts</artifactId>
+            <version>3.0.2</version>
+            <scope>test</scope>
+        </dependency>
+==============================================================================================================
+export JAVA_OPTS="-Xms1024m -Xmx1024m" && ./mvnw clean install
+==============================================================================================================
+You can use Customization for this. For example, if you need to ignore a top-level attribute named "timestamp" use:
+
+JSONAssert.assertEquals(expectedResponseBody, responseBody,
+            new CustomComparator(JSONCompareMode.LENIENT,
+                new Customization("timestamp", (o1, o2) -> true)));
+It's also possible to use path expressions like "entry.id". In your Customization you can use whatever method you like to compare the two values. The example above always returns true, no matter what the expected value and the actual value are. You could do more complicated stuff there if you need to.
+
+It is perfectly fine to ignore that values of multiple attributes, for example:
+
+@Test
+public void ignoringMultipleAttributesWorks() throws JSONException {
+    String expected = "{\"timestamp\":1234567, \"a\":5, \"b\":3 }";
+    String actual = "{\"timestamp\":987654, \"a\":1, \"b\":3 }";
+
+    JSONAssert.assertEquals(expected, actual,
+            new CustomComparator(JSONCompareMode.LENIENT,
+                    new Customization("timestamp", (o1, o2) -> true),
+                    new Customization("a", (o1, o2) -> true)
+            ));
+}
+There is one caveat when using Customizations: The attribute whose value is to be compared in a custom way has to be present in the actual JSON. If you want the comparison to succeed even if the attribute is not present at all you would have to override CustomComparator for example like this:
+
+@Test
+public void extendingCustomComparatorToAllowToCompletelyIgnoreCertainAttributes() throws JSONException {
+    // AttributeIgnoringComparator completely ignores some of the expected attributes
+    class AttributeIgnoringComparator extends CustomComparator{
+        private final Set<String> attributesToIgnore;
+
+        private AttributeIgnoringComparator(JSONCompareMode mode, Set<String> attributesToIgnore, Customization... customizations) {
+            super(mode, customizations);
+            this.attributesToIgnore = attributesToIgnore;
+        }
+
+        protected void checkJsonObjectKeysExpectedInActual(String prefix, JSONObject expected, JSONObject actual, JSONCompareResult result) throws JSONException {
+            Set<String> expectedKeys = getKeys(expected);
+            expectedKeys.removeAll(attributesToIgnore);
+            for (String key : expectedKeys) {
+                Object expectedValue = expected.get(key);
+                if (actual.has(key)) {
+                    Object actualValue = actual.get(key);
+                    compareValues(qualify(prefix, key), expectedValue, actualValue, result);
+                } else {
+                    result.missing(prefix, key);
+                }
+            }
+        }
+    }
+
+    String expected = "{\"timestamp\":1234567, \"a\":5}";
+    String actual = "{\"a\":5}";
+
+    JSONAssert.assertEquals(expected, actual,
+            new AttributeIgnoringComparator(JSONCompareMode.LENIENT,
+                    new HashSet<>(Arrays.asList("timestamp")))
+            );
+} 
+==============================================================================================================
+package simulation
+
+import scala.concurrent.duration._
+
+import io.gatling.core.Predef._
+import io.gatling.core.structure.{ChainBuilder, ScenarioBuilder}
+import io.gatling.http.Predef._
+import io.gatling.http.protocol.HttpProtocolBuilder
+
+class LoadTest extends Simulation {
+
+  val httpProtocol: HttpProtocolBuilder = http
+    .baseUrl("http://localhost:8080")
+
+  object HelloWorldResource {
+    val get: ChainBuilder = exec(http("HelloWorld")
+      .get("/")
+      .basicAuth("user", "24gh39ugh0"))
+  }
+
+  val myScenario: ScenarioBuilder = scenario("RampUpUsers")
+    .exec(HelloWorldResource.get)
+
+  setUp(myScenario.inject(
+    incrementUsersPerSec(20)
+      .times(5)
+      .eachLevelLasting(5 seconds)
+      .separatedByRampsLasting(5 seconds)
+      .startingFrom(20)
+  )).protocols(httpProtocol)
+    .assertions(global.successfulRequests.percent.is(100))
+}
+
+
+            <plugin>
+                <groupId>io.gatling</groupId>
+                <artifactId>gatling-maven-plugin</artifactId>
+                <version>3.0.1</version>
+                <configuration>
+                    <resultsFolder>${project.build.directory}</resultsFolder>
+                    <runMultipleSimulations>true</runMultipleSimulations>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>net.alchim31.maven</groupId>
+                <artifactId>scala-maven-plugin</artifactId>
+                <version>4.3.0</version>
+                <configuration>
+                    <scalaVersion>2.11.8</scalaVersion>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>scala-test-compile</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>testCompile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+			
+			     <dependency>
+            <groupId>io.gatling.highcharts</groupId>
+            <artifactId>gatling-charts-highcharts</artifactId>
+            <version>3.0.2</version>
+            <scope>test</scope>
+        </dependency>
+==============================================================================================================
+//    @TestConfiguration
+//    @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+//    @Description("Paragon MicroServices JBehave Steps configuration")
+//    public static class JBehaveStepsConfiguration implements ApplicationContextAware {
+//        private ConfigurableApplicationContext applicationContext;
+//
+//        /**
+//         * {@inheritDoc}
+//         *
+//         * @see ApplicationContextAware
+//         */
+//        @Override
+//        public void setApplicationContext(@NonNull final ApplicationContext applicationContext) throws BeansException {
+//            this.applicationContext = (ConfigurableApplicationContext) applicationContext;
+//        }
+//
+//        @PostConstruct
+//        private void initialize() {
+//            Optional.of(this.applicationContext.getBeansWithAnnotation(EnableJBehave.class))
+//                    .filter(not(CollectionUtils::isEmpty))
+//                    .ifPresent(steps -> steps.forEach((key, value) -> {
+//                        final EnableJBehave annotation = value.getClass().getAnnotation(EnableJBehave.class);
+//                        Arrays.stream(annotation.steps())
+//                                .forEach(step -> this.applicationContext.getAutowireCapableBeanFactory().autowire(step, AutowireCapableBeanFactory.AUTOWIRE_BY_TYPE, true));
+//                    }));
+//        }
+//    }
+
+mvn -pl example-jbehave-tests -am test
+mvn -pl example-jbehave-tests -am test -Dtest=LearnJbehaveStory
+
+@Test
+public void ignoringMultipleAttributesWorks() throws JSONException {
+    String expected = "{\"timestamp\":1234567, \"a\":5, \"b\":3 }";
+    String actual = "{\"timestamp\":987654, \"a\":1, \"b\":3 }";
+
+    JSONAssert.assertEquals(expected, actual,
+            new CustomComparator(JSONCompareMode.LENIENT,
+                    new Customization("timestamp", (o1, o2) -> true),
+                    new Customization("a", (o1, o2) -> true)
+            ));
+}
+
+
+
+@RestController
+public class UserController {
+
+  private UserRepository userRepository;
+
+  @Autowired
+  public UserController(UserRepository userRepository) {
+    this.userRepository = userRepository;
+  }
+
+  @PostMapping(path = "/user-service/users")
+  public ResponseEntity<IdObject> createUser(@RequestBody @Valid User user) {
+    User savedUser = this.userRepository.save(user);
+    return ResponseEntity
+      .status(201)
+      .body(new IdObject(savedUser.getId()));
+  }
+}
+
+@ExtendWith(SpringExtension.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT, 
+        properties = "server.port=8080")
+@Provider("userservice")
+@PactFolder("../pact-angular/pacts")
+public class UserControllerProviderTest {
+
+  @MockBean
+  private UserRepository userRepository;
+  
+  @BeforeEach
+  void setupTestTarget(PactVerificationContext context) {
+    context.setTarget(new HttpTestTarget("localhost", 8080, "/"));
+  }
+  
+  @TestTemplate
+  @ExtendWith(PactVerificationInvocationContextProvider.class)
+  void pactVerificationTestTemplate(PactVerificationContext context) {
+    context.verifyInteraction();
+  }
+
+  @State({"provider accepts a new person"})
+  public void toCreatePersonState() {
+    User user = new User();
+    user.setId(42L);
+    user.setFirstName("Arthur");
+    user.setLastName("Dent");
+    when(userRepository.findById(eq(42L))).thenReturn(Optional.of(user));
+    when(userRepository.save(any(User.class))).thenReturn(user);
+  }
+}
+
+<dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>example-jbehave-app</artifactId>
+            <version>${project.version}</version>
+            <classifier>classes</classifier>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jbehave</groupId>
+            <artifactId>jbehave-core</artifactId>
+            <version>${jbehave.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jbehave</groupId>
+            <artifactId>jbehave-spring</artifactId>
+            <version>${jbehave.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jbehave.site</groupId>
+            <artifactId>jbehave-site-resources</artifactId>
+            <version>3.1.1</version>
+            <type>zip</type>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jbehave</groupId>
+            <artifactId>jbehave-core</artifactId>
+            <version>${jbehave.version}</version>
+            <classifier>resources</classifier>
+            <type>zip</type>
+        </dependency>
+    </dependencies>
+	
+	
+==============================================================================================================
 curl --data '' https://example.com/resource.cgi
 
 curl -X POST https://example.com/resource.cgi
@@ -5744,6 +6443,35 @@ curl http://httpbin.org/post \
     -F param1=hello \
     -F name=dinsdale \
     -F name=piranha
+==============================================================================================================
+            <plugin>
+                <groupId>io.gatling</groupId>
+                <artifactId>gatling-maven-plugin</artifactId>
+                <version>${maven-gatling-plugin.version}</version>
+                <configuration>
+                    <resultsFolder>${project.build.directory}</resultsFolder>
+                    <!--<runMultipleSimulations>true</runMultipleSimulations>-->
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+			
+			   <dependencies>
+        <!-- Gatling test library dependencies -->
+        <dependency>
+            <groupId>io.gatling.highcharts</groupId>
+            <artifactId>gatling-charts-highcharts</artifactId>
+            <version>${gatling-charts.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+	
+	
 ==============================================================================================================
 <profiles>
   <profile>
