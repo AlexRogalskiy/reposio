@@ -6148,6 +6148,280 @@ class LoadTest extends Simulation {
             <scope>test</scope>
         </dependency>
 ==============================================================================================================
+export JAVA_OPTS="-Xms1024m -Xmx1024m" && ./mvnw clean install
+==============================================================================================================
+You can use Customization for this. For example, if you need to ignore a top-level attribute named "timestamp" use:
+
+JSONAssert.assertEquals(expectedResponseBody, responseBody,
+            new CustomComparator(JSONCompareMode.LENIENT,
+                new Customization("timestamp", (o1, o2) -> true)));
+It's also possible to use path expressions like "entry.id". In your Customization you can use whatever method you like to compare the two values. The example above always returns true, no matter what the expected value and the actual value are. You could do more complicated stuff there if you need to.
+
+It is perfectly fine to ignore that values of multiple attributes, for example:
+
+@Test
+public void ignoringMultipleAttributesWorks() throws JSONException {
+    String expected = "{\"timestamp\":1234567, \"a\":5, \"b\":3 }";
+    String actual = "{\"timestamp\":987654, \"a\":1, \"b\":3 }";
+
+    JSONAssert.assertEquals(expected, actual,
+            new CustomComparator(JSONCompareMode.LENIENT,
+                    new Customization("timestamp", (o1, o2) -> true),
+                    new Customization("a", (o1, o2) -> true)
+            ));
+}
+There is one caveat when using Customizations: The attribute whose value is to be compared in a custom way has to be present in the actual JSON. If you want the comparison to succeed even if the attribute is not present at all you would have to override CustomComparator for example like this:
+
+@Test
+public void extendingCustomComparatorToAllowToCompletelyIgnoreCertainAttributes() throws JSONException {
+    // AttributeIgnoringComparator completely ignores some of the expected attributes
+    class AttributeIgnoringComparator extends CustomComparator{
+        private final Set<String> attributesToIgnore;
+
+        private AttributeIgnoringComparator(JSONCompareMode mode, Set<String> attributesToIgnore, Customization... customizations) {
+            super(mode, customizations);
+            this.attributesToIgnore = attributesToIgnore;
+        }
+
+        protected void checkJsonObjectKeysExpectedInActual(String prefix, JSONObject expected, JSONObject actual, JSONCompareResult result) throws JSONException {
+            Set<String> expectedKeys = getKeys(expected);
+            expectedKeys.removeAll(attributesToIgnore);
+            for (String key : expectedKeys) {
+                Object expectedValue = expected.get(key);
+                if (actual.has(key)) {
+                    Object actualValue = actual.get(key);
+                    compareValues(qualify(prefix, key), expectedValue, actualValue, result);
+                } else {
+                    result.missing(prefix, key);
+                }
+            }
+        }
+    }
+
+    String expected = "{\"timestamp\":1234567, \"a\":5}";
+    String actual = "{\"a\":5}";
+
+    JSONAssert.assertEquals(expected, actual,
+            new AttributeIgnoringComparator(JSONCompareMode.LENIENT,
+                    new HashSet<>(Arrays.asList("timestamp")))
+            );
+} 
+==============================================================================================================
+package simulation
+
+import scala.concurrent.duration._
+
+import io.gatling.core.Predef._
+import io.gatling.core.structure.{ChainBuilder, ScenarioBuilder}
+import io.gatling.http.Predef._
+import io.gatling.http.protocol.HttpProtocolBuilder
+
+class LoadTest extends Simulation {
+
+  val httpProtocol: HttpProtocolBuilder = http
+    .baseUrl("http://localhost:8080")
+
+  object HelloWorldResource {
+    val get: ChainBuilder = exec(http("HelloWorld")
+      .get("/")
+      .basicAuth("user", "24gh39ugh0"))
+  }
+
+  val myScenario: ScenarioBuilder = scenario("RampUpUsers")
+    .exec(HelloWorldResource.get)
+
+  setUp(myScenario.inject(
+    incrementUsersPerSec(20)
+      .times(5)
+      .eachLevelLasting(5 seconds)
+      .separatedByRampsLasting(5 seconds)
+      .startingFrom(20)
+  )).protocols(httpProtocol)
+    .assertions(global.successfulRequests.percent.is(100))
+}
+
+
+            <plugin>
+                <groupId>io.gatling</groupId>
+                <artifactId>gatling-maven-plugin</artifactId>
+                <version>3.0.1</version>
+                <configuration>
+                    <resultsFolder>${project.build.directory}</resultsFolder>
+                    <runMultipleSimulations>true</runMultipleSimulations>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>net.alchim31.maven</groupId>
+                <artifactId>scala-maven-plugin</artifactId>
+                <version>4.3.0</version>
+                <configuration>
+                    <scalaVersion>2.11.8</scalaVersion>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>scala-test-compile</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>testCompile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+			
+			     <dependency>
+            <groupId>io.gatling.highcharts</groupId>
+            <artifactId>gatling-charts-highcharts</artifactId>
+            <version>3.0.2</version>
+            <scope>test</scope>
+        </dependency>
+==============================================================================================================
+//    @TestConfiguration
+//    @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+//    @Description("Paragon MicroServices JBehave Steps configuration")
+//    public static class JBehaveStepsConfiguration implements ApplicationContextAware {
+//        private ConfigurableApplicationContext applicationContext;
+//
+//        /**
+//         * {@inheritDoc}
+//         *
+//         * @see ApplicationContextAware
+//         */
+//        @Override
+//        public void setApplicationContext(@NonNull final ApplicationContext applicationContext) throws BeansException {
+//            this.applicationContext = (ConfigurableApplicationContext) applicationContext;
+//        }
+//
+//        @PostConstruct
+//        private void initialize() {
+//            Optional.of(this.applicationContext.getBeansWithAnnotation(EnableJBehave.class))
+//                    .filter(not(CollectionUtils::isEmpty))
+//                    .ifPresent(steps -> steps.forEach((key, value) -> {
+//                        final EnableJBehave annotation = value.getClass().getAnnotation(EnableJBehave.class);
+//                        Arrays.stream(annotation.steps())
+//                                .forEach(step -> this.applicationContext.getAutowireCapableBeanFactory().autowire(step, AutowireCapableBeanFactory.AUTOWIRE_BY_TYPE, true));
+//                    }));
+//        }
+//    }
+
+mvn -pl example-jbehave-tests -am test
+mvn -pl example-jbehave-tests -am test -Dtest=LearnJbehaveStory
+
+@Test
+public void ignoringMultipleAttributesWorks() throws JSONException {
+    String expected = "{\"timestamp\":1234567, \"a\":5, \"b\":3 }";
+    String actual = "{\"timestamp\":987654, \"a\":1, \"b\":3 }";
+
+    JSONAssert.assertEquals(expected, actual,
+            new CustomComparator(JSONCompareMode.LENIENT,
+                    new Customization("timestamp", (o1, o2) -> true),
+                    new Customization("a", (o1, o2) -> true)
+            ));
+}
+
+
+
+@RestController
+public class UserController {
+
+  private UserRepository userRepository;
+
+  @Autowired
+  public UserController(UserRepository userRepository) {
+    this.userRepository = userRepository;
+  }
+
+  @PostMapping(path = "/user-service/users")
+  public ResponseEntity<IdObject> createUser(@RequestBody @Valid User user) {
+    User savedUser = this.userRepository.save(user);
+    return ResponseEntity
+      .status(201)
+      .body(new IdObject(savedUser.getId()));
+  }
+}
+
+@ExtendWith(SpringExtension.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT, 
+        properties = "server.port=8080")
+@Provider("userservice")
+@PactFolder("../pact-angular/pacts")
+public class UserControllerProviderTest {
+
+  @MockBean
+  private UserRepository userRepository;
+  
+  @BeforeEach
+  void setupTestTarget(PactVerificationContext context) {
+    context.setTarget(new HttpTestTarget("localhost", 8080, "/"));
+  }
+  
+  @TestTemplate
+  @ExtendWith(PactVerificationInvocationContextProvider.class)
+  void pactVerificationTestTemplate(PactVerificationContext context) {
+    context.verifyInteraction();
+  }
+
+  @State({"provider accepts a new person"})
+  public void toCreatePersonState() {
+    User user = new User();
+    user.setId(42L);
+    user.setFirstName("Arthur");
+    user.setLastName("Dent");
+    when(userRepository.findById(eq(42L))).thenReturn(Optional.of(user));
+    when(userRepository.save(any(User.class))).thenReturn(user);
+  }
+}
+
+<dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>example-jbehave-app</artifactId>
+            <version>${project.version}</version>
+            <classifier>classes</classifier>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jbehave</groupId>
+            <artifactId>jbehave-core</artifactId>
+            <version>${jbehave.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jbehave</groupId>
+            <artifactId>jbehave-spring</artifactId>
+            <version>${jbehave.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jbehave.site</groupId>
+            <artifactId>jbehave-site-resources</artifactId>
+            <version>3.1.1</version>
+            <type>zip</type>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jbehave</groupId>
+            <artifactId>jbehave-core</artifactId>
+            <version>${jbehave.version}</version>
+            <classifier>resources</classifier>
+            <type>zip</type>
+        </dependency>
+    </dependencies>
+	
+	
+==============================================================================================================
 curl --data '' https://example.com/resource.cgi
 
 curl -X POST https://example.com/resource.cgi
