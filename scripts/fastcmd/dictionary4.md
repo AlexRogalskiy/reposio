@@ -6422,6 +6422,181 @@ public class UserControllerProviderTest {
 	
 	
 ==============================================================================================================
+import cc.catalysts.structurizr.ModelPostProcessor;
+import cc.catalysts.structurizr.ViewProvider;
+import cc.catalysts.structurizr.config.StructurizrProperties;
+import com.structurizr.Workspace;
+import com.structurizr.api.StructurizrClient;
+import com.structurizr.api.StructurizrClientException;
+import com.structurizr.model.Relationship;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.core.annotation.AnnotationAwareOrderComparator;
+import org.springframework.core.annotation.Order;
+
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static cc.catalysts.structurizr.service.StructurizrService.ORDER;
+
+/**
+ * @author Klaus Lehner, Catalysts GmbH
+ */
+@Order(ORDER)
+public class StructurizrService implements ApplicationListener<ContextRefreshedEvent> {
+
+    public static final int ORDER = 0;
+
+    private static final Logger LOG = LoggerFactory.getLogger(StructurizrService.class);
+
+    private final StructurizrClient structurizrClient;
+    private final Workspace workspace;
+    private final StructurizrProperties properties;
+
+    public StructurizrService(StructurizrClient structurizrClient, Workspace workspace, StructurizrProperties properties) {
+        this.structurizrClient = structurizrClient;
+        this.workspace = workspace;
+        this.properties = properties;
+    }
+
+    @Override
+    public void onApplicationEvent(ContextRefreshedEvent event) {
+        List<ModelPostProcessor> postProcessors = event.getApplicationContext()
+                .getBeansOfType(ModelPostProcessor.class).values().stream().collect(Collectors.toList());
+
+        AnnotationAwareOrderComparator.sort(postProcessors);
+
+        for (ModelPostProcessor postProcessor : postProcessors) {
+            postProcessor.postProcess(workspace.getModel());
+        }
+
+        if (properties.isAddImplicitRelationships()) {
+            final Set<Relationship> relationships = workspace.getModel().addImplicitRelationships();
+            LOG.info("Added {} implicit relationships.", relationships.size());
+        }
+
+        event.getApplicationContext()
+                .getBeansOfType(ViewProvider.class)
+                .values().stream()
+                .forEach(vp -> vp.createViews(workspace.getViews()));
+
+
+        if (properties.isPerformMerge()) {
+            try {
+                structurizrClient.putWorkspace(properties.getWorkspace().getId(), workspace);
+            } catch (StructurizrClientException e) {
+                LOG.error("Could not put workspace.", e);
+                throw new RuntimeException(e);
+            }
+        }
+    }
+}
+==============================================================================================================
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springboot_version}")
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = 11
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+dependencies {
+    compile('org.springframework.boot:spring-boot-starter-data-jpa')
+    compile('org.springframework.boot:spring-boot-starter-web')
+    compile('com.h2database:h2:1.4.196')
+
+    // add jaxb since it's no longer available in Java 11
+    runtime('javax.xml.bind:jaxb-api:2.3.1')
+
+    // add javassist >= 3.23.1-GA since earlier versions are broken in Java 11
+    // see https://github.com/jboss-javassist/javassist/issues/194
+    runtime('org.javassist:javassist:3.23.1-GA')
+
+    // overriding bytebuddy to newer version that supports Java 11
+    // see https://github.com/raphw/byte-buddy/issues/428
+    testCompile('net.bytebuddy:byte-buddy:1.9.12')
+
+    testCompile("au.com.dius:pact-jvm-provider-junit5_2.12:${pact_version}")
+    testCompile('org.springframework.boot:spring-boot-starter-test')
+    testRuntimeOnly( 'org.junit.jupiter:junit-jupiter-engine:5.1.0')
+}
+
+bootRun {
+    jvmArgs = ["-Xdebug", "-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005"]
+}
+
+test {
+    useJUnitPlatform()
+}
+==============================================================================================================
+{
+    "provider": {
+        "name": "ProviderName"
+    },
+    "consumer": {
+        "name": "ConsumerName"
+    },
+    "interactions": [
+        {
+            "description": "sending a ping request",
+            "request": {
+                "method": "GET",
+                "path": "/v1/monitoring/ping"
+            },
+            "response": {
+                "status": 200,
+                "headers": {
+                    "Content-Type": "application/json; charset=UTF-8"
+                },
+                "body": {
+                    "response": "pong"
+                },
+                "matchingRules": {
+                    "body": {
+                        
+                    },
+                    "header": {
+                        "Content-Type": {
+                            "match": [
+                                {
+                                    "match": "regex",
+                                    "regex": "application/json;\\s?charset=(utf|UTF)-8"
+                                }
+                            ],
+                            "combine": "AND"
+                        }
+                    }
+                }
+            }
+        }
+    ],
+    "metadata": {
+        "pactSpecification": {
+            "version": "3.0.0"
+        },
+        "pact-jvm": {
+            "version": "3.5.19"
+        }
+    }
+}
+==============================================================================================================
 curl --data '' https://example.com/resource.cgi
 
 curl -X POST https://example.com/resource.cgi
