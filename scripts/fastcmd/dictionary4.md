@@ -8449,6 +8449,91 @@ public enum MetricType {
   }
 }
 ==============================================================================================================
+https://www.baeldung.com/pact-junit-consumer-driven-contracts
+==============================================================================================================
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<RestMessage> handleArgumentNotValidException(MethodArgumentNotValidException ex, Locale locale) {
+        BindingResult result = ex.getBindingResult();
+        List<String> errorMessages = result.getAllErrors()
+                .stream()
+                .map(objectError -> messageSource.getMessage(objectError, locale))
+                .collect(Collectors.toList());
+        return new ResponseEntity<>(new RestMessage(errorMessages), HttpStatus.BAD_REQUEST);
+    }
+	
+	package au.com.dius.pact.provider.junit;
+
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+/**
+ * Used to mark methods that should be run on state change
+ */
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.METHOD})
+@Inherited
+public @interface State {
+  /**
+   * @return list of state names
+   */
+  String[] value();
+
+  /**
+   * Whether to run the method before (SETUP) or after (TEARDOWN) the interaction
+   */
+  StateChangeAction action() default StateChangeAction.SETUP;
+}
+
+==============================================================================================================
+public class AdminImportedUserId  {
+  @Rule
+  public PactProviderRuleMk2 mockProvider = new PactProviderRuleMk2("provider_app", PactSpecVersion.V2, this);
+
+  @Pact(provider = "provider_app", consumer = "consumer_app")
+  public RequestResponsePact createFragment(PactDslWithProvider builder) throws IOException {
+    return builder
+        .given("an admin with two imported users")
+        .uponReceiving("a get request for admin imported user id")
+        .path("/api/admin/users/imports/1")
+        .method("GET")
+        .headers(new ProviderClient().getHeaders())
+        .willRespondWith()
+        .status(200)
+        .body("{\"meta\":{},\"linked\":{\"contexts\":[{\"id\":1,\"class\":\"Domain\"}]},\"imports\":[{\"id\":\"160\","
+        + "\"context_id\":\"1\",\"user_name\":\"user10 Royer\",\"context_description\":\"Dev Environment\","
+        + "\"context_type\":\"Domain\",\"completed\":17,\"total\":17,\"state\":\"complete\",\"new_user_count\":0,"
+        + "\"restored_user_count\":0,\"updated_user_count\":17,\"deleted_user_count\":0,\"ignored_user_count\":0,"
+        + "\"deported_user_count\":17,\"invalid_rows\":[],\"created_at\":\"2017-09-23T13:13:21.132-06:00\","
+        + "\"user_id\":4078}]}")
+        .toPact();
+  }
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
