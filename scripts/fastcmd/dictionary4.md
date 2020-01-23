@@ -7930,8 +7930,197 @@ public static class KafkaStreamsConfig {
 
         return stream;
     }
-
 }
+==============================================================================================================
+import au.com.dius.pact.consumer.Pact;
+import au.com.dius.pact.consumer.PactProviderRuleMk2;
+import au.com.dius.pact.consumer.PactVerification;
+import au.com.dius.pact.consumer.dsl.PactDslWithProvider;
+import au.com.dius.pact.model.RequestResponsePact;
+import org.junit.Rule;
+import org.junit.Test;
+import org.springframework.http.*;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+public class PactConsumerDrivenContractUnitTest {
+
+    @Rule
+    public final PactProviderRuleMk2 mockProvider = new PactProviderRuleMk2("test_provider", "localhost", 8080, this);
+
+    @Pact(consumer = "test_consumer")
+    public RequestResponsePact createPact(final PactDslWithProvider builder) {
+        Map<String, String> headers = new HashMap<String, String>();
+        headers.put("Content-Type", "application/json");
+
+        return builder.given("test GET").uponReceiving("GET REQUEST").path("/pact")
+                .method("GET").willRespondWith().status(200)
+                .headers(headers).body("{\"condition\": true, \"name\": \"tom\"}").given("test POST").uponReceiving("POST REQUEST").method("POST")
+                .headers(headers).body("{\"name\": \"Michael\"}").path("/pact").willRespondWith().status(201).toPact();
+    }
+
+    @Test
+    @PactVerification()
+    public void givenGet_whenSendRequest_shouldReturn200WithProperHeaderAndBody() {
+        // when
+        final ResponseEntity<String> response = new RestTemplate().getForEntity(mockProvider.getUrl() + "/pact", String.class);
+
+        // then
+        assertThat(response.getStatusCode().value()).isEqualTo(200);
+        assertThat(response.getHeaders().get("Content-Type").contains("application/json")).isTrue();
+        assertThat(response.getBody()).contains("condition", "true", "name", "tom");
+
+        // and
+        final HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+
+        final String jsonBody = "{\"name\": \"Michael\"}";
+
+        // when
+        final ResponseEntity<String> postResponse = new RestTemplate().exchange(this.mockProvider.getUrl() + "/pact", HttpMethod.POST, new HttpEntity<>(jsonBody, httpHeaders), String.class);
+
+        // then
+        assertThat(postResponse.getStatusCode().value()).isEqualTo(201);
+    }
+}
+==============================================================================================================
+"providerState": "provider fetches product by id and client has valid license",
+==============================================================================================================
+{
+    "provider": {
+        "name": "test_provider"
+    },
+    "consumer": {
+        "name": "test_consumer"
+    },
+    "interactions": [
+        {
+            "description": "GET REQUEST",
+            "request": {
+                "method": "GET",
+                "path": "/pact"
+            },
+            "response": {
+                "status": 200,
+                "headers": {
+                    "Content-Type": "application/json"
+                },
+                "body": {
+                    "condition": true,
+                    "name": "tom"
+                }
+            },
+            "providerStates": [
+                {
+                    "name": "test GET",
+                    "params": {
+                        "test-name": "test-value"
+                    }
+                }
+            ]
+        },
+        {
+            "description": "POST REQUEST",
+            "request": {
+                "method": "POST",
+                "path": "/pact",
+                "headers": {
+                    "Content-Type": "application/json"
+                },
+                "body": {
+                    "name": "Michael"
+                }
+            },
+            "response": {
+                "status": 201
+            },
+            "providerStates": [
+                {
+                    "name": "test POST"
+                }
+            ]
+        }
+    ],
+    "metadata": {
+        "pact-specification": {
+            "version": "3.0.0"
+        },
+        "pact-jvm": {
+            "version": "3.5.0"
+        }
+    }
+}
+==============================================================================================================
+import au.com.dius.pact.consumer.Pact;
+import au.com.dius.pact.consumer.PactProviderRuleMk2;
+import au.com.dius.pact.consumer.PactVerification;
+import au.com.dius.pact.consumer.dsl.PactDslWithProvider;
+import au.com.dius.pact.model.RequestResponsePact;
+import org.junit.Rule;
+import org.junit.Test;
+import org.springframework.http.*;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+public class PactConsumerDrivenContractUnitTest {
+
+    @Rule
+    public final PactProviderRuleMk2 mockProvider = new PactProviderRuleMk2("test_provider", "localhost", 8080, this);
+
+    @Pact(consumer = "test_consumer")
+    public RequestResponsePact createPact(final PactDslWithProvider builder) {
+        Map<String, String> headers = new HashMap<String, String>();
+        headers.put("Content-Type", "application/json");
+
+        return builder.given("test GET", Collections.singletonMap("test-name", "test-value")).uponReceiving("GET REQUEST").path("/pact")
+                .method("GET").willRespondWith().status(200)
+                .headers(headers).body("{\"condition\": true, \"name\": \"tom\"}").given("test POST").uponReceiving("POST REQUEST").method("POST")
+                .headers(headers).body("{\"name\": \"Michael\"}").path("/pact").willRespondWith().status(201).toPact();
+    }
+
+    @Test
+    @PactVerification()
+    public void givenGet_whenSendRequest_shouldReturn200WithProperHeaderAndBody() {
+        // when
+        final ResponseEntity<String> response = new RestTemplate().getForEntity(mockProvider.getUrl() + "/pact", String.class);
+
+        // then
+        assertThat(response.getStatusCode().value()).isEqualTo(200);
+        assertThat(response.getHeaders().get("Content-Type").contains("application/json")).isTrue();
+        assertThat(response.getBody()).contains("condition", "true", "name", "tom");
+
+        // and
+        final HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+
+        final String jsonBody = "{\"name\": \"Michael\"}";
+
+        // when
+        final ResponseEntity<String> postResponse = new RestTemplate().exchange(this.mockProvider.getUrl() + "/pact", HttpMethod.POST, new HttpEntity<>(jsonBody, httpHeaders), String.class);
+
+        // then
+        assertThat(postResponse.getStatusCode().value()).isEqualTo(201);
+    }
+}
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
 ==============================================================================================================
 ==============================================================================================================
 ==============================================================================================================
@@ -8551,7 +8740,7 @@ https://www.baeldung.com/pact-junit-consumer-driven-contracts
 	
 	package au.com.dius.pact.provider.junit;
 
-
+http://vdlg-pba11-redis-1.pba.internal:5027/swagger/registry/index.html
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
