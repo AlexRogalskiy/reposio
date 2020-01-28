@@ -99,6 +99,8 @@ https://developers.redhat.com/blog/2019/12/30/serverless-kafka-on-kubernetes/?sc
 https://opensource.com/article/20/1/python-web-api-pyramid-cornice?sc_cid=701f2000000RtqCAAS
 http://www.apress.com/9781590595961
 https://developers.redhat.com/search/?s=most-recent&f=type%7Ebook
+
+Validation failed for argument [0] in public org.springframework.http.ResponseEntity com.paragon.microservices.confirmationlink.callback.controller.impl.IssueControllerImpl.acceptIssue(com.paragon.microservices.confirmationlink.callback.model.dto.IssueRequest,com.paragon.mailingcontour.commons.security.model.AuthenticatedUser): [Field error in object 'issueRequest' on field 'subject': rejected value []; codes [NotBlank.issueRequest.subject,NotBlank.subject,NotBlank.java.lang.String,NotBlank]; arguments [org.springframework.context.support.DefaultMessageSourceResolvable: codes [issueRequest.subject,subject]; arguments []; default message [subject]]; default message [Issue request model <subject> attribute should not be blank]] 
 ==============================================================================================================
 const express = require('express');
 const mongojs = require('mongojs');
@@ -13053,9 +13055,7 @@ import org.eclipse.milo.opcua.sdk.client.api.identity.IdentityProvider;
         @JsonSubTypes.Type(value = AnonymousIdentityProviderConfiguration.class, name = "anonymous"),
         @JsonSubTypes.Type(value = UsernameIdentityProviderConfiguration.class, name = "username")})
 public interface IdentityProviderConfiguration {
-
     IdentityProvider toProvider();
-
 }
 ==============================================================================================================
 ==============================================================================================================
