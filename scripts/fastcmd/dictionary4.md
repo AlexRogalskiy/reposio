@@ -52,6 +52,98 @@ class WithConfigurationTests {
 ==============================================================================================================
 ==============================================================================================================
 ==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+https://github.com/sslotsky/validate-this
+https://github.com/scottpreston/js-examples
+skupper.io
+https://developers.redhat.com/blog/2020/01/02/kubernetes-native-spring-apps-on-quarkus/?sc_cid=701f2000000RtqCAAS
+https://developers.redhat.com/blog/2019/12/30/serverless-kafka-on-kubernetes/?sc_cid=701f2000000RtqCAAS
+https://opensource.com/article/20/1/python-web-api-pyramid-cornice?sc_cid=701f2000000RtqCAAS
+http://www.apress.com/9781590595961
+https://developers.redhat.com/search/?s=most-recent&f=type%7Ebook
+==============================================================================================================
+const express = require('express');
+const mongojs = require('mongojs');
+
+const app = express();
+const db = mongojs('ChartsDB',['charts']);
+
+app.get('/chart.json',(req,res) =>{
+	db.charts.find({_id:mongojs.ObjectId("578a7c835df8a2cef0428e02")}, (err,r) =>{
+		if(err){
+			res.sendStatus(404);
+		}else{
+			res.header("Access-Control-Allow-Origin", "*");
+  		res.header("Access-Control-Allow-Headers", "X-Requested-With");
+  		res.send(JSON.stringify(r[0]));
+		}
+	});
+});
+
+
+app.listen(3001, function(){
+	console.log("we are running on prot 3001!");
+});
+==============================================================================================================
+npm install --save-dev babel-core babel-preset-env
+npm install --save-dev @babel/core @babel/preset-env
+==============================================================================================================
+       <dependency>
+            <groupId>io.reactivex.rxjava2</groupId>
+            <artifactId>rxjava</artifactId>
+            <version>${rx.java2.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-test</artifactId>
+            <version>${reactor-core.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-core</artifactId>
+            <version>${reactor-core.version}</version>
+        </dependency>
+==============================================================================================================
+==============================================================================================================
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -6659,6 +6751,1372 @@ public class ConsumerPortTest {
 https://wilsonmar.github.io/pact/
 https://reflectoring.io/pact-node-provider/
 https://techblog.poppulo.com/sharing-consumer-driven-contracts-with-pact-broker/
+==============================================================================================================
+import au.com.dius.pact.provider.junit.loader.PactBroker;
+import au.com.dius.pact.provider.junit.loader.PactFilter;
+import au.com.dius.pact.provider.junit.loader.PactFolder;
+import org.apache.http.HttpRequest;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.lang.annotation.Annotation;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class InheritedAnnotationsTest {
+
+    @Test
+    public void shouldHaveInheritedAnnotations() {
+        SampleProviderTest clazz = new SampleProviderTest();
+        List<? extends Class<? extends Annotation>> list = Arrays.stream(clazz.getClass().getAnnotations())
+                .map(Annotation::annotationType)
+                .collect(Collectors.toList());
+
+        Assert.assertTrue(list.containsAll(
+                Arrays.asList(
+                        PactBroker.class,
+                        Provider.class,
+                        Consumer.class,
+                        PactFolder.class,
+                        IgnoreNoPactsToVerify.class,
+                        PactFilter.class)));
+    }
+
+    private class SampleProviderTest extends ParentClazz {
+        @State("has no data")
+        public void hasNoData() {
+            System.out.println("Has no data state");
+        }
+
+        @TargetRequestFilter
+        public void requestFilter(HttpRequest  httpRequest) {
+
+        }
+    }
+
+    @PactBroker
+    @Provider("testProvider")
+    @Consumer("testConsumer")
+    @PactFolder("pactFolder")
+    @IgnoreNoPactsToVerify
+    @PactFilter("myFilter")
+    abstract class ParentClazz {
+
+    }
+}
+==============================================================================================================
+@Primary
+@Bean(name = "demandeInscriptionRepositoryMock")
+public DemandeInscriptionRepository demandeInscriptionRepositoryMock(final DemandeInscriptionRepository real) {
+    MockSettings mockSetting = new MockSettingsImpl();
+
+    Answer answer = invocation -> {
+        if (invocation.getMethod().getName().equals("YOUR_METHOD")){
+            return "YOUR_RETURN";
+        }else{
+            return AdditionalAnswers.delegatesTo(real).answer(invocation);
+        }
+    };
+
+    mockSetting.defaultAnswer(answer);
+
+    return Mockito.mock(DemandeInscriptionRepository.class, mockSetting);
+}
+==============================================================================================================
+import au.com.dius.pact.core.matchers.Matchers;
+import au.com.dius.pact.provider.junit.loader.PactFolder;
+import au.com.dius.pact.provider.junit.target.HttpTarget;
+import au.com.dius.pact.provider.junit.target.Target;
+import au.com.dius.pact.provider.junit.target.TestTarget;
+import com.github.restdriver.clientdriver.ClientDriverRule;
+import org.apache.commons.io.IOUtils;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.nio.charset.Charset;
+
+import static com.github.restdriver.clientdriver.RestClientDriver.giveResponse;
+import static com.github.restdriver.clientdriver.RestClientDriver.onRequestTo;
+
+@RunWith(PactRunner.class)
+@Provider("ArticlesProvider")
+@PactFolder("src/test/resources/wildcards")
+public class ArticlesContractTest {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(ArticlesContractTest.class);
+
+  @TestTarget
+  public final Target target = new HttpTarget(8000);
+
+  @ClassRule
+  public static final ClientDriverRule embeddedService = new ClientDriverRule(8000);
+
+  @Before
+  public void before() throws IOException {
+    System.setProperty(Matchers.PACT_MATCHING_WILDCARD, "true");
+    String json = IOUtils.toString(getClass().getResourceAsStream("/articles.json"), Charset.defaultCharset());
+    embeddedService.addExpectation(
+      onRequestTo("/articles.json"), giveResponse(json, "application/json")
+    );
+  }
+
+  @After
+  public void after() {
+    System.clearProperty(Matchers.PACT_MATCHING_WILDCARD);
+  }
+
+  @State("Pact for Issue 313")
+  public void stateChange() {
+    LOGGER.debug("stateChange - Pact for Issue 313 - Before");
+  }
+
+  @State(value = "Pact for Issue 313", action = StateChangeAction.TEARDOWN)
+  public void stateChangeAfter() {
+    LOGGER.debug("stateChange - Pact for Issue 313 - After");
+  }
+}
+==============================================================================================================
+<plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+            <configuration>
+				<fork>true</fork>
+				<arguments>
+					<argument>-Dfile.encoding=UTF8</argument>
+				</arguments>
+				<jvmArguments>-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8002
+					-Dfile.encoding=UTF8</jvmArguments>
+			</configuration>
+</plugin>
+==============================================================================================================
+Problem: A robot is located at the top-left corner of a m x n grid.
+The robot can only move either down or right at any point in time. The robot is trying to reach the bottom-right corner of the grid .
+How many possible unique paths are there?
+
+Approach 1(Recursion):
+
+Let NumberOfPaths(m, n) be the count of paths to reach row number m and column number n in the matrix, NumberOfPaths(m, n) can be recursively written as following.
+
+view sourceprint?
+/ Returns count of possible paths to reach cell at row number m and column
+// number n from the topmost leftmost cell (cell at 1, 1)
+int  numberOfPaths(int m, int n)
+{
+   // If either given row number is first or given column number is first
+   if (m == 1 || n == 1)
+        return 1;
+  
+   // If diagonal movements are allowed then the last addition
+   // is required.
+   return  numberOfPaths(m-1, n) + numberOfPaths(m, n-1);
+           // + numberOfPaths(m-1,n-1);
+}
+The time complexity of above recursive solution is exponential.
+
+Approach 2(Dynamic Programming):
+
+This problem has both properties of a dynamic programming problem. Like other typical Dynamic Programming(DP) problems, recomputations of same subproblems can be avoided by constructing a temporary array count[][] in bottom up manner using the above recursive formula.
+
+int numberOfPaths(int m, int n)
+{
+    // Create a 2D table to store results of subproblems
+    int count[m][n];
+  
+    // Count of paths to reach any cell in first column is 1
+    for (int i = 0; i < m; i++)
+        count[i][0] = 1;
+  
+    // Count of paths to reach any cell in first column is 1
+    for (int j = 0; j < n; j++)
+        count[0][j] = 1;
+ <strong>
+    // Calculate count of paths for other cells in bottom-up manner using
+    // the recursive solution
+    for (int i = 1; i < m; i++)
+    {
+        for (int j = 1; j < n; j++)
+  
+            // By uncommenting the last part of the code calculates the total
+            // possible paths if the diagonal Movements are allowed
+            count[i][j] = count[i-1][j] + count[i][j-1]; //+ count[i-1][j-1];
+  
+    }
+    return count[m-1][n-1];
+}
+
+==============================================================================================================
+public class MyService {
+     private ModelMapper modelMapper;
+
+     public MyService(){
+         this.modelMapper = new ModelMapper();
+         this.modelMapper.getConfiguration()
+            .setMatchingStrategy(MatchingStrategies.STRICT)
+            .setDestinationNamingConvention(LombokBuilderNamingConvention.INSTANCE)
+            .setDestinationNameTransformer(LombokBuilderNameTransformer.INSTANCE);
+     }
+
+     public OutputDTO aMethod(final InputDTO input){
+          return modelMapper.map(input, OutputDTO.OutputDTOBuilder.class).build(); 
+     }
+}
+Where LombokBuilderNamingConvention is:
+
+import org.modelmapper.spi.NamingConvention;
+import org.modelmapper.spi.PropertyType;
+
+public class LombokBuilderNamingConvention implements NamingConvention {
+
+    public static LombokBuilderNamingConvention INSTANCE = new LombokBuilderNamingConvention();
+
+    @Override
+    public boolean applies(String propertyName, PropertyType propertyType) {
+        return PropertyType.METHOD.equals(propertyType);
+    }
+
+    @Override
+    public String toString() {
+        return "Lombok @Builder Naming Convention";
+    }
+
+}
+And LombokBuilderNameTransformer is:
+
+import org.modelmapper.spi.NameTransformer;
+import org.modelmapper.spi.NameableType;
+
+
+public class LombokBuilderNameTransformer implements NameTransformer {
+
+    public static final NameTransformer INSTANCE = new LombokBuilderNameTransformer();
+
+    @Override
+    public String transform(final String name, final NameableType nameableType) {
+        return Strings.decapitalize(name);
+    }
+
+    @Override
+    public String toString() {
+        return "Lombok @Builder Mutator";
+    }
+}
+And OutputDTO can look like:
+
+@Builder // Has .builder() static method
+@Value // Thus immutable
+public class OutputDTO {
+   private String foo;
+   private int bar;
+} 
+==============================================================================================================
+public class Robot {
+    private static final int NORTH = 0, EAST = 1, SOUTH = 2, WEST = 3;
+    private int direction;
+    private int x, y;
+
+    private Grid grid;
+
+    public Robot(Grid grid) {
+        this.x = 0;
+        this.y = 0;
+
+        this.grid = grid;
+        direction = NORTH;
+    }
+
+    public void right() {
+        direction++;
+        if (direction == 4) {
+            direction = 0;
+        }
+    }
+
+    public void left() {
+        direction--;
+        if (direction == -1) {
+            direction = 3;
+        }
+    }
+
+    public void forward() {
+        if (direction == NORTH) {
+            y--;
+        } else if (direction == SOUTH) {
+            y++;
+        } else if (direction == EAST) {
+            x++;
+        } else if (direction == WEST) {
+            x--;
+        }
+    }
+
+    public void put() {
+        grid.put(x, y);
+    }
+
+    public void pick() {
+        grid.pick(x, y);
+    }
+}
+
+	
+	
+	
+	
+private int numberOfObjects;
+private Robot robot;
+private static final int X = 10;
+private static final int Y = 10;
+private Object [][] area; // grid
+
+public Area(){ // defines a grid and robot
+    area = new Area[X][Y];
+    for(int a=0;a<X;a++){
+        for(int b=0;b<Y;b++)
+            area[a][b]=".";
+    }
+
+    numberOfObjects = 0; // grid is initially empty
+    Area ar = new Area();
+    robot = new Robot(ar);
+}
+
+public void Put(int x,int y){ // put the object to position (x,y)
+    area[x][y]=numberOfObjects++;
+}
+
+public void PickUp(int x,int y){ // pick up the object in position (x,y)
+    if(area[x][y]!=null){
+        area[x][y]=numberOfObjects--;
+    }
+}
+
+public void PrintAGrid(){
+    for(int r=0;r<X;r++){
+        for(int c=0;c<Y;c++)
+        System.out.print(area[r][c]+" ");
+     System.out.println();
+    }
+    System.out.println();
+}
+}
+
+
+
+edit
+play_arrow
+
+brightness_4
+// Java implementation of the approach 
+class GFG { 
+  
+    // Function that returns true if the robot is safe 
+    static boolean isSafe(int N, int M, char[] str) 
+    { 
+  
+        int coll = 0, colr = 0, rowu = 0, rowd = 0; 
+  
+        for (int i = 0; i < str.length; i++) { 
+  
+            // If current move is "L" then 
+            // increase the counter of coll 
+            if (str[i] == 'L') { 
+                coll++; 
+                if (colr > 0) { 
+                    colr--; 
+                } 
+  
+                // If value of coll is equal to 
+                // column then break 
+                if (coll == M) { 
+                    break; 
+                } 
+            } 
+  
+            // If current move is "R" then 
+            // increase the counter of colr 
+            else if (str[i] == 'R') { 
+                colr++; 
+                if (coll > 0) { 
+                    coll--; 
+                } 
+  
+                // If value of colr is equal to 
+                // column then break 
+                if (colr == M) { 
+                    break; 
+                } 
+            } 
+  
+            // If current move is "U" then 
+            // increase the counter of rowu 
+            else if (str[i] == 'U') { 
+                rowu++; 
+                if (rowd > 0) { 
+                    rowd--; 
+                } 
+  
+                // If value of rowu is equal to 
+                // row then break 
+                if (rowu == N) { 
+                    break; 
+                } 
+            } 
+  
+            // If current move is "D" then 
+            // increase the counter of rowd 
+            else if (str[i] == 'D') { 
+                rowd++; 
+                if (rowu > 0) { 
+                    rowu--; 
+                } 
+  
+                // If value of rowd is equal to 
+                // row then break 
+                if (rowd == N) { 
+                    break; 
+                } 
+            } 
+        } 
+  
+        // If robot is within the bounds of the grid 
+        if (Math.abs(rowd) < N && Math.abs(rowu) < N 
+            && Math.abs(coll) < M && Math.abs(colr) < M) { 
+            return true; 
+        } 
+  
+        // Unsafe 
+        return false; 
+    } 
+  
+    // Driver code 
+    public static void main(String[] args) 
+    { 
+        int N = 1, M = 1; 
+        String str = "R"; 
+  
+        if (isSafe(N, M, str.toCharArray())) 
+            System.out.println("Yes"); 
+        else
+            System.out.println("No"); 
+    } 
+} 
+  
+// This code is contributed by 29AjayKumar 
+
+
+
+
+
+
+
+
+package geneseo.cs.sc;
+
+
+
+
+import java.awt.Graphics;
+import java.awt.Color;
+import java.awt.Point;
+
+
+
+
+property.mockbot.config.grid.height.positive=
+property.mockbot.config.grid.width.positive=
+property.mockbot.config.grid.notNull=
+
+
+/**
+ * Represents simple simulated robots. These robots occupy rooms with walls and
+ * tiled floors. Robots walk around on the floors (one tile at a time), changing
+ * and sensing the colors of tiles if they wish. But robots can't move through
+ * walls, thus they have to stay in their room. Robots can face in any of four
+ * directions, which are described as compass directions in analogy to a map:
+ * north is towards the top of the robot's room as drawn on a computer screen,
+ * east is towards the right, etc.
+ * @see geneseo.cs.sc.RobotRoom
+ */
+
+public class Robot {
+
+
+
+
+    /**
+     * The heading a robot has when facing north.
+     */
+
+    public static final int NORTH = 0;
+
+
+    /**
+     * The heading a robot has when facing east.
+     */
+    
+    public static final int EAST = 1;
+
+
+    /**
+     * The heading a robot has when facing south.
+     */
+    
+    public static final int SOUTH = 2;
+
+
+    /**
+     * The heading a robot has when facing west.
+     */
+    
+    public static final int WEST = 3;
+
+
+
+
+    // Internally, a robot records the room it is in, its row and column
+    // coordinates (in tiles) within that room, its heading, whether
+    // or not it is visible, and the amount of time it should delay
+    // after movements:
+
+    private RobotRoom room;
+    private int row;
+    private int col;
+    private int direction;
+    private boolean visible;
+    private int delayTime;
+
+    private static final int initialDelay = 500;	// Number of milliseconds delay for new robots
+
+    
+
+
+    // Robots also have some data that they use to draw themselves: x and y offsets
+    // of vertices of the robot relative to its center, and a color to draw it in
+    // (see the comments for the "draw" method below for more details):
+    
+    private static final int[] xOffsets = { 0, -10, -5, -5, 5, 5, 10 };
+    private static final int[] yOffsets = { -10, 0, 0, 10, 10, 0, 0 };
+
+    private static final Color robotColor = new Color( (float)0.25, (float)0.0, (float)0.3 );
+    
+
+
+
+    /**
+     * Initialize a robot and a room for it to occupy. The room will be a default room,
+     * and this robot will be its only occupant. The robot will have the default position
+     * and heading (center of the room, facing north). For example
+	 * <p><code>Robot r = new Robot();</code></p>
+     */
+
+    public Robot() {
+
+        room = new RobotRoom();				// A default room for this robot.
+
+        col = room.getRoomWidth() / 2;
+        row = room.getRoomHeight() / 2;
+
+        direction = NORTH;
+
+        visible = true;
+        delayTime = initialDelay;
+
+        room.addRobot( this, col, row );
+    }
+
+
+
+
+    /**
+     * Initialize a robot from its position, orientation, and room. For example
+	 * <p><code>Robot r = new Robot( 1, 3, Robot.NORTH, someRoom );</code></p>
+     * @param col The horizontal coordinate of the tile this robot is on (i.e., the
+     *  tile column the robot is in). This must be within the range of columns
+     *  for the room the robot is in, and, with the row parameter, must specify
+     *  an unobstructed tile.
+     * @param row The vertical coordinate of the tile this robot is on (i.e., the
+     *  tile row the robot is in). This must be within the range of rows for
+     *  the room the robot is in, and, with the column parameter, must specify
+     *  an unobstructed tile.
+     * @param heading The robot's heading. This should be one of the four headings
+     *  defined for robots.
+     * @param room The room the robot is in.
+     */
+
+    public Robot( int col, int row, int heading, RobotRoom room ) {
+
+        this.room = room;
+        this.col = col;
+        this.row = row;
+        this.direction = heading;
+        this.visible = true;
+        this.delayTime = initialDelay;
+
+        room.addRobot( this, col, row );
+    }
+
+
+
+
+    /**
+     * Move a robot one tile forward, unless the way is blocked by a wall or
+     *  other robot. If the way is blocked, the robot will flash briefly to
+     *  indicate that it can't move. For example
+	 *  <p><code>r.move();</code></p>
+     */
+    
+    public void move() {
+
+        if ( this.okToMove() ) {
+            
+            Point next = this.nextTile();
+            room.moveRobot( col, row, next.x, next.y );
+            col = next.x;
+            row = next.y;
+            
+            this.delay();
+        }
+        else {
+            this.flash(); 
+        }
+    }
+
+
+
+
+    /**
+     * Find out whether a robot can move forward. A robot can move whenever
+     *  the tile in front of it doesn't contain a wall or another robot.
+	 *  For example
+	 *  <p><code>if ( r.okToMove() ) {...</code></p>
+     * @return True if the robot can move, false if moving would cause the
+     *  robot to collide with a wall or another robot.
+     */
+
+    public boolean okToMove() {
+        Point next = this.nextTile();
+        return ! room.isObstructed( next.x, next.y );
+    }
+
+
+
+
+    /**
+     * Turn a robot 90 degrees to its left (i.e., counterclockwise about
+     *  its center). For example
+	 *  <p><code>r.turnLeft();</code></p>
+     */
+
+    // I do a 90-degree left turn as 3 90-degree right turns, 'though done
+    // all at once so the user doesn't see distinct turns.
+
+    public void turnLeft() {
+        this.turn( 3 );
+    }
+
+
+
+
+    /**
+     * Turn a robot 90 degrees to its right (i.e., clockwise about its center).
+	 *  For example
+	 *  <p><code>r.turnRight();</code></p>
+     */
+    
+    public void turnRight() {
+        this.turn( 1 );
+    }
+
+
+
+
+    /**
+     * Change the color of the tile under a robot. For example
+	 *  <p><code>r.paint( java.awt.Color.yellow );</code></p>
+     * @param newColor The color the tile changes to.
+     */
+
+    public void paint( Color newColor ) {
+        room.setColor( col, row, newColor );
+    }
+
+
+
+
+    /**
+     * Find out what color the tile under a robot is. For example
+	 *  <p><code>if ( r.colorOfTile() == java.awt.Color.red ) {...</code></p>
+     * @return The color of the tile under the robot.
+     */
+
+    public Color colorOfTile() {
+        return room.getColor( col, row );
+    }
+
+
+
+
+    /**
+     * Find out what direction a robot is facing. For example
+	 *  <p><code>if ( r.heading() == Robot.NORTH ) {...</code></p>
+     * @return The robot's direction, encoded as one of the values
+     *  <code>Robot.NORTH</code>, <code>Robot.EAST</code>,
+     *  <code>Robot.SOUTH</code>, or <code>Robot.WEST</code>.
+     */
+
+    public int heading() {
+        return direction;
+    }
+
+
+
+
+    /**
+     * Set the speed at which a robot moves and turns. For example
+	 *  <p><code>r.setSpeed( 100 );</code></p>
+     * @param speed An integer between 1 and 1000, which indicates approximately
+     *  how many moves or turns per second the robot should do. Values below 1
+     *  or above 1000 are treated as if they were 1 and 1000, respectively.
+     */
+
+    public void setSpeed( int speed ) {
+
+        if ( speed < 1 ) {
+            speed = 1;
+        }
+
+        if ( speed > 1000 ) {
+            speed = 1000;
+        }
+
+        delayTime = 1000 / speed;
+    }
+
+
+
+
+    /**
+     * Draw a robot.
+     * @param context The graphics context in which to draw.
+     * @param x The horizontal coordinate at which to place the robot's center.
+     * @param y The vertical coordinate at which to place the robot's center
+     */
+
+    // The robot is a polygon, filled with a robot color not likely to be
+    // generated by a student -- right now, a dark purple. I define the polygon
+    // by giving lists of X and Y offsets for its vertices from the center of
+    // the robot, when the robot is facing north. For other orientations, I
+    // rotate these offsets using the standard equations for 2D rotation
+    // (x' = x cos(a) + y sin(a); y' = -x sin(a) + y cos(a)), keeping in mind
+    // that the rotations are all multiples of 90 degrees, so the sines and cosines
+    // are all -1, 1, or 0. To actually draw the robot, I add the rotated offsets
+    // to the center coordinates provided as parameters, and use the results as
+    // the vertices of a filled polygon.
+
+    protected void draw( Graphics context, int x, int y ) {
+
+        if ( visible ) {
+
+            int sine;				// Will hold the sine of the rotation angle
+            int cosine;				// Will hold the cosine of the rotation angle
+
+            switch ( direction ) {
+                case NORTH:				// no rotation
+                    sine = 0;
+                    cosine = 1;
+                    break;
+                case WEST:				// 90 degrees
+                    sine = 1;
+                    cosine = 0;
+                    break;
+                case SOUTH:				// 180 degrees
+                    sine = 0;
+                    cosine = -1;
+                    break;
+                case EAST:				// -90 degrees
+                    sine = -1;
+                    cosine = 0;
+                    break;
+                default:				// Invalid rotations act like no rotation
+                    sine = 0;
+                    cosine = 1;
+                    break;
+            }
+
+            int[] xVertices = new int[ xOffsets.length ];
+            int[] yVertices = new int[ yOffsets.length ];
+
+            for ( int i = 0; i < xOffsets.length; i++ ) {
+                xVertices[i] = x + cosine * xOffsets[i] + sine * yOffsets[i];
+                yVertices[i] = y - sine * xOffsets[i] + cosine * yOffsets[i];
+            }
+
+            context.setColor( robotColor );
+            context.fillPolygon( xVertices, yVertices, xVertices.length );            
+        }
+    }
+
+
+
+
+    /**
+     * Find out the tile coordinates of the tile a robot would move to if it moved
+     *  forward (assuming that move is permitted).
+     * @return A Point containing the tile column (x coordinate) and row (y
+     *  coordinate) of the tile the robot would move to.
+     */
+
+    private Point nextTile() {
+        
+        switch ( direction ) {
+
+            case NORTH:
+                return new Point( col, row - 1 );
+
+            case EAST:
+                return new Point( col + 1, row );
+
+            case SOUTH:
+                return new Point( col, row + 1 );
+
+            case WEST:
+                return new Point( col - 1, row );
+
+            default:					// Treat invalid headings as if they were north
+                return new Point( col, row - 1 );
+        }
+    }
+
+
+
+
+    /**
+     * Pause. This is useful in order to slow down robot programs enough that users
+     *  can see where their robot is moving, for visual debugging.
+     */
+
+    private void delay() {
+
+        try {
+            Thread.sleep( delayTime );
+        }
+        catch ( InterruptedException interrupt ) { }
+    }
+
+
+
+
+    /**
+     * Make a robot flash on the screen. Typically used to signal some error, e.g.,
+     *  running into a wall or other robot.
+     */
+
+    // This works by toggling a "visible" flag in the robot, while redrawing its
+    // room. A pause between redraws ensures that the user's brain has time to
+    // process the alternately visible and invisible robots as "flashing".
+
+    private void flash() {
+
+        final int flashes = 6;				// The number of times to toggle the robot
+        final int flashDelay = 80;			// Milliseconds to wait between toggles
+
+        for ( int i = 0; i < flashes; i++ ) {
+            
+            visible = ! visible;
+            room.repaint();
+
+            try {
+                Thread.sleep( flashDelay );    
+            }
+            catch ( InterruptedException interrupt ) { }
+        }
+    }
+
+
+
+
+    /**
+     * Turn a robot an arbitrary number of 90-degree steps clockwise.
+     * @param steps The number of 90-degree steps to turn.
+     */
+
+    // Since directions are represented by integers in the range 0 to 3,
+    // increasing clockwise from north, I turn by simply adding the number
+    // of steps to the current direction, and taking the result mod 4 to keep
+    // it a valid direction.
+
+    private void turn( int steps ) {
+        
+        direction = ( direction + steps ) % 4;
+
+        room.repaint();
+
+        this.delay();        
+    }
+    
+}
+
+
+
+
+
+
+// This class represents rooms in which robots can move about.
+//
+// History:
+//
+//   July 2003 -- Created by Doug Baldwin.
+//
+//   March 2004 -- Extended by Doug Baldwin to accept "K" (black) as a
+//     color specification for tiles in room descriptions.
+
+
+
+
+package geneseo.cs.sc;
+
+import java.util.StringTokenizer;
+import javax.swing.JFrame;
+import java.awt.*;
+
+
+
+
+/**
+ * Represents a room in which Science of Computing robots can move. A room consists
+ * of a tiled floor and walls. The floor tiles can be colored. Within the room,
+ * tiles provide a coordinate system for describing the positions of robots, walls,
+ * etc. The coordinate system's origin is the upper left corner of the room, with
+ * horizontal coordinates increasing to the right and vertical coordinates increasing
+ * down. Coordinates start at 0, i.e., the left-most side of the room is horizontal
+ * coordinate 0, and the top side is row 0. Every room has walls around its edges
+ * (so that robots can't fall out of the room), and a room may have other walls
+ * (or fragments of wall) in its interior.
+ * @see geneseo.cs.sc.Robot
+ */
+
+public class RobotRoom extends Canvas {
+
+
+
+
+    // Robot rooms use an internal class to represent tiles. This class
+    // is basically just a simple record that stores a tile's color, whether
+    // it has a wall on it, and whether it has a robot on it (and which robot,
+    // if so). It also provides some simple support for things like initializing
+    // and drawing tiles.
+
+    private static class Tile {
+
+        public static final int WIDTH = 30;		// The width of a tile when drawn, in pixels
+        public static final int HEIGHT = 30;		// A tile's height, in pixels
+        public static final Color wallColor = new Color( (float)0.4, (float)0.32, (float)0.08 );
+        
+        public Color color;				// The tile's color
+        public Robot occupant;				// The robot on this tile, or null
+        public boolean isWall;				// True if there is a wall on this tile
+
+        public Tile( Color color, Robot occupant, boolean isWall ) {
+            if ( isWall ) {
+                this.color = wallColor;
+            }
+            else {
+                this.color = color;
+            }
+            this.occupant = occupant;
+            this.isWall = isWall;
+        }
+
+        public void draw( Graphics context, int left, int top ) {
+            context.setColor( color );
+            context.fillRect( left, top, WIDTH, HEIGHT );
+            if ( occupant != null ) {
+                occupant.draw( context, left+WIDTH/2, top+HEIGHT/2 );
+            }
+        }
+
+    }
+    
+
+
+
+    // Internally, robot rooms record their width and height, and an array
+    // of their tiles. They also have a frame in which they appear on the
+	// screen:
+
+    private int width;
+    private int height;
+    private Tile[][] tiles;
+	private JFrame window;
+
+
+
+
+    // Internal parameters for drawing robot rooms:
+    
+    private final int inset = 20;			// Number of pixels room is inset from frame's sides
+
+
+
+    
+    /**
+     * Initialize a robot's room with default size and contents. The default
+     * is a square room 10 tiles on a side, with all tiles white and no
+     * interior walls. For example
+	 *  <p><code>RobotRoom room = new RobotRoom();</code></p>
+     */
+
+    public RobotRoom() {
+        this( "11 11" );
+    }
+
+
+
+
+    /**
+     * Initialize a robot's room from its description. Regardless of what
+     *  the description calls for, the room will be at least three tiles by
+     *  three tiles, to leave space for a wall all around the room and at least
+     *  one tile for a robot inside. The room will be no more than 25 tiles
+     *  by 25. For example
+	 *  <p><code>RobotRoom room = new RobotRoom( "5 5 2 1 Y" );</code></p>
+     * @param description The description of the room. This is a string that
+     *  must start with two integers, the room's width and height, in tiles.
+     *  The string may then contain any number of tile specifications, which
+     *  consist of column and row coordinates (integers) followed by a color
+     *  or wall designator (R, G, B, Y, or K for red, green, blue, yellow, and
+     *  black, or * for a wall). All elements of the specification should be
+     *  separated by white space. For example
+     *    <code>9 5 4 2 * 3 2 r</code>
+     *  specifies a 9-tile wide by 5-tile high room whose middle tile is
+     *  a wall, the tile to its left is red. The outer-most rows and columns of
+     *  the room always contain walls, and any tiles not defined by the description
+     *  are white.
+     */
+
+    public RobotRoom( String description ) {
+    
+    	super();
+    	
+
+        // Initialize the frame in which this world will appear:
+
+        window = new JFrame( "Robot Room" );
+		
+		window.getContentPane().add( this );
+
+        window.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
+        
+        
+        // Get the requested width and height:
+
+        final int minWidth = 3;
+        final int maxWidth = 25;
+        final int minHeight = 3;
+        final int maxHeight = 25;
+        
+        width = minWidth;		// Width and height start with their
+        height = minHeight;		// default values
+
+        StringTokenizer tokens = new StringTokenizer( description );
+
+        try {
+
+            width = Integer.parseInt( tokens.nextToken() );
+            if (  width < minWidth  ||  width > maxWidth  ) {
+                width = minWidth;
+            }
+
+            height = Integer.parseInt( tokens.nextToken() );
+            if (  height < minHeight  ||  height > maxHeight  ) {
+                height = minHeight;
+            }
+        }
+        catch ( Exception error ) {
+            // Ignore exceptions in processing width and height, width and/or
+            // height variables will come out with their default values when
+            // there are errors.
+        }
+
+
+        // Create the tile array, filling it with empty white tiles everywhere except
+        // the outer rows and columns, which have walls on them:
+
+        tiles = new Tile[height][width];
+
+        for ( int row = 0; row < height; row++ ) {
+            for ( int col = 0; col < width; col++ ) {
+                boolean isWall = ( row == 0 || row == height-1 || col == 0 || col == width-1 );
+                tiles[row][col] = new Tile( Color.white, null, isWall );
+            }
+        }
+
+
+        // Go through the rest of the room's description, changing any tiles that it mentions
+        // to the color and wall status it requests. But don't allow changes in the border wall,
+        // or outside the room:
+
+        while ( tokens.hasMoreTokens() ) {
+
+            try {
+                
+                int col = Integer.parseInt( tokens.nextToken() );
+                int row = Integer.parseInt( tokens.nextToken() );
+                char colorCode = tokens.nextToken().charAt(0);
+
+                if (  row > 0  &&  row < height-1  &&  col > 0  &&  col < width-1  ) {
+                    switch ( colorCode ) {
+                        case 'r':
+                        case 'R':
+                            tiles[row][col].color = Color.red;
+                            tiles[row][col].isWall = false;
+                            break;
+                        case 'g':
+                        case 'G':
+                            tiles[row][col].color = Color.green;
+                            tiles[row][col].isWall = false;
+                            break;
+                        case 'b':
+                        case 'B':
+                            tiles[row][col].color = Color.blue;
+                            tiles[row][col].isWall = false;
+                            break;
+                        case 'y':
+                        case 'Y':
+                            tiles[row][col].color = Color.yellow;
+                            tiles[row][col].isWall = false;
+                            break;
+                        case 'k':
+                        case 'K':
+                            tiles[row][col].color = Color.black;
+                            tiles[row][col].isWall = false;
+                            break;
+                        case '*':
+                            tiles[row][col].isWall = true;
+                            tiles[row][col].color = Tile.wallColor;
+                            break;
+                    }
+                }
+            }
+            catch ( Exception error ) {
+                // Do nothing on an error, try to continue with the next tile, if any.
+            }
+        }
+
+
+        // Size the window to display the room, and make it visible to the user. Note that
+        // the window width and height reflect the space needed for the window's border, an
+        // inset between each side of the room and the window border, and space for the room's
+        // tiles, each of which has a 1-pixel border between it and the previous tile, plus
+        // a one-pixel border after the last tile:
+
+        window.pack();
+        
+        Insets borders = window.getInsets();
+        int windowWidth = borders.left + borders.right + 2 * inset + width * ( Tile.WIDTH + 1 ) + 1;
+        int windowHeight = borders.top + borders.bottom + 2 * inset + height * (Tile.HEIGHT + 1 ) + 1;
+        window.setSize( windowWidth, windowHeight );
+
+		this.setVisible( true );
+        window.setVisible( true );
+    }
+
+
+
+
+    /**
+     * Put a robot in a room. This will put the robot at the requested
+     *  position if possible. If not possible, because the requested
+     *  position is outside the room, because there is a wall at the
+     *  requested position, or because another robot is already at the
+     *  requested position, then the new robot is not placed in the room
+     *  at all. For example
+	 *  <p><code>room.addRobot( someRobot, 3, 5 );</code></p>
+     * @param robot The robot that is being put in this room.
+     * @param col The horizontal coordinate (tile column) at which to
+     *  place this robot.
+     * @param row The vertical coordinate (tile row) at which to place
+     *  this robot.
+     */
+
+    public void addRobot( Robot robot, int col, int row ) {
+        
+        if (  col >= 0  &&  col < width  &&  row >= 0  &&  row < height ) {
+            if (  ! tiles[row][col].isWall  &&  tiles[row][col].occupant == null  ) {
+                tiles[row][col].occupant = robot;
+            }
+        }
+
+        this.repaint();
+    }
+
+
+
+
+    /**
+     * Get a room's width. For example
+	 *  <p><code>int w = room.getRoomWidth();</code></p>
+     * @return The width of the room, in tiles.
+     */
+
+    public int getRoomWidth() {
+        return width;
+    }
+
+
+
+
+    /**
+     * Get a room's height. For example
+	 *  <p><code>int h = room.getRoomHeight();</code></p>
+     * @return The room's height, in tiles.
+     */
+
+    public int getRoomHeight() {
+        return height;
+    }
+
+
+
+
+    /**
+     * Move a robot from one tile to another.
+     * @param oldCol The horizontal coordinate (tile column) of the tile the
+     *  robot is moving from.
+     * @param oldRow The vertical coordinate (tile row) of the tile the robot
+     *  is moving from.
+     * @param newCol The horizontal coordinate of the tile the robot is moving to.
+     * @param newRow The vertical coordinate of the tile the robot is moving to.
+     */
+
+    protected void moveRobot( int oldCol, int oldRow, int newCol, int newRow ) {
+        
+        tiles[newRow][newCol].occupant = tiles[oldRow][oldCol].occupant;
+        tiles[oldRow][oldCol].occupant = null;
+        
+        this.repaint();
+    }
+
+
+
+
+    /**
+     * Find out whether a tile within a room is obstructed. A tile is obstructed
+     *  if it contains a wall or robot.
+     * @param col The horizontal coordinate (tile column) of the tile.
+     * @param row The vertical coordinate (tile row) of the tile.
+     * @return True if the specified tile is obstructed, false if it is not.
+     */
+
+    protected boolean isObstructed( int col, int row ) {
+        return (  tiles[row][col].isWall  ||  tiles[row][col].occupant != null  );
+    }
+    
+
+
+
+    /**
+     * Change the color of a tile in a room.
+     * @param col The horizontal coordinate (i.e., tile column) of the tile
+     *  to change.
+     * @param row The vertical coordinate (i.e., tile row) of the tile
+     *  to change.
+     * @param newColor The color to make the tile.
+     */
+
+    protected void setColor( int col, int row, Color newColor ) {
+
+        if (  col >= 0  &&  col < width  &&  row >= 0  &&  row < height  ) {
+            tiles[row][col].color = newColor;
+            this.repaint();            
+        }
+    }
+
+
+
+
+    /**
+     * Find out what color a tile within a room has.
+     * @param col The horizontal coordinate (i.e., tile column) of the tile.
+     * @param row The vertical coordinate (i.e.,tile row) of the tile.
+     * @return The color of the tile at the specified column and row. If the row
+     *  or column are out of bounds for this room, then the color is assumed to
+     *  be white.
+     */
+
+    protected Color getColor( int col, int row ) {
+
+        if (  col >= 0  &&  col < width  &&  row >= 0  &&  row < height  ) {
+            return tiles[row][col].color;            
+        }
+        else {
+            return Color.white;
+        }
+    }
+
+
+
+
+    /**
+     * Redisplay a robot room. This method should never be called by client
+     *  code, it is called automatically by the Java runtime system when the
+     *  runtime system believes that a robot room needs to be redrawn.
+     * @param context The graphics context in which to draw the room.
+     */
+
+    public void paint( Graphics context ) {
+
+
+        // Draw the borders between tiles as a series of horizontal and vertical
+        // lines. Note that line and tile positions take into account both the
+        // size of a tile and the one-pixel lines in between them:
+
+        int leftEdge = inset;										// The coordinate of the left edge of the room
+        int rightEdge = leftEdge + width * ( Tile.WIDTH + 1 );		// The coordinate of right edge of room
+        int topEdge = inset;										// The coordinate of the top edge of the room
+        int bottomEdge = topEdge + height * ( Tile.HEIGHT + 1 );	// Coordinate of bottom edge of the room
+
+        context.setColor( Color.black );
+
+        for ( int row = 0; row < height; row++ ) {
+            int vPos = topEdge + row * ( Tile.HEIGHT + 1 );
+            context.drawLine( leftEdge, vPos, rightEdge, vPos );
+        }
+
+        context.drawLine( leftEdge, bottomEdge, rightEdge, bottomEdge );
+
+        for ( int col = 0; col < width; col++ ) {
+            int hPos = leftEdge + col * ( Tile.WIDTH + 1);
+            context.drawLine( hPos, topEdge, hPos, bottomEdge );
+        }
+
+        context.drawLine( rightEdge, topEdge, rightEdge, bottomEdge );
+
+
+        // Draw the tiles themselves:
+
+        for ( int row = 0; row < height; row++ ) {
+            for ( int col = 0; col < width; col++ ) {
+                tiles[row][col].draw( context,
+                                      leftEdge + 1 + col*(Tile.WIDTH+1),
+                                      topEdge + 1 + row*(Tile.HEIGHT+1) );
+            }
+        }
+    }   
+}
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
 ==============================================================================================================
 ==============================================================================================================
 ==============================================================================================================

@@ -53449,3 +53449,3154 @@ https://github.com/MDHSRobotics/MockBot
  
  
  
+ 
+ 
+ 
+ 
+ 
+ 
+ The description of DevOps Tutorial
+
+DevOps is a software development methodology that combines software development with information technology operations.
+
+ 
+
+This app includes,
+
+- Introduction
+
+ 
+
+- DevOps Terminology : Terminology of devops
+
+ 
+
+- DevOps Lifecycle : Development, Testing, Integration, Deployment, Monitoring, Customer
+
+feedback and optimization
+
+ 
+
+- DevOps Tools : Includes tools description, features, commands and company which uses this tools
+
+ 
+
+- Git
+
+- Jenkins
+
+- Docker
+
+- Puppet
+
+- Ansible
+
+- Chef
+
+- Nagios
+
+- Selenium
+
+- ELK Stack
+
+- Splunk
+
+ 
+
+- DevOps Job Role : Includes role and responsibility of devops job role
+
+- DevOps Engineer
+
+- DevOps Architect
+
+- DevOps Release Manager
+
+- DevOps Lead
+
+- DevOps Automation Expert
+
+- DevOps Testing Professional
+
+- Software Developer
+
+- Security Professional
+
+ 
+
+- Certification Guildline
+
+ 
+
+ 
+
+The description of Docker Management
+
+Simply enter your Linux server details and connect to manage your docker.
+
+ 
+
+This application allows you to:
+
+- connect to multiple servers
+
+- list containers
+
+- create containers
+
+- start containers
+
+- stop containers
+
+- restart containers
+
+- remove containers
+
+- view resource usage of containers
+
+- view logs of containers
+
+- list images
+
+- build images
+
+- remove images
+
+- connect through password or rsa key
+
+ 
+
+Features
+
+- credentials are encrypted
+
+- server info is stored on phone only (wiped out if app removed)
+
+ 
+
+Found a bug?
+
+Send an email to: nevis.applications@gmail.com
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of Dory - node.js / javascript / git / ssh server
+
+Issues : https://github.com/tempage/dorynode
+
+(please open the issue in github, not in email. we are ALL developers :)
+
+ 
+
+----
+
+ 
+
+upgrade node.js : 'download file' menu -> check 'appfiles' -> check 'executable'
+
+v6.12.3 arm : https://dorynode.firebaseapp.com/v6.12.3_arm_release/node
+
+v8.3.0 arm : https://dorynode.firebaseapp.com/v8.3.0_arm_release/node
+
+v8.9.4 arm(only for android 5.0 above) : https://dorynode.firebaseapp.com/v8.9.4_arm_release/node
+
+v10.15.1 arm(only for android 5.0 above) : https://dorynode.firebaseapp.com/v10.15.1_arm_release/node
+
+ 
+
+* Dear Developers *
+
+Due to the ndk problem with node.js v8.9.4,
+
+DoryNode can not support android 4.x in a future release.
+
+ 
+
+----
+
+ 
+
+* node.js runtime(run ES2015/ES6, ES2016 javascript and node.js APIs in android)
+
+* API Documents and instant code run from doc
+
+* syntax highlighting code editor
+
+* npm supports
+
+* linux terminal(toybox 0.7.4). node.js REPL and npm command in shell
+
+(add '--no-bin-links' option if you execute npm in /sdcard)
+
+* StartOnBoot / LiveReload
+
+* native node.js binary and npm are included. no need to be online.
+
+* git, curl, openssl, ssh, sshd, scp, ssh-keygen and sftp in terminal
+
+* ssh server : start/stop ssh server in left menu. port 2222
+
+** manual : id $ whoami
+
+$ ssh-keygen
+
+$ ssh-keygen -A
+
+$ echo -n "password" | openssl sha256 | sed "s/^.* //" > ~/.ssh/doryauth
+
+(or cp remote's ~/.ssh/id_rsa.pub to dory's ~/.ssh/authorized_keys )
+
+$ sshd -r -p 2222
+
+$ (killall sshd)
+
+ 
+
+node version = v6.11.4 LTS, v6.12.3, v8.3.0, v8.9.4 LTS, v10.15.1 LTS
+
+npm version = 3.10.10
+
+ 
+
+Node.js® is a JavaScript runtime built on Chrome's V8 JavaScript engine. Node.js uses an event-driven, non-blocking I/O model that makes it lightweight and efficient. Node.js' package ecosystem, npm, is the largest ecosystem of open source libraries in the world. - https://nodejs.org
+
+ 
+
+npm is the package manager for JavaScript and the world’s largest software registry. Discover packages of reusable code — and assemble them in powerful new ways. -
+
+https://www.npmjs.com
+
+ 
+
+ 
+
+* run MEAN stack or various services in your mobile.
+
+ 
+
+Dory - mongoDB Server
+
+https://play.google.com/store/apps/details?id=io.tempage.dorymongo
+
+ 
+
+Dory - Redis Server
+
+https://play.google.com/store/apps/details?id=io.tempage.doryredis
+
+ 
+
+Dory - x509 Certificate(SSL/TLS)
+
+https://play.google.com/store/apps/details?id=io.tempage.dorycert
+
+ 
+
+DoryCast - Video Player(HTTP/RTP/IPTV)
+
+https://play.google.com/store/apps/details?id=io.tempage.dorycast
+
+ 
+
+---
+
+beta release
+
+https://play.google.com/apps/testing/io.tempage.dorynode
+
+Show less
+
+Dory - node.js / javascript / git / ssh server 0.7.11 Update
+
+2019-03-19
+
+* added : git, curl, openssl, ssh, scp, ssh-keygen, sftp, sshd and sftp-server
+
+please run 're-install node.js' for updates
+
+* ssh server : start/stop ssh server in left menu(port 2222)
+
+ 
+
+* removed : x86 binaries
+
+* android api : 21~
+
+* hot fix for android O~
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of Androcker: Docker Companion
+
+Docker is an open platform for developing, shipping, and running applications.
+
+Docker enables you to separate your applications from your infrastructure so you can deliver software quickly.
+
+With Docker, you can manage your infrastructure in the same ways you manage your applications.
+
+By taking advantage of Docker’s methodologies for shipping, testing, and deploying code quickly, you can significantly reduce the delay between writing code and running it in production.
+
+ 
+
+Androcker is an unofficial companion app for Docker.
+
+ 
+
+It lets you monitor and manage your Docker Hosts on the go. Anytime. Anywhere.
+
+Management features are being added progressively.
+
+ 
+
+This app contains non-intrusive Ads to help support its development. To remove them and support the development, please consider purchasing the in-app product to unlock all the premium features.
+
+ 
+
+Requirements
+
+∙ Docker Remote API : This app communicates with Docker hosts via the remote REST API. As such, it requires your Docker daemon to be accessible via the network.
+
+See https://goo.gl/kWDm51 (for instructions on how to make the Docker daemons listen on one or more given ports) and https://goo.gl/2Tm3kI (highly recommended for setting up Docker daemons for secure connections).
+
+ 
+
+Features
+
+ 
+
+∙ Material Design UI, with Dark and Light themes
+
+ 
+
+∙ Can handle multiple Docker hosts, each with different set of settings
+
+ 
+
+∙ It supports both TLS and non-TLS channels. Of course, sensitive info (including TLS Certificates and Keys) is encrypted locally and never ever leave your mobile device.
+
+ 
+
+∙ PIN protection
+
+ 
+
+∙ Node information at a glance
+
+ 
+
+∙ List of Containers
+
+ 
+
+→ Ability to perform various actions against containers: edit name, start, stop, kill, restart, pause, resume
+
+ 
+
+→ View realtime stats (CPU, Memory, Network, I/O, Top Processes)
+
+ 
+
+→ View container logs
+
+ 
+
+∙ List of Images
+
+ 
+
+→ Ability to tag or remove images
+
+ 
+
+→ View image history
+
+ 
+
+→ Pull Images
+
+ 
+
+∙ List of Volumes
+
+ 
+
+∙ List of Networks
+
+ 
+
+→ Ability to disconnect containers from a given network
+
+ 
+
+∙ List of Events
+
+ 
+
+Please note that this app is not affiliated to the official Docker project.
+
+ 
+
+Feel free to reach out at apps+androcker@rm3l.org for any inquiries.
+
+Show less
+
+Androcker: Docker Companion 0.1.3 (2069b76-google) Update
+
+2017-07-03
+
+Thanks for all the feedback received so far - this is great to see such traction and interest for a companion app for Docker.
+
+ 
+
+This release essentially fixes few bugs following the initial release:
+
+ 
+
+- potential issues against some recent versions of the Docker Remote API
+
+- random app crashes
+
+- addressed potential memory leaks
+
+ 
+
+As always, stay tuned - more features to come soon.
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of Androcker: Docker Companion
+
+Docker is an open platform for developing, shipping, and running applications.
+
+Docker enables you to separate your applications from your infrastructure so you can deliver software quickly.
+
+With Docker, you can manage your infrastructure in the same ways you manage your applications.
+
+By taking advantage of Docker’s methodologies for shipping, testing, and deploying code quickly, you can significantly reduce the delay between writing code and running it in production.
+
+ 
+
+Androcker is an unofficial companion app for Docker.
+
+ 
+
+It lets you monitor and manage your Docker Hosts on the go. Anytime. Anywhere.
+
+Management features are being added progressively.
+
+ 
+
+This app contains non-intrusive Ads to help support its development. To remove them and support the development, please consider purchasing the in-app product to unlock all the premium features.
+
+ 
+
+Requirements
+
+∙ Docker Remote API : This app communicates with Docker hosts via the remote REST API. As such, it requires your Docker daemon to be accessible via the network.
+
+See https://goo.gl/kWDm51 (for instructions on how to make the Docker daemons listen on one or more given ports) and https://goo.gl/2Tm3kI (highly recommended for setting up Docker daemons for secure connections).
+
+ 
+
+Features
+
+ 
+
+∙ Material Design UI, with Dark and Light themes
+
+ 
+
+∙ Can handle multiple Docker hosts, each with different set of settings
+
+ 
+
+∙ It supports both TLS and non-TLS channels. Of course, sensitive info (including TLS Certificates and Keys) is encrypted locally and never ever leave your mobile device.
+
+ 
+
+∙ PIN protection
+
+ 
+
+∙ Node information at a glance
+
+ 
+
+∙ List of Containers
+
+ 
+
+→ Ability to perform various actions against containers: edit name, start, stop, kill, restart, pause, resume
+
+ 
+
+→ View realtime stats (CPU, Memory, Network, I/O, Top Processes)
+
+ 
+
+→ View container logs
+
+ 
+
+∙ List of Images
+
+ 
+
+→ Ability to tag or remove images
+
+ 
+
+→ View image history
+
+ 
+
+→ Pull Images
+
+ 
+
+∙ List of Volumes
+
+ 
+
+∙ List of Networks
+
+ 
+
+→ Ability to disconnect containers from a given network
+
+ 
+
+∙ List of Events
+
+ 
+
+Please note that this app is not affiliated to the official Docker project.
+
+ 
+
+Feel free to reach out at apps+androcker@rm3l.org for any inquiries.
+
+Show less
+
+Androcker: Docker Companion 0.1.3 (2069b76-google) Update
+
+2017-07-03
+
+Thanks for all the feedback received so far - this is great to see such traction and interest for a companion app for Docker.
+
+ 
+
+This release essentially fixes few bugs following the initial release:
+
+ 
+
+- potential issues against some recent versions of the Docker Remote API
+
+- random app crashes
+
+- addressed potential memory leaks
+
+ 
+
+As always, stay tuned - more features to come soon.
+
+ 
+
+ 
+
+ 
+
+The description of PowerShell
+
+PowerShell Scripting is required for both Windows Administrators and DevOps Team to automate daily tasks on Windows servers.
+
+ 
+
+Using PowerShell, Infrastructure provisioning can be automated on Azure Cloud with AzureRM or Az Modules.
+
+ 
+
+To write the scripts for Azure, You should know the basics of PowerShell scripting which can be learned from this app.
+
+ 
+
+ 
+
+The description of Reference for Unix & Linux
+
+★⋙ Full Offline Content for Unix ⋙ from little drops ★
+
+ 
+
+👍👍👍👍👍
+
+Note : Please give 5 Star, It will encourage us. Please Don't give negative feedback, It is not solution for your need. If you have any problem, please mail @ android@thiyagaraaj.com.
+
+ 
+
+Suggestion are welcome. please mail @ android@thiyagaraaj.com
+
+👍👍👍👍👍
+
+ 
+
+Excellent Navigation and More Offline Contents In Version 6.0 Based On User Response and Expectations
+
+ 
+
+🌷Main Features🌷
+
+✔ Redesign UI based on User Experience
+
+✔ Enhanced Search for Unix Tutorials and Commands
+
+✔ Bookmark Options
+
+✔ Optimized Design Reading Content
+
+✔ More New Chapters for Unix and Linux
+
+✔ Optimized Image for Mobile and Full Offline Content
+
+ 
+
+ 
+
+Commands are under these parts:
+
+Access Control
+
+Communications
+
+Programming Tools
+
+Documentation
+
+Editors
+
+File and Directory Management
+
+File Display and Printing
+
+File Transfer
+
+News/Networks
+
+Process Control
+
+Status Information
+
+Image Processing
+
+Sound
+
+Text Processing
+
+X windows
+
+Web
+
+Miscellaneous
+
+ 
+
+- Linux and Unix Commands
+
+- Unix Tutorials
+
+- Unix Administrative and Networking Commands
+
+ 
+
+More Offline Unix and Linux Tutorials
+
+ 
+
+- About Unix
+
+- VI Editor and Commands
+
+- Unix Shell
+
+- Unix Other Useful Commands
+
+- Unix Advanced Commands
+
+- How Linux Works
+
+- Desktop Linux
+
+- Ubuntu Linux Commands
+
+- Useful Linux Commands
+
+ 
+
+- Linux Advanced Commands
+
+- Linux Network Commands
+
+- Linux Network Configuration Commands
+
+ 
+
+- Solaris System Process Commands
+
+ 
+
+Quick Reference - New
+
+- Unix Quick Reference
+
+- Unix Dummies Reference
+
+- Redhat / Fedora Unix and Linux Commands
+
+More Offline Commands About Unix,Linux,Ubuntu and Solaris.....
+
+ 
+
+Keywords : Unix Guide,Unix and Linux Commands,Unix Guide,Unix Tutorials,Linux Tutorials,Ubuntu Commands,Ubuntu Tutorials, Linux Commands,Ubuntu Tutorials,Ubuntu Videos,Unix Commands,Unix and Linux Pocket Guide,Ubuntu Reference,Unix Wiki,Unix Commands,Linux Commands,Solaris Commands,Unix Reference,Unix Pocket Guide,Linux Quick Reference,Unix Quick Reference,Ubuntu Quick Reference.
+
+ 
+
+little drops @ thiyagaraaj.com
+
+ 
+
+ 
+
+The description of I<code> NodeJs - NodeJs and NPM Package Manager
+
+⚠ This is a module for Icode-Go code editor (2.07+), it must be installed to use NodeJs and NPM:
+
+ 
+
+https://play.google.com/store/apps/details?id=com.twoseventwodev.icodego
+
+ 
+
+📱NodeJs:
+
+ 
+
+Node.js is an open source, cross-platform runtime environment for developing server-side and networking applications. Node.js applications are written in JavaScript, and can be run within the Node.js runtime on OS X, Microsoft Windows, Linux, and with Icode-NodeJs - Android.
+
+ 
+
+Following are some of the important features that make Node.js the first choice of software architects.
+
+ 
+
+★ Asynchronous and Event Driven:
+
+ 
+
+All APIs of Node.js library are asynchronous, that is, non-blocking. It essentially means a Node.js based server never waits for an API to return data. The server moves to the next API after calling it and a notification mechanism of Events of Node.js helps the server to get a response from the previous API call.
+
+ 
+
+★ Very Fast:
+
+ 
+
+Being built on Google Chrome's V8 JavaScript Engine, Node.js library is very fast in code execution.
+
+ 
+
+★ Single Threaded but Highly Scalable:
+
+ 
+
+Node.js uses a single threaded model with event looping. Event mechanism helps the server to respond in a non-blocking way and makes the server highly scalable as opposed to traditional servers which create limited threads to handle requests. Node.js uses a single threaded program and the same program can provide service to a much larger number of requests than traditional servers like Apache HTTP Server.
+
+ 
+
+★ No Buffering:
+
+ 
+
+Node.js applications never buffer any data. These applications simply output the data in chunks
+
+ 
+
+💾 NPM Package Manager:
+
+ 
+
+The name npm (Node Package Manager) stems from when npm first was created as a package manager for Node.js.
+
+ 
+
+★ npm is the world's largest Software Registry:
+
+ 
+
+The registry contains over 800,000 code packages.
+
+ 
+
+★ npm is free to use:
+
+ 
+
+You can download all npm public software packages without any registration or logon.
+
+ 
+
+★ npm can manage dependencies:
+
+ 
+
+npm can (in one command line) install all the dependencies of a project.
+
+ 
+
+👍 Icode-Go's integration of NodeJs and NPM make using these tools simple and straightforward, allowing more time to focus on developing.
+
+ 
+
+∙ NPM can be used through dialogs to make package installation easy.
+
+ 
+
+∙ NodeJs projects keep everything clean and easy to manage. Run a project with a tap of a finger.
+
+ 
+
+∙ If you are a traditional noder, we have a command line terminal that works very similar to a SSH client - just in our own little development environment. npm and node are both available from this command line.
+
+ 
+
+∙ STDIN and STDERR logging.
+
+ 
+
+⚠ This module is for ARM devices.
+
+ 
+
+⚠ NOTICE: npm packages that have source files built on the device (c++ make) will not work on Android. Android does not have a 'build' system to handle these packages. This is not a Icode-NodeJs restriction or flaw, it is beyond our control. All pure JavaScript packages will run perfectly.
+
+ 
+
+ 
+
+📱Device Requirements:
+
+∙ Icode Go 2.07+ Editor Installed
+
+∙ Approx. 100 ΜB of internal storage
+
+∙ 50 MB (basic node app) available RAM (per node instance)
+
+ 
+
+If you have any troubles with Installation, a feature request, or just need some assistance, before leaving a negative review please email us or post here:
+
+https://groups.google.com/forum/#!forum/icode-go
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of OpenHub
+
+An open source GitHub client app, faster and concise, support theme, accent color, language switch, with cool syntax highlighting, support multi-account switching, don't dependent on GMS.
+
+ 
+
+FEATURES
+
+ 
+
+App
+
+* Two login types (Basic Auth) and (OAuth)
+
+* Light and dark theme, multiple accent color
+
+* Markdown and code highlighting support
+
+* English, Simplified Chinese, Hebrew, German and Hindi support
+
+* Offline mode
+
+* Support trending repositories of all languages
+
+* Support multi-account switching
+
+* Search repos and users
+
+* Shortcuts support
+
+* Notifications support
+
+* Bookmark users or repos
+
+* Record trace of the repos or users you have been viewed
+
+* View github collections
+
+* View github featured topics
+
+* Support disable loading network image while mobile network
+
+ 
+
+Repositories
+
+* View repo info
+
+* Star, watch and fork repos
+
+* View repo files, commits and activity
+
+* Download source code, releases and files
+
+* View your private, public, forked and starred repos
+
+* View trending repos of daily, weekly and monthly
+
+* Search repos
+
+* View recent wiki updates
+
+ 
+
+Users
+
+* View user info
+
+* View user followers, following, organizations
+
+* View user public repositories, starred repositories and activity
+
+* View your private repositories
+
+* Follow/Unfollow users
+
+* Search users
+
+ 
+
+Organizations
+
+* View org info
+
+* View org public repositories and activity
+
+* View org members
+
+ 
+
+Issues
+
+* View issue info, comments and events
+
+* Create, open and close issues
+
+* Create, edit and delete issue comments
+
+* Edit, add and delete your labels
+
+* Write comment with preview
+
+* View your created, assigned and mentioned issues
+
+* View repository issues
+
+ 
+
+Commits
+
+* View commit info and files
+
+* View file diff
+
+* View repository commits
+
+ 
+
+And more
+
+* OpenHub is growing, try to be better github client.
+
+ 
+
+NOTE :
+
+Please report any issues at Github https://github.com/ThirtyDegreesRay/OpenHub/issues or email me the issues.
+
+ 
+
+OpenHub is an open source GitHub client, we will open and free for all time, you can view source code at: https://github.com/ThirtyDegreesRay/OpenHub.
+
+ 
+
+Thanks for your using, have a nice day.
+
+ 
+
+ 
+
+The description of Powershell Tutorial
+
+Powershell is a scripting language which is useful to automate the tasks in Windows and other environments. It is built on top of .net framework. The applications of Powershell scripts in IT field are seamless.
+
+ 
+
+This app is intended to help the aspirants who want to learn from basics. This app is useful for both beginners and advanced learners.
+
+ 
+
+This tutorial is mainly divided into Two sections:-
+
+ 
+
+a. Powershell Theory :
+
+This light-weight section is designed keenly to help understand the basic concepts of Powershell. It starts with introduction and takes you till the implementation of Powershell in Active Directory and WMI (Windows Management Instrumentation). It is recommended to understand the basic rules before beginning with PS scripting.
+
+ 
+
+b. Powershell Examples:
+
+The 'Examples' tab comprised of basic sample scripts. It contains more than 60 examples. Users can practice PS scripting by trying these examples in Powershell ISE. The examples present in the app are tested ones.
+
+ 
+
+---------------------------------------------------
+
+ 
+
+Powershell Tutorial Features:-
+
+All Powershell learning guides in this app comes with PS example code & command.
+
+Easy to Learn(Code Samples)
+
+External Reference Links and Our Git.
+
+Most importantly all the Content is available offline
+
+ 
+
+----------------------------------------------------
+
+ 
+
+Prerequisites for this Powershell Tutorial:-
+
+Basic Knowledge about any OS and Programming Language.
+
+ 
+
+----------------------------------------------------
+
+ 
+
+By this app we aim to make learning Powershell as easy as possible since this tutorials brings to you a complete guide for Powershell containing all from all the topics suitable for both beginners and advanced developers . For all the Developers who are new to Powershell it is recommended to refer the "Theory" tab since it will help you to grasp the intricacies of Powershell.
+
+ 
+
+In short this a complete Powershell tutorial app comprising of all the modules ranging from Powershell beginners to Powershell advanced concepts along with source code and examples. This Powershell tutorial can be better called as a beginners guide for Powershell :)
+
+ 
+
+ 
+
+ 
+
+The description of Linux+ LX0-103 & LX0-104
+
+This application is your comprehensive study guide for the Linux+ Powered by LPI certification exams. With complete coverage of 100% of the objectives on both Exam LX0-103 and Exam LX0-104.
+
+ 
+
+Linux is viewed by many companies and organizations as an excellent, low-cost, secure alternative to expensive operating systems such as Microsoft Windows. The CompTIA Linux+ Powered by LPI exams test a candidate's understanding and familiarity with the Linux Kernel.
+
+ 
+
+- Review the basic system architecture, installation, and management
+
+- Understand commands, devices, and file systems
+
+- Utilize shells, scripting, and data management techniques
+
+- Navigate user interfaces, desktops, and essential system services
+
+ 
+
+With the help of this application you will get access to best questions which stress all modules of knowledge about linux management, in order to prepare for the exam.
+
+ 
+
+You will get access to interactive learning environment which offers practice on questions and electronic flashcards. You can simulate a real test session with feedback at the end of the test, or just practice on questions and get the feedback right away - it's up to you.
+
+ 
+
+ 
+
+ 
+
+The description of Cloud Console
+
+Google Cloud Console helps you manage your services running on the Google Cloud Platform (GCP) directly from your Android phone or tablet:
+
+* Stay connected to the cloud and check billing, status, and critical issues.
+
+* Create your own custom dashboard to produce an overview of your GCP services.
+
+* Monitor the state of your Compute Engine and App Engine resources with the ability to SSH into your VMs.
+
+* Access to Cloud Shell to perform any Google Cloud (gcloud) operation.
+
+* View and respond to incidents, errors, and logging.
+
+ 
+
+We plan to ship new features regularly and continually improve your user experience. Please give us your feedback in the app by tapping the menu button in the upper-left corner, selecting "Help & feedback", and then "Send feedback".
+
+ 
+
+ 
+
+The description of Qute
+
+Get quick access to built-in Unix command line shell from your Android device. You can use Qute as a command prompt for run Unix\Linux commands, installed bin files and create shell scripts. Most popular PC commands (ping, netstat, trace, cd, mkdir, etc) are available on your device now. Qute gives you full access to the system terminal. Now the total control of your system belongs to you!
+
+ 
+
+Features:
+
+∙ Startup and creating shortcuts for commands
+
+∙ Bash script editor
+
+∙ Executing basic terminal commands and available bin files
+
+∙ List of your favorite commands and args
+
+∙ Autocomplete for commands
+
+∙ Support of rooted devices
+
+ 
+
+ 
+
+ 
+
+The description of Termux
+
+Termux combines powerful terminal emulation with an extensive Linux package collection.
+
+ 
+
+∙ Enjoy the bash and zsh shells.
+
+∙ Edit files with nano and vim.
+
+∙ Access servers over ssh.
+
+∙ Develop in C with clang, make and gdb.
+
+∙ Use the python console as a pocket calculator.
+
+∙ Check out projects with git and subversion.
+
+∙ Run text-based games with frotz.
+
+ 
+
+At first start a small base system is downloaded - desired packages can then be installed using the apt package manager. Access the built-in help by long-pressing anywhere on the terminal and selecting the Help menu option to learn more.
+
+ 
+
+Want to read the wiki?
+
+https://wiki.termux.com
+
+ 
+
+Want to ask questions, report bugs or give feedback?
+
+https://termux.com/community
+
+ 
+
+Want to join the Termux IRC chat?
+
+#termux on freenode
+
+ 
+
+ 
+
+ 
+
+The description of ArchWiki Viewer
+
+A simple viewer for the ArchLinux Wiki online. Page content is formatted for optimal mobile viewing.
+
+ 
+
+ 
+
+https://github.com/jtmcn/archwiki-viewer/
+
+ 
+
+ 
+
+ 
+
+The description of AnLinux
+
+This application will allow you to run Linux on Android, by using Termux and PRoot technology, you can even run SSH and Xfce4 Desktop Environment!!!
+
+ 
+
+ 
+
+If you are new to Linux, or you don't quite understand how it works. Before posting 1 star review, you could email us at exalabdevelopers@gmail.com.
+
+ 
+
+ 
+
+ 
+
+The source code could be found here : https://github.com/EXALAB/AnLinux-App
+
+ 
+
+ 
+
+Features:
+
+ 
+
+*NO ROOT ACCESS REQUIRED!!!
+
+ 
+
+*Lots of Linux distro supported:
+
+ 
+
+1. Ubuntu
+
+2. Debian
+
+3. Kali
+
+4. Kali Nethunter
+
+5. Parrot Security OS
+
+6. BackBox
+
+7. Fedora
+
+8. CentOS
+
+9. openSUSE Leap
+
+10. openSUSE Tumberweed
+
+11. Arch Linux
+
+12. Black Arch
+
+13. Alpine
+
+ 
+
+*Xfce4, Mate, LXQt, LXDE Desktop Environment Supported
+
+ 
+
+*Install multiple distro without conflict
+
+ 
+
+*Provide uninstallation script to fully uninstall distro
+
+ 
+
+ 
+
+ 
+
+Note :
+
+ 
+
+1. This app required Termux to work, it could be install on Play Store.
+
+ 
+
+2. About device requirement:
+
+ 
+
+Android Version : Android 5.0 or above
+
+ 
+
+Architeture : armv7, arm64, x86, x86_64
+
+ 
+
+3. Currently supported Desktop Environment:
+
+ 
+
+Xfce4, Mate, LXQt, LXDE
+
+ 
+
+4. For any suggestion or issue, please open an issue on Github.
+
+ 
+
+ 
+
+ 
+
+The description of Linux Reference Free
+
+Linux Reference Free is a handy reference app to help you learn Linux on the go. Universal application, runs on both mobile device & tablet.
+
+ 
+
+(Pro version is available here : https://play.google.com/store/apps/details?id=com.poash.linuxreferencepro)
+
+ 
+
+Features:
+
+* View content offline
+
+* No Ads
+
+* Test your knowledge with quiz (more question will be added soon)
+
+* Easily zoom in or out to view images
+
+* Change the font size to read easily, either on mobile phone or tablet
+
+* No permissions required
+
+* Internet connection not required
+
+ 
+
+Quiz Features
+
+★Test your knowledge
+
+★Questions test your understanding of the commands
+
+★Questions can be flagged for later review while the quiz is in progress
+
+★Correct answer, along with the explanation is displayed for each question once the quiz is over. User answers are also displayed
+
+★Questions that are left unanswered do not reveal correct answers
+
+ 
+
+Feel free to give us your feedback/suggestions at feedback@poash.com.
+
+ 
+
+If you face any problems, let us know. Please avoid leaving negative feedback in the comments.
+
+ 
+
+NOTE: Android 4.0 and below versions do not support features of changing text. Consequently, the text changing icons won't show up on these versions.
+
+ 
+
+ 
+
+ 
+
+The description of dataplicity - Terminal for Pi
+
+Remotely access your Raspberry Pi shell from any network without dynamic DNS, portforwarding or VPN.
+
+ 
+
+For more information, visit https://www.dataplicity.com/
+
+ 
+
+* DOES IT WORK BEHIND NAT?
+
+Yes. The client initiates a secure websockets connection to the Dataplicity service. This means that it works most places where there are firewalls, NAT or other network obstructions in place.
+
+ 
+
+* HOW DATAPLICITY WORKS
+
+The Dataplicity client uses a opportunistically-connected secure web connection to provide a communications channel between your device and Dataplicity, and your web browser attaches to the other end of that channel.
+
+ 
+
+* DO I NEED TO ENABLE SSH?
+
+No. Dataplicity does not require SSH, telnet or any other network services to operate. The client is self-contained and does not open any network ports on the device.
+
+ 
+
+* DOES IT OPEN A LOCAL PORT ON THE PI?
+
+No. Client connections are initiated from the device end and do not open any local ports.
+
+ 
+
+* DO I NEED TO INSTALL SOMETHING ON THE PI?
+
+Yes, you need to install the Dataplicity agent on the Pi. You can view the source on GitHub.
+
+ 
+
+* DOES DATAPLICITY AGENT RUN AS ROOT?
+
+No. When you log into the Dataplicity shell you still need to explicitly ask for super user rights to gain full control.
+
+Show less
+
+ 
+
+ 
+
+The description of JIRA Tutorial
+
+JIRA is a project management tool used for issues and bugs tracking system.
+
+ 
+
+It is widely used as an issue-tracking tool for all types of testing. This tutorial introduces the readers to the fundamental features, usage, and advantages of JIRA.
+
+ 
+
+This tutorial will guide the users on how to utilize this tool to track and report bugs in different applications.
+
+ 
+
+JIRA is an Incident Management Tool used for Project Management, Bug Tracking, Issue Tracking and Workflow.
+
+ 
+
+JIRA is based on the following three concepts – Project, Issue and Workflow.
+
+ 
+
+List Of Topics:
+
+ 
+
+- Introduction
+
+- Project
+
+- Issues
+
+- Workflow
+
+- Installation
+
+- Free Trials Setup
+
+- Login And Dashboard
+
+- Issue Types
+
+- Screens
+
+- Issue Creation
+
+- Clone an Issue
+
+- Create a Subtask
+
+- Convert Issue To Subtask
+
+- Convert Subtask to Issue
+
+- Create Issue using CSV
+
+- Edit an Issue
+
+- Email an Issue
+
+- Label an Issue
+
+- Linking Issues
+
+- Move an Issue
+
+- View/Change History
+
+- Watch and Vote on Issue
+
+- Search
+
+- Advanced Search
+
+- Reports
+
+- Workload Pie Chart
+
+- Created vs Resolved Issues
+
+- Burndown Chart
+
+ 
+
+ 
+
+The description of Cloud Earning PHM
+
+Welcome to the world of Phoneum - Mobile-only Cryptocurrency!
+
+ 
+
+Cloud Earning PHM is designed to deliver simplified user experience and platform that enables all users, regardless of technical aptitude, to fully participate in the new cryptocurrency economy.
+
+ 
+
+The application requires internet to sign in and establish a connection with the Phoneum server. Simply press "Start Earning" to connect. The server handles everything in the cloud, therefore, once earning is established, the app doesn't require the device to keep it open or in the background to earn PHM.
+
+ 
+
+At any time, open Cloud Earning PHM to access the average earning statistics and track the earning progress.
+
+ 
+
+To avoid interruption, a notification is sent 20 hours after the earning process starts, to extend Earning for the next 24 hours.
+
+ 
+
+Features:
+
+ 
+
+- Earn PHM on a 24-hour basis
+
+- PHM Balance updates daily
+
+- Extend earning to avoid interruption
+
+- Average Earning Statistics
+
+ 
+
+ 
+
+ 
+
+The description of G Cloud
+
+G Cloud Backup for Android
+
+ 
+
+*** Try our new FREE Zoolz Intelligent App - Backup / Restore your entire Android device - Try Facial Recognition for FREE - Start with 7 GB and daily 50 MB bonus ***
+
+ 
+
+● A Free Android Backup App that is simple and safe to protect never-ending contacts, messages, photos, videos, music, documents, call logs, files and more to a secure cloud location
+
+ 
+
+● Easily migrate to different devices and extend your storage by saving everything in the cloud
+
+ 
+
+● Organize your memories in a timeline and go back in time to view your first recorded video, a call from a year ago, and even today's photos
+
+ 
+
+● Share your past and present with ease
+
+ 
+
+Recommended by Android central
+
+ 
+
+“The app itself is so incredibly simple to use, with a very simple user interface. But, you'd be foolish to let that temper opinions. G Cloud Backup has a pretty extensive feature list.”
+
+http://www.androidcentral.com/g-cloud-backup-isn-t-made-google-does-pretty-good-job-backing-your-android-device
+
+ 
+
+CNet
+
+ 
+
+“You won't find many other backup solutions as complete and adroit as G Cloud Backup.”
+
+http://download.cnet.com/G-Cloud-Backup/3000-2242_4-75749505.html
+
+ 
+
+Please note that this app requires the privileges to backup and restore your SMS, call logs, system settings, calendar and to locate your lost device, we do not erase your data off your phone, send messages or locate your device without your consent. Disabling these options will also disable the use of its privilege, please review our data privacy for more info.
+
+ 
+
+FEATURES:
+
+ 
+
+✮✮New: Memories: Your life preserved, go back in time to calls from a year, view videos and all other data from the Memories tab✮✮
+
+ 
+
+► Auto Backup Messages (SMS), contacts, call logs, documents, settings, photos (at full resolution), videos, music and more
+
+►Backup Camera, Whatsapp, viber photos and videos
+
+► Start with 1 GB free and earn up to 10 GB easily
+
+► Automatic upload when WiFi is available and plugged in
+
+► Access your messages, call logs, download contacts, share music, videos and view photos from the web: http://www.gcloudbackup.com
+
+► Protect the App with a passcode
+
+► Protect more than one device
+
+► Secure data transfer (Secure Socket Layer) and storing (256-AES) on Amazon AWS
+
+► Easily move to new devices and preserve everything
+
+► One tap sign up with Email, Google+ or Facebook
+
+► No rooting or special configuration required
+
+► Backup External SD cards
+
+► Restore/migrate to a new device with a tap
+
+► Backs up every version of all files
+
+► Advanced options to change daily schedule, disable automatic schedule, upload over 3G, and more
+
+ 
+
+HOW TO BACKUP ANDROID PHONES
+
+ 
+
+1- Download G Cloud for FREE
+
+2- Create an account
+
+3- Select what to backup
+
+ 
+
+HOW TO RESTORE/REPLACE ANDROID PHONES
+
+ 
+
+1- Download G Cloud for FREE
+
+2- Log in to your account
+
+3- G Cloud will detect is this is a new phone and will move all your memories to the new phone
+
+ 
+
+If you have any questions or inquires please contact: support@gcloudbackup.com
+
+Before submitting a comment, we will get back to you ASAP
+
+Thank you :)
+
+ 
+
+✮✮ Protect your apps settings, game levels, app customizations, and more with G Cloud Apps Backup. FOR ROOTED DEVICES ONLY.
+
+To activate, please open G Cloud> and go to the Store. ✮✮
+
+ 
+
+✮✮NEW FREE: G Cloud Backup for iOS✮✮
+
+● Migrate contacts, photos, videos, and calendar from Android phones to iPhones and vise versa
+
+● Protect all your Android phones, tablets, iPhone, and iPad under a single account
+
+● Free up space from your iPhone and iPad
+
+ 
+
+Download it free today!
+
+https://itunes.apple.com/us/app/g-cloud-backup/id1038372306?ls=1&mt=8
+
+ 
+
+✮✮NEW FREE APP: G Lock - Hide Photos & Videos✮✮
+
+ 
+
+Download our latest FREE App, Protect all your private media and hide them from prying eyes with G Lock. G Lock keeps all your private photos and videos secure under multiple layers of security.
+
+ 
+
+https://play.google.com/store/apps/details?id=com.genie9.glock
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of AirConsole
+
+AirConsole - This multiplayer game console is the new way to play together with friends. Use a computer, Android TV or tablet as console and smartphones as gamepads to play single player and multiplayer games! AirConsole is fun and fast to get started. Download now!
+
+ 
+
+*Try our Starter Pack: a selection of 8 free games (maximum of 2 players, with ads).
+
+ 
+
+*Unlock over 140 multiplayer games and play with unlimited players with AirConsole Hero, our monthly subscription.
+
+ 
+
+*To use this app, you just have to visit www.airconsole.com on a Desktop, Tablet or AndroidTV to use it as your console’s screen.
+
+ 
+
+Questions? Comments? hello@airconsole.com
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of SSH/SFTP/FTP/TELNET Advanced Client - Admin Hands
+
+★★★ SSH client, FTP Client, SFTP Client, Telnet Terminal - all-in-one + monitor your hosts + batch modes + SSH host monitoring widget! ★★★
+
+ 
+
+Admin Hands - a new generation all-in-one complex software aimed to perform everyday!
+
+ 
+
+New feature: Monitoring & Statistic - watch all basic metrics of your server real-time: free RAM, free disk space, CPU usage, network usage and more.
+
+ 
+
+›››› Powerful & Secure SSH client
+
+›››› Fast Secure FTP and SFTP client
+
+›››› Telnet
+
+›››› HTTP Download/Upload Capabilities
+
+›››› Batch mode
+
+ 
+
+You can connect with ssh terminal, ftp client or perform automated actions with just one click! Very powerful tool for remote UNIX/Linux or Windows administrators, which helps us to handle an army of servers!
+
+ 
+
+3.1 KEY FEATURES:
+
+ 
+
+- Parallel SSH/SFTP/FTP/TELNET sessions
+
+- Users (Identity)
+
+- Google "Material Design" compliance
+
+- Built-in text editor with syntax highlight
+
+- SSH Monitoring & Statistics + Android Widget (very handy thing)
+
+- A lot of work done to fix multiple bugs and crashes
+
+ 
+
+★ ULTRA FAST!
+
+★ Secure password manager encrypted (AES-256) with master key
+
+★ Protocols: SSH, TELNET, SFTP, FTP, HTTP
+
+★ Batch actions: Download, Upload, Execute
+
+★ Batch ping hosts (two methods)
+
+★ Execute command or script on machines!
+
+★ SSH terminal and Telnet terminal (full color terminal) embedded
+
+★ FTP client for android
+
+★ SFTP client for android
+
+★ Ultra fast multi-threading, up to 128 threads!
+
+★ Additional keyboard with special characters and arrows!
+
+★ Simple, modern and friendly Material Design interface
+
+★ Terminal themes
+
+★ Import/Export data to another devices
+
+★ Save your hosts to CSV/XML/HTML
+
+★ Read and save logs
+
+★ Password Generator
+
+★ Organize your hosts by group
+
+★ Copy & Paste hosts!
+
+ 
+
+★★★ And much more! ★★★
+
+ 
+
+... Admin Hands is only tool with UI for:
+
+- Automatically run commands over SSH on many servers
+
+- Automatically run commands over TELNET on many servers
+
+- Automatically run commands over FTP on many servers
+
+- Automatically run commands over SFTP on many servers
+
+Show less
+
+SSH/SFTP/FTP/TELNET Advanced Client - Admin Hands 3.1.8 Update
+
+2019-06-03
+
++ SFTP/FTP:
+
+- now shows user:group instead of uid:gid
+
+- progress bar on upload/download
+
++ Fixed issues with storing private key and passphrase
+
+ 
+
+ 
+
+ 
+
+The description of JuiceSSH
+
+The all in one terminal client for Android including SSH, Local Shell, Mosh and Telnet support.
+
+ 
+
+Features:
+
+- Full colour terminal / ssh client
+
+- Popup keyboard with all those normally hard to find characters
+
+- Use the volume keys to quickly change font size
+
+- External keyboard support
+
+- Gestures for irssi, weechat, tmux and screen
+
+- Community and third party plugins
+
+- Official Mosh support (http://mosh.mit.edu)
+
+- Telnet support
+
+- Local Android terminal support
+
+- Dark, Light, 80's hacker, Molokai, Solarized Dark and Solarized Light terminal color themes
+
+For an overview of solarized color scheme and why it rocks for terminal usage check out http://ethanschoonover.com/solarized
+
+- Click URLs to open in a browser
+
+- Copy & Paste within sessions
+
+- Save / Share SSH transcripts to Dropbox/Evernote/Email & SD card
+
+- UTF-8 character support
+
+- Easily organise your connections by group
+
+- Keep multiple SSH sessions running in the background
+
+- Seamlessly connect 'via' other SSH connections with one click
+
+- Immediate access when you open the app to your frequently used connections
+
+- IPv6 support
+
+- Password & OpenSSH private key support (ECDSA, RSA and DSA)
+
+- RSA key generator (encryption supported)
+
+- SSH key agent forwarding
+
+- Support for two-factor authentication (eg: Google Authenticator)
+
+- Identities (users/password/keys) are abstracted from connections. Instead of updating every connection when you change your password - just update the identity and any connections linked to it will use the new password/key.
+
+- zlib compression to improve SSH sessions on high latency connections
+
+ 
+
+ 
+
+Pro Features (optional in-app purchase):
+
+- Quick and easy port forwards that can be connected to via the app or widget and can automatically open in a browser if required.
+
+- Integrate with Amazon AWS / EC2, synchronise connections and automatically group servers based on their class or security groups.
+
+- Securely keep everything in sync between multiple devices
+
+- Automated AES-256 encrypted backups of all of your connections and settings
+
+- A beautiful widget for fast access to either your frequently used connections, or a specific group (Android 3.0+).
+
+- Team collaboration. Share your groups of connections with team members and start working together instead of separately.
+
+- Handy snippets library for quick access to your frequently used commands
+
+- Security lock to automatically protect JuiceSSH after a period of inactivity
+
+ 
+
+For a detailed overview of this applications permissions and how each one is used in our ssh client please see http://sonelli.com/permissions
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of Linux Deploy
+
+This application is open source software for quick and easy installation of the operating system (OS) GNU/Linux on your Android device.
+
+ 
+
+The application creates a disk image on a flash card, mounts it and installs an OS distribution. Applications of the new system are run in a chroot environment and working together with the Android platform. All changes made on the device are reversible, i.e. the application and components can be removed completely. Installation of a distribution is done by downloading files from official mirrors online over the internet. The application requires superuser rights (ROOT).
+
+ 
+
+The program supports multi language interface. You can manage the process of installing the OS, and after installation, you can start and stop services of the new system (there is support for running your scripts) through the UI. The installation process is reported as text in the main application window. During the installation, the program will adjust the environment, which includes the base system, SSH server, VNC server and desktop environment. The program interface can also manage SSH and VNC settings.
+
+ 
+
+Installing a new operating system takes about 15 minutes. The recommended minimum size of a disk image is 1024 MB (with LXDE), and without a GUI - 512 MB. When you install Linux on the flash card with the FAT32 file system, the image size should not exceed 4095 MB! After the initial setup the password for SSH and VNC generated automatically. The password can be changed through "Properties -> User password" or standard OS tools (passwd, vncpasswd).
+
+ 
+
+FEATURES:
+
+Supported distributions: Alpine, Debian, Ubuntu, Kali, Arch, Fedora, CentOS, Slackware, Docker, RootFS (tgz, tbz2, txz)
+
+Installation type: file, partition, RAM, directory
+
+Supported file systems: ext2, ext3, ext4
+
+Supported architectures: ARM, ARM64, x86, x86_64, emulation mode (ARM ~ x86)
+
+I/O interfaces: CLI, SSH, VNC, X server, framebuffer
+
+Management interfaces (CLI): Android terminal (or adb), telnet, web browser (web terminal)
+
+Desktop environment: XTerm, LXDE, Xfce, MATE, other (manual configuration)
+
+Supported languages: multi language interface
+
+ 
+
+NOTICE:
+
+Instructions and guides: https://github.com/meefik/linuxdeploy/wiki
+
+Ask questions on the forum: http://4pda.ru/forum/index.php?showtopic=378043
+
+Previous versions: https://github.com/meefik/linuxdeploy/releases
+
+For access to a repository: https://play.google.com/store/apps/details?id=ru.meefik.donate
+
+Donations: http://meefik.ru/donate/
+
+ 
+
+ATTENTION!
+
+This program comes with ABSOLUTELY NO WARRANTY. This is free software, and you are welcome to redistribute it under license GPLv3.
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of Learn node js programming | express js tutorial
+
+if you are looking for any tool or any source for learning node.js then you are at right place. we are providing best Offline learn node js documentation free of cost. and we are also provide express js tutorials free documentation.
+
+ 
+
+Our application provides node.js tutorials+ node.js mongoDB + node.js MySql + node.js interview question + express.js tutorials
+
+ 
+
+what is node js ?
+
+ 
+
+- > Node.js is a server-side platform built on Google Chrome's JavaScript Engine (V8 Engine). Node.js was developed by Ryan Dahl in 2009 and its latest version is v0.10.36.Node.js is an open source, cross-platform run time environment for developing server-side and networking applications. Node.js applications are written in JavaScript, and can be run within the Node.js run time on OS X, Microsoft Windows, and Linux.
+
+ 
+
+why you should learn node js ?
+
+ 
+
+-> Node.js lets you write JavaScript on both client and server. ...
+
+Node.js allows you to build complex and powerful applications without writing complex code. ...
+
+Node.js is well suited to building micro services.
+
+Node.js can be used for more than just web development.
+
+ 
+
+what is express js :
+
+-> Express provides a minimal interface to build our applications. It provides us the tools that are required to build our app. It is flexible as there are numerous modules available on npm, which can be directly plugged into Express.
+
+Express was developed by TJ Holowaychuk and is maintained by the Node.js foundation and numerous open source contributors.
+
+ 
+
+how Learn node js programming can be help full to you ?
+
+-> we are trying to provide learn node js offline and in free cost. at whatever level now you are in knowledge of node.js. Learn node js programming | express js tutorial for you.
+
+-> Learn node js programming can help you in learning not only in node.js but Learn node js programming can also help you in learning express.js.
+
+-> Learn node js programming | express js tutorial provide node js interview questions, you can improve your node js interview skills.
+
+-> node js interview questions trying to provide all the node js tutorials offline and in easy language and simple explanation
+
+-> node js interview questions best phase of learn node js programming , where we have covered around 50 + node js interview questions in offline.
+
+-> so you can you learn node js offline tutorials for making web application or mobile api and may more , because node js is one of largest using framework of
+
+javascript. one famous quotes of javascript , js is everywhere. same this is for node.js. whether you have to do front end development of back end node.js can help you. even node js can be used full for android
+
+-> we are providing express js tutorials also. this is a one part of node.js. you will see here express js tutorials in very easy and simple way of learning.
+
+ 
+
+we have saprate our all stuff in these part .
+
+ 
+
+1) learn node js (node js basic and advance topics)
+
+2) learn express js
+
+3) interview questions
+
+4) learn mysql with node.js
+
+5) learn mongoDB with mysql
+
+6) node.js compiler
+
+ 
+
+you can use learn node.js programming for these things...
+
+ 
+
+this app can be used as to learn node js free or as node.js documentation offine and free. you will use this for learn node js for interview, and learn node js for crack exams, it has node js mongoDb tutorials, node js is used node js for API, node js for android and for j&t express this is gonna be best node js tutorials and best express js tutorial for you , this can use node for beginners and advance learner, you will get node js express example , node js express mongodb and best node js practice exercises. you will learn node js exress mysql , is gonna be helpful in understanding node js. at the end of the day u 'll know what is node js. and why is Learn node js programming | express js.
+
+ 
+
+our references:
+
+www.javatpoint.com
+
+www.tutorialspoint.com
+
+www.iconfinder.com
+
+ 
+
+ 
+
+The description of Dory - node.js / javascript / git / ssh server
+
+Issues : https://github.com/tempage/dorynode
+
+(please open the issue in github, not in email. we are ALL developers :)
+
+ 
+
+----
+
+ 
+
+upgrade node.js : 'download file' menu -> check 'appfiles' -> check 'executable'
+
+v6.12.3 arm : https://dorynode.firebaseapp.com/v6.12.3_arm_release/node
+
+v8.3.0 arm : https://dorynode.firebaseapp.com/v8.3.0_arm_release/node
+
+v8.9.4 arm(only for android 5.0 above) : https://dorynode.firebaseapp.com/v8.9.4_arm_release/node
+
+v10.15.1 arm(only for android 5.0 above) : https://dorynode.firebaseapp.com/v10.15.1_arm_release/node
+
+ 
+
+* Dear Developers *
+
+Due to the ndk problem with node.js v8.9.4,
+
+DoryNode can not support android 4.x in a future release.
+
+ 
+
+----
+
+ 
+
+* node.js runtime(run ES2015/ES6, ES2016 javascript and node.js APIs in android)
+
+* API Documents and instant code run from doc
+
+* syntax highlighting code editor
+
+* npm supports
+
+* linux terminal(toybox 0.7.4). node.js REPL and npm command in shell
+
+(add '--no-bin-links' option if you execute npm in /sdcard)
+
+* StartOnBoot / LiveReload
+
+* native node.js binary and npm are included. no need to be online.
+
+* git, curl, openssl, ssh, sshd, scp, ssh-keygen and sftp in terminal
+
+* ssh server : start/stop ssh server in left menu. port 2222
+
+** manual : id $ whoami
+
+$ ssh-keygen
+
+$ ssh-keygen -A
+
+$ echo -n "password" | openssl sha256 | sed "s/^.* //" > ~/.ssh/doryauth
+
+(or cp remote's ~/.ssh/id_rsa.pub to dory's ~/.ssh/authorized_keys )
+
+$ sshd -r -p 2222
+
+$ (killall sshd)
+
+ 
+
+node version = v6.11.4 LTS, v6.12.3, v8.3.0, v8.9.4 LTS, v10.15.1 LTS
+
+npm version = 3.10.10
+
+ 
+
+Node.js® is a JavaScript runtime built on Chrome's V8 JavaScript engine. Node.js uses an event-driven, non-blocking I/O model that makes it lightweight and efficient. Node.js' package ecosystem, npm, is the largest ecosystem of open source libraries in the world. - https://nodejs.org
+
+ 
+
+npm is the package manager for JavaScript and the world’s largest software registry. Discover packages of reusable code — and assemble them in powerful new ways. -
+
+https://www.npmjs.com
+
+ 
+
+ 
+
+* run MEAN stack or various services in your mobile.
+
+ 
+
+Dory - mongoDB Server
+
+https://play.google.com/store/apps/details?id=io.tempage.dorymongo
+
+ 
+
+Dory - Redis Server
+
+https://play.google.com/store/apps/details?id=io.tempage.doryredis
+
+ 
+
+Dory - x509 Certificate(SSL/TLS)
+
+https://play.google.com/store/apps/details?id=io.tempage.dorycert
+
+ 
+
+DoryCast - Video Player(HTTP/RTP/IPTV)
+
+https://play.google.com/store/apps/details?id=io.tempage.dorycast
+
+ 
+
+---
+
+beta release
+
+https://play.google.com/apps/testing/io.tempage.dorynode
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of Learn Node.js
+
+If you are searching for an application to learn Node.Js basic to advance without any programming knowledge . You are at right place. Whether
+
+ 
+
+you an experienced programmer or not , this application is intended for everyone who wish to learn the Node.js programming.
+
+ 
+
+This free app will teach you Node.js and Express.js.
+
+ 
+
+Features :
+
+ 
+
+- Great User Interface.
+
+- All topics are offline.
+
+- Topics into proper way.
+
+- Easy to understand.
+
+- Practice programs.
+
+- Copy and Share features.
+
+- Step by step learning
+
+- Node.js Interview Question and Answer.
+
+ 
+
+Topics :
+
+ 
+
+- Basic Tutorial
+
+- Advance Tutorial
+
+- Express.js Tutorial
+
+- Interview Que. and Answer
+
+ 
+
+ 
+
+>> Basic Tutorial :
+
+Start from basic Node.js learning.
+
+basic tutorial consist
+
+ 
+
+# What is Node.js
+
+# Features of Node.js
+
+# Node.js First Example
+
+# Node.js Console
+
+# Node.js Globale Objects
+
+# Node.js OS
+
+ 
+
+>>Advance Tutorial :
+
+In Advance Tutorial to learn more Node.js.
+
+advance tutorial consist
+
+ 
+
+# Node.js Callbacks
+
+# Node.js Event
+
+# Node.js TTY
+
+# Node.js MySQL Create Connection
+
+# Node.js MongoDB Create Connection
+
+# Node.js VS Angular.js
+
+ 
+
+>> Express.js Tutorial :
+
+In that topics provided new feature of Node.js Programs Learn and develop Node.js skill. Like,
+
+ 
+
+# Express.js Tutorial
+
+# What is Express.js
+
+# Express.js Request Object
+
+# Express.js Response Object
+
+# Express.js Routig
+
+# Express.js File Upload
+
+# Express.js Middleware
+
+# Express.js Cookies Management
+
+ 
+
+ 
+
+>>Interview Question and answer :
+
+Node.js interview Question and answer have been designed especially to get you acquainted
+
+with the nature of question you may encounter during your interview for the subject of Node.js programming Language.
+
+ 
+
+ 
+
+>>Contact Us :
+
+skyapper team happy to help any time contact on skyapper.dev@gmail.com
+
+
+
+
+The description of Pure Gadget Review
+
+Here you can find out new Gadgets information, Review, testing and unboxing and also all upcoming gadget information. mobile phone, tv, laptop tablet and iPhone, camera ETC.
+
+top ten gadget of the month best camera and another software review.
+
+ 
+
+By installing this app you agree to the following privacy policies:
+
+'http://www.appsgeyser.com/privacy/app/'
+
+'http://www.oneaudience.com/privacy/?package_name=com.wPureGadgetReview_7519609'
+
+ 
+
+ 
+
+ 
+
+https://m.fasttech.com/account/profile
+
+
+
+
+
+One place App for all Knowledge sharing apps.
+
+ 
+
+You can go through all knowledge sharing platforms here.
+
+ 
+
+Featured platforms:
+
+ 
+
+Quora
+
+reddit
+
+medium
+
+curiosity
+
+howstuffworks
+
+scientificamerican
+
+stack exchange
+
+ehow
+
+wiki how
+
+verywell
+
+the spruce
+
+the balance
+
+investopedia
+
+Life wire
+
+tripsavvy
+
+ifixit
+
+duolingo
+
+fluther
+
+brilliant
+
+lifehacker
+
+futurism
+
+the economist
+
+Mix
+
+brightside
+
+sputniknews
+
+instructables
+
+bukisa
+
+howcast
+
+thoughtco
+
+wikipedia
+
+gohighbrow
+
+TED
+
+feedly
+
+Quizlet
+
+tacitkey
+
+infobarrel
+
+ 
+
+ 
+
+ 
+
+ 
+
+Email: support@lingodeer.com
+
+ 
+
+ 
+
+www.prghub.com
+
+
+
+
+
+
+The description of React Native
+
+why is React Native Learn | React JS Learn | Learn ES6
+
+ 
+
+React technology is now a days one of trending technology...
+
+ 
+
+React is a one the best Javascript library.React has two types 1) React JS 2) React Native
+
+ 
+
+1) React JS
+
+-> React js is for web developing . with using react js you can develop amazing web application. React js is fully working on ecmascript 6(Modern Javascript). the biggest advantages of react js is your web pages loads fast and navigate without whole page refreshing.
+
+ 
+
+2) React Native
+
+-> React Native is used for Mobile App deveopment. React native is cross platform mobile development frameworks. it is based on same ecmascript 6(Modern Javascript). the biggest advantages of react native is, you develop both Android and IOS app without writing its native code.
+
+ 
+
+* So why you will download our app React Native Learn | React JS Learn | Learn ES6.
+
+-> Our app provides best react js tutorials as well as best react native tutorials. we were trying provide all react native tutorials offline and also react js tutorials offline. but it couldn't become possible because of some page designing library issue. but we promise you that it doesn't take much time to load because our all content is in app only. just you need to keep your mobile data on while using our app. we are planning to publish ads free offline react js tutorials app as well as react native.
+
+ 
+
+* our all react learning materials are divided in this steps..
+
+1) Learn Basic react js
+
+2) Learn Advance react js
+
+3) learn basic react native
+
+4) learn advance react native
+
+5) other stuff of react native
+
+6) React native Examples
+
+7) React native elements
+
+8) Learn making projects of react js
+
+9) Learn Typescript
+
+10) Learn ecmascript 6 (Es 6)
+
+11) React native interview questions and React js interview questions
+
+ 
+
+-> You will learn here one whole project of react js , how to build project in react js. and you will also learn here building react native projects. we are providing you some examples to practice react native.
+
+ 
+
+-> learning is not a big deal but to use learning for getting something is big deal. our app React Native Learn | React JS Learn | Learn ES6 will help in interview of react. you will feel confident in react native interview or react js interview.
+
+ 
+
+-> this is gonna be complete guide of react js and complete guide of react js as well. as you know we care for your learning. that's way we always try to provide you best learning tutorials. an this learn react js and learn react native tutorials are best. ans all react js tutorials free available.
+
+ 
+
+* what you learn extra
+
+-> you will get extra here , typescript tutorials free, learning typescript is good thing to understand more modern javascript. type script is a super set of javascript. it's used in angular development. so here, learn typescript offline and free.
+
+ 
+
+-> you will get here ecmascript 6 tutorials free. ecmascript is must learn technology, because in react you have to code in ecamscript 6. we are here trying to provide you best ecmascript 6 tutorials free or you can say ES6. if you are already familiar with javascript that it gonna be so much easy for you.
+
+ 
+
+# React Native Learn | React JS Learn | Learn ES6 features
+
+-> you can copy code
+
+-> your click will be saved for letting you know, visited page
+
+-> you can contact us whenever you face any trouble with our app
+
+ 
+
+* if you liked our work then you can share our app to others and don't forget to send you rating review. and you can follow us on instagram (vrpmecrazytech).
+
+ 
+
+our references:
+
+ 
+
+www.tutorialspoint.com
+
+www.javatpoint.com
+
+www.iconfinder.com
+
+ 
+
+ 
+
+ 
+
+The description of Creative IDE
+
+Creative IDE is a Lightweight integrated development environment
+
+and a learning platform for Ada95, Assembler 32bit, Assembler 64bit,
+
+AWK, Bash, BC, Brainf**k, C, C#, C++, C++ 4.3.2, C++14, C++14, C99,
+
+Clips, Clojure, Cobol, COBOL 85, CoffeeScript, Common Lisp, D, Dart,
+
+Elixir, Erlang, F#, Fantom, Forth, Fortran, Go, Gosu, Groovy, Haskell, Icon,
+
+Intercal, Java, JavaScript, Kotlin, Lua, Nemerle, Nice, Nim, Node.js,
+
+Objective-C, Ocaml, Octave, Pascal, Perl, PHP, Pico Lisp, Pike, Prolog,
+
+Python, Python 3, Python 3 nbc, R, Racket, Ruby, Rust, Scala, Scheme,
+
+Smalltalk, SQLite, Swift, TCL, Text, Unlambda, VB.NET, Whitespace.
+
+You can create, run, debug these nine languages in Creative IDE.
+
+Internet connection is not required to run this IDE and this app is completely free from ads and subscriptions.
+
+You can also learn programming languages through watching videos
+
+in the 'Learn' section of Creative IDE for 100 percently free of charge.
+
+Your can run your code with one click from the IDE. Creative IDE app
+
+includes lots of sample codes for reference, each language have each
+
+samples well created for beginners. You can increase your type seed and
+
+type stablity with builtin keyboard. Install the app and start programming
+
+with Creative IDE.
+
+ 
+
+➕Features that Creative IDE have➕
+
+ 
+
+🔴 Supports 68 languages
+
+Creative IDE supports Ada95, Assembler 32bit, Assembler 64bit,
+
+AWK, Bash, BC, Brainf**k, C, C#, C++, C++ 4.3.2, C++14, C++14, C99,
+
+Clips, Clojure, Cobol, COBOL 85, CoffeeScript, Common Lisp, D, Dart,
+
+Elixir, Erlang, F#, Fantom, Forth, Fortran, Go, Gosu, Groovy, Haskell, Icon,
+
+Intercal, Java, JavaScript, Kotlin, Lua, Nemerle, Nice, Nim, Node.js,
+
+Objective-C, Ocaml, Octave, Pascal, Perl, PHP, Pico Lisp, Pike, Prolog,
+
+Python, Python 3, Python 3 nbc, R, Racket, Ruby, Rust, Scala, Scheme,
+
+Smalltalk, SQLite, Swift, TCL, Text, Unlambda, VB.NET and Whitespace
+
+programming languages
+
+ 
+
+🔴 Run with no internet
+
+Creative IDE doesn't need an internet connection to run the code
+
+ 
+
+🔴 No limitations
+
+You can compile codes unlimited for FREE
+
+ 
+
+🔴 Learn by watching
+
+Learn programming languages by watching videos
+
+ 
+
+🔴 Lot's of samples
+
+Build with lot's of samples for four languages separately
+
+ 
+
+🔴 Debug scripts
+
+Error indicators with problem solving tips, line number
+
+and segment
+
+ 
+
+🔴Builtin keyboard
+
+For stable typing, Creative IDE have a builtin keyboard with
+
+gesture support
+
+ 
+
+🔴 Syntax highlighting
+
+Highlights code syntax for better code recognition
+
+ 
+
+🔴 Lightweight IDE
+
+Creative IDE is only less than 15Mb
+
+ 
+
+🔴 Creative IDE is available in all languages
+
+Creative IDE app is translated in more than 95 languages
+
+( eg. English, French, German......)
+
+so you can learn and code in your local language
+
+ 
+
+🔴 One App contains All
+
+This one app contains Ada95 IDE, Assembler 32bit IDE, Assembler 64bit IDE,
+
+AWK IDE, Bash IDE, BC IDE, Brainf**k IDE, C IDE, C# IDE, C++ IDE, C++ 4.3.2 IDE,
+
+C++14 IDE, C++14 IDE, C99 IDE, Clips IDE, Clojure IDE, Cobol IDE, COBOL 85 IDE,
+
+CoffeeScript IDE, Common Lisp IDE, D IDE, Dart IDE, Elixir IDE, Erlang IDE, F# IDE,
+
+Fantom IDE, Forth IDE, Fortran IDE, Go IDE, Gosu IDE, Groovy IDE, Haskell IDE,
+
+Icon IDE, Intercal IDE, Java IDE, JavaScript IDE, Kotlin IDE, Lua IDE, Nemerle IDE,
+
+Nice IDE, Nim IDE, Node.js IDE, Objective-C IDE, Ocaml IDE, Octave IDE, Pascal IDE,
+
+Perl IDE, PHP IDE, Pico Lisp IDE, Pike IDE, Prolog IDE, Python IDE, Python 3 IDE,
+
+Python 3 nbc IDE, R IDE, Racket IDE, Ruby IDE, Rust IDE, Scala IDE, Scheme IDE,
+
+Smalltalk IDE, SQLite IDE, Swift IDE, TCL IDE, Text IDE, Unlambda IDE, VB.NET IDE,
+
+Whitespace IDE
+
+ 
+
+📌Online compilers are powered by Jdoodle.com
+
+Thankyou Jdoodle Team for this mindblowing API
+
+ 
+
+ 
+
+📌About Creative IDE
+
+Creative IDE is project of Creatyification group
+
+www.creatyification.com
+
+support@creatyification.com
+
+ 
+
+MADE WITH ♥ IN INDIA.
+
+Show less
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of Dcoder, Compiler IDE :Code & Programming on mobile
+
+Dcoder is a mobile coding IDE ( Compiler for mobile ), where one can code and learn algorithms using programming on mobile. Tailored to enhance your coding skills, via the use of code compilation and algorithm solving. Now learn to code anytime anywhere.
+
+ 
+
+Choose any or all languages to work with:
+
+ 
+
+ 
+
+1. C : learn C programming, a powerful general-purpose language.
+
+2. C++ : GCC compiler 6.3
+
+3. Java : best Java Programming ide, JDK 8
+
+4. Python : learn Python 2.7 and Python 3.
+
+5. C# : Mono Compiler 4
+
+6. Php : Php Interpreter 7.0
+
+7. Objective-C : GCC compiler
+
+8. Ruby : Ruby version 1.9
+
+9. Lua : Lua Interpreter 5.2
+
+10. JS/NodeJS : Node.js engine 6.5
+
+11. Go : Go Lang 1.6
+
+12. VB.Net
+
+13. F#
+
+14. Common Lisp
+
+15. R
+
+16. Scala
+
+17. Perl
+
+18. Pascal
+
+19. Swift
+
+20. Tcl
+
+21, Prolog
+
+22. Assembely
+
+23. Haskell
+
+24. Clojure
+
+25. Kotlin
+
+26. Groovy
+
+27. Scheme
+
+28. Rust
+
+29. Bf
+
+30. Html
+
+31. Css
+
+ 
+
+Added bonus: Dcoder uses a Rich Text Editor supporting syntax highlight and packed with the necessary tools to offer you all the edge that an IDE or code compiler is supposed to.
+
+ 
+
+ 
+
+Its the fastest code compiler (IDE), coding and programming app available for android so far.
+
+ 
+
+With Dcoder one can:
+
+ 
+
+Write a program/code in any of the available 33+ Programming Languages.
+
+Code and Debug the code, see compilation results and errors at the same time on the same screen.
+
+Enjoy the power and ease of coding on your favorite Code Editor like Notepad++ or Sublime Text with compilation power, makes it equivalent to a powerful Ide like eclipse.
+
+Test your problem solving skills by solving challenges from the number of algorithm based challenges available in Algo Yo section.
+
+Learn Html,Css, JavaScript, Ruby programming, C Programming, Python and Java in the app along with many more programming languages.
+
+Irrespective of your coding skills be it beginner or expert Dcoder helps you to learn code and improve your skills while in a boring lecture or whenever you feel like.
+
+ 
+
+ 
+
+ 
+
+The main features include:
+
+ 
+
+1. Rich Text Editor with Syntax highlighting.(Code Editor)
+
+2. Line number, Auto indent, Autocomplete Parenthesis.
+
+3. Undo Redo.
+
+4. File Open/Save.
+
+5. Custom Suggestion View.
+
+6. Multiple Language Support.
+
+7. User input for languages like C, C++, Java, Php, JavaScript, Node.js and others.
+
+8. Active debug view for faster access to Output.
+
+9. Thoroughly designed Algorithm problems to improve coding Skills and make programmers industry ready.
+
+10. Leader Board: To know where you stand amongst the vast Dcoder community.
+
+11. Custom Menu Drawer, Custom Code Editor Themes, Editable font Size for Editor and much more!!
+
+ 
+
+ 
+
+ 
+
+Disclaimer: Dcoder uses array of strong cloud based compilers to compile the code and display output, it is the fastest one and has helped to bring app size to ~4 MB, Please don't rate low or demand offline feature that is not possible here. Also instead of rating low, you can write your problems to us at support@dcoder.tech that will let us help you better.
+
+ 
+
+Dcoder is an online compiler, now run, compile and execute your code snippets on your own android mobile devices.
+
+ 
+
+ 
+
+ 
+
+Begin the journey to enhance your skills.
+
+ 
+
+How to solve algorithms?
+
+https://youtu.be/rwzdKkgWKV4
+
+ 
+
+ 
+
+For a brief video:
+
+https://youtu.be/X9lsvumpFGI
+
+ 
+
+ 
+
+ 
+
+Join the Facebook Group
+
+For any help, questions related to Dcoder and challenges and also to opt as a Beta Tester.
+
+https://www.facebook.com/groups/dcodermobile
+
+ 
+
+ 
+
+Loved it? Be a beta tester, for early access to experimental features
+
+https://play.google.com/apps/testing/com.paprbit.dcoder
+
+ 
+
+Privacy policy: https://dcoder.tech/privacy.html
+
+ 
+
+Terms of use: https://dcoder.tech/termsofuse.html
+
+ 
+
+ 
+
+ 
+
+ 
+
+The description of JS Code Run
+
+JS Code Run is a simple tool where you can write and run your JavaScript code. Just type in your code and hit the play button to see your result.
+
+ 
+
+If there are any errors in your code, JS Code Run will give you insightful error messages to help you find the problem!
+
+ 
+
+Need help? Try some of our examples!
+
+ 
+
+Main features include:
+
+- Syntax highlighting
+
+- Supports ES6/ES7/ES8 features
+
+- Save files for later use
+
+- Log output with console.log()
+
+- Examples of common data structure & algorithm problems in JavaScript
+
+ 
+
+JS Code Run is open source. If you like a feature, raise an issue or contribute on GitHub: https://github.com/mtacchino/JSCodeRun
+
+ 
+
+Like the app? Give us a review!
+
+ 
+
+ 
+
+ 
+
+The description of Code editor - Edit JS, HTML, CSS, Files (free)
+
+Acode is light weight code editor and web IDE for android. You can use Acode editor as HTML editor, JavaScript editor, text editor, web development IDE and front end web development tool.
+
+ 
+
+You can create website, run the website in browser and see error or logs of JavaScript code in the console.
+
+ 
+
+You can edit any kind of source file like, python, CSS, html, java, JavaScript, Dart etc. You can also develop nodejs application using termux as terminal.
+
+ 
+
+It has features features like
+
+ 
+
+∙ GitHub (Available in beta)
+
+∙ Autocomplete
+
+∙ Builtin JavaScript console
+
+∙ Emmet
+
+∙ Beautify
+
+∙ Work space (Open multiple files and folders)
+
+∙ File and folder control
+
+∙ HTML preview
+
+∙ Multiple themes for editor
+
+∙ Dark and light theme for app
+
+∙ Multiple language support
+
+∙ Quick tool
+
+∙ Syntax highlighting
+
+∙ Linting
+
+∙ Many more features coming soon
+
+ 
+
+Key words:
+
+ 
+
+javascript editor, html editor, css editor, code editor, create website, run website, open file, open unkown file, website builder, website maker, python editor, github client, github file editor.
+
+ 
+
+Pro version: https://play.google.com/store/apps/details?id=com.foxdebug.acode
+
+ 
