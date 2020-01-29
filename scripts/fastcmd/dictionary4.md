@@ -11555,6 +11555,74 @@ pipenv run python app/manage.py runserver
 https://dev.to/yukinagae/your-first-guide-to-getting-started-with-pipenv-50bn
 https://www.techiediaries.com/pipenv-tutorial/
 ==============================================================================================================
+The following configuration parameters can be used to specify global timeouts for all methods of a certain category unless they or an enclosing test class is annotated with @Timeout:
+
+junit.jupiter.execution.timeout.default
+Default timeout for all testable and lifecycle methods
+
+junit.jupiter.execution.timeout.testable.method.default
+Default timeout for all testable methods
+
+junit.jupiter.execution.timeout.test.method.default
+Default timeout for @Test methods
+
+junit.jupiter.execution.timeout.testtemplate.method.default
+Default timeout for @TestTemplate methods
+
+junit.jupiter.execution.timeout.testfactory.method.default
+Default timeout for @TestFactory methods
+
+junit.jupiter.execution.timeout.lifecycle.method.default
+Default timeout for all lifecycle methods
+
+junit.jupiter.execution.timeout.beforeall.method.default
+Default timeout for @BeforeAll methods
+
+junit.jupiter.execution.timeout.beforeeach.method.default
+Default timeout for @BeforeEach methods
+
+junit.jupiter.execution.timeout.aftereach.method.default
+Default timeout for @AfterEach methods
+
+junit.jupiter.execution.timeout.afterall.method.default
+Default timeout for @AfterAll methods
+
+More specific configuration parameters override less specific ones. For example, junit.jupiter.execution.timeout.test.method.default overrides junit.jupiter.execution.timeout.testable.method.default which overrides junit.jupiter.execution.timeout.default.
+==============================================================================================================
+sudo pip install pymongo or
+sudo -E pip install pymongo 
+sudo pip show pymongo
+
+sudo apt-get install python-pip
+sudo pip install pymongo
+
+https://cloud.spring.io/spring-cloud-static/Dalston.SR5/multi/multi__service_discovery_eureka_clients.html
+
+$ ./mvnw install && ./mvnw spring-boot:run -pl application
+$ ./gradlew build && ./gradlew :application:bootRun
+ -Didea.maven3.use.compat.resolver
+==============================================================================================================
+@Component
+public class MyGRpcServerBuilderConfigurer extends GRpcServerBuilderConfigurer{
+        @Override
+        public void configure(ServerBuilder<?> serverBuilder){
+            serverBuilder
+                .executor(YOUR EXECUTOR INSTANCE)
+                .compressorRegistry(YOUR COMPRESSION REGISTRY)
+                .decompressorRegistry(YOUR DECOMPRESSION REGISTRY)
+                .useTransportSecurity(YOUR TRANSPORT SECURITY SETTINGS);
+            ((NettyServerBuilder)serverBuilder)// cast to NettyServerBuilder (which is the default server) for further customization
+                    .sslContext(GrpcSslContexts  // security fine tuning
+                                    .forServer(...)
+                                    .trustManager(...)
+                                    .build())
+                    .maxConnectionAge(...)
+                    .maxConnectionAgeGrace(...);
+
+        }
+    };
+}
+==============================================================================================================
 import org.springframework.hateoas.VndErrors;
 
 /**
@@ -13057,6 +13125,55 @@ import org.eclipse.milo.opcua.sdk.client.api.identity.IdentityProvider;
 public interface IdentityProviderConfiguration {
     IdentityProvider toProvider();
 }
+==============================================================================================================
+https://www.meteor.com/showcase
+==============================================================================================================
+Run the following command to create the virtual environment:
+
+virtualenv --python=python3 python-tutorial￼
+
+After this, enter the python-tutorial directory and activate the virtual environment with the following command:
+
+source bin/activate
+
+Next, install the Flask package using PIP.
+
+pip install flask
+
+Now using your favorite text editor, create a new file inside this directory and name the file flask-tut.py
+touch flask-tut.py
+vim flask-tut.py
+
+Add the following code to the file flask-tut.py:
+
+(click the insert key on your keyboard and then copy/paste to insert the code below)
+
+# Import the Flask package
+from flask import Flask
+# Initialize Flask
+app = Flask(__name__)
+# Define the index route
+@app.route("/")
+def index():
+return "Hello from Flask!"
+# Run Flask if the __name__ variable is equal to __main__
+if __name__ == "__main__":
+app.run()
+
+Lastly, execute the file by running:
+
+python3 flask-tut.py
+
+This starts the development web server. Part of the output when executed provides the address the server is listening on. Navigate to that address in a browser to display the Flask web application just created.
+
+(flask_tutorial) Johns-MBP:flask_tutorial john$ python flask_tut.py
+* Serving Flask app "flask_tut" (lazy loading)
+* Environment: production
+WARNING: This is a development server. Do not use it in a production deployment.
+Use a production WSGI server instead.
+* Debug mode: off<
+* Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+All requests and response codes will be logged to the output from the running server in the terminal.
 ==============================================================================================================
 ==============================================================================================================
 ==============================================================================================================
