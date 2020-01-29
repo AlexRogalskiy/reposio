@@ -19009,7 +19009,31 @@ sed -i tmp "s/getImplementationVersion.*\}/getImplementationVersion() \{ $RETURN
 rm runtime-parent/runtime-core/src/main/java/com/speedment/runtime/core/internal/component/InfoComponentImpl.javatmp
 
 
-
+http://vmsk-tc-prm.paragon-software.com/project.html?projectId=Microservices_ParagonMicroservicesConfirmationLinkCallback
+==============================================================================================================
+        // given
+        doReturn(Optional.of(this.getUserResponse())).when(this.registryClient).getUser(ArgumentMatchers.any(GetUserRequest.class));
+==============================================================================================================
+pactbroker:
+  host: "your.broker.local"
+  port: "443"
+  protocol: "https"
+  auth:
+    username: "<your broker username>"
+    password: "<your broker password>"
+	
+@RunWith(SpringRestPactRunner.class)
+@Provider("My Service")
+@PactBroker(
+  authentication =  @PactBrokerAuth(username = "${pactbroker.auth.username}", password = "${pactbroker.auth.password}")
+)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+public class PactVerificationTest {
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
 ==============================================================================================================
  * OrientDB orientDb = new OrientDB("remote:localhost","root","root");
  * if(orientDb.createIfNotExists("test",ODatabaseType.MEMORY)){
