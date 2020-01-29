@@ -11531,29 +11531,39 @@ public class Md5Util {
 }
 ==============================================================================================================
 python -m django --version
-pipenv install -e git+https://github.com/requests/requests.git#egg=requests
-pip freeze > requirements.txt
-pipenv lock -r
-pip install -r requirements.txt
-pipenv install -r dev-requirements.txt --dev
-$ pipenv lock -r > requirements.txt
-$ pipenv lock -r -d > dev-requirements.txt
-
-python -m pip install --user pipenv
-$ pipenv shell --three
-$ pipenv install django-cors-headers
-
-
-pipenv install django
-pipenv install djangorestframework
-pipenv install django-cors-headers
-django-admin.py startproject backend
-python manage.py migrate
-python manage.py runserver
-pipenv run python app/manage.py runserver
-
-https://dev.to/yukinagae/your-first-guide-to-getting-started-with-pipenv-50bn
-https://www.techiediaries.com/pipenv-tutorial/
+pipepublic class WaitingWorker implements Runnable {
+ 
+    private List<String> outputScraper;
+    private CountDownLatch readyThreadCounter;
+    private CountDownLatch callingThreadBlocker;
+    private CountDownLatch completedThreadCounter;
+ 
+    public WaitingWorker(
+      List<String> outputScraper,
+      CountDownLatch readyThreadCounter,
+      CountDownLatch callingThreadBlocker,
+      CountDownLatch completedThreadCounter) {
+ 
+        this.outputScraper = outputScraper;
+        this.readyThreadCounter = readyThreadCounter;
+        this.callingThreadBlocker = callingThreadBlocker;
+        this.completedThreadCounter = completedThreadCounter;
+    }
+ 
+    @Override
+    public void run() {
+        readyThreadCounter.countDown();
+        try {
+            callingThreadBlocker.await();
+            doSomeWork();
+            outputScraper.add("Counted down");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            completedThreadCounter.countDown();
+        }
+    }
+}
 ==============================================================================================================
 The following configuration parameters can be used to specify global timeouts for all methods of a certain category unless they or an enclosing test class is annotated with @Timeout:
 
