@@ -102,6 +102,195 @@ https://developers.redhat.com/search/?s=most-recent&f=type%7Ebook
 
 Validation failed for argument [0] in public org.springframework.http.ResponseEntity com.paragon.microservices.confirmationlink.callback.controller.impl.IssueControllerImpl.acceptIssue(com.paragon.microservices.confirmationlink.callback.model.dto.IssueRequest,com.paragon.mailingcontour.commons.security.model.AuthenticatedUser): [Field error in object 'issueRequest' on field 'subject': rejected value []; codes [NotBlank.issueRequest.subject,NotBlank.subject,NotBlank.java.lang.String,NotBlank]; arguments [org.springframework.context.support.DefaultMessageSourceResolvable: codes [issueRequest.subject,subject]; arguments []; default message [subject]]; default message [Issue request model <subject> attribute should not be blank]] 
 ==============================================================================================================
+import java.util.Map;
+
+import org.apache.kafka.common.utils.Utils;
+
+/**
+ * The <code>MetricName</code> class encapsulates a metric's name, logical group and its related attributes. It should be constructed using metrics.MetricName(...).
+ * <p>
+ * This class captures the following parameters
+ * <pre>
+ *  <b>name</b> The name of the metric
+ *  <b>group</b> logical group name of the metrics to which this metric belongs.
+ *  <b>description</b> A human-readable description to include in the metric. This is optional.
+ *  <b>tags</b> additional key/value attributes of the metric. This is optional.
+ * </pre>
+ * group, tags parameters can be used to create unique metric names while reporting in JMX or any custom reporting.
+ * <p>
+ * Ex: standard JMX MBean can be constructed like  <b>domainName:type=group,key1=val1,key2=val2</b>
+ * <p>
+ *
+ * Usage looks something like this:
+ * <pre>{@code
+ * // set up metrics:
+ *
+ * Map<String, String> metricTags = new LinkedHashMap<String, String>();
+ * metricTags.put("client-id", "producer-1");
+ * metricTags.put("topic", "topic");
+ *
+ * MetricConfig metricConfig = new MetricConfig().tags(metricTags);
+ * Metrics metrics = new Metrics(metricConfig); // this is the global repository of metrics and sensors
+ *
+ * Sensor sensor = metrics.sensor("message-sizes");
+ *
+ * MetricName metricName = metrics.metricName("message-size-avg", "producer-metrics", "average message size");
+ * sensor.add(metricName, new Avg());
+ *
+ * metricName = metrics.metricName("message-size-max", "producer-metrics");
+ * sensor.add(metricName, new Max());
+ *
+ * metricName = metrics.metricName("message-size-min", "producer-metrics", "message minimum size", "client-id", "my-client", "topic", "my-topic");
+ * sensor.add(metricName, new Min());
+ *
+ * // as messages are sent we record the sizes
+ * sensor.record(messageSize);
+ * }</pre>
+ */
+public final class MetricName {
+
+    private final String name;
+    private final String group;
+    private final String description;
+    private Map<String, String> tags;
+    private int hash = 0;
+
+    /**
+     * Please create MetricName by method {@link org.apache.kafka.common.metrics.Metrics#metricName(String, String, String, Map)}
+     *
+     * @param name        The name of the metric
+     * @param group       logical group name of the metrics to which this metric belongs
+     * @param description A human-readable description to include in the metric
+     * @param tags        additional key/value attributes of the metric
+     */
+    public MetricName(String name, String group, String description, Map<String, String> tags) {
+        this.name = Utils.notNull(name);
+        this.group = Utils.notNull(group);
+        this.description = Utils.notNull(description);
+        this.tags = Utils.notNull(tags);
+    }
+
+    public String name() {
+        return this.name;
+    }
+
+    public String group() {
+        return this.group;
+    }
+
+    public Map<String, String> tags() {
+        return this.tags;
+    }
+
+    public String description() {
+        return this.description;
+    }
+
+    @Override
+    public int hashCode() {
+        if (hash != 0)
+            return hash;
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((group == null) ? 0 : group.hashCode());
+        result = prime * result + ((name == null) ? 0 : name.hashCode());
+        result = prime * result + ((tags == null) ? 0 : tags.hashCode());
+        this.hash = result;
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        MetricName other = (MetricName) obj;
+        if (group == null) {
+            if (other.group != null)
+                return false;
+        } else if (!group.equals(other.group))
+            return false;
+        if (name == null) {
+            if (other.name != null)
+                return false;
+        } else if (!name.equals(other.name))
+            return false;
+        if (tags == null) {
+            if (other.tags != null)
+                return false;
+        } else if (!tags.equals(other.tags))
+            return false;
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "MetricName [name=" + name + ", group=" + group + ", description="
+                + description + ", tags=" + tags + "]";
+    }
+}
+
+/**
+ * An upper or lower bound for metrics
+ */
+public final class Quota {
+
+    private final boolean upper;
+    private final double bound;
+
+    public Quota(double bound, boolean upper) {
+        this.bound = bound;
+        this.upper = upper;
+    }
+
+    public static Quota upperBound(double upperBound) {
+        return new Quota(upperBound, true);
+    }
+
+    public static Quota lowerBound(double lowerBound) {
+        return new Quota(lowerBound, false);
+    }
+
+    public boolean isUpperBound() {
+        return this.upper;
+    }
+
+    public double bound() {
+        return this.bound;
+    }
+
+    public boolean acceptable(double value) {
+        return (upper && value <= bound) || (!upper && value >= bound);
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + (int) this.bound;
+        result = prime * result + (this.upper ? 1 : 0);
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (!(obj instanceof Quota))
+            return false;
+        Quota that = (Quota) obj;
+        return (that.bound == this.bound) && (that.upper == this.upper);
+    }
+
+    @Override
+    public String toString() {
+        return (upper ? "upper=" : "lower=") + bound;
+    }
+}
+==============================================================================================================
 const express = require('express');
 const mongojs = require('mongojs');
 
@@ -124,6 +313,50 @@ app.get('/chart.json',(req,res) =>{
 app.listen(3001, function(){
 	console.log("we are running on prot 3001!");
 });
+==============================================================================================================
+    obj.map(o -> (Runnable) () -> o.setAvailable(true))
+       .orElse(() -> logger.fatal("Object not available"))
+       .run();
+or
+
+    obj.map(o -> (Consumer<Object>) c -> o.setAvailable(true))
+       .orElse(o -> logger.fatal("Object not available"))
+       .accept(null);
+or
+
+    obj.map(o -> (Supplier<Object>) () -> {
+            o.setAvailable(true);
+            return null;
+    }).orElse(() () -> {
+            logger.fatal("Object not available")
+            return null;
+    }).get();
+==============================================================================================================
+module.exports = function(originalModule) {
+	if (!originalModule.webpackPolyfill) {
+		var module = Object.create(originalModule);
+		// module.parent = undefined by default
+		if (!module.children) module.children = [];
+		Object.defineProperty(module, "loaded", {
+			enumerable: true,
+			get: function() {
+				return module.l;
+			}
+		});
+		Object.defineProperty(module, "id", {
+			enumerable: true,
+			get: function() {
+				return module.i;
+			}
+		});
+		Object.defineProperty(module, "exports", {
+			enumerable: true
+		});
+		module.webpackPolyfill = 1;
+	}
+	return module;
+};
+
 ==============================================================================================================
 npm install --save-dev babel-core babel-preset-env
 npm install --save-dev @babel/core @babel/preset-env
