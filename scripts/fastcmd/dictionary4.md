@@ -291,6 +291,210 @@ public final class Quota {
     }
 }
 ==============================================================================================================
+language: java
+sudo: false
+install: true
+addons:
+  sonarcloud:
+    organization: "your_organization_key"
+    token:
+      secure: "$SONAR_TOKEN"
+jdk:
+  - oraclejdk8
+script:
+  - mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar
+cache:
+  directories:
+    - '$HOME/.m2/repository'
+    - '$HOME/.sonar/cache'
+
+import org.junit.Assert;
+import org.junit.runner.RunWith;
+import org.lognet.springboot.grpc.demo.DemoApp;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+
+import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.NONE;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = {DemoApp.class}, webEnvironment = NONE, properties = {"grpc.port=0","grpc.shutdownGrace=-1"})
+public class RandomGrpcPortTest extends GrpcServerTestBase {
+
+    @Override
+    protected void beforeGreeting() {
+        Assert.assertEquals(0,gRpcServerProperties.getPort().intValue());
+
+    }
+}
+
+https://www.youtube.com/watch?v=3AoS_7u9eCU
+https://www.baeldung.com/sonar-qube
+
+{
+  "body": {
+    "id": 100,
+    "description": "Small pack of bolts",
+    "processDate": "2015-07-01"
+  },
+  "generators": {
+      "body": {
+          "$.id": {
+              "type": "RandomDecimal",
+              "digits": 5
+          },
+          "$.description": {
+              "type": "RandomString",
+              "size": 20
+          },
+          "$.processDate": {
+              "type": "Date"
+          }
+      }
+  }
+}
+
+
+mvn -U -B -V --fail-at-end -Dgpg.skip=true -Dfile.encoding=UTF-8 -DskipTests=true -Dmaven.javadoc.skip=true -DskipCheckStyle=true clean install -P test
+==============================================================================================================
+Start Eureka: java -jar eureka-server/target/eureka-server-1.0-SNAPSHOT.jar
+Start gRPC Server #1: java -jar grpc-server/target/springboot-grpc-server-1.0-SNAPSHOT.jar --server.port=9090
+Start gRPC Server #2: java -jar grpc-server/target/springboot-grpc-server-1.0-SNAPSHOT.jar --server.port=9091
+Start gRPC Client: java -jar target/springboot-grpc-client-1.0-SNAPSHOT.jar
+==============================================================================================================
+import com.example.grpc.EchoRequest;
+import com.example.grpc.EchoResponse;
+import com.example.grpc.EchoServiceGrpc;
+import io.grpc.Server;
+import io.grpc.ServerBuilder;
+import io.grpc.stub.StreamObserver;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.logging.Logger;
+
+/**
+ * Created by rayt on 5/16/16.
+ */
+public class EchoServer {
+  static public void main(String[] args) throws IOException, InterruptedException {
+
+    Server server = ServerBuilder.forPort(8080)
+        .addService(new EchoServiceImpl()).build();
+
+    System.out.println("Starting server...");
+    server.start();
+    System.out.println("Server started!");
+    server.awaitTermination();
+  }
+}
+
+class EchoServiceImpl extends EchoServiceGrpc.EchoServiceImplBase {
+  private static Logger LOGGER = Logger.getLogger(EchoServiceImpl.class.getName());
+
+  @Override
+  public void echo(EchoRequest request, StreamObserver<EchoResponse> responseObserver) {
+    try {
+      String from = InetAddress.getLocalHost().getHostAddress();
+      System.out.println("Received: " + request.getMessage());
+      responseObserver.onNext(EchoResponse.newBuilder()
+          .setFrom(from)
+          .setMessage(request.getMessage())
+          .build());
+      responseObserver.onCompleted();
+    } catch (UnknownHostException e) {
+      responseObserver.onError(e);
+    }
+  }
+}
+
+server {
+    listen 80 http2;
+ 
+    location / {
+        grpc_pass grpc://echo-server:8080;
+    }
+}
+
+version: '3'
+services:
+  nginx-grpc:
+    build: .
+    ports:
+    - "8080:80"
+    command: nginx -g 'daemon off;'
+  echo-server:
+    image: saturnism/echo-server:latest
+    ports:
+    - "8080"
+==============================================================================================================
+import com.google.common.collect.Maps;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Repository
+public class MyDataRepository {
+	private final JdbcTemplate jdbcTemplate;
+
+	public MyDataRepository(JdbcTemplate jdbcTemplate) {
+		this.jdbcTemplate = jdbcTemplate;
+	}
+
+	public void insert(String key, String value) {
+		jdbcTemplate.update("insert into kv_table values (?, ?)", key, value);
+	}
+
+	public List<String> findAll() {
+		return jdbcTemplate.query("select * from kv_table", (rs, rowNum) -> {
+			return rs.getString(1);
+		});
+	}
+}
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+import org.junit.internal.runners.statements.Fail;
+import org.junit.runners.model.FrameworkMethod;
+import org.junit.runners.model.InitializationError;
+import org.junit.runners.model.Statement;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import java.util.function.Predicate;
+
+
+public class SpringRunnerWithGlobalExpectedExceptionInspected extends SpringJUnit4ClassRunner {
+    private final Class<? extends Predicate<Throwable>> expectedExceptionInspector;
+
+    public SpringRunnerWithGlobalExpectedExceptionInspected(Class<?> clazz) throws InitializationError {
+        super(clazz);
+        ExpectedStartupExceptionWithInspector annotation = clazz.getAnnotation(ExpectedStartupExceptionWithInspector.class);
+        if (annotation != null) {
+            expectedExceptionInspector = annotation.value();
+        } else {
+            throw new IllegalArgumentException("Missing " + ExpectedStartupExceptionWithInspector.class.getName() + " on " + clazz.getName());
+        }
+    }
+
+    @Override
+    protected Statement methodBlock(FrameworkMethod frameworkMethod) {
+        Statement result = super.methodBlock(frameworkMethod);
+        try {
+            return new ExpectExceptionWithPredicate(result, expectedExceptionInspector.newInstance());
+        } catch (InstantiationException | IllegalAccessException e) {
+            return new Fail(e);
+        }
+    }
+
+}
+==============================================================================================================
 const express = require('express');
 const mongojs = require('mongojs');
 
