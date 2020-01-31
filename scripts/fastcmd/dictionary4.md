@@ -428,6 +428,94 @@ services:
     ports:
     - "8080"
 ==============================================================================================================
+  del /f/q/s *.* > nul
+  rmdir /q/s your-folder-name
+==============================================================================================================
+https://www.baeldung.com/java-weekly-318?utm_source=email-newsletter&utm_medium=email&utm_campaign=jww
+==============================================================================================================
+https://habr.com/ru/post/337716/
+
+syntax = "proto3";
+
+package library;
+
+service LibraryService {
+  rpc AddBook(AddBookRequest) returns (AddBookResponse)
+}
+
+message AddBookRequest {
+  message Author {
+    string name = 1;
+    string surname = 2;
+  }
+  string isbn = 1;
+  repeated Author authors = 2;
+}
+
+message AddBookResponse {
+  int64 id = 1;
+}
+==============================================================================================================
+@ECHO OFF
+ECHO Delete Folder: %CD%?
+PAUSE
+SET FOLDER=%CD%
+CD /
+DEL /F/Q/S "%FOLDER%" > NUL
+RMDIR /Q/S "%FOLDER%"
+EXIT
+
+HKEY_CLASSES_ROOT\Directory\shell\
+cmd /c "cd %1 && quick_delete.bat"
+
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+1] Delete the desired file
+
+When the CMD window opens, navigate to the folder where the file is available. You will have to use the “cd” or change directory command. Then, use the following command with options in the prompt:
+
+DEL /F /A <file path with extension>
+Here:
+
+/F stands for force delete
+/A selects only the files with ready for archiving attribute
+2] Delete the desired folder
+
+Navigate to the folder containing the folder you wish to delete by using the ‘cd’ command. Type the following command in the Command Prompt:
+
+RD /S <folder path>
+Here:
+
+RD removes the folder from the directory.
+/S Removes all subfolders and files
+==============================================================================================================
+$ sudo cp src/cp /usr/local/bin/cpg
+$ sudo cp src/mv /usr/local/bin/mvg
+
+#!/bin/sh
+cp_p()
+{
+   strace -q -ewrite cp -- "${1}" "${2}" 2>&1 \
+      | awk '{
+        count += $NF
+            if (count % 10 == 0) {
+               percent = count / total_size * 100
+               printf "%3d%% [", percent
+               for (i=0;i<=percent;i++)
+                  printf "="
+               printf ">"
+               for (i=percent;i<100;i++)
+                  printf " "
+               printf "]\r"
+            }
+         }
+         END { print "" }' total_size=$(stat -c '%s' "${1}") count=0
+}
+
+https://github.com/Xfennec/progress
+==============================================================================================================
 import com.google.common.collect.Maps;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
