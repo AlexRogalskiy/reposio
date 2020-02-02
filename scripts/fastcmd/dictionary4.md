@@ -6546,6 +6546,76 @@ gatling {
   }
 }
 ==============================================================================================================
+mport streams.reactive.chapter_2.StockData;
+
+import java.util.concurrent.Flow;
+import java.util.concurrent.SubmissionPublisher;
+import java.util.function.Function;
+
+public class StockTransformProcessor<R> extends SubmissionPublisher<R> implements Flow.Processor<StockData, R> {
+
+    private Function<StockData, R> function;
+    private Flow.Subscription subscription;
+
+    public StockTransformProcessor(Function<StockData, R> function) {
+        super();
+        this.function = function;
+    }
+
+    @Override
+    public void onSubscribe(Flow.Subscription subscription) {
+        this.subscription = subscription;
+        subscription.request(1);
+    }
+
+    @Override
+    public void onNext(StockData item) {
+        submit(function.apply(item));
+        subscription.request(1);
+    }
+
+    @Override
+    public void onError(Throwable t) {
+        t.printStackTrace();
+    }
+
+    @Override
+    public void onComplete() {
+        close();
+    }
+}
+
+import java.util.UUID;
+import java.util.concurrent.SubmissionPublisher;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+
+public class OverProducingPublisher extends SubmissionPublisher<StockData> {
+
+  public void start() {
+    Stream<StockData> stockDataStream = Stream
+        .generate(() ->
+            new StockData(
+                UUID.randomUUID().toString(),
+                ThreadLocalRandom.current().nextFloat()
+            )
+        );
+
+
+    stockDataStream.limit(100_000).forEach(this::submit);
+  }
+
+
+}
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
 package test
 
 import io.gatling.core.Predef._

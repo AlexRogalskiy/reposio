@@ -23936,7 +23936,8 @@ public class PasswordStorageWebSecurityConfigurer extends WebSecurityConfigurerA
 		return new Color(red, green, blue, opacity);
 	}
 -----------------------------------------------------------------------------------------
-
+https://www.baeldung.com/mockserver
+-----------------------------------------------------------------------------------------
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -23964,6 +23965,43 @@ public class SimpleCORSFilter implements Filter {
 	public void destroy() {}
 }
 -----------------------------------------------------------------------------------------
+import java.util.concurrent.ExecutionException;
+ 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.util.concurrent.ListenableFuture;
+import org.springframework.web.client.AsyncRestTemplate;
+import org.springframework.web.client.HttpServerErrorException;
+ 
+@Service
+public class AsyncExampleRestService {
+ 
+    @Autowired
+    private AsyncRestTemplate asyncRestTemplate;
+     
+    public String deleteAllSuspendedUsers() {
+        ListenableFuture future = asyncRestTemplate.delete("http://localhost/delete-all-suspended-users");
+        // doing some long process here...
+        Object result = null;
+        String returnValue = "";
+        try {
+            result = future.get(); //The Future will return a null result upon completion.
+            if (result == null) {
+                returnValue = "{result:'success'}";
+            } else {
+                returnValue = "{result:'fail'}";
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            if (e.getCause() instanceof HttpServerErrorException) {
+                returnValue = "{result: 'server error'}";
+            }
+        }
+        System.out.println("deleteAllSuspendedUsers: " + result);
+         
+        return returnValue;
+    }
+}
+-----------------------------------------------------------------------------------------
 import org.junit.runner.RunWith;
 
 import cucumber.api.CucumberOptions;
@@ -23972,6 +24010,227 @@ import cucumber.api.junit.Cucumber;
 @RunWith(Cucumber.class)
 @CucumberOptions(features = "src/test/resources")
 public class RunCukesTest {
+}
+-----------------------------------------------------------------------------------------
+import static org.junit.Assert.assertEquals;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
+ 
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpMethod;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.client.AsyncRestTemplate;
+ 
+import com.javacodegeeks.example.service.AsyncExampleRestService;
+ 
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class AsyncExampleRestServiceTest {
+ 
+    @Autowired
+    AsyncRestTemplate asyncRestTemplate;
+ 
+    @Autowired
+    AsyncExampleRestService service;
+ 
+    private MockRestServiceServer mockServer;
+ 
+    @Before
+    public void setUp() {
+        mockServer = MockRestServiceServer.createServer(asyncRestTemplate);
+    }
+ 
+    @Test
+    public void testDeleteAllSuspendedUsers() {
+        mockServer.expect(requestTo("http://localhost/delete-all-suspended-users")).andExpect(method(HttpMethod.DELETE))
+            .andRespond(withServerError());
+ 
+        String result = service.deleteAllSuspendedUsers();
+        System.out.println("testDeleteAllSuspendedUsers: " + result);
+ 
+        mockServer.verify();
+        assertEquals("{result: 'server error'}", result);
+    }
+}
+-----------------------------------------------------------------------------------------
+mockServer.expect(requestTo(matchesPattern(".*exact-example-url.com.*")))
+    .andExpect(method(HttpMethod.GET))
+    .andRespond(withSuccess("response", MediaType.APPLICATION_JSON));
+-----------------------------------------------------------------------------------------
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.Collections;
+
+import org.junit.jupiter.api.Test;
+
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.test.web.Person;
+import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
+
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.endsWith;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.in;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.startsWith;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.jsonPath;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+
+/**
+ * Examples of defining expectations on JSON request content with
+ * <a href="https://github.com/jayway/JsonPath">JsonPath</a> expressions.
+ *
+ * @author Rossen Stoyanchev
+ * @author Sam Brannen
+ * @see org.springframework.test.web.client.match.JsonPathRequestMatchers
+ * @see org.springframework.test.web.client.match.JsonPathRequestMatchersTests
+ */
+public class JsonPathRequestMatchersIntegrationTests {
+
+	private static final MultiValueMap<String, Person> people = new LinkedMultiValueMap<>();
+
+	static {
+		people.add("composers", new Person("Johann Sebastian Bach"));
+		people.add("composers", new Person("Johannes Brahms"));
+		people.add("composers", new Person("Edvard Grieg"));
+		people.add("composers", new Person("Robert Schumann"));
+		people.add("performers", new Person("Vladimir Ashkenazy"));
+		people.add("performers", new Person("Yehudi Menuhin"));
+	}
+
+
+	private final RestTemplate restTemplate =
+			new RestTemplate(Collections.singletonList(new MappingJackson2HttpMessageConverter()));
+
+	private final MockRestServiceServer mockServer = MockRestServiceServer.createServer(this.restTemplate);
+
+
+	@Test
+	public void exists() throws Exception {
+		this.mockServer.expect(requestTo("/composers"))
+			.andExpect(content().contentType("application/json"))
+			.andExpect(jsonPath("$.composers[0]").exists())
+			.andExpect(jsonPath("$.composers[1]").exists())
+			.andExpect(jsonPath("$.composers[2]").exists())
+			.andExpect(jsonPath("$.composers[3]").exists())
+			.andRespond(withSuccess());
+
+		executeAndVerify();
+	}
+
+	@Test
+	public void doesNotExist() throws Exception {
+		this.mockServer.expect(requestTo("/composers"))
+			.andExpect(content().contentType("application/json"))
+			.andExpect(jsonPath("$.composers[?(@.name == 'Edvard Grieeeeeeg')]").doesNotExist())
+			.andExpect(jsonPath("$.composers[?(@.name == 'Robert Schuuuuuuman')]").doesNotExist())
+			.andExpect(jsonPath("$.composers[4]").doesNotExist())
+			.andRespond(withSuccess());
+
+		executeAndVerify();
+	}
+
+	@Test
+	public void value() throws Exception {
+		this.mockServer.expect(requestTo("/composers"))
+			.andExpect(content().contentType("application/json"))
+			.andExpect(jsonPath("$.composers[0].name").value("Johann Sebastian Bach"))
+			.andExpect(jsonPath("$.performers[1].name").value("Yehudi Menuhin"))
+			.andRespond(withSuccess());
+
+		executeAndVerify();
+	}
+
+	@Test
+	public void hamcrestMatchers() throws Exception {
+		this.mockServer.expect(requestTo("/composers"))
+			.andExpect(content().contentType("application/json"))
+			.andExpect(jsonPath("$.composers[0].name").value(equalTo("Johann Sebastian Bach")))
+			.andExpect(jsonPath("$.performers[1].name").value(equalTo("Yehudi Menuhin")))
+			.andExpect(jsonPath("$.composers[0].name", startsWith("Johann")))
+			.andExpect(jsonPath("$.performers[0].name", endsWith("Ashkenazy")))
+			.andExpect(jsonPath("$.performers[1].name", containsString("di Me")))
+			.andExpect(jsonPath("$.composers[1].name", is(in(Arrays.asList("Johann Sebastian Bach", "Johannes Brahms")))))
+			.andExpect(jsonPath("$.composers[:3].name", hasItem("Johannes Brahms")))
+			.andRespond(withSuccess());
+
+		executeAndVerify();
+	}
+
+	@Test
+	public void hamcrestMatchersWithParameterizedJsonPaths() throws Exception {
+		String composerName = "$.composers[%s].name";
+		String performerName = "$.performers[%s].name";
+
+		this.mockServer.expect(requestTo("/composers"))
+			.andExpect(content().contentType("application/json"))
+			.andExpect(jsonPath(composerName, 0).value(startsWith("Johann")))
+			.andExpect(jsonPath(performerName, 0).value(endsWith("Ashkenazy")))
+			.andExpect(jsonPath(performerName, 1).value(containsString("di Me")))
+			.andExpect(jsonPath(composerName, 1).value(is(in(Arrays.asList("Johann Sebastian Bach", "Johannes Brahms")))))
+			.andRespond(withSuccess());
+
+		executeAndVerify();
+	}
+
+	@Test
+	public void isArray() throws Exception {
+		this.mockServer.expect(requestTo("/composers"))
+			.andExpect(content().contentType("application/json"))
+			.andExpect(jsonPath("$.composers").isArray())
+			.andRespond(withSuccess());
+
+		executeAndVerify();
+	}
+
+	@Test
+	public void isString() throws Exception {
+		this.mockServer.expect(requestTo("/composers"))
+			.andExpect(content().contentType("application/json"))
+			.andExpect(jsonPath("$.composers[0].name").isString())
+			.andRespond(withSuccess());
+
+		executeAndVerify();
+	}
+
+	@Test
+	public void isNumber() throws Exception {
+		this.mockServer.expect(requestTo("/composers"))
+			.andExpect(content().contentType("application/json"))
+			.andExpect(jsonPath("$.composers[0].someDouble").isNumber())
+			.andRespond(withSuccess());
+
+		executeAndVerify();
+	}
+
+	@Test
+	public void isBoolean() throws Exception {
+		this.mockServer.expect(requestTo("/composers"))
+			.andExpect(content().contentType("application/json"))
+			.andExpect(jsonPath("$.composers[0].someBoolean").isBoolean())
+			.andRespond(withSuccess());
+
+		executeAndVerify();
+	}
+
+	private void executeAndVerify() throws URISyntaxException {
+		this.restTemplate.put(new URI("/composers"), people);
+		this.mockServer.verify();
+	}
+
 }
 -----------------------------------------------------------------------------------------
 import java.io.IOException;
