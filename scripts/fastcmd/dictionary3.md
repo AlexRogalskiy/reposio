@@ -24058,10 +24058,294 @@ public class AsyncExampleRestServiceTest {
         assertEquals("{result: 'server error'}", result);
     }
 }
+https://stackabuse.com/integrating-h2-database-with-spring-boot/
+https://plumbr.io/outofmemoryerror/gc-overhead-limit-exceeded
+
+need.assistance
+en
+
+jdbc:h2:tcp://localhost/split:32:~/h2data/sc_file.db;PAGE_SIZE=16384;CACHE_SIZE=8388608 
+and
+I started import with the following:
+SET TRACE_LEVEL_FILE 2;
+SET UNDO_LOG 0;
+SET LOG 0;
+SET LOCK_MODE 0;
+
+inert into testtab
+select * from ....
+-----------------------------------------------------------------------------------------
+
+<databasechangelog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemalocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd
+    http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+<changeset author="shay" dbms="oracle" id="createProcedure-example">
+    <createprocedure>
+create or replace function betwnstr( a_string varchar2, a_start_pos integer, a_end_pos integer ) return varchar2
+is
+begin
+  return substr( a_string, a_start_pos, a_end_pos - a_start_pos+1 );
+end;
+</createprocedure>
+<createprocedure>
+create or replace package test_betwnstr as
+  -- %suite(Between string function)
+  -- %test(Returns substring from start position to end position)
+  procedure basic_usage;
+end;
+</createprocedure>
+<createprocedure>
+create or replace package body test_betwnstr as
+  procedure basic_usage is
+  begin
+    ut.expect( betwnstr( '1234567', 2, 5 ) ).to_equal('2345');
+  end;
+end;
+</createprocedure>
+</changeset></databasechangelog>
+
+
+<databasechangelog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemalocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd
+    http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+    <changeset author="shay" id="0">
+        <createtable tablename="department">
+            <column name="id" type="int">
+                <constraints nullable="false" primarykey="true">
+            </constraints></column>
+            <column name="name" type="varchar(50)">
+                <constraints nullable="false">
+            </constraints></column>
+            <column defaultvalueboolean="true" name="active" type="boolean">
+        </column></createtable>
+    </changeset>
+</databasechangelog>
+
+<databasechangelog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemalocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd
+    http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+<changeset author="shay" id="4">
+    <insert tablename="department">
+        <column name="id" value="20">
+        <column name="name" value="Marketing">
+    </column></column></insert>
+    <rollback>delete from department where id=20</rollback>
+</changeset>
+</databasechangelog>
+
+DROP TABLE PRODUCT;
+CREATE TABLE PRODUCT (
+ID NUMBER(10,0) NOT NULL AUTO_INCREMENT,
+DESCRIPTION VARCHAR2(255) DEFAULT NULL,
+IMAGE_URL VARCHAR2(255) DEFAULT NULL,
+PRICE NUMBER(19,2) DEFAULT NULL,
+PRODUCT_ID VARCHAR2(255) DEFAULT NULL,
+VERSION NUMBER(10, 0) DEFAULT NULL,
+PRIMARY KEY (ID));
+DROP SEQUENCE PRODUCT_ID_SEQ;
+CREATE SEQUENCE PRODUCT_ID_SEQ
+  MINVALUE 1
+  MAXVALUE 9999999999999999
+  START WITH 1
+  INCREMENT BY 100
+  CACHE 100;
+-----------------------------------------------------------------------------------------
+liquibase.db.schema=public
+liquibase.db.url=jdbc:h2:${build.dir}/war/h2db/testh2db;MODE=MySQL
+liquibase.db.user=admin
+liquibase.db.pass=admin
+liquibase.db.driver=org.h2.Driver
+liquibase.contexts=test
+liquibase.prompt.non.local=false
+-----------------------------------------------------------------------------------------
+@Configuration
+@EnableWebSecurity
+public class BasicConfiguration extends WebSecurityConfigurerAdapter {
+ 
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        PasswordEncoder encoder = 
+          PasswordEncoderFactories.createDelegatingPasswordEncoder();
+        auth
+          .inMemoryAuthentication()
+          .withUser("user")
+          .password(encoder.encode("password"))
+          .roles("USER")
+          .and()
+          .withUser("admin")
+          .password(encoder.encode("admin"))
+          .roles("USER", "ADMIN");
+    }
+ 
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http
+          .authorizeRequests()
+          .anyRequest()
+          .authenticated()
+          .and()
+          .httpBasic();
+    }
+}
+
+@RunWith(SpringRunner.class)
+@SpringBootTest(webEnvironment = RANDOM_PORT)
+public class BasicConfigurationIntegrationTest {
+ 
+    TestRestTemplate restTemplate;
+    URL base;
+    @LocalServerPort int port;
+ 
+    @Before
+    public void setUp() throws MalformedURLException {
+        restTemplate = new TestRestTemplate("user", "password");
+        base = new URL("http://localhost:" + port);
+    }
+ 
+    @Test
+    public void whenLoggedUserRequestsHomePage_ThenSuccess()
+     throws IllegalStateException, IOException {
+        ResponseEntity<String> response 
+          = restTemplate.getForEntity(base.toString(), String.class);
+  
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue(response
+          .getBody()
+          .contains("Baeldung"));
+    }
+ 
+    @Test
+    public void whenUserWithWrongCredentials_thenUnauthorizedPage() 
+      throws Exception {
+  
+        restTemplate = new TestRestTemplate("user", "wrongpassword");
+        ResponseEntity<String> response 
+          = restTemplate.getForEntity(base.toString(), String.class);
+  
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertTrue(response
+          .getBody()
+          .contains("Unauthorized"));
+    }
+}
+
+https://www.baeldung.com/spring-boot-security-autoconfiguration
+-----------------------------------------------------------------------------------------
+('9dad1a44-11f7-4a13-994e-243c0b52a992',
+'need.assistance',
+'<br>
+$!{user.passport.firstLastName} needs your assistance for ticket #${ticket.id}: ${ticket.subject}.<br>
+<br>
+Product:         $!{ticket.product.comment}<br>
+State:           $!{action.toStatus.name}<br>
+<br>
+Customer:        ${ticket.customer.passport.firstLastName}<br>
+Customer e-mail: ${ticket.customer.email}<br>
+<br>
+Reference:       https://srs.paragon-software.com/#/supporter/ticket/${ticket.id}/details<br>
+<br>
+#foreach( $file in ${history.externalFiles} )<br>
+#set ($size = ${file.size} / 1024 / 1024)<br>
+Attachment name: ${file.originalFileName} ($size Mb)<br>
+Download:        https://srs.paragon-software.com/rest/back-api/storage/support-ticket/${file.id}<br>
+<br>
+#end<br>
+<br>
+<table style="border: dotted 1px #5a5a5a;" border="0" width="auto">
+<tbody>
+<tr>
+<td><span style="color: #5a5a5a; font-size: 14px; line-height: 20px; font-family: Arial, Helvetica, sans-serif;">${context.text}<br /></span></td>
+</tr>
+</tbody>
+</table>
+<br>
+<br>
+This request was processed by $!{user.passport.firstLastName}.<br>
+Request owner: $!{ticket.doc.owner.passport.firstLastName}.<br>
+<br>
+--<br>
+With best regards,<br>
+Paragon Support Team',
+'en')
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+liquibase --changeLogFile=mydb.xml generateChangeLog
+liquibase --changeLogFile=mydb.xml changelogSync
+liquibase --changeLogFile=mydb.xml update
+
+<changeSet author="e-ballo" id="DropViewsAndcreateSynonyms" context="dev,int,uat,prod">
+    <preConditions onFail="CONTINUE" >
+        <viewExists viewName="PMV_PACKAGE_ITEMS" schemaName="ZON"/>
+        <viewExists viewName="PMV_SUBSPLAN_INSTALLTYPES" schemaName="ZON"/>
+    </preConditions>
+    <dropView schemaName="ZON" viewName="PMV_PACKAGE_ITEMS"  />
+    <dropView schemaName="ZON" viewName="PMV_SUBSPLAN_INSTALLTYPES"  />
+    <sqlFile path="environment-synonyms.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+</changeSet>
+
+liquibase
+  --driver=org.postgresql.Driver
+  --classpath=postgresql-9.2-1002-jdbc4.jar
+  --url="jdbc:postgresql://<IP OR HOSTNAME>:<PORT>/<DATABASE>"
+  --changeLogFile=db.changelog-1.0.xml
+  --username=<POSTGRESQL USERNAME>
+  --password=<POSTGRESQL PASSWORD>
+generateChangeLog
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+option -XX:+HeapDumpOnOutOfMemoryError and a memory analysis tool such as the 
+Eclipse Memory Analyzer (MAT)."
+
+jdbc:h2:tcp://localhost/~/abc;mvcc=true;lock_timeout=100000;lock_mode=0;auto_reconnect=true;auto_server=true;AUTOCOMMIT=OFF
+
+Caused by: java.lang.OutOfMemoryError: GC overhead limit exceeded
+	at java.util.zip.ZipFile$ZipFileInputStream.read(ZipFile.java:748)
+	at java.io.FilterInputStream.read(FilterInputStream.java:83)
+	at java.io.DataInputStream.readByte(DataInputStream.java:265)
+-----------------------------------------------------------------------------------------
+class Wrapper {
+  public static void main(String args[]) throws Exception {
+    Map map = System.getProperties();
+    Random r = new Random();
+    while (true) {
+      map.put(r.nextInt(), "value");
+    }
+  }
+}
+As you might guess this cannot end well. And, indeed, when we launch the above program with:
+
+java -Xmx100m -XX:+UseParallelGC Wrapper
+we soon face the java.lang.OutOfMemoryError: GC overhead limit exceeded message. But the above example is tricky. When launched with different Java heap size or a different GC algorithm, my Mac OS X 10.9.2 with Hotspot 1.7.0_45 will choose to die differently. For example, when I run the program with smaller Java heap size like this:
+
+java -Xmx10m -XX:+UseParallelGC Wrapper
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------
 mockServer.expect(requestTo(matchesPattern(".*exact-example-url.com.*")))
     .andExpect(method(HttpMethod.GET))
     .andRespond(withSuccess("response", MediaType.APPLICATION_JSON));
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------
 import java.net.URI;
 import java.net.URISyntaxException;

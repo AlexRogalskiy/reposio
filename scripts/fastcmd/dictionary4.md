@@ -1371,6 +1371,138 @@ public interface FriendsRepository extends JpaRepository<UserFriend, Integer>{
     List<LeaderBoardModel> getScoreBoard(@Param("userId") Integer id);
 }
 ==============================================================================================================
+"response": {
+                "status": 404,
+                "headers": {
+                    "Content-Type": "application/json; charset=UTF-8"
+                },
+                "body": {
+                    // body sample
+                },
+                "matchingRules": {
+                    "$.header.Content-Type": {
+                        "match": "regex",
+                        "regex": "^application\\/json; charset=(utf|UTF)-8$"
+                    },
+                   // body matching rules
+            },
+==============================================================================================================
+https://www.testersfindaway.com/2019/02/19/testing-your-contracts-3-5/
+
+"generators": { 
+                    "body": { 
+                        "$.employee.id": { 
+                            "type": "RandomInt", 
+                            "min": 0, 
+                            "max": 2147483647 
+                        }, 
+                        "$.employee.firstName": { 
+                            "type": "RandomString", 
+                            "size": 20 
+                        }, 
+                        "$.employee.surname": { 
+                            "type": "RandomString", 
+                            "size": 20 
+                        } 
+                    }
+                }
+==============================================================================================================
+https://blog.risingstack.com/advanced-contract-testing-pact-verification-with-pattern-matching/
+<modifySql>
+     <replace replace="filter" with="FILTER"/>
+ </modifySql>
+ 
+ mvn liquibase:update
+ mvn liquibase:updateSQL
+==============================================================================================================
+mvn -pl persistence spring-boot:run
+
+https://www.baeldung.com/spring-boot-access-h2-database-multiple-apps
+https://brightinventions.pl/blog/clear-database-in-spring-boot-tests/
+
+CREATE DATABASE [@userName@]
+CONTAINMENT = NONE;
+
+USE [@userName@]
+;
+IF NOT EXISTS (SELECT name FROM sys.filegroups WHERE is_default=1 AND name = N'PRIMARY') ALTER DATABASE [@userName@] MODIFY FILEGROUP [PRIMARY] DEFAULT
+;
+ 
+CREATE LOGIN [@userName@] WITH PASSWORD=N'password', DEFAULT_DATABASE=[@userName@], CHECK_EXPIRATION=OFF, CHECK_POLICY=OFF;
+CREATE USER [@userName@] FOR LOGIN [@userName@];
+ALTER ROLE [db_owner] ADD MEMBER [@userName@];
+
+url: jdbc:p6spy:h2:mem:distributor;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_ON_EXIT=FALSE;IFEXISTS=FALSE;DB_CLOSE_DELAY=-1;TRACE_LEVEL_FILE=3;TRACE_LEVEL_SYSTEM_OUT=3;
+==============================================================================================================
+logging.level.org.springframework.web=INFO
+spring.datasource.url=jdbc:h2:mem:challenge;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MV_STORE=FALSE
+spring.datasource.driver-class-name=org.h2.Driver
+spring.datasource.schema=classpath:/schema.sql
+spring.datasource.data=classpath:/data.sql
+spring.h2.console.enabled=true
+spring.h2.console.path=/h2
+server.port = 8080
+==============================================================================================================
+<configuration>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <!-- encoders are assigned the type
+             ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
+        <encoder>
+            <pattern>%d{dd/MM/yyyy HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+
+    <!--<logger name="io.micronaut.http.server.netty.RoutingInBoundHandler" level="DEBUG"/>-->
+
+    <logger name="io.micronaut.http.server.netty" additivity="false" level="DEBUG">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+    <logger name="io.micronaut.http" additivity="false" level="DEBUG">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
+
+    <root level="info">
+        <appender-ref ref="STDOUT" />
+    </root>
+
+</configuration>
+==============================================================================================================
+    @PostConstruct
+    private void initDb() {
+        System.out.println("****** Inserting more sample data in the table: Employees ******");
+        String sqlStatements[] = {
+            "insert into employees(first_name, last_name) values('Donald','Trump')",
+            "insert into employees(first_name, last_name) values('Barack','Obama')"
+        };
+
+        Arrays.asList(sqlStatements).stream().forEach(sql -> {
+            System.out.println(sql);
+            jdbcTemplate.execute(sql);
+        });
+
+        System.out.println(String.format("****** Fetching from table: %s ******", "Employees"));
+        jdbcTemplate.query("select id,first_name,last_name from employees",
+            new RowMapper<Object>() {
+                @Override
+                public Object mapRow(ResultSet rs, int i) throws SQLException {
+                    System.out.println(String.format("id:%s,first_name:%s,last_name:%s",
+                        rs.getString("id"),
+                        rs.getString("first_name"),
+                        rs.getString("last_name")));
+                    return null;
+                }
+            });
+    }
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
 <plugin>
     <groupId>org.apache.maven.plugins</groupId>
     <artifactId>maven-war-plugin</artifactId>
