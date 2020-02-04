@@ -327,6 +327,73 @@ public class RandomGrpcPortTest extends GrpcServerTestBase {
     }
 }
 
+https://www.motobit.com/tips/
+
+public String trim(String str) {
+    return str.trim()/*.replace("\n", "").replace("\r", "")*/;
+}
+then add the following to the VelocityContext that you create:
+
+    context.put("trimmer", this);
+and finally in the velocity template do the following
+
+<a href="#">$trimmer.trim("#render_something('xxx')")</a>
+
+Je ne sais plus comment te dire
+Je ne trouve plus les mots
+Ces mots qui te faisaient rire
+Et ceux que tu trouvais beaux
+J'ai tant de fois voulu t'écrire
+Et tant de fois courbé le dos
+Et pour revivre nos souvenirs
+J'ai même aussi frôlé ta peau
+Oh, dis-moi
+Regarde-moi
+Je ne sais plus comment t'aimer
+Ni comment te garder
+Parle-moi
+Oui, parle-moi
+Je ne sais plus pourquoi t'aimer
+Ni pourquoi continuer
+Tu es là
+Mais tu es si loin
+De moi
+Je ne sais plus comment poursuivre
+Cet amour qui n'en est plus
+Je ne sais plus que souffrir
+Souffrir autant que j'y ai cru
+Mais je sais qu'il me faut survivre
+Et avancer un pas de plus
+Pour qu'enfin cesse la dérive
+Des moments à jamais perdus
+Oh, dis-moi
+Regarde-moi
+Je ne sais plus comment…
+
+Pourquoi je vis, pourquoi, je meurs?
+Pourquoi je ris, pourquoi je pleure?
+Voici le S.O.S
+D'un terrien en détresse
+J'ai jamais eu les pieds sur terre
+J'aimerais mieux être un oiseau
+J'suis mal dans ma peau
+J'voudrais voir le monde à l'envers
+Si jamais c'était plus beau
+Plus beau vu d'en haut
+D'en haut
+J'ai toujours confondu la vie
+Avec les bandes dessinées
+J'ai comme des envies de métamorphoses
+Je sens quelque chose
+Qui m'attire, qui m'attire, qui m'attire vers le haut
+Au grand loto de l'univers
+J'ai pas tiré l'bon numéro
+J'suis mal dans ma peau
+J'ai pas envie d'être un robot
+Métro boulot dodo
+Wou-oh
+Ahah
+
 https://www.youtube.com/watch?v=3AoS_7u9eCU
 https://www.baeldung.com/sonar-qube
 
@@ -351,10 +418,75 @@ https://www.baeldung.com/sonar-qube
           }
       }
   }
+  
+       "generators": { 
+                    "body": { 
+                        "$.employee.id": { 
+                            "type": "RandomInt", 
+                            "min": 0, 
+                            "max": 2147483647 
+                        }, 
+                        "$.employee.firstName": { 
+                            "type": "RandomString", 
+                            "size": 20 
+                        }, 
+                        "$.employee.surname": { 
+                            "type": "RandomString", 
+                            "size": 20 
+                        } 
+                    }
+                }
 }
 
 
 mvn -U -B -V --fail-at-end -Dgpg.skip=true -Dfile.encoding=UTF-8 -DskipTests=true -Dmaven.javadoc.skip=true -DskipCheckStyle=true clean install -P test
+==============================================================================================================
+{
+    "provider": {
+        "name": "Our Provider"
+    },
+    "consumer": {
+        "name": "Our Little Consumer"
+    },
+    "interactions": [
+        {
+            "description": "a request for json data",
+            "request": {
+                "method": "GET",
+                "path": "/provider.json",
+                "query": {
+                    "validDate": [
+                        "2018-04-10T12:34:28.839"
+                    ]
+                }
+            },
+            "response": {
+                "status": 200,
+                "headers": {
+                    "Content-Type": "application/json"
+                },
+                "body": {
+                    "test": "NO",
+                    "date": "2013-08-16T15:31:20+10:00",
+                    "count": 100
+                }
+            },
+            "providerStates": [
+                {
+                    "name": "data count > 0"
+                }
+            ]
+        }
+    ],
+    "metadata": {
+        "pact-specification": {
+            "version": "3.0.0"
+        },
+        "pact-jvm": {
+            "version": "3.5.14"
+        }
+    }
+}
 ==============================================================================================================
 Start Eureka: java -jar eureka-server/target/eureka-server-1.0-SNAPSHOT.jar
 Start gRPC Server #1: java -jar grpc-server/target/springboot-grpc-server-1.0-SNAPSHOT.jar --server.port=9090

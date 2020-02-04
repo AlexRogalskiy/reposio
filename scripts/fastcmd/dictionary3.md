@@ -24226,7 +24226,294 @@ public class BasicConfigurationIntegrationTest {
     }
 }
 
+
+    private String enhanceTemplate(String body) {
+        if (!body.startsWith("##preserveWhitespace")) {
+            body = body.replaceAll("(##.*)?[ \\t\\r]*\\n+[ \\t\\r]*", Matcher.quoteReplacement(""));
+            body = body.trim();
+        }
+        return body;
+    }
+https://www.youtube.com/watch?v=nU7CdM7n2I4
 https://www.baeldung.com/spring-boot-security-autoconfiguration
+https://grpc.io/docs/tutorials/basic/java/#example-code-and-setup
+https://grpc.io/docs/samples/
+-----------------------------------------------------------------------------------------
+<!-- https://mvnrepository.com/artifact/org.multiverse/multiverse-core -->
+<dependency>
+    <groupId>org.multiverse</groupId>
+    <artifactId>multiverse-core</artifactId>
+    <version>0.7.0</version>
+</dependency>
+
+https://github.com/amaembo/streamex
+
+      <plugin>
+        <groupId>org.sonatype.plugins</groupId>
+        <artifactId>nexus-staging-maven-plugin</artifactId>
+        <version>1.6.6</version>
+        <extensions>true</extensions>
+        <configuration>
+          <serverId>ossrh</serverId>
+          <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+          <autoReleaseAfterClose>true</autoReleaseAfterClose>
+        </configuration>
+      </plugin>
+	  
+	        <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-gpg-plugin</artifactId>
+        <version>1.5</version>
+        <executions>
+          <execution>
+            <id>sign-artifacts</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>sign</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+	  
+	  // By native Java Stream APIs:
+accounts.stream()
+    .collect(Collectors.groupingBy(e -> e.getFirstName(), Collectors.counting()))
+    .entrySet().stream()
+    .sorted(Entry.comparingByValue())
+    .collect(Collectors.toMap(Function.identity(), Function.identity(), () -> new LinkedHashMap<>()));
+
+// groupBy. Less steps and more clear.
+StreamEx.of(accounts)
+    .groupBy(e -> e.getFirstName(), Collectors.counting())
+    .sorted(Entry.comparingByValue())
+    .toMap(Function.identity(), Function.identity(), () -> new LinkedHashMap<>());
+
+// even shorter and clearer with: groupByToEntry.
+StreamEx.of(accounts)
+    .groupByToEntry(e -> e.getFirstName(), Collectors.counting())
+    .sorted(Entry.comparingByValue())
+    .toMap(LinkedHashMap::new);
+	
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+import one.util.streamex.DoubleStreamEx;
+import one.util.streamex.EntryStream;
+import one.util.streamex.IntStreamEx;
+import one.util.streamex.StreamEx;
+
+public class StreamEX {
+
+    public static void main(String[] args) {
+        // Collector shortcut methods (toList, toSet, groupingBy, joining, etc.)
+        List<User> users = Arrays.asList(new User("name"), new User(), new User());
+        users.stream().map(User::getName).collect(Collectors.toList());
+        List<String> userNames = StreamEx.of(users).map(User::getName).toList();
+        Map<Role, List<User>> role2users = StreamEx.of(users).groupingBy(User::getRole);
+        StreamEx.of(1, 2, 3).joining("; "); // "1; 2; 3"
+        // Selecting stream elements of specific type
+        List usersAndRoles = Arrays.asList(new User(), new Role());
+        List<Role> roles = IntStreamEx.range(usersAndRoles.size()).mapToObj(usersAndRoles::get).select(Role.class).toList();
+        System.out.println(roles);
+        // adding elements to Stream
+        List<String> appendedUsers = StreamEx.of(users).map(User::getName).prepend("(none)").append("LAST").toList();
+        System.out.println(appendedUsers);
+        // Removing unwanted elements and using the stream as Iterable:
+        for (String line : StreamEx.of(users).map(User::getName).nonNull()) {
+            System.out.println(line);
+        }
+        // Selecting map keys by value predicate:
+        Map<String, Role> nameToRole = new HashMap<>();
+        nameToRole.put("first", new Role());
+        nameToRole.put("second", null);
+        Set<String> nonNullRoles = StreamEx.ofKeys(nameToRole, Objects::nonNull).toSet();
+        System.out.println(nonNullRoles);
+        // Operating on key-value pairs:
+        Map<User, List<Role>> users2roles = transformMap(role2users);
+        Map<String, String> mapToString = EntryStream.of(users2roles).mapKeys(String::valueOf).mapValues(String::valueOf).toMap();
+        // Support of byte/char/short/float types:
+        short[] src = { 1, 2, 3 };
+        char[] output = IntStreamEx.of(src).map(x -> x * 5).toCharArray();
+    }
+
+    public double[] getDiffBetweenPairs(double... numbers) {
+        return DoubleStreamEx.of(numbers).pairMap((a, b) -> b - a).toArray();
+    }
+
+    public static Map<User, List<Role>> transformMap(Map<Role, List<User>> role2users) {
+        Map<User, List<Role>> users2roles = EntryStream.of(role2users).flatMapValues(List::stream).invert().grouping();
+        return users2roles;
+    }
+	
+	import org.multiverse.api.StmUtils;
+import org.multiverse.api.callables.TxnCallable;
+import org.multiverse.api.references.TxnInteger;
+import org.multiverse.api.references.TxnLong;
+
+public class Account {
+
+    private final TxnLong lastUpdate;
+    private final TxnInteger balance;
+
+    Account(final int balance) {
+        this.lastUpdate = StmUtils.newTxnLong(System.currentTimeMillis());
+        this.balance = StmUtils.newTxnInteger(balance);
+    }
+
+    Integer getBalance() {
+        return balance.atomicGet();
+    }
+
+    void adjustBy(final int amount) {
+        adjustBy(amount, System.currentTimeMillis());
+    }
+
+    private void adjustBy(final int amount, final long date) {
+        StmUtils.atomic(() -> {
+            balance.increment(amount);
+            lastUpdate.set(date);
+
+            if (balance.get() < 0) {
+                throw new IllegalArgumentException("Not enough money");
+            }
+        });
+    }
+
+    void transferTo(final Account other, final int amount) {
+        StmUtils.atomic(() -> {
+            final long date = System.currentTimeMillis();
+            adjustBy(-amount, date);
+            other.adjustBy(amount, date);
+        });
+    }
+
+    @Override
+    public String toString() {
+        return StmUtils.atomic((TxnCallable<String>) txn -> "Balance: " + balance.get(txn) + " lastUpdateDate: " + lastUpdate.get(txn));
+    }
+}
+
+}
+
+-----------------------------------------------------------------------------------------
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.util.Date;
+import java.util.Set;
+import java.util.regex.Pattern;
+
+import org.reflections.Reflections;
+import org.reflections.scanners.MethodAnnotationsScanner;
+import org.reflections.scanners.MethodParameterScanner;
+import org.reflections.scanners.ResourcesScanner;
+import org.reflections.scanners.Scanner;
+import org.reflections.scanners.SubTypesScanner;
+import org.reflections.util.ClasspathHelper;
+import org.reflections.util.ConfigurationBuilder;
+
+public class ReflectionsApp {
+
+    public Set<Class<? extends Scanner>> getReflectionsSubTypes() {
+        Reflections reflections = new Reflections("org.reflections");
+        Set<Class<? extends Scanner>> scannersSet = reflections.getSubTypesOf(Scanner.class);
+        return scannersSet;
+    }
+
+    public Set<Class<?>> getJDKFunctinalInterfaces() {
+        Reflections reflections = new Reflections("java.util.function");
+        Set<Class<?>> typesSet = reflections.getTypesAnnotatedWith(FunctionalInterface.class);
+        return typesSet;
+    }
+
+    public Set<Method> getDateDeprecatedMethods() {
+        Reflections reflections = new Reflections(java.util.Date.class, new MethodAnnotationsScanner());
+        Set<Method> deprecatedMethodsSet = reflections.getMethodsAnnotatedWith(Deprecated.class);
+        return deprecatedMethodsSet;
+    }
+
+    @SuppressWarnings("rawtypes")
+    public Set<Constructor> getDateDeprecatedConstructors() {
+        Reflections reflections = new Reflections(java.util.Date.class, new MethodAnnotationsScanner());
+        Set<Constructor> constructorsSet = reflections.getConstructorsAnnotatedWith(Deprecated.class);
+        return constructorsSet;
+    }
+
+    public Set<Method> getMethodsWithDateParam() {
+        Reflections reflections = new Reflections(java.text.SimpleDateFormat.class, new MethodParameterScanner());
+        Set<Method> methodsSet = reflections.getMethodsMatchParams(Date.class);
+        return methodsSet;
+    }
+
+    public Set<Method> getMethodsWithVoidReturn() {
+        Reflections reflections = new Reflections(java.text.SimpleDateFormat.class, new MethodParameterScanner());
+        Set<Method> methodsSet = reflections.getMethodsReturn(void.class);
+        return methodsSet;
+    }
+
+    public Set<String> getPomXmlPaths() {
+        Reflections reflections = new Reflections(new ResourcesScanner());
+        Set<String> resourcesSet = reflections.getResources(Pattern.compile(".*pom\\.xml"));
+        return resourcesSet;
+    }
+
+    public Set<Class<? extends Scanner>> getReflectionsSubTypesUsingBuilder() {
+        Reflections reflections = new Reflections(new ConfigurationBuilder().setUrls(ClasspathHelper.forPackage("org.reflections"))
+            .setScanners(new SubTypesScanner()));
+
+        Set<Class<? extends Scanner>> scannersSet = reflections.getSubTypesOf(Scanner.class);
+        return scannersSet;
+    }
+
+}
+https://teamtreehouse.com/community/hexadecimal-string-with-odd-number-of-characters
+https://signpost.machinezoo.com/?q=machinezoo.com
+-----------------------------------------------------------------------------------------
+import org.quartz.JobBuilder;
+import org.quartz.JobDetail;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.SchedulerFactory;
+import org.quartz.SimpleScheduleBuilder;
+import org.quartz.Trigger;
+import org.quartz.TriggerBuilder;
+import org.quartz.impl.StdSchedulerFactory;
+
+public class QuartzExample {
+
+    public static void main(String args[]) {
+
+        SchedulerFactory schedFact = new StdSchedulerFactory();
+        try {
+
+            Scheduler sched = schedFact.getScheduler();
+
+            JobDetail job = JobBuilder.newJob(SimpleJob.class).withIdentity("myJob", "group1").usingJobData("jobSays", "Hello World!").usingJobData("myFloatValue", 3.141f).build();
+
+            Trigger trigger = TriggerBuilder.newTrigger().withIdentity("myTrigger", "group1").startNow().withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(40).repeatForever()).build();
+
+            JobDetail jobA = JobBuilder.newJob(JobA.class).withIdentity("jobA", "group2").build();
+
+            JobDetail jobB = JobBuilder.newJob(JobB.class).withIdentity("jobB", "group2").build();
+
+            Trigger triggerA = TriggerBuilder.newTrigger().withIdentity("triggerA", "group2").startNow().withPriority(15).withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(40).repeatForever()).build();
+
+            Trigger triggerB = TriggerBuilder.newTrigger().withIdentity("triggerB", "group2").startNow().withPriority(10).withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(20).repeatForever()).build();
+
+            sched.scheduleJob(job, trigger);
+            sched.scheduleJob(jobA, triggerA);
+            sched.scheduleJob(jobB, triggerB);
+            sched.start();
+
+        } catch (SchedulerException e) {
+            e.printStackTrace();
+        }
+    }
+
+}
 -----------------------------------------------------------------------------------------
 ('9dad1a44-11f7-4a13-994e-243c0b52a992',
 'need.assistance',
