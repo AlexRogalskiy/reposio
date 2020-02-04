@@ -20166,7 +20166,882 @@ mvn test -B -U -P CI
 
 http://vmsk-tc-prm.paragon-software.com/viewLog.html?tab=buildLog&buildTypeId=Microservices_Maven_ParagonMicroservicesDistributor_050build&buildId=5672369&_focus=4678
 ==============================================================================================================
+@Bean
+public CommonsRequestLoggingFilter requestLoggingFilter() {
+    CommonsRequestLoggingFilter loggingFilter = new CommonsRequestLoggingFilter();
+    loggingFilter.setIncludeClientInfo(true);
+    loggingFilter.setIncludeQueryString(true);
+    loggingFilter.setIncludePayload(true);
+    loggingFilter.setMaxPayloadLength(64000);
+    return loggingFilter;
+}
+
+public class LoggableDispatcherServlet extends DispatcherServlet {
+
+    private final Log logger = LogFactory.getLog(getClass());
+
+    @Override
+    protected void doDispatch(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        if (!(request instanceof ContentCachingRequestWrapper)) {
+            request = new ContentCachingRequestWrapper(request);
+        }
+        if (!(response instanceof ContentCachingResponseWrapper)) {
+            response = new ContentCachingResponseWrapper(response);
+        }
+        HandlerExecutionChain handler = getHandler(request);
+
+        try {
+            super.doDispatch(request, response);
+        } finally {
+            log(request, response, handler);
+            updateResponse(response);
+        }
+    }
+
+    private void log(HttpServletRequest requestToCache, HttpServletResponse responseToCache, HandlerExecutionChain handler) {
+        LogMessage log = new LogMessage();
+        log.setHttpStatus(responseToCache.getStatus());
+        log.setHttpMethod(requestToCache.getMethod());
+        log.setPath(requestToCache.getRequestURI());
+        log.setClientIp(requestToCache.getRemoteAddr());
+        log.setJavaMethod(handler.toString());
+        log.setResponse(getResponsePayload(responseToCache));
+        logger.info(log);
+    }
+
+    private String getResponsePayload(HttpServletResponse response) {
+        ContentCachingResponseWrapper wrapper = WebUtils.getNativeResponse(response, ContentCachingResponseWrapper.class);
+        if (wrapper != null) {
+
+            byte[] buf = wrapper.getContentAsByteArray();
+            if (buf.length > 0) {
+                int length = Math.min(buf.length, 5120);
+                try {
+                    return new String(buf, 0, length, wrapper.getCharacterEncoding());
+                }
+                catch (UnsupportedEncodingException ex) {
+                    // NOOP
+                }
+            }
+        }
+        return "[unknown]";
+    }
+
+    private void updateResponse(HttpServletResponse response) throws IOException {
+        ContentCachingResponseWrapper responseWrapper =
+            WebUtils.getNativeResponse(response, ContentCachingResponseWrapper.class);
+        responseWrapper.copyBodyToResponse();
+    }
+}
+
+  @Bean
+    public ServletRegistrationBean dispatcherRegistration() {
+        return new ServletRegistrationBean(dispatcherServlet());
+    }
+
+    @Bean(name = DispatcherServletAutoConfiguration.DEFAULT_DISPATCHER_SERVLET_BEAN_NAME)
+    public DispatcherServlet dispatcherServlet() {
+        return new LoggableDispatcherServlet();
+    }
+	
+	
+	
+	
+	import org.apache.commons.io.IOUtils;
+import org.springframework.boot.actuate.trace.TraceProperties;
+import org.springframework.boot.actuate.trace.TraceRepository;
+import org.springframework.boot.actuate.trace.WebRequestTraceFilter;
+import org.springframework.stereotype.Component;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+@Component
+public class CustomWebTraceFilter extends WebRequestTraceFilter {
+
+  public CustomWebTraceFilter(TraceRepository repository, TraceProperties properties) {
+    super(repository, properties);
+}
+
+  @Override
+  protected Map<String, Object> getTrace(HttpServletRequest request) {
+    Map<String, Object> trace = super.getTrace(request);
+    String multipartHeader = request.getHeader("content-type");
+    if (multipartHeader != null && multipartHeader.startsWith("multipart/form-data")) {
+        Map<String, Object> parts = new LinkedHashMap<>();
+        try {
+            request.getParts().forEach(
+                    part -> {
+                        try {
+                            parts.put(part.getName(), IOUtils.toString(part.getInputStream(), Charset.forName("UTF-8")));
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+            );
+        } catch (IOException | ServletException e) {
+            e.printStackTrace();
+        }
+        if (!parts.isEmpty()) {
+            trace.put("multipart-content-map", parts);
+        }
+    }
+    return trace;
+  }
+}
+
+
+
+
+import java.io.BufferedReader;
+    import java.io.ByteArrayInputStream;
+    import java.io.ByteArrayOutputStream;
+    import java.io.IOException;
+    import java.io.InputStream;
+    import java.io.InputStreamReader;
+    import java.io.OutputStream;
+    import java.io.PrintWriter;
+    import java.util.Collection;
+    import java.util.Enumeration;
+    import java.util.HashMap;
+    import java.util.Locale;
+    import java.util.Map;
+    import javax.servlet.*;
+    import javax.servlet.http.Cookie;
+    import javax.servlet.http.HttpServletRequest;
+    import javax.servlet.http.HttpServletRequestWrapper;
+    import javax.servlet.http.HttpServletResponse;
+    import org.apache.commons.io.output.TeeOutputStream;
+    import org.slf4j.Logger;
+    import org.slf4j.LoggerFactory;
+    import org.springframework.stereotype.Component;
+
+    @Component
+    public class HttpLoggingFilter implements Filter {
+
+        private static final Logger log = LoggerFactory.getLogger(HttpLoggingFilter.class);
+
+        @Override
+        public void init(FilterConfig filterConfig) throws ServletException {
+        }
+
+        @Override
+        public void doFilter(ServletRequest request, ServletResponse response,
+                             FilterChain chain) throws IOException, ServletException {
+            try {
+                HttpServletRequest httpServletRequest = (HttpServletRequest) request;
+                HttpServletResponse httpServletResponse = (HttpServletResponse) response;
+
+                Map<String, String> requestMap = this
+                        .getTypesafeRequestMap(httpServletRequest);
+                BufferedRequestWrapper bufferedRequest = new BufferedRequestWrapper(
+                        httpServletRequest);
+                BufferedResponseWrapper bufferedResponse = new BufferedResponseWrapper(
+                        httpServletResponse);
+
+                final StringBuilder logMessage = new StringBuilder(
+                        "REST Request - ").append("[HTTP METHOD:")
+                        .append(httpServletRequest.getMethod())
+                        .append("] [PATH INFO:")
+                        .append(httpServletRequest.getServletPath())
+                        .append("] [REQUEST PARAMETERS:").append(requestMap)
+                        .append("] [REQUEST BODY:")
+                        .append(bufferedRequest.getRequestBody())
+                        .append("] [REMOTE ADDRESS:")
+                        .append(httpServletRequest.getRemoteAddr()).append("]");
+
+                chain.doFilter(bufferedRequest, bufferedResponse);
+                logMessage.append(" [RESPONSE:")
+                        .append(bufferedResponse.getContent()).append("]");
+                log.debug(logMessage.toString());
+            } catch (Throwable a) {
+                log.error(a.getMessage());
+            }
+        }
+
+        private Map<String, String> getTypesafeRequestMap(HttpServletRequest request) {
+            Map<String, String> typesafeRequestMap = new HashMap<String, String>();
+            Enumeration<?> requestParamNames = request.getParameterNames();
+            while (requestParamNames.hasMoreElements()) {
+                String requestParamName = (String) requestParamNames.nextElement();
+                String requestParamValue;
+                if (requestParamName.equalsIgnoreCase("password")) {
+                    requestParamValue = "********";
+                } else {
+                    requestParamValue = request.getParameter(requestParamName);
+                }
+                typesafeRequestMap.put(requestParamName, requestParamValue);
+            }
+            return typesafeRequestMap;
+        }
+
+        @Override
+        public void destroy() {
+        }
+
+        private static final class BufferedRequestWrapper extends
+                HttpServletRequestWrapper {
+
+            private ByteArrayInputStream bais = null;
+            private ByteArrayOutputStream baos = null;
+            private BufferedServletInputStream bsis = null;
+            private byte[] buffer = null;
+
+            public BufferedRequestWrapper(HttpServletRequest req)
+                    throws IOException {
+                super(req);
+                // Read InputStream and store its content in a buffer.
+                InputStream is = req.getInputStream();
+                this.baos = new ByteArrayOutputStream();
+                byte buf[] = new byte[1024];
+                int read;
+                while ((read = is.read(buf)) > 0) {
+                    this.baos.write(buf, 0, read);
+                }
+                this.buffer = this.baos.toByteArray();
+            }
+
+            @Override
+            public ServletInputStream getInputStream() {
+                this.bais = new ByteArrayInputStream(this.buffer);
+                this.bsis = new BufferedServletInputStream(this.bais);
+                return this.bsis;
+            }
+
+            String getRequestBody() throws IOException {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(
+                        this.getInputStream()));
+                String line = null;
+                StringBuilder inputBuffer = new StringBuilder();
+                do {
+                    line = reader.readLine();
+                    if (null != line) {
+                        inputBuffer.append(line.trim());
+                    }
+                } while (line != null);
+                reader.close();
+                return inputBuffer.toString().trim();
+            }
+
+        }
+
+        private static final class BufferedServletInputStream extends
+                ServletInputStream {
+
+            private ByteArrayInputStream bais;
+
+            public BufferedServletInputStream(ByteArrayInputStream bais) {
+                this.bais = bais;
+            }
+
+            @Override
+            public int available() {
+                return this.bais.available();
+            }
+
+            @Override
+            public int read() {
+                return this.bais.read();
+            }
+
+            @Override
+            public int read(byte[] buf, int off, int len) {
+                return this.bais.read(buf, off, len);
+            }
+
+            @Override
+            public boolean isFinished() {
+                return false;
+            }
+
+            @Override
+            public boolean isReady() {
+                return true;
+            }
+
+            @Override
+            public void setReadListener(ReadListener readListener) {
+
+            }
+        }
+
+        public class TeeServletOutputStream extends ServletOutputStream {
+
+            private final TeeOutputStream targetStream;
+
+            public TeeServletOutputStream(OutputStream one, OutputStream two) {
+                targetStream = new TeeOutputStream(one, two);
+            }
+
+            @Override
+            public void write(int arg0) throws IOException {
+                this.targetStream.write(arg0);
+            }
+
+            public void flush() throws IOException {
+                super.flush();
+                this.targetStream.flush();
+            }
+
+            public void close() throws IOException {
+                super.close();
+                this.targetStream.close();
+            }
+
+            @Override
+            public boolean isReady() {
+                return false;
+            }
+
+            @Override
+            public void setWriteListener(WriteListener writeListener) {
+
+            }
+        }
+
+        public class BufferedResponseWrapper implements HttpServletResponse {
+
+            HttpServletResponse original;
+            TeeServletOutputStream tee;
+            ByteArrayOutputStream bos;
+
+            public BufferedResponseWrapper(HttpServletResponse response) {
+                original = response;
+            }
+
+            public String getContent() {
+                return bos.toString();
+            }
+
+            public PrintWriter getWriter() throws IOException {
+                return original.getWriter();
+            }
+
+            public ServletOutputStream getOutputStream() throws IOException {
+                if (tee == null) {
+                    bos = new ByteArrayOutputStream();
+                    tee = new TeeServletOutputStream(original.getOutputStream(),
+                            bos);
+                }
+                return tee;
+
+            }
+
+            @Override
+            public String getCharacterEncoding() {
+                return original.getCharacterEncoding();
+            }
+
+            @Override
+            public String getContentType() {
+                return original.getContentType();
+            }
+
+            @Override
+            public void setCharacterEncoding(String charset) {
+                original.setCharacterEncoding(charset);
+            }
+
+            @Override
+            public void setContentLength(int len) {
+                original.setContentLength(len);
+            }
+
+            @Override
+            public void setContentLengthLong(long l) {
+                original.setContentLengthLong(l);
+            }
+
+            @Override
+            public void setContentType(String type) {
+                original.setContentType(type);
+            }
+
+            @Override
+            public void setBufferSize(int size) {
+                original.setBufferSize(size);
+            }
+
+            @Override
+            public int getBufferSize() {
+                return original.getBufferSize();
+            }
+
+            @Override
+            public void flushBuffer() throws IOException {
+                tee.flush();
+            }
+
+            @Override
+            public void resetBuffer() {
+                original.resetBuffer();
+            }
+
+            @Override
+            public boolean isCommitted() {
+                return original.isCommitted();
+            }
+
+            @Override
+            public void reset() {
+                original.reset();
+            }
+
+            @Override
+            public void setLocale(Locale loc) {
+                original.setLocale(loc);
+            }
+
+            @Override
+            public Locale getLocale() {
+                return original.getLocale();
+            }
+
+            @Override
+            public void addCookie(Cookie cookie) {
+                original.addCookie(cookie);
+            }
+
+            @Override
+            public boolean containsHeader(String name) {
+                return original.containsHeader(name);
+            }
+
+            @Override
+            public String encodeURL(String url) {
+                return original.encodeURL(url);
+            }
+
+            @Override
+            public String encodeRedirectURL(String url) {
+                return original.encodeRedirectURL(url);
+            }
+
+            @SuppressWarnings("deprecation")
+            @Override
+            public String encodeUrl(String url) {
+                return original.encodeUrl(url);
+            }
+
+            @SuppressWarnings("deprecation")
+            @Override
+            public String encodeRedirectUrl(String url) {
+                return original.encodeRedirectUrl(url);
+            }
+
+            @Override
+            public void sendError(int sc, String msg) throws IOException {
+                original.sendError(sc, msg);
+            }
+
+            @Override
+            public void sendError(int sc) throws IOException {
+                original.sendError(sc);
+            }
+
+            @Override
+            public void sendRedirect(String location) throws IOException {
+                original.sendRedirect(location);
+            }
+
+            @Override
+            public void setDateHeader(String name, long date) {
+                original.setDateHeader(name, date);
+            }
+
+            @Override
+            public void addDateHeader(String name, long date) {
+                original.addDateHeader(name, date);
+            }
+
+            @Override
+            public void setHeader(String name, String value) {
+                original.setHeader(name, value);
+            }
+
+            @Override
+            public void addHeader(String name, String value) {
+                original.addHeader(name, value);
+            }
+
+            @Override
+            public void setIntHeader(String name, int value) {
+                original.setIntHeader(name, value);
+            }
+
+            @Override
+            public void addIntHeader(String name, int value) {
+                original.addIntHeader(name, value);
+            }
+
+            @Override
+            public void setStatus(int sc) {
+                original.setStatus(sc);
+            }
+
+            @SuppressWarnings("deprecation")
+            @Override
+            public void setStatus(int sc, String sm) {
+                original.setStatus(sc, sm);
+            }
+
+            @Override
+            public String getHeader(String arg0) {
+                return original.getHeader(arg0);
+            }
+
+            @Override
+            public Collection<String> getHeaderNames() {
+                return original.getHeaderNames();
+            }
+
+            @Override
+            public Collection<String> getHeaders(String arg0) {
+                return original.getHeaders(arg0);
+            }
+
+            @Override
+            public int getStatus() {
+                return original.getStatus();
+            }
+
+        }
+    }
+	
+	import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+
+import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+public class CounterServer extends HttpServlet {
+  static final String COUNTER_KEY = "Counter.txt";
+
+  public void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException,
+      IOException {
+    HttpSession session = req.getSession(true);
+    int count = 1;
+    Integer i = (Integer) session.getAttribute(COUNTER_KEY);
+    if (i != null) {
+      count = i.intValue() + 5;
+    }
+    session.setAttribute(COUNTER_KEY, new Integer(count));
+    DataInputStream in = new DataInputStream(req.getInputStream());
+    resp.setContentType("application/octet-stream");
+    ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+    DataOutputStream out = new DataOutputStream(byteOut);
+    out.writeInt(count);
+    out.flush();
+    byte[] buf = byteOut.toByteArray();
+    resp.setContentLength(buf.length);
+    ServletOutputStream servletOut = resp.getOutputStream();
+    servletOut.write(buf);
+    servletOut.close();
+  }
+}
+
+   
+	
+	@Component
+public class CustomHttpInterceptor extends HandlerInterceptorAdapter {
+
+    @Override
+    public boolean preHandle (final HttpServletRequest request, final HttpServletResponse response,
+            final Object handler)
+            throws Exception {
+
+        // Logs here
+
+        return super.preHandle(request, response, handler);
+    }
+
+    @Override
+    public void afterCompletion(final HttpServletRequest request, final HttpServletResponse response,
+            final Object handler, final Exception ex) {
+        // Logs here
+    }
+}
+
+
+@Configuration
+public class WebMvcConfig implements WebMvcConfigurer {
+
+    @Autowired
+    CustomHttpInterceptor customHttpInterceptor;
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(customHttpInterceptor).addPathPatterns("/endpoints");
+    }
+
+}
+
+
+
+
+@Component
+public class CustomHttpInterceptor extends HandlerInterceptorAdapter {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CustomHttpInterceptor.class);
+
+    private static final int MAX_PAYLOAD_LENGTH = 1000;
+
+    @Override
+    public void afterCompletion(final HttpServletRequest request, final HttpServletResponse response,
+            final Object handler, final Exception ex) {
+        final byte[] contentAsByteArray = ((ContentCachingResponseWrapper) response).getContentAsByteArray();
+
+        LOGGER.info("Request body:\n" + getContentAsString(contentAsByteArray, response.getCharacterEncoding()));
+    }
+
+    private String getContentAsString(byte[] buf, String charsetName) {
+        if (buf == null || buf.length == 0) {
+            return "";
+        }
+
+        try {
+            int length = Math.min(buf.length, MAX_PAYLOAD_LENGTH);
+
+            return new String(buf, 0, length, charsetName);
+        } catch (UnsupportedEncodingException ex) {
+            return "Unsupported Encoding";
+        }
+    }
+
+}
+
+
+
+
+@Configuration
+public class LoggingFilter extends GenericFilterBean {
+
+    /**
+     * It's important that you actually register your filter this way rather then just annotating it
+     * as @Component as you need to be able to set for which "DispatcherType"s to enable the filter
+     * (see point *1*)
+     * 
+     * @return
+     */
+    @Bean
+    public FilterRegistrationBean<LoggingFilter> initFilter() {
+        FilterRegistrationBean<LoggingFilter> registrationBean = new FilterRegistrationBean<>();
+        registrationBean.setFilter(new LoggingFilter());
+
+        // *1* make sure you sett all dispatcher types if you want the filter to log upon
+        registrationBean.setDispatcherTypes(EnumSet.allOf(DispatcherType.class));
+
+        // *2* this should put your filter above any other filter
+        registrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE);
+
+        return registrationBean;
+    }
+
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+            throws IOException, ServletException {
+
+        ContentCachingRequestWrapper wreq = 
+            new ContentCachingRequestWrapper(
+                (HttpServletRequest) request);
+
+        ContentCachingResponseWrapper wres = 
+            new ContentCachingResponseWrapper(
+                (HttpServletResponse) response);
+
+        try {
+
+            // let it be ...
+            chain.doFilter(wreq, wres);
+
+            // makes sure that the input is read (e.g. in 404 it may not be)
+            while (wreq.getInputStream().read() >= 0);
+
+            System.out.printf("=== REQUEST%n%s%n=== end request%n",
+                    new String(wreq.getContentAsByteArray()));
+
+            // Do whatever logging you wish here, in this case I'm writing request 
+            // and response to system out which is probably not what you wish to do
+            System.out.printf("=== RESPONSE%n%s%n=== end response%n",
+                    new String(wres.getContentAsByteArray()));
+
+            // this is specific of the "ContentCachingResponseWrapper" we are relying on, 
+            // make sure you call it after you read the content from the response
+            wres.copyBodyToResponse();
+
+            // One more point, in case of redirect this will be called twice! beware to handle that
+            // somewhat
+
+        } catch (Throwable t) {
+            // Do whatever logging you whish here, too
+            // here you should also be logging the error!!!
+            throw t;
+        }
+
+    }
+}
+
+
+
+
+	/**
+ * Doogies very cool HTTP request logging
+ *
+ * There is also {@link org.springframework.web.filter.CommonsRequestLoggingFilter}  but it cannot log request method
+ * And it cannot easily be extended.
+ *
+ * https://mdeinum.wordpress.com/2015/07/01/spring-framework-hidden-gems/
+ * http://stackoverflow.com/questions/8933054/how-to-read-and-copy-the-http-servlet-response-output-stream-content-for-logging
+ */
+public class DoogiesRequestLogger extends OncePerRequestFilter {
+
+  private boolean includeResponsePayload = true;
+  private int maxPayloadLength = 1000;
+
+  private String getContentAsString(byte[] buf, int maxLength, String charsetName) {
+    if (buf == null || buf.length == 0) return "";
+    int length = Math.min(buf.length, this.maxPayloadLength);
+    try {
+      return new String(buf, 0, length, charsetName);
+    } catch (UnsupportedEncodingException ex) {
+      return "Unsupported Encoding";
+    }
+  }
+
+  /**
+   * Log each request and respponse with full Request URI, content payload and duration of the request in ms.
+   * @param request the request
+   * @param response the response
+   * @param filterChain chain of filters
+   * @throws ServletException
+   * @throws IOException
+   */
+  @Override
+  protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+
+    long startTime = System.currentTimeMillis();
+    StringBuffer reqInfo = new StringBuffer()
+     .append("[")
+     .append(startTime % 10000)  // request ID
+     .append("] ")
+     .append(request.getMethod())
+     .append(" ")
+     .append(request.getRequestURL());
+
+    String queryString = request.getQueryString();
+    if (queryString != null) {
+      reqInfo.append("?").append(queryString);
+    }
+
+    if (request.getAuthType() != null) {
+      reqInfo.append(", authType=")
+        .append(request.getAuthType());
+    }
+    if (request.getUserPrincipal() != null) {
+      reqInfo.append(", principalName=")
+        .append(request.getUserPrincipal().getName());
+    }
+
+    this.logger.debug("=> " + reqInfo);
+
+    // ========= Log request and response payload ("body") ========
+    // We CANNOT simply read the request payload here, because then the InputStream would be consumed and cannot be read again by the actual processing/server.
+    //    String reqBody = DoogiesUtil._stream2String(request.getInputStream());   // THIS WOULD NOT WORK!
+    // So we need to apply some stronger magic here :-)
+    ContentCachingRequestWrapper wrappedRequest = new ContentCachingRequestWrapper(request);
+    ContentCachingResponseWrapper wrappedResponse = new ContentCachingResponseWrapper(response);
+
+    filterChain.doFilter(wrappedRequest, wrappedResponse);     // ======== This performs the actual request!
+    long duration = System.currentTimeMillis() - startTime;
+
+    // I can only log the request's body AFTER the request has been made and ContentCachingRequestWrapper did its work.
+    String requestBody = this.getContentAsString(wrappedRequest.getContentAsByteArray(), this.maxPayloadLength, request.getCharacterEncoding());
+    if (requestBody.length() > 0) {
+      this.logger.debug("   Request body:\n" +requestBody);
+    }
+
+    this.logger.debug("<= " + reqInfo + ": returned status=" + response.getStatus() + " in "+duration + "ms");
+    if (includeResponsePayload) {
+      byte[] buf = wrappedResponse.getContentAsByteArray();
+      this.logger.debug("   Response body:\n"+getContentAsString(buf, this.maxPayloadLength, response.getCharacterEncoding()));
+    }
+
+    wrappedResponse.copyBodyToResponse();  // IMPORTANT: copy content of response back into original response
+
+  }
+}
 ==============================================================================================================
+spring-aop, aspectjrt, aspectjweaver
+Add this to your xml config file <aop:aspectj-autoproxy/>
+
+Create an annotation which can be used as a pointcut
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.METHOD,ElementType.TYPE})
+public @interface EnableLogging {
+ActionType actionType();
+}
+Now annotate all your rest API methods which you want to log
+
+@EnableLogging(actionType = ActionType.SOME_EMPLOYEE_ACTION)
+@Override
+public Response getEmployees(RequestDto req, final String param) {
+...
+}
+Now on to the Aspect. component-scan the package which this class is in.
+
+@Aspect
+@Component
+public class Aspects {
+
+@AfterReturning(pointcut = "execution(@co.xyz.aspect.EnableLogging * *(..)) && @annotation(enableLogging) && args(reqArg, reqArg1,..)", returning = "result")
+public void auditInfo(JoinPoint joinPoint, Object result, EnableLogging enableLogging, Object reqArg, String reqArg1) {
+
+    HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes())
+            .getRequest();
+
+    if (result instanceof Response) {
+        Response responseObj = (Response) result;
+
+    String requestUrl = request.getScheme() + "://" + request.getServerName()
+                + ":" + request.getServerPort() + request.getContextPath() + request.getRequestURI()
+                + "?" + request.getQueryString();
+
+String clientIp = request.getRemoteAddr();
+String clientRequest = reqArg.toString();
+int httpResponseStatus = responseObj.getStatus();
+responseObj.getEntity();
+// Can log whatever stuff from here in a single spot.
+}
+
+
+@AfterThrowing(pointcut = "execution(@co.xyz.aspect.EnableLogging * *(..)) && @annotation(enableLogging) && args(reqArg, reqArg1,..)", throwing="exception")
+public void auditExceptionInfo(JoinPoint joinPoint, Throwable exception, EnableLogging enableLogging, Object reqArg, String reqArg1) {
+
+    HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes())
+            .getRequest();
+
+    String requestUrl = request.getScheme() + "://" + request.getServerName()
+    + ":" + request.getServerPort() + request.getContextPath() + request.getRequestURI()
+    + "?" + request.getQueryString();
+
+    exception.getMessage();
+    exception.getCause();
+    exception.printStackTrace();
+    exception.getLocalizedMessage();
+    // Can log whatever exceptions, requests, etc from here in a single spot.
+    }
+}
 ==============================================================================================================
 ==============================================================================================================
 ==============================================================================================================
