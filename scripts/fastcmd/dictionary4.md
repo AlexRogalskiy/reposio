@@ -20981,6 +20981,172 @@ public class DoogiesRequestLogger extends OncePerRequestFilter {
   }
 }
 ==============================================================================================================
+@SpringBootApplication
+@RestController
+public class FiledownloadApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(FiledownloadApplication.class, args);
+    }
+
+
+    @PostMapping("/downloadFile")
+    public ResponseEntity<FileSystemResource> download(@RequestBody FileDownload fileDownload) throws IOException {
+        String path = fileDownload.getPath();
+        FileSystemResource fileSystemResource = new FileSystemResource(path);
+        return new ResponseEntity<>(fileSystemResource, HttpStatus.OK);
+    }
+
+    class FileDownload {
+
+        String path;
+
+        public FileDownload() {
+        }
+
+        public String getPath() {
+            return path;
+        }
+
+        public void setPath(String path) {
+            this.path = path;
+        }
+    }
+}
+==============================================================================================================
+import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+
+public class ServletOutputStreamCopier extends ServletOutputStream {
+    private final OutputStream outputStream;
+    private final ByteArrayOutputStream copy;
+
+    public ServletOutputStreamCopier(final OutputStream outputStream) {
+        this.outputStream = outputStream;
+        this.copy = new ByteArrayOutputStream(1024);
+    }
+
+    @Override
+    public void write(final int b) throws IOException {
+        this.outputStream.write(b);
+        this.copy.write(b);
+    }
+
+    public byte[] getCopy() {
+        return this.copy.toByteArray();
+    }
+
+    @Override
+    public boolean isReady() {
+        return false;
+    }
+
+    @Override
+    public void setWriteListener(final WriteListener listener) {
+    }
+}
+
+
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponseWrapper;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+
+public class HttpServletResponseCopier extends HttpServletResponseWrapper {
+    private ServletOutputStream outputStream;
+    private PrintWriter writer;
+    private ServletOutputStreamCopier copier;
+
+    public HttpServletResponseCopier(final HttpServletResponse response) {
+        super(response);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see HttpServletResponseWrapper
+     */
+    @Override
+    public ServletOutputStream getOutputStream() throws IOException {
+        if (this.writer != null) {
+            throw new IllegalStateException("getWriter() has already been called on this response.");
+        }
+        if (this.outputStream == null) {
+            this.outputStream = this.getResponse().getOutputStream();
+            this.copier = new ServletOutputStreamCopier(this.outputStream);
+        }
+        return this.copier;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see HttpServletResponseWrapper
+     */
+    @Override
+    public PrintWriter getWriter() throws IOException {
+        if (this.outputStream != null) {
+            throw new IllegalStateException("getOutputStream() has already been called on this response.");
+        }
+        if (this.writer == null) {
+            this.copier = new ServletOutputStreamCopier(this.getResponse().getOutputStream());
+            this.writer = new PrintWriter(new OutputStreamWriter(this.copier, this.getResponse().getCharacterEncoding()), true);
+        }
+        return writer;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see HttpServletResponseWrapper
+     */
+    @Override
+    public void flushBuffer() throws IOException {
+        if (this.writer != null) {
+            this.writer.flush();
+        } else if (this.outputStream != null) {
+            this.copier.flush();
+        }
+    }
+
+    public byte[] getCopy() {
+        if (this.copier != null) {
+            return this.copier.getCopy();
+        }
+        return new byte[0];
+    }
+}
+==============================================================================================================
+<dependencies>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-reflect</artifactId>
+            <version>1.1.0</version>
+        </dependency>
+    </dependencies>
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
 spring-aop, aspectjrt, aspectjweaver
 Add this to your xml config file <aop:aspectj-autoproxy/>
 
