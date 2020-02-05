@@ -441,6 +441,529 @@ https://www.baeldung.com/sonar-qube
 
 mvn -U -B -V --fail-at-end -Dgpg.skip=true -Dfile.encoding=UTF-8 -DskipTests=true -Dmaven.javadoc.skip=true -DskipCheckStyle=true clean install -P test
 ==============================================================================================================
+import io.nats.client.AsyncSubscription;
+import io.nats.client.Connection;
+import io.nats.client.Message;
+import io.nats.client.Nats;
+import io.nats.client.Options;
+import io.nats.client.Subscription;
+import io.nats.client.SyncSubscription;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+public final class NatsClient {
+
+    private final String serverURI;
+
+    private final Connection natsConnection;
+
+    private final Map<String, Subscription> subscriptions = new HashMap<>();
+
+    private final static Logger log = LoggerFactory.getLogger(NatsClient.class);
+
+    NatsClient() {
+        this.serverURI = "jnats://localhost:4222";
+        natsConnection = initConnection(serverURI);
+    }
+
+    public NatsClient(String serverURI) {
+        if ((serverURI != null) && (!serverURI.isEmpty())) {
+            this.serverURI = serverURI;
+        } else {
+            this.serverURI = "jnats://localhost:4222";
+        }
+
+        natsConnection = initConnection(serverURI);
+    }
+
+    public void closeConnection() {
+        // Close connection
+        natsConnection.close();
+    }
+
+    private Connection initConnection(String uri) {
+        try {
+            Options options = new Options.Builder()
+              .errorCb(ex -> log.error("Connection Exception: ", ex))
+              .disconnectedCb(event -> log.error("Channel disconnected: {}", event.getConnection()))
+              .reconnectedCb(event -> log.error("Reconnected to server: {}", event.getConnection()))
+              .build();
+
+            return Nats.connect(uri, options);
+        } catch (IOException ioe) {
+            log.error("Error connecting to NATs! ", ioe);
+            return null;
+        }
+    }
+
+    void publishMessage(String topic, String replyTo, String message) {
+        try {
+            natsConnection.publish(topic, replyTo, message.getBytes());
+        } catch (IOException ioe) {
+            log.error("Error publishing message: {} to {} ", message, topic, ioe);
+        }
+    }
+
+    public void subscribeAsync(String topic) {
+
+        AsyncSubscription subscription = natsConnection.subscribe(
+          topic, msg -> log.info("Received message on {}", msg.getSubject()));
+
+        if (subscription == null) {
+            log.error("Error subscribing to {}", topic);
+        } else {
+            subscriptions.put(topic, subscription);
+        }
+    }
+
+    SyncSubscription subscribeSync(String topic) {
+        return natsConnection.subscribe(topic);
+    }
+
+    public void unsubscribe(String topic) {
+        try {
+            Subscription subscription = subscriptions.get(topic);
+
+            if (subscription != null) {
+                subscription.unsubscribe();
+            } else {
+                log.error("{} not found. Unable to unsubscribe.", topic);
+            }
+        } catch (IOException ioe) {
+            log.error("Error unsubscribing from {} ", topic, ioe);
+        }
+    }
+
+    Message makeRequest(String topic, String request) {
+        try {
+            return natsConnection.request(topic, request.getBytes(), 100);
+        } catch (IOException | InterruptedException ioe) {
+            log.error("Error making request {} to {} ", topic, request, ioe);
+            return null;
+        }
+    }
+
+    void installReply(String topic, String reply) {
+        natsConnection.subscribe(topic, message -> {
+            try {
+                natsConnection.publish(message.getReplyTo(), reply.getBytes());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    SyncSubscription joinQueueGroup(String topic, String queue) {
+        return natsConnection.subscribe(topic, queue);
+    }
+}
+==============================================================================================================
+dist: trusty
+language: java
+sudo: required
+jdk:
+- openjdk8
+- openjdk9
+- openjdk10
+- openjdk11
+- oraclejdk8
+- oraclejdk9
+before_script:
+- wget "https://github.com/nats-io/nats-streaming-server/releases/download/v0.16.0/nats-streaming-server-v0.16.0-linux-amd64.zip"
+  -O tmp.zip
+- unzip tmp.zip
+- mv nats-streaming-server-v0.16.0-linux-amd64 stan
+before_install:
+- openssl aes-256-cbc -K $encrypted_4d67c1484586_key -iv $encrypted_4d67c1484586_iv
+  -in .travis/nats.travis.gpg.enc -out .travis/nats.travis.gpg -d
+install:
+- "./gradlew assemble"
+script:
+- "./gradlew check"
+before_cache:
+- rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+- rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+cache:
+  directories:
+  - "$HOME/.gradle/caches/"
+  - "$HOME/.gradle/wrapper/"
+after_success:
+- "./gradlew test jacocoTestReport coveralls"
+- |
+  if [ "${TRAVIS_BRANCH}" == "master" ] && [ -z "${TRAVIS_TAG}" ] && [ "${TRAVIS_JDK_VERSION}" == "oraclejdk8" ]; then
+    ./gradlew -i publishToSonatype
+  fi
+- |
+  if [ "${TRAVIS_BRANCH}" == "${TRAVIS_TAG}" ] && [ ! -z "${TRAVIS_TAG}" ] && [ "${TRAVIS_JDK_VERSION}" == "oraclejdk8" ]; then
+    ./gradlew -i sign publishToSonatype closeAndReleaseRepository
+  fi
+env:
+  global:
+  - stan_path=$TRAVIS_BUILD_DIR/stan/nats-streaming-server
+  - GPG_KEYRING_FILE=.travis/nats.travis.gpg
+  - secure: T/D5pMoZiDU6O3gU70D/qUJIvggI412y4nCw7WhC4JKDFMNIAa2enPfCrm9Np8sjuT2CF8hW4+SR7Adv5yZnMVIkCos1vmWjuz/yH/3+TRVANMr4fzUS3KsBCfl421qRxbtBt8frlOSdOpAYsqBscel9Jsvx22UVNV8qspXkYhjnQmX8mpgXj8yz1l6Y82htda/hB4dozgPcTMoLpT21yPwHlU8NdiTs1Bsj1JL7vz/PEzuNNylYLWoa2J6mvn1i3B/FjtgZwCeYydvel36QrFRoiK+Blo0iz1vOKnt3vAAQ6z5fkRGNjqxxiYzEGOP34uRvoSmJv6cHpqVV6gwQJJ+ntVZqrkjtdUqyffWE0wp0Pzf9c0fPaqBt/BtXdL0051+fgVpX8apkEM6amcF12S41i/XmhtLK452fsidfOEsdAV7OCVEJeahQPy5zX6CCUM/VqZoWaVmjC6TEW+Ai84tO3QkPLV1BChN46LBY+qapLMpPsmWyn0+pvmBtqiHCfDjhSuDQVwWsPKM83ealpFEtqmfOgKDc+FIAtLWcW8k7RUImQz3Qe325PQ/0r+voiuV7GQTI+68GkX5IyMwa8nXVOVxROy67IatIzYC6BQsoLb9YDCHuQq6j3AVe3np0OQ4MT8daCQZoL4sTh3lKR85u0gPLHhv9ybzAqAWvUrs=
+  - secure: qJcqsoZNwQec+pMYWiCS3eucerDBCiRlh4uXm81523QHTYjYxd+paK+XYSFoG+5goSx7eTbvlDsXz7ctBGU836r1GgOzheki8WMLwYhrdWKJH0OrHVlH+6UsQvQ3Y/UkWBCWvM3V+zeJ8phUAMo1W3OYZK9fYe8TXTlW725/UH+dETfpyCGbSH1KFIKp9bgO9t42iy34Ruhx/HRsaCtpdsCVaOKEo7WyEIuZXOo7RbeJKieGPig5o+mDeiOti8WCBpsHL3EmaCbbqxrPIKGjfn4RksS/h0gr1kHVc52H7GaB8YLF23Whpgq5EbBZ6b4HcNxqS8YF5dkdYFuqq/8XNu4F3JVZhVEsrbRwwSmi7LolFZtV5aHFv2pEyr99FfdPfhlzJVXD+chOyfcaeyx3bOnFsl/Q/SlNf/e6aCxsgFD1PUZHpj2svkNKNWagwRVGmfEEal6pWl3MPxIstevZK4c1Ot7ExSKGuTgHYVlUd+J/Y5A66fKU5a7dRtCQJQ5zxm0vl0mWONFCZECpULpBuXS2ajAd2ajy6IVXEiZeUvyfNTmk/9KCUD5WwxSaRmh5SK4tf32O5TaEXNpyT4HJHW7MqooSpr7jvRm7kjmdMU1Smzc83NI0/WePw7wcud8qTGNlIMewJlTCP2ol8N6wCnSKJCP8bQDxDmG5dFFMFCg=
+  - secure: egT874iZk81lBqbklIGxqu9QzPZ1twXiz4MoXmmdZi3Oow2YCWLI/aQQgcDoUDNIsYYTiqC29l464Hs28E0yJNMEi6ZB/sG/H/lQgXnDPQY1IsrOpV+0dS1j7tcWaybLFR7XY4yP66xny+nEHcgCysmv35+54tDze0c4V/dvlyALBGR0+xVBLvK1t4L9iarKjxjuwHwo1Xw4cRHzlIZnuJeVQJK3H7ykjKBy6IrbUNmR/Zyjs1WJRo1mlcICIu3Q7c/5Uocx+vwOQwyD5Mfw3sZzjXwfykQGP9A3Om/ZQ6WxSJ2B30B6V2v+YXUtsIO7cqMFYDT+moTuG4ffIQOX9wmCad56XTLOanqHjNQbaKU5ygzXHtVne1GEq6nz+X3QpZExSIp3qlKnfi+tVFfeBtGYPU2uSkmdsvaOr0HVYaHtcvSkemds4vox3jZ0sRn3VsZH8ftM/GT9kGD47NKwj1VeFuXhtDZsChYzz/tv0F5wSOAX1kfku8wmodzxyFeFqw13bfbD9nq6pM7LSZi/5sG6meONsAeRhZsKx/d1gaAVbnx8XTV2aNt3yhUnIMzL5zC3Qy3eRgESR+fax5bimbav1jYMaEfrN9QWBWPZ8LBJhto+9u3T+wPFeKY4a0h4ZKoIbGCVDlExzqrl1Hh2c5HwjM9L7BXaEBviinZoGIQ=
+  - secure: 01oTIjzhriCRiK1CNAkd7KaRSclPMdHcaWhQkrYgwYcboCeUrs0LIVPYts+gB+FE3MsJyRwMfrug4qM/gJQBrHbddYpleZFUPQXZ1rWKpkzzxFP1PD51886k2Cumxd3KvrjdUj/NZ7UITVQ9SbI+dlJFaAM5mLXLBWwk7NVtDKZEnIyxFC3rsexbS4NwPRiU1muX/wPhaMjtH8bHdnqC+6B6aZ+/165n7MhfF8c+ABqB4XmLMPcNmp5oiX/zGDng/17inNquZywCaJkm0Qq+98SwXrICeTVhS4TV6hT8orYFKBynQLMMCCG1EKVRydTkDw6OZJt16aqJKWhuW1RNCcpCU1DiEPWQGBirGuGcuFdpmg9f8t6dtXqrXK1IY4zxy5iyF2VjXeLGWZEtoTryLQnaKggbWzDZAimGtdDnyAK5TBp8g+ODsK/ArsEVQC4d19nL0cXTX+DxvVfeq+QPUH00k2+Qz9FJ4Kv1a8cGnTa0miC0oETZe5KwtivdHoQtr8698b7FxgW/t1jp3QLfoxpBE6omJMusgOvY/gmmS1ZvZ3Kn2sNPEcEUDX3+SIWEhXJ3jTo+e4Sf25pyi/VNLV5Uocu1AxT1/IQ0SKho316hV5jsqy3JxVv3I55yDIDHNupLJ/ST9/zRCAEG0wJOTUMEjgLhJS4DSNDrb/uCLxI=
+
+
+
+.coveralls.yml
+service_name: travis-ci
+repo_token: 7fvWrchpHceKauTqp3PgceKvsWYMAN6S7
+==============================================================================================================
+/**
+ * Applications can use a ConnectionListener to track the status of a {@link Connection Connection}. The 
+ * listener is configured in the {@link Options Options} at creation time.
+ */
+public interface ConnectionListener {
+    public enum Events {
+        /** The connection has successfully completed the handshake with the nats-server. */
+        CONNECTED("nats: connection opened"),
+        /** The connection is permanently closed, either by manual action or failed reconnects. */
+        CLOSED("nats: connection closed"),
+        /** The connection lost its connection, but may try to reconnect if configured to. */
+        DISCONNECTED("nats: connection disconnected"), 
+        /** The connection was connected, lost its connection and successfully reconnected. */
+        RECONNECTED("nats: connection reconnected"), 
+        /** The connection was reconnected and the server has been notified of all subscriptions. */
+        RESUBSCRIBED("nats: subscriptions re-established"),
+        /** The connection was told about new servers from, from the current server. */ 
+        DISCOVERED_SERVERS("nats: discovered servers");
+
+        private String event;
+
+        Events(String err) {
+            this.event = err;
+        }
+
+        /**
+         * @return the string value for this event
+         */
+        public String toString() {
+            return this.event;
+        }
+    }
+
+    /**
+     * Connection related events that occur asynchronously in the client code are
+     * sent to a ConnectionListener via a single method. The ConnectionListener can
+     * use the event type to decide what to do about the problem.
+     * 
+     * @param conn the connection associated with the error
+     * @param type the type of event that has occurred
+     */
+    public void connectionEvent(Connection conn, Events type);
+}
+==============================================================================================================
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
+import io.nats.client.AuthHandler;
+import io.nats.client.NKey;
+
+class FileAuthHandler implements AuthHandler {
+    private String jwtFile;
+    private String nkeyFile;
+    private String credsFile;
+
+    FileAuthHandler(String creds) {
+        this.credsFile = creds;
+    }
+
+    FileAuthHandler(String jwtFile, String nkeyFile) {
+        this.jwtFile = jwtFile;
+        this.nkeyFile = nkeyFile;
+    }
+
+    private char[] extract(CharBuffer data, int headers) {
+        CharBuffer buff = CharBuffer.allocate(data.length());
+        boolean skipLine = false;
+        int headerCount = 0;
+        int linePos = -1;
+
+        while (data.length() > 0) {
+            char c = data.get();
+            linePos++;
+
+            // End of line, either we got it, or we should keep reading the new line
+            if (c == '\n' || c=='\r') {
+                if (buff.position() > 0) { // we wrote something
+                    break;
+                }
+                skipLine = false;
+                linePos = -1; // so we can start right up
+                continue;
+            }
+
+            // skip to the new line
+            if (skipLine) {
+                continue;
+            }
+
+            // Ignore whitespace
+            if (Character.isWhitespace(c)) {
+                continue;
+            }
+
+            // If we are on a - skip that line, bump the header count
+            if (c == '-' && linePos == 0) {
+                skipLine = true;
+                headerCount++;
+                continue;
+            }
+
+            // Skip the line, or add to buff
+            if (!skipLine && headerCount==headers) {
+                buff.put(c);
+            }
+        }
+
+        // check for naked value
+        if (buff.position() == 0 && headers==1) {
+            data.position(0);
+            while (data.length() > 0) {
+                char c = data.get();
+                if (c == '\n' || c=='\r' || Character.isWhitespace(c)) {
+                    if (buff.position() > 0) { // we wrote something
+                        break;
+                    }
+                    continue;
+                }
+    
+                buff.put(c);
+            }
+            buff.flip();
+        } else {
+            buff.flip();
+        }
+
+        char[] retVal = new char[buff.length()];
+        buff.get(retVal);
+        buff.clear();
+        for (int i=0; i<buff.capacity();i++) {
+            buff.put('\0');
+        }
+        return retVal;
+    }
+
+    private char[] readKeyChars() throws IOException {
+        char[] keyChars = null;
+
+        if (this.credsFile != null) {
+            byte[] data = Files.readAllBytes(Paths.get(this.credsFile));
+            ByteBuffer bb = ByteBuffer.wrap(data);
+            CharBuffer chars = StandardCharsets.UTF_8.decode(bb);
+            keyChars = this.extract(chars, 3); // we are 2nd so 3 headers
+            // Clear things up as best we can
+            chars.clear();
+            for (int i=0; i<chars.capacity();i++) {
+                chars.put('\0');
+            }
+            for (int i=0;i<data.length;i++) {
+                data[i] = 0;
+            }
+        } else {
+            byte[] data = Files.readAllBytes(Paths.get(this.nkeyFile));
+            ByteBuffer bb = ByteBuffer.wrap(data);
+            CharBuffer chars = StandardCharsets.UTF_8.decode(bb);
+            keyChars = this.extract(chars, 1);
+            // Clear things up as best we can
+            chars.clear();
+            for (int i=0; i<chars.capacity();i++) {
+                chars.put('\0');
+            }
+            for (int i=0;i<data.length;i++) {
+                data[i] = 0;
+            }
+        }
+
+        return keyChars;
+    }
+
+    /**
+     * Sign is called by the library when the server sends a nonce.
+     * The client's NKey should be used to sign the provided value.
+     * 
+     * @param nonce the nonce to sign
+     * @return the signature for the nonce
+     */ 
+    public byte[] sign(byte[] nonce) {
+        try {
+            char[] keyChars = this.readKeyChars();
+            NKey nkey =  NKey.fromSeed(keyChars);
+            byte[] sig = nkey.sign(nonce);
+            nkey.clear();
+            return sig;
+        } catch (Exception exp) {
+            throw new IllegalStateException("problem signing nonce", exp);
+        }
+    }
+
+    /**
+     * getID should return a public key associated with a client key known to the server.
+     * If the server is not in nonce-mode, this array can be empty.
+     * 
+     * @return the public key as a char array
+     */
+    public char[] getID() {
+        try {
+            char[] keyChars = this.readKeyChars();
+            NKey nkey =  NKey.fromSeed(keyChars);
+            char[] pubKey = nkey.getPublicKey();
+            nkey.clear();
+            return pubKey;
+        } catch (Exception exp) {
+            throw new IllegalStateException("problem getting public key", exp);
+        }
+    }
+
+    /**
+     * getJWT should return the user JWT associated with this connection.
+     * This can return null for challenge only authentication, but for account/user
+     * JWT-based authentication you need to return the JWT bytes here.
+     * 
+     * @return the user JWT
+     */ 
+    public char[] getJWT() {
+        try {
+            char[] jwtChars = null;
+            String fileToUse = this.jwtFile;
+
+            if (this.credsFile != null) {
+                fileToUse = this.credsFile;
+            }
+
+            // If no file is provided, assume this is challenge only authentication
+            // and simply return null here.
+            if (fileToUse == null) {
+                return null;
+            }
+
+            byte[] data = Files.readAllBytes(Paths.get(fileToUse));
+            ByteBuffer bb = ByteBuffer.wrap(data);
+            CharBuffer chars = StandardCharsets.UTF_8.decode(bb);
+            jwtChars = this.extract(chars, 1); // jwt is always first
+            // Clear things up as best we can
+            chars.clear();
+            for (int i=0; i<chars.capacity();i++) {
+                chars.put('\0');
+            }
+            bb.clear();
+            for (int i=0;i<data.length;i++) {
+                data[i] = 0;
+            }
+
+            return jwtChars;
+        } catch (Exception exp) {
+            throw new IllegalStateException("problem reading jwt", exp);
+        }
+    }
+}
+==============================================================================================================
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
+import io.nats.client.Options;
+
+public class SSLUtils {
+    private static TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
+        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+            return null;
+        }
+
+        public void checkClientTrusted(X509Certificate[] certs, String authType) {
+        }
+
+        public void checkServerTrusted(X509Certificate[] certs, String authType) {
+        }
+    } };
+
+    public static SSLContext createOpenTLSContext() {
+        SSLContext context = null;
+
+        try {
+            context = SSLContext.getInstance(Options.DEFAULT_SSL_PROTOCOL);
+            context.init(null, trustAllCerts, new SecureRandom());
+        } catch (Exception e) {
+            context = null;
+        }
+
+        return context;
+    }
+}
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+		// Access the Client service to retrieve the list of clients and
+		// the list of clients grouped by country
+		List<Client> clientList = clientService.getClientList();
+		List<ClientByCountry> clientByCountryList = clientService.getClientByCountryList();
+
+		// Create a JasperReport data source and ...
+		JRBeanCollectionDataSource clientDS = new JRBeanCollectionDataSource(clientList);
+		JRBeanCollectionDataSource clientByCountryDS = new JRBeanCollectionDataSource(clientByCountryList);
+
+		// ... add them to the parameters Map object
+		Map<String, Object> parameters = new HashMap<String, Object>();
+		parameters.put("SUBREPORT_DIR", "/");
+		parameters.put("CLIENT_DS", clientDS);
+		parameters.put("BY_COUNTRY_DS", clientByCountryDS);
+
+		// Call fillReport method passing the main report and the parameters
+		// To finish, export the report to a PDF file
+		JasperPrint jasperPrint = JasperFillManager.fillReport(new ClassPathResource("/clients-example.jasper").getInputStream(), parameters, new JREmptyDataSource());
+		JRPdfExporter pdfExporter = new JRPdfExporter();
+		pdfExporter.setExporterInput(new SimpleExporterInput(jasperPrint));
+		pdfExporter.setExporterOutput(new SimpleOutputStreamExporterOutput(reportOutput));
+		pdfExporter.exportReport();
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+     <dependency>
+            <groupId>com.googlecode.java-diff-utils</groupId>
+            <artifactId>diffutils</artifactId>
+            <version>1.2.1</version>
+        </dependency>
+==============================================================================================================
+# Database
+spring.datasource.url = jdbc:sqlite:clients.db
+spring.datasource.driver-class-name = org.sqlite.JDBC
+spring.jpa.properties.hibernate.dialect = org.hibernate.dialect.SQLiteDialect
+spring.jpa.hibernate.ddl-auto=update
+
+# Report PDF output
+report-output = /tmp/report.pdf
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
 {
     "provider": {
         "name": "Our Provider"

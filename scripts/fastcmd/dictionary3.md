@@ -24469,8 +24469,793 @@ public class ReflectionsApp {
     }
 
 }
+
+https://www.reviversoft.com/file-extensions/jasper
+https://hexed.it/?hl=en
 https://teamtreehouse.com/community/hexadecimal-string-with-odd-number-of-characters
 https://signpost.machinezoo.com/?q=machinezoo.com
+https://www.fileformat.info/tool/hexdump.htm
+
+https://github.com/sergiodurand/jasper-examples
+
+hexdump -e '"%x"'
+xxd -p | tr -d '\n'
+xxd -plain test.txt > test.hex
+od -An < input | tr -dc '[:alnum:]'
+-----------------------------------------------------------------------------------------
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+  <title></title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <style type="text/css">
+    a {text-decoration: none}
+  </style>
+</head>
+<body text="#000000" link="#000000" alink="#000000" vlink="#000000">
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr><td width="50%">&nbsp;</td><td align="center">
+
+<a name="JR_PAGE_ANCHOR_0_1"></a>
+<table class="jrPage" cellpadding="0" cellspacing="0" border="0" style="empty-cells: show; width: 595px; border-collapse: collapse; background-color: white;">
+<tr valign="top" style="height:0">
+<td style="width:20px"></td>
+<td style="width:3px"></td>
+<td style="width:2px"></td>
+<td style="width:3px"></td>
+<td style="width:2px"></td>
+<td style="width:17px"></td>
+<td style="width:3px"></td>
+<td style="width:94px"></td>
+<td style="width:31px"></td>
+<td style="width:5px"></td>
+<td style="width:33px"></td>
+<td style="width:1px"></td>
+<td style="width:1px"></td>
+<td style="width:20px"></td>
+<td style="width:6px"></td>
+<td style="width:46px"></td>
+<td style="width:1px"></td>
+<td style="width:31px"></td>
+<td style="width:11px"></td>
+<td style="width:17px"></td>
+<td style="width:13px"></td>
+<td style="width:1px"></td>
+<td style="width:39px"></td>
+<td style="width:2px"></td>
+<td style="width:3px"></td>
+<td style="width:6px"></td>
+<td style="width:13px"></td>
+<td style="width:2px"></td>
+<td style="width:14px"></td>
+<td style="width:6px"></td>
+<td style="width:6px"></td>
+<td style="width:8px"></td>
+<td style="width:11px"></td>
+<td style="width:2px"></td>
+<td style="width:37px"></td>
+<td style="width:4px"></td>
+<td style="width:46px"></td>
+<td style="width:4px"></td>
+<td style="width:1px"></td>
+<td style="width:1px"></td>
+<td style="width:1px"></td>
+<td style="width:1px"></td>
+<td style="width:1px"></td>
+<td style="width:3px"></td>
+<td style="width:5px"></td>
+<td style="width:18px"></td>
+</tr>
+<tr valign="top" style="height:28px">
+<td colspan="46">
+</td>
+</tr>
+<tr valign="top" style="height:42px">
+<td colspan="24">
+</td>
+<td colspan="14">
+<img src="" style="height: 42px" alt=""/></td>
+<td colspan="8">
+</td>
+</tr>
+<tr valign="top" style="height:8px">
+<td colspan="46">
+</td>
+</tr>
+<tr valign="top" style="height:1px">
+<td colspan="4">
+</td>
+<td colspan="41" style="border-top: 1px solid #FF793C; ">
+</td>
+<td>
+</td>
+</tr>
+<tr valign="top" style="height:14px">
+<td colspan="46">
+</td>
+</tr>
+<tr valign="top" style="height:107px">
+<td colspan="26">
+</td>
+<td colspan="17">
+<div style="width: 100%; height: 100%; position: relative;">
+<div style="position: absolute; overflow: hidden; width: 100%; height: 100%; ">
+<table cellpadding="0" cellspacing="0" border="0" style="empty-cells: show; width: 100%; border-collapse: collapse;">
+<tr valign="top" style="height:0">
+<td style="width:156px"></td>
+<td style="width:2px"></td>
+</tr>
+<tr valign="top" style="height:30px">
+<td style="pointer-events: auto; text-indent: 0px; text-align: left;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #5A5A5A; font-size: 10px; line-height: 1.2578125; font-weight: bold;">Paragon Technologie GmbH</span></td>
+<td>
+</td>
+</tr>
+</table>
+</div>
+<div style="position: absolute; overflow: hidden; width: 100%; height: 100%; pointer-events: none; ">
+<table cellpadding="0" cellspacing="0" border="0" style="empty-cells: show; width: 100%; border-collapse: collapse;">
+<tr valign="top" style="height:0">
+<td style="width:158px"></td>
+</tr>
+<tr valign="top" style="height:85px">
+<td style="pointer-events: auto; text-indent: 0px; text-align: left;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #5A5A5A; font-size: 10px; line-height: 1.2578125;"><br/>Leo-Wohleb-Straße 8<br/>79098 Freiburg / Germany<br/><br/>Tel. +49 761 59 01 8 – 201<br/>Fax +49 761 59 01 8 – 130<br/></span></td>
+</tr>
+</table>
+</div>
+<div style="position: relative; width: 100%; height: 100%; pointer-events: none; ">
+<table cellpadding="0" cellspacing="0" border="0" style="empty-cells: show; width: 100%; border-collapse: collapse;">
+<tr valign="top" style="height:0">
+<td style="width:158px"></td>
+</tr>
+<tr valign="top" style="height:83px">
+<td>
+</td>
+</tr>
+<tr valign="top" style="height:24px">
+<td style="pointer-events: auto; text-indent: 0px; text-align: left;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #FF793C; font-size: 10px; line-height: 1.2578125;">sales@paragon-software.com<br/></span></td>
+</tr>
+</table>
+</div>
+</div>
+</td>
+<td colspan="3">
+</td>
+</tr>
+<tr valign="top" style="height:10px">
+<td colspan="46">
+</td>
+</tr>
+<tr valign="top" style="height:6px">
+<td>
+</td>
+<td colspan="11" rowspan="2" style="text-indent: 0px; text-align: left;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #454545; font-size: 6px; line-height: 1.2578125; text-decoration: underline;">Paragon Technologie GmbH, Leo-Wohleb-Straße 8, 79098 Freiburg</span></td>
+<td colspan="34">
+</td>
+</tr>
+<tr valign="top" style="height:4px">
+<td>
+</td>
+<td colspan="4">
+</td>
+<td colspan="27" rowspan="3" style="background-color: #A5A5A5; text-indent: 0px;  vertical-align: middle;text-align: right;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #FFFFFF; font-size: 15px; line-height: 1; *line-height: normal;">Invoice</span></td>
+<td colspan="3">
+</td>
+</tr>
+<tr valign="top" style="height:15px">
+<td colspan="16">
+</td>
+<td colspan="3">
+</td>
+</tr>
+<tr valign="top" style="height:11px">
+<td>
+</td>
+<td colspan="7" rowspan="6" style="text-indent: 0px; text-align: left;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #5A5A5A; font-size: 10px; line-height: 1.2578125;">&nbsp;</span></td>
+<td colspan="8">
+</td>
+<td colspan="3">
+</td>
+</tr>
+<tr valign="top" style="height:1px">
+<td>
+</td>
+<td colspan="8">
+</td>
+<td colspan="27" style="border-top: 1px solid #808080; ">
+</td>
+<td colspan="3">
+</td>
+</tr>
+<tr valign="top" style="height:28px">
+<td>
+</td>
+<td colspan="9">
+</td>
+<td colspan="7" style="border-left: 1px solid #5A5A5A; border-bottom: 1px solid #5A5A5A; text-indent: 0px; text-align: left;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #5A5A5A; font-size: 10px; line-height: 1; *line-height: normal;">Doc. Number<br/>null</span></td>
+<td colspan="12" style="border-bottom: 1px solid #5A5A5A; text-indent: 0px; text-align: left;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #5A5A5A; font-size: 10px; line-height: 1; *line-height: normal;">null</span></td>
+<td colspan="7" style="border-bottom: 1px solid #5A5A5A; border-right: 1px solid #5A5A5A; text-indent: 0px; text-align: center;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #5A5A5A; font-size: 10px; line-height: 1; *line-height: normal;">Page<br/> 1/1</span></td>
+<td colspan="3">
+</td>
+</tr>
+<tr valign="top" style="height:28px">
+<td>
+</td>
+<td colspan="9">
+</td>
+<td colspan="7" style="border-left: 1px solid #5A5A5A; border-bottom: 1px solid #5A5A5A; text-indent: 0px; text-align: left;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #5A5A5A; font-size: 10px; line-height: 1; *line-height: normal;">Customer No.<br/>null</span></td>
+<td colspan="19" style="border-bottom: 1px solid #5A5A5A; border-right: 1px solid #5A5A5A; text-indent: 0px; text-align: left;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #5A5A5A; font-size: 10px; line-height: 1; *line-height: normal;">UID-Businesspartner</span></td>
+<td colspan="3">
+</td>
+</tr>
+<tr valign="top" style="height:28px">
+<td>
+</td>
+<td colspan="9">
+</td>
+<td colspan="26" style="border-left: 1px solid #5A5A5A; border-bottom: 1px solid #000000; border-right: 1px solid #5A5A5A; text-indent: 0px; text-align: left;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #5A5A5A; font-size: 10px; line-height: 1; *line-height: normal;">Your Refrence<br/>null</span></td>
+<td colspan="3">
+</td>
+</tr>
+<tr valign="top" style="height:22px">
+<td>
+</td>
+<td colspan="9">
+</td>
+<td colspan="26" rowspan="2" style="border-left: 1px solid #5A5A5A; border-bottom: 1px solid #000000; border-right: 1px solid #5A5A5A; text-indent: 0px; text-align: left;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #5A5A5A; font-size: 10px; line-height: 1; *line-height: normal;">Ref.<br/>null</span></td>
+<td colspan="3">
+</td>
+</tr>
+<tr valign="top" style="height:6px">
+<td colspan="17">
+</td>
+<td colspan="3">
+</td>
+</tr>
+<tr valign="top" style="height:28px">
+<td colspan="17">
+</td>
+<td colspan="26" style="border-left: 1px solid #5A5A5A; border-bottom: 1px solid #000000; border-right: 1px solid #5A5A5A; text-indent: 0px; text-align: left;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #5A5A5A; font-size: 10px; line-height: 1; *line-height: normal;">Your Contact<br/>Larissa Petersen</span></td>
+<td colspan="3">
+</td>
+</tr>
+<tr valign="top" style="height:31px">
+<td colspan="17">
+</td>
+<td colspan="26" rowspan="2" style="border-left: 1px solid #5A5A5A; border-bottom: 1px solid #000000; border-right: 1px solid #5A5A5A; text-indent: 0px; text-align: left;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #5A5A5A; font-size: 9px; line-height: 1; *line-height: normal;">Delivery Address<br/> </span></td>
+<td colspan="3">
+</td>
+</tr>
+<tr valign="top" style="height:28px">
+<td>
+</td>
+<td colspan="15" style="text-indent: 0px;  vertical-align: bottom;text-align: left;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #5A5A5A; font-size: 8px; line-height: 1.1640625;">We are happy that you have been choosing our products.</span></td>
+<td>
+</td>
+<td colspan="3">
+</td>
+</tr>
+<tr valign="top" style="height:25px">
+<td colspan="46">
+</td>
+</tr>
+<tr valign="top" style="height:30px">
+<td>
+</td>
+<td colspan="18" class="jrcolHeader interactiveElement" data-coluuid="53e0e85c-194c-4e22-a373-eba0056e1530" data-cellid="product_1416983859_0" data-tableuuid="e1f2bdc3-2fb2-41c9-a43e-0b1da5699c4b" data-colidx="0" style="background-color: #ADADAD; border: 1px solid #000000; text-indent: 0px;  vertical-align: middle;text-align: center;">, <span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #5A5A5A; font-size: 10px; line-height: 1.2578125;">Description</span></td>
+<td colspan="4" class="jrcolHeader interactiveElement" data-coluuid="0fee2b48-6bb3-49af-b3da-330df05d6209" data-cellid="quantity_2105689049_0" data-tableuuid="e1f2bdc3-2fb2-41c9-a43e-0b1da5699c4b" data-colidx="1" style="background-color: #ADADAD; border: 1px solid #000000; text-indent: 0px;  vertical-align: middle;text-align: center;">, <span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #5A5A5A; font-size: 10px; line-height: 1.2578125;">Quantity</span></td>
+<td colspan="9" class="jrcolHeader interactiveElement" data-coluuid="a15d872d-12e4-4a37-a8e3-a3c1e06ceb62" data-cellid="unitPriceAmountNet_625845872_0" data-tableuuid="e1f2bdc3-2fb2-41c9-a43e-0b1da5699c4b" data-colidx="2" style="background-color: #ADADAD; border: 1px solid #000000; text-indent: 0px;  vertical-align: middle;text-align: center;">, <span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #5A5A5A; font-size: 10px; line-height: 1.2578125;">Price</span></td>
+<td colspan="3" class="jrcolHeader interactiveElement" data-coluuid="0065f1c3-8233-4367-a47b-299684f7ab87" data-cellid="c3_1026721546_0" data-tableuuid="e1f2bdc3-2fb2-41c9-a43e-0b1da5699c4b" data-colidx="3" style="background-color: #ADADAD; border: 1px solid #000000; text-indent: 0px;  vertical-align: middle;text-align: center;">, <span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #5A5A5A; font-size: 10px; line-height: 1.2578125;">VAT</span></td>
+<td colspan="2" class="jrcolHeader interactiveElement" data-coluuid="92e18477-f3da-4744-84f7-81695b7f9689" data-cellid="subTotalAmountNet_1108451698_0" data-tableuuid="e1f2bdc3-2fb2-41c9-a43e-0b1da5699c4b" data-colidx="4" style="background-color: #ADADAD; border: 1px solid #000000; text-indent: 0px;  vertical-align: middle;text-align: center;">, <span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #5A5A5A; font-size: 10px; line-height: 1.2578125;">Amount</span></td>
+<td colspan="9">
+</td>
+</tr>
+<tr valign="top" style="height:89px">
+<td colspan="46">
+</td>
+</tr>
+<tr valign="top" style="height:2px">
+<td colspan="2">
+</td>
+<td colspan="16" rowspan="10" style="text-indent: 0px; text-align: left;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #5A5A5A; font-size: 10px; line-height: 1.2578125;">Unless stated otherwise,<br/>the delivery date is identical to the billing date</span></td>
+<td colspan="28">
+</td>
+</tr>
+<tr valign="top" style="height:28px">
+<td colspan="2">
+</td>
+<td colspan="3">
+</td>
+<td colspan="12" style="text-indent: 0px;  vertical-align: bottom;text-align: left;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #5A5A5A; font-size: 10px; line-height: 1.2578125;">SUBTOTAL</span></td>
+<td>
+</td>
+<td colspan="9" style="text-indent: 0px;  vertical-align: bottom;text-align: right;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #5A5A5A; font-size: 10px; line-height: 1.2578125;">null</span></td>
+<td colspan="3">
+</td>
+</tr>
+<tr valign="top" style="height:1px">
+<td colspan="2">
+</td>
+<td colspan="3">
+</td>
+<td colspan="19" style="border-top: 1px solid #808080; ">
+</td>
+<td colspan="6">
+</td>
+</tr>
+<tr valign="top" style="height:18px">
+<td colspan="2">
+</td>
+<td colspan="3">
+</td>
+<td colspan="12" style="text-indent: 0px;  vertical-align: bottom;text-align: left;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #5A5A5A; font-size: 10px; line-height: 1.2578125;">null</span></td>
+<td>
+</td>
+<td colspan="9" style="text-indent: 0px;  vertical-align: bottom;text-align: right;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #5A5A5A; font-size: 10px; line-height: 1.2578125;">null</span></td>
+<td colspan="3">
+</td>
+</tr>
+<tr valign="top" style="height:1px">
+<td colspan="2">
+</td>
+<td colspan="3">
+</td>
+<td colspan="19" style="border-top: 1px solid #808080; ">
+</td>
+<td colspan="6">
+</td>
+</tr>
+<tr valign="top" style="height:18px">
+<td colspan="2">
+</td>
+<td colspan="3">
+</td>
+<td colspan="12" style="text-indent: 0px;  vertical-align: bottom;text-align: left;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #5A5A5A; font-size: 10px; line-height: 1.2578125;">OTHER FEES</span></td>
+<td>
+</td>
+<td colspan="9" style="text-indent: 0px;  vertical-align: bottom;text-align: right;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #5A5A5A; font-size: 10px; line-height: 1.2578125;">null</span></td>
+<td colspan="3">
+</td>
+</tr>
+<tr valign="top" style="height:15px">
+<td colspan="2">
+</td>
+<td colspan="3">
+</td>
+<td colspan="22">
+<div style="width: 100%; height: 100%; position: relative;">
+<div style="position: absolute; overflow: hidden; width: 100%; height: 100%; ">
+<table cellpadding="0" cellspacing="0" border="0" style="empty-cells: show; width: 100%; border-collapse: collapse;">
+<tr valign="top" style="height:0">
+<td style="width:1px"></td>
+<td style="width:110px"></td>
+<td style="width:2px"></td>
+<td style="width:96px"></td>
+</tr>
+<tr valign="top" style="height:15px">
+<td>
+</td>
+<td style="pointer-events: auto; text-indent: 0px;  vertical-align: bottom;text-align: left;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #5A5A5A; font-size: 10px; line-height: 1.2578125;">TOTAL AMOUNT</span></td>
+<td>
+</td>
+<td style="pointer-events: auto; text-indent: 0px;  vertical-align: bottom;text-align: right;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #5A5A5A; font-size: 10px; line-height: 1.2578125;">null</span></td>
+</tr>
+</table>
+</div>
+<div style="position: relative; width: 100%; height: 100%; pointer-events: none; ">
+<table cellpadding="0" cellspacing="0" border="0" style="empty-cells: show; width: 100%; border-collapse: collapse;">
+<tr valign="top" style="height:0">
+<td style="width:206px"></td>
+<td style="width:3px"></td>
+</tr>
+<tr valign="top" style="height:1px">
+<td style="pointer-events: auto; background-color: #FFFFFF; border-top: 1px solid #808080; ">
+</td>
+<td>
+</td>
+</tr>
+<tr valign="top" style="height:14px">
+<td colspan="2">
+</td>
+</tr>
+</table>
+</div>
+</div>
+</td>
+<td colspan="3">
+</td>
+</tr>
+<tr valign="top" style="height:1px">
+<td colspan="2">
+</td>
+<td colspan="28">
+</td>
+</tr>
+<tr valign="top" style="height:1px">
+<td colspan="2">
+</td>
+<td colspan="4">
+</td>
+<td colspan="19" style="border-top: 1px solid #808080; ">
+</td>
+<td colspan="5">
+</td>
+</tr>
+<tr valign="top" style="height:5px">
+<td colspan="2">
+</td>
+<td colspan="28">
+</td>
+</tr>
+<tr valign="top" style="height:12px">
+<td colspan="46">
+</td>
+</tr>
+<tr valign="top" style="height:30px">
+<td colspan="29">
+</td>
+<td colspan="13" style="text-indent: 0px;  vertical-align: bottom;text-align: right;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #FF793C; font-size: 10px; line-height: 1.2578125;">THANK YOU!</span></td>
+<td colspan="4">
+</td>
+</tr>
+<tr valign="top" style="height:6px">
+<td colspan="46">
+</td>
+</tr>
+<tr valign="top" style="height:1px">
+<td colspan="2">
+</td>
+<td colspan="42" style="border-top: 1px solid #5A5A5A; ">
+</td>
+<td colspan="2">
+</td>
+</tr>
+<tr valign="top" style="height:14px">
+<td colspan="46">
+</td>
+</tr>
+<tr valign="top" style="height:24px">
+<td colspan="5">
+</td>
+<td colspan="5" rowspan="3" style="text-indent: 0px; text-align: left;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #A5A5A5; font-size: 7px; line-height: 1.2578125;">Geschäftsführer: Konstantin Komarov<br/>Registergericht: Amtsgericht Freiburg<br/>Registernummer: HRB 300575 <br/>VAT ID.: DE-19338458</span></td>
+<td colspan="3">
+</td>
+<td colspan="12" rowspan="2" style="text-indent: 0px; text-align: left;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #A5A5A5; font-size: 7px; line-height: 1.2578125;">Paragon Technologie GmbH<br/>Konto-Nr.: 143037000<br/>BLZ: 680 700 24</span></td>
+<td colspan="3">
+</td>
+<td colspan="10" style="text-indent: 0px; text-align: left;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #A5A5A5; font-size: 7px; line-height: 1.2578125;">IBAN: DE54 6807 0024 0143 0370 00<br/>BIC/SWIFT: DEUTDEDBFRE</span></td>
+<td colspan="8">
+</td>
+</tr>
+<tr valign="top" style="height:10px">
+<td colspan="5">
+</td>
+<td colspan="3">
+</td>
+<td colspan="21">
+</td>
+</tr>
+<tr valign="top" style="height:10px">
+<td colspan="5">
+</td>
+<td colspan="36">
+</td>
+</tr>
+<tr valign="top" style="height:4px">
+<td colspan="46">
+</td>
+</tr>
+<tr valign="top" style="height:1px">
+<td colspan="3">
+</td>
+<td colspan="3" rowspan="6">
+<img src="" style="height: 22px" alt=""/></td>
+<td colspan="40">
+</td>
+</tr>
+<tr valign="top" style="height:1px">
+<td colspan="3">
+</td>
+<td colspan="5">
+</td>
+<td colspan="3" rowspan="6">
+<img src="" style="height: 22px" alt=""/></td>
+<td colspan="32">
+</td>
+</tr>
+<tr valign="top" style="height:3px">
+<td colspan="3">
+</td>
+<td colspan="5">
+</td>
+<td>
+</td>
+<td colspan="5" rowspan="7" style="text-indent: 0px; text-align: left;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #A5A5A5; font-size: 7px; line-height: 1.2578125;">+49 761 59 018 201 <br/>+ 1-888-347-5462</span></td>
+<td colspan="7">
+</td>
+<td colspan="3" rowspan="6">
+<img src="" style="height: 22px" alt=""/></td>
+<td colspan="16">
+</td>
+</tr>
+<tr valign="top" style="height:2px">
+<td colspan="3">
+</td>
+<td>
+</td>
+<td colspan="2" rowspan="2" style="text-indent: 0px; text-align: left;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #A5A5A5; font-size: 7px; line-height: 1.0;">www.paragon-software.com</span></td>
+<td colspan="2">
+</td>
+<td>
+</td>
+<td colspan="7">
+</td>
+<td colspan="16">
+</td>
+</tr>
+<tr valign="top" style="height:13px">
+<td colspan="3">
+</td>
+<td>
+</td>
+<td colspan="2">
+</td>
+<td>
+</td>
+<td colspan="7">
+</td>
+<td>
+</td>
+<td colspan="8" rowspan="2" style="text-indent: 0px; text-align: left;">
+<span style="font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; color: #A5A5A5; font-size: 7px; line-height: 1.2578125;">info@paragon-software.com</span></td>
+<td colspan="7">
+</td>
+</tr>
+<tr valign="top" style="height:2px">
+<td colspan="3">
+</td>
+<td colspan="5">
+</td>
+<td>
+</td>
+<td colspan="7">
+</td>
+<td>
+</td>
+<td colspan="7">
+</td>
+</tr>
+<tr valign="top" style="height:1px">
+<td colspan="11">
+</td>
+<td>
+</td>
+<td colspan="7">
+</td>
+<td colspan="16">
+</td>
+</tr>
+<tr valign="top" style="height:1px">
+<td colspan="15">
+</td>
+<td colspan="7">
+</td>
+<td colspan="16">
+</td>
+</tr>
+<tr valign="top" style="height:7px">
+<td colspan="15">
+</td>
+<td colspan="26">
+</td>
+</tr>
+<tr valign="top" style="height:20px">
+<td colspan="46">
+</td>
+</tr>
+</table>
+
+</td><td width="50%">&nbsp;</td></tr>
+</table>
+</body>
+</html>
+
+-----------------------------------------------------------------------------------------
+# Maven
+# Build your Java project and run tests with Apache Maven.
+# Add steps that analyze code, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/java
+
+trigger:
+- master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- task: Maven@3
+  inputs:
+    mavenPomFile: 'pom.xml'
+    mavenOptions: '-Xmx3072m'
+    javaHomeOption: 'JDKVersion'
+    jdkVersionOption: '1.8'
+    jdkArchitectureOption: 'x64'
+    publishJUnitResults: true
+    testResultsFiles: '**/surefire-reports/TEST-*.xml'
+    goals: 'package'
+-----------------------------------------------------------------------------------------
+ React, Preact, Inferno, Snabbdom и тд.
+ 
+ Creatium
+-----------------------------------------------------------------------------------------
+@MockBean(answer=Answers.RETURNS_DEEP_STUBS)
+-----------------------------------------------------------------------------------------
+https://zsoltfabok.com/
+https://www.itefix.net/cwrsync
+-----------------------------------------------------------------------------------------
+@ApiResponse(responseCode = "200", description = "Returns a dummy", content = @Content(
+mediaType = "application/json",
+schema = @Schema(implementation = Dummy.class)))
+-----------------------------------------------------------------------------------------
+@RunWith(SpringJUnit4ClassRunner.class)
+@WebAppConfiguration
+@ContextConfiguration(classes = AppConfig.class)
+public class ControllerTest {
+  @Autowired
+  private WebApplicationContext wac;
+  private MockMvc mockMvc;
+
+  @Before
+  public void setup () {
+      DefaultMockMvcBuilder builder = MockMvcBuilders.webAppContextSetup(this.wac);
+      this.mockMvc = builder.build();
+  }
+    .............
+  @Test
+  public void testConsumerController () throws Exception {
+      MockHttpServletRequestBuilder builder =
+                MockMvcRequestBuilders.post("/newEmployee")
+                                      .contentType("text/yaml")
+                                      .accept(MediaType.TEXT_PLAIN_VALUE)
+                                      .content(getNewEmployeeInYaml());
+      this.mockMvc.perform(builder)
+                  .andExpect(MockMvcResultMatchers.status()
+                                                  .isOk())
+                  .andExpect(MockMvcResultMatchers.content()
+                                                  .string("Employee saved: Tina"))
+                  .andDo(MockMvcResultHandlers.print());
+      ;
+  }
+    .............
+  public String getNewEmployeeInYaml () {
+      return "id: 1\nname: Tina\nphoneNumber: 111-111-1111\n";
+  }
+}
+-----------------------------------------------------------------------------------------
+public class MyCustomMessageConverter extends AbstractMessageConverter {
+
+	public MyCustomMessageConverter() {
+		super(new MimeType("application", "bar"));
+	}
+
+	@Override
+  protected boolean supports(Class<?> clazz) {
+    return (Bar.class == clazz);
+  }
+
+	@Override
+	protected Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
+		Object payload = message.getPayload();
+		return (payload instanceof Bar ? payload : new Bar((byte[]) payload));
+	}
+}
+
+@JacksonXmlRootElement
+public class Cities implements Serializable {
+
+    private static final long serialVersionUID = 22L;
+
+    @JacksonXmlProperty(localName = "City")
+    @JacksonXmlElementWrapper(useWrapping = false)
+    private List<City> cities = new ArrayList<>();
+
+    public List<City> getCities() {
+        return cities;
+    }
+
+    public void setCities(List<City> cities) {
+        this.cities = cities;
+    }
+}
+-----------------------------------------------------------------------------------------
+@Override
+public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {
+    configurer.favorPathExtension(true)
+            .favorParameter(false)
+            .ignoreAcceptHeader(false)
+            .useJaf(false)
+            .defaultContentType(MediaType.APPLICATION_JSON);
+}
+
+@RestController
+@RequestMapping(
+  value = "/", 
+  produces = "application/vnd.baeldung.api.v1+json"
+)
+public class CustomMediaTypeController
+-----------------------------------------------------------------------------------------
+# generate keys if they don't exist yet
+gpg2 --gen-key
+
+# list keys on the machine
+gpg2 --list-keys
+
+# upload to a key server; I used keyserver.ubuntu.com
+gpg2 --send-keys --keyserver keyserver.ubuntu.com <KEY ID>
+
+# I had my keys in backup, so I had to export them:
+gpg2 --import path_to_keys/secring.gpg
+
+osx: brew install gpg2
+ubuntu: sudo apt-get install gpgv2
+-----------------------------------------------------------------------------------------
+@RunWith(SpringRunner.class)
+@DataJpaTest
+public class UserRepositoryTest {
+
+    @Autowired
+    private TestEntityManager entityManager;
+
+    @Autowired
+    private UserRepository repository;
+
+    @Test
+    public void findsUserByEmail() {
+        User user = new User("email", "password");
+        entityManager.persist(user);
+        assertEquals(user, repository.findByEmail("email"));
+        assertNull(repository.findByEmail("email2"));
+    }
+}
+-----------------------------------------------------------------------------------------
+Function<String, String> normalizer = (original) ->
+    original
+        .replaceAll("[\\s+]?\n+[\\s+]?", "") // remove newline chars
+        .replaceAll("(>)(\\s+)(<)", "$1$3") // remove white space between tags
+        .toLowerCase();
+String html1 = normalizer.apply(doc1.html());
+String html2 = normalizer.apply(doc2.html());
+Assert.assertEquals("Both documents are identical", html1, html2);
 -----------------------------------------------------------------------------------------
 import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
