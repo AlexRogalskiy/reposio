@@ -21537,6 +21537,311 @@ public class FiledownloadApplication {
     }
 }
 ==============================================================================================================
+#!/bin/sh
+#
+# Copyright (c) 2001-2016 Mathew A. Nelson and Robocode contributors
+# All rights reserved. This program and the accompanying materials
+# are made available under the terms of the Eclipse Public License v1.0
+# which accompanies this distribution, and is available at
+# http://robocode.sourceforge.net/license/epl-v10.html
+#
+
+pwd=`pwd`
+cd "${0%/*}"
+java -Xmx512M -DNOSECURITY=true -Dsun.io.useCanonCaches=false -cp libs/robocode.jar robocode.Robocode $*
+cd "${pwd}"
+==============================================================================================================
+ *  &#64;JsonDeserialize(using=MySerializer.class,
+ *    as=MyHashMap.class,
+ *    keyAs=MyHashKey.class,
+ *    contentAs=MyHashValue.class
+ *  )
+==============================================================================================================
+package com.paragon.microservices.documents.generator.server.system.serializer;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.paragon.mailingcontour.commons.rest.configuration.RestApiConfiguration;
+import com.paragon.microservices.documents.generator.server.common.annotation.SpringUnitTest;
+import com.paragon.microservices.documents.generator.server.common.annotation.TestTag;
+import com.paragon.microservices.documents.generator.server.model.dto.RequestDto;
+import com.paragon.microservices.documents.generator.server.model.enumeration.TemplateType;
+import com.paragon.microservices.documents.generator.server.system.configuration.BaseConfiguration;
+import com.paragon.microservices.documents.generator.server.system.converter.StringToMediaTypeConverter;
+import org.junit.Before;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.autoconfigure.cache.CachesEndpointAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.health.HealthIndicatorAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.jdbc.DataSourceHealthIndicatorAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.metrics.MetricsAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.metrics.cache.CacheMetricsAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.metrics.web.servlet.WebMvcMetricsAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.redis.RedisHealthIndicatorAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.redis.RedisReactiveHealthIndicatorAutoConfiguration;
+import org.springframework.boot.autoconfigure.cache.CacheAutoConfiguration;
+import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
+import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
+import org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration;
+import org.springframework.boot.autoconfigure.data.web.SpringDataWebAutoConfiguration;
+import org.springframework.boot.autoconfigure.freemarker.FreeMarkerAutoConfiguration;
+import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
+import org.springframework.boot.autoconfigure.task.TaskExecutionAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.client.RestTemplateAutoConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.core.convert.ConversionService;
+import org.springframework.http.MediaType;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import org.springframework.test.annotation.DirtiesContext;
+
+import java.io.IOException;
+import java.util.Locale;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+@Tag(TestTag.SERIALIZER)
+@SpringUnitTest(
+        classes = {
+                // configuration
+                MediaTypeDeserializerTest.TestConfiguration.class,
+                BaseConfiguration.class,
+                RestApiConfiguration.class,
+                // converters
+                StringToMediaTypeConverter.class
+        },
+        classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD,
+        exclude = {
+                TaskExecutionAutoConfiguration.class,
+                SpringDataWebAutoConfiguration.class,
+                RedisAutoConfiguration.class,
+                RedisRepositoriesAutoConfiguration.class,
+                MetricsAutoConfiguration.class,
+                WebMvcMetricsAutoConfiguration.class,
+                UserDetailsServiceAutoConfiguration.class,
+                DataSourceAutoConfiguration.class,
+                JpaRepositoriesAutoConfiguration.class,
+                RestTemplateAutoConfiguration.class,
+                DataSourceTransactionManagerAutoConfiguration.class,
+                HibernateJpaAutoConfiguration.class,
+                JacksonAutoConfiguration.class,
+                FreeMarkerAutoConfiguration.class,
+                CacheAutoConfiguration.class,
+                CacheMetricsAutoConfiguration.class,
+                CachesEndpointAutoConfiguration.class,
+                HealthIndicatorAutoConfiguration.class,
+                DataSourceHealthIndicatorAutoConfiguration.class,
+                RedisHealthIndicatorAutoConfiguration.class,
+                RedisReactiveHealthIndicatorAutoConfiguration.class
+        }
+)
+class MediaTypeDeserializerTest {
+
+    @Autowired
+    private ObjectMapper objectMapper;
+    @Autowired
+    private ConversionService conversionService;
+
+    private ObjectMapper resultObjectMapper;
+
+    @Before
+    void setUp() {
+        final SimpleModule typeModule = new SimpleModule("MediaTypeModule");
+        typeModule.addDeserializer(MediaType.class, new MediaTypeDeserializer(this.objectMapper, this.conversionService));
+        this.resultObjectMapper.registerModule(typeModule);
+    }
+
+    @Test
+    void test_convert_String_To_RequestDto_whenPassed_StandardMediaType_Message() throws IOException {
+        // given
+        final String source = "{" +
+                "\"id\": \"2e3dbe91-9a2c-41c0-a07a-478351ca6f74\",\n" +
+                "\"templateName\": \"need.assistance\",\n" +
+                "\"templateType\": \"email\",\n" +
+                "\"locale\": \"en\",\n" +
+                "\"mediaType\": \"text/html\",\n" +
+                "\"data\": {}" +
+                "}";
+        final RequestDto expected = RequestDto.builder()
+                .id(UUID.fromString("2e3dbe91-9a2c-41c0-a07a-478351ca6f74"))
+                .templateName("need.assistance")
+                .templateType(TemplateType.EMAIL.getCode())
+                .locale(Locale.ENGLISH)
+                .mediaType(MediaType.TEXT_HTML)
+                .data(new Object())
+                .build();
+
+        // when
+        final RequestDto actual = this.resultObjectMapper.readValue(source, RequestDto.class);
+
+        // then
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void test_convert_String_To_RequestDto_whenPassed_SimpleMediaType_Message() throws IOException {
+        // given
+        final String source = "{" +
+                "\"id\": \"2e3dbe91-9a2c-41c0-a07a-478351ca6f74\",\n" +
+                "\"templateName\": \"need.assistance\",\n" +
+                "\"templateType\": \"email\",\n" +
+                "\"locale\": \"en\",\n" +
+                "\"mediaType\": \"text\",\n" +
+                "\"data\": {}" +
+                "}";
+        final RequestDto expected = RequestDto.builder()
+                .id(UUID.fromString("2e3dbe91-9a2c-41c0-a07a-478351ca6f74"))
+                .templateName("need.assistance")
+                .templateType(TemplateType.EMAIL.getCode())
+                .locale(Locale.ENGLISH)
+                .mediaType(MediaType.TEXT_HTML)
+                .data(new Object())
+                .build();
+
+        // when
+        final RequestDto actual = this.resultObjectMapper.readValue(source, RequestDto.class);
+
+        // then
+        assertEquals(expected, actual);
+    }
+
+
+    @Test
+    void test_convert_String_To_RequestDto_whenPassed_InvalidFormatMediaType_Message() throws IOException {
+        // given
+        final String source = "{" +
+                "\"id\": \"2e3dbe91-9a2c-41c0-a07a-478351ca6f74\",\n" +
+                " \"templateName\": \"need.assistance\",\n" +
+                " \"templateType\": \"email\",\n" +
+                " \"locale\": \"en\",\n" +
+                " \"mediaType\": \"text html\",\n" +
+                " \"data\": {}" +
+                "}";
+        final RequestDto expected = RequestDto.builder()
+                .id(UUID.fromString("2e3dbe91-9a2c-41c0-a07a-478351ca6f74"))
+                .templateName("need.assistance")
+                .templateType(TemplateType.EMAIL.getCode())
+                .locale(Locale.ENGLISH)
+                .mediaType(MediaType.TEXT_HTML)
+                .data(new Object())
+                .build();
+
+        // when
+        final RequestDto actual = this.resultObjectMapper.readValue(source, RequestDto.class);
+
+        // then
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void test_convert_String_To_RequestDto_whenPassed_InvalidMediaType_Message() throws IOException {
+        // given
+        final String source = "{" +
+                "\"id\": \"2e3dbe91-9a2c-41c0-a07a-478351ca6f74\",\n" +
+                " \"templateName\": \"need.assistance\",\n" +
+                " \"templateType\": \"email\",\n" +
+                " \"locale\": \"en\",\n" +
+                " \"mediaType\": \"test\",\n" +
+                " \"data\": {}" +
+                "}";
+        final RequestDto expected = RequestDto.builder()
+                .id(UUID.fromString("2e3dbe91-9a2c-41c0-a07a-478351ca6f74"))
+                .templateName("need.assistance")
+                .templateType(TemplateType.EMAIL.getCode())
+                .locale(Locale.ENGLISH)
+                .mediaType(MediaType.TEXT_HTML)
+                .data(new Object())
+                .build();
+
+        // when
+        final RequestDto actual = this.resultObjectMapper.readValue(source, RequestDto.class);
+
+        // then
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void test_convert_String_To_RequestDto_whenPassed_FullMediaType_Message() throws IOException {
+        // given
+        final String source = "{" +
+                "\"id\": \"2e3dbe91-9a2c-41c0-a07a-478351ca6f74\",\n" +
+                "                    \"templateName\": \"need.assistance\",\n" +
+                "                    \"templateType\": \"email\",\n" +
+                "                    \"locale\": \"en\",\n" +
+                "                    \"mediaType\": {\n" +
+                "                        \"type\": \"text\",\n" +
+                "                        \"subtype\": \"html\",\n" +
+                "                        \"parameters\": {},\n" +
+                "                        \"qualityValue\": 1.0,\n" +
+                "                        \"concrete\": true,\n" +
+                "                        \"charset\": null,\n" +
+                "                        \"wildcardType\": false,\n" +
+                "                        \"wildcardSubtype\": false\n" +
+                "                    },\n" +
+                "                    \"data\": {}" +
+                "}";
+        final RequestDto expected = RequestDto.builder()
+                .id(UUID.fromString("2e3dbe91-9a2c-41c0-a07a-478351ca6f74"))
+                .templateName("need.assistance")
+                .templateType(TemplateType.EMAIL.getCode())
+                .locale(Locale.ENGLISH)
+                .mediaType(MediaType.TEXT_HTML)
+                .data(new Object())
+                .build();
+
+        // when
+        final RequestDto actual = this.resultObjectMapper.readValue(source, RequestDto.class);
+
+        // then
+        assertEquals(expected, actual);
+    }
+
+    @org.springframework.boot.test.context.TestConfiguration
+    public static class TestConfiguration {
+        @Bean
+        public Jackson2ObjectMapperBuilder jackson2ObjectMapperBuilder() {
+            return Jackson2ObjectMapperBuilder.json().deserializerByType() ;
+        }
+    }
+}
+
+==============================================================================================================
+0x25 0x50 0x44 0x46
+==============================================================================================================
+@JsonCreator
+public ImportResultItemImpl(@JsonProperty("name") String name, 
+        @JsonProperty("resultType") ImportResultItemType resultType, 
+        @JsonProperty("message") String message) {
+    super();
+    this.resultType = resultType;
+    this.message = message;
+    this.name = name;
+}
+
+{"type":"text","subtype":"html","parameters":{},"qualityValue":1.0,"wildcardType":false,"charset":null,"concrete":true,"wildcardSubtype":false}
+==============================================================================================================
+git merge --no-commit; git diff
+==============================================================================================================
+    ObjectMapper mapper = new ObjectMapper();  
+    SimpleModule mod = new SimpleModule("EfsModule");
+    mod.addDeserializer(Efs.class, new CustomDeserializer(Efs.class));
+    mapper.registerModule(mod);
+
+
+    List<HttpMessageConverter<?>> messageConverters = new ArrayList<>();
+    MappingJackson2HttpMessageConverter jsonMessageConverter = new MappingJackson2HttpMessageConverter();
+    jsonMessageConverter.setObjectMapper(mapper);
+    messageConverters.add(jsonMessageConverter);
+
+
+    RestTemplate restTemplate = new RestTemplate();
+    restTemplate.setMessageConverters(messageConverters);
+==============================================================================================================
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
 import java.io.ByteArrayOutputStream;
