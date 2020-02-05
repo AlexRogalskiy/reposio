@@ -869,6 +869,45 @@ class FileAuthHandler implements AuthHandler {
     }
 }
 ==============================================================================================================
+public class BasketItemDeserializer extends JsonDeserializer {
+  @Override
+  public BasketItem deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
+    throws IOException, JsonProcessingException {
+    ObjectCodec objectCodec = jsonParser.getCodec();
+    JsonNode jsonNode = objectCodec.readTree(jsonParser);
+ 
+    BasketItem basketItem = new BasketItem();
+    basketItem.setProduct(jsonNode.get("detail").get("product").asText());
+    basketItem.setCode(jsonNode.get("detail").get("code").asText());
+    basketItem.setAmount(jsonNode.get("amount").asInt());
+ 
+    return basketItem;
+  }
+}
+ 
+public class BasketItemSerializer extends JsonSerializer {
+  @Override
+  public void serialize(
+    BasketItem basketItem, JsonGenerator jsonGenerator, SerializerProvider serializerProvider)
+      throws IOException, JsonProcessingException {
+    jsonGenerator.writeStartObject();
+    jsonGenerator.writeObjectFieldStart("detail");
+    jsonGenerator.writeStringField("product", basketItem.getProduct());
+    jsonGenerator.writeStringField("code", basketItem.getCode());
+    jsonGenerator.writeEndObject();
+    jsonGenerator.writeNumberField("amount", basketItem.getAmount());
+    jsonGenerator.writeEndObject();
+  }
+}
+ 
+@Service
+public class BasketItemJsonModule extends SimpleModule {
+  public BasketItemJsonModule() {
+    this.addDeserializer(BasketItem.class, new BasketItemDeserializer());
+    this.addSerializer(BasketItem.class, new BasketItemSerializer());
+  }
+}
+==============================================================================================================
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 
