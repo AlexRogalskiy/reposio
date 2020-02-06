@@ -869,6 +869,8 @@ class FileAuthHandler implements AuthHandler {
     }
 }
 ==============================================================================================================
+echo "MAVEN_OPTS='-Xmx2g -XX:+TieredCompilation -XX:TieredStopAtLevel=1'" > ~/.mavenrc
+==============================================================================================================
 public class BasketItemDeserializer extends JsonDeserializer {
   @Override
   public BasketItem deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)

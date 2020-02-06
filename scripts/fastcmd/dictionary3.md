@@ -25127,6 +25127,17 @@ https://www.itefix.net/cwrsync
 mediaType = "application/json",
 schema = @Schema(implementation = Dummy.class)))
 -----------------------------------------------------------------------------------------
+npm install --no-bin-links
+-----------------------------------------------------------------------------------------
+//    @BeforeEach
+//    void setUp() {
+//        final SimpleModule mediaTypeModule = new SimpleModule("MediaTypeModule");
+//        mediaTypeModule.addDeserializer(MediaType.class, new MediaTypeDeserializer(this.conversionService));
+//        this.objectMapper.registerModule(mediaTypeModule);
+//    }
+-----------------------------------------------------------------------------------------
+http://queues.io/
+-----------------------------------------------------------------------------------------
 public class BasketItemTest {
   @Test
   public void deserialize() throws Exception {
