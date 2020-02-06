@@ -21851,6 +21851,36 @@ class MediaTypeDeserializerTest {
     }
 }
 
+Assert.assertTrue(new ReflectionEquals(expected, excludeFields).matches(actual));
+Assert.assertTrue(EqualsBuilder.reflectionEquals(expected,actual));
+
+public void test() {
+        // do the actual test
+        assertThat(actualObject)
+            .isEqualToComparingFieldByFieldRecursively(expectedObject);
+    }
+	
+	public void test() {
+        // do the actual test
+        assertThat(actualObject)
+            .usingRecursiveComparison()
+            .isEqualTo(expectedObject);
+    }
+	
+String s = new ReflectionToStringBuilder(o, ToStringStyle.SHORT_PREFIX_STYLE)
+                .setExcludeFieldNames(new String[] { "foo", "bar" }).toString()
+				
+import static org.hamcrest.beans.SamePropertyValuesAs.samePropertyValuesAs;
+...
+SomeClass expected = buildExpected(); 
+SomeClass actual = sut.doSomething();
+
+assertThat(actual.getSubObject(), is(samePropertyValuesAs(expected.getSubObject())));    
+expected.setSubObject(null);
+actual.setSubObject(null);
+
+assertThat(actual, is(samePropertyValuesAs(expected)));
+assertThat(obj1, reflectEquals(obj2));
 ==============================================================================================================
 0x25 0x50 0x44 0x46
 ==============================================================================================================
