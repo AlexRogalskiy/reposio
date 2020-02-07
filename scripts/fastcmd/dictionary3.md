@@ -25118,6 +25118,26 @@ steps:
  
  Creatium
 -----------------------------------------------------------------------------------------
+public static int countPattern(String references, Pattern referencePattern) {
+    return StreamSupport.stream(Spliterators.spliteratorUnknownSize(
+            new Iterator<Integer>() {
+                Matcher matcher = referencePattern.matcher(references);
+                int from = 0;
+
+                @Override
+                public boolean hasNext() {
+                    return matcher.find(from);
+                }
+
+                @Override
+                public Integer next() {
+                    from = matcher.start() + 1;
+                    return 1;
+                }
+            },
+            Spliterator.IMMUTABLE), false).reduce(0, (a, c) -> a + c);
+}
+-----------------------------------------------------------------------------------------
 @MockBean(answer=Answers.RETURNS_DEEP_STUBS)
 -----------------------------------------------------------------------------------------
 https://zsoltfabok.com/
