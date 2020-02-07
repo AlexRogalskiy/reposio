@@ -10938,6 +10938,87 @@ public class PactConsumerDrivenContractUnitTest {
     }
 }
 ==============================================================================================================
+I use spring-boot in my project, and I run this jar file which is built by spring-boot as a service on Centos. When I run this service:
+
+service myApp start
+
+I always get the below error messages:
+
+2016-08-26 09:11:02.002 ERROR 31900 --- [           main] o.s.b.c.FileEncodingApplicationListener  : System property 'file.encoding' is currently 'ANSI_X3.4-1968'. It should be 'UTF-8' (as defined in 'spring.mandatoryFileEncoding').
+2016-08-26 09:11:02.018 ERROR 31900 --- [           main] o.s.b.c.FileEncodingApplicationListener  : Environment variable LANG is 'null'. You could use a locale setting that matches encoding='UTF-8'.
+2016-08-26 09:11:02.018 ERROR 31900 --- [           main] o.s.b.c.FileEncodingApplicationListener  : Environment variable LC_ALL is 'null'. You could use a locale setting that matches encoding='UTF-8'.
+2016-08-26 09:11:02.031 ERROR 31900 --- [           main] o.s.boot.SpringApplication               : Application startup failed
+java.lang.IllegalStateException: The Java Virtual Machine has not been configured to use the desired default character encoding (UTF-8).
+    at org.springframework.boot.context.FileEncodingApplicationListener.onApplicationEvent(FileEncodingApplicationListener.java:74) ~[spring-boot-1.3.7.RELEASE.jar!/:1.3.7.RELEASE]
+If I run this jar file directly, then this application runs properly.
+
+java -jar target/myApp-1.0.jar
+
+ .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::        (v1.3.7.RELEASE)
+
+......
+
+2016-08-26 09:54:34.954 DEBUG 32035 --- [           main] o.s.w.s.resource.ResourceUrlProvider     : Found resource handler mapping: URL pattern="/**", locations=[ServletContext resource [/], class path resource [META-INF/resources/], class path resource [resources/], class path resource [static/], class path resource [public/]], resolvers=[org.springframework.web.servlet.resource.PathResourceResolver@1817d444]
+2016-08-26 09:54:35.051  INFO 32035 --- [           main] s.b.c.e.t.TomcatEmbeddedServletContainer : Tomcat started on port(s): 8000 (http)
+2016-08-26 09:54:35.053 DEBUG 32035 --- [           main] o.s.w.c.s.StandardServletEnvironment     : Adding [server.ports] PropertySource with highest search precedence
+2016-08-26 09:54:35.061  INFO 32035 --- [           main] co.nz.myApplication           : Started myApplication in 12.339 seconds (JVM running for 13.183)
+This is pom.xml:
+
+<project>
+....
+
+ <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>1.3.7.RELEASE</version>
+    <relativePath/>
+ </parent>
+
+ <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <java.version>1.8</java.version>
+ </properties>
+ ....
+
+ <build>
+    <plugins>
+        <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+            <configuration>
+                <executable>true</executable>
+                <jvmArguments>-Dfile.encoding=UTF8 -Dspring.profiles.active="production"</jvmArguments>
+            </configuration>
+            <dependencies>
+                <dependency>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>springloaded</artifactId>
+                    <version>1.2.5.RELEASE</version>
+                </dependency>
+            </dependencies>
+        </plugin>
+    </plugins>
+ </build>
+ 
+ 
+ "providerStates": [
+                {
+                    "name": "provider deletes email template",
+                    "params": {
+                        "test-name": "test-value"
+                    }
+                }
+            ],
+			
+ Gson gson = new GsonBuilder().disableHtmlEscaping().create();
+resp.getWriter().println(gson.toJson(json));
+==============================================================================================================
 import au.com.dius.pact.consumer.Pact;
 import au.com.dius.pact.consumer.PactProviderRuleMk2;
 import au.com.dius.pact.consumer.PactVerification;
