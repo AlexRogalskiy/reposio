@@ -11019,6 +11019,361 @@ This is pom.xml:
  Gson gson = new GsonBuilder().disableHtmlEscaping().create();
 resp.getWriter().println(gson.toJson(json));
 ==============================================================================================================
+sudo gem install waves
+waves generate -t classic -n myapp
+cd myapp
+waves server
+
+[dan@yoda dolphin (open-source)]$ ./bin/dolphin configure aws --help
+Usage: ./bin/dolphin (options)
+    -g, --group GROUP                The AWS security group to use for new instances
+    -i, --image IMAGE                The AWS image for provisioning pods
+    -k, --key KEY                    Your AWS account key
+    -p, --keypair KEYPAIR            The AWS keypair name to use with SSH
+    -r, --region REGION              The region (datacenter) for region-specific options
+    -s, --secret SECRET              Your AWS account secret
+    -h, --help                       Show this message
+==============================================================================================================
+// So we start with a function that will allow to create new functions that 
+// convert errors into events. 
+
+var safeFactory = function(emitter) {
+  return function(fn) {
+    return function(err,value) {
+    if (err) { emitter.emit("error",err); }
+    else fn(value);
+    }
+  }
+};
+
+// Then you can do:
+// 
+//     var safe = safeFactory(this);
+//     
+//       ...
+//       
+//     asyncThing(safe(myCallback));
+//     
+//     
+// Or (assuming you have a library like underscore):
+// 
+//     asyncThing(safe(_.bind(this,myCallback)));
+//     
+// This opens the possibility of defining a function that defines a method 
+// that converts an async call into a safe invocation.
+
+var safeMethodFactory = function(object,method,async,callback) {
+  return function() {
+    var args = _(arguments); // converts arguments to an Array
+    args.push(safe(_.bind(object,callback)));
+    return async(args);
+  }
+};
+// 
+// So now you could do something like this:
+// 
+//     var A = function() {
+//       this.readFile = safeMethodFactory(this,fs.readFile,this.parse);
+//     }
+==============================================================================================================
+# first we will give Domains a little help
+
+class Domain < String
+  def subdomain( rank = 1 ) ; self.split('.')[0..(rank-1)].join('.') ; end
+  def level( rank ) ; self.split('.')[(rank*-1)..-1].join('.') ; end
+  def top_level ; level(1) ; end
+end
+
+# now we can treat them like strings but also access domain components naturally
+
+d = Domain.new("store.apple.co.uk")
+d == "store.apple.co.uk"              # => true
+d =~ /^store/                         # => 0
+d.subdomain                           # => "store"
+d.subdomain(2)                        # => "store.apple"
+d.top_level                           # => "uk"
+d.level(2)                            # => "co.uk"
+d.level(3)                            # => "apple.co.uk"
+
+# within request mappings, we can pass lambda constraints:
+
+
+
+:domain => lambda { |d| d.level(2) == "co.uk" }
+
+
+      def satisfy?( request )
+        METHODS.all? do | method |
+          wanted = instance_variable_get( "@#{method}")
+          got = request.send( method ) if wanted
+          wanted.is_a? Proc ? wanted.call( got ) : wanted === got
+        end
+      end
+	  
+
+
+require 'socket'
+require 'rubygems'
+require 'monitor'
+
+include Socket::Constants
+
+lock = Mutex.new ; buf = []
+client = Connection.new( 2201, '10.45.10.219' ).listen
+server = Connection.new( 2202, '10.45.10.219' ).connect
+stop = false
+
+class YPCSocket
+  def initialize( port, ip )
+    @socket = Socket.new( AF_INET, SOCK_STREAM, 0 )
+    @address = Socket.pack_sockaddr_in( port, ip )
+  end
+  def close ; @socket.close ; end
+  def listen
+    @socket.bind( @address ).listen( 1 )
+  end
+  def connect
+    @socket.connect( @address  )
+  end
+  def accept
+    Connection.new( @socket.accept.first )
+  end
+  
+  class Connection
+    def initialize( socket )
+      @socket = socket
+    end
+    def read ; @socket.gets.chomp ; end
+  end
+end
+
+def read
+  connection = client.accept
+  while ( data = connection.read && data != 'END' )
+    lock.synchronize { buf << data }
+  end
+  stop = true
+end
+
+def write
+  until( stop ) do
+    lock.synchronize { data = buf.pop unless buf.empty? }
+    server.puts( data ) if data
+  end
+end
+
+
+Thread.start { read }
+Thread.start { write }
+
+client.close ; server.close
+==============================================================================================================
+#!/usr/bin/env ruby
+
+class BufferedString
+  
+  class Buffer < String
+    
+    def initialize
+      @eof = false
+      super
+    end
+    
+    def eof?
+      @eof
+    end
+    
+    def close!
+      @eof = true
+    end
+    
+  end
+
+  def initialize
+    @buf = Buffer.new
+    @pos = 0 
+  end
+  
+  def initialize_copy( from )
+    @buf = from.instance_eval { @buf }
+    @pos = 0
+  end
+  
+  def read
+    rval = @buf[ @pos..-1 ]
+    @pos += ( @buf.length - @pos )
+    return rval
+  end
+  
+  def close!
+    @buf.close!
+  end
+  
+  def eof?
+    @buf.eof? and @pos >= @buf.length
+  end
+  
+  def seek(pos) ; @pos = pos ; end
+  
+  def write( string )
+    @buf.insert(@pos,string)
+  end
+  
+  def method_missing(name,*args,&block)
+    @buf.send(name,*args,&block)
+  end
+  
+end
+
+io = BufferedString.new
+ioread = io.dup
+writer = Thread.new do
+  io << "xxx" while ( io.length < 1000 )
+  io.close!
+end
+reader = Thread.new do
+  p ioread.read until ioread.eof?
+end
+sleep 1 while [ reader, writer ].find { |thread| thread.alive? }
+
+io = BufferedString.new
+ioread = io.dup
+io << "dan"
+io.seek(0)
+io.write("hello ")
+p ioread.read
+==============================================================================================================
+require 'socket'
+
+class Server
+  
+  def initialize( port )
+    @server = TCPServer.new( port )
+    @threads = []
+  end
+  
+  def run( &block )
+    begin
+      request = nil
+      trap( 'INT' ) { shutdown }
+      loop do
+      	begin
+      		request = @server.accept_nonblock
+      	rescue Errno::EAGAIN, Errno::ECONNABORTED, Errno::EPROTO, Errno::EINTR
+      	  @threads.delete_if { |t| !t.alive? && t.join }
+      		IO.select([@server])
+      		retry
+      	end
+      	process( request, block )
+      end
+    rescue
+      shutdown
+    end
+  end
+  
+  private
+  
+  def process( request, block )
+  	@threads << Thread.new do
+  	  data = '' ; chunk = nil
+  	  loop do 
+    	  chunk = request.recv_nonblock(16*1024)
+  	    data << chunk
+  	    puts "CHUNK #{chunk.size}"
+  	    break if chunk.size == 0
+  	  end
+  	  puts "READ #{data.size}"
+      request.close_read
+      IO.select([], [request])
+  		request.print( block[ data ] )
+  	  request.close
+    end
+  end
+
+  def shutdown
+    @server.close
+    exit
+  end
+  
+end
+
+
+
+
+
+DELIMITERS = [ ['(',')'], ['{','}'], ['[',']'] ]
+def match?( string, stack = [] )
+  return true if string.empty? and stack.empty?
+  first = string[0,1] ; DELIMITERS.any? do | open, close |
+    case first
+    when open then match?( string[1..-1], stack.clone.push( close ) )
+    when close then match?( string[1..-1], stack ) if stack.clone.pop == close
+    else false
+    end
+  end
+end
+
+
+
+module MetaHelper
+  
+  # include this anywhere you want to refer to the model, controller, etc., generically
+  # all methods are prefixed with x_ to avoid name clashes with existing methods
+  
+  def x_controller_class ; self.class ; end
+  def x_controller_name ; self.class.name.underscore.gsub('_controller', '') ; end
+  def x_model_name ; x_controller_name.singularize ; end
+  def x_model_class ; x_model_name.camelize.constantize ; end
+  def x_mailer_name ; x_model_name + "_mailer" ; end
+  def x_mailer_class ; x_mailer_name.camelize.constantize ; end
+  def x_instance ; instance_variable_get( "@#{x_model_name}" ) ; end
+  def x_collection ; instance_variable_get( "@#{x_model_name.pluralize}" ) ; end
+  def x_find( id ) ; instance_variable_set( "@#{x_model_name}", x_model_class.find( id ) ) ; end
+  def x_find_all ; instance_variable_set( "@#{x_model_name.pluralize}", x_model_class.find( :all ) ) ; end
+  def t( key, options = {} ) 
+    I18n.t( 
+      ( key =~ /^\./ ? "#{x_controller_name}.#{params[:action]}#{key}" : key ), 
+      options )
+  end
+  
+end
+==============================================================================================================
+Текст песни
+Poussière vivante, je cherche en vain ma voie lactée
+Dans ma tourmente, je n'ai trouvé qu'un mausolée
+Et je divague
+J'ai peur du vide
+Je tourne des pages mais
+Des pages vides
+Poussière errante, je n'ai pas su me diriger
+Chaque heure demande pour qui, pour quoi, se redresser
+Et je divague
+J'ai peur du vide
+Pourquoi ces larmes, dis
+À quoi bon vire?
+Mais mon Dieu de quoi j'ai l'air, je sers à rien du tout
+Et qui peut dire dans cet enfer ce qu'on attend de nous, j'avoue
+Ne plus savoir à quoi je sers, sans doute à rien du tout
+À présent je peux me taire si tout devient dégoût
+Poussière brûlante, la fièvre a eu raison de moi
+Je ris sans rire, je vis, je fais n'importe quoi
+Et je divague
+J'ai peur du vide
+Je tourne des pages mais
+Des pages vides
+Mais mon Dieu de quoi j'ai l'air, je sers à rien du tout
+Et qui peut dire dans cet enfer ce qu'on attend de nous, j'avoue
+Ne plus savoir à quoi je sers, sans doute à rien du tout
+À présent je peux me taire si tout devient dégoût
+Mais mon Dieu de quoi j'ai l'air, je sers à rien du tout
+Et qui peut dire dans cet enfer ce qu'on attend de nous, j'avoue
+Ne plus savoir à quoi je sers, sans doute à rien du tout
+À présent je peux me taire si tout devient dégoût
+Mais mon Dieu de quoi j'ai l'air, je sers à rien du tout
+Et qui peut dire dans cet enfer ce qu'on attend de nous, j'avoue
+Ne plus savoir à quoi je sers, sans doute à rien du tout
+À présent je peux me taire si tout devient dégoût
+==============================================================================================================
 import au.com.dius.pact.consumer.Pact;
 import au.com.dius.pact.consumer.PactProviderRuleMk2;
 import au.com.dius.pact.consumer.PactVerification;
