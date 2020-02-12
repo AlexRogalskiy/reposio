@@ -31,6 +31,163 @@ class WithConfigurationTests {
     }
 }
 ==============================================================================================================
+Prepare data: use image to get byte array
+
+InputStream inputStream = FileUtils.openInputStream(new File("config/images.jpg"));
+byte[] pic = IOUtils.toByteArray(inputStream);
+Pojo pojo = new Pojo();
+pojo.setId("1");
+pojo.setPic(pic);
+ObjectMapper mapper = new ObjectMapper();
+String json = mapper.writeValueAsString(pojo);
+--Situation 1: use readvalue to object => the image2.jpg is correct
+
+Pojo tranPojo = mapper.readValue(json, Pojo.class);
+
+byte[] tranPicPojo = tranPojo.getPic();
+InputStream isPojo = new ByteArrayInputStream(tranPicPojo);
+File tranFilePojo = new File("config/images2.png");
+FileUtils.copyInputStreamToFile(isPojo, tranFilePojo);
+--Situation 2: use readvalue to Map and get String => the image3.jpg is broken
+
+Map<String, String> map = mapper.readValue(json, Map.class);
+
+byte[] tranString = map.get("pic").getBytes();
+InputStream isString = new ByteArrayInputStream(tranString);
+File tranFileString = new File("config/images3.png");
+FileUtils.copyInputStreamToFile(isString, tranFileString);
+==============================================================================================================
+List<A> source = Collections.emptyList();
+TypeDescriptor sourceType = TypeDescriptor.collection(List.class, TypeDescriptor.valueOf(A.class));
+TypeDescriptor targetType = TypeDescriptor.collection(List.class, TypeDescriptor.valueOf(B.class));
+List<B> target = (List<B>) conversionService.convert(source, sourceType, targetType);
+
+@SuppressWarnings({"rawtypes", "unchecked"})
+public <T> List<T> convert(List<?> sourceList, Class<T> targetClass) {
+
+    Assert.notNull(sourceList, "Cannot convert null list.");
+    List<Object> targetList = new ArrayList();
+
+    for (int i = 0; i < sourceList.size(); i++) {
+        Object o = super.convert(sourceList.get(i), targetClass);
+        targetList.add(o);
+    }
+
+    return (List<T>) targetList;
+}
+
+
+public static <T, U> List<U> convertList(final ConversionService service, final List<T> source, final Class<U> destType) {
+
+    final List<U> dest = new ArrayList<U>();
+
+    if (source != null) {
+        for (final T element : source) {
+            dest.add(service.convert(element, destType));
+        }
+    }
+    return dest;
+}
+
+
+public class SqlRowSetToCollectionConverterService implements Converter<SqlRowSet, Collection<?>> {
+
+    private SqlRowSetToCollectionConverter<?>[] converters;
+
+    public void setConverters (SqlRowSetToCollectionConverter<?>[] aConverters) {
+        converters = aConverters;
+    }
+
+    @Override
+    public Collection<?> convert (SqlRowSet aSource) {
+        for (SqlRowSetToCollectionConverter<?> converter : converters) {
+            if (converter.canConvert (aSource)) {
+                return (converter.convert(aSource));
+            }
+        }
+        return null;
+    }
+
+}
+
+@Nullable
+public Object convert(@Nullable Object source, TypeDescriptor targetType) {
+  return convert(source, TypeDescriptor.forObject(source), targetType);
+}
+
+
+public <S, @NonNull T> Collection<T> convert(Collection<S> source, Class<T> targetType) {
+  return (Collection<@NonNull T>) requireNonNull(conversionService.convert(source, TypeDescriptor.collection(List.class, TypeDescriptor.valueOf(targetType))));
+}
+
+
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+@Component
+public class RedisObjectHelper {
+
+    @Resource
+    private RedisTemplate<String, ?> redisTemplate;
+    private HashOperations<String, byte[], byte[]> hashOperations;
+    private HashMapper<Object, byte[], byte[]> mapper;
+
+    @PostConstruct
+    public void init() {
+        mapper = new ObjectHashMapper(new CustomConversions(Arrays.asList(new Timestamp2ByteConverter(), new Byte2TimestampConverter())));
+        hashOperations = redisTemplate.opsForHash();
+    }
+    // and any methods
+}
+
+@Component
+@ReadingConverter
+public class BytesToOffsetDateTimeConverter implements Converter<byte[], OffsetDateTime> {
+    @Override
+    public OffsetDateTime convert(final byte[] source) {
+        return OffsetDateTime.parse(new String(source), DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+    }
+}
+and writing converter:
+
+@Component
+@WritingConverter
+public class OffsetDateTimeToBytesConverter implements Converter<OffsetDateTime, byte[]> {
+    @Override
+    public byte[] convert(final OffsetDateTime source) {
+        return source.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME).getBytes();
+    }
+}
+And registered a RedisCustomConversions bean in the configuration:
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.core.convert.RedisCustomConversions;
+import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
+
+import java.util.Arrays;
+
+@Configuration
+@EnableRedisRepositories
+public class RedisConfiguration {
+
+    @Bean
+    public RedisCustomConversions redisCustomConversions(OffsetDateTimeToBytesConverter offsetToBytes,
+                                                         BytesToOffsetDateTimeConverter bytesToOffset) {
+        return new RedisCustomConversions(Arrays.asList(offsetToBytes, bytesToOffset));
+    }
+
+}
 ==============================================================================================================
 ==============================================================================================================
 ==============================================================================================================
