@@ -11496,6 +11496,132 @@ curl -v -X GET \
 -H "Authorization: Bearer {your oauthToken}" \
 'http://localhost:8080/oauth2-provider/v1.0/users/{userId}'
 ==============================================================================================================
+import java.io.*;
+import java.util.List;
+
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
+
+public class JsonMarshallerUnmarshaller<T> {
+    private ObjectMapper mapper;
+    private Class<T> targetClass;
+
+    public JsonMarshallerUnmarshaller(Class<T> targetClass) {
+        AnnotationIntrospector introspector = new JacksonAnnotationIntrospector();
+
+        mapper = new ObjectMapper();
+        mapper.getDeserializationConfig().with(introspector);
+        mapper.getSerializationConfig().with(introspector);
+
+        this.targetClass = targetClass;
+    }
+
+    public List<T> unmarshal(String jsonString) throws JsonParseException, JsonMappingException, IOException {
+        return parseList(jsonString, mapper, targetClass);
+    }
+
+    public String marshal(List<T> list) throws JsonProcessingException {
+        return mapper.writeValueAsString(list);
+    }
+
+    public static <E> List<E> parseList(String str, ObjectMapper mapper, Class<E> clazz)
+            throws JsonParseException, JsonMappingException, IOException {
+        return mapper.readValue(str, listType(mapper, clazz));
+    }
+
+    public static <E> List<E> parseList(InputStream is, ObjectMapper mapper, Class<E> clazz)
+            throws JsonParseException, JsonMappingException, IOException {
+        return mapper.readValue(is, listType(mapper, clazz));
+    }
+
+    public static <E> JavaType listType(ObjectMapper mapper, Class<E> clazz) {
+        return mapper.getTypeFactory().constructCollectionType(List.class, clazz);
+    }
+}
+
+import java.io.*;
+import java.util.*;
+
+public class JsonMarshaller<T> {
+    private static ClassLoader loader = JsonMarshaller.class.getClassLoader();
+
+    public static void main(String[] args) {
+        try {
+            JsonMarshallerUnmarshaller<Station> marshaller = new JsonMarshallerUnmarshaller<>(Station.class);
+            String jsonString = read(loader.getResourceAsStream("data.json"));
+            List<Station> stations = marshaller.unmarshal(jsonString);
+            stations.forEach(System.out::println);
+            System.out.println(marshaller.marshal(stations));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @SuppressWarnings("resource")
+    public static String read(InputStream ios) {
+        return new Scanner(ios).useDelimiter("\\A").next(); // Read the entire file
+    }
+}
+==============================================================================================================
+Type setType = new TypeToken<Set<CategoryTl>>() {}.getType();
+mapper.createTypeMap(setType, CategoryTlDTO.class).setConverter(converter);
+==============================================================================================================
+JsonMarshallerUnmarshaller<T> {
+    T targetClass;
+
+    public ArrayList<T> unmarshal(String jsonString) {
+        ObjectMapper mapper = new ObjectMapper();
+
+        AnnotationIntrospector introspector = new JacksonAnnotationIntrospector();
+        mapper.getDeserializationConfig()
+            .withAnnotationIntrospector(introspector);
+
+        mapper.getSerializationConfig()
+            .withAnnotationIntrospector(introspector);
+        JavaType type = mapper.getTypeFactory().
+            constructCollectionType(
+                ArrayList.class, 
+                targetclass.getClass());
+
+        try {
+            Class c1 = this.targetclass.getClass();
+            Class c2 = this.targetclass1.getClass();
+            ArrayList<T> temp = (ArrayList<T>) 
+                mapper.readValue(jsonString,  type);
+            return temp ;
+        } catch (JsonParseException e) {
+            e.printStackTrace();
+        } catch (JsonMappingException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return null ;
+    }  
+}
+==============================================================================================================
+Condition notNull = ctx -> ctx.getSource() != null;
+We can use the notNull Condition to specify that mapping only take place for a property if the source is not null:
+
+typeMap.addMappings(mapper -> mapper.when(notNull).map(Person::getName, PersonDTO::setName));
+In this example, mapping to setName will be skipped if the source is not null, else mapping will proceed from the source object’s getName method:
+
+typeMap.addMappings(mapper -> mapper.when(notNull).skip(PersonDTO::setName));
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
 This is a post on how to serialize and deserialize a domain object that has an attribute with the @jsonignore annotation. This is usually a problem when you use the same domain model as a view model and there is a requirement to cache the domain model. If such domain model contains an attribute with @jsonignore annotation, that attribute will not be cache if you are using a jsonserializer.
 This is how to go about it:
 Configure a new Object Mapper for your cache
