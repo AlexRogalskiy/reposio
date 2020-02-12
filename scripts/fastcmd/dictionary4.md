@@ -11313,7 +11313,7 @@ def match?( string, stack = [] )
   end
 end
 
-
+Assert.assertTrue(new ReflectionEquals(expected, excludeFields).matches(actual));
 
 module MetaHelper
   
@@ -11337,6 +11337,199 @@ module MetaHelper
   end
   
 end
+==============================================================================================================
+import java.util.List;
+import com.mendix.systemwideinterfaces.core.IContext;
+import com.mendix.webui.CustomJavaAction;
+import org.jsoup.Jsoup;
+import org.jsoup.select.Elements;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Document;
+import com.mendix.systemwideinterfaces.core.IMendixObject;
+import docugen.proxies.TemplateImage;
+import com.mendix.core.Core;
+
+public class ReplaceImages extends CustomJavaAction<java.lang.String>
+{
+	private java.lang.String HTML;
+
+	public ReplaceImages(IContext context, java.lang.String HTML)
+	{
+		super(context);
+		this.HTML = HTML;
+	}
+
+	@java.lang.Override
+	public java.lang.String executeAction() throws Exception
+	{
+		// BEGIN USER CODE
+		
+		//create variables to use later
+		String src;
+		String base64String;
+		String base64Prefix = "data:image/png;base64,";
+		String base64Complete;
+		
+		
+		//parse document
+		Document doc = Jsoup.parse(HTML);
+		
+		//retrieve all img tags
+		Elements img = doc.getElementsByTag("img");
+		
+		
+		//loop through image tags
+		 for (Element el : img) {
+
+			 // If alt is empty or null or already has the base64 encoded
+             if(el.attr("src") == null || el.attr("src").contains(base64Prefix) || el.attr("src").equals("")) {
+                
+            	//dont change anything if it is already base64 encoded
+
+
+            	 
+             } else if (el.attr("src").contains("file?guid=")){
+
+				 //the id is stored with a prefix of file?guid= , so we split the string in two from the equal sign, and then store the object id in a variable
+				 src = el.attr("src");
+				 String[] parts = src.split("=");
+				 String id = parts[1];
+
+				 //retrieve mendix object list by id
+				 List<IMendixObject> result = Core.retrieveXPathQuery(context(), "//DocuGen.TemplateImage[id" + "='" + id + "']");
+
+				 //the list will always contain one object, so take the first object out of the result list
+				 IMendixObject firstObj = result.get(0);
+
+				 //Retrieve the base64 string and add the base64 prefix
+				 base64String = firstObj.getValue(context(), TemplateImage.MemberNames.Base64String.toString());
+				 base64Complete = base64Prefix + base64String;
+
+				 //change the img tag to contain the base64 string
+				 el.attr("src", base64Complete.toString()); 
+             
+             } else {
+                 
+                 //dont change anything
+
+             }
+			 
+             
+         }
+         
+         return doc.toString();
+
+		// END USER CODE
+	}
+
+	/**
+	 * Returns a string representation of this action
+	 */
+	@java.lang.Override
+	public java.lang.String toString()
+	{
+		return "ReplaceImages";
+	}
+
+	// BEGIN EXTRA CODE
+	// END EXTRA CODE
+}
+==============================================================================================================
+public Module registerGeoJsonModule(){
+return new GeoJsonModule();
+}
+
+public Set<Object> getSingletons() {
+Set<Object> s = new HashSet<Object>();
+JacksonJsonProvider jjp = new JacksonJsonProvider();
+jjp.configure(Feature.WRITE_NULL_MAP_VALUES, false);
+jjp.configure(Feature.WRITE_NULL_PROPERTIES, false);
+s.add(jjp);
+return s;
+}
+
+@Document(collection="cachedcodes")
+public class CachedCode {
+
+@PersistenceConstructor
+public CachedCode(String code, UUID clientId, LocalDateTime expiration) {
+    this.code = code;
+    this.clientId = clientId;
+    this.expiration = expiration;
+}
+
+public CachedCode(String code, UUID clientId, long secondsExpiring) {
+    this.code = code;
+    this.clientId = clientId;
+    this.expiration = LocalDateTime.now().plusSeconds(secondsExpiring);
+}
+
+
+public UUID getClientId( ) {
+    return this.clientId;
+}
+
+public String getCode() {
+    return this.code;
+}
+
+public boolean hasExpired(LocalDateTime now) {
+    return (expiration.isBefore(now));
+}
+
+...
+@Id
+private final String code;
+private final UUID clientId;
+private final LocalDateTime expiration;
+
+
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer {your oauthToken}" \
+-d '{"firstName":"Foo", "lastName": "Bar", "emailAddress":"foobar@example.com"}' \
+'http://localhost:8080/oauth2-provider/v1.0/users/{userId}'
+
+and the GET:
+
+curl -v -X GET \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer {your oauthToken}" \
+'http://localhost:8080/oauth2-provider/v1.0/users/{userId}'
+==============================================================================================================
+This is a post on how to serialize and deserialize a domain object that has an attribute with the @jsonignore annotation. This is usually a problem when you use the same domain model as a view model and there is a requirement to cache the domain model. If such domain model contains an attribute with @jsonignore annotation, that attribute will not be cache if you are using a jsonserializer.
+This is how to go about it:
+Configure a new Object Mapper for your cache
+ObjectMapper objectMapper = new ObjectMapper();
+2. Create a JacksonAnnotationIntrospector subclass to ignore the annotation and override hasIgnoreMarker to always return false
+public static class JsonIgnoreDisabler extends  JacksonAnnotationIntrospector {
+    @Override
+    public boolean hasIgnoreMarker(final AnnotatedMember m){
+        return false;
+    }
+}
+3. Set the class in the mapper
+mapper.setAnnotationIntrospector(new JsonIgnoreDisabler());
+4. Enable defaultTyping
+mapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY);
+5. If using redis, you can set the serializer for RedisTemplate like this:
+RedisTemplate redisTemplate = new RedisTemplate();
+redisTemplate.setDefaultSerializer(new GenericJackson2JsonRedisSerializer(mapper));
+redisTemplate.afterPropertiesSet();
+You should start seeing your @jsonignore field in the cache.
+
+
+	public static void main(String[] args) {
+
+		RedisOperations<String, Object> redis = SpringApplication.run(App.class, args).getBean(RedisOperations.class);
+		
+		A a = new B();
+		System.out.println(a);
+		redis.opsForValue().set("foo", a);
+		
+		A aa = (A)redis.opsForValue().get("foo");
+		System.out.println(aa);
+		
+	}
 ==============================================================================================================
 Текст песни
 Poussière vivante, je cherche en vain ma voie lactée
