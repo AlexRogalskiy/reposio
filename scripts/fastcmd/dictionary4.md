@@ -19571,6 +19571,48 @@ public class PluginConfig extends SortEntity<User, Long> {
 	}
 }
 ------------------------------------------------------------
+$ sudo docker run -d --restart=unless-stopped -p 80:80 -p 443:443 rancher/rancher
+------------------------------------------------------------
+World  mockWorld = mock(World.class); 
+
+doAnswer(new Answer<Void>() {
+
+    public Void answer(InvocationOnMock invocation) {
+
+      Object[] args = invocation.getArguments();
+
+      System.out.println("called with arguments: " + Arrays.toString(args));
+
+      return null;
+
+    }
+
+}).when(mockWorld).setState(anyString());
+------------------------------------------------------------
+public byte[] ToByteArray<T>(T obj)
+{
+    if(obj == null)
+        return null;
+    BinaryFormatter bf = new BinaryFormatter();
+    using(MemoryStream ms = new MemoryStream())
+    {
+        bf.Serialize(ms, obj);
+        return ms.ToArray();
+    }
+}
+
+public T FromByteArray<T>(byte[] data)
+{
+    if(data == null)
+         return default(T);
+    BinaryFormatter bf = new BinaryFormatter();
+    using(MemoryStream ms = new MemoryStream(data))
+    {
+        object obj = bf.Deserialize(ms);
+        return (T)obj;
+    }
+}
+------------------------------------------------------------
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
