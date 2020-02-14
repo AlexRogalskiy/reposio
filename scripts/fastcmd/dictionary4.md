@@ -19573,6 +19573,95 @@ public class PluginConfig extends SortEntity<User, Long> {
 ------------------------------------------------------------
 $ sudo docker run -d --restart=unless-stopped -p 80:80 -p 443:443 rancher/rancher
 ------------------------------------------------------------
+@BeforeMethod
+public void configureRestAssured(...) {
+   RestAssured.baseURI = "http://cookiemonster.com";
+   RestAssured.requestSpecification = given()
+       .header("Language", "en");
+   RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
+...
+}
+
+public class OAuth2Filter implements AuthFilter {
+
+   String accessToken;
+
+   OAuth2Filter(String accessToken) {
+       this.accessToken = accessToken;
+   }
+
+   @Override
+   public Response filter(FilterableRequestSpecification requestSpec, FilterableResponseSpecification responseSpec, FilterContext ctx) {
+       requestSpec.replaceHeader("Authorization", "Bearer " + accessToken);
+       return ctx.next(requestSpec, responseSpec);
+   }
+}
+
+String accessToken = getAccessToken(username, password);
+OAuth2Filter auth = new OAuth2Filter(accessToken);
+
+given()
+   .filter(auth)
+   .filter(new RequestLoggingFilter())
+   .filter(new ResponseLoggingFilter())
+...
+
+
+
+given()
+   .filter(auth)
+   .filter(new RequestLoggingFilter())
+…
+
+given()
+   .filter(new RequestLoggingFilter())
+   .filter(auth)
+   
+
+@Test
+public void shouldCorrectlyCountAddedCookies() {
+   Integer addNumber = 10;
+
+   JsonPath beforeCookies = given()
+           .when()
+           .get("/latestcookies")
+           .then()
+           .assertThat()
+           .statusCode(200)
+           .extract()
+           .jsonPath();
+
+   String beforeId = beforeCookies.getString("id");
+
+   JsonPath afterCookies = given()
+           .body(String.format("{number: %s}", addNumber))
+           .when()
+           .put("/cookies")
+           .then()
+           .assertThat()
+           .statusCode(200)
+           .extract()
+           .jsonPath();
+
+   Integer afterNumber = afterCookies.getInt("number");
+   String afterId = afterCookies.getString("id");
+   JsonPath history = given()
+           .when()
+           .get("/history")
+           .then()
+           .assertThat()
+           .statusCode(200)
+           .extract()
+           .jsonPath();
+
+   assertThat(history.getInt(String.format("records.find{r -> r.id == %s}.number", beforeId)))
+           .isEqualTo(afterNumber - addNumber);
+   assertThat(history.getInt(String.format("records.find{r -> r.id == %s}.number", afterId)))
+           .isEqualTo(afterNumber);
+}
+
+
+------------------------------------------------------------
 World  mockWorld = mock(World.class); 
 
 doAnswer(new Answer<Void>() {
