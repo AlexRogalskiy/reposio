@@ -25257,6 +25257,82 @@ MockMultipartFile file = new MockMultipartFile("file", "company_upload.csv",
 -----------------------------------------------------------------------------------------
 https://www.baeldung.com/pdf-conversions-java
 -----------------------------------------------------------------------------------------
+https://blog.maddevs.io/go-rest-%D0%B8%D0%BB%D0%B8-grpc-f5d52d7ffff6
+-----------------------------------------------------------------------------------------
+final TemplateData templateData = new TemplateData(null);
+this.modelMapper2.<TemplateData>mapInternal(actualData, null, (Class<Map<String, Object>) MAP_TYPE.getRawClass(), null);
+
+final TemplateData templateData = new TemplateData(null);
+this.modelMapper2.mapInternal(actualData, null, TypeToken.of(TemplateData.class).getType(), null);
+-----------------------------------------------------------------------------------------
+ <dependency>
+        <groupId>com.fasterxml.jackson.module</groupId>
+        <artifactId>jackson-module-jaxb-annotations</artifactId>
+        <version>2.10.1</version>
+    </dependency>
+
+
+    <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <exclusions>
+            <exclusion>
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-jaxb-annotations</artifactId>
+            </exclusion>
+        </exclusions>
+    </dependency>
+-----------------------------------------------------------------------------------------
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.NoSuchElementException;
+
+/**
+ * Captures and silently ignores stack exceptions upon popping.
+ */
+public abstract class SilentStack<E> extends ArrayDeque<E> {
+  public E pop() {
+    try {
+      return super.pop();
+    }
+    catch( NoSuchElementException nsee ) {
+      return create();
+    }
+  }
+
+  public E create() {
+    try {
+      Type sooper = getClass().getGenericSuperclass();
+      Type t = ((ParameterizedType)sooper).getActualTypeArguments()[ 0 ];
+
+      return (E)(Class.forName( t.toString() ).newInstance());
+    }
+    catch( Exception e ) {
+      return null;
+    }
+  }
+}
+-----------------------------------------------------------------------------------------
+@SuppressWarnings("unchecked")
+private Class<T> getGenericTypeClass() {
+    try {
+        String className = ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0].getTypeName();
+        Class<?> clazz = Class.forName(className);
+        return (Class<T>) clazz;
+    } catch (Exception e) {
+        throw new IllegalStateException("Class is not parametrized with generic type!!! Please use extends <> ");
+    }
+} 
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
 private static void generatePDFFromHTML(String filename) {
     Document document = new Document();
     PdfWriter writer = PdfWriter.getInstance(document,

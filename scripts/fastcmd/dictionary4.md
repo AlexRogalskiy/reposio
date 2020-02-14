@@ -11495,6 +11495,176 @@ module MetaHelper
   
 end
 ==============================================================================================================
+https://www.jianshu.com/p/1761842427cc
+https://www.baeldung.com/java-char-encoding
+==============================================================================================================
+
+public class CharsetDemo
+{
+   /**
+    * Supplies the default encoding without using Charset.defaultCharset()
+    * and without accessing System.getProperty("file.encoding").
+    *
+    * @return Default encoding (default charset).
+    */
+   public static String getEncoding()
+   {
+      final byte [] bytes = {'D'};
+      final InputStream inputStream = new ByteArrayInputStream(bytes);
+      final InputStreamReader reader = new InputStreamReader(inputStream);
+      final String encoding = reader.getEncoding();
+      return encoding;
+   }
+   public static void main(final String[] arguments)
+   {
+      out.println("Default Locale:   " + Locale.getDefault());
+      out.println("Default Charset:  " + Charset.defaultCharset());
+      out.println("file.encoding;    " + System.getProperty("file.encoding"));
+      out.println("sun.jnu.encoding: " + System.getProperty("sun.jnu.encoding"));
+      out.println("Default Encoding: " + getEncoding());
+   }
+}
+==============================================================================================================
+mvn install:install-file -Dfile=htmlcomponent.jar -DgroupId=htmlComponent -DartifactId=htmlComponent -Dversion=1.0 -Dpackaging=jar.
+==============================================================================================================
+import com.jolbox.bonecp.BoneCPDataSource;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.context.embedded.*;
+import org.springframework.boot.context.embedded.tomcat.TomcatEmbeddedServletContainerFactory;
+import org.springframework.boot.orm.jpa.EntityScan;
+import org.springframework.context.annotation.*;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.http.HttpStatus;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+
+import javax.sql.DataSource;
+
+@Configuration
+@ComponentScan({"com.mobenga.snowcat.web", "com.mobenga.snowcat.service"})
+@PropertySource("classpath:application.properties")
+@EnableAutoConfiguration
+@EnableTransactionManagement
+@EnableJpaRepositories("com.mobenga.snowcat.service.data.repository")
+@EntityScan("com.mobenga.snowcat.service.data")
+public class SnowcatMVCConfig extends WebMvcConfigurerAdapter {
+
+    @Value("${port:8080}")
+    private int port;
+    @Value("jdbc:h2:${db.url}")
+    private String url;
+    @Value("${db.username}")
+    private String username;
+    @Value("${db.password}")
+    private String password;
+
+    @Bean
+    public DataSource dataSource() {
+        BoneCPDataSource dataSource = new BoneCPDataSource();
+        dataSource.setDriverClass("org.h2.Driver");
+        dataSource.setJdbcUrl(url);
+        dataSource.setUsername(username);
+        dataSource.setPassword(password);
+        return dataSource;
+    }
+
+    public static void main(String[] args) {
+        //Used by Spring Boot
+        SpringApplication.run(SnowcatMVCConfig.class, args);
+    }
+
+    @Bean
+    public EmbeddedServletContainerFactory servletContainer() {
+        TomcatEmbeddedServletContainerFactory factory = new TomcatEmbeddedServletContainerFactory();
+        factory.setPort(port);
+        factory.addErrorPages(new ErrorPage(HttpStatus.NOT_FOUND, "/"));
+        return factory;
+    }
+}
+==============================================================================================================
+var $ = function(selector) {
+    if(this.$) {
+        return new $(selector);
+    }
+    if(typeof selector == "string") {
+        this.init = document.getElementById(selector);
+    }
+};
+ 
+$.prototype = {
+    text: function(text) {
+        if(!text){
+           this.init.innerHTML;
+        }
+        this.init.innerHTML = text;
+        return this;
+    },
+    css: function(style) {
+        for(var i in style){
+           this.init.style[i] = style[i];
+        }
+        return this;
+    }
+};
+//пример использования:
+$('div').text('div').css({color: "red"});
+
+
+
+({
+    foo: function (a) {
+        return a;
+    }
+}).foo('foo').toUpperCase();
+==============================================================================================================
+assertThat(strings, Matchers.<Collection<String>> allOf(
+    hasSize(greaterThan(2)),
+    hasItem(is("string two"))
+));
+
+assertThat("test", anyOf(is("testing"), containsString("est")));
+
+assertThat(Long.valueOf(1), instanceOf(Integer.class));
+// shortcut for instanceOf
+assertThat(Long.valueOf(1), isA(Integer.class));
+
+ @Test
+    public void listShouldInitiallyBeEmpty() {
+        List<Integer> list = Arrays.asList(5, 2, 4);
+
+        assertThat(list, hasSize(3));
+
+        // ensure the order is correct
+        assertThat(list, contains(5, 2, 4));
+
+        assertThat(list, containsInAnyOrder(2, 4, 5));
+
+        assertThat(list, everyItem(greaterThan(1)));
+
+    }
+	
+	
+	
+	assertThat(fellowship, everyItem(hasProperty("race", is(not((ORC))))));
+	 assertThat(list, everyItem(greaterThan(1)));
+	 
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
 import java.util.List;
 import com.mendix.systemwideinterfaces.core.IContext;
 import com.mendix.webui.CustomJavaAction;
