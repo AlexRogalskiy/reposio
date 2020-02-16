@@ -11495,6 +11495,197 @@ module MetaHelper
   
 end
 ==============================================================================================================
+package com.paragon.microservices.distributor.system.handler;
+
+import com.paragon.microservices.distributor.system.configuration.DelegatedObjectMapper;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.ClientHttpRequest;
+import org.springframework.http.client.ClientHttpResponse;
+import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpMessageConverterExtractor;
+import org.springframework.web.client.RequestCallback;
+import org.springframework.web.client.ResponseExtractor;
+import org.springframework.web.client.RestTemplate;
+
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.net.URI;
+import java.util.Objects;
+import java.util.Optional;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class CustomRestTemplate extends RestTemplate {
+    private final DelegatedObjectMapper delegatedObjectMapper;
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see RestTemplate
+     */
+    @NonNull
+    @Override
+    public <T> ResponseExtractor<ResponseEntity<T>> responseEntityExtractor(final Type responseType) {
+        return new ResponseEntityResponseExtractor<>(this.delegatedObjectMapper, responseType);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see RestTemplate
+     */
+    @NonNull
+    @Override
+    public <T> RequestCallback httpEntityCallback(@Nullable final Object requestBody, @NonNull final Type responseType) {
+        if (log.isInfoEnabled()) {
+            log.info(
+                    " >>> Request payload: {}, response type: {} >>> ",
+                    this.delegatedObjectMapper.toJsonExternal(requestBody),
+                    responseType.getTypeName()
+            );
+        }
+        return super.httpEntityCallback(requestBody, responseType);
+    }
+
+//    /**
+//     * {@inheritDoc}
+//     *
+//     * @see RestTemplate
+//     */
+//    @Nullable
+//    protected <T> T doExecute(final URI url,
+//                              @Nullable final HttpMethod method,
+//                              @Nullable final RequestCallback requestCallback,
+//                              @Nullable final ResponseExtractor<T> responseExtractor) throws RestClientException {
+//        logger.info(url);
+//        if (log.isInfoEnabled()) {
+//            log.info(
+//                    " >>> Request '{} {}' on client service with headers: {} >>> ",
+//                    method,
+//                    url
+//            );
+//        }
+//        return super.doExecute(url, method, requestCallback, responseExtractor);
+//    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see RestTemplate
+     */
+    @NonNull
+    @Override
+    protected ClientHttpRequest createRequest(@NonNull final URI url, @NonNull final HttpMethod method) throws IOException {
+        final ClientHttpRequest request = super.createRequest(url, method);
+        if (log.isInfoEnabled()) {
+            log.info(
+                    " >>> Request '{} {}' on client service with headers: {} >>> ",
+                    request.getMethod(),
+                    request.getURI(),
+                    request.getHeaders()
+            );
+        }
+        return request;
+    }
+
+    /**
+     * Custom {@link ResponseExtractor} implementation for {@link HttpEntity}
+     */
+    public class ResponseEntityResponseExtractor<T> implements ResponseExtractor<ResponseEntity<T>> {
+        @NonNull
+        private final DelegatedObjectMapper delegatedObjectMapper;
+        @Nullable
+        private final HttpMessageConverterExtractor<T> delegate;
+
+        ResponseEntityResponseExtractor(final DelegatedObjectMapper delegatedObjectMapper, @Nullable final Type responseType) {
+            this.delegatedObjectMapper = delegatedObjectMapper;
+            this.delegate = Optional.ofNullable(responseType)
+                    .filter(value -> Void.class != value)
+                    .map(value -> new HttpMessageConverterExtractor<T>(value, getMessageConverters()))
+                    .orElse(null);
+        }
+
+        @Override
+        public ResponseEntity<T> extractData(@NonNull final ClientHttpResponse response) throws IOException {
+            if (Objects.nonNull(this.delegate)) {
+                final T body = this.delegate.extractData(response);
+                if (log.isInfoEnabled()) {
+                    log.info(
+                            " >>> Response '{}' on client service with headers: {} <<< data response: {} ",
+                            response.getStatusCode(),
+                            response.getHeaders(),
+                            this.delegatedObjectMapper.toJsonExternal(body)
+                    );
+                }
+                return ResponseEntity.status(response.getRawStatusCode()).headers(response.getHeaders()).body(body);
+            }
+            return ResponseEntity.status(response.getRawStatusCode()).headers(response.getHeaders()).build();
+        }
+    }
+}
+
+==============================================================================================================
+package com.paragon.microservices.distributor.system.configuration;
+
+import com.paragon.microservices.distributor.system.handler.CustomRestTemplate;
+import com.paragon.microservices.distributor.system.handler.RestClientHttpRequestInterceptor;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.boot.web.client.RestTemplateCustomizer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Description;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.List;
+
+@Configuration
+@Description("Paragon MicroServices Commons RestTemplate interceptor configuration")
+public class RestTemplateInterceptorConfiguration {
+
+    @Bean
+    @Description("Custom RestTemplate request interceptor customizer bean")
+    public RestTemplateCustomizer customRestTemplateRequestInterceptorCustomizer(final List<ClientHttpRequestInterceptor> interceptors) {
+        return restTemplate -> restTemplate.getInterceptors().addAll(interceptors);
+    }
+
+    @Bean
+    @Description("Default client HTTP request interceptor bean")
+    public ClientHttpRequestInterceptor defaultClientHttpRequestInterceptor() {
+        return new RestClientHttpRequestInterceptor();
+    }
+
+    @Bean
+    @Description("Default RestTemplate builder bean")
+    public RestTemplateBuilder restTemplateBuilder(final List<HttpMessageConverter<?>> converters,
+                                                   final List<RestTemplateCustomizer> customizers) {
+        RestTemplateBuilder builder = new RestTemplateBuilder();
+        builder = builder.additionalMessageConverters(converters);
+        builder = builder.additionalCustomizers(customizers);
+        return builder;
+    }
+
+    @Bean
+    @Description("Custom RestTemplate bean")
+    public RestTemplate restTemplate(final RestTemplateBuilder restTemplateBuilder,
+                                     final CustomRestTemplate customRestTemplate) {
+        return restTemplateBuilder.configure(customRestTemplate);
+    }
+}
+
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
 https://www.jianshu.com/p/1761842427cc
 https://www.baeldung.com/java-char-encoding
 ==============================================================================================================
@@ -11524,6 +11715,419 @@ public class CharsetDemo
       out.println("Default Encoding: " + getEncoding());
    }
 }
+==============================================================================================================
+Это руководство, посвященное безопасности Docker, разделено на три раздела. Очень приветствуются ваши комментарии, поскольку здесь представлена компиляция разных материалов, которые я особо не перепроверял.
+
+· Раздел 1: Безопасность операционной системы хоста при взаимодействии с Docker.
+
+· Раздел 2: Создание конфигурационного файла и контейнеров.
+
+· Раздел 3: Функции безопасности, которые могут быть интегрированы со специфическими возможностями в Docker Enterprise.
+
+Как было сказано выше, это руководство собрано из разных материалов, ссылки на которые указаны ниже. На полноту не претендую, но все основы затронуты. Обо всем остальном можно узнать в CIS (ссылка в конце статьи) и документации для Docker.
+
+Docker Security Benchmark
+
+Сценарий Docker Bench for Security представляет собой автоматический скрипт, выполняющий проверку на основе наилучших практик безопасности Docker. Этот скрипт следует рассматривать как хороший эвристический тест вашей безопасности, но не всеобъемлющим аналитическим инструментом.
+
+Операционная система хоста
+
+Если операционная система хоста не защищена должны образом, контейнер в Docker также не удастся защитить. Соответственно, следует придерживаться лучших практик по безопасности ОС хоста. Нелишним будет запустить несколько проверок на предмет присутствия уязвимостей в дополнение к реализации мер, указанных ниже.
+
+Правила аудита
+
+Создайте и используйте правила аудита для файлов, имеющих отношение к Docker, при помощи auditctl. Например, можно добавить строку «-w /usr/bin/dockerd -k docker» в файл /etc/audit.rules и перезапустить службу аудита.
+
+Режим FIPS
+
+Режим FIPS (Federal Information Processing Standard; Федеральный стандарт по обработке информации) принуждает криптографические утилиты к использованию алгоритмов, совместимых с федеральными и промышленными стандартами и законами безопасности. Если ваша ОС на хосте поддерживает FIPS, то вы можете включить этот режим при помощи следующей команды:
+
+sed -i 's/GRUB_CMDLINE_LINUX="/GRUB_CMDLINE_LINUX="fips=1 /g' /etc/default/grub
+
+grub2-mkconfig -o /boot/grub2/grub.cfg && reboot
+
+Включить FIPS в Docker Engine можно при помощи следующей команды:
+
+mkdir -p /etc/systemd/system/docker.service.d 2>&1; echo -e "[Service]\n Environment=\"DOCKER_FIPS=1\"" > /etc/systemd/system/docker.service.d/fips-module.conf; systemctl daemon-reload; systemctl restart docker
+
+Более подробная информация доступна по следующим ссылкам:
+
+· https://docs.docker.com/compliance/nist/fips140_2/ 10
+
+· https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/security_guide/chap-federal_standards_and_regulations 7
+
+Секреты в Docker
+
+Конфиденциальная информация должна храниться в виде секретов, созданных при помощи команды docker service create. Пример:
+
+docker service create --label com.docker.ucp.access.label=/prod --name nginx --publish 443 --secret source=orcabank_prod_mobile.ca.pem.v1,target=ca.pem nginx
+
+Конфигурационный файл в Docker
+
+Если в конфигурационный файл, находящийся в /etc/docker/daemon.json, добавить опцию “icc”:false, отключится коммуникация между контейнерами с целью избежания ненужных информационных утечек.
+
+Опция “log-level: “info” позволяет собирать все неотладочные логи.
+
+Конфигурация, показанная ниже, разрешает удаленное подключение и отправку логов по указанному адресу:
+
+{
+
+"log-driver": "syslog",
+
+"log-opts": {
+
+"syslog-address": "udp://1.2.3.4:1111"
+
+}
+
+}
+
+Эта опция сработает только если включен демон syslog. TCP и UDP принимаются в качестве параметров. Также можно воспользоваться соответствующим параметром при запуске Docker (–log-opt syslog-address=ADRESS) в рамках парадигмы доступа к контейнеру из контейнера.
+
+Следующая опция позволяет предотвратить эскалацию привилегий посредством изоляции пространства имен для определенного пользователя:
+
+“userns-remap”: “Your_User”
+
+Безопасность транспортного уровня
+
+Ограничьте подключения к демону Docker (если требуется удаленный доступ) для пользователей с доступом к учетным записям TLS клиента.
+
+Плагины авторизации
+
+Укажите, какие команды разрешены для какого пользователя, и создайте соответствующий плагин авторизации для Docker. Теперь при запуске демона Docker укажите созданный плагин:
+
+
+dockerd --authorization-plugin=PLUGIN_ID
+
+Подробнее о создании плагинов авторизации рассказано в документации.
+
+Параметры демона
+
+Демон Docker запускается с набором стандартных параметров.
+
+--live-restore – контейнеры без демонов для максимизации доступности после выключения или перезагрузки. Эта опция облегчает установку обновлений и патчей, минимизируя время простоя.
+
+--userland-proxy=false – когда доступны или используются hairpin NAT’ы, пользовательские прокси становятся излишними и только расширяют возможности для атак.
+
+--no-new-privileges – запрет для контейнеров на получение дополнительных привилегий через suid или sguid.
+
+--seccomp-profile /path/to/profile – эта опция позволяет добавить настроенный профиль seccomp.
+
+Контейнер и конфигурационный файл
+
+Создание пользователя
+
+Убедитесь, что для контейнера создан пользователь, и запуск контейнера происходит от имени этого пользователя (а не от имени root).
+
+Удаленный доступ
+
+Не разрешайте удаленный доступ к демону. Если удаленный доступ нужен, обезопасьте этот доступ при помощи сертификатов.
+
+Изолирование пользовательского пространства имен
+
+Особенно важно убедиться, что в Docker изолировано пользовательское пространство имен, поскольку по умолчанию это пространство имен совместно используется с пространством имен хоста. В некоторых случаях подобную фитчу можно использовать для расширения привилегий или даже для выхода за пределы контейнера. Вы можете изолировать пользовательское пространство имен, отредактировав конфигурационный файл, как было описано выше в разделе «Конфигурационный файл в Docker». Об изолировании упоминается повторно с целью подчеркнуть важность этой меры.
+
+Профилактические проверки
+
+Healthcheck – мощный инструмент, используемы для проверки целостности контейнера и может быть сконфигурирован в файле dockerfile. Подобного рода проверки следует проводить периодически, чтобы контролировать корректность работы контейнера. В примере ниже после проверки возвращается 0, если сервер работает, и 1 – если не работает.
+
+HEALTHCHECK CMD curl --fail http://localhost || exit 1
+
+SELinux
+
+Если SELinux поддерживается операционной системой хоста, создайте или импортируйте политику SELinux и запустите Docker в режиме демона с включенным SELinux.
+
+docker daemon --selinux-enable
+
+Затем вы можете запускать контейнеры Docker с опциями безопасности, как показано в примере ниже:
+
+docker run --interactive --tty --security-opt label=level:TopSecret centos /bin/bash
+
+Сетевые интерфейсы
+
+По умолчанию Docker слушает на каждом сетевом интерфейсе. Поскольку в большинстве случаев трафик ожидается только на одном интерфейсе, излишне увеличивается количество возможностей для реализации атаки. Таким образом, при запуске контейнера вы можете связать порты контейнера со специфическими интерфейсами хоста, как показано ниже:
+
+docker run --detach --publish 10.2.3.4:49153:80 nginx
+
+Версии кэшированных образов
+
+Когда вы загружаете образы, убедитесь, что локальная версия соответствует версии в репозитории. Иначе вы можете извлечь устаревшую кэшированную версию образа, содержащую уязвимости.
+
+Сетевой мост
+
+Стандартная сетевая модель docker0 уязвима к ARP спуфингу и MAC флудингу. Для решения этой проблемы создайте пользовательский сетевой мост согласно вашей спецификации, как описано по ссылке https://docs.docker.com/network/bridge/
+
+Предупреждение о сокетах
+
+Никогда не запускайте Docker-сокеты внутри контейнера, поскольку в этом случае в контейнере можно будет запускать Docker-команды и как следствие взаимодействовать и управлять операционной системой хоста.
+
+Конфигурация Docker Enterprise
+
+Docker Trust
+
+Утилита Docker trust позволяет сгенерировать ключи для проверки криптографической целостности образов. Эти ключи можно использовать для подписи образов при помощи приватных ключей, которые проверяются при помощи публичных ключей на сервере Notary Server. Более подробная информация доступна по ссылке https://docs.docker.com/engine/security/trust/content_trust/. Включение Docker Trust в Enterprise Engine рассматривается в разделе https://docs.docker.com/engine/security/trust/content_trust/#enabling-dct-within-the-docker-enterprise-engine
+
+Сканирование уязвимостей
+
+В Docker Enterprise встроен сканер уязвимостей, у которого есть опция для загрузки базы CVE и запуска в офлайн режиме для сканирования образов. Сканирование образов на постоянной основе повышает уровень безопасности, когда вы своевременно реагируете на появление брешей. Более подробно можно ознакомиться по ссылке https://docs.docker.com/ee/dtr/user/manage-images/scan-images-for-vulnerabilities/
+
+Интеграция LDAP с UCP
+
+UCP (Universal Control Plane) можно интегрировать с LDAP для упрощенной системы аутентификации с целью избежать ненужной избыточности. Более подробная информация доступна по ссылке https://docs.docker.com/ee/ucp/admin/configure/external-auth/
+
+Для дальнейшего чтения
+
+Дополнительные рекомендации и наилучшие практики в сфере безопасности Docker, помимо изучения docs.docker.com, можно подчерпнуть из документа «Center for Internet Security benchmarks for Docker», который доступен на странице https://learn.cisecurity.org/benchmarks.
+==============================================================================================================
+https://medium.com/@patrickleet/mono-repo-or-multi-repo-why-choose-one-when-you-can-have-both-e9c77bd0c668
+==============================================================================================================
+@TestInstance(Lifecycle.PER_CLASS)
+==============================================================================================================
+meta git checkout -b feature/my-new-branch
+Want to commit all changes for the feature you are working on that spans several services?
+meta git commit -m 'made the feature'
+meta will loop through the projects you’ve added to your .meta file, and apply the command to each of them. However, meta works for much more than just git. In fact, all meta really does, is organize your projects into a JSON file, and provide an extensible core for easily providing new functionality through plugins. meta ships with a few plugins built into the core, and more are available from the community.
+Below I will walk you through the simple process of creating your first meta-repo.
+Making a `meta` repository
+First, let’s install meta.
+npm i -g meta
+Then, let’s create a new meta-repository.
+mkdir yourProject && cd yourProject
+meta init
+This creates a .meta file with the following content.
+{
+ "projects": {}
+}
+Next, head on over to GitHub and create a new repository and push our repo.
+git init
+git add -A
+git commit -m “init meta repo”
+git remote add origin git@github.com:you/yourProject.git
+git push -u origin master
+Adding projects to your meta repo
+Now, all you need to do is add some projects, which is as simple as running the following command, provided by the meta-project plugin. Let’s imagine we have a few services we want to add: userService, graphqlService, and appService.
+meta project add userService git@github.com:you/userService.git
+meta project add graphqlService git@github.com:you/graphqlService.git
+meta project add appService git@github.com:you/appService.git
+The above will modify the .meta file and .gitignore file to look like the following:
+// .meta
+{
+  "projects": {
+    "userService": "git@github.com:you/userService.git",
+    "graphqlService": "git@github.com:you/graphqlService.git",
+    "appService": "git@github.com:you/appService.git"
+  }
+}
+// .gitignore
+userService
+graphqlService
+appService
+Commit, and push.
+Sharing
+Now, when you have a new developer to onboard, you can simply give them access to an appropriate meta-repo. You can make many meta-repos if you’d like. One for DevOps related projects, one with everything for an admin, one with just services for a backend engineer, or even a meta repo full of other meta repos. Slice it any way you’d like!
+To clone a meta repo, simply run the following:
+meta git clone git@github.com:you/yourProject.git
+To sync the additional repos defined in the .meta file, run:
+meta git update
+==============================================================================================================
+git init
+git add -A
+git commit -m “init meta repo”
+git remote add origin git@github.com:you/yourProject.git
+git push -u origin master
+==============================================================================================================
+System.exit(SpringApplication.exit(context, (ExitCodeGenerator) () -> 0));
+==============================================================================================================
+https://github.com/MarcGiffing/wicket-spring-boot
+==============================================================================================================
+public class TestLauncher {
+    public static void main(String[] args) {
+        LauncherDiscoveryRequest request
+          = LauncherDiscoveryRequestBuilder.request()
+          .selectors(selectClass("com.baeldung.EmployeesTest"))
+          .configurationParameter(
+            "junit.conditions.deactivate", 
+            "com.baeldung.extensions.*")
+          .build();
+ 
+        TestPlan plan = LauncherFactory.create().discover(request);
+        Launcher launcher = LauncherFactory.create();
+        SummaryGeneratingListener summaryGeneratingListener
+          = new SummaryGeneratingListener();
+        launcher.execute(
+          request, 
+          new TestExecutionListener[] { summaryGeneratingListener });
+  
+        System.out.println(summaryGeneratingListener.getSummary());
+    }
+}
+
+If we want to register an extension for all tests in our application, we can do so by adding the fully qualified name to the /META-INF/services/org.junit.jupiter.api.extension.Extension file:
+
+1
+com.baeldung.extensions.LoggingExtension
+==============================================================================================================
+npm i -g meta
+meta git clone git@github.com:mateodelnorte/meta.git
+cd ./meta
+yarn
+meta yarn install
+meta yarn link --all
+yarn link
+
+npm i -g meta
+meta git clone git@github.com:mateodelnorte/meta.git
+cd ./meta
+npm install
+meta npm install
+meta npm link --all
+npm link
+
+meta git status --include-only dir1,dir2
+==============================================================================================================
+echo "# mc" >> README.md
+git init
+git add README.md
+git commit -m "first commit"
+git remote add origin https://github.com/AlexRogalskiy/mc.git
+git push -u origin master
+
+git remote add origin https://github.com/AlexRogalskiy/mc.git
+git push -u origin master
+==============================================================================================================
+public class JacksonView1 {
+    public static class publicView{}
+
+    public static class User  {
+        public User(Long id, String showName, List<String> callableQueues) {
+            this.id = id;
+            this.showName = showName;
+            this.callableQueues = callableQueues;
+        }
+        @JsonView(publicView.class)
+        public final Long id;
+
+        public final String showName;
+
+        @JsonView(publicView.class)
+        public final List<String> callableQueues;
+    }
+
+    public static void main(String[] args) {
+        User user = new User(123l, "name", Arrays.asList("a", "b"));
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.disable(MapperFeature.DEFAULT_VIEW_INCLUSION);
+        mapper.setConfig(mapper.getSerializationConfig()
+                .withView(publicView.class));
+        System.out.println(mapper.convertValue(user, JsonNode.class));
+    }
+}
+==============================================================================================================
+import com.paragon.mailingcontour.commons.rest.service.mapper.DelegatedObjectMapper;
+import com.paragon.microservices.distributor.system.handler.RestClientHttpRequestInterceptor;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.boot.web.client.RestTemplateCustomizer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Description;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
+import org.springframework.http.converter.HttpMessageConverter;
+
+import java.util.List;
+
+@Configuration
+//@ConditionalOnBean(annotation = EnableRequestLogging.class)
+@Description("Paragon MicroServices Distributor Client Request configuration")
+public class RestTemplateInterceptorConfiguration {
+
+    @Bean("clientRequestInterceptorCustomizer")
+    @Description("Custom RestTemplate request interceptor customizer bean")
+    public RestTemplateCustomizer clientRequestInterceptorCustomizer(final List<ClientHttpRequestInterceptor> interceptors) {
+        return restTemplate -> restTemplate.getInterceptors().addAll(interceptors);
+    }
+
+    @Bean
+    @Description("Default client HTTP request interceptor bean")
+    public ClientHttpRequestInterceptor defaultClientHttpRequestInterceptor(final DelegatedObjectMapper delegatedObjectMapper) {
+        return new RestClientHttpRequestInterceptor(delegatedObjectMapper);
+    }
+
+    @Bean
+    public RestTemplateBuilder restTemplateBuilder(final List<HttpMessageConverter<?>> converters, final List<RestTemplateCustomizer> customizers) {
+        RestTemplateBuilder builder = new RestTemplateBuilder();
+        builder = builder.additionalMessageConverters(converters);
+        builder = builder.additionalCustomizers(customizers);
+        return builder;
+    }
+}
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+//Creating a synchronizedList so that when the async resttemplate returns, there will be no concurrency issues
+List<String> links = Collections.synchronizedList(new ArrayList<String>());
+
+//CustomClientHttpRequestFactory just extends SimpleClientHttpRequestFactory but disables automatic redirects in SimpleClientHttpRequestFactory
+CustomClientHttpRequestFactory customClientHttpRequestFactory = new CustomClientHttpRequestFactory();
+//Setting the ThreadPoolTaskExecutor for the Async calls
+org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor pool = new org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor();
+pool.setCorePoolSize(5);
+pool.setMaxPoolSize(10);
+pool.setWaitForTasksToCompleteOnShutdown(true);
+pool.initialize();
+//Setting the TaskExecutor to the ThreadPoolTaskExecutor
+customClientHttpRequestFactory.setTaskExecutor(pool);
+
+ArrayList<String> references = new ArrayList<>();
+ArrayList<String> links = new ArrayList<>();
+AsyncRestTemplate asyncRestTemplate = new AsyncRestTemplate(customClientHttpRequestFactory); 
+restTemplate.getMessageConverters().add(new StringHttpMessageConverter());
+for (int i = 0; i < 10; i++) {
+    Future<ResponseEntity<String>> resource = asyncRestTemplate.getForEntity(references.get(i), String.class);
+    ResponseEntity<String> entity = resource.get(); //this should start up 10 threads to get the links asynchronously
+    links.add(entity.getBody().toString());
+}
+==============================================================================================================
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.File;
+import java.io.IOException;
+
+public class JacksonExample2 {
+
+    public static void main(String[] args) {
+
+        ObjectMapper mapper = new ObjectMapper();
+
+        try {
+
+            // JSON file to Java object
+            Staff staff = mapper.readValue(new File("c:\\test\\staff.json"), Staff.class);
+
+            // JSON string to Java object
+            String jsonInString = "{\"name\":\"mkyong\",\"age\":37,\"skills\":[\"java\",\"python\"]}";
+            Staff staff2 = mapper.readValue(jsonInString, Staff.class);
+
+            // compact print
+            System.out.println(staff2);
+
+            // pretty print
+            String prettyStaff1 = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(staff2);
+
+            System.out.println(prettyStaff1);
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
 ==============================================================================================================
 mvn install:install-file -Dfile=htmlcomponent.jar -DgroupId=htmlComponent -DartifactId=htmlComponent -Dversion=1.0 -Dpackaging=jar.
 ==============================================================================================================
