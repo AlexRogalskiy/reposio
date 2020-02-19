@@ -25283,6 +25283,9 @@ this.modelMapper2.mapInternal(actualData, null, TypeToken.of(TemplateData.class)
         </exclusions>
     </dependency>
 -----------------------------------------------------------------------------------------
+https://eax.me/consul/
+https://github.com/2ndQuadrant/pglogical
+
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 

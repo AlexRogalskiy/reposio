@@ -11632,6 +11632,820 @@ public class CustomRestTemplate extends RestTemplate {
 }
 
 ==============================================================================================================
+ // package & imports
+ @RestController
+ public class UserController {
+     @RequestMapping("/users") /* Maps to all HTTP actions by default (GET,POST,..)*/
+     public @ResponseBody
+     String getUsers() {
+         return "{\"users\":[{\"firstname\":\"Richard\", \"lastname\":\"Feynman\"}," +
+             "{\"firstname\":\"Marie\",\"lastname\":\"Curie\"}]}";
+     }
+ }
+==============================================================================================================
+public class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
+    private TokenAuthenticationService tokenAuthenticationService;
+    public JWTLoginFilter(String url, AuthenticationManager authenticationManager) {
+         super(new AntPathRequestMatcher(url));
+         setAuthenticationManager(authenticationManager);
+         tokenAuthenticationService = new TokenAuthenticationService();
+    }
+}
+
+
+ @Configuration
+ @EnableWebSecurity
+ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+     @Override
+     protected void configure(HttpSecurity http) throws Exception {
+         // disable caching
+         http.headers().cacheControl();
+         http.csrf().disable() // disable csrf for our requests.
+             .authorizeRequests()
+             .antMatchers("/").permitAll()
+             .antMatchers(HttpMethod.POST, "/login").permitAll()
+             .anyRequest().authenticated()
+             .and()
+             // We filter the api/login requests
+             .addFilterBefore(new JWTLoginFilter("/login", authenticationManager()), UsernamePasswordAuthenticationFilter.class)
+             // And filter other requests to check the presence of JWT in header
+             .addFilterBefore(new JWTAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+     }
+==============================================================================================================
+package com.paragon.mailingcontour.commons.utils;
+
+import lombok.experimental.UtilityClass;
+
+@UtilityClass
+public class JreUtil {
+    public static final int JAVA_VERSION = getJavaVersion();
+    private static Boolean _modular;
+    private static Boolean _modularRuntime;
+
+    private static int getJavaVersion() {
+        String version = System.getProperty("java.version");
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < version.length(); i++) {
+            char c = version.charAt(i);
+            if (Character.isDigit(c)) {
+                sb.append(c);
+            } else {
+                break;
+            }
+        }
+        int major = Integer.parseInt(sb.toString());
+        major = major == 1 ? 8 : major;
+        return major;
+    }
+
+    public static boolean isJava8() {
+        return JAVA_VERSION == 8;
+    }
+
+    public static boolean isJava9() {
+        return JAVA_VERSION == 9;
+    }
+
+    public static boolean isJava9orLater() {
+        return !isJava8();
+    }
+
+    public static boolean isJava12() {
+        return JAVA_VERSION == 12;
+    }
+
+    public static boolean isJava12orLater() {
+        return JAVA_VERSION >= 12;
+    }
+
+    public static boolean isJava9Modular_compiler(final Object ctx) {
+        if (_modular == null) {
+            if (isJava8()) {
+                _modular = false;
+            } else {
+                final Object modulesUtil = ReflectUtil.method(ReflectUtil.type("com.sun.tools.javac.comp.Modules"), "instance", ReflectUtil.type("com.sun.tools.javac.util.Context")).invokeStatic(ctx);
+                final Object defModule = ReflectUtil.method(modulesUtil, "getDefaultModule").invoke();
+                _modular = defModule != null && !(boolean) ReflectUtil.method(defModule, "isNoModule").invoke() && !(boolean) ReflectUtil.method(defModule, "isUnnamed").invoke();
+            }
+        }
+        return _modular;
+    }
+
+    public static boolean isJava9Modular_runtime() {
+        if (_modularRuntime == null) {
+            if (isJava8()) {
+                _modularRuntime = false;
+            } else {
+                final Object manifoldModule = ReflectionUtils.method(Class.class, "getModule").invoke(JreUtil.class);
+                _modularRuntime = (boolean) ReflectionUtils.method(manifoldModule, "isNamed").invoke();
+            }
+        }
+        return _modularRuntime;
+    }
+}
+
+==============================================================================================================
+INSERT INTO data_raw (tstamp, val)
+  SELECT tstamp, FLOOR(random()*100)
+  FROM generate_series (
+    '2020-01-01 00:00:00' :: TIMESTAMP,
+    '2020-01-04 23:00:00' :: TIMESTAMP,
+    '1 hour') AS tstamp;
+	
+SELECT
+  tstamp :: DATE +
+    concat(
+      FLOOR(EXTRACT(HOUR FROM tstamp) / 8)*8,
+      ':00:00'
+    ) :: TIME AS d,
+  avg(val) :: FLOAT
+FROM data_raw
+GROUP BY d
+ORDER BY d;
+
+REFRESH MATERIALIZED VIEW CONCURRENTLY data_view;
+
+CREATE OR REPLACE FUNCTION update_data_agg() RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO data_agg (tstamp, total, num) VALUES (
+      NEW.tstamp :: DATE + concat(
+        FLOOR(EXTRACT(HOUR FROM NEW.tstamp) / 8)*8,
+        ':00:00'
+      ) :: TIME, NEW.val, 1
+    ) ON CONFLICT (tstamp) DO
+    UPDATE SET total = data_agg.total + EXCLUDED.total,
+               num = data_agg.num + 1;
+    RETURN NULL;
+END
+$$ LANGUAGE 'plpgsql';
+
+CREATE TRIGGER data_agg_trigger
+AFTER INSERT ON data_raw
+FOR EACH ROW EXECUTE PROCEDURE update_data_agg();
+
+COPY data_raw TO '/tmp/data_raw.dat';
+DELETE FROM data_raw;
+COPY data_raw FROM '/tmp/data_raw.dat';
+
+CREATE OR REPLACE FUNCTION data_raw_insert_only() RETURNS TRIGGER AS $$
+BEGIN
+  RAISE 'UPDATE / DELETE / TRUNCATE are not allowed on data_raw,'
+    ' because triggers are involved!';
+  RETURN NULL;
+END
+$$ LANGUAGE 'plpgsql';
+
+CREATE TRIGGER data_raw_ins_only BEFORE UPDATE OR DELETE OR TRUNCATE
+ON data_raw EXECUTE PROCEDURE data_raw_insert_only();
+==============================================================================================================
+sudo apt-get install postgis qgis osm2pgsql
+
+adduser eax
+usermod -a -G sudo eax
+mkdir /home/eax/.ssh
+cp /root/.ssh/authorized_keys /home/eax/.ssh/
+chown -R eax:eax /home/eax
+
+apt install ntp
+ntpq -pn
+
+sudo systemctl enable cockroachdb
+sudo systemctl start cockroachdb
+sudo systemctl status cockroachdb
+
+wget https://binaries.cockroachdb.com/cockroach-v19.2.2.linux-amd64.tgz
+tar -xvzf cockroach-v19.2.2.linux-amd64.tgz
+sudo cp cockroach-v19.2.2.linux-amd64/cockroach /usr/local/bin
+
+sudo mkdir /var/lib/cockroach
+sudo useradd cockroach
+sudo chown cockroach /var/lib/cockroach
+
+
+
+cockroach sql --insecure
+CREATE DATABASE phonebook;
+CREATE USER IF NOT EXISTS phonebook;
+GRANT ALL ON DATABASE phonebook TO phonebook;
+SET DATABASE = phonebook;
+CREATE TABLE phonebook(id SERIAL PRIMARY KEY,
+                       name VARCHAR(64), phone VARCHAR(64));
+INSERT INTO phonebook (name, phone) VALUES ('Alice', '123');
+INSERT INTO phonebook (name, phone) VALUES ('Bob', '456');
+SELECT * FROM phonebook;
+INSERT INTO phonebook(name,phone)
+  SELECT 'user_' || n :: TEXT, '100' || n :: TEXT
+    FROM generate_series(1,10000) AS n;
+DROP TABLE phonebook;
+
+
+sudo -u postgres psql
+\c mydatabase
+create extension postgis;
+
+CREATE TABLE my_points(id SERIAL PRIMARY KEY, name TEXT);
+SELECT AddGeometryColumn('my_points', 'point', 4326, 'POINT', 2);
+INSERT INTO my_points (name, point)
+  VALUES ('Центр Москвы',
+           ST_GeomFromEWKT('SRID=4326;POINT(37.617635 55.755814)'));
+		   
+select id, name, ST_AsText(point) as point from my_points;
+wget 'http://download.geofabrik.de/europe/'\
+'russia-european-part-150101.osm.pbf'
+osm2pgsql -s -d mydatabase -U eax -H localhost -W \
+  ./russia-european-part-150101.osm.pbf
+  
+SELECT amenity, COUNT(*) AS cnt
+FROM planet_osm_point
+WHERE amenity <> ''
+GROUP BY amenity
+ORDER BY cnt DESC
+LIMIT 10;
+
+
+CREATE TABLE cities(id SERIAL PRIMARY KEY, name TEXT);
+SELECT AddGeometryColumn('cities', 'polygon', 4326, 'POLYGON', 2);
+CREATE INDEX cities_idx ON cities USING gist(polygon);
+INSERT INTO cities(name, polygon)
+  SELECT DISTINCT ON (name) name, ST_Transform(way, 4326)
+  FROM planet_osm_polygon WHERE place = 'city';
+  
+SELECT name, ST_AsEWKT(point),
+       ST_Distance(
+         point :: geography,
+         ST_GeomFromEWKT(
+           'SRID=4326;POINT(37.617635 55.755814)'
+         ) :: geography
+       ) AS dist
+FROM cafes ORDER BY dist LIMIT 3;
+
+SELECT name, ST_AsEWKT(point)
+FROM cafes
+WHERE ST_DWithin(
+        point,
+        ST_GeomFromEWKT('SRID=4326;POINT(37.617635 55.755814)'),
+        0.005);
+		
+SELECT
+  name,
+  ST_AsText(point) AS gps,
+  ST_DistanceSphere(
+    point,
+    ST_GeomFromEWKT('SRID=4326;POINT(37.617635 55.755814)')
+  ) AS dist
+FROM cafes
+ORDER BY point <-> ST_GeomFromEWKT(
+                     'SRID=4326;POINT(37.617635 55.755814)'
+                   )
+LIMIT 10;
+
+WITH subq AS (
+  SELECT name, ST_AsText(point) AS gps,
+         ST_DistanceSphere(
+           point,
+           ST_GeomFromEWKT('SRID=4326;POINT(37.617635 55.755814)')
+         ) AS dist
+  FROM cafes
+  ORDER BY point <-> ST_GeomFromEWKT(
+                       'SRID=4326;POINT(37.617635 55.755814)'
+                     )
+  LIMIT 15
+) SELECT * FROM subq ORDER BY dist LIMIT 10;
+==============================================================================================================
+# select to_tsvector('My name is Alex and I''m a software developer.');
+                   to_tsvector                    
+--------------------------------------------------
+ 'alex':4 'develop':10 'm':7 'name':2 'softwar':9
+(1 row)
+
+# select to_tsvector('russian', 'Меня зовут Саша и я программист.');
+            to_tsvector            
+-----------------------------------
+ 'зовут':2 'программист':6 'саш':3
+(1 row)
+==============================================================================================================
+-- экспорт таблицы
+COPY tname TO PROGRAM 'gzip > /tmp/data.gz';
+-- экспорт данных по запросу
+COPY (SELECT * FROM tname WHERE ...) TO PROGRAM 'gzip > /tmp/data.gz';
+-- импорт данных
+COPY tname FROM PROGRAM 'zcat /tmp/data.gz';
+==============================================================================================================
+SET CLUSTER SETTING sql.trace.log_statement_execute = true;
+SET CLUSTER SETTING sql.trace.log_statement_execute = false;
+
+docker run -d --name cockroach -p 5432:26257 -p 8080:8080 \
+  cockroachdb/cockroach:v19.2.3 start-single-node --insecure
+docker exec -it cockroach ./cockroach sql --insecure
+==============================================================================================================
+# select to_tsvector('Hello,') || to_tsvector('world!');
+      ?column?      
+---------------------
+ 'hello':1 'world':2
+(1 row)
+
+# select to_tsquery('Hello | world');
+    to_tsquery    
+-------------------
+ 'hello' | 'world'
+(1 row)
+
+# select to_tsquery('russian', 'Привет & мир');
+    to_tsquery    
+------------------
+ 'привет' & 'мир'
+(1 row)
+
+# select plainto_tsquery('Hello world');
+  plainto_tsquery  
+-------------------
+ 'hello' & 'world'
+(1 row)
+
+# select phraseto_tsquery('russian', 'Привет мир');
+  phraseto_tsquery  
+--------------------
+ 'привет' <-> 'мир'
+(1 row)
+
+# select to_tsvector('Hello, world!') @@
+  plainto_tsquery('hello world') as match;
+ match
+-------
+ t
+(1 row)
+
+# select to_tsvector('Hello, world!') @@
+  plainto_tsquery('goodbye world') as match;
+ match
+-------
+ f
+ 
+CREATE TABLE IF NOT EXISTS
+  articles(id SERIAL PRIMARY KEY, title VARCHAR(128), content TEXT);
+CREATE OR REPLACE FUNCTION make_tsvector(title TEXT, content TEXT)
+   RETURNS tsvector AS $$
+BEGIN
+  RETURN (setweight(to_tsvector('english', title),'A') ||
+    setweight(to_tsvector('english', content), 'B'));
+END
+$$ LANGUAGE 'plpgsql' IMMUTABLE;
+
+CREATE INDEX IF NOT EXISTS idx_fts_articles ON articles
+  USING gin(make_tsvector(title, content));
+
+SELECT id, title FROM articles WHERE
+  make_tsvector(title, content) @@ to_tsquery('bjarne <-> stroustrup');
+  
+SELECT id, ts_headline(title, q) FROM articles,
+    to_tsquery('bjarne <-> stroustrup') AS q
+  WHERE make_tsvector(title, content) @@ q;
+  
+SELECT id, ts_headline(title, q, 'StartSel=<em>, StopSel=</em>')
+  FROM articles, to_tsquery('bjarne <-> stroustrup') AS q
+  WHERE make_tsvector(title, content) @@ q
+  ORDER BY ts_rank(make_tsvector(title, content), q) DESC;
+==============================================================================================================
+wget --quiet https://www.postgresql.org/media/keys/ACCC4CF8.asc -O - \
+  | sudo apt-key add -
+  
+deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main
+
+sudo apt-get update
+sudo apt-get install postgresql-9.5
+
+Правим /etc/postgresql/9.5/main/pg_hba.conf:
+
+host    replication      postgres       10.0.3.0/24            md5
+host    all              postgres       10.0.3.0/24            md5
+
+Правим /etc/postgresql/9.5/main/postgresql.conf:
+
+# какие адреса слушать, замените на IP сервера
+listen_addresses = '10.0.3.245'
+
+wal_level = hot_standby
+
+# опционально: не дожидаемся fsync на реплике при синхронной репликации
+# synchronous_commit = remote_write
+
+# это нужно, чтобы работал pg_rewind
+wal_log_hints = on
+
+max_wal_senders = 8
+wal_keep_segments = 64
+
+# если хотим синхронную репликацию на одну любую реплику
+# synchronous_standby_names = '*'
+
+hot_standby = on
+
+cd /var/lib/postgresql/9.5/
+tar -cvzf main_backup-`date +%s`.tgz main
+rm -rf main
+mkdir main
+chmod go-rwx main
+pg_basebackup -P -R -X stream -c fast -h 10.0.3.245 -U postgres \
+  -D ./main
+  
+recovery_target_timeline = 'latest'
+recovery_min_apply_delay = 10min
+
+/etc/postgresql/9.5/main/pg_hba.conf
+/etc/postgresql/9.5/main/postgresql.conf
+
+https://eax.me/postgresql-replication/
+
+SELECT * FROM pg_stat_replication;
+
+Не дожидаемся fsync на реплике:
+
+SET synchronous_commit = 'remote_write';
+Пишем только локально, не ждем подтверждения от реплики:
+
+SET synchronous_commit = 'local';
+Возвращаем обычное поведение:
+
+SET synchronous_commit = 'on';
+
+sudo -u postgres /usr/lib/postgresql/9.5/bin/pg_ctl promote \
+  -D /var/lib/postgresql/9.5/main/
+  
+SELECT pg_is_in_recovery();
+
+sudo apt-add-repository ppa:pitti/postgresql
+sudo apt-get update
+sudo apt-get install postgresql-9.2
+
+https://eax.me/postgresql-install/
+
+CREATE DATABASE test_database;
+CREATE USER test_user WITH password 'qwerty';
+GRANT ALL ON DATABASE test_database TO test_user;
+
+CREATE SEQUENCE user_ids;
+CREATE TABLE users (
+  id INTEGER PRIMARY KEY DEFAULT NEXTVAL('user_ids'),
+  login CHAR(64),
+  password CHAR(64));
+  
+CREATE TABLE users2 (
+  id SERIAL PRIMARY KEY,
+  login CHAR(64),
+  password CHAR(64));
+  
+Теперь с помощью команды \d можно ознакомиться со списком всех доступных таблиц, а с помощью \d users — увидеть описание таблицы users. Если вы не получили интересующую вас информацию, попробуйте \d+ вместо \d. Список баз данных можно получить командой \l, а переключиться на конкретную БД — командой \c dbname. Для отображения справки по командам скажите \?.
+
+CREATE TABLE "anotherTable" ("someValue" VARCHAR(64));
+
+CREATE SCHEMA bookings;
+Переключение на схему:
+
+SET search_path TO bookings;
+
+Просмотреть список существующих схем можно командой \dn. По умолчанию используется схема с именем public. В принципе, можно успешно использовать PostgreSQL, и не зная про существование схем. Но при работе с унаследованным кодом, а также в некоторых граничных случаях, знание о схемах может очень пригодиться.
+
+Чтобы исправить это, добавьте строку:
+
+listen_addresses = 'localhost,192.168.0.1'
+… в файл /etc/postgresql/9.2/main/postgresql.conf, а также:
+
+host    all    all    192.168.0.1/16    md5
+… в файл /etc/postgresql/9.2/main/pg_hba.conf и скажите:
+
+sudo service postgresql restart
+
+pg_dump -c -h 192.168.0.1 -U test_user test_database > ./dump.sql
+cat dump.sql | psql -h 192.168.0.1 test_database test_user
+
+
+sudo apt-get install pgbouncer
+По умолчанию прокси слушает порт 6432. Логи можно почитать так:
+
+less /var/log/postgresql/pgbouncer.log.
+Конфигурационный файл называется /etc/pgbouncer/pgbouncer.ini. Рассмотрим основные параметры.
+
+;; database name = connect string
+;;
+;; connect string params:
+;;   dbname= host= port= user= password=
+;;   client_encoding= datestyle= timezone=
+;;   pool_size= connect_query=
+;;   auth_user=
+[databases]
+
+* = host=localhost port=5432
+
+; When server connection is released back to pool:
+;   session      - after client disconnects
+;   transaction  - after transaction finishes
+;   statement    - after statement finishes
+pool_mode = transaction
+По умолчанию стоит в session, то есть, сессия будет удерживаться клиентом до тех пор, пока он не закроет соединение. Чаще всего значение имеет смысл заменить на transaction. В этом случае соединение будет возвращаться в общий пул после завершения транзакции. Значение statement означает, что соединение будет освобождаться после выполнения каждого отдельного выражения, чего вы почти наверняка не должны хотеть.
+
+Настройки размера пула:
+
+; total number of clients that can connect
+max_client_conn = 1000
+
+; default pool size.  20 is good number when transaction pooling
+; is in use, in session pooling it needs to be the number of
+; max clients you want to handle at any moment
+default_pool_size = 20
+
+;; Minimum number of server connections to keep in pool.
+;min_pool_size = 0
+
+; any, trust, plain, crypt, md5, cert, hba, pam
+auth_type = md5
+auth_file = /etc/pgbouncer/userlist.txt
+
+;;;
+;;; Users allowed into database 'pgbouncer'
+;;;
+
+; comma-separated list of users, who are allowed to change settings
+admin_users = eax
+
+; comma-separated list of users who are just allowed to use
+;    SHOW command
+;stats_users = stats, root
+
+Файл /etc/pgbouncer/userlist.txt содержит имена пользователей и пароли, с которыми PgBouncer подключается к базе. Например:
+
+"eax" "qwerty"
+Пароли не обязательно хранить открытым текстом:
+
+"eax" "md5175c641eaed0b6c05ae8444b73d789f0"
+Здесь хэш 175c641e... был посчитан как MD5 от пароля, следом за которым записано имя пользователя:
+
+echo -n 'qwertyeax' | md5sum
+Теперь, когда PgBouncer настроен, можно перезапустить его:
+
+sudo service pgbouncer restart
+… и ломиться в базу:
+
+psql -p 6432 -U eaxRELOAD;
+Информацию о других доступных командах можно посмотреть так:
+
+SHOW HELP;
+
+pgbench -i
+pgbench -p 6432 -c 900 -C -T 60 -P 1
+Если все было сделано правильно, pgbench будет превосходно работать, а команда SHOW CLIENTS;, выполненная в админке PgBouncer, покажет нам 900 соединений. При этом вывод ps wuax | grep postgres покажет, что реально запущено лишь 20 бэкендов PostgreSQL.
+==============================================================================================================
+Итак, на всех трех машинах собираем Stolon из исходников:
+
+cd ~/go/src # или где у вас $GOPATH/src
+mkdir -p github.com/sorintlab
+cd github.com/sorintlab
+git clone https://github.com/sorintlab/stolon.git
+cd stolon
+git checkout v0.3.0
+./build
+Запускаем sentinel:
+
+./bin/stolon-sentinel --cluster-name mycluster --store-backend consul \
+  --listen-address 10.0.3.7
+Задача sentinel — следить за состоянием кластера и в случае необходимости производить его реконфигурацию. Одновременно можно запустить сколько угодно sentinel, но из них только один будет выбран, как лидер. Остальные нужны для того, чтобы заменить лидера, если с ним что-то случится. В общем случае, чтобы нормально переживать нетсплиты, следует запускать по одному sentinel на каждой машине с PostgreSQL.
+
+https://eax.me/stolon/
+
+curl -s 'localhost:8500/v1/kv/?recurse' | jq -r '.[]["Key"]'
+https://github.com/sorintlab/stolon
+
+
+Можете немного поэкспериментировать с MongoDB, поработав с ней через оболочку mongo:
+
+$ mongo MongoShortener
+MongoDB shell version: 2.0.6
+connecting to: MongoShortener
+Смотрим список коллекций в базе:
+
+> show collections
+Создать новый документ (попробуйте создать два документа с одинаковым code):
+
+> db.urls.insert({ code: 123, url: "http://eax.me/" });
+Просмотреть список документов (в поле _id всегда хранится уникальный ID документа):
+
+> db.urls.find();
+Создание индекса:
+
+> db.urls.ensureIndex({ code: 1 }, { unique: true });
+Просмотр списка индексов:
+
+> db.urls.getIndexes();
+Удаление индекса (перезапустите сокращалку и посмотрите, создастся ли он снова):
+
+> db.urls.dropIndex({ code: 1 });
+Обновление документа:
+
+> db.urls.update({ code: 123 }, { url: "http://example.ru/" });
+Удаление документа:
+
+> db.urls.remove({ code: 123 });
+Выход из оболочки:
+
+> exit
+
+
+https://eax.me/couchdb/
+curl -X GET http://localhost:5984/_membership
+
+curl -X PUT http://localhost:5984/_users/org.couchdb.user:afiskon \
+     -H "Accept: application/json" \
+     -H "Content-Type: application/json" \
+     -d '{"name": "afiskon", "password": "secret", "roles": [],'\
+' "type": "user"}'
+
+curl -X PUT \
+  http://localhost:5984/contacts/_security \
+  -H "Content-Type: application/json" \
+  -d '{"admins": { "names": [], "roles": [] }, "members": '\
+'{ "names": ["afiskon"], "roles": [] } }' \
+  --user admin
+==============================================================================================================
+@startlatex
+\sum_{i=1}^n i^3=\bigg ({\dfrac{n(n+1)}{2}} \bigg)^2
+@endlatex
+==============================================================================================================
+Так исторически сложилось, что для сохранения сессии при работе по SSH или чего-то такого обычно я использую screen. Но бывает, например, что ты работаешь с машиной, где у тебя нет рутовых прав, и где не установлен screen, но зато есть tmux. Поскольку я плохо помню сочетания клавиш tmux, то решил выписать их для себя в виде небольшой шпаргалки.
+
+Итак, основные хоткеи следующие:
+
+Ctr+B, ?	Показать все доступные хоткеи
+Ctr+B, C	Создать окно
+Ctr+B, N	Следующее окно
+Ctr+B, P	Предыдущее окно
+Ctr+B, [0-9]	Перейти к окну с данным номером
+Ctr+B, X	Закрыть окно
+Ctr+B, %	Горизонтальное разделение
+Ctr+B, "	Вертикальное разделение
+Ctr+B, стрелочки	Переход между разделениями
+Ctr+B, запятая	Переименовать окно
+Ctr+B, W	Список всех окон с переключением
+Ctr+B, Fn+вверх	Скролинг, можно использовать точпад
+Ctr+B, $	Переименовать текущую сессию
+Ctr+B, D	Detach, отсоединиться от сессии
+ 
+
+Список доступных сессий можно посмотреть командой:
+
+tmux ls
+Подключение к сессии:
+
+tmux attach -t 0
+Сессиям можно давать осмысленные имена и запускать в них фоновые задачи:
+
+# создать фоновую сессию
+tmux new-session -d -s background-task 'watch date'
+# подсоединиться к сессии
+tmux attach -t background-task
+# прибить сессию
+tmux kill-session -t background-task
+Это иногда бывает удобно в каких-нибудь скриптах. Характерно, что в screen подобный функционал тоже заявлен, но последний раз, когда я проверял, он был сломан.
+
+Интересно также, что в отличие от screen, в tmux нет возможности работать с последовательными портами. Но если вы решите полностью переходить на tmux, то для этой задачи можете воспользоваться утилитой cu:
+
+cu -l /dev/tty.usbserial -s 115200
+В общем-то, это все, о чем я хотел сегодня рассказать. Надеюсь, вы нашли эту информацию полезной.
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+on: push
+jobs:
+  test:
+    strategy:
+      matrix:
+        platform: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.platform }}
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions/setup-node@v1
+      with:
+        version: 12
+    - run: npm install-ci-test
+    - uses:
+
+
+
+
+
+
+
+
+
+
+
+  publish:
+    needs: [build]
+    steps:
+    - uses: actions/checkout@v1
+==============================================================================================================
+    private static class Uuids {
+
+        private final Map<TestIdentifier, String> storage = new ConcurrentHashMap<>();
+        private final ReadWriteLock lock = new ReentrantReadWriteLock();
+
+        public Optional<String> get(final TestIdentifier testIdentifier) {
+            try {
+                lock.readLock().lock();
+                return Optional.ofNullable(storage.get(testIdentifier));
+            } finally {
+                lock.readLock().unlock();
+            }
+        }
+
+        private String getOrCreate(final TestIdentifier testIdentifier) {
+            try {
+                lock.writeLock().lock();
+                return storage.computeIfAbsent(testIdentifier, ti -> UUID.randomUUID().toString());
+            } finally {
+                lock.writeLock().unlock();
+            }
+        }
+    }
+==============================================================================================================
+ <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>1.4</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>ovh.not.javamusicbot.MusicBot</mainClass>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+==============================================================================================================
+<dependency>
+    <groupId>io.jsonwebtoken</groupId>
+    <artifactId>jjwt</artifactId>
+    <version>0.6.0</version>
+</dependency>
+
+		sigAlgs.put("HS256", "HMACSHA256");
+		sigAlgs.put("HS384" , "HMACSHA384");
+		sigAlgs.put("HS512" , "HMACSHA512");
+		sigAlgs.put("RS256" , "SHA256withRSA");
+		sigAlgs.put("RS512" , "SHA512withRSA");
+
+		keyAlgs.put("RSA1_5" , "RSA/ECB/PKCS1Padding");
+==============================================================================================================<settings xmlns="http://maven.apache.org/SETTINGS/1.1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.1.0 http://maven.apache.org/xsd/settings-1.1.0.xsd">
+  <servers>
+    <server>
+      <id>ossrh</id>
+      <username>rsmckinney</username>
+      <password>${env.MAN_PASS_PHRASE}</password>
+    </server>
+  </servers>
+
+  <profiles>
+    <profile>
+      <id>ossrh</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <properties>
+        <gpg.passphrase>${env.MAN_PASS_PHRASE}</gpg.passphrase>
+      </properties>
+    </profile>
+  </profiles>
+
+</settings>
+==============================================================================================================
 package com.paragon.microservices.distributor.system.configuration;
 
 import com.paragon.microservices.distributor.system.handler.CustomRestTemplate;
