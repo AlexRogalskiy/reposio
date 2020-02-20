@@ -25283,6 +25283,648 @@ this.modelMapper2.mapInternal(actualData, null, TypeToken.of(TemplateData.class)
         </exclusions>
     </dependency>
 -----------------------------------------------------------------------------------------
+import io.github.glytching.dragoman.ql.domain.OrderBy;
+import io.github.glytching.dragoman.ql.listener.AbstractOrderByClauseListener;
+import org.bson.BsonDocument;
+import org.bson.BsonInt32;
+import org.bson.conversions.Bson;
+
+import java.util.List;
+
+/**
+ * A Mongo specific implementation of {@link AbstractOrderByClauseListener} which turns the domain
+ * {@link OrderBy} into a {@link Bson} instance.
+ */
+public class MongoOrderByClauseListener extends AbstractOrderByClauseListener<Bson> {
+
+  @Override
+  public Bson get() {
+    BsonDocument orderByObject = new BsonDocument();
+    List<OrderBy> orderBys = getOrderBys();
+    for (OrderBy orderBy : orderBys) {
+      orderByObject.put(orderBy.getName(), new BsonInt32(orderBy.isAscending() ? 1 : -1));
+    }
+    return orderByObject;
+  }
+}
+import com.google.inject.AbstractModule;
+import io.github.glytching.dragoman.http.HttpClient;
+import io.github.glytching.dragoman.http.HttpClientAdapter;
+import io.github.glytching.dragoman.http.HttpClientAdapterImpl;
+import io.github.glytching.dragoman.http.okhttp.OkHttpClient;
+
+public class HttpModule extends AbstractModule {
+
+  @Override
+  protected void configure() {
+    bind(HttpClientAdapter.class).to(HttpClientAdapterImpl.class);
+    bind(HttpClient.class).to(OkHttpClient.class);
+  }
+}
+
+  <organizationUrl>http://arktekk.no</organizationUrl>
+-----------------------------------------------------------------------------------------
+.github/workflows/run-tests.yaml
+
+name: run-tests
+on: [push]
+# on:
+#  pull_request:
+env:
+  GO_VERSION: 1.12.15
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+    - name: set up go ${{env.GO_VERSION}}
+      uses: actions/setup-go@v1
+      with:
+        go-version: ${{env.GO_VERSION}}
+      id: go
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v1
+      with:
+        fetch-depth: 1
+    - name: Build
+      run: ./build.sh
+    - name: Test
+      run: go test -count=1 -v ./...
+-----------------------------------------------------------------------------------------
+https://eax.me/golang-dockertest/
+https://eax.me/postgresql-triggers/
+-----------------------------------------------------------------------------------------
+sudo ufw allow ssh
+sudo ufw default deny incoming
+sudo ufw enable
+
+sudo apt install docker.io
+sudo systemctl enable docker
+sudo systemctl start docker
+
+# Для доступа к /var/run/docker.sock говорим:
+sudo usermod -a -G docker eax
+# где `eax` - имя вашего пользователя.
+# После выполнения команды понадобится перелогиниться.
+
+deb http://apt.kubernetes.io/ kubernetes-xenial main
+
+# под рутом
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | \
+  apt-key add
+
+# Если в системе включен swap, k8s откажется стартовать.
+# Swap отключается командой `swapoff -a` и последующим
+# редактированием /etc/fstab.
+
+# под обычным пользователем
+sudo apt update
+# смотрим список доступных версий
+apt-cache madison kubeadm
+# самые последние версии кубера не обязательно самые стабильные
+sudo apt install kubeadm=1.14.9-00 kubelet=1.14.9-00 kubectl=1.14.9-00
+sudo kubeadm init --pod-network-cidr=10.244.0.0/16 \
+  --apiserver-advertise-address=YOUR_EXTERNAL_IP \
+  --kubernetes-version stable-1.14
+mkdir ~/.kube
+sudo cp /etc/kubernetes/admin.conf ~/.kube/config
+sudo chown eax:eax ~/.kube/config
+
+
+kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/⏎
+  master/Documentation/kube-flannel.yml
+kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/⏎
+  master/Documentation/k8s-manifests/kube-flannel-rbac.yml
+  
+# В kubeadmin init можно было просто указать:
+# --pod-network-cidr=192.168.0.0/16
+# Но поскольку мы указали другую подсеть (для Flannel),
+# обновим параметр таким образом:
+kubeadm config upload from-flags --pod-network-cidr=192.168.0.0/16
+kubectl apply -f https://docs.projectcalico.org/v3.6/getting-started/⏎
+  kubernetes/installation/hosted/kubernetes-datastore/⏎
+  calico-networking/1.7/calico.yaml
+  
+kubectl taint nodes --all node-role.kubernetes.io/master-
+-----------------------------------------------------------------------------------------
+@startuml
+
+CanTakeDamage <|-- Hero
+Hero <|-- Mage
+Hero <|-- Warrior
+
+enum Spell {
+    FIREBALL
+    THUNDERBOLT
+}
+
+enum Weapon {
+    SWORD
+    BOW
+}
+
+interface CanTakeDamage {
+    TakeDamage(num int) int
+}
+
+class Hero {
+    Name: string
+    HP: int
+    XP: int
+
+    IsDead() bool
+    IsMage() bool
+    IsWarrior() bool
+    Attack(enemy CanTakeDamage)
+}
+
+class Warrior {
+    Weapon: Weapon
+    ArrowsNumber: int
+}
+
+class Mage {
+    Spellbook: []Spell
+    Mana: int
+}
+
+@enduml
+
+@startuml
+
+actor User
+participant Nginx
+participant Application
+database PostgreSQL
+
+autonumber 1
+User -> Nginx: GET / HTTP/1.0
+Nginx -> Application: GET / HTTP/1.0
+Application -> PostgreSQL: SELECT * FROM ...
+PostgreSQL --> Application: (A LOT OF DATA)
+Application --> Nginx: HTTP/1.0 200 OK
+Nginx --> User: HTTP/1.0 200 OK
+
+@enduml
+
+@startuml
+
+start
+
+:Check eax.me for new posts;
+
+while (There are new posts?) is (Yes);
+  :Read one post;
+  :Share;
+  :Leave comments;
+endwhile (No);
+
+stop
+
+@enduml
+-----------------------------------------------------------------------------------------
+# если у вас Ubuntu:
+sudo apt-get install doxygen
+
+# если у вас Arch Linux:
+sudo pacman -S doxygen
+
+doxygen -g
+
+Имя проекта:
+
+PROJECT_NAME           = "Project Name"
+Версия проекта:
+
+PROJECT_NUMBER         = 0.1
+Краткое описание проекта:
+
+PROJECT_BRIEF          = "Yet another NoSQL DBMS"
+Куда писать сгенеренные доки:
+
+OUTPUT_DIRECTORY       = doxygen
+Отключаем LaTeX, так как HTML обычно достаточно:
+
+GENERATE_LATEX         = NO
+Где искать файлы, из которых генерировать документацию — список файлов и директорий через пробел:
+
+INPUT                  = src include
+Включаем рекурсивный обход директорий:
+
+RECURSIVE              = YES
+
+@brief — краткое описание метода или класса;
+@param foo — описание аргумента foo процедуры или метода;
+@return — описание возвращаемого значения;
+@class Foo — описание конкретного класса Foo;
+@file fname — описание конкретного файла;
+@mainpage Title — комментарий содержит текст для титульного листа документации;
+@see Ref — ссылка на связанный класс или метод;
+@throws Foo или @exception Foo — метод бросает исключение Foo;
+@warning — предупреждение. Очень ярко выделяется в документации, трудно не заметить;
+@private — пометить класс или метод, как приватный. Удобно, когда не хочется палить в документации какие-то детали реализации;
+@todo — что-то нужно доделать. Doxygen генерирует отдельную страницу со списком всех @todo;
+@deprecated — помечает класс или метод устаревшим. Как и с @todo, Doxygen генерирует отдельную страницу со списком всех устаревших классов и методов;
+
+doxygen
+firefox doxygen/html/index.html
+-----------------------------------------------------------------------------------------
+export KUBECONFIG=/путь/до/вашего/kubeconfig.yaml
+kubectl get nodes
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.15.9-alpine
+        ports:
+        - containerPort: 80
+          protocol: TCP
+		  
+kubectl apply -f nginx.yaml
+kubectl get deployments
+
+# фильтрация подов по меткам
+kubectl get pods -l app=nginx
+
+# показывает внутренние IP подов
+kubectl get pods -o wide
+
+# вывод в JSON --- удобно в скриптах
+kubectl get pods -o json
+
+# чтобы не зависеть от jq:
+kubectl get pods -o jsonpath='{.items[:].metadata.name}'
+
+kubectl describe deployments
+kubectl describe pods
+
+kubectl exec -it nginx-deployment-bff77b7f8-jbl4m -- /bin/sh
+
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-load-balancer
+spec:
+  type: LoadBalancer
+  selector:
+    app: nginx
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+      name: http
+	  
+kubectl apply -f loadbalancer.yaml
+kubectl get svc
+
+...
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 3 # <-- изменено
+...
+
+/ # apk upgrade
+/ # apk add curl
+...
+/ # curl nginx-load-balancer 2>/dev/null | grep title
+<title>Welcome to nginx!</title>
+/ # curl nginx-load-balancer.default.svc.cluster.local 2>/dev/null | \
+>     grep title
+<title>Welcome to nginx!</title>
+
+kubectl delete -f loadbalancer.yaml
+kubectl delete -f nginx.yaml
+-----------------------------------------------------------------------------------------
+Пару дней назад состоялся релиз Grafana 6.0. Из интересного в данной версии добавили встроенную агрегацию логов. Соответствующее хранилище для логов называется Loki, а агент для записи логов в это хранилище — Promtail. Таким образом, теперь в Grafana можно смотреть не только метрики, но также и логи. Удобно, когда и те, и другие доступны в одном месте. В этой заметке мы научимся писать логи в Promtail / Loki из программ на языке Go.
+-----------------------------------------------------------------------------------------
+sudo apt-get install ntp
+ntpq -pn
+Затем ставим Java:
+
+sudo add-apt-repository ppa:webupd8team/java
+sudo apt-get update
+sudo apt-get install oracle-java8-installer
+sudo apt-get install oracle-java8-unlimited-jce-policy
+Наконец, устанавливаем Cassandra:
+
+curl -L http://debian.datastax.com/debian/repo_key | sudo apt-key add -
+echo "deb http://debian.datastax.com/community stable main" | \
+  sudo tee -a /etc/apt/sources.list.d/cassandra.sources.list
+sudo apt-get update
+sudo apt-get install dsc21 cassandra-tools
+
+/etc/cassandra/cassandra.yaml — основные настройки;
+/etc/cassandra/cassandra-env.sh — все параметры JVM;
+/var/log/cassandra/system.log — смотрим сюда, если что-то сломалось;
+/var/lib/cassandra/ — все данные;
+
+MAX_HEAP_SIZE="350M"
+HEAP_NEWSIZE="150M"
+Пока Cassandra вроде не жалуется. В реальном, боевом, окружении, понятно, эти параметры лучше вообще не трогать без явной нужды, так как скрипт вычисляет их автоматически. Кроме того, можно настроить JMX:
+
+JVM_OPTS="$JVM_OPTS -Djava.rmi.server.hostname=10.110.0.10"
+JVM_OPTS="$JVM_OPTS -Dcom.sun.management.jmxremote.port=9999"
+JVM_OPTS="$JVM_OPTS -Dcom.sun.management.jmxremote.authenticate=false"
+JVM_OPTS="$JVM_OPTS -Dcom.sun.management.jmxremote.ssl=false"
+-----------------------------------------------------------------------------------------
+cqlsh> create keyspace test with replication={'class':'SimpleStrategy',
+                                              'replication_factor':2};
+cqlsh> use test;
+cqlsh:test> create table todo_list ( id int primary key,
+                                     description text );
+cqlsh:test> insert into todo_list (id,description) values (1,'Item 1');
+cqlsh:test> insert into todo_list (id,description) values (2,'Item 2');
+cqlsh:test> insert into todo_list (id,description) values (3,'Item 3');
+cqlsh:test> create index on todo_list (description);
+cqlsh:test> select id from todo_list where description = 'Item 1';
+
+cqlsh:test> expand on
+Now Expanded output is enabled
+
+cqlsh:test> expand off
+Disabled Expanded output.
+
+cqlsh:test> tracing on;
+Now Tracing is enabled
+
+cqlsh:test> tracing off;
+Disabled Tracing.
+cqlsh:test> desc table todo_list;
+
+... skiped ...
+
+cqlsh:test> desc keyspace test;
+
+... skiped ...
+
+Удаление строки:
+
+cqlsh:test> delete from todo_list where id = 1;
+Удаление таблицы:
+
+cqlsh:test> drop table todo_list;
+Удаление кейспейса:
+
+cqlsh:test> drop keyspace test;
+Выход из cqlsh:
+
+cqlsh:test> exit
+
+cqlsh:test> create table
+                table1 (field1, field2, field3, field4, field5)
+            primary key ((field1, field2), field3, field4))
+            with clustering order by (field3 desc, field4 asc);
+
+
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+Создаем пользователя, от имени которого будет работать runner:
+
+adduser actions
+# добавляем его в sudoers
+vim /etc/sudoers
+su actions
+cd
+Ставим кое-какие зависимости нашего проекта:
+
+sudo apt update
+sudo apt install gcc docker.io
+sudo systemctl enable docker
+sudo systemctl start docker
+# разрешаем пользователю actions пользоваться Docker
+sudo usermod -a -G docker actions
+Наконец, ставим runner, используя команды из инструкции:
+
+mkdir actions-runner && cd actions-runner
+curl -O -L ВАША_ССЫЛКА_НА_АРХИВ
+tar xzf ИМЯ_АРХИВА_ТГЗ
+./config.sh --url УРЛ_ВАШЕГО_РЕПОЗИТОРИЯ --token ЗДЕСЬ_ВАШ_ТОКЕН
+# устанавливаем и запускаем сервис
+sudo ./svc.sh install
+sudo ./svc.sh start
+sudo ./svc.sh status
+Если все было сделано правильно, раннер появится в разделе Settings → Actions репозитория. Теперь открываем run-tests.yaml и меняем в нем единственную строчку:
+
+    # runs-on: ubuntu-latest
+    runs-on: self-hosted
+-----------------------------------------------------------------------------------------
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
+/** A utility class for password related operations. */
+public class PasswordUtil {
+
+  /**
+   * A secure one-way hash function for the given {@code password}.
+   *
+   * @param password the given password value
+   * @return a hash for the given {@code password}
+   */
+  public String toHash(String password) {
+    try {
+      // MessageDigest isn't thread safe so we must create a new one each time we want to hash a
+      // password
+      MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
+
+      sha256.update(password.getBytes("UTF-8"));
+
+      return toHexString(sha256.digest());
+    } catch (NoSuchAlgorithmException ex) {
+      throw new RuntimeException("No SHA-256 algorithm available, check the JRE!", ex);
+    } catch (UnsupportedEncodingException ex) {
+      throw new RuntimeException("UTF-8 is not supported by this platform!", ex);
+    }
+  }
+
+  private String toHexString(byte[] bytes) {
+    StringBuilder hexString = new StringBuilder();
+    for (byte b : bytes) {
+      String hex = Integer.toHexString(0xff & b);
+
+      if (hex.length() == 1) {
+        hexString.append('0');
+      }
+
+      hexString.append(hex);
+    }
+    return hexString.toString();
+  }
+}
+-----------------------------------------------------------------------------------------
+    private List<Method> findPublicStaticMethods(Class<?> configurationClass) {
+        List<Method> staticMethods = new LinkedList<>();
+        for (Method method : configurationClass.getMethods()) {
+            if (Modifier.isStatic(method.getModifiers()) && Modifier.isPublic(method.getModifiers())) {
+                staticMethods.add(method);
+            }
+        }
+        return staticMethods;
+    }
+-----------------------------------------------------------------------------------------
+import org.springframework.beans.factory.annotation.QualifierAnnotationAutowireCandidateResolver;
+import org.springframework.beans.factory.config.BeanDefinitionHolder;
+import org.springframework.beans.factory.config.DependencyDescriptor;
+
+import static org.constretto.spring.EnvironmentAnnotationConfigurer.findEnvironmentAnnotation;
+
+/**
+ * Internal class that reads &#064;Environment annotations on classes and removes all classes that are not annotated
+ * with the current environment as autowire candidates.
+ *
+ * @author <a href="mailto:kaare.nilsen@gmail.com">Kaare Nilsen</a>
+ */
+public class ConstrettoAutowireCandidateResolver extends QualifierAnnotationAutowireCandidateResolver {
+
+    @SuppressWarnings("unchecked")
+    public boolean isAutowireCandidate(BeanDefinitionHolder bdHolder, DependencyDescriptor descriptor) {
+
+        if (descriptor.getDependencyType().isInterface()) {
+            return super.isAutowireCandidate(bdHolder, descriptor);
+        } else {
+            return findEnvironmentAnnotation(descriptor.getDependencyType()) == null || super.isAutowireCandidate(bdHolder, descriptor);
+        }
+
+    }
+}
+-----------------------------------------------------------------------------------------
+ <plugin>
+        <groupId>org.mortbay.jetty</groupId>
+        <artifactId>maven-jetty-plugin</artifactId>
+        <version>6.1.18</version>
+        <configuration>
+          <useTestClasspath>true</useTestClasspath>
+          <contextPath>/</contextPath>
+          <connectors>
+            <connector implementation="org.mortbay.jetty.nio.SelectChannelConnector">
+              <port>8080</port>
+            </connector>
+          </connectors>
+          <scanIntervalSeconds>5</scanIntervalSeconds>
+          <systemProperties>
+            <systemProperty>
+              <key>CONSTRETTO_TAGS</key>
+              <value>development,constretto,exampletag</value>
+            </systemProperty>
+            <systemProperty>
+              <key>CONSTRETTO_ENV</key>
+              <value>development,constretto,exampleenv</value>
+            </systemProperty>
+          </systemProperties>
+        </configuration>
+      </plugin>
+-----------------------------------------------------------------------------------------
+import org.apache.commons.validator.routines.RegexValidator;
+import org.apache.commons.validator.routines.UrlValidator;
+
+/** Utility class for URL related code. */
+public class UrlUtils {
+
+  private final UrlValidator urlValidator;
+
+  public UrlUtils() {
+    this.urlValidator = new UrlValidator(new RegexValidator(".*"), 0L);
+  }
+
+  /**
+   * Is the given {@code incoming} a valid URL?
+   *
+   * @param incoming a (putative) URL-as-string
+   * @return true if the {@code incoming} is a valid URL, false otherwise
+   */
+  public boolean isUrl(String incoming) {
+    return urlValidator.isValid(incoming);
+  }
+}
+-----------------------------------------------------------------------------------------
+@GrabResolver('http://oss.jfrog.org/artifactory/libs-snapshot') //(1)
+@Grab('org.ratpack-framework:ratpack-groovy:0.9.0-SNAPSHOT')
+import static org.ratpackframework.groovy.RatpackScript.ratpack
+
+ratpack { //(2)
+    handlers {
+        get {
+            response.send 'Hello, world!' //(3)
+        }
+    }
+}
+
+ratpack {
+    handlers {
+        get {
+            response.send 'Hello, world!'
+        }
+        get('habr'){
+            response.send 'Hello, habr!' //наш новый обработчик
+        }
+    }
+}
+
+
+-----------------------------------------------------------------------------------------
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-mapping PUBLIC
+    "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+
+    <class name="usersdata.model.UsersEntity" table="users" schema="test">
+        <id name="id">
+            <column name="id" sql-type="int(8)"/>
+        </id>
+        <property name="name">
+            <column name="name" sql-type="varchar(25)" length="25"/>
+        </property>
+        <property name="age">
+            <column name="age" sql-type="int(11)"/>
+        </property>
+        <property name="isAdmin">
+            <column name="isAdmin" sql-type="bit(1)"/>
+        </property>
+        <property name="createDate">
+            <column name="createDate" sql-type="timestamp"/>
+        </property>
+    </class>
+</hibernate-mapping>
+-----------------------------------------------------------------------------------------
 https://eax.me/consul/
 https://github.com/2ndQuadrant/pglogical
 

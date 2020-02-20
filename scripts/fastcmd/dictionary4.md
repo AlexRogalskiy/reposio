@@ -12269,6 +12269,1085 @@ curl -X PUT \
 \sum_{i=1}^n i^3=\bigg ({\dfrac{n(n+1)}{2}} \bigg)^2
 @endlatex
 ==============================================================================================================
+;(function()
+{
+	// CommonJS
+	SyntaxHighlighter = SyntaxHighlighter || (typeof require !== 'undefined'? require('shCore').SyntaxHighlighter : null);
+
+	function Brush()
+	{
+		var keywords =	'break case catch class continue ' +
+				'default delete do else enum export extends false  ' +
+				'for function if implements import in instanceof ' +
+				'interface let new null package private protected ' +
+				'static return super switch ' +
+				'this throw true try typeof var while with yield';
+
+		var r = SyntaxHighlighter.regexLib;
+
+		this.regexList = [
+			{ regex: r.multiLineDoubleQuotedString,					css: 'string' },			// double quoted strings
+			{ regex: r.multiLineSingleQuotedString,					css: 'string' },			// single quoted strings
+			{ regex: r.singleLineCComments,							css: 'comments' },			// one line comments
+			{ regex: r.multiLineCComments,							css: 'comments' },			// multiline comments
+			{ regex: /\s*#.*/gm,									css: 'preprocessor' },		// preprocessor tags like #region and #endregion
+			{ regex: new RegExp(this.getKeywords(keywords), 'gm'),	css: 'keyword' }			// keywords
+			];
+
+		this.forHtmlScript(r.scriptScriptTags);
+	};
+
+	Brush.prototype	= new SyntaxHighlighter.Highlighter();
+	Brush.aliases	= ['js', 'jscript', 'javascript'];
+
+	SyntaxHighlighter.brushes.JScript = Brush;
+
+	// CommonJS
+	typeof(exports) != 'undefined' ? exports.Brush = Brush : null;
+})();
+
+/* global describe, it */
+
+(function () {
+    'use strict';
+
+    describe('Give it some context', function () {
+        describe('maybe a bit more context here', function () {
+            it('should run here few assertions', function () {
+
+            });
+        });
+    });
+})();
+==============================================================================================================
+git remote add NAME URL >/dev/null 2>&1 || git remote set-url NAME URL
+git push --set-upstream origin master
+==============================================================================================================
+==============================================================================================================
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
+import ru.javawebinar.topjava.model.User;
+import ru.javawebinar.topjava.repository.UserRepository;
+import ru.javawebinar.topjava.util.exception.NotFoundException;
+
+import java.util.List;
+
+import static ru.javawebinar.topjava.util.ValidationUtil.checkNotFound;
+import static ru.javawebinar.topjava.util.ValidationUtil.checkNotFoundWithId;
+
+/**
+ * GKislin
+ * 06.03.2015.
+ */
+@Service
+public class UserServiceImpl implements UserService {
+
+    @Autowired
+    private UserRepository repository;
+
+    @CacheEvict(value = "users", allEntries = true)
+    @Override
+    public User save(User user) {
+        Assert.notNull(user, "user must not be null");
+        return repository.save(user);
+    }
+
+    @CacheEvict(value = "users", allEntries = true)
+    @Override
+    public void delete(int id) {
+        checkNotFoundWithId(repository.delete(id), id);
+    }
+
+    @Override
+    public User get(int id) throws NotFoundException {
+        return checkNotFoundWithId(repository.get(id), id);
+    }
+
+    @Override
+    public User getByEmail(String email) throws NotFoundException {
+        Assert.notNull(email, "email must not be null");
+        return checkNotFound(repository.getByEmail(email), "email=" + email);
+    }
+
+    @Cacheable("users")
+    @Override
+    public List<User> getAll() {
+        return repository.getAll();
+    }
+
+    @CacheEvict(value = "users", allEntries = true)
+    @Override
+    public void update(User user) {
+        Assert.notNull(user, "user must not be null");
+        repository.save(user);
+    }
+
+    @CacheEvict(value = "users", allEntries = true)
+    @Override
+    public void evictCache() {
+    }
+}
+
+@Access(AccessType.FIELD)
+
+ @Id
+    @SequenceGenerator(name = "global_seq", sequenceName = "global_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "global_seq")
+    // PROPERTY access for id due to bug: https://hibernate.atlassian.net/browse/HHH-3718
+    @Access(value = AccessType.PROPERTY)
+    protected Integer id;
+	
+	
+import org.hibernate.validator.constraints.NotBlank;
+import org.hibernate.validator.constraints.Range;
+
+import javax.persistence.*;
+import javax.validation.constraints.NotNull;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+
+/**
+ * GKislin
+ * 11.01.2015.
+ */
+@SuppressWarnings("JpaQlInspection")
+@NamedQueries({
+        @NamedQuery(name = Meal.ALL_SORTED, query = "SELECT m FROM Meal m WHERE m.user.id=:userId ORDER BY m.dateTime DESC"),
+        @NamedQuery(name = Meal.DELETE, query = "DELETE FROM Meal m WHERE m.id=:id AND m.user.id=:userId"),
+        @NamedQuery(name = Meal.GET_BETWEEN, query = "SELECT m FROM Meal m " +
+                "WHERE m.user.id=:userId AND m.dateTime BETWEEN :startDate AND :endDate ORDER BY m.dateTime DESC"),
+//        @NamedQuery(name = Meal.UPDATE, query = "UPDATE Meal m SET m.dateTime = :datetime, m.calories= :calories," +
+//                "m.description=:desc where m.id=:id and m.user.id=:userId")
+})
+@Entity
+@Table(name = "meals", uniqueConstraints = {@UniqueConstraint(columnNames = {"user_id", "date_time"}, name = "meals_unique_user_datetime_idx")})
+public class Meal extends BaseEntity {
+    public static final String ALL_SORTED = "Meal.getAll";
+    public static final String DELETE = "Meal.delete";
+    public static final String GET_BETWEEN = "Meal.getBetween";
+
+    @Column(name = "date_time", nullable = false)
+    @NotNull
+    private LocalDateTime dateTime;
+
+    @Column(name = "description", nullable = false)
+    @NotBlank
+    private String description;
+
+    @Column(name = "calories", nullable = false)
+    @Range(min = 10, max = 5000)
+    private int calories;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    public Meal() {
+    }
+
+    public Meal(LocalDateTime dateTime, String description, int calories) {
+        this(null, dateTime, description, calories);
+    }
+
+    public Meal(Integer id, LocalDateTime dateTime, String description, int calories) {
+        super(id);
+        this.dateTime = dateTime;
+        this.description = description;
+        this.calories = calories;
+    }
+
+    public LocalDateTime getDateTime() {
+        return dateTime;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public int getCalories() {
+        return calories;
+    }
+
+    public LocalDate getDate() {
+        return dateTime.toLocalDate();
+    }
+
+    public LocalTime getTime() {
+        return dateTime.toLocalTime();
+    }
+
+    public void setDateTime(LocalDateTime dateTime) {
+        this.dateTime = dateTime;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setCalories(int calories) {
+        this.calories = calories;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    @Override
+    public String toString() {
+        return "Meal{" +
+                "id=" + id +
+                ", dateTime=" + dateTime +
+                ", description='" + description + '\'' +
+                ", calories=" + calories +
+                '}';
+    }
+}
+
+
+==============================================================================================================
+wget --no-cookies --no-check-certificate --header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" "http://download.oracle.com/otn-pub/java/jdk/8u51-b16/jdk-8u51-linux-i586.tar.gz"
+tar xzvf jdk-8u51-linux-i586.tar.gz
+jdk1.8.0_51/bin/java -jar blink-1.0-SNAPSHOT.jar
+==============================================================================================================
+<dependencies>
+  <dependency>
+    <groupId>com.basho.riak</groupId>
+    <artifactId>riak-client</artifactId>
+    <version>2.0.7</version>
+  </dependency>
+  ...
+</dependencies>
+==============================================================================================================
+sudo systemctl restart prometheus
+==============================================================================================================
+sudo useradd --no-create-home --shell /bin/false node_exporter
+# Последнюю версию пакета ищем здесь:
+# https://github.com/prometheus/node_exporter/releases
+wget https://github.com/.../node_exporter-0.17.0.linux-amd64.tar.gz
+tar -xvzf node_exporter-0.17.0.linux-amd64.tar.gz
+sudo cp node_exporter-0.17.0.linux-amd64/node_exporter /usr/local/bin/
+
+Создаем /etc/systemd/system/node_exporter.service:
+
+[Unit]
+Description=Node Exporter
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=node_exporter
+Group=node_exporter
+ExecStart=/usr/local/bin/node_exporter
+
+[Install]
+WantedBy=default.target
+Запускаем демона:
+
+sudo systemctl daemon-reload
+sudo systemctl start node_exporter
+sudo systemctl status node_exporter
+sudo systemctl enable node_exporter
+Проверяем, что метрики отдаются:
+
+curl 'localhost:9100/metrics'
+
+sudo useradd --no-create-home --shell /bin/false prometheus
+# Свежий пакет находим здесь:
+# https://github.com/prometheus/prometheus/releases
+wget https://github.com/.../prometheus-2.6.0.linux-amd64.tar.gz
+tar -xvzf prometheus-2.6.0.linux-amd64.tar.gz
+sudo cp prometheus-2.6.0.linux-amd64/prometheus /usr/local/bin/
+sudo cp prometheus-2.6.0.linux-amd64/promtool /usr/local/bin/
+
+sudo mkdir /etc/prometheus
+sudo cp -r prometheus-2.6.0.linux-amd64/consoles/ \
+  /etc/prometheus/consoles
+sudo cp -r prometheus-2.6.0.linux-amd64/console_libraries/ \
+  /etc/prometheus/console_libraries
+sudo cp prometheus-2.6.0.linux-amd64/prometheus.yml \
+  /etc/prometheus/
+sudo chown -R prometheus:prometheus /etc/prometheus
+
+sudo mkdir /var/lib/prometheus
+sudo chown prometheus:prometheus /var/lib/prometheus
+
+
+Правим /etc/prometheus/prometheus.yml, указывая, где искать Node Exporter:
+
+# ...
+
+# Важно! В YAML запрещено использовать табуляцию.
+# Все отступы - это два пробела.
+
+scrape_configs:
+  - job_name: 'prometheus'
+    # ... тут все оставляем как было ...
+  - job_name: 'node_localhost'
+    static_configs:
+    - targets: ['localhost:9100']
+Создаем /etc/systemd/system/prometheus.service:
+
+[Unit]
+Description=Prometheus
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=prometheus
+Group=prometheus
+ExecStart=/usr/local/bin/prometheus \
+    --config.file /etc/prometheus/prometheus.yml \
+    --storage.tsdb.path /var/lib/prometheus/ \
+    --web.console.templates=/etc/prometheus/consoles \
+    --web.console.libraries=/etc/prometheus/console_libraries
+
+[Install]
+WantedBy=default.target
+Запускаем Prometheus:
+
+sudo systemctl daemon-reload
+sudo systemctl start prometheus
+sudo systemctl status prometheus
+sudo systemctl enable prometheus
+Проверяем, что Prometheus отдает свои собственные метрики:
+
+curl 'localhost:9090/metrics'
+
+
+# Ссылку на свежий пакет находим тут:
+# https://grafana.com/grafana/download
+
+wget https://dl.grafana.com/oss/release/grafana_5.4.2_amd64.deb
+sudo apt install ./grafana_5.4.2_amd64.deb
+sudo systemctl start grafana-server
+sudo systemctl status grafana-server
+sudo systemctl enable grafana-server
+==============================================================================================================
+Первым делом, переводим донгл в monitor mode:
+
+sudo airmon-ng start wlp0s20u1
+Посмотрим, какой канал использует интересующий наш роутер:
+
+sudo airodump-ng wlp0s20u1mon
+В моем случае использовался 8-ой канал. Снифаем весь трафик:
+
+sudo airodump-ng -c 8 -w wifi-traffic wlp0s20u1mon
+Поскольку трафик передается в открытом виде, не составляет большого труда проанализировать его:
+
+# грепаем строки
+strings wifi-traffic-01.cap | grep http
+
+# выводим все логины-пароли
+dsniff -p wifi-traffic-01.cap
+
+# выводим все URL
+urlsnarf -p wifi-traffic-01.cap
+
+# почему-то tshark находит намного больше URL
+tcpdump -r wifi-traffic-01.cap -n -w - tcp port 80 | \
+  tshark -V -Y "http.request || http.response" -r - | \
+  grep 'Full request URI'
+
+# также через tshark видны все куки и формы
+tcpdump -r wifi-traffic-01.cap -n -w - tcp port 80 | \
+  tshark -V -Y "http.request || http.response" -r -
+==============================================================================================================
+sudo apt install sslstrip
+sslstrip -l 8080
+В соседнем терминале говорим:
+
+sudo iptables -t nat -A PREROUTING -p tcp --destination-port 80 \
+  -j REDIRECT --to-port 8080
+==============================================================================================================
+https://eax.me/lets-encrypt/
+
+sudo add-apt-repository ppa:certbot/certbot
+sudo apt-get update
+sudo apt-get install python3-certbot-nginx
+
+sudo service nginx reload
+… и просим Certbot получить сертификат:
+
+sudo certbot --nginx -d afiskon.ru
+sudo certbot renew --dry-run
+
+https://www.rtl-sdr.com/
+http://gqrx.dk/download/gqrx-sdr-for-the-raspberry-pi
+==============================================================================================================
+passwd
+sudo systemctl enable ssh.service
+sudo systemctl start ssh.service
+
+
+Первоначальная настройка NAT
+Открываем /etc/network/interfaces и пишем туда следующее:
+
+auto lo
+iface lo inet loopback
+
+auto eth0
+
+# Вариант А, без смены MAC:
+# iface eth0 inet dhcp
+
+# Вариант Б, со сменой MAC:
+iface eth0 inet dhcp
+  hwaddress ether 11:22:33:44:55:66
+
+auto eth1
+iface eth1 inet static
+  address 10.128.10.1
+  network 10.128.10.0
+  netmask 255.255.255.0
+  broadcast 10.128.10.255
+
+auto wlan0
+iface wlan0 inet static
+  address 10.128.11.1
+  network 10.128.11.0
+  netmask 255.255.255.0
+  broadcast 10.128.11.255
+  
+  
+sudo systemctl stop dhcpcd
+sudo systemctl disable dhcpcd
+
+sudo systemctl restart networking
+sudo apt install dnsmasq dnsutils
+
+Правим /etc/dnsmasq.conf:
+
+# Можно явно указать апстрим DNS-сервера
+# Это может быть особенно полезно, если вы
+# хотите заворачивать весь трафик в VPN
+server=8.8.8.8
+server=8.8.4.4
+
+domain-needed
+bogus-priv
+
+# Listen only given interfaces
+interface=lo
+interface=eth1
+interface=wlan0
+bind-interfaces
+
+# DNS cache size
+cache-size=15000
+
+# IP ranges
+dhcp-range=eth1,10.128.10.50,10.128.10.250
+dhcp-range=wlan0,10.128.11.50,10.128.11.250
+
+# Default gateways
+dhcp-option=eth1,3,10.128.10.1
+dhcp-option=wlan0,3,10.128.11.1
+
+# DNS servers
+dhcp-option=eth1,6,10.128.10.1
+dhcp-option=wlan0,6,10.128.11.1
+Перезапускаем демона:
+
+sudo systemctl restart dnsmasq
+sudo systemctl status dnsmasq
+Проверяем работу DNS-сервера:
+
+dig @127.0.0.1 eax.me
+
+
+# enable IP-forwarding
+sudo sh -c 'echo 1 > /proc/sys/net/ipv4/ip_forward'
+
+# for LAN
+sudo iptables -A FORWARD -i eth1 -o eth0 -j ACCEPT
+sudo iptables -A FORWARD -i eth0 -o eth1 -m conntrack \
+  --ctstate ESTABLISHED,RELATED -j ACCEPT
+
+# for WLAN
+sudo iptables -A FORWARD -i wlan0 -o eth0 -j ACCEPT
+sudo iptables -A FORWARD -i eth0 -o wlan0 -m conntrack \
+  --ctstate ESTABLISHED,RELATED -j ACCEPT
+
+# allow traffic between LAN and WLAN
+sudo iptables -A FORWARD -i wlan0 -o eth1 -j ACCEPT
+sudo iptables -A FORWARD -i eth1 -o wlan0 -j ACCEPT
+
+sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+
+выдали IP-адрес, и что имеется доступ в интернет. Если все работает, сохраняем сделанные изменения, чтобы они не потерялись после перезагрузки.
+
+Для этого дописываем в /etc/sysctl.conf:
+
+net.ipv4.ip_forward=1
+Выполняем: команду:
+
+sudo sh -c 'iptables-save > /etc/iptables.rules'
+Создаем скрипт /etc/network/if-pre-up.d/iptables:
+
+#!/bin/sh
+
+set -e
+
+iptables-restore < /etc/iptables.rules
+exit 0
+Говорим:
+
+sudo chmod +x /etc/network/if-pre-up.d/iptables
+Перезагружаем малину:
+
+sudo reboot
+Проверяем, что все работает и после перезагрузки.
+
+Настройка точки доступа Wi-Fi
+Устанавливаем hostapd:
+
+sudo apt install hostapd
+Правим /etc/default/hostapd
+
+DAEMON_CONF="/etc/hostapd/hostapd.conf"
+Создаем файл /etc/hostapd/hostapd.conf:
+
+interface=wlan0
+ssid=RaspberryPi
+country_code=RU
+
+# Enable IEEE 802.11d
+ieee80211d=1
+
+# Enable IEEE 802.11n
+ieee80211n=1
+
+hw_mode=g
+channel=5
+
+# Use PSK
+auth_algs=1
+
+wpa=2
+wpa_key_mgmt=WPA-PSK
+rsn_pairwise=CCMP
+wpa_passphrase=s3cre7_pa55w0rd
+SSID, пароль и номер канала, естественно, указываем какие нужно.
+
+Запускаем hostapd:
+
+sudo systemctl enable hostapd
+sudo systemctl start hostapd
+Должна появиться точка доступа с SSID RaspberryPi. Пробуем к ней подключиться и проверяем, что все работает. Если вдруг что-то не работает, отладочный вывод можно получить командой:
+
+sudo hostapd -dd /etc/hostapd/hostapd.conf
+Делаем ребут:
+
+sudo reboot
+==============================================================================================================
+gdb -> disassemble
+
+omxplayer test.mp3
+==============================================================================================================
+nmap -Pn -p 22 192.168.0.0/24 | grep -B3 open | grep 'Nmap scan'
+Затем подключаем малину, повторяем команду, смотрим diff.
+
+==============================================================================================================
+wget http://download.raspbsd.org/FreeBSD-armv6-11.0-RPI2-291824.img.gz
+gunzip FreeBSD-armv6-11.0-RPI2-291824.img.gz
+sudo umount /dev/mmcblk0p1
+sudo dd bs=1M if=FreeBSD-armv6-11.0-RPI2-291824.img of=/dev/mmcblk0
+
+http://www.sstv-handbook.com/
+
+FlightAware
+APRSdroid
+https://aprs.fi/info/a/R1BEN-9
+https://github.com/MalcolmRobb/dump1090
+https://eax.me/weather-satellites/
+
+opkg install kmod-i2c-gpio-custom kmod-i2c-core i2c-tools
+cat /sys/class/gpio/gpio0/value
+echo 0 > /sys/class/gpio/export
+
+flashrom -c 'MX25L12835F/MX25L12845E/MX25L12865E' \
+  -p 'ft2232_spi:type=2232H,port=A' --read gl-ar750.dump
+
+sudo yaourt -S binwalk-git squashfs-tools sasquatch jefferson-git \
+  mtd-utils gzip bzip2 tar arj lhasa p7zip cabextract sleuthkit lzop
+binwalk gl-ar750.dump
+binwalk -e gl-ar750.dump
+r2 -a mips -b 32 _gl-ar750.dump.extracted/squashfs-root/bin/busybox
+==============================================================================================================
+#!/usr/bin/env python3
+# vim: set ai et ts=4 sw=4:
+
+import os
+import sys
+import subprocess
+import tempfile
+
+def run(cmd):
+    code = subprocess.call(cmd, shell=True)
+    if code != 0:
+        print("Command `%s` returned non-zero status: %d" %
+              (cmd, code))
+        sys.exit(1)
+
+if len(sys.argv) < 2:
+    print("Usage: " + sys.argv[0] + " <infile>")
+    sys.exit(1)
+
+infile = sys.argv[1]
+outfile = tempfile.gettempdir() + "/temp.pgm";
+fsize = os.path.getsize(infile)
+
+run('(echo "P5 512 %d 255"; cat %s) > %s' %
+    (fsize / 512, infile, outfile))
+run('gimp %s' % (outfile))
+==============================================================================================================
+msg:
+  .ascii "hello world"
+
+foo:
+  push msg
+  call print
+  jmp foo
+  
+  
+https://eax.me/sigrok/
+https://github.com/ReFirmLabs/binwalk  
+==============================================================================================================
+yaourt -S radare2-cutter-git
+
+# по умолчанию файл открывается только на чтение:
+r2 ~/path/to/binary
+# для открытия на чтение и на запись скажите:
+# r2 -w ~/path/to/binary
+
+https://eax.me/radare2/
+https://crafting.be/2017/04/radare2-reverse-unknown/
+
+sudo apt-get install build-essential liblzma-dev liblzo2-dev zlib1g-dev
+==============================================================================================================
+sudo ip link set enp0s25 promisc on
+sudo ip link set enp0s20u3 promisc on
+
+==============================================================================================================
+sudo ethtool -s enp0s25 speed 10 autoneg off
+ethtool enp0s25
+od -Ax -tx1 -v payload.dat > payload.hex
+
+==============================================================================================================
+/*
+ * eaxsniff - libpcap usage example
+ * (c) Aleksander Alekseev 2016 | http://eax.me/
+ */
+
+#include <pcap/pcap.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#include "include/net_headers.h"
+
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#define UNUSED(x) ((void)(x))
+
+#define PRINT_BYTES_PER_LINE 16
+
+static void
+print_data_hex(const uint8_t* data, int size)
+{
+    int offset = 0;
+    int nlines = size / PRINT_BYTES_PER_LINE;
+    if(nlines * PRINT_BYTES_PER_LINE < size)
+        nlines++;
+
+    printf("        ");
+
+    for(int i = 0; i < PRINT_BYTES_PER_LINE; i++)
+        printf("%02X ", i);
+
+    printf("\n\n");
+
+    for(int line = 0; line < nlines; line++)
+    {
+        printf("%04X    ", offset);
+        for(int j = 0; j < PRINT_BYTES_PER_LINE; j++)
+        {
+            if(offset + j >= size)
+                printf("   ");
+            else
+                printf("%02X ", data[offset + j]);
+        }
+
+        printf("   ");
+
+        for(int j = 0; j < PRINT_BYTES_PER_LINE; j++)
+        {
+            if(offset + j >= size)
+                printf(" ");
+            else if(data[offset + j] > 31 && data[offset + j] < 127)
+                printf("%c", data[offset + j]);
+            else
+                printf(".");
+        }
+
+        offset += PRINT_BYTES_PER_LINE;
+        printf("\n");
+    }
+}
+
+static void
+handle_packet(uint8_t* user, const struct pcap_pkthdr *hdr,
+                const uint8_t* bytes)
+{
+    UNUSED(user);
+
+    struct iphdr* ip_header = (struct iphdr*)(bytes +
+                                              sizeof(struct ethhdr));
+    struct sockaddr_in  source, dest;
+
+    memset(&source, 0, sizeof(source));
+    memset(&dest, 0, sizeof(dest));
+    source.sin_addr.s_addr = ip_header->saddr;
+    dest.sin_addr.s_addr = ip_header->daddr;
+
+    char source_ip[128];
+    char dest_ip[128];
+    strncpy(source_ip, inet_ntoa(source.sin_addr), sizeof(source_ip));
+    strncpy(dest_ip, inet_ntoa(dest.sin_addr), sizeof(dest_ip));
+
+    int source_port = 0;
+    int dest_port = 0;
+    int data_size = 0;
+    int ip_header_size = ip_header->ihl * 4;
+    char* next_header = (char*)ip_header + ip_header_size;
+
+    if(ip_header->protocol == IP_HEADER_PROTOCOL_TCP)
+    {
+        struct tcphdr* tcp_header = (struct tcphdr*)next_header;
+        source_port = ntohs(tcp_header->source);
+        dest_port = ntohs(tcp_header->dest);
+        int tcp_header_size = tcp_header->doff * 4;
+        data_size = hdr->len - sizeof(struct ethhdr) -
+                        ip_header_size - tcp_header_size;
+    }
+    else if(ip_header->protocol == IP_HEADER_PROTOCOL_UDP)
+    {
+        struct udphdr* udp_header = (struct udphdr*)next_header;
+        source_port = ntohs(udp_header->source);
+        dest_port = ntohs(udp_header->dest);
+        data_size = hdr->len - sizeof(struct ethhdr) -
+                        ip_header_size - sizeof(struct udphdr);
+    }
+
+    printf("\n%s:%d -> %s:%d, %d (0x%x) bytes\n\n",
+        source_ip, source_port, dest_ip, dest_port,
+        data_size, data_size);
+
+    if(data_size > 0)
+    {
+        int headers_size = hdr->len - data_size;
+        print_data_hex(bytes + headers_size, data_size);
+    }
+}
+
+void
+list_devs()
+{
+    int errcode;
+    pcap_if_t *alldevs, *currdev;
+    char errbuff[PCAP_ERRBUF_SIZE];
+
+    errcode = pcap_findalldevs(&alldevs, errbuff);
+    if(errcode != 0)
+    {
+        fprintf(stderr, "pcap_findalldevs failed: %s\n", errbuff);
+        return;
+    }
+
+    currdev = alldevs;
+
+    while(currdev)
+    {
+        printf("%s\t%s\n", currdev->name,
+            currdev->description ? currdev->description :
+                                   "(no description)"
+        );
+        currdev = currdev->next;
+    }
+
+    if(alldevs)
+        pcap_freealldevs(alldevs);
+}
+
+int
+main(int argc, char* argv[])
+{
+    int res;
+
+    if((argc < 3) && !((argc == 2) &&
+                       (strcmp(argv[1], "--list-devs") == 0)))
+    {
+        printf("Usage: %s device filter\n"
+               "       %s --list-devs\n",
+               argv[0], argv[0]);
+        printf("Example: %s eth0 'udp src or dst port 53'\n", argv[0]);
+        printf("%s\n", pcap_lib_version());
+        return 1;
+    }
+
+    if(argc == 2)
+    {
+        list_devs();
+        return 0;
+    }
+
+    const char* device = argv[1];
+    const char* filter = argv[2];
+    char errbuf[PCAP_ERRBUF_SIZE];
+
+    pcap_t* pcap = pcap_open_live(device, 65535, 1, 100, errbuf);
+    if(pcap == NULL)
+    {
+        fprintf(stderr, "pcap_open_live failed: %s\n", errbuf);
+        return 1;
+    }
+
+    struct bpf_program filterprog;
+    res = pcap_compile(pcap, &filterprog, filter, 0,
+                       PCAP_NETMASK_UNKNOWN);
+    if(res != 0)
+    {
+        fprintf(stderr, "pcap_compile failed: %s\n",
+                pcap_geterr(pcap));
+        pcap_close(pcap);
+        return 1;
+    }
+
+    res = pcap_setfilter(pcap, &filterprog);
+    if(res != 0)
+    {
+        fprintf(stderr, "pcap_setfilter failed: %s\n",
+                pcap_geterr(pcap));
+        pcap_close(pcap);
+        return 1;
+    }
+
+    printf("Listening %s, filter: %s...\n", device, filter);
+
+    res = pcap_loop(pcap, -1, handle_packet, NULL);
+    printf("pcap_loop returned %d\n", res);
+
+    pcap_close(pcap);
+    return 0;
+}
+==============================================================================================================
+sudo ./eaxsniff eth0 'udp src or dst port 53'
+https://eax.me/libpcap/
+
+mysql mail --user mail --password
+==============================================================================================================
+CREATE TABLE `virtual_domains` (
+`id`  INT NOT NULL AUTO_INCREMENT,
+`name` VARCHAR(50) NOT NULL,
+PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `virtual_users` (
+`id` INT NOT NULL AUTO_INCREMENT,
+`domain_id` INT NOT NULL,
+`password` VARCHAR(106) NOT NULL,
+`email` VARCHAR(120) NOT NULL,
+PRIMARY KEY (`id`),
+UNIQUE KEY `email` (`email`),
+FOREIGN KEY (domain_id) REFERENCES virtual_domains(id)
+  ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `virtual_aliases` (
+`id` INT NOT NULL AUTO_INCREMENT,
+`domain_id` INT NOT NULL,
+`source` VARCHAR(100) NOT NULL,
+`destination` VARCHAR(100) NOT NULL,
+PRIMARY KEY (`id`),
+FOREIGN KEY (domain_id) REFERENCES virtual_domains(id)
+  ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+==============================================================================================================
+# дописываем или изменяем:
+
+# пока что без TLS
+smtpd_use_tls=no
+myhostname = mail.eax.me
+mydestination = localhost
+
+virtual_transport = lmtp:unix:private/dovecot-lmtp
+# то, что пока нет таких файлов - это ОК
+virtual_mailbox_domains = mysql:/etc/postfix/mysql-domains.cf
+virtual_mailbox_maps = mysql:/etc/postfix/mysql-users.cf
+virtual_alias_maps = mysql:/etc/postfix/mysql-aliases.cf
+
+smtpd_sasl_type = dovecot
+smtpd_sasl_path = private/auth
+smtpd_sasl_auth_enable = yes
+smtpd_recipient_restrictions = permit_sasl_authenticated,⏎
+  permit_mynetworks,reject_unauth_destination
+
+# увеличиваем максимальный размер письма до 50 Мб
+message_size_limit = 52428800
+
+sudo chown postfix:postfix /etc/postfix/mysql-*.cf
+sudo chmod o-rwx /etc/postfix/mysql-*.cf
+
+sudo service postfix restart
+
+$ sudo postmap -q mail@eax.me mysql:/etc/postfix/mysql-users.cf
+1
+$ sudo postmap -q eax.me mysql:/etc/postfix/mysql-domains.cf
+1
+$ sudo postmap -q postmaster@eax.me mysql:/etc/postfix/mysql-aliases.cf
+mail@eax.me
+
+https://eax.me/mail-server-on-vds/
+
+Проверить, что все в порядке, можно командой dig -x 1.2.3.4. SPF запись включается простым добавлением TXT-записи с содержимым v=spf1 mx -all. Она говорит, что слать письма с eax.me могут только сервера, указанные в MX-записях домена. Для проверки выполняем команду dig -t TXT eax.me.
+==============================================================================================================
+sudo certbot --standalone certonly -d mail.eax.me
+Теперь актуальный ключ и сертификат всегда будут лежать в:
+
+/etc/letsencrypt/live/mail.eax.me/fullchain.pem
+/etc/letsencrypt/live/mail.eax.me/privkey.pem
+Правим /etc/postfix/main.cf:
+
+smtpd_use_tls=yes
+smtpd_tls_auth_only = yes
+smtpd_tls_cert_file=/etc/letsencrypt/live/mail.eax.me/fullchain.pem
+smtpd_tls_key_file=/etc/letsencrypt/live/mail.eax.me/privkey.pem
+# Эта настройка говорит по возможности слать исходящую почту по TLS
+# Без нее GMail будет помечать письма как "незашифрованные"
+smtp_tls_security_level=may
+Затем редактируем /etc/dovecot/conf.d/10-ssl.conf
+
+ssl = required
+# символы < перед путями к файлам - не опечатка
+ssl_cert = </etc/letsencrypt/live/mail.eax.me/fullchain.pem
+ssl_key = </etc/letsencrypt/live/mail.eax.me/privkey.pem
+Перезапускаем Postfix и Dovecot:
+
+sudo service postfix restart
+sudo service dovecot restart
+==============================================================================================================
+В /etc/letsencrypt/cli.ini пишем:
+
+renew-hook=/etc/letsencrypt/certbot-renew-hook.sh
+Создаем /etc/letsencrypt/certbot-renew-hook.sh:
+
+#!/bin/sh
+
+set -e
+
+systemctl reload postfix
+systemctl reload dovecot
+Наконец, говорим:
+
+sudo chmod ug+x /etc/letsencrypt/certbot-renew-hook.sh
+==============================================================================================================
+sudo apt install spamassassin spamc
+sudo adduser spamd --disabled-login
+Правим /etc/default/spamassassin таким образом:
+
+SPAMD_HOME="/home/spamd/"
+OPTIONS="--create-prefs --max-children 5 --username spamd ⏎
+  --helper-home-dir ${SPAMD_HOME} -s ${SPAMD_HOME}spamd.log"
+PIDFILE="${SPAMD_HOME}spamd.pid"
+CRON=1
+В /etc/spamassassin/local.cf дописываем:
+
+rewrite_header Subject ***** SPAM _SCORE_ *****
+report_safe             0
+required_score          5.0
+use_bayes               1
+use_bayes_rules         1
+bayes_auto_learn        1
+skip_rbl_checks         0
+use_razor2              0
+use_dcc                 0
+use_pyzor               0
+Правим /etc/postfix/master.cf:
+
+# тут нужно дописать строчку -o content_filter...
+smtp      inet  n       -       y       -       -       smtpd
+  -o content_filter=spamassassin
+
+# в конец дописываем:
+spamassassin unix -     n       n       -       -       pipe
+  user=spamd argv=/usr/bin/spamc -f -e
+  /usr/sbin/sendmail -oi -f ${sender} ${recipient}
+Говорим:
+
+sudo service spamassassin start
+sudo service postfix restart
+==============================================================================================================
+В этом нам поможет расширение для Dovecot под названием sieve:
+
+sudo apt install dovecot-sieve dovecot-managesieved
+Правим /etc/dovecot/conf.d/20-lmtp.conf:
+
+protocol lmtp {
+  #mail_plugins = $mail_plugins
+  mail_plugins = $mail_plugins sieve
+}
+Редактируем /etc/dovecot/conf.d/90-sieve.conf:
+
+plugin {
+   # то, что пока не таких файлов и путей - это ОК
+   sieve = ~/.dovecot.sieve
+   sieve_global_dir = /var/lib/dovecot/sieve/
+   sieve_global_path = /var/lib/dovecot/sieve/default.sieve
+   sieve_dir = ~/sieve
+}
+Далее говрим:
+
+sudo mkdir /var/lib/dovecot/sieve/
+Создаем /var/lib/dovecot/sieve/default.sieve:
+
+require "fileinto";
+if header :contains "X-Spam-Flag" "YES" {
+  fileinto "SPAM";
+}
+Чтобы каталог SPAM автоматически создавался, если его еще нет, правим файл /etc/dovecot/conf.d/15-lda.conf:
+
+lda_mailbox_autocreate = yes
+Завершающие шаги:
+
+sudo chown -R vmail:vmail /var/lib/dovecot
+sudo sievec /var/lib/dovecot/sieve/default.sieve
+sudo service dovecot restart
+==============================================================================================================
+gpg --verify roundcubemail-<version>.tar.gz{.asc,}
+https://eax.me/c-cryptography/
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
 Так исторически сложилось, что для сохранения сессии при работе по SSH или чего-то такого обычно я использую screen. Но бывает, например, что ты работаешь с машиной, где у тебя нет рутовых прав, и где не установлен screen, но зато есть tmux. Поскольку я плохо помню сочетания клавиш tmux, то решил выписать их для себя в виде небольшой шпаргалки.
 
 Итак, основные хоткеи следующие:
