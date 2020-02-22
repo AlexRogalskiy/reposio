@@ -13333,10 +13333,3212 @@ sudo chown -R vmail:vmail /var/lib/dovecot
 sudo sievec /var/lib/dovecot/sieve/default.sieve
 sudo service dovecot restart
 ==============================================================================================================
+wget -O - https://downloads.ceylon-lang.org/apt/ceylon-debian-repo.gpg.key | sudo apt-key add -
+sudo add-apt-repository "deb https://downloads.ceylon-lang.org/apt/ unstable main"
+sudo apt-get update
+==============================================================================================================
 gpg --verify roundcubemail-<version>.tar.gz{.asc,}
 https://eax.me/c-cryptography/
 ==============================================================================================================
+sudo bettercap -caplet http-ui
+hcitool lescan
+gattool -I connect <address>
+gattool -t random -b <address> -I
 ==============================================================================================================
+sudo wget -O /etc/pki/rpm-gpg/RPM-GPG-KEY-ceylon https://downloads.ceylon-lang.org/rpm/ceylon-rpm-repo.gpg.key
+sudo rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-ceylon
+# If you're using yum:
+sudo yum-config-manager --add-repo https://downloads.ceylon-lang.org/rpm/ceylon.repo
+# If you're using dnf:
+sudo dnf config-manager --add-repo https://downloads.ceylon-lang.org/rpm/ceylon.repo
+==============================================================================================================
+mkvirtualenv sump2
+workon sump2
+pip install pygame pyserial
+==============================================================================================================
+sudo add-apt-repository ppa:certbot/certbot
+sudo apt-get update
+sudo apt-get install python3-certbot-nginx
+
+# Вариант А, типичная раздача статики
+server {
+    listen 80 default_server;
+
+    charset UTF-8;
+
+    root /home/afiskon/afiskon.ru;
+    index index.html index.htm;
+
+    server_name afiskon.ru; # <--- !!!
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}
+
+# Вариант Б, типичный reverse proxy
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server ipv6only=on;
+
+    server_name forum.devzen.ru;
+
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+
+        proxy_set_header Host forum.devzen.ru;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+
+sudo service nginx reload
+sudo certbot --nginx -d afiskon.ru
+sudo certbot renew --dry-run
+==============================================================================================================
+java -Dcom.sun.management.jmxremote.port=9999 \
+  -Dcom.sun.management.jmxremote.authenticate=false \
+  -Dcom.sun.management.jmxremote.ssl=false ...
+  
+akka-cluster 127.0.0.1 9999 cluster-status
+auto-down-unreachable-after = 10s
+
+https://eax.me/akka-cluster-routing/
+==============================================================================================================
+sudo usermod -a -G dialout $USER
+sudo apt-get remove modemmanager -y
+sudo apt install gstreamer1.0-plugins-bad gstreamer1.0-libav -y
+
+http://qgroundcontrol.com/
+==============================================================================================================
+git submodule sync
+git submodule init
+git submodule update --remote
+==============================================================================================================
+DO $$
+DECLARE
+    i INTEGER;
+BEGIN
+    FOR i IN 1 .. 100
+    LOOP
+        RAISE NOTICE 'i = %', i;
+        EXECUTE ('create temp table temp_table_' || i || '(x int);');
+    END LOOP;
+END $$;
+
+DO $ololo$ BEGIN /* тут ваш код */ END $ololo$;
+
+DO $$
+DECLARE
+    i INTEGER;
+    j INTEGER;
+    q TEXT;
+BEGIN
+    FOR i IN 1 .. 2800 LOOP
+        q = 'create temp table temp_table_' || i || '(';
+        FOR j IN 1 .. 400 LOOP
+            IF j <> 1 THEN
+                q = q || ',';
+            END IF;
+            q = q || 'attr_' || j || ' int';
+        END LOOP;
+        q = q || ');';
+        EXECUTE q;
+    END LOOP;
+END $$;
+
+CREATE OR REPLACE FUNCTION gen_long_string(len INT) RETURNS TEXT AS $$
+DECLARE
+    res TEXT := 'abcdefghijklmnopqrstuvwxyz';
+BEGIN
+    WHILE LENGTH(res) <= len
+    LOOP
+        res := res || res;
+    END LOOP;
+
+    RETURN SUBSTRING(res, 1, len);
+END
+$$ LANGUAGE 'plpgsql';
+
+CREATE OR REPLACE FUNCTION pgpro_edition_safe() RETURNS TEXT AS $$
+DECLARE
+    ver TEXT;
+BEGIN
+    SELECT pgpro_edition() INTO ver;
+    RETURN ver;
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'pgpro_edition() procedure doesn''t exist';
+    RETURN 'standard';
+END
+$$ LANGUAGE 'plpgsql';
+
+/*
+Example:
+
+SELECT byte_array_to_string_array('{"\\x68656c6c6f","\\x776f726c64"}');
+ byte_array_to_string_array
+----------------------------
+ {hello,world}
+(1 row)
+*/
+CREATE OR REPLACE FUNCTION byte_array_to_string_array(bytes bytea[])
+RETURNS TEXT[] AS $$
+DECLARE
+    strings TEXT[];
+BEGIN
+    -- IF array_length(bytes, 1) IS NULL THEN
+    IF bytes = '{}' THEN
+        RETURN '{}';
+    END IF;
+
+    FOR i IN array_lower(bytes, 1) .. array_upper(bytes, 1) LOOP
+        strings[i] := convert_from(bytes[i], 'utf-8');
+    END LOOP;
+
+    RETURN strings;
+END
+$$ LANGUAGE 'plpgsql' IMMUTABLE;
+Здесь массив элементов с типом bytea превращается в массив строк. Заметьте, как выполняется проверка на пустой массив. По неизвестным мне причинам для пустого массива процедура array_length вместо нуля возвращает null, отсюда и такой код.
+
+Наконец, рассмотрим последний на сегодня пример:
+
+DO $$
+DECLARE
+    r RECORD;
+    cnt INT;
+BEGIN
+    FOR r IN
+        SELECT table_name FROM information_schema.TABLES
+        WHERE table_schema = 'pg_catalog' AND table_type != 'VIEW'
+        ORDER BY table_name DESC
+    LOOP
+        EXECUTE 'select count(*) cnt FROM ' || r.table_name INTO cnt;
+        RAISE NOTICE '% %', r.table_name, cnt;
+    END LOOP;
+END $$;
+==============================================================================================================
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.KafkaException;
+import org.apache.kafka.common.TopicPartition;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static java.time.Duration.ofSeconds;
+import static java.util.Collections.singleton;
+import static org.apache.kafka.clients.consumer.ConsumerConfig.*;
+import static org.apache.kafka.clients.consumer.ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG;
+import static org.apache.kafka.clients.producer.ProducerConfig.*;
+
+public class TransactionalWordCount {
+
+    private static final String CONSUMER_GROUP_ID = "my-group-id";
+    private static final String OUTPUT_TOPIC = "output";
+    private static final String INPUT_TOPIC = "input";
+
+    public static void main(String[] args) {
+
+        KafkaConsumer<String, String> consumer = createKafkaConsumer();
+        KafkaProducer<String, String> producer = createKafkaProducer();
+
+        producer.initTransactions();
+
+        try {
+
+            while (true) {
+
+                ConsumerRecords<String, String> records = consumer.poll(ofSeconds(60));
+
+                Map<String, Integer> wordCountMap = records.records(new TopicPartition(INPUT_TOPIC, 0))
+                        .stream()
+                        .flatMap(record -> Stream.of(record.value().split(" ")))
+                        .map(word -> Tuple.of(word, 1))
+                        .collect(Collectors.toMap(tuple -> tuple.getKey(), t1 -> t1.getValue(), (v1, v2) -> v1 + v2));
+
+                producer.beginTransaction();
+
+                wordCountMap.forEach((key, value) -> producer.send(new ProducerRecord<String, String>(OUTPUT_TOPIC, key, value.toString())));
+
+                Map<TopicPartition, OffsetAndMetadata> offsetsToCommit = new HashMap<>();
+
+                for (TopicPartition partition : records.partitions()) {
+                    List<ConsumerRecord<String, String>> partitionedRecords = records.records(partition);
+                    long offset = partitionedRecords.get(partitionedRecords.size() - 1).offset();
+
+                    offsetsToCommit.put(partition, new OffsetAndMetadata(offset + 1));
+                }
+
+                producer.sendOffsetsToTransaction(offsetsToCommit, CONSUMER_GROUP_ID);
+                producer.commitTransaction();
+
+            }
+
+        } catch (KafkaException e) {
+
+            producer.abortTransaction();
+
+        }
+
+
+    }
+
+    private static KafkaConsumer<String, String> createKafkaConsumer() {
+        Properties props = new Properties();
+        props.put(BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        props.put(GROUP_ID_CONFIG, CONSUMER_GROUP_ID);
+        props.put(ENABLE_AUTO_COMMIT_CONFIG, "false");
+        props.put(ISOLATION_LEVEL_CONFIG, "read_committed");
+        props.put(KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
+        props.put(VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
+
+        KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props);
+        consumer.subscribe(singleton(INPUT_TOPIC));
+        return consumer;
+    }
+
+    private static KafkaProducer<String, String> createKafkaProducer() {
+
+        Properties props = new Properties();
+        props.put(BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        props.put(ENABLE_IDEMPOTENCE_CONFIG, "true");
+        props.put(TRANSACTIONAL_ID_CONFIG, "prod-1");
+        props.put(KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
+        props.put(VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
+
+        return new KafkaProducer(props);
+    }
+}
+==============================================================================================================
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.security.KeyStore;
+import java.security.SecureRandom;
+
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+
+import io.nats.client.Connection;
+import io.nats.client.Nats;
+import io.nats.client.Options;
+
+// [begin connect_tls]
+class SSLUtils {
+    public static String KEYSTORE_PATH = "src/main/resources/keystore.jks";
+    public static String TRUSTSTORE_PATH = "src/main/resources/cacerts";
+    public static String STORE_PASSWORD = "password";
+    public static String KEY_PASSWORD = "password";
+    public static String ALGORITHM = "SunX509";
+
+    public static KeyStore loadKeystore(String path) throws Exception {
+        KeyStore store = KeyStore.getInstance("JKS");
+        BufferedInputStream in = new BufferedInputStream(new FileInputStream(path));
+
+        try {
+            store.load(in, STORE_PASSWORD.toCharArray());
+        } finally {
+            if (in != null) {
+                in.close();
+            }
+        }
+
+        return store;
+    }
+
+    public static KeyManager[] createTestKeyManagers() throws Exception {
+        KeyStore store = loadKeystore(KEYSTORE_PATH);
+        KeyManagerFactory factory = KeyManagerFactory.getInstance(ALGORITHM);
+        factory.init(store, KEY_PASSWORD.toCharArray());
+        return factory.getKeyManagers();
+    }
+
+    public static TrustManager[] createTestTrustManagers() throws Exception {
+        KeyStore store = loadKeystore(TRUSTSTORE_PATH);
+        TrustManagerFactory factory = TrustManagerFactory.getInstance(ALGORITHM);
+        factory.init(store);
+        return factory.getTrustManagers();
+    }
+
+    public static SSLContext createSSLContext() throws Exception {
+        SSLContext ctx = SSLContext.getInstance(Options.DEFAULT_SSL_PROTOCOL);
+        ctx.init(createTestKeyManagers(), createTestTrustManagers(), new SecureRandom());
+        return ctx;
+    }
+}
+
+public class ConnectTLS {
+    public static void main(String[] args) {
+
+        try {
+            SSLContext ctx = SSLUtils.createSSLContext();
+            Options options = new Options.Builder().
+                                server("nats://localhost:4222").
+                                sslContext(ctx). // Set the SSL context
+                                build();
+            Connection nc = Nats.connect(options);
+            
+            // Do something with the connection
+
+            nc.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+// [end connect_tls]
+==============================================================================================================
+sudo truncate -s 200G /home/.eax
+sudo chown eax:eax /home/.eax
+sudo losetup /dev/loop0 /home/.eax
+sudo cryptsetup -h sha256 -c aes-xts-plain64 \
+  -s 512 luksFormat /dev/loop0
+sudo cryptsetup luksOpen /dev/loop0 eax_home
+Открываем зашифрованный диск:
+
+sudo cryptsetup luksOpen /dev/loop0 eax_home
+В результате появится устройсто /dev/mapper/eax_home. Создаем на нем ФС:
+
+sudo mkfs.ext4 /dev/mapper/eax_home
+Монтируем зашифрованный диск:
+
+sudo mount /dev/mapper/eax_home /mnt
+Меняем права на файловой системе:
+
+sudo chown -R eax:eax /mnt
+Копируем содержимое нашего домашнего каталога. Затем отмонтируем зашифрованный диск:
+
+sudo umount /mnt
+Закрываем зашифрованный диск:
+
+sudo cryptsetup luksClose eax_home
+Отсоединяем loop-устройство:
+
+sudo losetup -d /dev/loop0
+Теперь архивируем и удаляем содержимое /home/eax, затем монтируем в него зашифрованный диск. Если все работает нормально — удаляем бэкап.
+
+Скрипт /home/mount.sh для автоматизации монтирования:
+
+#!/bin/sh
+
+set -e
+
+losetup /dev/loop0 /home/.eax
+cryptsetup luksOpen /dev/loop0 eax_home
+mount /dev/mapper/eax_home /home/eax
+Скрипт /home/umount.sh, выполняющие обратные действия:
+
+#!/bin/sh
+
+set -e
+
+umount /home/eax
+cryptsetup luksClose eax_home
+losetup -d /dev/loop0
+Когда оригинальных данных на диске не осталось, можно заполнить свободное место мусором:
+
+cd /home
+# наберитесь терпения, это надолго (особенно без rng-tools!)
+sudo dd if=/dev/urandom of=./random.tmp bs=10M count=6300
+sync
+sudo rm random.tmp
+==============================================================================================================
+Пакеты, необходимые для работы Wi-Fi:
+
+sudo pacman -S iw wpa_supplicant dialog
+Смотрим список доступных беспроводных интерфейсов:
+
+sudo iw dev
+Поднимаем интерфейс:
+
+sudo ip link set wlp2s0 up
+Ищем доступные точки:
+
+sudo iw dev wlp2s0 scan | less
+Создаем примерно такой файл /etc/wpa_supplicant/wpa_supplicant-wlp2s0.conf:
+
+# пример конфига со всеми возможными опциями:
+# /etc/wpa_supplicant/wpa_supplicant.conf
+
+ctrl_interface=/run/wpa_supplicant
+update_config=1
+
+network={
+  ssid="network_ssid"
+  psk="secret"
+}
+Затем говорим:
+
+sudo systemctl enable wpa_supplicant@wlp2s0
+sudo systemctl start wpa_supplicant@wlp2s0
+sudo systemctl status wpa_supplicant@wlp2s0
+Получение настроек сети по DHCP настраивается путем редактирования файла конфигурации /etc/systemd/network/wireless.network аналогично тому, как ранее это делалось для витой пары (см пост Как я устанавливал Arch Linux на свой ноутбук), только нужно заменить имя интерфейса на wlp2s0.
+
+Говорим:
+
+sudo systemctl restart systemd-networkd
+==============================================================================================================
+Настройка беспроводной сети: NetworkManager
+Описанный выше подход отлично работает, если вы пользуетесь Wi-Fi только дома и на работе. Однако он не особо пригоден, если вы часто используете Wi-Fi в общественных местах, так как там зачастую может даже не быть WPA. В этом случае вам больше подойдет NetworkManager:
+
+sudo pacman -S networkmanager network-manager-applet \
+  dhclient networkmanager-openvpn gnome-keyring
+sudo systemctl enable NetworkManager
+sudo systemctl start NetworkManager
+Чтобы NetworkManager не конфликтовал с другими сервисами, скажите:
+
+systemctl --type=service
+Найдите в списке все сервисы, делающие что-то с сетью, всякие wpa_supplicant и systemd-networkd, и скажите им stop, а затем disable. Затем дописываем:
+
+exec nm-applet &
+… в файле ~/.config/i3/config, чтобы при запуске i3 в трее появлялась иконка NetworkManager. Далее все делаем через нее, используя простой и понятный GUI интерфейс. Единственное, что мне не очень понравилось в nm-applet, это то, что он часто показывает всплывающие сообщения, в том числе при выходе ноутбука из спящего режима. Отключить их можно таким образом:
+
+gsettings set org.gnome.nm-applet \
+  disable-disconnected-notifications true
+gsettings set org.gnome.nm-applet \
+  disable-connected-notifications true
+==============================================================================================================
+Ставим dnsmasq, но убеждаемся, что он выключен:
+
+sudo pacman -S dnsmasq
+sudo systemctl disable dnsmasq
+Далее в /etc/NetworkManager/NetworkManager.conf пишем:
+
+[main]
+
+dns=dnsmasq
+Чтобы увеличить размер кэша (по умолчанию хранится 450 записей), создайте файл /etc/NetworkManager/dnsmasq.d/cache.conf с таким содержимым:
+
+cache-size=10000
+Затем говорим:
+
+sudo systemctl restart NetworkManager
+Теперь NetworkManager будет автоматически запускать dnsmasq с нужными параметрами и прописывать его в /etc/resolv.conf. Для получения информации о текущем статусе dnsmasq можно сказать:
+
+sudo killall -s USR1 dnsmasq
+… и почитать вывод journalctl -r.
+==============================================================================================================
+Первым делом «экспортируем» пин, без этого шага им не получится управлять:
+
+echo 2 > /sys/class/gpio/export
+Делаем его out-пином, то есть, он будет либо подавать, либо не подавать напряжение в 3.3 вольта:
+
+echo out > /sys/class/gpio/gpio2/direction
+
+Подаем напряжение:
+
+echo 1 > /sys/class/gpio/gpio2/value
+Перестаем подавать напряжение:
+
+echo 0 > /sys/class/gpio/gpio2/value
+Узнаем, подается ли сейчас напряжение:
+
+cat /sys/class/gpio/gpio2/value
+По завершении работы пину можно сделать unexport:
+
+echo 2 > /sys/class/gpio/unexport
+
+echo 5 > /sys/class/gpio/export
+echo in > /sys/class/gpio/gpio5/direction
+
+==============================================================================================================
+sudo systemctl enable iptables
+sudo systemctl start iptables
+sudo systemctl status iptables
+Правила берутся из файла /etc/iptables/iptables.rules, рядом с ним есть файл с примерами.
+
+Сохранение правил:
+
+sudo sh -c 'iptables-save > /etc/iptables/iptables.rules'
+Загрузка правил:
+
+sudo sh -c 'iptables-restore < /etc/iptables/iptables.rules'
+==============================================================================================================
+sudo pacman -S xsane
+sudo pacman -S cups
+# нужно для gtk >= 3.22
+sudo pacman -S gtk3-print-backends
+# куча драйверов для устройств от HP
+sudo pacman -S hplip
+# нужно для нормальной работы утилит hp-* из hplip
+sudo pacman -S python-pyqt5
+# запускаем CUPS
+sudo systemctl enable org.cups.cupsd.service
+sudo systemctl start org.cups.cupsd.service
+==============================================================================================================
+Вариант 1: использование tor и Chromium
+Существует по крайней мере два способа подключиться к сети Tor. Первый заключается в том, чтобы установить сервис tor и настроить ваш браузер, в данном примере — Chromium, так, чтобы он использовал этот сервис в качестве прокси. Для опытов я использовал Arch Linux, но в других дистрибутивах последовательность шагов будет почти такой же.
+
+Установка сервиса:
+
+sudo pacman -S tor torsocks
+Запуск, остановка, и так далее производятся, как обычно:
+
+sudo systemctl start tor
+sudo systemctl stop tor
+Сервис Tor работает, как socks-прокси на 127.0.0.1:9050. Любую программу можно заставить работать через Tor при помощи утилиты torify:
+
+curl https://eax.me/ip/ -o -
+torify curl https://eax.me/ip/ -o -
+Если torify по какой-то причине не работает (я сталкивался с таким на старых версиях Ubuntu), попробуйте также утилиту proxychains. Она по умолчанию настроена на использование Tor, поэтому даже конфиг (/etc/proxychains.conf) не придется трогать.
+
+Теперь — запуск Chromium:
+
+chromium --proxy-server="socks5://127.0.0.1:9050" \
+  --host-resolver-rules="MAP * 0.0.0.0 , EXCLUDE 127.0.0.1" \
+  --incognito http://godnotaba36dsabv.onion/
+Первый ключ говорит использовать указанный socks-прокси, второй — перенаправлять через него в том числе и DNS трафик. Заметьте, что чтобы это работало, Chromium сначала нужно закрыть.
+==============================================================================================================
+Поднимаем свой .onion ресурс
+Для поднятия своих ресурсов не требуется внешний IP, поэтому все описанные действия можно произвести даже в поднятой на ноутбуке виртуалке.
+
+Ставим Nginx:
+
+sudo pacman -S nginx
+sudo systemctl enable nginx
+sudo systemctl start nginx
+curl localhost:80 -o -
+Должны увидеть знаменитое Welcome to nginx!.
+
+Ставим Tor:
+
+sudo pacman -S tor torsocks
+Дописываем в файл /etc/tor/torrc:
+
+HiddenServiceDir /var/lib/tor/hidden_service/
+HiddenServicePort 80 127.0.0.1:80
+# можно указывать несколько портов:
+HiddenServicePort 22 127.0.0.1:22
+Запускаем Tor:
+
+sudo systemctl enable tor
+sudo systemctl start tor
+Обязательно делайте резервную копию /var/lib/tor/hidden_service/ — без нее вы не сможете перенести свой сайт на другую машину, сохранив доменное имя. В файле hostname вы увидите сгенерированное доменное имя. Можно вбить его в Tor Browser и убедиться, что вы увидите Welcome to nginx!. Заметьте, что весь трафик уже шифруется, и вы эффективно получаете SSL/TLS безо всяких там центров сертификации!
+
+Можно подрубиться и по SSH:
+
+torify ssh eax@g5a6wykhm2ajtwvk.onion
+Помимо прочего, можно использовать этот прием для подключения по SSH к своему домашнему компьютеру, находящемуся за NAT.
+
+Рассмотрим еще небольшой пример. Настроим проброс порта 3003, как это было описано выше. Затем скажем:
+
+sudo pacman -S gnu-netcat
+nc -l -p 3003
+На другой машине говорим:
+
+torify telnet g5a6wykhm2ajtwvk.onion 3003
+В итоге получили анонимный чат с end to end шифрованием! Для большего удобства можно использовать специализированный LAN-чаты. Например, iptux (AUR) имеет GUI и поддерживает обмен файлами. Также для обмена файлами через Tor существует программа OnionShare (AUR).
+==============================================================================================================
+Просмотреть настройки VirtualBox:
+
+vboxmanage list systemproperties
+Изменение настроек, например, пути до каталога, гда хранятся виртуалки:
+
+vboxmanage setproperty machinefolder /home/eax/virtualbox
+Список поддерживаемых типов виртуалок:
+
+vboxmanage list ostypes
+vboxmanage list ostypes | egrep ^ID
+Создаем новую виртуалку:
+
+vboxmanage createvm --name ubuntu1604 --ostype Ubuntu_64 --register
+Меняем параметры ВМ — указываем количество памяти и тд:
+
+vboxmanage modifyvm ubuntu1604 --cpus 1 --memory 512 --audio none \
+  --usb off --acpi on --boot1 dvd --nic1 nat
+Создаем жесткий диск размером 10 Гб (место по дэфолту не преаллоцируется):
+
+vboxmanage createhd \
+  --filename /home/eax/virtualbox/ubuntu1604/ubuntu1604.vdi \
+  --size 10000
+Цепляем созданный жесткий диск к виртуалке:
+
+vboxmanage storagectl ubuntu1604 --name ide-controller --add ide
+vboxmanage storageattach ubuntu1604 --storagectl ide-controller \
+  --port 0 --device 0 --type hdd \
+  --medium /home/eax/virtualbox/ubuntu1604/ubuntu1604.vdi
+Цепляем к ВМ ISO-образ, с которого будет происходить установка системы:
+
+vboxmanage storageattach ubuntu1604 --storagectl ide-controller \
+  --port 0 --device 1 --type dvddrive \
+  --medium /home/eax/data/iso/ubuntu-16.04.1-server-amd64.iso
+Включаем доступ к ВМ по VNC:
+
+vboxmanage modifyvm ubuntu1604 --vrde on
+vboxmanage modifyvm ubuntu1604 --vrdeaddress 127.0.0.1
+vboxmanage modifyvm ubuntu1604 --vrdeport 3001
+vboxmanage modifyvm ubuntu1604 --vrdeproperty VNCPassword="secret"
+Я лично для подключения использую TigerVNC (форк TightVNC):
+
+vncviewer localhost:3001
+Чтобы каждый раз не вводить пароль, можно сказать:
+
+vncpasswd ./vnc.password
+… и всегда использовать этот файл:
+
+vncviewer localhost:3001 PasswordFile=/home/eax/temp/vnc.password
+Посмотреть свойства виртуальной машины (узнать номер порта VNC):
+
+vboxmanage showvminfo ubuntu1604  | grep VRDE
+Запустить виртуалку:
+
+# если на десктопе
+vboxmanage startvm ubuntu1604
+
+# если все это крутится на сервере и собираемся подрубаться по VNC
+vboxmanage startvm --type headless ubuntu1604
+Для некоторых систем установочный диск отключается от ВМ автоматически по окончанию установки. Если этого не произошло, говорим:
+
+vboxmanage storageattach archlinux1 --storagectl ide-controller \
+  --port 0 --device 1 --type dvddrive --medium emptydrive
+Pause, Resume, Poweroff:
+
+vboxmanage controlvm archlinux1 pause
+vboxmanage controlvm archlinux1 resume
+vboxmanage controlvm archlinux1 poweroff
+Проброс портов настраивается так (ВМ должна быть остановлена):
+
+vboxmanage modifyvm ubuntu1604 --natpf1 "ssh-forwarding,tcp,,22001,,22"
+После этого в виртуалку можно будет зайти по SSH таким образом:
+
+ssh -p 22001 eax@localhost
+Просмотр списка правил перенаправления портов:
+
+vboxmanage showvminfo ubuntu1604 | grep Rule
+Удаление правила:
+
+vboxmanage modifyvm ubuntu1604 --natpf1 delete ssh-forwarding
+Список всех виртуалок:
+
+vboxmanage list vms
+vboxmanage list vms --long | egrep '^(Name|State)'
+Список работающих виртуалок:
+
+vboxmanage list runningvms
+Переименовать ВМ (при этом переименовывается и ее каталог):
+
+vboxmanage modifyvm ubuntu1604 --name ubuntu1
+Создать полный клон ВМ:
+
+vboxmanage clonevm ubuntu1 --name ubuntu2 --register
+Список NAT-сетей:
+
+vboxmanage natnetwork list
+Создание новой сети:
+
+vboxmanage natnetwork add --netname UbuntuNat --network 10.0.4.0/24 \
+  --enable --dhcp on --ipv6 off
+Редактирование сети:
+
+vboxmanage natnetwork modify --netname UbuntuNat --ipv6 on
+Удаление сети:
+
+vboxmanage natnetwork remove --netname UbuntuNat
+Подключение виртуалок к NAT-сети:
+
+vboxmanage modifyvm ubuntu1 --nic2 natnetwork --nat-network2 UbuntuNat
+vboxmanage modifyvm ubuntu2 --nic2 natnetwork --nat-network2 UbuntuNat
+Важно! Скорее всего, гостевая операционная система окажется не настроена для использования второго интерфейса, если вы добавили его после установки. В Ubuntu для добавления нового интерфейса нужно отредактировать файл /etc/network/interfaces, для Arch Linux см заметку Как я устанавливал Arch Linux на свой ноутбук.
+
+Удалить виртуалку и все ассоциированные с ней файлы, в том числе и диски:
+
+vboxmanage unregistervm ubuntu2 --delete
+Экспорт:
+
+vboxmanage export ubuntu2 --output ubuntu2.ova
+Импорт:
+
+vboxmanage import ubuntu2.ova
+# или, с переопределением имени:
+vboxmanage import ubuntu2.ova --vsys 0 --vmname ubuntu2
+==============================================================================================================
+Использование pacman
+Pacman (название означает package manager) — это местная утилита для управления бинарными пакетами, аналог apt-get из мира Debian / Ubuntu или yum из мира RHEL / CentOS / Fedora. Пользоваться им очень просто.
+
+Получение общей справки или справки по конкретным командам:
+
+pacman --help
+pacman -S --help
+Флаги с буквами в верхнем регистре означают команды. Из них основные — это -S (sync), -Q (query) и -R (remove). Все они имеют дополнительные флаги, которые пишутся в нижнем регистре. Например, s означает search. Зная типичные дополнительные флаги, получаем сравнительно простую и понятную схему. Например, -Ss означает поиск по всем пакетам, а -Qs означает поиск только по установленным пакетам. В итоге, основные действия с пакетами выполняются следующим образом.
+
+Установить пакеты:
+
+pacman -S gimp gpicview
+Поиск пакетов по регулярному выражению:
+
+pacman -Ss ^ssh
+Установка группы пакетов:
+
+pacman -S --needed base-devel
+Список пакетов, входящих в группу:
+
+pacman -Sg base-devel
+Список всех доступных групп:
+
+# группы и пакеты в них
+pacman -Sgg
+# только имена групп
+pacman -Sgg | cut -d ' ' -f 1 | uniq
+Обновить базу данных пакетов:
+
+pacman -Sy
+Обновить установленные пакеты:
+
+pacman -Su
+Список пакетов, для которых есть обновления:
+
+pacman -Qu
+Список установленных пакетов:
+
+pacman -Qi
+pacman -Qi | grep Name
+Поиск установленного пакета по регулярному выражению:
+
+pacman -Qs ^ssh
+Список файлов, принадлежащих пакету:
+
+pacman -Ql mutt
+Определить, к какому пакету относится заданный файл:
+
+pacman -Qo /usr/bin/mutt
+Удалить пакет:
+
+pacman -R xorg-xbacklight
+Удаление пакетов, установленных, как зависимости, и ставших ненужными (autoremove):
+
+pacman -R `pacman -Qdtq`
+Некоторые пакетные менеджеры умеют «замораживать» пакеты, то есть, не обновлять их при наличии обновлений (hold в Debian и деривативах, lock во FreeBSD). Для достижения того же эффекта в Arch Linux в файле /etc/pacman.conf в секцию [options] нужно дописать что-то вроде:
+
+IgnorePkg = systemd mutt
+Заканчивая рассказ про pacman, хочется отметить, что список серверов с пакетами находится в /etc/pacman.d/mirrorlist, а кэш загруженных пакетов следует искать в /var/cache/pacman/pkg/. Для очистки кэша используйте команду:
+
+pacman -Sc
+Логи пишутся в /var/log/pacman.log. В них вы всегда найдете, что, на что, и когда было обновлено.
+
+Пример использования AUR
+AUR (аббревиатура от Arch User Repository) — это каталог пакетов для Arch Linux, поддерживаемых пользователями (типа как PPA в мире Ubuntu). На сайте aur.archlinux.org есть поиск, комментарии к пакетам, и многое другое.
+
+Для примера рассмотрим установку пакета ttf-ms-fonts, который содержит шрифты от Microsoft, и по более-менее понятным причинам доступен только в AUR:
+
+# пакеты из группы base-devel - это типичные пакеты,
+# необходимые для сборки других пакетов
+pacman -S --needed base-devel
+# адрес репозитория есть на странице пакета
+git clone https://aur.archlinux.org/ttf-ms-fonts.git
+cd ttf-ms-fonts
+Перекрестная ссылка: Моя шпаргалка по работе с Git.
+
+В репозитории вы найдете файл PKGBUILD (используется синтаксис bash), и плюс к нему, возможно, какие-то патчи и подобные вещи. Файл PKGBUILD содержит информацию о том, откуда качать исходники пакета и какие контрольные суммы у этих исходников, с какими флагами их собирать, и так далее. Таким образом, немного подправив PKGBUILD, можно собрать пакет со своими флагами. Хорошей практикой считается держать репозитории AUR-пакетов где-нибудь в ~/packages, время от времени делая им git pull и обновляясь на новую версию.
+
+Будучи в репозитории говорим:
+
+makepkg -s
+Здесь ключ -s означает необходимость установить недостающие зависимости с помощью pacman. Настройки makepkg хранятся в файле /etc/makepkg.conf. Это местный аналог /etc/make.conf из мира FreeBSD. В нем можно указать CFLAGS, CXXFLAGS и подобные вещи. Очень рекомендуется указать в параметре PACKAGER свое имя и email. Это позволит отличать пакеты, собранные вами, от всех остальных.
+
+Наконец, ставим собранный пакет:
+
+pacman -U ttf-ms-fonts-2.0-10-any.pkg.tar.xz
+Кстати, с помощью pacman -U также можно откатываться к более ранним версиям пакетов. Где искать кэш со скаченными пакетами, вы уже знаете. Если же пакета нет в кэше, его всегда можно найти на archive.archlinux.org.
+
+Дополнение: На случай, если пакет из AUR зависит от других пакетов из AUR, предусмотрено ряд утилит, благодаря которым не придется ставить все эти пакеты вручную, как описано выше. Методом тыка я решил попробовать yaourt и оказался им вполне доволен. Утилита работает в точности, как pacman, только дополнительно позволяет устанавливать пакеты из AUR.
+
+Единственная неприятная особенность этой утилиты заключается в том, что при сборке пакетов из AUR она задает кучу разных вопросов в стиле:
+
+Edit PKGBUILD ? [Y/n] ("A" to abort)
+Исправить такое поведение можно, прописав в ~/.bashrc:
+
+alias yaourt='yaourt --noconfirm'
+Из интересных фишек yaourt стоит упомянуть, что утилита выводит в консоль обсуждения пакетов на AUR. Это очень удобно, например, в случае, если пакет вдруг не собирается, так как в комментариях нередко можно найти воркэраунд.
+
+Собираем пакеты из исходников с помощью ABS
+Под аббревиатурой ABS (Arch Build System) понимается сразу несколько довольно разных вещей. Это (1) сам механизм сборки пакетов в Arch Linux, с файлами PKGBUILD, утилитой makepkg и прочим, как было описано выше. ABS называется и (2) аналог дерева портов из мира FreeBSD, использующий (1), и о котором пойдет речь в этом параграфе. Также (3) ABS может означать утилиту abs, предназначенную для работы с (2). Наконец, (4) поскольку официальные пакеты собираются из ABS в смысле (2), аббревиатуру ABS часто используют в смысле «противоположность AUR». Несмотря на всю эту неразбериху, значение «ABS» обычно легко понять по контексту.
+
+Итак, для работы с ABS в смысле (2) первым делом ставим утилиту abs:
+
+sudo pacman -S abs
+С помощью этой утилиты скачиваем ABS:
+
+sudo abs
+Все исходники сваливаются в /var/abs. У меня они заняли около 82 Мб. Далее работа с ABS осуществляется точно так же, как с AUR. Интересно, что makepkg не позволяет запускать себя из под рута, в связи с чем приходится копировать исходники пакетов из /var/abs к себе в ~/packages, и держать их там вместе с AUR. Это разумно сразу по нескольким причинам. Во-первых, вы всегда точно знаете, какие пакеты вы собираете из исходников, а какие — нет. Во-вторых, сборка пакетов из ABS часто означает их сборку со своими параметрами, то есть, с изменением PKGBUILD. Чтобы эти изменения не терялись при обновлении ABS, вы можете держать у себя в ~/packages не только измененный PKGBUILD, но и патч к нему.
+
+В файле /etc/abs.conf можно указать, что утилита abs должна тянуть, а что нет. Например, можно не тянуть каталог core и дополнительно тянуть testing.
+
+Обновление ABS производится так:
+
+# обновить все дерево
+sudo abs
+# обновить конкретный пакет
+sudo abs extra/mutt
+Чтобы при следующем обновлении бинарных пакетов pacman не затер пакеты, собранное из исходников, в PKGBUILD следует дописать:
+
+groups=('modified')
+… а в /etc/pacman.conf:
+
+IgnoreGroup = modified
+Помимо прочего, при помощи ABS можно собрать кастомное ядро Linux. Сорцы соответствующего пакета вы найдете в /var/abs/core/linux.
+==============================================================================================================
+Установка
+Для своих страшных экспериментов я использовал Ubuntu 16.04. Готовых пакетов для различных дистрибутивов Linux разработчики CouchDB не предоставляют, поэтому имеет смысл один раз настроить его в Docker или LXC-контейнере, и потом использовать этот контейнер на всех узлах кластера. Для быстрой установки CouchDB мной был написан bash-скрипт. Имеет смысл сразу воспользоваться им. В ближайших двух параграфах я расскажу, как этот скрипт работает.
+
+Ставим зависимости:
+
+sudo apt-get update
+sudo apt-get --no-install-recommends -y install \
+    build-essential pkg-config runit erlang \
+    libicu-dev libmozjs185-dev libcurl4-openssl-dev
+Качаем архив с исходниками с зеркала, которое предложат на официальном сайте. Затем говрим:
+
+tar -xvzf apache-couchdb-2.0.0.tar.gz
+cd apache-couchdb-2.0.0/
+./configure && make release
+Создаем пользователя couchdb:
+
+sudo adduser --system \
+        --no-create-home \
+        --shell /bin/bash \
+        --group --gecos \
+        "CouchDB Administrator" couchdb
+Копируем rel/couchdb в домашний каталог пользователя и выставляем правильные права:
+
+sudo cp -R rel/couchdb /home/couchdb
+sudo chown -R couchdb:couchdb /home/couchdb
+sudo find /home/couchdb -type d -exec chmod 0770 {} \;
+sudo sh -c 'chmod 0644 /home/couchdb/etc/*'
+Проверяем, что все было сделано правильно:
+
+sudo -i -u couchdb /home/couchdb/bin/couchdb
+У меня в логи стали сыпаться ворнинги про отсутствующую базу данных _users. Не переживайте, мы это вот-вот пофиксим.
+
+На http://localhost:5984 должны увидеть:
+
+{
+  "couchdb": "Welcome",
+  "version": "2.0.0",
+  "vendor": {
+    "name": "The Apache Software Foundation"
+  }
+}
+==============================================================================================================
+sudo apt-get install linux-crashdump
+==============================================================================================================
+sudo dpkg --add-architecture i386
+sudo add-apt-repository ppa:ubuntu-wine/ppa
+sudo apt-get update
+sudo aptitude --full-resolver --without-recommends \
+  -f install wine1.8:i386
+==============================================================================================================
+sudo pip3 install termcolor
+==============================================================================================================
+#!/usr/bin/env python3
+
+import sys
+from termcolor import colored
+
+
+def file_to_list(fname):
+    with open(fname, "r") as f:
+        return [x.strip() for x in f.readlines()]
+
+
+def make_colored(ch):
+    chars = {
+        "~": ("blue", []),
+        ".": ("white", []),
+        "#": ("green", []),
+        "O": ("white", ["bold"]),
+        "^": ("red", ["dark"]),
+        "=": ("red", ["dark"]),
+    }
+    default = ("red", [])
+    color, attrs = chars.get(ch, default)
+    return colored(ch, color, attrs=attrs)
+
+
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: {} <file>".format(sys.argv[0]), file=sys.stderr)
+        sys.exit(1)
+
+    lines = file_to_list(sys.argv[1])
+    for src_line in lines:
+        dst_line = ""
+        i = 0
+        chnum = len(src_line)
+        while i < chnum:
+            ch = src_line[i]
+            dst_line = dst_line + make_colored(ch)
+            i += 1
+        print(dst_line)
+
+if __name__ == "__main__":
+    main()
+==============================================================================================================
+sudo dd if=./proxmox-ve.iso of=/dev/sdb bs=1M
+
+adduser eax
+usermod -a -G sudo eax
+==============================================================================================================
+# В Debian / Ubuntu:
+sudo apt-get install screen
+
+# Во FreeBSD:
+sudo pkg install screen
+Запускаем:
+
+screen
+Так можно посмотреть список запущенных экземпляров screen:
+
+screen -ls
+А так — подключиться к одному из них:
+
+screen -r 6098.pts-0.vpn
+Если в списке только один экземпляр, то можно просто:
+
+screen -r
+Пример файлa ~/.screenrc:
+
+startup_message off
+hardstatus alwayslastline "%w"
+
+# start windows numering from 1
+# via https://wiki.archlinux.org/index.php/GNU_Screen
+bind c screen 1
+bind ^c screen 1
+bind 0 select 10
+screen 1
+Здесь мы отключаем приветственное сообщение, а также добавляем статусную строку с выводом списка всех окон. Нумерацию окон начинаем с единицы, а не с нуля, как делается по умолчанию.
+
+Интересно, что одним экземпляром screen могут пользоваться сразу несколько человек. Для этого первый должен выполнить:
+
+screen -R pairprog
+:multiuser on
+:acladd second_user_login
+… а второй:
+
+screen -x first_user_login/pairprog
+==============================================================================================================
+Обратите внимание, как красиво во FreeBSD по умолчанию рисуется статусная строка.
+
+Основные хоткеи в screen следующие.
+
+Окна:
+
+Ctr + A, C	Create, создать окно
+Ctr + A, K	Kill, прибить окно
+Ctr + A, W	Windows, показать список окон
+Ctr + A, Space	Переключитьcя на следующее окно
+Ctr + A, N	То же самое
+Ctr + A, Backspace	Переключиться на предыдущее окно
+Ctr + A, P	То же самое
+Ctr + A, Ctr + A	Вернутся на окно, с которого переключились
+Ctr + A, "	Выбрать из списка окно, на которое хотим переключиться
+Ctr + A, 0-9	Переключиться на окно с таким-то номером
+Ctr + A, ‘	Ввести номер окна, на которое хотим переключиться
+Ctr + A, Shift + A	Переименовать окно
+Ctr + A, :number 3	Изменить номер окна
+Ctr + A, I	Info, информация о текущем окне
+Ctr + A, Shift + N	Number, номер и название текущего окна
+ 
+
+Регионы:
+
+Ctr + A, Shift + S	Разделить текущий регион горизонтально
+Ctr + A, |	Разделить текущий регион вертикально
+Ctr + A, :resize +5	Изменить размер региона вертикально (увеличить на 5)
+Ctr + A, :resize -h 80	Изменить размер региона горизонтально (установить в 80)
+Ctr + A, Tab	Переключение между регионами
+Ctr + A, Shift + X	Прибить текущий регион
+Ctr + A, Shift + Q	Прибить все регионы кроме текущего
+ 
+
+Мониторинг:
+
+Ctr + A, Shift + M	Включить/выключить мониторинг активности в окне
+Сек + A, _	Мониторинг неактивности в течение 30 секунд
+ 
+
+Скролинг и копирование текста:
+
+Ctr + A, [	Перейти в режим copy/scrollback
+Ctr + A, ]	Вставить содержимое paste buffer (регистр . — «точка»)
+Ctr + A, >	Записать paste buffer во временный файл (bufferfile)
+Ctr + A, <	Считать paste buffer из временного файла
+Ctr + A, =	Удалить bufferfile
+Ctr + A, :bufferfile	Изменить имя bufferfile (нужно передать аргумент)
+Ctr + A, :readreg a	Положить paste buffer в регистр a
+Ctr + A, :paste a	Вставить содержимое регистра a
+ 
+
+Режим copy/scrollback похож на редактирование текста в Vim. Например, можно искать текст при помощи / и ?. Перейти к началу строки можно при помощи ^, а к концу — при помощи $. Нажатие Y выделяет всю строчку. Нажатие Shift+W копирует одно слово. В целом, в режим copy/scrollback обычно переходят для того, чтобы выделить кусок текста, выведенный ранее в окне. Начало и конец выделения помечаются нажатием на пробел. Попробуйте один раз и сразу все поймете.
+
+Разное:
+
+Ctr + A, ?	Подсказка по хоткеям
+Ctr + A, D	Detach
+Ctr + A, \	Прибить все окна и выйти
+Ctr + A, A	Послать Ctr + A
+Ctr + A, T	Time, показать текущее время, имя хоста, LA
+Ctr + A, V	Version, показать версию screen
+Ctr + A, X	Lock, для разблакировки нужно ввести пароль пользователя
+Ctr + A, F	Fit, подогнать окно под размер текущего региона
+Ctr + A, Z	Как Ctr+Z для обычных приложений
+==============================================================================================================
+Итак, начнем. Для начала, часто имеет смысл подключить EPEL:
+
+yum install epel-release
+Установка пакетов производится так:
+
+yum install gcc
+Получение информации о пакете:
+
+yum info git
+Получение списка зависимостей пакета:
+
+yum deplist git
+Проверка наличия доступных обновлений:
+
+yum check-update
+Обновление всех установленных пакетов:
+
+yum update
+Обновление конкрутного пакета:
+
+yum update yum
+Откатываем пакет к предыдущей версии:
+
+yum downgrade git
+Переустанавливаем пакет:
+
+yum reinstall git
+Удаление пакета:
+
+yum remove git
+Список всех доступных пакетов:
+
+yum list available | less
+Спискок всех установленных пакетов:
+
+yum list installed | less
+Спискок вообще всех пакетов:
+
+yum list all | less
+Проверить, установлен ли пакет:
+
+yum list mutt
+yum list mysql*
+Поиск по пакетам:
+
+yum search mutt
+История установки/обновления/удаления пакетов:
+
+yum history
+Посмотреть детали о записи в истории:
+
+yum history info 42
+Откатить изменение из истории (вы же за это любите NixOS?):
+
+yum history undo 42
+Повторить изменения из истории:
+
+yum history redo 42
+Определение, к какому пакету относится файл:
+
+yum provides /usr/bin/pstree
+А так можно посмотреть все файлы, которые входят в конкретный пакет:
+
+yum install yum-utils
+repoquery -l psmisc
+Также в пакет yum-utils входит команда для установки отладочных символов, необходимых, если вы иногда запускаете gdb:
+
+debuginfo-install glibc
+Часто нужной debuginfo нет в обычных репозиториях, но ее можно найти на filewatcher.com. Например, если ищем отладочные символы для:
+
+nspr-4.10.6-1.el6_6.x86_64
+… то вводим в поиске:
+
+nspr-debuginfo-4.10.6-1.el6_6.x86_64
+Список репозиториев:
+
+yum repolist
+Список групп пакетов:
+
+yum grouplist
+Получение информации о группе:
+
+yum groupinfo "Web Server"
+Установка группы пакетов:
+
+yum groupinstall "Web Server"
+Удаление группы пакетов:
+
+yum groupremove "Web Server"
+Установка скаченного RPM-файла:
+
+yum install path/to/some.rpm
+… или:
+
+rmp -i path/to/some.rpm
+==============================================================================================================
+https://eax.me/lxc/
+https://eax.me/postgresql-build/
+==============================================================================================================
+Отвечаем утвердительно, и ждем, пока pkg установится.
+
+Затем читаем справку:
+
+pkg help
+Посмотреть справку по конкретной команде можно так:
+
+pkg help update
+Обновляем информацию о доступных пакетах:
+
+pkg update
+Смотрим список установленных пакетов:
+
+pkg info
+Обновляем установленные пакеты:
+
+pkg upgrade
+Ищем пакет по названию:
+
+pkg search xorg
+Установка пакета/пактетов и всех его/их зависимостей:
+
+pkg install xorg
+pkg install git-lite vim-lite sudo
+Удаляем пакет:
+
+pkg delete xorg
+Удаляем пакеты, которые больше не нужны:
+
+pkg autoremove
+Смотрим, к какому пакету относится файл:
+
+pkg which /usr/local/bin/git
+Посмотреть полный список файлов в пакете можно так:
+
+pkg info -l mesa-demos
+Загружаем базу известных уязвимостей:
+
+pkg audit -F
+Проверяем установленные пакеты на предмет наличия известных уязвимостей, с ссылками на подробные отчеты:
+
+pkg audit
+Проверяем все установленные пакеты на предмет валидности контрольных сумм входящих в пакеты файлов:
+
+pkg check -s -a
+Проверяем все установленные пакеты на предмет отсутствия требуемых зависимостей:
+
+pkg check -d -a
+Удаляем из кэша старые пакеты:
+
+pkg clean
+Смотрим статистику:
+
+pkg stats
+Запрещаем/разрешаем обновление конкретного пакета:
+
+pkg lock syncthing
+pkg unlock syncthing
+Посмотреть список «залоченых» пакетов:
+
+pkg lock -l
+Откатиться к более старой версии пакета:
+
+sudo pkg remove chromium
+sudo pkg install /var/cache/pkg/chromium-51.0.2704.106_2.txz
+==============================================================================================================
+Я, впрочем, не гугу Subversion. Но в первом приближении, вроде, все верно.
+
+Теперь перейдем к командам.
+
+Делаем checkout:
+
+svn co --username eax https://example.com/project/trunk/
+Подсасываем последние изменения:
+
+svn up
+Проверить, в какой ветке мы находимся и на какой сервер смотрим:
+
+svn info
+Посмотреть историю изменений:
+
+svn up
+svn log | less
+История изменений с diff’ами, аналог git log -p:
+
+svn log --diff | less
+Кто какие строчки когда менял:
+
+svn blame -v test.txt
+Посмотреть незакомиченные изменения:
+
+svn diff
+Какие файлы были изменены или добавлены:
+
+svn diff --summarize
+Изменения в рамках ревизиции, аналог git show:
+
+# посмотреть комментарий
+svn log -c 123456
+# посмотреть изменения
+svn diff -c 123456
+Посмотреть измененные в ревизии файлы:
+
+svn diff --summarize -c 123456
+Изменения по сравнению с текущей ревизией, аналог git diff:
+
+svn diff -r 123456
+svn diff --summarize -r 123456
+Применение сохраненного в файл дифа, аналог git apply:
+
+patch -p0 -i myfile.diff
+Отменить последние изменения, аналог git reset --hard HEAD:
+
+svn revert --recursive .
+Текущее состояние репозитория, измененные файлы и так далее:
+
+svn status
+Удалить неотслеживаемые файлы и каталоги — встроенной команды, увы, нет, но можно прописать алиас в .bashrc:
+
+svn status | perl -lne 'if(/^\?\s+(.*?)$/){ print $1 }' | xargs rm -r
+Получение списка бранчей:
+
+svn ls https://example.com/project/branches/
+Создание нового бранча или тэга:
+
+svn copy https://example.com/project/trunk/ \
+  https://example.com/project/branches/test-branch
+
+svn copy https://example.com/project/trunk/ \
+  https://example.com/project/tags/1.0 \
+  -m "Release 1.0"
+Переключение на бранч:
+
+cd path/to/trunk
+cd ..
+mkdir branches
+cd branches
+svn co https://example.com/project/branches/test-branch
+cd test-branch
+Мерж бранча:
+
+svn merge http://example.ru/project/branches/test-branch
+Удаление бранча:
+
+svn delete http://example.ru/project/branches/test-branch \
+  -m "Removing test-branch"
+Примечание: Примите также во внимание, что если вы сделали checkout самого корня репозитория, в котором находятся каталоги trunk, branches и tags, то можете просматривать бранчи обычным ls, удалять обычным svn rm с последующим коммитом, и так далее. Впрочем, в больших проектах вы вряд ли захотите делать checkout вот прямо всего репозитория целиком.
+
+Добавить файл:
+
+svn add text.txt
+Переименовать файл:
+
+svn mv from.txt to.txt
+Удалить файл:
+
+svn del file.txt
+Lock/unlock, чтобы файл никто не мог менять кроме нас:
+
+svn lock file.txt
+svn unlock file.txt
+Коммит и сразу пуш, потому что это SVN:
+
+svn commit -m 'Your comment here'
+==============================================================================================================
+git config --global core.preloadindex true
+git config --global core.fscache true
+git config --global gc.auto 256
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+sudo sh -c 'echo 1 > /proc/sys/kernel/sysrq'
+# или:
+sudo sysctl kernel.sysrq=1
+Чтобы не вводить их заново после перезагрузки, можно отредактировать файл /etc/sysctl.conf.
+
+Примеры некоторых интересных сочетаний:
+
+SysRq+H — подсказка по всем сочетаниям;
+SysRq+L — показать стектрейсы всех CPU;
+SysRq+P — показать значения всех регистров;
+SysRq+B — перезагрузить систему;
+SysRq+O — выключить питание;
+SysRq+C — уронить ядро;
+==============================================================================================================
+git config --global core.preloadindex true
+git config --global core.fscache true
+git config --global gc.auto 256
+
+alias -s {erl,ml,hs}=vim
+alias -s avi=mplayer
+
+export PROMPT='%n@%m> '
+export RPROMPT='[%~]'
+
+git_prompt() {
+  temp=`git symbolic-ref HEAD 2>/dev/null | cut -d / -f 3`
+  if [ "$temp" != "" ]; then echo "$temp:"; fi
+}
+setopt prompt_subst
+export RPROMPT='[$(git_prompt)%~]'
+
+Глобинг
+Опция extendedglob включает расширенный глобинг. Например, если он включен, команда:
+
+ls *.(sh|config)
+… отобразит все файлы, имеющие расширение sh или config. А команда:
+
+echo ^*.erl
+… выведет имена всех файлов, имеющих расширение, отличное от erl.
+
+Также в zsh есть рекурсивный глобинг:
+
+ls **/src/*.erl
+Такое выражение рекурсивно ищет файлы, имеющие расширение erl и находящиеся в каталоге с именем src. Нетрудно догадаться, что делает следующая команда:
+
+ls **/src/^*.erl
+
+Если вы привыкли к поиску по истории путем нажатия Ctr+R, как это сделано в bash, то можете прописать в ~/.zshrc:
+
+bindkey '^R' history-incremental-search-backward
+
+setopt menucomplete
+zstyle ':completion:*' menu select=1 _complete _ignored _approximate
+
+% setopt correctall
+% pdw
+zsh: correct 'pdw' to 'pwd' [nyae]? y
+/home/eax
+
+% < ./file.txt
+
+bindkey "^[OB" down-line-or-search
+bindkey "^[OC" forward-char
+bindkey "^[OD" backward-char
+bindkey "^[OF" end-of-line
+bindkey "^[OH" beginning-of-line
+bindkey "^[[1~" beginning-of-line
+bindkey "^[[3~" delete-char
+bindkey "^[[4~" end-of-line
+bindkey "^[[5~" up-line-or-history
+bindkey "^[[6~" down-line-or-history
+bindkey "^?" backward-delete-char
+
+extract () {
+  if [ -f $1 ] ; then
+    case $1 in
+      *.tar.bz2) tar xvjf $1   ;;
+      *.tar.gz)  tar xvzf $1   ;;
+      *.tar.xz)  tar xvfJ $1   ;;
+      *.bz2)     bunzip2 $1    ;;
+      *.rar)     unrar x $1    ;;
+      *.gz)      gunzip $1     ;;
+      *.tar)     tar xvf $1    ;;
+      *.tbz2)    tar xvjf $1   ;;
+      *.tgz)     tar xvzf $1   ;;
+      *.zip)     unzip $1      ;;
+      *.Z)       uncompress $1 ;;
+      *.7z)      7z x $1       ;;
+      *)         echo "'$1' cannot be extracted via >extract<" ;;
+    esac
+  else
+    echo "'$1' is not a valid file"
+  fi
+}
+
+sudo apt-get update
+sudo apt-get install software-properties-common
+sudo apt-add-repository ppa:bcandrea/consul
+sudo apt-get update
+sudo apt-get install consul consul-web-ui dnsutils curl jq
+
+sudo apt-get install unzip
+wget https://releases.hashicorp.com/path/to/consul.zip
+unzip consul_VER_linux_amd64.zip
+sudo service consul stop
+sudo mv /usr/bin/consul /usr/bin/consul.backup
+sudo mv consul /usr/bin/consul
+
+{
+"server": true,
+"datacenter": "dc1",
+"bootstrap_expect": 3,
+"data_dir": "/opt/consul",
+"log_level": "INFO"
+}
+
+sudo service consul restart
+consul join 10.0.3.223 10.0.3.224
+consul members
+curl -s localhost:8500/v1/catalog/nodes | jq .
+ssh -N -L 8500:localhost:8500 ubuntu@10.0.3.223
+
+curl -X PUT -d 'value1' localhost:8500/v1/kv/group1/key1
+curl -X PUT -d 'value2' localhost:8500/v1/kv/group1/key2
+curl -X PUT -d 'value3' localhost:8500/v1/kv/group1/key3
+
+curl -s localhost:8500/v1/kv/group1/key1 | jq .
+curl -s localhost:8500/v1/kv/group1/key1 | \
+  jq -r '.[0]["Value"]' | \
+  base64 -d
+  
+Обновление:
+
+curl -X PUT -d 'new-value3' localhost:8500/v1/kv/group1/key3
+Удаление:
+
+curl -X DELETE localhost:8500/v1/kv/group1/key3
+Заметили выше ModifyIndex? Это поле предусмотрено специально для compare and swap:
+
+curl -X PUT -d 'new-val' localhost:8500/v1/kv/group1/key2?cas=22
+Если данные не успели поменяться, запись произойдет успешно, и будет получен ответ true. Иначе CAS не пройдет и придет ответ false.
+
+Еще можно подождать изменений ключа так:
+
+curl -s 'localhost:8500/v1/kv/group1/key1?index=21&wait=5s' | jq .
+
+curl -XPUT -d @req.json 10.0.3.223:8500/v1/agent/service/register
+curl -s 10.0.3.224:8500/v1/catalog/services | jq .
+curl -s 10.0.3.224:8500/v1/catalog/service/postgresql-replica \
+  | jq .
+curl -s 10.0.3.224:8500/v1/catalog/node/postgresql-slave | jq .
+curl localhost:8500/v1/agent/service/deregister/postgresql-master
+curl -s localhost:8500/v1/health/service/postgresql-replica | jq .
+
+Service discovery при помощи DNS
+Пример запроса:
+
+dig @127.0.0.1 -p 8600 postgresql-replica.service.consul
+Пример ответа:
+
+;; QUESTION SECTION:
+;postgresql-replica.service.consul. IN A
+
+;; ANSWER SECTION:
+postgresql-replica.service.consul.  0 IN A 10.0.3.223
+postgresql-replica.service.consul.  0 IN A 10.0.3.224
+Можно запросить SRV запись, чтобы в ответе были еще и номера портов:
+
+dig srv @127.0.0.1 -p 8600 postgresql-replica.service.consul
+Ответ в этом случае:
+
+;; QUESTION SECTION:
+;postgresql-replica.service.consul. IN SRV
+
+;; ANSWER SECTION:
+postgresql-replica.service.consul.  0 IN SRV 1 1 5432
+                                    postgresql-slave-2.node.dc1.consul.
+postgresql-replica.service.consul.  0 IN SRV 1 1 5432
+                                    postgresql-slave.node.dc1.consul.
+;; ADDITIONAL SECTION:
+postgresql-slave-2.node.dc1.consul. 0 IN A 10.0.3.224
+postgresql-slave.node.dc1.consul.   0 IN A 10.0.3.223
+Ноль в обоих ответах— это TTL, то есть DNS-ответ не должен кэшироваться.
+
+curl -s 10.0.3.224:8500/v1/health/service/postgresql-master | jq .
+curl -s 10.0.3.224:8500/v1/health/node/postgresql-slave-2 | jq .
+
+Информация о кластере и leader election
+Consul позволяет посмотреть, кто сейчас есть в кластере:
+
+curl -s localhost:8500/v1/status/peers | jq .
+Пример ответа:
+
+[
+  "10.0.3.223:8300",
+  "10.0.3.224:8300",
+  "10.0.3.245:8300"
+]
+Также мы можем узнать, кто сейчас лидер:
+
+curl -s localhost:8500/v1/status/leader | jq .
+Пример ответа:
+
+"10.0.3.223:8300"
+А так можно получить очень размашистую информацию об агенте, содержащую, помимо прочего, IP текущей машины:
+
+curl -s localhost:8500/v1/agent/self | jq '.Member.Addr'
+
+https://eax.me/consul/
+
+lein test :only jepsen.system.consul-test
+==============================================================================================================
+nmap -Pn -p 22 192.168.0.0/24 | grep -B3 open | grep 'Nmap scan'
+ssh-copy-id pi@10.0.0.110
+ssh -X pi@10.0.0.110
+==============================================================================================================
+sudo apt-get install sqsh
+sqsh -DMyDatabaseName -S10.110.0.10 \
+  -UServerInstance\\Administrator -mpretty
+Здесь MyDatabaseName — название вашей базы данных, 10.110.0.10 — IP-адрес хоста, на котором крутится СУБД, ServerInstance — имя инстанса, например, «SQLEXPRESS», Administrator — имя пользователя, а mpretty — флаг, без которого результат выполнения всех запросов будет выглядеть, как говно.
+Создать базу данных:
+
+1> create database my_test_db
+2> go
+Переключиться на другую БД:
+
+1> use my_test_db
+2> go
+Создание таблицы:
+
+1> create table users (id integer primary key identity, login
+   varchar(256) not null, password varchar(256) not null, constraint
+   cs_unique_login unique(login))
+2> go
+Здесь identity — это аналог auto_increment из MySQL. Остальное должно быть понятно.
+
+Добавить строку:
+
+1> insert into users (login, password) values ('afiskon', '123456')
+2> go
+Достать строки:
+
+1> select * from users
+2> go
+Идентификаторы вроде названия полей можно брать в квадратные скобки:
+
+1> select [login] from users;
+2> go
+Обновление данных:
+
+1> update users set password = '654321' where login = 'afiskon'
+2> go
+Удаление:
+
+1> delete from users where id = 1
+2> go
+Грохнуть базу данных:
+
+1> use some_other_db
+2> go
+1> drop database my_test_db
+2> go
+Начать транзакцию:
+
+1> begin transaction
+2> go
+Откатить транзакцию:
+
+1> rollback
+2> go
+Закоммитить транзакцию:
+
+1> commit
+2> go
+Простой пример использования переменных:
+
+1> declare @users_number int
+2> set @users_number = (select count(*) from users)
+3> go
+Посмотреть список таблиц в базе данных:
+
+1> sp_tables
+2> go
+Тут много системных таблиц. Обычно интерес представляю те, у которых в колонке owner написано dbo.
+
+Информация о колонках в таблице:
+
+1> sp_columns users
+2> go
+Список баз данных:
+
+1> sp_helpdb
+2> go
+Информация о базе данных:
+
+1> sp_helpdb my_test_db
+2> go
+Вездесущий go можно комбинировать с командами шелла. Например:
+
+1> sp_columns users
+2> go | less -S
+Или:
+
+1> sp_columns users
+2> go > /home/eax/temp/out.txt
+Вертикальный вывод:
+
+1> sp_columns users
+2> go -m vert
+Вывод в CSV:
+
+1> sp_columns users
+2> go -m csv
+Выход:
+
+1> quit
+==============================================================================================================
+sudo pip install pytest pytest-quickcheck pytest-html pytest-cov
+==============================================================================================================
+java -Dcom.sun.management.jmxremote.port=9999 \
+  -Dcom.sun.management.jmxremote.authenticate=false \
+  -Dcom.sun.management.jmxremote.ssl=false ...
+==============================================================================================================
+Создаем директорию, куда будут писаться логи:
+
+sudo mkdir /var/log/couchdb
+sudo chown couchdb:couchdb /var/log/couchdb
+Создаем директории с конфигурацией для запуска couchdb:
+
+sudo mkdir /etc/sv/couchdb
+sudo mkdir /etc/sv/couchdb/log
+В /etc/sv/couchdb/log/run пишем:
+
+#!/bin/sh
+exec svlogd -tt /var/log/couchdb
+Опционально можно создать /etc/sv/couchdb/log/config c указанием, когда производить ротацию логов и подобного рода вешей, если дэфолты не устраивают. Формат конфига, а также дэфолты описаны в man svlogd.
+
+Также создаем скрипт /etc/sv/couchdb/run:
+
+#!/bin/sh
+export HOME=/home/couchdb
+exec 2>&1
+exec chpst -u couchdb /home/couchdb/bin/couchdb
+Делаем обоим скриптам chmod u+x. Затем:
+
+sudo ln -s /etc/sv/couchdb/ /etc/service/couchdb
+Через несколько секунд runit должен заметить новый сервис и запустить его. Управление:
+
+sudo sv status couchdb
+sudo sv stop couchdb
+sudo sv start couchdb
+==============================================================================================================
+Сочетания клавиш
+Как обычно, далее предполагается, что про всякие Ctr+C, Ctr+V и Ctr+S вы знаете, поэтому эти хоткеи не упоминаются. Учтите также, что перечень хоткеев не отражает всех возможностей Sublime Text. Например, в диалоге открытия нового файла (Ctr+O) предусмотрен весьма удобный автокомплит имен файлов.
+
+Лэйауты:
+
+Shift + Alt + 1	Одна группа вкладок
+Shift + Alt + 2..4	От 2 до 4 столбцов
+Shift + Alt + 5	Типа табличка 2 на 2
+Shift + Alt + 8/9	В 2 или 3 строки
+Ctr + циферка	Перейти на лайаут под заданным номером
+ 
+
+Окна:
+
+Ctr + Shift + N	Новое окно
+Ctr + Shift + W	Закрыть окно
+ 
+
+Табы:
+
+Ctr + N	Новая вкладка
+Ctr + PgUp/PgDown	Переход между табами
+Ctr + W	Закрыть вкладку
+Alt + циферка	Перейти к табу с номером
+Ctr + Shift + N	Перенести таб на лайаут с заданным номером
+ 
+
+Выделение:
+
+Ctr + D	Выделение слов с созданием новых курсоров
+Ctr + U	Если в результате выделения поставились лищние курсоры
+Ctr + Shift + пробел	Выделить текущий скоуп
+ 
+
+Поиск:
+
+Ctr + F	Поиск в текущем файле
+Ctr + E	Использовать выделенное для поиска
+F3 / Shift + F3	Искать вперед/назад в текущем файле
+Ctr + Shift + F	Поиск по нескольким файлам
+F4 / Shift + F4	Перемещение по результатам поиска в файлах
+Alt + R	В диалоге поиска: вкл/выкл регулярные выражения
+Alt + С	В диалоге поиска: вкл/выкл case sensitivity
+Alt + F3	Найти все, везде поставить курсоры
+ 
+
+Замена:
+
+Ctr + H	Диалог замены текста
+Ctr + Alt + Enter	В диалоге замены: заменить все
+ 
+
+Переходы:
+
+Ctr + G	Перейти к строке с заданным номером
+Ctr + M	Переход к парной скобке
+Ctr + P	Перейти к файлу по его имени (с превью в редакторе!)
+Ctr + R	Переход к методу или классу по имени в текущем файле
+Alt + O	Переключение между .c и .h файлами
+Ctr + Shift + R	ST 3: Переход к символу по имени во всем проекте
+F12	ST 3: Перейти к определению того, что под курсором
+Alt + −	ST 3: Вернуться туда, откуда пришли
+Alt + Shift + −	ST 3: Обратное действие к предыдущему пункту
+ 
+
+Закладки:
+
+Ctr + F2	Поставить/снять закладку
+F2 / Shift + F2	Предыдущая/следующая закладка в рамках одного файла
+Ctr + Shift + F2	Снять все закладки в рамках текущего файла
+ 
+
+Фолдинг:
+
+Ctr + Shift + [	Свернуть код
+Ctr + Shift + ]	Развернуть код
+Ctr + K + J	Развернуть все, что свернуто
+ 
+
+Отступы:
+
+Ctr + ]	Увеличить отступ
+Ctr + [	Уменьшить отступ
+ 
+
+Комментирование:
+
+Ctr + /	Закомментировать/раскомментировать код
+Ctr + Shift + /	То же самое, но использовать блочный комментарий
+ 
+
+Макросы:
+
+Ctr + Alt + Q	Начать/закончить записывать макрос
+Ctr + Shift + Alt + Q	Выполнить записанный макрос
+ 
+
+Курсоры:
+
+Ctr + клик	Создать новый курсор
+Alt + Shift + ↑↓	Создание новых курсоров выше/ниже
+Ctr + Shift + L	Для каждой выделенной строки создаться свой курсор
+ 
+
+Некоторые преобразования текста:
+
+F9	Сортировка строк
+Ctr + F9	Сортировка строк с учетом регистра
+Ctr + K + L	Привести текст к нижнему регистру
+Ctr + K + U	Привести текст к верхнему регистру
+ 
+
+Интерфейс:
+
+F11	Включить/выключить фулскрин режим
+Shift + F11	Так называемые distraction free mode
+Ctr + K + B	Показать/скрыть сайдбар слева
+Ctr + колесико/+/−	Сделать шрифты больше/меньше
+ 
+
+Прочее:
+
+F6	Включить/выключить проверку орфографии
+Ctr + Shift + P	Поиск команды редактора по ее названию
+Ctr + ~	Показать/скрыть Python-консоль
+ 
+
+По большому счету, это все!
+
+Файл настроек
+В контексте этой заметки нельзя не сказать и пару слов о файле настроек.
+
+Искать его следует где-то здесь:
+
+~/.config/sublime-text-*/Packages/User/Preferences.sublime-settings
+Если такого файла нет, ничего страшного — просто создайте его.
+
+Вот содержимое моего файла:
+
+{
+  "always_show_minimap_viewport": true,
+  "draw_centered": true,
+  "word_wrap": true,
+  "wrap_width": 80,
+  "font_size": 10,
+  "rulers":
+  [
+    80
+  ],
+  "update_check": false
+}
+Как видите, это обычный JSON. Приведенные настройки говорят саблайму (1) всегда подсвечивать на minimap справа то место, на которое мы сейчас смотрим, (2) рендерить текст по центру, а не по левой стороне (3) отображать слова на следующей строчке, если строка не умещается в 80 символов по ширине, (4) использовать шрифт размером 10 попугаев, (5) отмечать вертикальной линией ширину строки в 80 символов и (6) не проверять наличие новых версий редактора. В такой конфигурации получается что-то очень похожее на distraction free mode, только с табами, номерами строк и отображением закладок. Все изменения настроек саблайм подхватывает на лету, без перезапуска редактора.
+==============================================================================================================
+#!/usr/bin/sbt -Dsbt.version=0.13.7 -Dsbt.main.class=sbt.ScriptMain
+!#
+
+/***
+scalaVersion := "2.11.7"
+*/
+
+import sys.process._
+import java.io._
+
+run("ls -la" #| "wc -l" #> new File("/tmp/out.txt"))
+
+def run(cmd: ProcessBuilder): String = {
+  // ... see above ...
+}
+==============================================================================================================
+Установка Nmap в Debian/Ubuntu:
+
+sudo apt-get install nmap
+Установка утилиты Ncrack (на момент написания поста она находится в альфе и потому не содержится в deb-пакете):
+
+wget https://nmap.org/ncrack/dist/ncrack-0.4ALPHA.tar.gz
+tar -xvzf ncrack-0.4ALPHA.tar.gz
+cd ncrack-0.4ALPHA
+./configure
+make
+sudo ckeckinstall
+Сканируем 1000 наиболее часто используемых портов:
+
+nmap 12.34.56.78
+Указываем список портов:
+
+nmap -p22,80,100-200 12.34.56.78
+Сканирование подсети:
+
+nmap -p22 52.8.254.0/24
+Сканирование списка хостов из файла:
+
+nmap -p22 -iL iplist.txt
+Генерировать списки случайных IP можно, например, таким скриптом на Perl:
+
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+my $cnt = 0;
+my %filter;
+
+my $gen_number = shift;
+
+if(!$gen_number) {
+  die "Usage: $0 <number>";
+}
+
+while($cnt < $gen_number) {
+  my $x = 1 + int(rand(239));
+  my $y = int(rand(256));
+  my $z = int(rand(256));
+  my $w = 1 + int(rand(254));
+
+  # see https://en.wikipedia.org/wiki/Reserved_IP_addresses
+  if(($x == 10) || ($x == 127)) { next; }
+  if(($x == 100) && ($y >= 64) && ($y <= 127)) { next; }
+  if(($x == 169) && ($y == 254)) { next; }
+  if(($x == 172) && ($y >= 16) && ($y <= 31)) { next; }
+  if(($x == 192) && ($y == 0) && ($z == 0)) { next; }
+  if(($x == 192) && ($y == 0) && ($z == 2)) { next; }
+  if(($x == 192) && ($y == 88) && ($z == 99)) { next; }
+  if(($x == 192) && ($y == 168)) { next; }
+  if(($x == 198) && ($y == 18)) { next; }
+  if(($x == 198) && ($y == 19)) { next; }
+  if(($x == 198) && ($y == 51) && ($z == 100)) { next; }
+  if(($x == 203) && ($y == 0) && ($z == 113)) { next; }
+  if(($x >= 224) && ($x <= 239)) { next; }
+
+  my $ip = "$x.$y.$z.$w";
+  if($filter{$ip}) { next; }
+
+  $filter{$ip} = 1;
+  print "$ip\n";
+  $cnt++;
+}
+Сканирование методом установки TCP соединения:
+
+nmap -p22,80 -sT 12.34.56.78
+SYN-сканирование:
+
+sudo nmap -p22,80 -sS 12.34.56.78
+Прочие виды сканирования: FIN, Xmas Tree и NULL:
+
+sudo nmap -p22,80 -sF 12.34.56.78
+sudo nmap -p22,80 -sX 12.34.56.78
+sudo nmap -p22,80 -sN 12.34.56.78
+Не определять доменные имена для сканируемых IP:
+
+nmap -n -p22 12.34.56.78
+Показывать причину, по которой определенный порт считается «открытым»:
+
+nmap -p22,80,100-200 --reason 12.34.56.78
+Определение версии сервисов:
+
+nmap -p22,80,100-200 -sV 12.34.56.78
+Определение операционной системы:
+
+sudo nmap -O 12.34.56.78
+Пингануть хосты для проверки, онлайн ли они, но не сканировать порты:
+
+nmap -sn 12.34.56.0/24
+Сканировать хосты, даже если они не отвечают на пинги:
+
+nmap -p22,80 -Pn 12.34.56.78
+Считать, что хост онлайн, если он отвечает на SYN, посланный на порт 443:
+
+nmap -p22,80,443 -PS 443 12.34.56.0/24
+Сканирование UDP (работает медленнее обычного сканирования TCP):
+
+sudo nmap -sU -p123 tick.ucla.edu
+Ограничиваем время, которое можно потратить на один хост:
+
+nmap -p22 --host-timeout 1m 12.34.56.78
+Управление степенью параллелизма:
+
+nmap -p22 --max-parallelism 2 12.34.56.78
+nmap -p22 --min-parallelism 2 12.34.56.78
+Делаем паузу прежде, чем перейти к следующему хосту:
+
+nmap -p22 --scan-delay 5s 12.34.56.0/24
+Ограничение на число пакетов, посылаемых в секунду:
+
+nmap -p22 --min-rate 1 --max-rate 100 12.34.56.78
+Использование NSE (Nmap Scripting Engine):
+
+# обновляем базу данных скриптов
+sudo nmap --script-updatedb
+
+# натравляем все скрипты из группы default:
+nmap --script default 12.34.56.78
+
+# все скрипты, название которых начинается на http
+nmap --script http-* 12.34.56.78
+Ломаем SSH с помощью Ncrack:
+
+ncrack ssh://12.34.56.78
+ncrack --user root ssh://12.34.56.78
+Fun fact! Существуют и другие утилиты для подбора паролей, заметно отличающиеся между собой поддерживаемыми протоколами и опциями. В частности, стоит обратить внимание на утилиты hydra и medusa.
+
+Указываем списки логинов и паролей для Ncrack:
+
+ncrack -U users.txt -P passwords.txt ...
+Выводим больше отладочной информации, включая подбираемые логины и пароли:
+
+ncrack -d7 ...
+Используем Ncrack совместно с Nmap:
+
+nmap 12.34.56.78 -oX scan.xml
+ncrack -iX scan.xml
+Использование Ndiff:
+
+ndiff scan1.xml scan2.xml
+Пример использования Nping:
+
+sudo nping -c2 -p80 --tcp 12.34.56.78
+Примеры использования Ncat:
+
+ncat host 123 < send.txt
+ncat -l > received.txt
+Использование Ncat в качестве бэкдора:
+
+ncat -k -l -p 3344 -e /bin/bash
+ncat localhost 3344
+Ncat для пробрасывания портов:
+
+ncat -l 10.1.2.3 --keep-open 2222 \
+  --sh-exec "ncat 192.168.2.15 22"
+ssh user@10.1.2.3 -p 2222
+Ncat для расшифровки SSL:
+
+ncat -l localhost --keep-open 8080 \
+  --sh-exec "ncat --ssl encrypted.google.com 443"
+С сохранением трафика в файл:
+
+ncat -l localhost --keep-open 8080 --hex-dump dump.log \
+  --sh-exec "ncat --ssl encrypted.google.com 443"
+==============================================================================================================
+wget geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
+gunzip GeoLiteCity.dat.gz
+
+#!/bin/sh
+/usr/bin/sbt -Dsbt.version=0.13.7 -Dsbt.main.class=sbt.ConsoleMain "$@"
+
+screpl "com.maxmind.geoip%geoip-api%1.2.14"
+
+scala> import com.maxmind.geoip._
+import com.maxmind.geoip._
+
+scala> val srv = {
+     | new LookupService("./GeoLiteCity.dat",
+     |                   LookupService.GEOIP_MEMORY_CACHE)
+     | }
+scala> val loc = srv.getLocation("123.45.67.89")
+Смотрим в интересующие нас поля:
+
+scala> loc.countryCode
+res0: String = RU
+
+scala> loc.countryName
+res1: String = Russian Federation
+
+scala> loc.city
+res2: String = Moscow
+
+scala> loc.latitude
+res3: Float = 55.752197
+
+scala> loc.longitude
+res4: Float = 37.6156
+==============================================================================================================
+java -Dlogback.configurationFile=path/to/logback.xml -jar ./target/scala-2.11/finagle-example-assembly-0.1.jar
+==============================================================================================================
+package com.acme.web;
+
+import com.acme.account.Account;
+import com.acme.account.AccountService;
+import com.acme.transaction.Transaction;
+import com.acme.transaction.TransactionService;
+import io.vertx.core.AbstractVerticle;
+
+import io.vertx.core.json.DecodeException;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.auth.oauth2.OAuth2Auth;
+import io.vertx.ext.auth.oauth2.providers.GithubAuth;
+import io.vertx.ext.web.Route;
+import io.vertx.ext.web.Router;
+import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.handler.*;
+import io.vertx.ext.web.sstore.LocalSessionStore;
+
+public class MainVerticle extends AbstractVerticle {
+
+  @Override
+  public void start() {
+    final AccountService accountService = AccountService.createProxy(vertx, AccountService.DEFAULT_ADDRESS);
+    final TransactionService transactionService = TransactionService.createProxy(vertx, TransactionService.DEFAULT_ADDRESS);
+    // the router will map http requests to handlers
+    final Router app = Router.router(vertx);
+    // enable parsing of http message bodies e.g.: json upload, multipart-form data
+    app.post().handler(BodyHandler.create());
+
+    // We need cookies and sessions
+    app.route()
+      .handler(CookieHandler.create());
+    app.route()
+      .handler(SessionHandler.create(LocalSessionStore.create(vertx)));
+    // Simple auth service which uses a GitHub to authenticate the user
+    OAuth2Auth authProvider =
+      GithubAuth.create(vertx, System.getenv("CLIENTID"), System.getenv("CLIENTSECRET"));
+    // We need a user session handler too to make sure
+    // the user is stored in the session between requests
+    app.route()
+      .handler(UserSessionHandler.create(authProvider));
+
+    // TODO: (REFACTOR #13) create a callback route
+
+    // TODO: (REFACTOR #13) protect all handlers from this point forward
+
+    app.post("/account")
+      // TODO: (REFACTOR #9) validate the input body
+      // validate the input data
+      .handler(ctx -> {
+        try {
+          // save the parsed input in the request context
+          ctx.put("initialBalance", ctx.getBodyAsJson().getInteger("balance", 0));
+          // invoke the next handler
+          ctx.next();
+        } catch (RuntimeException e) {
+          ctx.fail(e);
+        }
+      })
+      // create an account, at this moment the input has been validated
+      .handler(ctx -> {
+        accountService.createAccount(ctx.get("initialBalance"), createAccount -> {
+          if (createAccount.failed()) {
+            ctx.fail(createAccount.cause());
+          } else {
+            ctx
+              .put("created", createAccount.result())
+              .next();
+          }
+        });
+      })
+      // TODO: (REFACTOR #9) handle the last as a 202 created response
+      ;
+
+    app.get("/account/:id")
+      // validate the input
+      .handler(MainVerticle::idValidation)
+      // invoke the remote service and return the json response
+      .handler(ctx -> {
+        accountService.getAccount(ctx.get("id"), getAccount -> {
+          if (getAccount.failed()) {
+            ctx.fail(getAccount.cause());
+          } else {
+            Account account = getAccount.result();
+            // pass the reply to the next handler
+            ctx
+              .put("reply", account == null ? null : account.toJson())
+              .next();
+          }
+        });
+      })
+      .handler(MainVerticle::jsonReply);
+
+    app.post("/transaction")
+      // validate the input body
+      .handler(MainVerticle::jsonBody)
+      // validate the input data
+      .handler(ctx -> {
+        try {
+          JsonObject body = ctx.getBodyAsJson();
+
+          String source = body.getString("source");
+          String target = body.getString("target");
+          int amount = body.getInteger("amount", -1);
+
+          if (source == null || target == null || amount < 0) {
+            ctx.fail(400);
+          } else {
+            // save the parsed input in the request context
+            ctx.put("source", source);
+            ctx.put("target", target);
+            ctx.put("amount", amount);
+
+            // invoke the next handler
+            ctx.next();
+          }
+        } catch (RuntimeException e) {
+          ctx.fail(e);
+        }
+      })
+      .handler(ctx -> {
+        // TODO: (REFACTOR #10) use the service proxy with the variable initialBalance from the context
+        // On success, put the response on a context under the name "created" and handle it
+        // to the next handler
+      })
+      .handler(MainVerticle::created);
+
+    app.get("/transaction/:id")
+      // validate the input
+      .handler(MainVerticle::idValidation)
+      .handler(ctx -> {
+        transactionService.getTransaction(ctx.get("id"), getTransaction -> {
+          if (getTransaction.failed()) {
+            ctx.fail(getTransaction.cause());
+          } else {
+            Transaction transaction = getTransaction.result();
+            // pass the reply to the next handler
+            ctx
+              .put("reply", transaction == null ? null : transaction.toJson())
+              .next();
+          }
+        });
+      })
+      .handler(MainVerticle::jsonReply);
+
+    // Serve the static resources
+    app.route().handler(StaticHandler.create());
+
+    vertx.createHttpServer().requestHandler(app::accept).listen(8080, res -> {
+      if (res.failed()) {
+        res.cause().printStackTrace();
+      } else {
+        System.out.println("Server listening at: http://localhost:8080/");
+      }
+    });
+  }
+
+  /**
+   * Ensures that there is a HTTP JSON body in the request.
+   * Will fail the request with status code 400 (Bad Request) if no body is present
+   */
+  private static void jsonBody(RoutingContext ctx) {
+    try {
+      JsonObject body = ctx.getBodyAsJson();
+      if (body == null) {
+        // no json body
+        ctx.fail(400);
+      }
+      ctx.next();
+    } catch (DecodeException e) {
+      ctx.fail(e);
+    }
+  }
+
+  /**
+   * Ensures that there is a path param "id" in the request.
+   * Will fail the request with status code 400 (Bad Request) if no "id" is present
+   */
+  private static void idValidation(RoutingContext ctx) {
+    String id = ctx.pathParam("id");
+    if (id == null) {
+      // if the id is not present, return bad request
+      ctx.fail(400);
+    } else {
+      ctx.put("id", id);
+      ctx.next();
+    }
+  }
+
+  /**
+   * Will return status code 202 (Created) with the location header pointing to the newly created resource.
+   */
+  private static void created(RoutingContext ctx) {
+    ctx.response()
+      .putHeader("Location", ctx.normalisedPath() + "/" + ctx.get("created"))
+      .setStatusCode(202)
+      .end();
+  }
+
+  /**
+   * Will return a JSON response with the correct headers or status code 404 (Not Found) if reply is null
+   */
+  private static void jsonReply(RoutingContext ctx) {
+    JsonObject reply = ctx.get("reply");
+    if (reply == null) {
+      ctx.fail(404);
+    } else {
+      ctx.response()
+        .putHeader("Content-Type", "application/json")
+        .end(reply.encodePrettily());
+    }
+  }
+}
+
+
+  <dependencies>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-core</artifactId>
+      <version>3.5.0</version>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-web</artifactId>
+      <version>3.5.0</version>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-service-proxy</artifactId>
+      <version>3.5.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.acme</groupId>
+      <artifactId>account</artifactId>
+      <version>1.0.0</version>
+      <classifier>api</classifier>
+    </dependency>
+    <dependency>
+      <groupId>com.acme</groupId>
+      <artifactId>transaction</artifactId>
+      <version>1.0.0</version>
+      <classifier>api</classifier>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-auth-oauth2</artifactId>
+      <version>3.5.0</version>
+    </dependency>
+  </dependencies>
+==============================================================================================================
+SET DATABASE UNIQUE NAME HSQLDB5F2C12D57E
+SET DATABASE GC 0
+SET DATABASE DEFAULT RESULT MEMORY ROWS 0
+SET DATABASE EVENT LOG LEVEL 0
+SET DATABASE TRANSACTION CONTROL LOCKS
+SET DATABASE DEFAULT ISOLATION LEVEL READ COMMITTED
+SET DATABASE TRANSACTION ROLLBACK ON CONFLICT TRUE
+SET DATABASE TEXT TABLE DEFAULTS ''
+SET DATABASE SQL NAMES FALSE
+SET DATABASE SQL REFERENCES FALSE
+SET DATABASE SQL SIZE TRUE
+SET DATABASE SQL TYPES FALSE
+SET DATABASE SQL TDC DELETE TRUE
+SET DATABASE SQL TDC UPDATE TRUE
+SET DATABASE SQL CONCAT NULLS TRUE
+SET DATABASE SQL UNIQUE NULLS TRUE
+SET DATABASE SQL CONVERT TRUNCATE TRUE
+SET DATABASE SQL AVG SCALE 0
+SET DATABASE SQL DOUBLE NAN TRUE
+SET FILES WRITE DELAY 500 MILLIS
+SET FILES BACKUP INCREMENT TRUE
+SET FILES CACHE SIZE 10000
+SET FILES CACHE ROWS 50000
+SET FILES SCALE 32
+SET FILES LOB SCALE 32
+SET FILES DEFRAG 0
+SET FILES NIO TRUE
+SET FILES NIO SIZE 256
+SET FILES LOG TRUE
+SET FILES LOG SIZE 50
+CREATE USER SA PASSWORD DIGEST 'd41d8cd98f00b204e9800998ecf8427e'
+ALTER USER SA SET LOCAL TRUE
+CREATE SCHEMA PUBLIC AUTHORIZATION DBA
+SET SCHEMA PUBLIC
+CREATE MEMORY TABLE PUBLIC.ACCOUNTS(ID VARCHAR(36) NOT NULL PRIMARY KEY,BALANCE INTEGER DEFAULT 0 NOT NULL)
+CREATE MEMORY TABLE PUBLIC.TRANSACTIONS(ID VARCHAR(36) NOT NULL PRIMARY KEY,AMOUNT INTEGER NOT NULL,STATUS VARCHAR(20) NOT NULL,SOURCE VARCHAR(36) NOT NULL,TARGET VARCHAR(36) NOT NULL)
+ALTER SEQUENCE SYSTEM_LOBS.LOB_ID RESTART WITH 1
+SET DATABASE DEFAULT INITIAL SCHEMA PUBLIC
+GRANT USAGE ON DOMAIN INFORMATION_SCHEMA.SQL_IDENTIFIER TO PUBLIC
+GRANT USAGE ON DOMAIN INFORMATION_SCHEMA.YES_OR_NO TO PUBLIC
+GRANT USAGE ON DOMAIN INFORMATION_SCHEMA.TIME_STAMP TO PUBLIC
+GRANT USAGE ON DOMAIN INFORMATION_SCHEMA.CARDINAL_NUMBER TO PUBLIC
+GRANT USAGE ON DOMAIN INFORMATION_SCHEMA.CHARACTER_DATA TO PUBLIC
+GRANT DBA TO SA
+SET SCHEMA SYSTEM_LOBS
+INSERT INTO BLOCKS VALUES(0,2147483647,0)
+SET SCHEMA PUBLIC
+INSERT INTO ACCOUNTS VALUES('0571f011-25e7-4bc6-ae34-3e990d41265a',10)
+INSERT INTO ACCOUNTS VALUES('0a4fbd4e-f5be-4b4b-b82a-5736b99a3b3f',10)
+INSERT INTO ACCOUNTS VALUES('1903a0b0-9462-40d6-8a82-173cbe8d4c75',0)
+INSERT INTO ACCOUNTS VALUES('1c7ecb45-d31a-45e1-8c54-bad666168864',25)
+INSERT INTO ACCOUNTS VALUES('1d8db257-8edd-441a-90bd-37c334b97b34',25)
+INSERT INTO ACCOUNTS VALUES('378a926f-9e26-44ff-b600-d725b033a6c1',75)
+INSERT INTO ACCOUNTS VALUES('3d062aef-136f-4db1-8b65-d735c9eb61da',25)
+INSERT INTO ACCOUNTS VALUES('4045789b-4aa7-4f1e-aa3d-24db94909cbe',25)
+INSERT INTO ACCOUNTS VALUES('43c32675-8c27-4389-9c5c-d2a43fcb44ad',25)
+INSERT INTO ACCOUNTS VALUES('4c954d2e-def6-4231-9be2-e682bca0ea71',0)
+INSERT INTO ACCOUNTS VALUES('593428aa-372b-44a6-b369-b85b9710796b',10)
+INSERT INTO ACCOUNTS VALUES('5c3dfc3a-5e67-46ab-85e0-8809c2b9d0b8',0)
+INSERT INTO ACCOUNTS VALUES('6abdaff0-b2bd-4c93-b3d8-9969788c047c',10)
+INSERT INTO ACCOUNTS VALUES('6f51ac68-5048-4868-a028-8c8db553468a',0)
+INSERT INTO ACCOUNTS VALUES('71387a41-b0b2-477c-88af-381520525daf',0)
+INSERT INTO ACCOUNTS VALUES('76b6ca50-431e-4041-a668-8d5d25fe4831',10)
+INSERT INTO ACCOUNTS VALUES('7a7793e3-d93b-44e2-9f58-ea7566b67c70',10)
+INSERT INTO ACCOUNTS VALUES('7bd78582-a2ec-4cdd-9137-0992d15d78ca',0)
+INSERT INTO ACCOUNTS VALUES('7fd2195e-3cff-4f8a-94f0-74119204a5ef',75)
+INSERT INTO ACCOUNTS VALUES('80b96db8-0ce6-4ffa-a3ec-f999fa6b2551',10)
+INSERT INTO ACCOUNTS VALUES('8583a75b-5858-416b-9983-a7b552c527fc',75)
+INSERT INTO ACCOUNTS VALUES('8f72739d-75bd-4df4-8eb3-bbe05a753c15',75)
+INSERT INTO ACCOUNTS VALUES('9313c500-a125-47f8-be6f-89d0341b0d74',25)
+INSERT INTO ACCOUNTS VALUES('93c4676f-5c13-4215-8e2a-b5d554e96937',0)
+INSERT INTO ACCOUNTS VALUES('9e003161-051d-414b-96c7-a50a6f435d64',75)
+INSERT INTO ACCOUNTS VALUES('a84b2c9d-4d31-40f4-ac05-7ac3b172d488',6)
+INSERT INTO ACCOUNTS VALUES('c070c052-b55c-469b-b61f-85975493dcfe',0)
+INSERT INTO ACCOUNTS VALUES('caec8c94-5511-4729-8899-a599c03c2788',10)
+INSERT INTO ACCOUNTS VALUES('cb910baa-eba9-47d5-a69d-097234828678',75)
+INSERT INTO ACCOUNTS VALUES('d84cda30-6797-41a0-b048-730404dd7541',25)
+INSERT INTO ACCOUNTS VALUES('ddce04c9-4b73-471f-9201-179b70cbfccc',0)
+INSERT INTO ACCOUNTS VALUES('deb85e01-e8cf-4c47-aacb-1153dcd7a9db',10)
+INSERT INTO ACCOUNTS VALUES('e0deee62-5eb8-46d3-a71d-6c8926dfaa0e',0)
+INSERT INTO ACCOUNTS VALUES('ed5440c5-98c5-4bf6-b945-cdd0cb41af1b',75)
+INSERT INTO ACCOUNTS VALUES('f638c444-2be0-4017-a7f9-1e703a672f8c',0)
+INSERT INTO ACCOUNTS VALUES('f6d29dd0-fc15-46ea-bc0f-5bc9e53b58dc',25)
+INSERT INTO ACCOUNTS VALUES('f9d162ad-052a-41d4-a9ad-4b6b1d0e8a75',75)
+INSERT INTO ACCOUNTS VALUES('fb5525b7-d841-474a-82a5-179d4e099ce0',10)
+INSERT INTO TRANSACTIONS VALUES('0c239d09-3d42-48a9-8359-e46fe458b6d1',10,'CONFIRMED','fromAccount','toAccount')
+INSERT INTO TRANSACTIONS VALUES('e40a7286-5309-4c3f-8997-4b06ed206b41',10,'CONFIRMED','fromAccount','toAccount')
+
+==============================================================================================================
+# build
+> nvm use v8.16
+> npm install --only=production
+
+# start
+> npm start
+
+# if access error
+> sudo adduser $(whoami) dialout
+> sudo chmod a+rw /dev/ttyACM0
+==============================================================================================================
+git fetch origin master:master
+git merge master
+git checkout master
+git merge --squash topic
+git branch -D topic
+
+git config --global commit.template ~/.git-commit-template.txt
+git config --global commit.cleanup strip
+
+git branch <name> <commit>
+==============================================================================================================
+sudo: required
+dist: bionic
+
+language: java
+
+jdk: openjdk11
+
+cache:
+  directories:
+  - $HOME/.m2
+  - $HOME/.bnd/cache/
+
+before_install:
+  - echo "MAVEN_OPTS='-Xms1g -Xmx2g'" > ~/.mavenrc
+install:
+  - |
+    function prevent_timeout() {
+        local i=0
+        while [ -e /proc/$1 ]; do
+            # print zero width char every 3 minutes while building
+            if [ "$i" -eq "180" ]; then printf %b '\u200b'; i=0; else i=$((i+1)); fi
+            sleep 1
+        done
+    }
+    function print_reactor_summary() {
+        sed -ne '/\[INFO\] Reactor Summary.*:/,$ p' "$1" | sed 's/\[INFO\] //'
+    }
+    function mvnp() {
+        set -o pipefail # exit build with error when pipes fail
+        local command=(mvn $@)
+        exec "${command[@]}" 2>&1 | # execute, redirect stderr to stdout
+            tee .build.log | # write output to log
+            stdbuf -oL grep -aE '^\[INFO\] Building .+ \[.+\]$' | # filter progress
+            sed -uE 's/^\[INFO\] Building (.*[^ ])[ ]+\[([0-9]+\/[0-9]+)\]$/\2| \1/' | # prefix project name with progress
+            sed -e :a -e 's/^.\{1,6\}|/ &/;ta' & # right align progress with padding
+        local pid=$!
+        prevent_timeout $pid &
+        wait $pid
+    }
+after_success:
+  - print_reactor_summary .build.log
+after_failure:
+  - tail -n 2000 .build.log
+script:
+  - mvnp clean verify -B -DskipChecks
+
+==============================================================================================================
+echo "renaming bin files with the board name"
+rename -v 's:/:-:g' .pio/build/*/*.bin
+mkdir toDeploy
+rename 's/.pio-build-//' .*.bin
+cd .pio/libdeps
+echo "zipping libraries per board"
+for i in */; do zip -r "${i%/}-libraries.zip" "$i"; done
+ls -la
+mv *.zip ../../toDeploy
+cd ../..
+echo "zipping code and licence"
+zip -r OpenMQTTGateway_sources.zip main LICENSE.txt
+mv *.zip toDeploy
+mv *.bin toDeploy
+cd toDeploy
+ls -la
+cd ..
+
+==============================================================================================================
+sudo dpkg -i esl-erlang_18.0-1~ubuntu~precise_amd64.deb
+sudo dpkg -i rabbitmq-server_3.5.3-1_all.deb
+sudo apt-get install -f
+
+sudo service rabbitmq-server status
+
+sudo rabbitmq-plugins enable rabbitmq_management
+sudo rabbitmqctl add_user afiskon superpassword
+sudo rabbitmqctl set_user_tags afiskon administrator
+
+Заходим на rabbitmq.example.ru:15672, там в первую очередь идем во вкладку Admin и удаляем пользователя guest. Веб-интерфейс RabbitMQ по крутости не уступает веб-интерфейсу Couchbase. Здесь можно смотреть все очереди, все эксченджи, есть красивые графики, вот это все. В качестве домашнего задания можете создать нового пользователя, новый vhost, а затем дать доступ к этому vhost новому пользователю, а также администратору. Без последнего шага вы не сможете смотреть очереди и эксченджи в vhost’е через веб-интерфейс.
+
+sudo sh -c "echo -n CookieFromNode1 > /var/lib/rabbitmq/.erlang.cookie"
+Далее:
+
+sudo rabbitmqctl stop_app
+sudo rabbitmqctl reset
+sudo rabbitmqctl join_cluster rabbit@ip-172-12-23-34
+sudo rabbitmqctl start_app
+Важно указывать именно доменное имя (ip-172-12-23-34), а не IP, иначе ноды не смогут соединиться.
+
+Проверяем:
+
+sudo rabbitmqctl cluster_status
+Должны увидеть что-то вроде:
+
+Cluster status of node 'rabbit@ip-172-45-56-67' ...
+[{nodes,[{disc,['rabbit@ip-172-12-23-34','rabbit@ip-172-45-56-67']}]},
+ {running_nodes,['rabbit@ip-172-12-23-34','rabbit@ip-172-45-56-67']},
+ {cluster_name,<<"rabbit@ip-172-12-23-34.us-west-1.foo.bar">>},
+ {partitions,[]}]
+В случае проблем изучайте логи в каталоге /var/log/rabbitmq/. Например, частая проблема в мире Erlang — залипший демон epmd. Если команда:
+
+epmd -names
+… говорит, что имя rabbitmq зарегистрировано, а вы точно знаете, что сервис сейчас остановлен, epmd нужно прибить:
+
+sudo killall -9 epmd
+
+
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+-- complain if script is sourced in psql
+-- rather than via CREATE EXTENSION
+\echo USE "CREATE EXTENSION zson" TO LOAD this file. \quit
+
+CREATE TYPE zson;
+
+CREATE TABLE zson_dict (
+    dict_id SERIAL NOT NULL,
+    word_id INTEGER NOT NULL,
+    word TEXT NOT NULL,
+    PRIMARY KEY(dict_id, word_id)
+);
+
+-- ВАЖНО! Содержимое таблиц расширения по умолчанию не попадает
+-- в бэкапы, создаваемые при помощи pg_dump. Для решения этой
+-- проблемы нужно явно сказать:
+SELECT pg_catalog.pg_extension_config_dump('zson_dict', '');
+
+-- ... и еще много-много кода...
+==============================================================================================================
+Примите во внимание, что некоторые программы для печати используют консольные утилиты. Например, чтобы распечатать файл, они говорят:
+
+lpr path/to/file.png
+Однако это не будет работать, если у вас несколько принтеров. Решается проблема путем установки принтера по умолчанию:
+
+lpoptions -d HP_Deskjet_5700
+Список доступных принтеров можно посмотреть так:
+
+lpstat -p -d
+==============================================================================================================
+sudo add-apt-repository ppa:mumble/release
+sudo apt-get update
+sudo apt-get install mumble
+
+sudo dpkg-reconfigure mumble-server
+==============================================================================================================
+lpr -P HP_Deskjet_5700 path/to/file.png
+==============================================================================================================
+Виртуализация
+В последнее время я предпочитаю вместо LXC или KVM использовать VirtualBox. Помимо прочего, он позволяет запускать любые операционные системы и передавать свои виртуалки пользователям ОС, отличных от Linux. Кроме того, я написал для него собственный скрипт-обертку, использующий утилиту vboxmanage. В итоге получился Vagrant, только на православном Python и делающий все так, как мне это удобно.
+
+При установке VirtualBox я выбрал пакет virtualbox-host-modules-arch (там предлагается несколько вариантов). Для загрузки модулей говорим:
+
+sudo modprobe vboxdrv
+sudo modprobe vboxnetadp
+sudo modprobe vboxnetflt
+sudo modprobe vboxpci
+Для автоматизации их загрузки создаем /etc/modules-load.d/virtualbox.conf:
+
+vboxdrv
+vboxnetadp
+vboxnetflt
+vboxpci
+Если планируете использовать VRDE, также поставьте пакет virtualbox-ext-vnc.
+==============================================================================================================
+Ситуация исправляется путем создания /etc/X11/xorg.conf.d/70-synaptics.conf:
+
+Section "InputClass"
+    Identifier "touchpad"
+    Driver "synaptics"
+    MatchIsTouchpad "on"
+        Option "TapButton1" "1"
+        Option "TapButton2" "3"
+        Option "TapButton3" "2"
+EndSection
+==============================================================================================================
+lspci | grep -i audio
+cat /proc/asound/card*/id
+aplay -l
+==============================================================================================================
+sudo systemctl suspend
+
+sudo nano /etc/systemd/logind.conf
+HandleLidSwitch=ignore
+HandleLidSwitchDocked=ignore
+
+sudo systemctl restart systemd-logind
+==============================================================================================================
+cat /sys/class/backlight/intel_backlight/max_brightness
+echo 4648 > /sys/class/backlight/intel_backlight/brightness
+
+xbacklight -get
+sudo xbacklight -set 50
+sudo xbacklight -inc 10
+sudo xbacklight -dec 10
+==============================================================================================================
+heaptrack ./test_rbtree
+# или: heaptrack -p PID
+
+heaptrack_print --print-leaks \
+  --print-histogram histogram.data \
+  --print-massif massif.data \
+  --print-flamegraph flamegraph.data \
+  --file ./heaptrack.test_rbtree.22023.gz > report.txt
+==============================================================================================================
+sudo pip install markdown
+python -m markdown article.md
+python -m markdown article.md -f ~/temp/t.html
+==============================================================================================================
+command! MarkdownPreview !python -m markdown % -f ~/temp/t.html &&
+ \ chromium ~/temp/t.html
+command! MarkdownUpdate !python -m markdown % -f ~/temp/t.html
+
+au BufRead *.md set wrap tw=80
+==============================================================================================================
+#!/bin/sh
+
+set -e
+
+rm ../*.html 2>/dev/null || true
+rm -r ../author 2>/dev/null || true
+rm -r ../category 2>/dev/null || true
+rm -r ../rss 2>/dev/null || true
+rm -r ../theme 2>/dev/null || true
+
+pelican --relative-urls --ignore-cache \
+  --theme-path template/pelican-simplegrey \
+  -o .. content
+
+git add ../*.html
+
+User-agent: *
+Disallow: /src/
+Crawl-delay: 10
+Host: afiskon.github.io
+==============================================================================================================
+cd path/to/afiskon.github.io
+mkvirtualenv pelican
+pip install pelican markdown
+mkdir src
+cd src
+pelican-quickstart
+
+pelican --relative-urls --ignore-cache -o .. content
+chromium ../index.html
+==============================================================================================================
+CREATE OR REPLACE FUNCTION make_tsvector(title TEXT, content TEXT)
+   RETURNS tsvector AS $$
+BEGIN
+  RETURN (setweight(to_tsvector('english', title),'A') ||
+    setweight(to_tsvector('english', content), 'B'));
+END
+$$ LANGUAGE 'plpgsql' IMMUTABLE;
+
+CREATE INDEX IF NOT EXISTS idx_fts_articles ON articles
+  USING gin(make_tsvector(title, content));
+
+SELECT id, title FROM articles WHERE
+  make_tsvector(title, content) @@ to_tsquery('bjarne <-> stroustrup');
+  
+
+==============================================================================================================
+-- расширение входит в состав PostgreSQL
+CREATE EXTENSION pg_trgm;
+
+-- также можно использовать gist
+CREATE INDEX articles_trgm_idx ON articles
+  USING gin (title gin_trgm_ops);
+  
+SELECT show_trgm(title) FROM articles LIMIT 3;
+SELECT title, similarity(title, 'Straustrup') FROM articles
+  WHERE title % 'Straustrup';
+  
+
+==============================================================================================================
+<plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>properties-maven-plugin</artifactId>
+        <version>1.0.0</version>
+        <executions>
+          <execution>
+            <phase>initialize</phase>
+            <goals>
+              <goal>read-project-properties</goal>
+            </goals>
+            <configuration>
+              <files>
+                <file>${basedir}/${propertiesFile}</file>
+              </files>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+==============================================================================================================
+sudo: false
+
+language: java
+
+jdk:
+  - openjdk7
+
+install: mvn -B install -U -DskipTests=true
+
+script: mvn -B verify -U -Dmaven.javadoc.skip=true
+
+after_success:
+
+cache:
+  directories:
+  - $HOME/.m2
+
+env:
+  global:
+
+branches:
+  only:
+    - master
+    
+==============================================================================================================
+before_install:
+ - echo "MAVEN_OPTS='-Xmx2g -XX:+TieredCompilation -XX:TieredStopAtLevel=1'" > ~/.mavenrc
+
+language: java
+
+jdk:
+ - oraclejdk8
+ 
+script:
+ - mvn clean verify -B -U
+
+after_success:
+   - mvn coveralls:report
+
+cache:
+  directories:
+  - "$HOME/.m2"
+==============================================================================================================
+# переменную окружения также можно вписать в ~/.bash_profile
+export PGINSTALL=~/postgresql-install
+export PATH="$PGINSTALL/bin:$PATH"
+mkdir -p $PGINSTALL
+
+git clone https://github.com/afiskon/pgscripts.git
+git clone git://git.postgresql.org/git/postgresql.git
+cd postgresql
+git checkout REL_10_BETA2
+
+./configure --prefix=$PGINSTALL # --enable-cassert --enable-debug
+make && make check
+~/pgscripts/single-install.sh
+==============================================================================================================
+psql -h 10.128.0.16 -U eax -d eax
+screen /dev/ttyUSB0 11520
+
+
+Утилиты strace и ltrace
+Программа strace показывает системные вызовы и их возвраты, что бывает довольно удобно при отладке. С флагом -c она показывает топ системных вызовов, их количество, и сколько времени было проведено в вызове:
+
+$ strace -c pwd
+gcc -pg -Wall htable.c htable_test.c -o htable_test
+cat test.txt | gprof ./htable_test > profile
+sudo perf top -u postgres
+sudo perf top -a
+sudo perf top -p 12345
+
+==============================================================================================================
+			<plugin>
+				<groupId>org.eclipse.jetty</groupId>
+				<artifactId>jetty-maven-plugin</artifactId>
+				<version>9.4.0.v20161208</version>
+				<configuration>
+					<webAppSourceDirectory>${project.build.directory}/site/allure-maven-plugin</webAppSourceDirectory>
+					<stopKey>stop</stopKey>
+					<stopPort>1234</stopPort>
+				</configuration>
+			</plugin>
+==============================================================================================================
+<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.19.1</version>
+				<configuration>
+					<testFailureIgnore>false</testFailureIgnore>
+					<encoding>UTF-8</encoding>
+					<inputEncoding>UTF-8</inputEncoding>
+					<outputEncoding>UTF-8</outputEncoding>
+					<argLine>
+						-javaagent:${settings.localRepository}\org\aspectj\aspectjweaver\${aspectj.version}\aspectjweaver-${aspectj.version}.jar
+					</argLine>
+					<skip>false</skip>
+					<suiteXmlFiles>
+						<suiteXmlFile>testng1.xml</suiteXmlFile>
+					</suiteXmlFiles>
+				</configuration>
+			</plugin>
+==============================================================================================================
+pipeline {
+    agent { label 'java' }
+    parameters {
+        booleanParam(name: 'RELEASE', defaultValue: false, description: 'Perform release?')
+        string(name: 'RELEASE_VERSION', defaultValue: '', description: 'Release version')
+        string(name: 'NEXT_VERSION', defaultValue: '', description: 'Next version (without SNAPSHOT)')
+    }
+    stages {
+        stage('Build') {
+            steps {
+                sh './mvnw -Dmaven.test.failure.ignore=true clean verify'
+            }
+        }
+        stage('Release') {
+            when { expression { return params.RELEASE } }
+            steps {
+                configFileProvider([configFile(fileId: 'bintray-settings.xml', variable: 'SETTINGS')]) {
+                    sshagent(['qameta-ci_ssh']) {
+                        sh 'git checkout master && git pull origin master'
+                        sh "./mvnw release:prepare release:perform -B -s ${env.SETTINGS} " +
+                                "-DreleaseVersion=${params.RELEASE_VERSION} " +
+                                "-DdevelopmentVersion=${params.NEXT_VERSION}-SNAPSHOT"
+                    }
+                }
+            }
+        }
+    }
+    post {
+        always {
+            deleteDir()
+        }
+        failure {
+            slackSend message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} failed (<${env.BUILD_URL}|Open>)",
+                    color: 'danger', teamDomain: 'qameta', channel: 'allure', tokenCredentialId: 'allure-channel'
+        }
+    }
+}
+==============================================================================================================
+Getting Plugin Configuration Information
+license-list goal
+This goal displays a list of available licenses.
+
+Use it directly (and only) from commandline :
+
+  mvn license:license-list
+To display the license header, use the detail parameter :
+
+  mvn license:license-list -Ddetail
+For more information, see the examples and for full detail see detail page.
+
+comment-style-list goal
+This goal displays the available comment styles to box file header.
+
+Use it directly (and only) from commandline :
+
+  mvn license:comment-style-list
+To display the example, use the detail parameter :
+
+  mvn license:comment-style-list -Ddetail
+For more information, see the examples and for full detail see detail page.
+
+help goal
+This goal display the help of the plugin (available goals).
+
+Use it directly (and only) from commandline :
+
+  mvn license:help
+To display verbose help :
+
+  mvn license:help -Ddetail
+==============================================================================================================
+echo "RUN THE PROJECT IN THE SERVER/LOCAL"
+
+echo "Compiling while skipping tests ..."
+./mvnw clean install -DskipTests
+echo "Compilation finished"
+
+echo "Kill the process on port 8080, to undeploy the former version if existing"
+sudo kill $(sudo lsof -t -i:8080)
+
+echo "Let's deploy the new version silently"
+nohup ./mvnw spring-boot:run &
+==============================================================================================================
+public class BaseStory extends JUnitStory {
+
+    @Override
+    public Configuration configuration() {
+        if (super.hasConfiguration()) {
+            return super.configuration();
+        }
+        return new MostUsefulConfiguration()
+                .useStoryReporterBuilder(new StoryReporterBuilder()
+                        .withDefaultFormats()
+                        .withFormats(CONSOLE)
+                        .withReporters(new AllureReporter()));
+    }
+
+}
+==============================================================================================================
+public class Rand7UsingRand5 {
+
+	public int rand7(){
+		int r = (rand5()-1)*5 + rand5();
+		while(r > 21){   // I just need to ignore [22, 25] 
+			r = (rand5()-1)*5 + rand5();
+		}
+		return (r%7) + 1;
+	}
+	
+	private int rand5(){
+		return (int)(Math.ceil(Math.random()*5));
+	}
+	
+	public static void main(String args[]){
+		Rand7UsingRand5 rr = new Rand7UsingRand5();
+		for(int i=0; i < 10; i++){
+			System.out.print(rr.rand7());
+		}
+	}
+}
+==============================================================================================================
+import com.arangodb.springframework.annotation.Query;
+import com.arangodb.springframework.repository.ArangoRepository;
+import xyz.dassiorleando.arangodb.domain.Article;
+
+import java.util.List;
+
+/**
+ * Article repository
+ * @author dassiorleando
+ */
+public interface ArticleRepository extends ArangoRepository<Article, String> {
+
+    // Supposing that article is the collection name to perform the query on
+    @Query("FOR a IN article FILTER a.title == @0 RETURN a")
+    Iterable<Article> getArticleByTitle(String title);
+
+    Iterable<Article> findByTitle(String title);
+
+}
+==============================================================================================================
+import java.util.UUID;
+import java.util.concurrent.SubmissionPublisher;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Stream;
+
+public class OverProducingPublisher extends SubmissionPublisher<StockData> {
+
+  public void start() {
+    Stream<StockData> stockDataStream = Stream
+        .generate(() ->
+            new StockData(
+                UUID.randomUUID().toString(),
+                ThreadLocalRandom.current().nextFloat()
+            )
+        );
+
+
+    stockDataStream.limit(100_000).forEach(this::submit);
+  }
+
+
+}
+==============================================================================================================
+import com.tomekl007.restapps.domain.DeliveryItem;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+@Component
+public class DeliveryServiceReactiveWrapper {
+  private DeliveryServiceRepository deliveryServiceRepository;
+
+  @Autowired
+  public DeliveryServiceReactiveWrapper(DeliveryServiceRepository deliveryServiceRepository) {
+
+    this.deliveryServiceRepository = deliveryServiceRepository;
+  }
+
+  public Mono<DeliveryItem> save(DeliveryItem deliveryItem) {
+    return Mono.just(deliveryItem).map(d -> deliveryServiceRepository.save(d));
+  }
+
+  public Flux<DeliveryItem> getByItemName(String itemName) {
+    return Flux.fromIterable(deliveryServiceRepository.findByItemName(itemName));
+  }
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+
+[submodule "sdk/proto"]
+	path = sdk/proto
+	url = https://github.com/dronecore/DroneCore-Proto.git
+==============================================================================================================
+sudo apt-get install postgis qgis osm2pgsql
+sudo -u postgres psql
+==============================================================================================================
+GET /api/v1.0/users?fields=id,email,url&offset=100&limit=10&order_by=id
+GET /api/v1.0/logs?from=2013-01-01+00:00:00&to=2013-12-31+23:59:59
+==============================================================================================================
+curl ... | sed 's/},/}\n/g'
+==============================================================================================================
+sudo service riak start
+/var/log/riak/console.log
+==============================================================================================================
+curl -H 'Accept: application/x-json-stream' \
+  http://localhost/api/v1.0/streams/users -N
+
+{"type":"user","data":{"id":123,"name":"Alex","url":"http://eax.me/"}}
+{"type":"user","data":{"id":456,"name":"Bob","url":"http://ya.ru/"}}
+...
+{"type":"sync"}
+{"type":"heartbeat"}
+{"type":"heartbeat"}
+{"type":"user_deleted","data":{"id":123}}
+...
+==============================================================================================================
+Выбираем используемый метод:
+
+-X{GET|PUT|POST|DELETE}
+Указываем тело запроса:
+
+-d '{"name":"Alex","url":"http://eax.me/"}'
+Если тело запроса большое, можно сохранить его в файл и сказать:
+
+-d @filename.json
+# чтобы при этом не удалялись символы новой строки:
+--data-binary @filename.json
+Выводим заголовки из ответа сервера в stdout:
+
+-D -
+Говорим передавать данные в gzip’е:
+
+--compressed
+Сохраняем тело ответа в указанный файл вместо stdout:
+
+-o output.json
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+akka {
+  loglevel = "INFO"
+
+  actor {
+    provider = "akka.cluster.ClusterActorRefProvider"
+    debug {
+      receive = on
+      lifecycle = off
+    }
+  }
+
+  remote {
+    log-remote-lifecycle-events = off
+    netty.tcp {
+      hostname = "127.0.0.1"
+      port = 2551
+    }
+  }
+
+  cluster {
+    min-nr-of-members = 2
+    auto-down-unreachable-after = 10s
+
+    seed-nodes = [
+      "akka.tcp://system@127.0.0.1:2551"
+    ]
+  }
+}
+==============================================================================================================
+mkdir temp
+sudo airodump-ng -c 6 --bssid 'BE:EF:C0:FF:FE:42' -w temp/ wlp2s0mon
+
+sudo pacman -S hashcat hashcat-utils
+
+cap2hccapx temp/-01.cap temp/-01.hccapx
+hashcat -m 2500 temp/-01.hccapx rockyou.txt
+==============================================================================================================
+sudo pacman -S sshuttle
+https://eax.me/sshuttle/
+
+#!/bin/sh
+
+set -e
+
+USER=eax
+SERVER=11.22.33.44
+DNS=8.8.8.8
+
+mv /etc/resolv.conf /etc/resolv.conf.sshuttle-$SERVER.bak
+echo "nameserver $DNS" > /etc/resolv.conf
+sshuttle --dns -r $USER@$SERVER -x $SERVER 0/0 || true
+mv /etc/resolv.conf.sshuttle-$SERVER.bak /etc/resolv.conf
+
+chmod u+x ./vpn.sh
+sudo ./vpn.sh
+==============================================================================================================
+ если у вас Ubuntu:
+sudo apt-get install doxygen
+
+# если у вас Arch Linux:
+sudo pacman -S doxygen
+doxygen -g
+Имя проекта:
+
+PROJECT_NAME           = "Project Name"
+Версия проекта:
+
+PROJECT_NUMBER         = 0.1
+Краткое описание проекта:
+
+PROJECT_BRIEF          = "Yet another NoSQL DBMS"
+Куда писать сгенеренные доки:
+
+OUTPUT_DIRECTORY       = doxygen
+Отключаем LaTeX, так как HTML обычно достаточно:
+
+GENERATE_LATEX         = NO
+Где искать файлы, из которых генерировать документацию — список файлов и директорий через пробел:
+
+INPUT                  = src include
+Включаем рекурсивный обход директорий:
+
+RECURSIVE              = YES
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+# with an AUR helper, e. g. pacaur:
+pacaur -S ceylon
+# manually:
+git clone https://aur.archlinux.org/ceylon
+cd ceylon
+makepkg
+sudo pacman -U ceylon-1.3.3-*.pkg*
+==============================================================================================================
+visualvm -cp:a ./jmxremote_optional-repackaged-5.0.jar
+
+JVM_OPTS="$JVM_OPTS -Dcassandra.jmxmp"
+/usr/bin/cassandra -e -f
+
+nodetool --jmxmp status
+==============================================================================================================
+Cd bj = new Cd("basement_jaxx_singles");
+Cd mr = new Cd("maria rita");
+		
+List<Cd> order = new ArrayList<Cd>();
+order.add(mr);
+// добавим два раза один и тот же объект (две ссылки на один и тот же объект)
+order.add(bj);
+order.add(bj);
+
+// добавим в список сам список (закольцовывание)
+order.add(order);
+
+XStream xstream = new XStream();
+xstream.alias("cd", Cd.class);
+System.out.println(xstream.toXML(order));
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+graphite:
+  -
+    period: 60
+    timeunit: 'SECONDS'
+    hosts:
+     - host: 'graphite-server.domain.local'
+       port: 2003
+    predicate:
+      color: "white"
+      useQualifiedName: true
+      patterns:
+        - "^org.apache.cassandra.metrics.Cache.+"
+        - "^org.apache.cassandra.metrics.ClientRequest.+"
+        - "^org.apache.cassandra.metrics.Storage.+"
+        - "^org.apache.cassandra.metrics.ThreadPools.+"
 ==============================================================================================================
 ==============================================================================================================
 ==============================================================================================================
