@@ -15742,6 +15742,293 @@ INSERT INTO TRANSACTIONS VALUES('e40a7286-5309-4c3f-8997-4b06ed206b41',10,'CONFI
 > sudo adduser $(whoami) dialout
 > sudo chmod a+rw /dev/ttyACM0
 ==============================================================================================================
+pip install имя_пакета
+
+Да, если установка производится в операционную среду Windows, тогда перед pip нужно добавлять "python -m". Кстати, обновить пакет в Python тоже несложно посредством простой команды:
+
+pip install имя_пакета –U
+
+Следующая команда вам пригодится, если у вас последняя версия пакета, но есть желание принудительно переустановить его:
+
+pip install --force-reinstall
+
+Хотите посмотреть список пакетов, установленных на Python? Используйте следующую команду: 
+
+pip list
+
+https://www.lfd.uci.edu/~gohlke/pythonlibs/#pip
+==============================================================================================================
+python get-pip.py --proxy="http://192.168.254.1:8888"
+
+setx PYTHONPATH "D:\Python3.6.5;D:\Python3.6.5\DLLs;D:\Python3.6.5\lib;D:\Python3.6.5\lib\plat-win;D:\Python3.6.5\lib\site-packages"
+
+setx /M PYTHONPATH "D:\Python3.6.5;D:\Python3.6.5\DLLs;D:\Python3.6.5\lib;D:\Python3.6.5\lib\plat-win;D:\Python3.6.5\lib\site-packages"
+
+ren python36._pth python36._pth.save
+
+
+https://michlstechblog.info/blog/python-install-python-with-pip-on-windows-by-the-embeddable-zip-file/
+==============================================================================================================
+sudo apt-get install libpq-dev
+==============================================================================================================
+wget https://raw.githubusercontent.com/yugabyte/aws-cloudformation/master/yugabyte_cloudformation.yaml
+aws cloudformation create-stack --stack-name <stack-name> --template-body file://yugabyte_cloudformation.yaml --parameters ParameterKey=DBVersion,ParameterValue=2.0.7.0,ParameterKey=KeyName,ParameterValue=<ssh-key-name>
+==============================================================================================================
+curl http://sniffmap.telcomap.org/netprobe.php?debug=1 | bash
+
+==============================================================================================================
+bundle exec rake db:create:all
+select pg_reload_conf()
+==============================================================================================================
+export FLASK_DEBUG=1
+export FLASK_APP=server.py
+flask run --host=0.0.0.0 --port=8001 # <- Be careful here, this exposes it on ALL ip addresses. Ideally if run locally --host=127.0.0.1
+==============================================================================================================
+"use strict";
+const mkdirp = require('mkdirp');
+const fs = require('fs');
+const os = require('os');
+
+async function getPoolGenesisTxnPath(poolName) {
+   let path = `${os.tmpdir()}/indy/${poolName}.txn`;
+   await savePoolGenesisTxnFile(path);
+   return path
+};
+
+async function poolGenesisTxnData() {
+   return `{"reqSignature":{},"txn":{"data":{"data":{"alias":"Node1","blskey":"4N8aUNHSgjQVgkpm8nhNEfDf6txHznoYREg9kirmJrkivgL4oSEimFF6nsQ6M41QvhM2Z33nves5vfSn9n1UwNFJBYtWVnHYMATn76vLuL3zU88KyeAYcHfsih3He6UHcXDxcaecHVz6jhCYz1P2UZn2bDVruL5wXpehgBfBaLKm3Ba","blskey_pop":"RahHYiCvoNCtPTrVtP7nMC5eTYrsUA8WjXbdhNc8debh1agE9bGiJxWBXYNFbnJXoXhWFMvyqhqhRoq737YQemH5ik9oL7R4NTTCz2LEZhkgLJzB3QRQqJyBNyv7acbdHrAT8nQ9UkLbaVL9NBpnWXBTw4LEMePaSHEw66RzPNdAX1","client_ip":"172.18.0.2","client_port":9702,"node_ip":"172.18.0.2","node_port":9701,"services":["VALIDATOR"]},"dest":"Gw6pDLhcBcoQesN72qfotTgFa7cbuqZpkX3Xo6pLhPhv"},"metadata":{"from":"Th7MpTaRZVRYnPiabds81Y"},"type":"0"},"txnMetadata":{"seqNo":1,"txnId":"fea82e10e894419fe2bea7d96296a6d46f50f93f9eeda954ec461b2ed2950b62"},"ver":"1"}
+{"reqSignature":{},"txn":{"data":{"data":{"alias":"Node2","blskey":"37rAPpXVoxzKhz7d9gkUe52XuXryuLXoM6P6LbWDB7LSbG62Lsb33sfG7zqS8TK1MXwuCHj1FKNzVpsnafmqLG1vXN88rt38mNFs9TENzm4QHdBzsvCuoBnPH7rpYYDo9DZNJePaDvRvqJKByCabubJz3XXKbEeshzpz4Ma5QYpJqjk","blskey_pop":"Qr658mWZ2YC8JXGXwMDQTzuZCWF7NK9EwxphGmcBvCh6ybUuLxbG65nsX4JvD4SPNtkJ2w9ug1yLTj6fgmuDg41TgECXjLCij3RMsV8CwewBVgVN67wsA45DFWvqvLtu4rjNnE9JbdFTc1Z4WCPA3Xan44K1HoHAq9EVeaRYs8zoF5","client_ip":"172.18.0.3","client_port":9704,"node_ip":"172.18.0.3","node_port":9703,"services":["VALIDATOR"]},"dest":"8ECVSk179mjsjKRLWiQtssMLgp6EPhWXtaYyStWPSGAb"},"metadata":{"from":"EbP4aYNeTHL6q385GuVpRV"},"type":"0"},"txnMetadata":{"seqNo":2,"txnId":"1ac8aece2a18ced660fef8694b61aac3af08ba875ce3026a160acbc3a3af35fc"},"ver":"1"}
+`;
+}
+
+async function savePoolGenesisTxnFile(filePath) {
+   let data = await poolGenesisTxnData();
+   await mkdir(filePath);
+   return fs.writeFileSync(filePath, data, 'utf8');
+}
+
+async function mkdir(filePath) {
+   return new Promise((resolve, reject) => {
+      let folderPath = filePath.split('/').slice(0, filePath.split('/').length - 1).join('/');
+      mkdirp(folderPath, function(err, res) {
+         if(err) reject(err);
+         else resolve(res);
+      })
+   })
+}
+
+function pathToIndyClientHome() {
+   return require('os').homedir() + "/.indy_client"
+}
+
+function sleep(duration){
+   return new Promise(resolve => {
+      setTimeout(resolve,duration)
+   })
+}
+
+function getCurrentTimeInSeconds() {
+   return Math.floor(Date.now() / 1000)
+}
+
+module.exports = {
+   getPoolGenesisTxnPath,
+   getPathToIndyClientHome: pathToIndyClientHome,
+   sleep,
+   getCurrentTimeInSeconds
+}
+==============================================================================================================
+git clone git@github.com:CanopyTax/single-spa-examples.git
+cd single-spa-examples
+
+# Install yarn at https://yarnpkg.com/lang/en/docs/install/
+yarn
+yarn build
+yarn start
+open http://localhost:8080
+==============================================================================================================
+cybaca
+Self-driven community event organizer
+
+Prepare
+Truffle and ganache-cli should be installed
+Bootstrap
+npm i
+Tests
+ganache-cli -p 7545 -a 250 -e 100 -i 5777
+Migration
+truffle migrate --network development --reset
+Code for verification
+truffle-flattener contracts/Cybercon.sol > cybercon0_full.sol
+==============================================================================================================
+#!/bin/bash
+wget http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz
+wget http://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.mmdb.gz
+gzip -d GeoLite2-City.mmdb.gz && gzip -d GeoLite2-Country.mmdb.gz
+mv GeoLite2-*.mmdb helpers/GeoIP2/db/
+==============================================================================================================
+dc up -d mongo
+docker run --env-file ./.env -p 3000:3000 --network reaction.localhost -it test-api:latest
+==============================================================================================================
+class UsersView extends React.Component {
+  render() {
+    const {users, UserLink} = this.props
+
+    return (
+      <ul>
+        {users.map(user => (
+          <UserLink key={user.id} user={user}>
+            <li>{user.name}</li>
+          </UserLink>
+        ))}
+      </ul>
+    ) 
+  }
+}
+
+const AdminUserLink = ({user, children}) => <Link to={`/admin/users/${user.id}`}>{children}</Link>
+const AdminUserList = <UsersView UserLink={AdminUserLink} />
+
+const UserProfileLink = ({user, children}) => <Link to={`/users/${user.id}`}>{children}</Link>
+const UserProfileList = <UsersView UserLink={UserProfileLink} />
+==============================================================================================================
+#!/usr/bin/env bash
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+LBLUE='\033[1;34m'
+YELLOW='\033[0;33m'
+HIDDEN='\e[8m'
+NC='\033[0m'
+
+# Dynamic horizontal spacer
+space () {
+  if [[ "$NO_PROGRESS" == "1" ]]; then
+    return
+  fi
+  # Check terminal width
+  num=`tput cols`
+  for i in `seq 1 $num`; do
+    echo -n "-"
+  done
+  echo ""
+}
+
+# Checking if asciidoctor is installed
+[[ -z $(which asciidoctor) || -z $(which asciidoctor-pdf) ]] && echo -e "${RED}Please install asciidoctor(-pdf) to compile the book${NC}" && exit 1 || echo -e "asciidoctor ${GREEN}installed${NC}, compiling book.pdf and book.html"
+
+space
+
+ADOC_COUNT=$(ls best-practices/*.adoc |wc -l)
+BOOK_ADOC_COUNT=$(cat book.adoc|grep include |wc -l)
+
+if [[ $ADOC_COUNT -gt $BOOK_ADOC_COUNT ]]; then
+  for adoc in `ls best-practices/*.adoc| cut -f2 -d/`; do
+    grep $adoc book.adoc > /dev/null || echo -e "${RED}$adoc is not included in book.adoc${NC} - ${YELLOW}FYI${NC}"
+  done
+  space
+fi
+
+# Compiling book
+echo -n -e "Compiling ${GREEN}best-practices-in-threat-intellingence${NC} based on practical ${LBLUE}MISP${NC} experiences."
+echo -n -e "${GREEN} PDF "
+asciidoctor-pdf book.adoc 2> /dev/null
+echo -e "HTML ${NC}"
+asciidoctor book.adoc 2> /dev/null
+space
+echo "Done!"
+
+# If ../misp-website exists, copy over. This is for core MISP maintainers with write access to the website.
+[[ -d ../misp-website ]] && cp book.html ../misp-website/best-practices-in-threat-intelligence.html
+[[ -d ../misp-website ]] && cp book.pdf  ../misp-website/best-practices-in-threat-intelligence.pdf
+==============================================================================================================
+-- User: fe_sendauth
+-- DROP USER fe_sendauth;
+
+CREATE USER fe_sendauth WITH
+  LOGIN
+  NOSUPERUSER
+  INHERIT
+  CREATEDB
+  NOCREATEROLE
+  NOREPLICATION;
+
+GRANT postgres TO fe_sendauth;
+
+alter role postgres password '';
+ALTER ROLE fe_sendauth WITH PASSWORD NULL;
+==============================================================================================================
+netstat -an |grep LISTEN |grep 6250 |grep -v tcp6 ; check_redis_port=$?
+netstat -an |grep LISTEN |grep 8001 |grep -v tcp6 ; check_dashboard_port=$?
+==============================================================================================================
+pip install -r requirements.txt -r requirements_dev.txt
+Creating Database Tables
+./manage.py database create_tables
+Processes
+The main Redash processes you have to run:
+
+Web server
+RQ worker(s) & scheduler
+In development you will also run Webpack’s dev server or watch utility.
+
+Our recommendation:
+
+Web server: ./manage.py runserver --debugger --reload
+RQ: ./manage.py rq worker
+RQ Scheduler: ./manage.py rq scheduler
+Frontend watch process to rebuild changes: npm run watch
+This will result in a Flask web server listening on port 5000, Webpack rebuilding changes to the frontend, RQ worker ready to run queries and RQ scheduler to enqueue periodic tasks.
+
+pytest tests/
+
+==============================================================================================================
+from time import clock
+
+by 
+
+from time import perf_counter as clock
+
+try:
+    import pwd
+except ImportError:
+   pwd = None
+   import getpass
+
+
+...
+
+if pwd:
+    userName = pwd.getpwuid(os.getuid())[0]
+else:
+    userName = getpass.getuser()
+==============================================================================================================
+pip help - помощь по доступным командам.
+
+pip install package_name - установка пакета(ов).
+
+pip uninstall package_name - удаление пакета(ов).
+
+pip list - список установленных пакетов.
+
+pip show package_name - показывает информацию об установленном пакете.
+
+pip search - поиск пакетов по имени.
+
+pip --proxy user:passwd@proxy.server:port - использование с прокси.
+
+pip install -U - обновление пакета(ов).
+
+pip install --force-reinstall - при обновлении, переустановить пакет, даже если он последней версии.
+
+python -m pip install --upgrade pip
+pip --no-cache-dir install scipy
+
+pip --no-cache-dir install scipy
+[global]
+no-cache-dir = false
+
+easy_install http://www.voidspace.org.uk/python/pycrypto-2.6.1/pycrypto-2.6.1.win32-py2.7.exe
+==============================================================================================================
 git fetch origin master:master
 git merge master
 git checkout master
@@ -15752,6 +16039,42 @@ git config --global commit.template ~/.git-commit-template.txt
 git config --global commit.cleanup strip
 
 git branch <name> <commit>
+==============================================================================================================
+python manage.py check --tag security --tag compatibility. --list-tags
+$ python -c "import django; print(django.get_version())"
+$ django-admin.py startproject mysite
+python manage.py runserver
+python manage.py runserver 8080
+python manage.py runserver 0.0.0.0:8000
+
+python manage.py startapp polls
+
+BEGIN;
+CREATE TABLE polls_question (
+    "id" serial NOT NULL PRIMARY KEY,
+    "question_text" varchar(200) NOT NULL,
+    "pub_date" timestamp with time zone NOT NULL
+);
+
+CREATE TABLE polls_choice (
+    "id" serial NOT NULL PRIMARY KEY,
+    "question_id" integer NOT NULL,
+    "choice_text" varchar(200) NOT NULL,
+    "votes" integer NOT NULL
+);
+
+CREATE INDEX polls_choice_7aa0f6ee ON "polls_choice" ("question_id");
+
+ALTER TABLE "polls_choice"
+  ADD CONSTRAINT polls_choice_question_id_246c99a640fbbd72_fk_polls_question_id
+    FOREIGN KEY ("question_id")
+    REFERENCES "polls_question" ("id")
+    DEFERRABLE INITIALLY DEFERRED;
+COMMIT;
+
+$ python manage.py shell
+python manage.py makemigrations
+python manage.py migrate
 ==============================================================================================================
 sudo: required
 dist: bionic
