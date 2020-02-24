@@ -15838,6 +15838,459 @@ module.exports = {
    getCurrentTimeInSeconds
 }
 ==============================================================================================================
+npm install --no-optional
+npm install --no-bin-links
+==============================================================================================================
+choco install make
+curl https://install.meteor.com/ | sh
+==============================================================================================================
+git pull --rebase upstream master
+git remote add upstream https://github.com/madvas/ethlance.git
+==============================================================================================================
+$ curl -o- -L https://yarnpkg.com/install.sh | bash
+$ yarn install
+$ yarn start
+
+$ npm version
+$ git push origin master --tags
+==============================================================================================================
+npm install --save-dev webpack-dev-server@2.9.7
+==============================================================================================================
+// tslint:disable:no-console
+// In production, we register a service worker to serve assets from local cache.
+
+// This lets the app load faster on subsequent visits in production, and gives
+// it offline capabilities. However, it also means that developers (and users)
+// will only see deployed updates on the 'N+1' visit to a page, since previously
+// cached resources are updated in the background.
+
+// To learn more about the benefits of this model, read https://goo.gl/KwvDNy.
+// This link also includes instructions on opting out of this behavior.
+
+const isLocalhost = Boolean(
+  window.location.hostname === 'localhost' ||
+    // [::1] is the IPv6 localhost address.
+    window.location.hostname === '[::1]' ||
+    // 127.0.0.1/8 is considered localhost for IPv4.
+    window.location.hostname.match(
+      /^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/
+    )
+);
+
+export default function register() {
+  if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
+    // The URL constructor is available in all browsers that support SW.
+    const publicUrl = new URL(
+      process.env.PUBLIC_URL!,
+      window.location.toString()
+    );
+    if (publicUrl.origin !== window.location.origin) {
+      // Our service worker won't work if PUBLIC_URL is on a different origin
+      // from what our page is served on. This might happen if a CDN is used to
+      // serve assets; see https://github.com/facebookincubator/create-react-app/issues/2374
+      return;
+    }
+
+    window.addEventListener('load', () => {
+      const swUrl = `${process.env.PUBLIC_URL}/service-worker.js`;
+
+      if (isLocalhost) {
+        // This is running on localhost. Lets check if a service worker still exists or not.
+        checkValidServiceWorker(swUrl);
+
+        // Add some additional logging to localhost, pointing developers to the
+        // service worker/PWA documentation.
+        navigator.serviceWorker.ready.then(() => {
+          console.log(
+            'This web app is being served cache-first by a service ' +
+              'worker. To learn more, visit https://goo.gl/SC7cgQ'
+          );
+        });
+      } else {
+        // Is not local host. Just register service worker
+        registerValidSW(swUrl);
+      }
+    });
+  }
+}
+
+function registerValidSW(swUrl: string) {
+  navigator.serviceWorker
+    .register(swUrl)
+    .then(registration => {
+      registration.onupdatefound = () => {
+        const installingWorker = registration.installing;
+        if (installingWorker) {
+          installingWorker.onstatechange = () => {
+            if (installingWorker.state === 'installed') {
+              if (navigator.serviceWorker.controller) {
+                // At this point, the old content will have been purged and
+                // the fresh content will have been added to the cache.
+                // It's the perfect time to display a 'New content is
+                // available; please refresh.' message in your web app.
+                console.log('New content is available; please refresh.');
+              } else {
+                // At this point, everything has been precached.
+                // It's the perfect time to display a
+                // 'Content is cached for offline use.' message.
+                console.log('Content is cached for offline use.');
+              }
+            }
+          };
+        }
+      };
+    })
+    .catch(error => {
+      console.error('Error during service worker registration:', error);
+    });
+}
+
+function checkValidServiceWorker(swUrl: string) {
+  // Check if the service worker can be found. If it can't reload the page.
+  fetch(swUrl)
+    .then(response => {
+      // Ensure service worker exists, and that we really are getting a JS file.
+      if (
+        response.status === 404 ||
+        response.headers.get('content-type')!.indexOf('javascript') === -1
+      ) {
+        // No service worker found. Probably a different app. Reload the page.
+        navigator.serviceWorker.ready.then(registration => {
+          registration.unregister().then(() => {
+            window.location.reload();
+          });
+        });
+      } else {
+        // Service worker found. Proceed as normal.
+        registerValidSW(swUrl);
+      }
+    })
+    .catch(() => {
+      console.log(
+        'No internet connection found. App is running in offline mode.'
+      );
+    });
+}
+
+export function unregister() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.ready.then(registration => {
+      registration.unregister();
+    });
+  }
+}
+==============================================================================================================
+#pip install requests psutil
+import time
+import requests
+import psutil
+import argparse
+
+# constants
+URL = 'https://corlysis.com:8086/write'
+READING_DATA_PERIOD_MS = 1000.0
+SENDING_PERIOD = 5
+MAX_LINES_HISTORY = 1000
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("db", help="database name")
+    parser.add_argument("token", help="secret token")
+    args = parser.parse_args()
+
+    corlysis_params = {"db": args.db, "u": "token", "p": args.token, "precision": "ms"}
+
+    # initialization
+    payload = ""
+    counter = 1
+    problem_counter = 0
+
+    # infinite loop
+    while True:
+        unix_time_ms = int(time.time()*1000)
+
+        # read sensor data and convert it to line protocol
+        line = "server_data cpu_percent={},free_memory={} {}\n".format(psutil.cpu_percent(interval=None),
+                                                                       psutil.virtual_memory().free,
+                                                                       unix_time_ms)
+
+        payload += line
+
+        if counter % SENDING_PERIOD == 0:
+            try:
+                # try to send data to cloud
+                r = requests.post(URL, params=corlysis_params, data=payload)
+                if r.status_code != 204:
+                    raise Exception("data not written")
+                payload = ""
+            except:
+                problem_counter += 1
+                print('cannot write to InfluxDB')
+                if problem_counter == MAX_LINES_HISTORY:
+                    problem_counter = 0
+                    payload = ""
+
+        counter += 1
+
+        # wait for selected time
+        time_diff_ms = int(time.time()*1000) - unix_time_ms
+        print(time_diff_ms)
+        if time_diff_ms < READING_DATA_PERIOD_MS:
+            time.sleep((READING_DATA_PERIOD_MS - time_diff_ms)/1000.0)
+
+
+if __name__ == "__main__":
+    main()
+==============================================================================================================
+/*
+IOStash IoT PaaS Platform Library for Nodejs v2.0
+Copyright (c) 2018 Aravind VS
+https://iostash.io
+*/
+
+
+var io = require('socket.io-client')
+var colors = require('colors');
+var async = require('async');
+var _ = require('lodash');
+var socket = null
+var logs = false;
+var API_URL = 'api.iostash.io:82';
+
+function iostash(options) {
+    var opts = options;
+    var logs = opts.debugLogs || false;
+    this.subscriptionManager = {
+        authenticated: false,
+        connected: false,
+        subscriptions: [],
+        addSubscription: function(event, id) {
+            this.subscriptions.push({ event: event, id: id });
+        },
+        removeSubscription: function(event, id) {
+            _.remove(this.subscriptions, function(currentObject) {
+                return (currentObject.event === event && currentObject.id === id);
+            });
+        },
+        checkSubscription: function(event, id) {
+            return _.some(this.subscriptions, function(subscription) {
+                return subscription.event == event && subscription.id == id;
+            })
+        }
+    };
+
+    var self = this;
+
+    function _log(message) {
+        if (logs)
+            console.log('[IOStash]'.green, message)
+    }
+
+    function _error(message) {
+        console.log('[IOStash]'.red, message)
+    }
+
+    if (!opts.accessToken || opts.accessToken.length < 10)
+        _error('Invalid token specified')
+    else {
+        _log('Attempting connection')
+        socket = io(API_URL, { reconnection: opts.autoReconnect || true, reconnectionDelayMax: opts.retryDelay || 500, reconnectionAttempts: opts.retryAttempts || 10 });
+        socket.on('connect', function() {
+            _log('Connected, authenticating')
+            self.subscriptionManager.connected = true;
+            socket.emit('authenticate', { accessToken: opts.accessToken });
+            socket.on('disconnect', function() {
+                self.subscriptionManager.connected = false;
+                _error('Connection closed')
+            });
+
+            socket.on('authenticated', function(data) {
+                self.subscriptionManager.authenticated = true;
+                _log('Auth successful')
+                async.each(self.subscriptionManager.subscriptions, function(subscription) {
+                    socket.emit(subscription.event, subscription.id)
+                })
+            });
+
+            socket.on('unauthorized', function(e) {
+                _error('Auth failed - Invalid access token')
+                self.subscriptionManager.authenticated = false;
+            });
+        });
+
+        socket.on('reconnect_failed', function(e) {
+            _error('Reconnection attempts failed. Please check your network connection')
+            self.subscriptionManager.authenticated = false;
+        })
+
+    }
+}
+
+iostash.prototype.subscribeDevice = function(deviceId, callback) {
+    socket.emit('subscribeDevice', deviceId)
+    this.subscriptionManager.addSubscription('subscribeDevice', deviceId);
+    socket.on('devicesubscriptionFailed' + deviceId, function(data) {
+        _error('Subscription to ' + deviceId.yellow + ' failed: ' + data)
+        callback(data)
+    })
+    socket.on('deviceUpdate' + deviceId, function(data) {
+        callback(null, data)
+    })
+}
+
+iostash.prototype.unsubscribeDevice = function(deviceId, callback) {
+    socket.emit('unsubscribeDevice', deviceId)
+    socket.on('deviceUnsubcribed/#' + socket.id, function(data) {
+        this.subscriptionManager.removeSubscription('subscribeDevice', deviceId);
+        callback(data)
+    })
+}
+
+iostash.prototype.subscribeChannel = function(channelId, callback) {
+    socket.emit('channelSubscribe', channelId)
+    this.subscriptionManager.addSubscription('channelSubscribe', channelId);
+    socket.on('channelsubscriptionFailed' + channelId, function(data) {
+        callback(data)
+    })
+    socket.on('channelUpdate' + channelId, function(data) {
+        callback(null, data)
+    })
+}
+
+iostash.prototype.unsubscribeChannel = function(channelId, callback) {
+    socket.emit('channelUnsubscribe', channelId)
+    socket.on('channelunsubcribed/#' + socket.id, function(data) {
+        this.subscriptionManager.removeSubscription('channelSubscribe', channelId);
+        callback(data)
+    })
+}
+
+iostash.prototype.subscribeDataPoint = function(deviceId, dataPointName, callback) {
+    socket.emit('subscribeDevice', deviceId)
+    socket.emit('subscribeDataPoint', { 'deviceID': deviceId, 'dataPoint': dataPointName })
+    this.subscriptionManager.addSubscription('subscribeDataPoint', { 'deviceID': deviceId, 'dataPoint': dataPointName });
+    socket.on('datapointsubscriptionFailed' + deviceId + dataPointName, function(data) {
+        callback(data)
+    })
+    socket.on('dataPointUpdate' + deviceId + dataPointName, function(data) {
+        callback(null, data)
+    })
+}
+
+iostash.prototype.unsubscribeDataPoint = function(deviceId, dataPointName, callback) {
+    socket.emit('unsubscribeDataPoint', deviceId + dataPointName)
+    socket.on('dataPointUpdateUnsubscribed/#' + socket.id, function(data) {
+        this.subscriptionManager.removeSubscription('subscribeDataPoint', { 'deviceID': deviceId, 'dataPoint': dataPointName });
+        callback(data)
+    })
+}
+
+iostash.prototype.subscribeCustomData = function(deviceId, callback) {
+    if (!this.subscriptionManager.checkSubscription('subscribeDevice', deviceId)) {
+        socket.emit('subscribeDevice', deviceId)
+        this.subscriptionManager.addSubscription('subscribeDevice', deviceId);
+    }
+    socket.on('publish' + deviceId, function(data) {
+        callback(null, data)
+    })
+}
+
+iostash.prototype.subscribeLocation = function(deviceId, callback) {
+    if (!this.subscriptionManager.checkSubscription('subscribeDevice', deviceId)) {
+        socket.emit('subscribeDevice', deviceId)
+        this.subscriptionManager.addSubscription('subscribeDevice', deviceId);
+    }
+    socket.on('newlocationUpdate' + deviceId, function(data) {
+        callback(null, data)
+    })
+}
+
+iostash.prototype.subscribeActions = function(deviceId, callback) {
+    if (!this.subscriptionManager.checkSubscription('subscribeDevice', deviceId)) {
+        socket.emit('subscribeDevice', deviceId)
+        this.subscriptionManager.addSubscription('subscribeDevice', deviceId);
+    }
+    socket.on('action' + deviceId, function(data) {
+        callback(null, data)
+    })
+}
+
+iostash.prototype.getConnectionStatus = function() {
+    return this.subscriptionManager.connected;
+}
+
+iostash.prototype.connectionDropped = function(callback) {
+    socket.on('disconnect', function() {
+        callback('Connection dropped');
+    });
+}
+
+iostash.prototype.connectionFatal = function(callback) {
+    socket.on('reconnect_failed', function(e) {
+        callback('Cannot establish connection, please check your network')
+    })
+}
+
+module.exports = iostash;
+=========================================================================================================
+=====
+Install dependencies and run the app
+yarn install;
+yarn run dev;
+Open the app in your browser at http://localhost:8000
+open -a "Google Chrome" http://localhost:8000
+==============================================================================================================
+docker run alpine env
+docker version
+https://docs.docker.com/docker-for-windows/dashboard/
+==============================================================================================================
+https://github.com/GladysAssistant/Gladys
+https://documentation.gladysassistant.com/en/installation#raspberry-pi
+
+curl -sSL https://get.docker.com | sh
+sudo usermod -aG docker pi
+
+docker run -d \
+--restart=always \
+--privileged \
+--network=host \
+--name gladys \
+-e NODE_ENV=production \
+-e SERVER_PORT=80 \
+-e TZ=Europe/Paris \
+-e SQLITE_FILE_PATH=/var/lib/gladysassistant/gladys-production.db \
+-v /var/run/docker.sock:/var/run/docker.sock \
+-v /var/lib/gladysassistant:/var/lib/gladysassistant \
+-v /dev:/dev \
+gladysassistant/gladys:4.0.0-beta-arm
+
+docker run -d \
+  --name watchtower \
+  --restart=always \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  containrrr/watchtower:armhf-latest \
+  --cleanup
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+single-spa-parcel-example
+This project is an example of web app built with multiple microfrontends running in different VM's using the single-spa framework.
+
+To run this example in development mode use:
+Have a Mongo DB running in port 27017
+Inside each folder (sample-api, sample-api2, sample-vue, sample-react, sample-single-spa) run:
+npm install
+npm run serve
+You can access the portal at http://localhost:5000/index.local
+To run this example in production use:
+inside the environment folder:
+docker-compose build
+docker-compose up
+You can access the portal at http://localhost:5001
+==============================================================================================================
 git clone git@github.com:CanopyTax/single-spa-examples.git
 cd single-spa-examples
 
@@ -15846,6 +16299,142 @@ yarn
 yarn build
 yarn start
 open http://localhost:8080
+
+https://github.com/single-spa/single-spa-examples
+==============================================================================================================
+Clone the repo
+Run npm run install-all
+
+run npm start
+
+Open running code at http://localhost:8233/
+==============================================================================================================
+sudo npm install --unsafe-perm --verbose -g ethereumjs-testrpc
+nvm install --lts nvm use --lts
+npm install --global --production windows-build-tools
+sed -i -e 's/.\\/build\\/Release\\/scrypt/scrypt/' node_modules/scrypt/index.js
+==============================================================================================================
+const localStorageMock = {
+  getItem: jest.fn(),
+  setItem: jest.fn(),
+  clear: jest.fn(),
+};
+global.localStorage = localStorageMock;
+
+window.matchMedia =
+  window.matchMedia ||
+  function() {orgiori
+    return {
+      matches: false,
+      addListener: function() {},
+      removeListener: function() {},
+    };
+  };
+
+==============================================================================================================
+export const handleUpdate = () => null
+
+export function uuidv4() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = (Math.random() * 16) | 0,
+      v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+==============================================================================================================
+curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.35.2/install.sh | bash
+wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.35.2/install.sh | bash
+
+nvm install 12.14.1
+nvm ls-remote
+nvm ls available
+nvm install v12.14.1 --reinstall-packages-from=10.18.1
+
+nvm install node
+nvm install --lts
+nvm use 13.6.0
+nvm use node
+
+nvm use node
+nvm unalias awesome-version
+nvm alias default 12.14.1
+
+npm install -g --unsafe-perm=false --allow-root
+==============================================================================================================
+autoload -U add-zsh-hook
+load-nvmrc() {
+  local node_version="$(nvm version)"
+  local nvmrc_path="$(nvm_find_nvmrc)"
+
+  if [ -n "$nvmrc_path" ]; then
+    local nvmrc_node_version=$(nvm version "$(cat "${nvmrc_path}")")
+
+    if [ "$nvmrc_node_version" = "N/A" ]; then
+      nvm install
+    elif [ "$nvmrc_node_version" != "$node_version" ]; then
+      nvm use
+    fi
+  elif [ "$node_version" != "$(nvm version default)" ]; then
+    echo "Reverting to nvm default version"
+    nvm use default
+  fi
+}
+add-zsh-hook chpwd load-nvmrc
+load-nvmrc
+==============================================================================================================
+{
+  "name" : "GitHub Chat",
+  "version" : "0.1.2",
+  "description" : "Chat and conference with your peers on GitHub",
+  "background_page" : "background.html",
+  "browser_action" : {
+    "default_icon" : "logo-32.png"
+  },
+  "content_scripts" : [
+    {
+      "matches" : [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js" : [ "jquery-1.6.2.min.js", "contentscript.js"],
+      "run_at" : "document_idle"
+    }
+  ],
+  "icons" : {
+    "16" : "logo-16.png",
+    "48" : "logo-48.png",
+    "128" : "logo-128.png"
+  }
+}
+==============================================================================================================
+git clone git@github.com:CanopyTax/single-spa-examples.git
+cd single-spa-examples
+
+# Install yarn at https://yarnpkg.com/lang/en/docs/install/
+yarn
+yarn build
+yarn start
+open http://localhost:8080
+==============================================================================================================
+npm show <package> version
+npm list -g
+npm list --depth=0
+npm view <package> version
+npm info YOUR_PACKAGE version
+node -p "require('./package.json').version"
+
+==============================================================================================================
+npm config get sass_binary_path
+npm rebuild node-sass
+sudo chmod -R 775 /node_modules
+
+npm ls node-sass
+node -p process.platform
+node -p process.arch
+node -p "require('node-sass').info"
+
+npm update
 ==============================================================================================================
 cybaca
 Self-driven community event organizer
