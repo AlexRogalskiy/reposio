@@ -16234,7 +16234,182 @@ iostash.prototype.connectionFatal = function(callback) {
 
 module.exports = iostash;
 =========================================================================================================
-=====
+java -Xms512m -Xmx2048m -ea -cp $CP edu.mit.csail.sdg.alloy4whole.SimpleGUI
+    find $DST/alloy -type d -name ".svn" | xargs rm -rf 
+    find $DST/alloy -type d -name "CVS" | xargs rm -rf 
+=========================================================================================================
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <appender name="Console"
+        class="ch.qos.logback.core.ConsoleAppender">
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <Pattern>
+                %black(%d{ISO8601}) %highlight(%-5level) [%blue(%t)] %yellow(%C{1.}): %msg%n%throwable
+            </Pattern>
+        </layout>
+    </appender>
+ 
+    <appender name="RollingFile"
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>../log/gs_webapi.log</file>
+        <encoder
+            class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <Pattern>%d %p %C{1.} [%t] %m%n</Pattern>
+        </encoder>
+ 
+        <rollingPolicy
+            class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>../log/gs_webapi-%d{yyyyMMdd}.%i.log
+            </fileNamePattern>
+            <timeBasedFileNamingAndTriggeringPolicy
+                class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>1MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+        </rollingPolicy>
+    </appender>
+     
+    <!-- LOG everything at INFO level -->
+    <root level="info">
+        <appender-ref ref="RollingFile" />
+        <appender-ref ref="Console" />
+    </root>
+ 
+</configuration>
+=========================================================================================================
+j=0
+for i in `find . -maxdepth 1 -type f -name '*.out.txt'`; do
+	#echo $i
+	#rm $i 
+	j=$((j+1))
+done
+echo $j
+=========================================================================================================
+	<plugin>
+		        <groupId>org.apache.maven.plugins</groupId>
+		        <artifactId>maven-clean-plugin</artifactId>
+		        <version>2.4.1</version>
+				<executions>
+					<execution>
+						<id>default-clean</id>
+						<configuration>
+							<excludeDefaultDirectories>true</excludeDefaultDirectories>
+							<filesets>
+								<fileset>
+									<directory>${basedir}/../griddb-binding/lib</directory>
+									<includes>
+										<include>${basedir}/../griddb-binding/lib/griddb-binding.jar</include>
+									</includes>							
+									<excludes>
+										<exclude>${basedir}/../griddb-binding/lib/gridstore.jar</exclude>
+									</excludes>
+									<followSymlinks>false</followSymlinks>
+								</fileset>
+							</filesets>
+						</configuration>
+						<goals>
+							<goal>clean</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+=========================================================================================================
+<dependency>
+			<groupId>com.toshiba.mwcloud.gs</groupId>
+			<artifactId>gridstore</artifactId>
+			<version>${gridstore.version}</version>
+			<scope>system</scope>
+			<systemPath>${basedir}/../griddb-binding/lib/gridstore.jar</systemPath>
+		</dependency>
+=========================================================================================================
+=========================================================================================================
+=========================================================================================================
+=========================================================================================================
+=========================================================================================================
+=========================================================================================================
+=========================================================================================================
+=========================================================================================================
+=========================================================================================================
+=========================================================================================================
+output=Merged_$(date +%Y-%m-%d-%H-%M-%S).txt
+##Header is common among all files
+
+files=`find . -maxdepth 1 -type f -name '*.out.txt'`
+files_arr=($files)
+
+header=`head -n 1 "${files_arr[0]}"`
+echo $header > "$output"
+
+for file in $files; do
+	sed "/$header/d" "$file" >> "$output"
+done
+
+sed -i 's/_IMPLY_/,imply,/' "$output"
+sed -i 's/_IMPLY_/,and,/' "$output"
+=========================================================================================================
+grep '^-1,' "$1"  | sed 's/-1,-1,-1,-1,-1,-1,-1,//' | sed 'p;s/$/.als.out.txt.timedout/' | sed 's/_$/_.als.out.txt/' | xargs -n2 mv
+=========================================================================================================
+#classpath=/Users/vajih/Documents/workspace-git/alloy/bin:/Users/vajih/Documents/workspace-git/lib-sdg/jars-external/sat4j.jar:/Users/vajih/Documents/workspace-git/alloy/lib/apple-osx-ui.jar:/Users/vajih/Documents/workspace-git/alloy/lib/extra.jar:/Users/vajih/Documents/workspace-git/lib-sdg/jars-sdg/kodkod-int-overflow.jar:/Users/vajih/Downloads/eclipse/plugins/org.junit_4.11.0.v201303080030/junit.jar:/Users/vajih/Downloads/eclipse/plugins/org.hamcrest.core_1.3.0.v201303031735.jar:/Users/vajih/Documents/workspace-git/debugger-experiment/lib/alloy4.2.jar:/Users/vajih/Documents/workspace-git/lib-sdg/jars-external/rt.jar:/Users/vajih/Documents/workspace-git/lib-sdg/jars-external/functionaljava-3.0.jar:/Users/vajih/Documents/workspace-git/alloy/lib/guava-18.0.jar:/Users/vajih/Documents/workspace-git/alloy/lib/reflections-0.10-SNAPSHOT-jar-with-dependencies.jar
+xms=1024m
+xmx=4096m
+
+CP=$(ls -1 dist/*.jar | xargs | sed "s/\ /:/g"):$(ls -1 lib/*.jar | xargs | sed "s/\ /:/g")
+
+echo $CP
+#CP=$CP:classes:$(ls -1 dist/*.jar | xargs | sed "s/\ /:/g")
+
+java -Xmx$xmx -Xms$xms -Djava.util.logging.config.file=resources/java.logger.monitor.config  -cp $CP edu.uw.ece.alloy.debugger.propgen.benchmarker.center.TemporalAnalyzerRunner 
+
+echo $classpath
+=========================================================================================================
+#!/bin/bash
+# file: clean.sh
+
+echo "Kill all the previous H2 Databases."
+while read p; do
+  kill $p
+done <scripts/processID.log
+
+sleep 1
+
+echo "Remove the database IDs"
+rm scripts/processID.log
+
+echo "Remove the previous database logs"
+#rm db/alloy_props*
+pushd db
+ find alloy_props* -type f -delete
+popd
+
+echo "Remove all the temporary generated files."
+#rm relational_props/tmp/*
+pushd relational_props/tmp/
+find . -type f -delete
+popd 
+
+echo "Remove all the java logs."
+#rm tmp/*.log*
+pushd tmp
+find *.log* -type f -delete
+popd
+
+
+echo "Start H2 database"
+java -cp lib/h2*.jar org.h2.tools.Server & 
+pID=`echo $!`
+echo "A H2 database created as the process id:" $pID
+echo $pID >> scripts/processID.log
+
+echo "REDAY TO START THE FRAMEWORK............"
+=========================================================================================================
+npm install -g ganache-cli@6.1.0
+npm install -g truffle@0.0.0
+truffle init
+=========================================================================================================
+yarn policies set-version will download the latest stable release
+yarn policies set-version --rc will download the latest rc release
+yarn policies set-version 1.13.0 will download a specific version
+yarn policies set-version '^1.12.0' will download the latest minor
+=========================================================================================================
 Install dependencies and run the app
 yarn install;
 yarn run dev;
