@@ -16238,6 +16238,107 @@ java -Xms512m -Xmx2048m -ea -cp $CP edu.mit.csail.sdg.alloy4whole.SimpleGUI
     find $DST/alloy -type d -name ".svn" | xargs rm -rf 
     find $DST/alloy -type d -name "CVS" | xargs rm -rf 
 =========================================================================================================
+import com.toshiba.mwcloud.gs.GSException;
+import com.toshiba.mwcloud.gs.GridStore;
+import com.toshiba.mwcloud.gs.GridStoreFactory;
+import com.toshiba.mwcloud.gs.RowKey;
+import com.toshiba.mwcloud.gs.RowSet;
+import com.toshiba.mwcloud.gs.TimeSeries;
+import com.toshiba.mwcloud.gs.TimestampUtils;
+import com.toshiba.mwcloud.gs.TimeUnit;
+import com.toshiba.mwcloud.gs.Collection;
+
+public class Init {
+
+	static class Point {
+		@RowKey Date timestamp;
+		long deviceId;
+	}
+
+	static class Device {
+		@RowKey long id;
+		long userId;
+		long year;
+	}
+	
+	public static void main(String[] args) throws GSException {
+
+		Properties props = new Properties();
+		props.setProperty("notificationAddress", args[0]);
+		props.setProperty("notificationPort", args[1]);
+		props.setProperty("clusterName", args[2]);
+		props.setProperty("user", "admin");
+		props.setProperty("password", "admin");
+		GridStore store = GridStoreFactory.getInstance().getGridStore(props);
+
+		//---------------------------------------------
+		
+		TimeSeries<Point> ts = store.putTimeSeries("point01", Point.class);
+
+		Point point = new Point();
+		
+		point.timestamp = TimestampUtils.current();
+		point.deviceId = 144012;
+		ts.put(point);
+		
+		point.timestamp = TimestampUtils.add(point.timestamp, 1, TimeUnit.SECOND);
+		point.deviceId = 24485;
+		ts.put(point);
+		
+		point.timestamp = TimestampUtils.add(point.timestamp, 1, TimeUnit.SECOND);
+		point.deviceId = 30292;
+		ts.put(point);
+		
+		point.timestamp = TimestampUtils.add(point.timestamp, 1, TimeUnit.SECOND);
+		point.deviceId = 24485;
+		ts.put(point);
+		
+		//---------------------------------------------
+		
+		Collection<Long, Device> col = store.putCollection("devices", Device.class);
+
+		Device device = new Device();
+
+		device.id = 30292;
+		device.userId = 47;
+		device.year = 2015;
+		col.put(device);
+		
+		device.id = 107624;
+		device.userId = 86;
+		device.year = 2016;
+		col.put(device);
+		
+		device.id = 121150;
+		device.userId = 47;
+		device.year = 2017;
+		col.put(device);
+		
+		device.id = 22975;
+		device.userId = 86;
+		device.year = 2014;
+		col.put(device);
+		
+		device.id =  144012;
+		device.userId = 122;
+		device.year = 2017;
+		col.put(device);
+		
+		device.id =  90714;
+		device.userId = 77;
+		device.year = 2016;
+		col.put(device);
+		
+		device.id =  24485;
+		device.userId = 1;
+		device.year = 2014;
+		col.put(device);
+
+		store.close();
+	}
+
+}
+=========================================================================================================
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
     <appender name="Console"
@@ -16792,6 +16893,261 @@ pip --no-cache-dir install scipy
 no-cache-dir = false
 
 easy_install http://www.voidspace.org.uk/python/pycrypto-2.6.1/pycrypto-2.6.1.win32-py2.7.exe
+==============================================================================================================
+mvn --settings .travis/settings.xml install -DskipTests=false -Dgpg.skip -Dmaven.javadoc.skip=true -B -V
+==============================================================================================================
+#!/usr/bin/env bash
+
+set -e
+
+# only do deployment, when travis detects a new tag
+if [ ! -z "$TRAVIS_TAG" ]
+then
+    echo "on a tag -> set pom.xml <version> to $TRAVIS_TAG"
+    mvn --settings .travis/settings.xml org.codehaus.mojo:versions-maven-plugin:2.3:set -DnewVersion=$TRAVIS_TAG -Prelease
+
+    if [ ! -z "$TRAVIS" -a -f "$HOME/.gnupg" ]; then
+        shred -v ~/.gnupg/*
+        rm -rf ~/.gnupg
+    fi
+
+    source .travis/gpg.sh
+
+    mvn clean deploy --settings .travis/settings.xml -DskipTests=true -B -U -Prelease
+
+    if [ ! -z "$TRAVIS" ]; then
+        shred -v ~/.gnupg/*
+        rm -rf ~/.gnupg
+    fi
+else
+    echo "not on a tag -> keep snapshot version in pom.xml"
+fi
+==============================================================================================================
+#!/usr/bin/env bash
+
+set -e
+
+# create a random passphrase
+export GPG_PASSPHRASE=$(echo "$RANDOM$(date)" | md5sum | cut -d\  -f1)
+
+# configuration to generate gpg keys
+cat >gen-key-script <<EOF
+      %echo Generating a basic OpenPGP key
+      Key-Type: RSA
+      Key-Length: 4096
+      Subkey-Type: 1
+      Subkey-Length: 4096
+      Name-Real: Opensource Idealo
+      Name-Email: opensource-logback-redis@idealo.de
+      Expire-Date: 2y
+      Passphrase: ${GPG_PASSPHRASE}
+      %commit
+      %echo done
+EOF
+
+# create a local keypair with given configuration
+gpg --batch --gen-key gen-key-script
+
+
+# export created GPG key
+#
+# example output
+# sec   4096R/EDD32E8B 2016-09-08 [verfällt: 2018-09-08]
+# uid                  Lars K.W. Gohlke <lars.gohlke@idealo.de>
+# ssb   4096R/CC1613B2 2016-09-08
+# ssb   4096R/55B7CAA2 2016-09-08
+export GPG_KEYNAME=$(gpg -K | grep ^sec | cut -d/  -f2 | cut -d\  -f1 | head -n1)
+
+# cleanup local configuration
+shred gen-key-script
+
+# publish the gpg key  (sonatype reads from keyserver.ubuntu.com)
+gpg --keyserver keyserver.ubuntu.com --send-keys ${GPG_KEYNAME}
+
+# wait for the key beeing accessible
+while(true); do
+    date
+    gpg --keyserver keyserver.ubuntu.com --recv-keys ${GPG_KEYNAME} && break || sleep 30
+done
+
+echo wait for 2minutes to let the key being synced
+sleep 120 
+==============================================================================================================
+docker run --cap-add=NET_ADMIN --rm -v "$(pwd)":/sitespeed.io -e REPLAY=true -e LATENCY=100 sitespeedio/sitespeed.io -n 5 -b chrome https://en.wikipedia.org/wiki/Barack_Obama
+
+docker run --cap-add=NET_ADMIN --rm -v "$(pwd)":/sitespeed.io -e REPLAY=true -e LATENCY=100 sitespeedio/sitespeed.io -n 11 -b firefox https://en.wikipedia.org/wiki/Barack_Obama
+
+npm i -g sitespeed.io
+$ git clone https://github.com/sitespeedio/sitespeed.io.git
+$ cd sitespeed.io
+$ npm install
+$ bin/sitespeed.js --help
+$ bin/sitespeed.js https://www.sitespeed.io/
+
+Before we start telling you all about sitespeed.io you should just try it out:
+
+$ docker run --rm -v "$(pwd)":/sitespeed.io sitespeedio/sitespeed.io https://www.sitespeed.io/
+Or using npm (you need Chrome or Firefox installed)
+
+$ npm i -g sitespeed.io && sitespeed.io https://www.sitespeed.io/
+==============================================================================================================
+How to generate vault aws role
+Create aws secrets backend
+command
+curl -H "X-Vault-Token: <token>" -X POST -d @mount.json https://<vault-host>/v1/sys/mounts/<aws-secrets-backend>
+mount.json
+{
+ "type": "aws",
+  "config": {
+    "force_no_cache": true,
+    "default_lease_ttl": "10m",
+    "max_lease_ttl": "25h"
+  }
+}
+Configure aws secrets backend
+command:
+curl -H "X-Vault-Token: <token>"  -X POST -d @config.json https://<vault-host>/v1/<aws-secrets-backend>/config/root
+config.json:
+{
+	"access_key": <awsAccessKey>,
+	"secret_key": <awsSecretKey>,
+	"region": "eu-central-1"
+}
+Create role
+command:
+curl -H "X-Vault-Token: <token>"  -X POST -d @role.json https://<vault-host>/v1/<aws-secrets-backend>/roles/<role>
+role.json:
+{
+	"credential_type": "iam_user",
+	"policy_arns": <policy-arn>
+}
+==============================================================================================================
+<?xml version="1.0" encoding="UTF-8"?>
+<included>
+    <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook"/>
+    <appender name="REDIS_APPENDER" class="net.logstash.logback.appender.LoggingEventAsyncDisruptorAppender">
+        <ringBufferSize>131072</ringBufferSize>
+        <waitStrategyType>sleeping</waitStrategyType>
+        <appender class="de.idealo.logback.appender.RedisBatchAppender">
+            <connectionConfig>
+                <!-- redis sentinel: -->
+                <scheme>SENTINEL</scheme>
+                <sentinelMasterName>mymaster</sentinelMasterName>
+                <sentinels>localhost:26379</sentinels>
+                <!-- redis node: -->
+                <!--<scheme>NODE</scheme>-->
+                <!--<host>localhost</host>-->
+                <!--<port>6379</port>-->
+                <key>logstash</key>
+            </connectionConfig>
+            <maxBatchMessages>1000</maxBatchMessages>
+            <maxBatchSeconds>10</maxBatchSeconds>
+            <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+                <providers>
+                    <mdc/>
+                    <pattern>
+                        <pattern>
+                            {
+                            "timestamp": "%d{yyyy-MM-dd'T'HH:mm:ss.SSSZZ}",
+                            "message": "%message",
+                            "logger": "%logger",
+                            "thread": "%thread",
+                            "level": "%level",
+                            "host": "${HOSTNAME}",
+                            "file": "%file",
+                            "line": "%line"
+                            }
+                        </pattern>
+                    </pattern>
+                    <stackTrace>
+                        <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                            <maxDepthPerThrowable>30</maxDepthPerThrowable>
+                            <maxLength>4096</maxLength>
+                            <shortenedClassNameLength>20</shortenedClassNameLength>
+                            <rootCauseFirst>true</rootCauseFirst>
+                        </throwableConverter>
+                    </stackTrace>
+                </providers>
+            </encoder>
+        </appender>
+    </appender>
+</included>
+==============================================================================================================
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                      http://maven.apache.org/xsd/settings-1.0.0.xsd">
+    <servers>
+        <server>
+            <!-- Maven Central Deployment -->
+            <id>ossrh</id>
+            <username>${env.SONATYPE_USERNAME}</username>
+            <password>${env.SONATYPE_PASSWORD}</password>
+        </server>
+    </servers>
+    <profiles>
+        <profile>
+            <id>ossrh</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <gpg.keyname>${env.GPG_KEYNAME}</gpg.keyname>
+                <gpg.executable>gpg</gpg.executable>
+                <gpg.passphrase>${env.GPG_PASSPHRASE}</gpg.passphrase>
+            </properties>
+        </profile>
+    </profiles>
+</settings>
+==============================================================================================================
+language: java
+
+jdk:
+  - openjdk11
+
+script: mvn --settings .travis/settings.xml clean  verify
+
+deploy:
+  -
+    provider: script
+    script: .travis/deploy.sh
+    skip_cleanup: true
+    on:
+      repo: idealo/logback-redis
+      tags: true
+      jdk: openjdk11
+
+
+
+notifications:
+  email:
+    - opensource-logback-redis@idealo.de
+==============================================================================================================
+import org.assertj.core.api.Assertions;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.junit4.SpringRunner;
+
+import static org.assertj.core.api.Assertions.assertThat;
+@RunWith(SpringRunner.class)
+@SpringBootTest(properties = {
+        "spring.kafka.bootstrap-servers=${spring.embedded.kafka.brokers}",
+        "spring.kafka.producer.key-serializer: org.apache.kafka.common.serialization.LongSerializer",
+        "spring.kafka.producer.value-serializer: org.apache.kafka.common.serialization.IntegerSerializer"
+})
+@DirtiesContext
+public class CaseUtilTest {
+
+    @Test
+    public void shouldSplitCamelCase() {
+        Assertions.assertThat(CaseUtil.splitCamelCase("test")).containsOnly("test");
+        Assertions.assertThat(CaseUtil.splitCamelCase("testAnotherCase")).containsSequence("test", "another", "case");
+        Assertions.assertThat(CaseUtil.splitCamelCase("testABC")).containsOnly("test", "abc");
+        Assertions.assertThat(CaseUtil.splitCamelCase("TestTest")).containsOnly("test", "test");
+    }
+}
 ==============================================================================================================
 git fetch origin master:master
 git merge master
