@@ -16973,6 +16973,565 @@ done
 echo wait for 2minutes to let the key being synced
 sleep 120 
 ==============================================================================================================
+import path from 'path'
+import express from 'express'
+import { MongoClient } from 'mongodb'
+import template from './../template'
+//comment out before building for production
+import devBundle from './devBundle'
+
+const app = express()
+//comment out before building for production
+devBundle.compile(app)
+
+const CURRENT_WORKING_DIR = process.cwd()
+app.use('/dist', express.static(path.join(CURRENT_WORKING_DIR, 'dist')))
+
+app.get('/', (req, res) => {
+  res.status(200).send(template())
+})
+
+let port = process.env.PORT || 3000
+app.listen(port, function onStart(err) {
+  if (err) {
+    console.log(err)
+  }
+  console.info('Server started on port %s.', port)
+})
+
+// Database Connection URL
+const url = process.env.MONGODB_URI || 'mongodb://localhost:27017/mernSimpleSetup'
+// Use connect method to connect to the server
+MongoClient.connect(url, (err, db)=>{
+  console.log("Connected successfully to mongodb server")
+  db.close()
+})
+
+import webpack from 'webpack'
+import webpackMiddleware from 'webpack-dev-middleware'
+import webpackHotMiddleware from 'webpack-hot-middleware'
+import webpackConfig from './../webpack.config.client.js'
+
+const compile = (app) => {
+  if(process.env.NODE_ENV == "development"){
+    const compiler = webpack(webpackConfig)
+    const middleware = webpackMiddleware(compiler, {
+      publicPath: webpackConfig.output.publicPath
+    })
+    app.use(middleware)
+    app.use(webpackHotMiddleware(compiler))
+  }
+}
+
+export default {
+  compile
+}
+
+==============================================================================================================
+<argLine>-Xmx512m -XX:MaxPermSize=128m -Djava.net.preferIPv4Stack=true</argLine> <!-- 512MB needed for HBase 2 -->
+==============================================================================================================
+      <!-- Flume -->
+      <dependency>
+        <groupId>org.apache.flume</groupId>
+        <artifactId>flume-ng-sdk</artifactId>
+        <version>${vers.flume}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.flume</groupId>
+        <artifactId>flume-ng-core</artifactId>
+        <version>${vers.flume}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.flume</groupId>
+        <artifactId>flume-ng-configuration</artifactId>
+        <version>${vers.flume}</version>
+      </dependency>
+	  
+	        <!-- Data formats -->
+      <dependency>
+        <groupId>org.apache.avro</groupId>
+        <artifactId>avro</artifactId>
+        <version>${vers.avro}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.parquet</groupId>
+        <artifactId>parquet-hive-bundle</artifactId>
+        <version>${vers.parquet}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-core</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.parquet</groupId>
+        <artifactId>parquet-avro</artifactId>
+        <version>${vers.parquet}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-core</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>net.sf.opencsv</groupId>
+        <artifactId>opencsv</artifactId>
+        <version>${vers.opencsv}</version>
+      </dependency>
+==============================================================================================================
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.PathFilter;
+
+public class HiddenPathFilter implements PathFilter {
+  private static final HiddenPathFilter INSTANCE = new HiddenPathFilter();
+
+  public static HiddenPathFilter get() {
+    return INSTANCE;
+  }
+
+  private HiddenPathFilter() {
+  }
+
+  @Override
+  public boolean accept(Path path) {
+    return (
+        !path.getName().startsWith(".") &&
+        !path.getName().startsWith("_")
+    );
+  }
+}
+
+
+import com.google.common.base.Objects;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import java.io.IOException;
+import java.net.URI;
+import java.util.Random;
+
+public class Paths {
+  public static String addUUID(String path, String uuid) {
+    // In some cases, Spark will add the UUID to the filename itself.
+    if (path.contains(uuid)) {
+      return path;
+    }
+
+    int dot; // location of the first '.' in the file name
+    int lastSlash = path.lastIndexOf('/');
+    if (lastSlash >= 0) {
+      dot = path.indexOf('.', lastSlash);
+    } else {
+      dot = path.indexOf('.');
+    }
+
+    if (dot >= 0) {
+      return path.substring(0, dot) + "-" + uuid + path.substring(dot);
+    } else {
+      return path + "-" + uuid;
+    }
+  }
+
+  private static class Pair<L, R> {
+    private final L first;
+    private final R second;
+
+    public static <L, R> Pair<L, R> of(L first, R second) {
+      return new Pair<>(first, second);
+    }
+
+    private Pair(L first, R second) {
+      this.first = first;
+      this.second = second;
+    }
+
+    public L getFirst() {
+      return first;
+    }
+
+    public R getSecond() {
+      return second;
+    }
+  }
+
+  public static Path getRoot(Path path) {
+    Path current = path;
+    while (!current.isRoot()) {
+      current = current.getParent();
+    }
+    return current;
+  }
+
+  public static Pair<String, String> splitFilename(String path) {
+    int lastSlash = path.lastIndexOf('/');
+    return Pair.of(path.substring(0, lastSlash), path.substring(lastSlash + 1));
+  }
+
+  public static String getParent(String path) {
+    int lastSlash = path.lastIndexOf('/');
+    if (lastSlash >= 0) {
+      return path.substring(0, lastSlash);
+    }
+    return null;
+  }
+
+  public static String getFilename(String path) {
+    int lastSlash = path.lastIndexOf('/');
+    if (lastSlash >= 0) {
+      return path.substring(lastSlash + 1);
+    }
+    return path;
+  }
+
+  public static String getRelativePath(Path basePath,
+                                       Path fullPath) {
+    // TODO: test this thoroughly
+    // Use URI.create(Path#toString) to avoid URI character escape bugs
+    URI relative = URI.create(basePath.toString())
+        .relativize(URI.create(fullPath.toString()));
+    return relative.getPath();
+  }
+
+  public static Path getLocalTaskAttemptTempDir(Configuration conf,
+                                                String uuid, int taskId,
+                                                int attemptId) {
+    return new Path(localTemp(conf, taskId, attemptId), uuid);
+  }
+
+  public static Path getMultipartUploadCommitsDirectory(Configuration conf,
+                                                        String uuid)
+      throws IOException {
+    // no need to use localTemp, this is HDFS in production
+    Path work = FileSystem.get(conf).makeQualified(
+        new Path("/tmp", uuid));
+    return new Path(work, "pending-uploads");
+  }
+
+  // TODO: verify this is correct, it comes from dse-storage
+  private static Path localTemp(Configuration conf, int taskId, int attemptId) {
+    String localDirs = conf.get("mapreduce.cluster.local.dir");
+    Random rand = new Random(Objects.hashCode(taskId, attemptId));
+    String[] dirs = localDirs.split(",");
+    String dir = dirs[rand.nextInt(dirs.length)];
+
+    try {
+      return FileSystem.getLocal(conf).makeQualified(new Path(dir));
+    } catch (IOException e) {
+      throw new RuntimeException("Failed to localize path: " + dir, e);
+    }
+  }
+
+  public static String removeStartingAndTrailingSlash(String path) {
+    int start = 0;
+    if (path.startsWith("/")) {
+      start = 1;
+    }
+
+    int end = path.length();
+    if (path.endsWith("/")) {
+      end -= 1;
+    }
+
+    return path.substring(start, end);
+  }
+}
+==============================================================================================================
+npm install -g spacejam
+spacejam test-packages ./
+
+# For apps
+spacejam test --driver-package my:driver-package
+# For packages
+spacejam test-packages <package>
+==============================================================================================================
+<dependency>
+        <groupId>org.apache.solr</groupId>
+        <artifactId>solr-test-framework</artifactId>
+        <version>${vers.solr}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.solr</groupId>
+        <artifactId>solr-cell</artifactId>
+        <version>${vers.solr}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.solr</groupId>
+        <artifactId>solr-core</artifactId>
+        <version>${vers.solr}</version>
+        <exclusions> <!-- unnecessary for client purposes -->
+          <exclusion>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-annotations</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-auth</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-common</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-hdfs</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-xmp</artifactId>
+        <version>${vers.tika}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.apache.geronimo.specs</groupId>
+            <artifactId>geronimo-stax-api_1.0_spec</artifactId> <!-- needed by tika-parsers but already provided by JDK -->
+          </exclusion>
+          <exclusion>
+            <groupId>xerces</groupId>
+            <artifactId>xercesImpl</artifactId> <!-- used by com.drewnoakes:metadata-extractor:jar but replacing built-in XML parser with legacy xerces is scary and we don't need it -->
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-core</artifactId>
+        <version>${vers.tika}</version>
+      </dependency>
+==============================================================================================================
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-release-plugin</artifactId>
+        <version>${vers.maven-release-plugin}</version>
+        <configuration>
+          <autoVersionSubmodules>true</autoVersionSubmodules>
+          <goals>deploy</goals>
+          <tagNameFormat>release-@{project.version}</tagNameFormat>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>org.apache.maven.scm</groupId>
+            <artifactId>maven-scm-provider-gitexe</artifactId>
+            <version>${vers.git-provider}</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+==============================================================================================================
+  
+language: java
+jdk:
+  - oraclejdk7
+  - oraclejdk8
+
+env:
+  - HADOOP_PROFILE=default
+  - HADOOP_PROFILE=cdh5
+cache:
+  directories:
+    - $HOME/.m2
+
+install: mvn -q install -DskipTests=true -Dmaven.javadoc.skip=true -Dsource.skip=true
+before_script: umask 0022
+before_install: echo "127.0.0.1 "`hostname` | sudo tee -a /etc/hosts
+script: mvn test -P $HADOOP_PROFILE
+
+notifications:
+  webhooks:
+    urls:
+      - https://webhooks.gitter.im/e/474ff698bda62f1804a6
+    on_success: change  # options: [always|never|change] default: always
+    on_failure: always  # options: [always|never|change] default: always
+    on_start: false     # default: false
+==============================================================================================================
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt</artifactId>
+			<version>0.9.1</version>
+		</dependency>
+		
+package com.packt.cardatabase.service;
+
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.Date;
+
+import static java.util.Collections.emptyList;
+
+public class AuthenticationService {
+  static final long EXPIRATIONTIME = 864_000_00; // 1 day in milliseconds
+  static final String SIGNINGKEY = "SecretKey";
+  static final String PREFIX = "Bearer";
+
+  static public void addToken(HttpServletResponse res, String username) {
+    String JwtToken = Jwts.builder().setSubject(username)
+        .setExpiration(new Date(System.currentTimeMillis() + EXPIRATIONTIME))
+        .signWith(SignatureAlgorithm.HS512, SIGNINGKEY)
+        .compact();
+    res.addHeader("Authorization", PREFIX + " " + JwtToken);
+	res.addHeader("Access-Control-Expose-Headers", "Authorization");
+  }
+
+  static public Authentication getAuthentication(HttpServletRequest request) {
+    String token = request.getHeader("Authorization");
+    if (token != null) {
+      String user = Jwts.parser()
+          .setSigningKey(SIGNINGKEY)
+          .parseClaimsJws(token.replace(PREFIX, ""))
+          .getBody()
+          .getSubject();
+
+      if (user != null) 
+    	  return new UsernamePasswordAuthenticationToken(user, null, emptyList());
+    }
+    return null;
+  }
+}
+==============================================================================================================
+import React, { Component } from 'react';
+import './App.css';
+
+class WeatherApp extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {temp: 0, desc: '', icon: '', loading: true}
+  }
+
+  componentDidMount() {
+    fetch('http://api.openweathermap.org/data/2.5/weather?q=London&units=Metric&APIkey=YOUR_API_KEY')
+    .then(response => response.json()) 
+    .then(responseData => {
+      this.setState({ 
+         temp: responseData.main.temp,
+        desc: responseData.weather[0].description,
+        icon: responseData.weather[0].icon,
+        loading: false 
+       }); 
+    });
+  }
+  
+  render() {
+    const imgSrc = 'http://openweathermap.org/img/w/' + 
+    this.state.icon + '.png';
+
+    if (this.state.loading) {
+      return <p>Loading</p>;
+    }
+    else {
+      return (
+        <div className="App">
+          <p>Temperature: {this.state.temp} °C</p>
+          <p>Description: {this.state.desc}</p>
+          <img src={imgSrc} alt="Weather icon" />
+        </div>
+      );
+    }
+ }
+}
+
+export default WeatherApp;
+==============================================================================================================
+FROM openjdk:8-jdk-alpine
+VOLUME /tmp
+EXPOSE 8080
+ARG JAR_FILE
+COPY target/cardatabase-0.0.1-SNAPSHOT.jar app.jar
+ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar"]
+==============================================================================================================
+public enum ContainerAttribute {
+
+	BASE(0x00000000),
+
+	BASE_SYSTEM(0x00000001),
+
+	SINGLE(0x00000010),
+
+	SINGLE_SYSTEM(0x00000011),
+
+	SINGLE_SEMI_PERMANENT_SYSTEM(0x00000015),
+
+	LARGE(0x00000020),
+
+	SUB(0x00000030),
+
+	VIEW(0x00000040)
+	;
+
+	private int flag;
+
+	private ContainerAttribute(int flag) {
+		this.flag = flag;
+	}
+
+	public int flag() {
+		return this.flag;
+	}
+
+	public static ContainerAttribute getAttribute(int flag) {
+
+		for (ContainerAttribute attribute : values()) {
+			if (attribute.flag() == flag) {
+				return attribute;
+			}
+		}
+		return null;
+	}
+
+}
+==============================================================================================================
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'maven'
+archivesBaseName = "griddb-kafka-sink"
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+dependencies {
+    compile "org.apache.kafka:connect-api:0.10.2.0"
+    compile "org.slf4j:slf4j-api:1.7.6"
+    compile "com.toshiba.mwcloud.gs:gridstore:3.0"
+    compile group: 'net.arnx', name: 'jsonic', version: '1.3.0'
+
+    testCompile "junit:junit:4.11"
+    testCompile "org.easymock:easymock:3.3.1"
+    testCompile "org.powermock:powermock-module-junit4:1.6.2"
+    testCompile "org.powermock:powermock-api-easymock:1.6.2"
+    testRuntime "org.slf4j:slf4j-log4j12:1.7.6"
+}
+
+task testJar(type: Jar) {
+    classifier = 'test'
+    from sourceSets.test.output
+}
+
+test {
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat = 'full'
+    }
+}
+
+javadoc {
+    include "**/net/griddb/connect/*"
+}
+
+artifacts {
+    archives testJar
+}
+
+configurations {
+    archives.extendsFrom(testCompile)
+}
+==============================================================================================================
 docker run --cap-add=NET_ADMIN --rm -v "$(pwd)":/sitespeed.io -e REPLAY=true -e LATENCY=100 sitespeedio/sitespeed.io -n 5 -b chrome https://en.wikipedia.org/wiki/Barack_Obama
 
 docker run --cap-add=NET_ADMIN --rm -v "$(pwd)":/sitespeed.io -e REPLAY=true -e LATENCY=100 sitespeedio/sitespeed.io -n 11 -b firefox https://en.wikipedia.org/wiki/Barack_Obama
