@@ -17748,6 +17748,1052 @@ const server = app.listen(8081, () => {
     console.log("Albion service listening at http://%s:%s", host, port);
 });
 ==============================================================================================================
+import com.google.common.collect.Lists;
+import java.io.Serializable;
+import java.util.Collection;
+import org.apache.avro.mapreduce.AvroJob;
+import org.apache.crunch.FilterFn;
+import org.apache.crunch.MapFn;
+import org.apache.crunch.PCollection;
+import org.apache.crunch.Pair;
+import org.apache.crunch.Target;
+import org.apache.crunch.util.CrunchTool;
+import org.apache.hadoop.util.ToolRunner;
+import org.kitesdk.data.Dataset;
+import org.kitesdk.data.DatasetDescriptor;
+import org.kitesdk.data.Datasets;
+import org.kitesdk.data.crunch.CrunchDatasets;
+
+import static org.apache.crunch.types.avro.Avros.collections;
+import static org.apache.crunch.types.avro.Avros.ints;
+import static org.apache.crunch.types.avro.Avros.longs;
+import static org.apache.crunch.types.avro.Avros.specifics;
+
+public class AnalyzeRatings extends CrunchTool implements Serializable {
+
+  public static final String IN_DATASET_URI = "dataset:hive:ratings";
+  public static final String OUT_DATASET_URI = "dataset:hive:ratings_histograms";
+
+  public AnalyzeRatings(boolean inMemory) {
+    super(inMemory);
+  }
+
+  @Override
+  public int run(String[] args) throws Exception {
+    getConf().set("avro.schema.input.key", Rating.getClassSchema().toString());
+
+    // load or create the output dataset
+    Dataset<MovieRatingsHistogram> histograms;
+    if (Datasets.exists(OUT_DATASET_URI)) {
+      histograms = Datasets.load(OUT_DATASET_URI,
+          MovieRatingsHistogram.class);
+    } else {
+      histograms = Datasets.create(OUT_DATASET_URI,
+          new DatasetDescriptor.Builder()
+              .schema(MovieRatingsHistogram.class)
+              .build(),
+          MovieRatingsHistogram.class);
+    }
+
+    PCollection<Rating> ratings = read(CrunchDatasets.asSource(
+        Datasets.load(IN_DATASET_URI, Rating.class)));
+
+    PCollection<MovieRatingsHistogram> bimodal = ratings
+        .by(new GetMovieID(), longs())
+        .mapValues(new GetRating(), ints())
+        .groupByKey()
+        .mapValues(new AccumulateRatings(), collections(ints()))
+        .parallelDo(new BuildRatingsHistogram(),
+            specifics(MovieRatingsHistogram.class))
+        .filter(new IdentifyBimodalMovies());
+
+    bimodal.write(
+        CrunchDatasets.asTarget(histograms),
+        Target.WriteMode.OVERWRITE);
+
+    return getPipeline().done().succeeded() ? 0 : 1;
+  }
+
+  public static class GetMovieID extends MapFn<Rating, Long> {
+    @Override
+    public Long map(Rating rating) {
+      return rating.getMovieId();
+    }
+  }
+
+  public static class GetRating extends MapFn<Rating, Integer> {
+    @Override
+    public Integer map(Rating rating) {
+      return rating.getRating().intValue();
+    }
+  }
+
+  public static class AccumulateRatings
+      extends MapFn<Iterable<Integer>, Collection<Integer>> {
+    @Override
+    public Collection<Integer> map(Iterable<Integer> ratings) {
+      int[] counts = new int[] {0, 0, 0, 0, 0};
+      for (int rating : ratings) {
+        if (rating <= 5) {
+          counts[rating - 1] += 1;
+        }
+      }
+      return Lists.newArrayList(
+          counts[0], counts[1], counts[2], counts[3], counts[4]);
+    }
+  }
+
+  public static class BuildRatingsHistogram
+      extends MapFn<Pair<Long, Collection<Integer>>, MovieRatingsHistogram> {
+    @Override
+    public MovieRatingsHistogram map(Pair<Long, Collection<Integer>> movieIdAndRatings) {
+      return new MovieRatingsHistogram(movieIdAndRatings.first(),
+          Lists.newArrayList(movieIdAndRatings.second()));
+    }
+  }
+
+  // require a difference of at least 2 to register a change
+  public static final int CHANGE_THRESH = 2;
+
+  public static class IdentifyBimodalMovies extends FilterFn<MovieRatingsHistogram> {
+    @Override
+    public boolean accept(MovieRatingsHistogram movieRatingHistogram) {
+      int last = -1;
+      int totalRatings = 0;
+      boolean foundNegative = false;
+      boolean foundBimodal = false;
+
+      for (Integer count : movieRatingHistogram.getHistogram()) {
+        totalRatings += count;
+
+        if (last >= 0) {
+          int diff = count - last;
+          if (foundNegative && diff > CHANGE_THRESH) {
+            foundBimodal = true;
+          }
+          if (diff < -CHANGE_THRESH) {
+            foundNegative = true;
+          }
+        }
+
+        last = count;
+      }
+
+      // filter out some noise
+      if (totalRatings < 20) {
+        return false;
+      }
+
+      return foundBimodal;
+    }
+  }
+
+  public static void main(String... args) throws Exception {
+    int rc = ToolRunner.run(new AnalyzeRatings(false), args);
+    System.exit(rc);
+  }
+
+}
+==============================================================================================================
+  
+function render_graphs(results, parentDomElement) {
+  if(typeof parentDomElement === "undefined") {
+    $('.chart, .small-chart').map(function() {
+        plot($(this), results);
+    });
+    $('.summary').map(function() {
+        summarise($(this), results);
+    });
+  }
+  else {
+    parentDomElement.find('.chart, .small-chart').map(function() {
+        plot($(this), results);
+    });
+    parentDomElement.find('.summary').map(function() {
+        summarise($(this), results);
+    });
+  }
+}
+
+function summarise(div, results) {
+    var scenario = div.attr('data-scenario');
+    var mode     = div.attr('data-mode');
+    var data     = results[scenario];
+
+    var rate;
+    if (mode == 'send') {
+        rate = Math.round(data['send-msg-rate']);
+    }
+    else if (mode == 'recv') {
+        rate = Math.round(data['recv-msg-rate']);
+    }
+    else {
+        rate = Math.round((data['send-msg-rate'] + data['recv-msg-rate']) / 2);
+    }
+
+    div.append('<strong>' + rate + '</strong>msg/s');
+}
+
+function plot(div, results) {
+    var file = div.attr('data-file');
+
+    if (file == undefined) {
+        plot0(div, results);
+    }
+    else {
+        $.ajax({
+            url: file,
+            success: function(data) {
+                plot0(div, JSON.parse(data));
+            },
+            fail: function() { alert('error loading ' + file); }
+        });
+    }
+}
+
+function plot0(div, results) {
+    var type     = div.attr('data-type');
+    var scenario = div.attr('data-scenario');
+
+    if (type == 'time') {
+        var data = results[scenario];
+        plot_time(div, data);
+    }
+    else {
+        var dimensions       = results[scenario]['dimensions'];
+        var dimension_values = results[scenario]['dimension-values'];
+        var data             = results[scenario]['data'];
+
+        if (type == 'series') {
+            plot_series(div, dimensions, dimension_values, data);
+        }
+        else if (type == 'x-y') {
+            plot_x_y(div, dimensions, dimension_values, data);
+        }
+        else if (type == 'r-l') {
+            plot_r_l(div, dimensions, dimension_values, data);
+        }
+    }
+}
+
+function plot_time(div, data) {
+    var show_latency = div.attr('data-latency') == 'true';
+    var chart_data = [];
+    var keys = show_latency
+       ? ['send-msg-rate', 'recv-msg-rate', 'avg-latency']
+        : ['send-msg-rate', 'recv-msg-rate'];
+    $.each(keys, function(i, plot_key) {
+        var d = [];
+        $.each(data['samples'], function(j, sample) {
+            d.push([sample['elapsed'] / 1000, sample[plot_key]]);
+        });
+        var yaxis = (plot_key.indexOf('latency') == -1 ? 1 : 2);
+        chart_data.push({label: plot_key, data: d, yaxis: yaxis});
+    });
+
+    plot_data(div, chart_data, {yaxes: axes_rate_and_latency});
+}
+
+function plot_series(div, dimensions, dimension_values, data) {
+    var x_key         = div.attr('data-x-key');
+    var series_key    = div.attr('data-series-key');
+    var series_first  = dimensions[0] == series_key;
+    var series_values = dimension_values[series_key];
+    var x_values      = dimension_values[x_key];
+    var plot_key      = attr_or_default(div, 'plot-key', 'send-msg-rate');
+
+    var chart_data = [];
+    $.each(series_values, function(i, s_val) {
+        var d = [];
+        $.each(x_values, function(j, x_val) {
+            var val = series_first ? data[s_val][x_val] :
+                                     data[x_val][s_val];
+            d.push([x_val, val[plot_key]]);
+        });
+        chart_data.push({label: series_key + ' = ' + s_val, data: d});
+    });
+
+    plot_data(div, chart_data);
+}
+
+function plot_x_y(div, dimensions, dimension_values, data) {
+    var x_key = div.attr('data-x-key');
+    var x_values = dimension_values[x_key];
+    var plot_keys = attr_or_default(div, 'plot-keys', 'send-msg-rate').split(' ');
+    var chart_data = [];
+    var extra = {};
+    $.each(plot_keys, function(i, plot_key) {
+        var d = [];
+        $.each(x_values, function(j, x_val) {
+            d.push([x_val, data[x_val][plot_key]]);
+        });
+        var yaxis = 1;
+        if (plot_key.indexOf('bytes') != -1) {
+            yaxis = 2;
+            extra = {yaxes: axes_rate_and_bytes};
+        }
+        chart_data.push({label: plot_key, data: d, yaxis: yaxis});
+    });
+    plot_data(div, chart_data, extra);
+}
+
+function plot_r_l(div, dimensions, dimension_values, data) {
+    var x_values = dimension_values['producerRateLimit'];
+
+    var chart_data = [];
+    var d = [];
+    $.each(x_values, function(i, x_val) {
+        d.push([x_val, data[x_val]['send-msg-rate']]);
+    });
+    chart_data.push({label: 'rate achieved', data: d, yaxis: 1});
+
+    d = [];
+    $.each(x_values, function(i, x_val) {
+        d.push([x_val, data[x_val]['avg-latency']]);
+    });
+    chart_data.push({label: 'latency (us)', data: d, yaxis: 2});
+
+    plot_data(div, chart_data, {yaxes: axes_rate_and_latency});
+}
+
+function plot_data(div, chart_data, extra) {
+    var legend     = attr_or_default(div, 'legend', 'se');
+    var x_axis_log = attr_or_default(div, 'x-axis-log', 'false') == 'true';
+    var cssClass   = div.attr('class');
+
+    var chrome = {
+        series: { lines: { show: true } },
+        grid:   { borderWidth: 2, borderColor: "#aaa" },
+        xaxis:  { tickColor: "#fff" },
+        yaxis:  { tickColor: "#eee" },
+        legend: { position: legend, backgroundOpacity: 0.5 }
+    };
+
+    if (div.attr('class') == 'small-chart') {
+        chrome['legend'] = { show: false };
+    }
+
+    if (extra != undefined) {
+        for (var k in extra) {
+            chrome[k] = extra[k];
+        }
+    }
+
+    if (x_axis_log) {
+        chrome['xaxis'] = log_x_axis;
+    }
+
+    var cell = div.wrap('<td />').parent();;
+    var row = cell.wrap('<tr/>').parent();
+    row.wrap('<table class="' + cssClass + '-wrapper"/>');
+
+    cell.before('<td class="yaxis">' + div.attr('data-y-axis') + '</td>');
+    if (div.attr('data-y-axis2')) {
+        cell.after('<td class="yaxis">' + div.attr('data-y-axis2') + '</td>');
+    }
+    row.after('<tr><td></td><td class="xaxis">' + div.attr('data-x-axis') +
+              '</td><td></td></tr>');
+
+    $.plot(div, chart_data, chrome);
+}
+
+function log_transform(v) {
+    return Math.log(v);
+}
+
+function log_ticks(axis) {
+    var val = axis.min;
+    var res = [val];
+    while (val < axis.max) {
+        val *= 10;
+        res.push(val);
+    }
+    return res;
+}
+
+function attr_or_default(div, key, def) {
+    var res = div.attr('data-' + key);
+    return res == undefined ? def : res;
+}
+
+var axes_rate_and_latency = [{min:       0},
+                             {min:       100,
+                              transform: log_transform,
+                              ticks:     log_ticks,
+                              position:  "right"}];
+
+var axes_rate_and_bytes = [{min:       0},
+                           {min:       0,
+                            position:  "right"}];
+
+var log_x_axis = {min:       1,
+                  transform: log_transform,
+                  ticks:     log_ticks};
+==============================================================================================================
+#!/bin/sh
+
+set -e
+
+SCRIPTDIR=$(dirname "$0")
+SRCDIR=$(cd "$SCRIPTDIR"/.. && pwd)
+
+(
+	cd "$SRCDIR"
+	mvn -q compile
+	mvn -q exec:java \
+		-Dexec.mainClass="com.rabbitmq.perf.PerfTest" -Dexec.args="$*"
+)
+==============================================================================================================
+#!/usr/bin/env bash
+
+# OS specific support (must be 'true' or 'false').
+cygwin=false;
+darwin=false;
+case "`uname`" in
+	CYGWIN*)
+		cygwin=true
+		;;
+
+	Darwin*)
+		darwin=true
+		;;
+esac
+
+# For Cygwin, ensure paths are in UNIX format before anything is touched.
+if $cygwin ; then
+	[ -n "$JAVA_HOME" ] && JAVA_HOME=`cygpath --unix "$JAVA_HOME"`
+fi
+
+# Attempt to find JAVA_HOME if not already set
+if [ -z "${JAVA_HOME}" ]; then
+	if $darwin ; then
+		[ -z "$JAVA_HOME" -a -f "/usr/libexec/java_home" ] && export JAVA_HOME=`/usr/libexec/java_home`
+		[ -z "$JAVA_HOME" -a -d "/Library/Java/Home" ] && export JAVA_HOME="/Library/Java/Home"
+		[ -z "$JAVA_HOME" -a -d "/System/Library/Frameworks/JavaVM.framework/Home" ] && export JAVA_HOME="/System/Library/Frameworks/JavaVM.framework/Home"
+	else
+		javaExecutable="`which javac`"
+		[ -z "$javaExecutable" -o "`expr \"$javaExecutable\" : '\([^ ]*\)'`" = "no" ] && echo "JAVA_HOME not set and cannot find javac to deduce location, please set JAVA_HOME." && exit 1
+		# readlink(1) is not available as standard on Solaris 10.
+		readLink=`which readlink`
+		[ `expr "$readLink" : '\([^ ]*\)'` = "no" ] && echo "JAVA_HOME not set and readlink not available, please set JAVA_HOME." && exit 1
+		javaExecutable="`readlink -f \"$javaExecutable\"`"
+		javaHome="`dirname \"$javaExecutable\"`"
+		javaHome=`expr "$javaHome" : '\(.*\)/bin'`
+		JAVA_HOME="$javaHome"
+		export JAVA_HOME
+	fi
+fi
+
+# Sanity check that we have java
+if [ ! -f "${JAVA_HOME}/bin/java" ]; then
+	echo ""
+	echo "======================================================================================================"
+	echo " Please ensure that your JAVA_HOME points to a valid Java SDK."
+	echo " You are currently pointing to:"
+	echo ""
+	echo "  ${JAVA_HOME}"
+	echo ""
+	echo " This does not seem to be valid. Please rectify and restart."
+	echo "======================================================================================================"
+	echo ""
+	exit 1
+fi
+
+# Attempt to find TOOLS_HOME if not already set
+if [ -z "${TOOLS_HOME}" ]; then
+    # Resolve links: $0 may be a link
+    PRG="$0"
+    # Need this for relative symlinks.
+    while [ -h "$PRG" ] ; do
+	    ls=`ls -ld "$PRG"`
+	    link=`expr "$ls" : '.*-> \(.*\)$'`
+	    if expr "$link" : '/.*' > /dev/null; then
+		    PRG="$link"
+	    else
+		    PRG=`dirname "$PRG"`"/$link"
+	    fi
+    done
+    SAVED="`pwd`"
+    cd "`dirname \"$PRG\"`/../" >&-
+    export TOOLS_HOME="`pwd -P`"
+    cd "$SAVED" >&-
+fi
+
+if [ ! -d "${TOOLS_HOME}" ]; then
+	echo "Not a directory: TOOLS_HOME=${TOOLS_HOME}"
+	echo "Please rectify and restart."
+	exit 2
+fi
+
+CLASSPATH=.:${TOOLS_HOME}/bin
+if [ -d ${TOOLS_HOME}/ext ]; then
+	CLASSPATH=$CLASSPATH:${TOOLS_HOME}/ext
+fi
+for f in ${TOOLS_HOME}/lib/*; do
+	CLASSPATH=$CLASSPATH:$f
+done
+
+if $cygwin; then
+	TOOLS_HOME=`cygpath --path --mixed "$TOOLS_HOME"`
+	CLASSPATH=`cygpath --path --mixed "$CLASSPATH"`
+fi
+
+exec "${JAVA_HOME}/bin/java" ${JAVA_OPTS} -cp "$CLASSPATH" "$@"
+#!/bin/sh
+
+run() {
+    echo "=== running with '$2'"
+    sh `dirname $0`/runjava com.rabbitmq.perf.PerfTest -h $1 -z 10 -i 20 $2
+    sleep 2
+}
+
+for sz in "" "-s 1000"; do
+    for pers in "" "-f persistent"; do
+        for args in \
+            "" \
+            "-a" \
+            "-m 1" \
+            "-m 1 -n 1" \
+            "-m 10" \
+            "-m 10 -n 10" \
+            ; do
+          run $1 "${args} ${pers} ${sz}"
+        done
+    done
+done
+
+for args in "-a -f mandatory" "-a -f mandatory -f immediate"; do
+    run $1 "$args"
+done
+
+
+@if "%DEBUG%" == "" @echo off
+
+@rem Set local scope for the variables with windows NT shell
+if "%OS%"=="Windows_NT" setlocal
+
+:setToolsHome
+@rem Setup TOOLS_HOME if not already defined
+if defined TOOLS_HOME goto setJavaHome
+set DIRNAME=%~dp0
+if "%DIRNAME%" == "" set DIRNAME=.
+set TOOLS_HOME=%DIRNAME%\..
+
+:setJavaHome
+@rem Find java.exe
+if defined JAVA_HOME goto findJavaFromJavaHome
+set JAVA_EXE=java.exe
+%JAVA_EXE% -version >NUL 2>&1
+if "%ERRORLEVEL%" == "0" goto runSpring
+echo.
+echo ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH.
+echo.
+echo Please set the JAVA_HOME variable in your environment to match the
+echo location of your Java installation.
+goto fail
+
+:findJavaFromJavaHome
+set JAVA_HOME=%JAVA_HOME:"=%
+set JAVA_EXE=%JAVA_HOME%/bin/java.exe
+if exist "%JAVA_EXE%" goto runSpring
+echo.
+echo ERROR: JAVA_HOME is set to an invalid directory: %JAVA_HOME%
+echo.
+echo Please set the JAVA_HOME variable in your environment to match the
+echo location of your Java installation.
+goto fail
+
+:runSpring
+@rem Get command-line arguments, handling Windows variants
+
+if not "%OS%" == "Windows_NT" goto win9xME_args
+if "%@eval[2+2]" == "4" goto 4NT_args
+
+:win9xME_args
+@rem Slurp the command line arguments.
+set CMD_LINE_ARGS=
+set _SKIP=2
+
+:win9xME_args_slurp
+if "x%~1" == "x" goto execute
+
+set CMD_LINE_ARGS=%*
+goto execute
+
+:4NT_args
+@rem Get arguments from the 4NT Shell from JP Software
+set CMD_LINE_ARGS=%$
+
+:execute
+@rem Setup the command line
+
+set CLASSPATH=%TOOLS_HOME%\lib\*
+"%JAVA_EXE%" %JAVA_OPTS% -cp "%CLASSPATH%" %CMD_LINE_ARGS%
+
+:end
+@rem End local scope for the variables with windows NT shell
+if "%ERRORLEVEL%"=="0" goto mainEnd
+
+:fail
+rem Set variable TOOLS_EXIT_CONSOLE if you need the _script_ return code instead of
+rem the _cmd.exe /c_ return code!
+if  not "" == "%TOOLS_EXIT_CONSOLE%" exit 1
+exit /b 1
+
+:mainEnd
+if "%OS%"=="Windows_NT" endlocal
+
+#!/bin/sh
+
+cd `dirname $0`/..
+run() {
+    echo "=== running with '$2'"
+    mvn -q exec:java -Dexec.mainClass="com.rabbitmq.perf.PerfTest" -Dexec.args=" -h $1 -z 10 -i 20 $2"
+    sleep 2
+}
+
+for sz in "" "-s 1000"; do
+    for pers in "" "-f persistent"; do
+        for args in \
+            "" \
+            "-a" \
+            "-m 1" \
+            "-m 1 -n 1" \
+            "-m 10" \
+            "-m 10 -n 10" \
+            ; do
+          run $1 "${args} ${pers} ${sz}"
+        done
+    done
+done
+
+for args in "-a -f mandatory" "-a -f mandatory -f immediate"; do
+    run $1 "$args"
+done
+
+#!/bin/sh
+
+commentText=$1
+shift
+
+if [ -z "$commentText" ]; then
+    echo "Comment text must be supplied!"
+    exit 1
+fi
+
+echo "Comment text: $commentText. Press enter to continue."
+read dummy
+
+function run1 {
+    (while true; do (date +%s.%N; ps ax -o '%mem rss sz vsz args' | grep "beam.*-s rabbit" | grep -v grep) | tr '\n' ' ' | awk '{print $1,$2/100,$3,$4,$5}'; sleep 1; done) > memlog.txt &
+    memlogger=$!
+    echo "STARTED MEMLOGGER $memlogger"
+    sleep 2
+    sh ./runjava com.rabbitmq.examples.StressPersister -B $1 -b $2 -C $commentText | tee stressoutput.txt
+    logfile=$(head -1 stressoutput.txt)
+    sleep 2
+    kill $memlogger
+    echo "STOPPED MEMLOGGER $memlogger"
+    baselog=$(basename $logfile .out)
+    mv memlog.txt $baselog.mem
+    grep -v '^#' $logfile > stressoutput.txt
+    mv stressoutput.txt $logfile
+}
+
+function run32b {
+    run1 32b 5000
+    run1 32b 10000
+    run1 32b 20000
+    run1 32b 40000
+    run1 32b 80000
+}
+
+function run1m {
+    run1 1m 125
+    run1 1m 250
+    run1 1m 500
+    run1 1m 1000
+    run1 1m 2000
+    run1 1m 4000
+}
+
+function chartall {
+    for logfile in *.out
+    do
+	echo $logfile
+	baselog=$(basename $logfile .out)
+	firsttimestamp=$(cat $baselog.mem | head -1 | awk '{print $1}')
+	cat > $baselog.gnuplot <<EOF
+set terminal png size 1024, 768
+set logscale y
+set xlabel "Time, seconds"
+set ylabel "Round-trip time, microseconds"
+set y2label "VSZ, megabytes"
+set y2range [0 : 1048576]
+set y2tics
+set ytics nomirror
+set autoscale y2
+plot '$logfile' using ((\$1 / 1000) - $firsttimestamp):2 title 'RTT' axes x1y1 with lines, \
+     '$baselog.mem' using (\$1 - $firsttimestamp):(\$5 / 1024) title 'VSZ' axes x1y2 with lines
+EOF
+	gnuplot $baselog.gnuplot > $baselog.png
+    done
+}
+
+run32b
+run1m
+chartall
+==============================================================================================================
+<VirtualHost *:80>
+    ServerName next.rabbitmq.com
+    # TODO alias this into the eng.vmware.com namespace in some smart way
+    ServerAdmin postmaster@rabbitmq.com
+
+    DocumentRoot /srv/next.rabbitmq.com/site/
+
+    CustomLog /var/log/apache2/access-next.rabbitmq.com.log combined
+    ErrorLog /var/log/apache2/error-next.rabbitmq.com.log
+
+    # Send 404 and 500s to the appropriate pages.  403 is permission denied.
+    ErrorDocument 403 /404.html
+    ErrorDocument 404 /404.html
+    ErrorDocument 500 /500.html
+
+    # These directories are created/managed by the sync-nightly infrastructure
+    Alias /nightlies /home/rabbitmq/extras/nightlies
+    Alias /debian-snapshot /home/rabbitmq/extras/nightlies/debian
+
+    <Directory /home/rabbitmq/extras/nightlies/rabbitmq-server>
+        Options +FollowSymLinks
+    </Directory>
+
+    ServerSignature On
+    <Directory /srv/next.rabbitmq.com/site>
+        Options -Indexes
+    </Directory>
+
+    # Via: http://mail-archives.apache.org/mod_mbox/httpd-announce/201108.mbox/%3C20110824161640.122D387DD@minotaur.apache.org%3E
+    #
+    # Drop the Range header when more than 5 ranges.
+    # CVE-2011-3192
+
+    SetEnvIf Range (,.*?){5,} bad-range=1
+    RequestHeader unset Range env=bad-range
+</VirtualHost>
+==============================================================================================================
+ <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+==============================================================================================================
+import java.util.concurrent.TimeoutException;
+
+public class BlockingValueOrException<V, E extends Throwable & SensibleClone<E>>
+    extends BlockingCell<ValueOrException<V, E>>
+{
+    public void setValue(V v) {
+        super.set(ValueOrException.<V, E>makeValue(v));
+    }
+
+    public void setException(E e) {
+        super.set(ValueOrException.<V, E>makeException(e));
+    }
+
+    public V uninterruptibleGetValue() throws E {
+        return uninterruptibleGet().getValue();
+    }
+
+    public V uninterruptibleGetValue(int timeout) throws E, TimeoutException {
+    	return uninterruptibleGet(timeout).getValue();
+    }
+}
+==============================================================================================================
+# with environment variables
+env:
+  PRODUCERS: 1
+  CONSUMERS: 2
+  RATE: 500
+# or with the full command line
+env:
+  JBP_CONFIG_JAVA_MAIN: >
+    { arguments: "-x 1 -y 2 --rate 500" }
+==============================================================================================================
+#!/usr/bin/env bash
+
+DEPLOY_DIRECTORY=api/current
+TAG=$(git describe --exact-match --tags $(git log -n1 --pretty='%h'))
+
+./mvnw -q clean javadoc:javadoc -Dmaven.javadoc.failOnError=false
+git co gh-pages
+rm -rf $DEPLOY_DIRECTORY/*
+cp -r target/site/apidocs/* $DEPLOY_DIRECTORY
+git add $DEPLOY_DIRECTORY
+git commit -m "Add Javadoc for $TAG"
+git push origin gh-pages
+==============================================================================================================
+---
+applications:
+  - name: rabbitmq-perf-test
+    path: ./target/pcf-perf-test-1.0-SNAPSHOT.jar
+    buildpacks: 
+      - https://github.com/cloudfoundry/java-buildpack.git
+    memory: 768M
+    health-check-type: process
+    services: [rmq]
+    env:
+#      AUTOACK:
+#      AUTO_DELETE:
+#      BODY:
+#      BODY_CONTENT_TYPE:
+#      CMESSAGES:
+#      CONFIRM:
+#      CONFIRM_TIMEOUT:
+#      CONSUMERS:
+#      CONSUMER_CHANNEL_COUNT:
+#      CONSUMER_LATENCY:
+#      CONSUMER_RATE:
+#      CTXSIZE:
+#      EXCHANGE:
+#      EXCLUSIVE:
+#      FLAG:
+#      FRAMEMAX:
+#      GLOBAL_QOS:
+#      HEARTBEAT:
+#      HEARTBEAT_SENDER_THREADS:
+#      ID:
+#      INTERVAL:
+#      LEGACY_METRICS:
+#      MESSAGE_PROPERTIES:
+#      METRICS_PROMETHEUS_ENDPOINT:
+#      METRICS_PROMETHEUS_PORT:
+#      METRICS_TAGS:
+#      MULTI_ACK_EVERY:
+#      NIO_THREADS:
+#      NIO_THREAD_POOL:
+#      OUTPUT_FILE:
+#      PMESSAGES:
+#      PREDECLARED:
+#      PRODUCERS:
+#      PRODUCER_CHANNEL_COUNT:
+#      PRODUCER_RANDOM_START_DELAY:
+#      PRODUCER_SCHEDULER_THREADS:
+#      PTXSIZE:
+#      PUBLISHING_INTERVAL:
+#      QOS:
+#      QUEUE:
+#      QUEUE_ARGS:
+#      QUEUE_PATTERN:
+#      QUEUE_PATTERN_FROM:
+#      QUEUE_PATTERN_TO:
+#      RANDOM_ROUTING_KEY:
+#      RATE:
+#      ROUTING_KEY:
+#      ROUTING_KEY_CACHE_SIZE:
+#      SASL_EXTERNAL:
+#      SIZE:
+#      SKIP_BINDING_QUEUES:
+#      SLOW_START:
+#      TIME:
+#      TYPE:
+#      URI:
+#      URIS:
+#      USE_DEFAULT_SSL_CONTEXT:
+#      USE_MILLIS:
+==============================================================================================================
+/**
+ * Parse trees capture a structured view of a parsed token stream.
+ * They encapsulate the result of a parse() operation.
+ * <p>
+ *
+ * </p>
+ * <p>
+ * Traversal algorithms will assume that there are no loops in the tree (no child can be its own ancestor).
+ * </p>
+ */
+package com.rabbitmq.jms.parse;
+
+/**
+ * A non-empty tree of {@link Node}s which can be traversed.
+ * <p>
+ * The tree is a {@link Node} and a(n array of) children (if there are no children this must be a zero-length array and must not be <code>null</code>).
+ * Each child in the array is a {@link ParseTree ParseTree&lt;Node&gt;}.
+ * </p>
+ * @param <Node> - the type of nodes in the tree, a {@link Node} is attached to the root of each subtree.
+ */
+public interface ParseTree<Node> {
+
+    /**
+     * @return the node at the root of the tree.
+     */
+    Node getNode();
+
+    /**
+     * Convenience method to avoid creating children prematurely. Must be the same as <code>getChildren().length</code>.
+     * @return the number of children of the root.
+     */
+    int getNumberOfChildren();
+
+
+    /**
+     * Get the immediate children of the root of the tree.
+     * @return an array of children.
+     */
+    ParseTree<Node>[] getChildren();
+
+    /**
+     * Get the nodes of the immediate children of the root of the tree.
+     * @return an array of {@link Node}s.
+     */
+    Node[] getChildNodes();
+
+}
+
+/**
+ * This traverser class encapsulates two methods of traversing a tree, calling a {@link Visitor} for
+ * each subtree of a {@link ParseTree ParseTree&lt;Node&gt;}.
+ * <p>
+ * Each subtree can be visited in ‘pre-order’ as well asO
+ * in ‘post-order’. ‘Pre-order’ visits each subtree <i>before</i> any of its child subtrees, and ‘post-order’
+ * visits each subtree <i>after</i> visiting its child subtrees.
+ * </p>
+ * <p>
+ * {@link ParseTreeTraverser#traverse(ParseTree, Visitor)} visits each subtree twice: combining ‘pre-order’ and ‘post-order’ traversal in one pass.
+ * </p>
+ * <p>
+ * The {@link Visitor} contract returns a <code>boolean</code> flag from its visit methods which these
+ * traversal algorithms interpret as immediate abort: no further visits will be made after the first returns false.
+ * Each traversal method returns <code>true</code> if all the tree is visited, and <code>false</code> if any visit aborted.
+ * </p>
+ */
+public abstract class ParseTreeTraverser {  // stop direct instantiation
+    private ParseTreeTraverser() {};        // stop indirect instantiation
+
+    /**
+     * Visits each subtree in <i>both</i> ‘pre-order’ and ‘post-order’, in one pass.
+     * Each subtree is visited <i>before</i> (by calling {@link Visitor#visitBefore(Object, Object[])}) and <i>after</i> (by calling {@link Visitor#visitAfter(Object, Object[])})
+     * all of its child subtrees are visited.
+     * @param tree the tree all of whose subtrees are to be visited
+     * @param visitor the {@link Visitor} whose {@link Visitor#visitBefore(Object, Object[])} and {@link Visitor#visitAfter(Object, Object[])}
+     *                methods are passed each subtree’s node and child nodes.
+     * @return <code>true</code> if the traversal completed, <code>false</code> if it was aborted prematurely
+     */
+    public static <Node> boolean traverse(ParseTree<Node> tree, Visitor<Node> visitor) {
+        if (!visitor.visitBefore(tree.getNode(), tree.getChildNodes())) return false;
+        for (ParseTree<Node> st : tree.getChildren()) {
+            if (!traverse(st, visitor)) return false;
+        }
+        if (!visitor.visitAfter(tree.getNode(), tree.getChildNodes())) return false;
+        return true;
+    }
+
+}
+
+
+/**
+ * A {@link Parser} produces a parse tree of nodes.
+ * <p>
+ * Parsing never throws an exception but instead sets a success indicator and error message.
+ * </p>
+ *
+ * @param <Node> - type of node in the ParseTree produced
+ */
+public interface Parser<Node> {
+
+    /**
+     * This method returns the parse tree. It is idempotent.
+     *
+     * @return a {@link ParseTree ParseTree&lt;Node&gt;} capturing the result of a complete parse attempt.
+     */
+    ParseTree<Node> parse();
+
+    /**
+     * This call is idempotent.
+     * @return <b><code>true</code></b> if the parse completed successfully, otherwise <b><code>false</code></b>, in which case the
+     *         termination message is set.
+     */
+    boolean parseOk();
+
+    /**
+     * This call is idempotent.
+     * @return a string with a reason for termination. Only valid if {@link #parseOk()} returns <code>false</code>.
+     */
+    String getErrorMessage();
+
+}
+==============================================================================================================
+    /**
+     * Generates a UUID string identifier.
+     * @param prefix - prefix of uniquely generated string; may be <code>null</code>, in which case “<code>null</code>” is the prefix used.
+     * @return a UUID string with given prefix
+     */
+    public static final String generateUUID(String prefix) {
+        return new StringBuilder().append(prefix).append(UUID.randomUUID()).toString();
+    }
+}
+==============================================================================================================
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>${maven.jar.plugin.version}</version>
+        <configuration>
+          <archive>
+            <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+            <manifestEntries>
+              <Automatic-Module-Name>com.rabbitmq.client</Automatic-Module-Name>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <version>${maven.bundle.plugin.version}</version>
+        <executions>
+          <execution>
+            <id>bundle-manifest</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>manifest</goal>
+            </goals>
+            <configuration>
+              <instructions>
+                <Export-Package>com.rabbitmq*</Export-Package>
+                <Bundle-SymbolicName>com.rabbitmq.client</Bundle-SymbolicName>
+                <Specification-Title>AMQP</Specification-Title>
+                <Specification-Version>0.9.1</Specification-Version>
+                <Specification-Vendor>AMQP Working Group (www.amqp.org)</Specification-Vendor>
+                <Implementation-Title>${project.name}</Implementation-Title>
+                <Implementation-Version>${project.version}</Implementation-Version>
+                <Implementation-Vendor>${project.organization.name}</Implementation-Vendor>
+                <Implementation-URL>${project.url}</Implementation-URL>
+              </instructions>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+Movie Ratings Analysis
+This example shows a movie ratings web application that logs rating events to HDFS for follow-on analysis. Start by running the web application.
+
+Setup
+These instructions are intended for the [QuickStart VM][quickstart-vm], but should work on most Hadoop clusters. Start by cloning this repository:
+
+git clone https://github.com/rdblue/ratings-crunch.git
+cd ratings-crunch
+Average ratings using Crunch
+mvn package
+mvn kite:run-tool
+hadoop fs -cat average_ratings/part-r-00000
+Average ratings using Impala
+First we need to tell Impala to refresh its metastore so the new ratings table will be visible:
+
+impala-shell -q 'invalidate metadata ratings'
+Then we can issue queries:
+
+impala-shell -q 'select movie_id, avg(rating) from ratings group by movie_id'
+==============================================================================================================
 import { KeyCodes } from "./KeyCodes";
 
 let KeyPressHelper = {};
