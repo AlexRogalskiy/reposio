@@ -19204,6 +19204,1111 @@ java_grpc_library(
     deps = [":handshaker_java_proto"],
 )
 ==============================================================================================================
+given()
+   .baseUri("http://cookiemonster.com")
+   .when()
+   .get("/cookies")
+   .then()
+   .assertThat()
+   .statusCode(200);
+   
+   ResponseSpecification responseSpec = expect()
+   .statusCode(200);
+
+given()
+   .expect()
+   .spec(responseSpec)
+   .when()
+   .get("/hello");
+
+given()
+   .expect()
+   .spec(responseSpec)
+   .when()
+   .get("/goodbye");
+   
+   @BeforeMethod
+public void configureRestAssured(...) {
+   RestAssured.baseURI = "http://cookiemonster.com";
+   RestAssured.requestSpecification = given()
+       .header("Language", "en");
+   RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
+...
+}
+
+@Test
+public void shouldCorrectlyCountAddedCookies() {
+   Integer addNumber = 10;
+
+   JsonPath beforeCookies = given()
+           .when()
+           .get("/latestcookies")
+           .then()
+           .assertThat()
+           .statusCode(200)
+           .extract()
+           .jsonPath();
+
+   String beforeId = beforeCookies.getString("id");
+
+   JsonPath afterCookies = given()
+           .body(String.format("{number: %s}", addNumber))
+           .when()
+           .put("/cookies")
+           .then()
+           .assertThat()
+           .statusCode(200)
+           .extract()
+           .jsonPath();
+
+   Integer afterNumber = afterCookies.getInt("number");
+   String afterId = afterCookies.getString("id");
+   JsonPath history = given()
+           .when()
+           .get("/history")
+           .then()
+           .assertThat()
+           .statusCode(200)
+           .extract()
+           .jsonPath();
+
+   assertThat(history.getInt(String.format("records.find{r -> r.id == %s}.number", beforeId)))
+           .isEqualTo(afterNumber - addNumber);
+   assertThat(history.getInt(String.format("records.find{r -> r.id == %s}.number", afterId)))
+           .isEqualTo(afterNumber);
+}
+==============================================================================================================
+import android.util.Log;
+
+import org.infobip.mobile.messaging.Message;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+public class MessageJson {
+    /**
+     * Creates json from a message object
+     *
+     * @param message message object
+     * @return message json
+     */
+    public static JSONObject toJSON(Message message) {
+        try {
+            return new JSONObject()
+                    .putOpt("messageId", message.getMessageId())
+                    .putOpt("title", message.getTitle())
+                    .putOpt("body", message.getBody())
+                    .putOpt("sound", message.getSound())
+                    .putOpt("vibrate", message.isVibrate())
+                    .putOpt("icon", message.getIcon())
+                    .putOpt("silent", message.isSilent())
+                    .putOpt("category", message.getCategory())
+                    .putOpt("from", message.getFrom())
+                    .putOpt("receivedTimestamp", message.getReceivedTimestamp())
+                    .putOpt("customPayload", message.getCustomPayload())
+                    .putOpt("contentUrl", message.getContentUrl())
+                    .putOpt("seen", message.getSeenTimestamp() != 0)
+                    .putOpt("seenDate", message.getSeenTimestamp())
+                    .putOpt("geo", hasGeo(message));
+        } catch (JSONException e) {
+            Log.w(com.reactlibrary.Utils.TAG, "Cannot convert message to JSON: " + e.getMessage());
+            Log.d(com.reactlibrary.Utils.TAG, Log.getStackTraceString(e));
+            return null;
+        }
+    }
+
+    private static boolean hasGeo(Message message) {
+        if (message == null || message.getInternalData() == null) {
+            return false;
+        }
+
+        try {
+            JSONObject geo = new JSONObject(message.getInternalData());
+            return geo.getJSONArray("geo") != null && geo.getJSONArray("geo").length() > 0;
+        } catch (JSONException e) {
+            return false;
+        }
+    }
+}
+==============================================================================================================
+  
+// This is a test harness for your module
+// You should do something interesting in this harness 
+// to test out the module and to provide instructions 
+// to users on how to use it by example.
+
+
+// open a single window
+var win = Ti.UI.createWindow({
+	backgroundColor:'white'
+});
+
+var label = Ti.UI.createLabel();
+var button = Ti.UI.createButton({
+   title: 'Pay!',
+   top: 10,
+   width: 100,
+   height: 100
+});
+button.addEventListener('click',function(e)
+{
+   Titanium.API.info("You clicked the button");
+   test123();
+});
+
+win.add(label);
+win.add(button);
+win.open();
+
+// TODO: write your module tests here
+var appcelerator_mpayments = require('c.mpayments.appcelerator');
+Ti.API.info("module is => " + appcelerator_mpayments);
+
+var onCancelled = function(data) {
+Ti.API.info("RESPONSE is => " + data.apiKey + ' ; ' + data.clientId + ' ; ' + data.itemAmount + ' of ' + data.itemName);
+};
+
+var onSuccess = function(data) {
+Ti.API.info("RESPONSE is => Tranaction is canceled: " + data.apiKey + ' ; ' + data.clientId + ' ; ' + data.itemAmount + ' of ' + data.itemName);
+};
+
+var onFailed = function(data) {
+Ti.API.info("RESPONSE is => Tranaction is failed:" + data.apiKey + ' ; ' + data.clientId + ' ; ' + data.itemAmount + ' of ' + data.itemName);
+};
+
+var onPending = function(data) {
+Ti.API.info("RESPONSE is => Tranaction is pending :" + data.apiKey + ' ; ' + data.clientId + ' ; ' + data.itemAmount + ' of ' + data.itemName);
+};
+function test123() {
+	appcelerator_mpayments.setDebugModeEnabled(true);
+    appcelerator_mpayments.setPendingTransactionHandlingEnabled(false);
+	var purchaseRequest = { 
+		//apiKey: "1448cd2b6019584b45f0aa434ce4b98b",
+		apiKey: '28550ec26491d4ed1b1de6fd3fe2b92a',
+		clientId: 'Nena'
+	//packageIndex: '0'
+	//price: '30.0'
+	};
+	appcelerator_mpayments.startPurchase(purchaseRequest);
+}
+appcelerator_mpayments.addEventListener('onPurchaseSuccess', onSuccess);
+appcelerator_mpayments.addEventListener('onPurchasePending', onPending);
+appcelerator_mpayments.addEventListener('onPurchaseFailed', onFailed);
+appcelerator_mpayments.addEventListener('onPurchaseCancelled', onCancelled);
+
+//test123();
+==============================================================================================================
+import java.util.HashMap;
+import org.appcelerator.kroll.KrollModule;
+import org.appcelerator.kroll.annotations.Kroll;
+import org.appcelerator.kroll.common.Log;
+import org.appcelerator.titanium.TiApplication;
+import c.mpayments.android.BillingActivity;
+import c.mpayments.android.PurchaseListener;
+import c.mpayments.android.PurchaseManager;
+import c.mpayments.android.PurchaseRequest;
+import c.mpayments.android.PurchaseResponse;
+import c.mpayments.android.util.Logger;
+
+@Kroll.module(name = "AppceleratorMpayments", id = "c.mpayments.appcelerator")
+public class AppceleratorMpaymentsModule extends KrollModule implements
+		PurchaseListener {
+	private static final String TAG = "AppceleratorMpayments";
+
+	public AppceleratorMpaymentsModule() {
+		super();
+	}
+
+	@Kroll.onAppCreate
+	public static void onAppCreate(TiApplication app) {
+		Log.d(TAG, "Inside onAppCreate");
+	}
+
+	@Kroll.method
+	public void setDebugModeEnabled(
+			@Kroll.argument(name = "debugModeEnabled", optional = false) Boolean debugModeEnabled) {
+		Logger.setDebugModeEnabled(debugModeEnabled);
+	}
+
+	@Kroll.method
+	public void setPendingTransactionHandlingEnabled(
+			@Kroll.argument(name = "pendingTransactionHandlingEnabled", optional = false) Boolean pendingTransactionHandlingEnabled) {
+		PurchaseManager
+				.setPendingTransactionHandlingEnabled(pendingTransactionHandlingEnabled);
+	}
+
+	@Kroll.method
+	public void startPurchase(
+			@Kroll.argument(name = "purchaseRequest", optional = false) HashMap args) {
+		HashMap<String, String> arguments = (HashMap<String, String>) args;
+		String apiKey = arguments.get("apiKey");
+
+		PurchaseRequest pr = new PurchaseRequest(apiKey);
+		updatePurchaseRequestWithArguments(pr, arguments);
+
+		// BillingActivity.mcc = "220";
+		// BillingActivity.mnc = "01";
+
+		PurchaseManager.attachPurchaseListener(this);
+
+		PurchaseManager.startPurchase(pr, this.getActivity());
+	}
+
+	private HashMap<String, String> getHashMapFromPurchaseResponse(
+			PurchaseResponse response) {
+		HashMap<String, String> data = new HashMap<String, String>();
+		data.put("apiKey", response.getApiKey());
+		data.put("clientId", response.getClientId());
+		data.put("transactionId", response.getTransactionId());
+		data.put("errorMessage", response.getErrorMessage());
+		data.put("itemName", response.getItemName());
+		data.put("currency", response.getCurrency());
+		data.put("itemAmount", Integer.toString(response.getItemAmount()));
+		data.put("price", Double.toString(response.getPrice()));
+		return data;
+	}
+
+	private void updatePurchaseRequestWithArguments(PurchaseRequest pr,
+			HashMap<String, String> arguments) {
+
+		String clientId = arguments.get("clientId");
+		String info = arguments.get("info");
+		String languageCode = arguments.get("languageCode");
+		String testMode = arguments.get("testMode");
+		String offlineMode = arguments.get("offlineMode");
+		String price = arguments.get("price");
+		String packageIndex = arguments.get("packageIndex");
+
+		if (null != clientId && clientId.trim() != "") {
+			pr.setClientId(clientId);
+		}
+		if (null != info && info.trim() != "") {
+			pr.setInfo(info);
+		}
+		if (null != testMode && testMode.trim() != "") {
+			pr.setTestModeEnabled(Boolean.parseBoolean(testMode.trim()));
+		}
+		if (null != languageCode && languageCode.trim() != "") {
+			pr.setLanguageCode(languageCode);
+		}
+		if (null != price && price.trim() != "") {
+			pr.setPrice(Double.parseDouble(price.trim()));
+		}
+		if (null != offlineMode && offlineMode.trim() != "") {
+			pr.setOfflineModeEnabled(Boolean.parseBoolean(offlineMode.trim()));
+		}
+		if (null != packageIndex && packageIndex.trim() != "") {
+			pr.setPackageIndex(Integer.parseInt(packageIndex.trim()));
+		}
+	}
+
+		@Override
+	public void onPurchaseCanceled(PurchaseResponse arg0) {
+		HashMap<String, String> data = getHashMapFromPurchaseResponse(arg0);
+		fireEvent("onPurchaseCancelled", data);
+
+	}
+
+	@Override
+	public void onPurchaseFailed(PurchaseResponse arg0) {
+		HashMap<String, String> data = getHashMapFromPurchaseResponse(arg0);
+		fireEvent("onPurchaseFailed", data);
+
+	}
+
+	@Override
+	public void onPurchasePending(PurchaseResponse arg0) {
+		HashMap<String, String> data = getHashMapFromPurchaseResponse(arg0);
+		fireEvent("onPurchasePending", data);
+
+	}
+
+	@Override
+	public void onPurchaseSuccess(PurchaseResponse arg0) {
+		HashMap<String, String> data = getHashMapFromPurchaseResponse(arg0);
+		fireEvent("onPurchaseSuccess", data);
+
+	}
+}
+==============================================================================================================
+var centili = {
+    startPayment: function(args, successCallback, errorCallback) {
+        if (typeof errorCallback != "function")  {
+            console.log("CentiliPayment failure: failure parameter not a function");
+            return
+        }
+
+        if (typeof successCallback != "function") {
+            console.log("CentiliPayment failure: success callback parameter must be a function");
+            return
+        }
+
+        cordova.exec(
+            successCallback,    // success callback function
+            errorCallback,      // error callback function
+            'Centili',          // mapped to our native Java class called "Centili"
+            'startPayment',     // with this action name
+            [args]              // and this array of custom arguments
+        ); 
+    },
+    setDebugModeEnabled: function(ind, successCallback, errorCallback){
+        if (typeof errorCallback != "function")  {
+            console.log("CentiliPayment failure: failure parameter not a function");
+            return
+        }
+
+        if (typeof successCallback != "function") {
+            console.log("CentiliPayment failure: success callback parameter must be a function");
+            return
+        }
+        cordova.exec(
+            successCallback,    
+            errorCallback,      
+            'Centili',          
+            'setDebugMode',     
+            [{                  
+                "ind": ind
+            }]
+        ); 
+    },
+    setPandingTransactionHandlingEnabled: function(ind, successCallback, errorCallback){
+        if (typeof errorCallback != "function")  {
+            console.log("CentiliPayment failure: failure parameter not a function");
+            return
+        }
+
+        if (typeof successCallback != "function") {
+            console.log("CentiliPayment failure: success callback parameter must be a function");
+            return
+        }        
+
+        cordova.exec(
+            successCallback,    
+            errorCallback,      
+            'Centili',          
+            'setPandingTransactionEnabled',     
+            [{                 
+                "ind": ind
+            }]
+        ); 
+    }
+};
+
+module.exports = centili;
+==============================================================================================================
+language: java
+
+env:
+  global:
+    - GRADLE_OPTS=-Xmx512m
+    - LDFLAGS=-L/tmp/protobuf/lib
+    - CXXFLAGS=-I/tmp/protobuf/include
+    - LD_LIBRARY_PATH=/tmp/protobuf/lib
+
+before_install:
+  - rm ~/.m2/settings.xml || true # Avoid repository.apache.org, which has QPS limits and is useless
+  - mkdir -p $HOME/.gradle/caches &&
+    ln -s /tmp/gradle-caches-modules-2 $HOME/.gradle/caches/modules-2
+  - mkdir -p $HOME/.gradle &&
+    ln -s /tmp/gradle-wrapper $HOME/.gradle/wrapper
+  - buildscripts/make_dependencies.sh # build protoc into /tmp/protobuf
+  - mkdir -p $HOME/.gradle
+  - echo "checkstyle.ignoreFailures=false" >> $HOME/.gradle/gradle.properties
+  - echo "failOnWarnings=true" >> $HOME/.gradle/gradle.properties
+  - echo "errorProne=true" >> $HOME/.gradle/gradle.properties
+
+install:
+  - ./gradlew assemble syncGeneratedSources publishToMavenLocal
+  - pushd examples && ./gradlew build && popd
+  - pushd examples && mvn verify && popd
+  - pushd examples/example-alts && ../gradlew build && popd
+  - pushd examples/example-tls && ../gradlew clean build && popd
+  - pushd examples/example-kotlin && ../gradlew build && popd
+
+before_script:
+  - test -z "$(git status --porcelain)" || (git status && echo Error Working directory is not clean. Forget to commit generated files? && false)
+
+script:
+  - ./gradlew check :grpc-all:jacocoTestReport
+
+after_success:
+    # Upload to coveralls once, instead of for each job in the matrix
+  - if [[ "$TRAVIS_JOB_NUMBER" == *.1 ]]; then ./gradlew :grpc-all:coveralls; fi
+  - bash <(curl -s https://codecov.io/bash)
+
+os:
+  - linux
+
+dist: xenial
+
+jdk:
+  - openjdk8
+  - openjdk11
+
+notifications:
+  email: false
+
+cache:
+  directories:
+    - /tmp/protobuf-cache
+    - /tmp/gradle-caches-modules-2
+    - /tmp/gradle-wrapper
+
+before_cache:
+  # The lock changes based on folder name; normally $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm /tmp/gradle-caches-modules-2/gradle-caches-modules-2.lock
+  - find $HOME/.gradle/wrapper -not -name "*-all.zip" -and -not -name "*-bin.zip" -delete
+
+==============================================================================================================
+import android.support.annotation.Nullable;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
+import io.grpc.okhttp.OkHttpChannelBuilder;
+import java.io.InputStream;
+import java.security.KeyStore;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.security.auth.x500.X500Principal;
+
+/**
+ * A helper class to create a OkHttp based channel.
+ */
+class TesterOkHttpChannelBuilder {
+  public static ManagedChannel build(
+      String host,
+      int port,
+      @Nullable String serverHostOverride,
+      boolean useTls,
+      @Nullable InputStream testCa) {
+    ManagedChannelBuilder<?> channelBuilder = ManagedChannelBuilder.forAddress(host, port)
+        .maxInboundMessageSize(16 * 1024 * 1024);
+    if (serverHostOverride != null) {
+      // Force the hostname to match the cert the server uses.
+      channelBuilder.overrideAuthority(serverHostOverride);
+    }
+    if (useTls) {
+      try {
+        ((OkHttpChannelBuilder) channelBuilder).useTransportSecurity();
+        ((OkHttpChannelBuilder) channelBuilder).sslSocketFactory(getSslSocketFactory(testCa));
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    } else {
+      channelBuilder.usePlaintext();
+    }
+    return channelBuilder.build();
+  }
+
+  private static SSLSocketFactory getSslSocketFactory(@Nullable InputStream testCa)
+      throws Exception {
+    if (testCa == null) {
+      return (SSLSocketFactory) SSLSocketFactory.getDefault();
+    }
+
+    SSLContext context = SSLContext.getInstance("TLS");
+    context.init(null, getTrustManagers(testCa) , null);
+    return context.getSocketFactory();
+  }
+
+  private static TrustManager[] getTrustManagers(InputStream testCa) throws Exception {
+    KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+    ks.load(null);
+    CertificateFactory cf = CertificateFactory.getInstance("X.509");
+    X509Certificate cert = (X509Certificate) cf.generateCertificate(testCa);
+    X500Principal principal = cert.getSubjectX500Principal();
+    ks.setCertificateEntry(principal.getName("RFC2253"), cert);
+    // Set up trust manager factory to use our key store.
+    TrustManagerFactory trustManagerFactory =
+        TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+    trustManagerFactory.init(ks);
+    return trustManagerFactory.getTrustManagers();
+  }
+}
+==============================================================================================================
+import java.util.concurrent.TimeUnit;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Param;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
+import org.openjdk.jmh.annotations.State;
+
+/**
+ * Javadoc.
+ */
+@State(Scope.Benchmark)
+public class AttributesBenchmark {
+
+  public Attributes base = Attributes.EMPTY;
+
+  public Attributes.Key<Object>[] keys;
+  public Attributes withValue = base;
+
+  /**
+   * Javadoc.
+   */
+  @Setup
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public void setUp() {
+    keys = new Attributes.Key[iterations];
+    for (int i = 0; i < iterations; i++) {
+      keys[i] = Attributes.Key.create("any");
+      withValue = withValue.toBuilder().set(keys[i], "yes").build();
+    }
+  }
+
+  @Param({"1", "2", "10"})
+  public int iterations;
+
+  /**
+   * Javadoc.
+   */
+  @Benchmark
+  @BenchmarkMode(Mode.SampleTime)
+  @OutputTimeUnit(TimeUnit.NANOSECONDS)
+  public Attributes chain() {
+    Attributes attr = base;
+    for (int i = 0; i < iterations; i++) {
+      attr = attr.toBuilder().set(keys[i], new Object()).build();
+    }
+    return attr;
+  }
+
+  /**
+   * Javadoc.
+   */
+  @Benchmark
+  @BenchmarkMode(Mode.SampleTime)
+  @OutputTimeUnit(TimeUnit.NANOSECONDS)
+  public Object lookup() {
+    return withValue.get(keys[0]);
+  }
+}
+==============================================================================================================
+import java.nio.charset.Charset;
+import java.util.concurrent.TimeUnit;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.State;
+
+/** StatusBenchmark. */
+@State(Scope.Benchmark)
+public class StatusBenchmark {
+
+  /**
+   * Javadoc comment.
+   */
+  @Benchmark
+  @BenchmarkMode(Mode.SampleTime)
+  @OutputTimeUnit(TimeUnit.NANOSECONDS)
+  public byte[] messageEncodePlain() {
+    return Status.MESSAGE_KEY.toBytes("Unexpected RST in stream");
+  }
+
+  /**
+   * Javadoc comment.
+   */
+  @Benchmark
+  @BenchmarkMode(Mode.SampleTime)
+  @OutputTimeUnit(TimeUnit.NANOSECONDS)
+  public byte[] messageEncodeEscape() {
+    return Status.MESSAGE_KEY.toBytes("Some Error\nWasabi and Horseradish are the same");
+  }
+
+  /**
+   * Javadoc comment.
+   */
+  @Benchmark
+  @BenchmarkMode(Mode.SampleTime)
+  @OutputTimeUnit(TimeUnit.NANOSECONDS)
+  public String messageDecodePlain() {
+    return Status.MESSAGE_KEY.parseBytes(
+        "Unexpected RST in stream".getBytes(Charset.forName("US-ASCII")));
+  }
+
+  /**
+   * Javadoc comment.
+   */
+  @Benchmark
+  @BenchmarkMode(Mode.SampleTime)
+  @OutputTimeUnit(TimeUnit.NANOSECONDS)
+  public String messageDecodeEscape() {
+    return Status.MESSAGE_KEY.parseBytes(
+        "Some Error%10Wasabi and Horseradish are the same".getBytes(Charset.forName("US-ASCII")));
+  }
+
+  /**
+   * Javadoc comment.
+   */
+  @Benchmark
+  @BenchmarkMode(Mode.SampleTime)
+  @OutputTimeUnit(TimeUnit.NANOSECONDS)
+  public byte[] codeEncode() {
+    return Status.CODE_KEY.toBytes(Status.DATA_LOSS);
+  }
+
+  /**
+   * Javadoc comment.
+   */
+  @Benchmark
+  @BenchmarkMode(Mode.SampleTime)
+  @OutputTimeUnit(TimeUnit.NANOSECONDS)
+  public Status codeDecode() {
+    return Status.CODE_KEY.parseBytes("15".getBytes(Charset.forName("US-ASCII")));
+  }
+}
+==============================================================================================================
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("deadline", deadline)
+        .add("authority", authority)
+        .add("callCredentials", credentials)
+        .add("executor", executor != null ? executor.getClass() : null)
+        .add("compressorName", compressorName)
+        .add("customOptions", Arrays.deepToString(customOptions))
+        .add("waitForReady", isWaitForReady())
+        .add("maxInboundMessageSize", maxInboundMessageSize)
+        .add("maxOutboundMessageSize", maxOutboundMessageSize)
+        .add("streamTracerFactories", streamTracerFactories)
+        .toString();
+  }
+==============================================================================================================
+import javax.annotation.concurrent.ThreadSafe;
+
+/**
+ * A Channel-specific logger provided by GRPC library to {@link LoadBalancer} implementations.
+ * Information logged here goes to <strong>Channelz</strong>, and to the Java logger of this class
+ * as well.
+ */
+@ExperimentalApi("https://github.com/grpc/grpc-java/issues/5029")
+@ThreadSafe
+public abstract class ChannelLogger {
+  /**
+   * Log levels.  See the table below for the mapping from the ChannelLogger levels to Channelz
+   * severity level (see {@code ChannelTraceEvent} from <a
+   * href="https://github.com/grpc/grpc-java/blob/master/services/src/main/proto/grpc/channelz/v1/channelz.proto">channelz.proto</a>)
+   * and Java logger levels.  Note that {@code DEBUG} level is not recorded on Channelz.
+   * <pre>
+   * +---------------------+-------------------+-------------------+
+   * | ChannelLogger Level | Channelz Severity | Java Logger Level |
+   * +---------------------+-------------------+-------------------+
+   * | DEBUG               | N/A               | FINEST            |
+   * | INFO                | CT_INFO           | FINEST            |
+   * | WARNING             | CT_WARNING        | FINER             |
+   * | ERROR               | CT_ERROR          | FINE              |
+   * +---------------------+-------------------+-------------------+
+   * </pre>
+   */
+  public enum ChannelLogLevel {
+    DEBUG,
+    INFO,
+    WARNING,
+    ERROR
+  }
+
+  /**
+   * Logs a message.
+   */
+  public abstract void log(ChannelLogLevel level, String message);
+
+  /**
+   * Logs a message, using a message format and a list of arguments used to generate the log
+   * message with {@link java.text.MessageFormat}.
+   */
+  public abstract void log(ChannelLogLevel level, String messageFormat, Object... args);
+}
+==============================================================================================================
+import com.google.common.base.MoreObjects;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
+
+/**
+ * A {@link ManagedChannelBuilder} that delegates all its builder method to another builder by
+ * default.
+ *
+ * @param <T> The type of the subclass extending this abstract class.
+ *
+ * @since 1.7.0
+ */
+@ExperimentalApi("https://github.com/grpc/grpc-java/issues/3363")
+public abstract class ForwardingChannelBuilder<T extends ForwardingChannelBuilder<T>>
+    extends ManagedChannelBuilder<T> {
+
+  /**
+   * The default constructor.
+   */
+  protected ForwardingChannelBuilder() {}
+
+  /**
+   * This method serves to force sub classes to "hide" this static factory.
+   */
+  public static ManagedChannelBuilder<?> forAddress(String name, int port) {
+    throw new UnsupportedOperationException("Subclass failed to hide static factory");
+  }
+
+  /**
+   * This method serves to force sub classes to "hide" this static factory.
+   */
+  public static ManagedChannelBuilder<?> forTarget(String target) {
+    throw new UnsupportedOperationException("Subclass failed to hide static factory");
+  }
+
+  /**
+   * Returns the delegated {@code ManagedChannelBuilder}.
+   */
+  protected abstract ManagedChannelBuilder<?> delegate();
+
+  @Override
+  public T directExecutor() {
+    delegate().directExecutor();
+    return thisT();
+  }
+
+  @Override
+  public T executor(Executor executor) {
+    delegate().executor(executor);
+    return thisT();
+  }
+
+  @Override
+  public T offloadExecutor(Executor executor) {
+    delegate().offloadExecutor(executor);
+    return thisT();
+  }
+
+  @Deprecated
+  @Override
+  public T blockingExecutor(Executor executor) {
+    delegate().blockingExecutor(executor);
+    return thisT();
+  }
+
+  @Override
+  public T intercept(List<ClientInterceptor> interceptors) {
+    delegate().intercept(interceptors);
+    return thisT();
+  }
+
+  @Override
+  public T intercept(ClientInterceptor... interceptors) {
+    delegate().intercept(interceptors);
+    return thisT();
+  }
+
+  @Override
+  public T userAgent(String userAgent) {
+    delegate().userAgent(userAgent);
+    return thisT();
+  }
+
+  @Override
+  public T overrideAuthority(String authority) {
+    delegate().overrideAuthority(authority);
+    return thisT();
+  }
+
+  @Override
+  public T usePlaintext() {
+    delegate().usePlaintext();
+    return thisT();
+  }
+
+  @Override
+  public T useTransportSecurity() {
+    delegate().useTransportSecurity();
+    return thisT();
+  }
+
+  @Override
+  public T nameResolverFactory(NameResolver.Factory resolverFactory) {
+    delegate().nameResolverFactory(resolverFactory);
+    return thisT();
+  }
+
+  @Override
+  public T defaultLoadBalancingPolicy(String policy) {
+    delegate().defaultLoadBalancingPolicy(policy);
+    return thisT();
+  }
+
+  @Override
+  public T enableFullStreamDecompression() {
+    delegate().enableFullStreamDecompression();
+    return thisT();
+  }
+
+  @Override
+  public T decompressorRegistry(DecompressorRegistry registry) {
+    delegate().decompressorRegistry(registry);
+    return thisT();
+  }
+
+  @Override
+  public T compressorRegistry(CompressorRegistry registry) {
+    delegate().compressorRegistry(registry);
+    return thisT();
+  }
+
+  @Override
+  public T idleTimeout(long value, TimeUnit unit) {
+    delegate().idleTimeout(value, unit);
+    return thisT();
+  }
+
+  @Override
+  public T maxInboundMessageSize(int max) {
+    delegate().maxInboundMessageSize(max);
+    return thisT();
+  }
+
+  @Override
+  public T maxInboundMetadataSize(int max) {
+    delegate().maxInboundMetadataSize(max);
+    return thisT();
+  }
+
+  @Override
+  public T keepAliveTime(long keepAliveTime, TimeUnit timeUnit) {
+    delegate().keepAliveTime(keepAliveTime, timeUnit);
+    return thisT();
+  }
+
+  @Override
+  public T keepAliveTimeout(long keepAliveTimeout, TimeUnit timeUnit) {
+    delegate().keepAliveTimeout(keepAliveTimeout, timeUnit);
+    return thisT();
+  }
+
+  @Override
+  public T keepAliveWithoutCalls(boolean enable) {
+    delegate().keepAliveWithoutCalls(enable);
+    return thisT();
+  }
+
+  @Override
+  public T maxRetryAttempts(int maxRetryAttempts) {
+    delegate().maxRetryAttempts(maxRetryAttempts);
+    return thisT();
+  }
+
+  @Override
+  public T maxHedgedAttempts(int maxHedgedAttempts) {
+    delegate().maxHedgedAttempts(maxHedgedAttempts);
+    return thisT();
+  }
+
+  @Override
+  public T retryBufferSize(long bytes) {
+    delegate().retryBufferSize(bytes);
+    return thisT();
+  }
+
+  @Override
+  public T perRpcBufferLimit(long bytes) {
+    delegate().perRpcBufferLimit(bytes);
+    return thisT();
+  }
+
+  @Override
+  public T disableRetry() {
+    delegate().disableRetry();
+    return thisT();
+  }
+
+  @Override
+  public T enableRetry() {
+    delegate().enableRetry();
+    return thisT();
+  }
+
+  @Override
+  public T setBinaryLog(BinaryLog binaryLog) {
+    delegate().setBinaryLog(binaryLog);
+    return thisT();
+  }
+
+  @Override
+  public T maxTraceEvents(int maxTraceEvents) {
+    delegate().maxTraceEvents(maxTraceEvents);
+    return thisT();
+  }
+
+  @Override
+  public T proxyDetector(ProxyDetector proxyDetector) {
+    delegate().proxyDetector(proxyDetector);
+    return thisT();
+  }
+
+  @Override
+  public T defaultServiceConfig(@Nullable Map<String, ?> serviceConfig) {
+    delegate().defaultServiceConfig(serviceConfig);
+    return thisT();
+  }
+
+  @Override
+  public T disableServiceConfigLookUp() {
+    delegate().disableServiceConfigLookUp();
+    return thisT();
+  }
+
+  /**
+   * Returns the {@link ManagedChannel} built by the delegate by default. Overriding method can
+   * return different value.
+   */
+  @Override
+  public ManagedChannel build() {
+    return delegate().build();
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this).add("delegate", delegate()).toString();
+  }
+
+  /**
+   * Returns the correctly typed version of the builder.
+   */
+  protected final T thisT() {
+    @SuppressWarnings("unchecked")
+    T thisT = (T) this;
+    return thisT;
+  }
+}
+==============================================================================================================
+import com.google.common.util.concurrent.ListenableFuture;
+
+/**
+ * An internal class. Do not use.
+ *
+ * <p>An interface for types that <b>may</b> support instrumentation. If the actual type does not
+ * support instrumentation, then the future will return a {@code null}.
+ */
+@Internal
+public interface InternalInstrumented<T> extends InternalWithLogId {
+
+  /**
+   * Returns the stats object.
+   */
+  ListenableFuture<T> getStats();
+}
+==============================================================================================================
+/**
+ * A {@link ClientCall} which forwards all of it's methods to another {@link ClientCall}.
+ */
+public abstract class ForwardingClientCall<ReqT, RespT>
+    extends PartialForwardingClientCall<ReqT, RespT> {
+  /**
+   * Returns the delegated {@code ClientCall}.
+   */
+  @Override
+  protected abstract ClientCall<ReqT, RespT> delegate();
+
+  @Override
+  public void start(Listener<RespT> responseListener, Metadata headers) {
+    delegate().start(responseListener, headers);
+  }
+
+  @Override
+  public void sendMessage(ReqT message) {
+    delegate().sendMessage(message);
+  }
+
+  /**
+   * A simplified version of {@link ForwardingClientCall} where subclasses can pass in a {@link
+   * ClientCall} as the delegate.
+   */
+  public abstract static class SimpleForwardingClientCall<ReqT, RespT>
+      extends ForwardingClientCall<ReqT, RespT> {
+    private final ClientCall<ReqT, RespT> delegate;
+
+    protected SimpleForwardingClientCall(ClientCall<ReqT, RespT> delegate) {
+      this.delegate = delegate;
+    }
+
+    @Override
+    protected ClientCall<ReqT, RespT> delegate() {
+      return delegate;
+    }
+  }
+}
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+npm install --save sequelize
+
+postgres://postgres:postgres@localhost.com:5432/dbname
+
+# One of the following:
+$ npm install --save pg pg-hstore # Postgres
+$ npm install --save mysql2
+$ npm install --save mariadb
+$ npm install --save sqlite3
+$ npm install --save tedious # Microsoft SQL Server
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+$> sudo add-apt-repository --yes ppa:webupd8team/java && \
+   sudo apt-get update --yes && sudo apt-get upgrade --yes && \
+   sudo apt-get install --yes oracle-java8-installer git maven && \
+   git clone https://github.com/infobip/popout.git && \
+   cd popout && \
+   mvn clean package \
+     -DskipTests \
+     -Dgpg.skip \
+     -Dfindbugs.skip=true \
+     -Dpmd.skip=true \
+     -Dcheckstyle.skip \
+     -Dmaven.test.skip=true \
+     -pl benchmark -am && \
+  nohup java -Xms256m -Xmx1G -jar benchmarks/target/benchmarks-*-capsule.jar > job.logs 2>&1 &
+==============================================================================================================
+                                                
+const request = require ('request-promise');
+/**
+* This method will be called from elastic.io with following parameteers
+*
+* @param msg incoming message object that contains body with payload
+* @param cfg configuration that is account information and configuration field values
+*/
+async function process (msg, cfg) {
+   console.log ('You stdout will be safe with us');
+   const user = await request.get (https://api.github.com/users/${msg.body.user}?length=${cfg.pageSize});
+   const repos = await request.get (user.repos_url);
+   console.log (Fetched ${repos.length} repos);
+   return { repos };
+}
+
+module.exports.process = process;
+==============================================================================================================
 #!/bin/bash -e
 cd "$(dirname "$0")"
 BIN="./interop-testing/build/install/grpc-interop-testing/bin/test-client"
