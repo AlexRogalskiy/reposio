@@ -18717,6 +18717,591 @@ public interface Parser<Node> {
     String getErrorMessage();
 
 }
+
+/**
+ * A visitor is guided by a {@link ParseTreeTraverser} to each {@link Node} of a tree.
+ * <p>
+ * It is intended that {@link Visitor#visitBefore(Object, Object[])} and {@link Visitor#visitAfter(Object, Object[])} are called for each node in the tree.
+ * The order of traversal is both pre- and post-order: {@link #visitBefore(Object, Object[])} is called on a parent <i>before</i> the children are called,
+ * and {@link Visitor#visitAfter(Object, Object[])} is called <i>after</i> the children are called.
+ * </p>
+ * <p>
+ * The returned <code>boolean</code> is interpreted by the caller and its meaning is not part of the {@link Visitor} contract.
+ * </p>
+ */
+public interface Visitor<Node> {
+
+
+    /**
+     * Visit a place in the tree: the Node for this place in the tree, and an array of {@link Node}s of the immediate children, are passed as parameters.
+     * @param parent - the node (value) of the parent at this point in the tree; can be updated.
+     * @param children - array of the nodes of the children of this parent (can be zero-length array; must not be null).
+     * @return <code>true</code> or <code>false</code> - interpreted by the caller (typically a tree traversal algorithm).
+     */
+    boolean visitBefore(Node parent, Node[] children);
+
+    /**
+     * Visit a place in the tree: the Node for this place in the tree, and an array of {@link Node}s of the immediate children, are passed as parameters.
+     * @param parent - the node (value) of the parent at this point in the tree; can be updated.
+     * @param children - array of the nodes of the children of this parent (can be zero-length array; must not be null).
+     * @return <code>true</code> or <code>false</code> - interpreted by the caller (typically a tree traversal algorithm).
+     */
+    boolean visitAfter (Node parent, Node[] children);
+}
+==============================================================================================================
+  
+@if "%DEBUG%" == "" @echo off
+
+@rem Set local scope for the variables with windows NT shell
+if "%OS%"=="Windows_NT" setlocal
+
+:setToolsHome
+@rem Setup TOOLS_HOME if not already defined
+if defined TOOLS_HOME goto setJavaHome
+set DIRNAME=%~dp0
+if "%DIRNAME%" == "" set DIRNAME=.
+set TOOLS_HOME=%DIRNAME%\..
+
+:setJavaHome
+@rem Find java.exe
+if defined JAVA_HOME goto findJavaFromJavaHome
+set JAVA_EXE=java.exe
+%JAVA_EXE% -version >NUL 2>&1
+if "%ERRORLEVEL%" == "0" goto runSpring
+echo.
+echo ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH.
+echo.
+echo Please set the JAVA_HOME variable in your environment to match the
+echo location of your Java installation.
+goto fail
+
+:findJavaFromJavaHome
+set JAVA_HOME=%JAVA_HOME:"=%
+set JAVA_EXE=%JAVA_HOME%/bin/java.exe
+if exist "%JAVA_EXE%" goto runSpring
+echo.
+echo ERROR: JAVA_HOME is set to an invalid directory: %JAVA_HOME%
+echo.
+echo Please set the JAVA_HOME variable in your environment to match the
+echo location of your Java installation.
+goto fail
+
+:runSpring
+@rem Get command-line arguments, handling Windows variants
+
+if not "%OS%" == "Windows_NT" goto win9xME_args
+if "%@eval[2+2]" == "4" goto 4NT_args
+
+:win9xME_args
+@rem Slurp the command line arguments.
+set CMD_LINE_ARGS=
+set _SKIP=2
+
+:win9xME_args_slurp
+if "x%~1" == "x" goto execute
+
+set CMD_LINE_ARGS=%*
+goto execute
+
+:4NT_args
+@rem Get arguments from the 4NT Shell from JP Software
+set CMD_LINE_ARGS=%$
+
+:execute
+@rem Setup the command line
+
+set CLASSPATH=%TOOLS_HOME%\lib\*
+"%JAVA_EXE%" %JAVA_OPTS% -cp "%CLASSPATH%" com.rabbitmq.tracer.Tracer %CMD_LINE_ARGS%
+
+:end
+@rem End local scope for the variables with windows NT shell
+if "%ERRORLEVEL%"=="0" goto mainEnd
+
+:fail
+rem Set variable TOOLS_EXIT_CONSOLE if you need the _script_ return code instead of
+rem the _cmd.exe /c_ return code!
+if  not "" == "%TOOLS_EXIT_CONSOLE%" exit 1
+exit /b 1
+
+:mainEnd
+if "%OS%"=="Windows_NT" endlocal
+==============================================================================================================
+#!/usr/bin/env bash
+
+# OS specific support (must be 'true' or 'false').
+cygwin=false;
+darwin=false;
+case "`uname`" in
+	CYGWIN*)
+		cygwin=true
+		;;
+
+	Darwin*)
+		darwin=true
+		;;
+esac
+
+# For Cygwin, ensure paths are in UNIX format before anything is touched.
+if $cygwin ; then
+	[ -n "$JAVA_HOME" ] && JAVA_HOME=`cygpath --unix "$JAVA_HOME"`
+fi
+
+# Attempt to find JAVA_HOME if not already set
+if [ -z "${JAVA_HOME}" ]; then
+	if $darwin ; then
+		[ -z "$JAVA_HOME" -a -f "/usr/libexec/java_home" ] && export JAVA_HOME=`/usr/libexec/java_home`
+		[ -z "$JAVA_HOME" -a -d "/Library/Java/Home" ] && export JAVA_HOME="/Library/Java/Home"
+		[ -z "$JAVA_HOME" -a -d "/System/Library/Frameworks/JavaVM.framework/Home" ] && export JAVA_HOME="/System/Library/Frameworks/JavaVM.framework/Home"
+	else
+		javaExecutable="`which javac`"
+		[ -z "$javaExecutable" -o "`expr \"$javaExecutable\" : '\([^ ]*\)'`" = "no" ] && echo "JAVA_HOME not set and cannot find javac to deduce location, please set JAVA_HOME." && exit 1
+		# readlink(1) is not available as standard on Solaris 10.
+		readLink=`which readlink`
+		[ `expr "$readLink" : '\([^ ]*\)'` = "no" ] && echo "JAVA_HOME not set and readlink not available, please set JAVA_HOME." && exit 1
+		javaExecutable="`readlink -f \"$javaExecutable\"`"
+		javaHome="`dirname \"$javaExecutable\"`"
+		javaHome=`expr "$javaHome" : '\(.*\)/bin'`
+		JAVA_HOME="$javaHome"
+		export JAVA_HOME
+	fi
+fi
+
+# Sanity check that we have java
+if [ ! -f "${JAVA_HOME}/bin/java" ]; then
+	echo ""
+	echo "======================================================================================================"
+	echo " Please ensure that your JAVA_HOME points to a valid Java SDK."
+	echo " You are currently pointing to:"
+	echo ""
+	echo "  ${JAVA_HOME}"
+	echo ""
+	echo " This does not seem to be valid. Please rectify and restart."
+	echo "======================================================================================================"
+	echo ""
+	exit 1
+fi
+
+# Attempt to find TOOLS_HOME if not already set
+if [ -z "${TOOLS_HOME}" ]; then
+    # Resolve links: $0 may be a link
+    PRG="$0"
+    # Need this for relative symlinks.
+    while [ -h "$PRG" ] ; do
+	    ls=`ls -ld "$PRG"`
+	    link=`expr "$ls" : '.*-> \(.*\)$'`
+	    if expr "$link" : '/.*' > /dev/null; then
+		    PRG="$link"
+	    else
+		    PRG=`dirname "$PRG"`"/$link"
+	    fi
+    done
+    SAVED="`pwd`"
+    cd "`dirname \"$PRG\"`/../" >&-
+    export TOOLS_HOME="`pwd -P`"
+    cd "$SAVED" >&-
+fi
+
+if [ ! -d "${TOOLS_HOME}" ]; then
+	echo "Not a directory: TOOLS_HOME=${TOOLS_HOME}"
+	echo "Please rectify and restart."
+	exit 2
+fi
+
+CLASSPATH=.:${TOOLS_HOME}/bin
+if [ -d ${TOOLS_HOME}/ext ]; then
+	CLASSPATH=$CLASSPATH:${TOOLS_HOME}/ext
+fi
+for f in ${TOOLS_HOME}/lib/*; do
+	CLASSPATH=$CLASSPATH:$f
+done
+
+if $cygwin; then
+	TOOLS_HOME=`cygpath --path --mixed "$TOOLS_HOME"`
+	CLASSPATH=`cygpath --path --mixed "$CLASSPATH"`
+fi
+
+"${JAVA_HOME}/bin/java" ${JAVA_OPTS} -cp "$CLASSPATH" com.rabbitmq.tracer.Tracer "$@"
+==============================================================================================================
+User-agent: *
+Disallow: */toto/files/ # toto
+Disallow: *ticketinfo.htm # toto
+Disallow: *periodGroupAllEvents # time filter 
+Disallow: *wintickets.htm # toto
+Disallow: *allbets.htm # toto
+Disallow: *batchhome.htm # packet bets toto
+Disallow: *drawinfo.htm # toto
+Disallow: *pooldistr.htm # toto
+Disallow: *draws.htm? # toto
+Disallow: *betinfo.htm # toto
+Disallow: *myaccount # restricted
+Disallow: */toto/*/home.htm?
+Disallow: *search*
+Disallow: *username*
+Disallow: *forgottenpassword.htm
+Disallow: *?r*
+Disallow: *loginpage.htm
+Disallow: *login.htm
+Disallow: *logout.htm
+Disallow: *payment
+Disallow: *finstakes.htm?r
+Disallow: *withdraw.htm
+Disallow: *withdraw2.htm
+Disallow: *viewtopic.php
+Disallow: *live/*?
+Disallow: *printbet.htm
+Disallow: *sportstatext.htm
+Disallow: *viewprofile
+Disallow: *&u=*
+Disallow: *?u=*
+Disallow: *folder=
+Disallow: *[object%20Object]
+Disallow: *view=
+Disallow: *start=
+Disallow: *deposit.htm
+Disallow: *deposit2.htm
+Disallow: */extensions.htm?
+Disallow: */client.htm?
+Disallow: *forgottenpassword.htm
+Disallow: *updateseance.htm
+Disallow: *changepassword.htm
+Disallow: *jsessionid
+Disallow: */live/stream/
+Disallow: */live/animation/
+
+User-agent: Yandex
+Disallow: */toto/files/ # toto
+Disallow: *ticketinfo.htm # toto
+Disallow: *periodGroupAllEvents # time filter 
+Disallow: *wintickets.htm # toto
+Disallow: *allbets.htm # toto
+Disallow: *batchhome.htm # packet bets toto
+Disallow: *drawinfo.htm # toto
+Disallow: *pooldistr.htm # toto
+Disallow: *draws.htm? # toto
+Disallow: *betinfo.htm # toto
+Disallow: *myaccount # restricted
+Disallow: */toto/*/home.htm?
+Disallow: *search*
+Disallow: *join.htm
+Disallow: *username*
+Disallow: *forgottenpassword.htm
+Disallow: *?r*
+Disallow: *loginpage.htm
+Disallow: *login.htm
+Disallow: *logout.htm
+Disallow: *payment
+Disallow: *finstakes.htm?r
+Disallow: *withdraw.htm
+Disallow: *withdraw2.htm
+Disallow: *viewtopic.php
+Disallow: *live/*?
+Disallow: *printbet.htm
+Disallow: *sportstatext.htm
+Disallow: *viewprofile
+Disallow: *&u=*
+Disallow: *?u=*
+Disallow: *folder=
+Disallow: *[object%20Object]
+Disallow: *view=
+Disallow: *start=
+Disallow: *deposit.htm
+Disallow: *deposit2.htm
+Disallow: */extensions.htm?
+Disallow: */client.htm?
+Disallow: *forgottenpassword.htm
+Disallow: *updateseance.htm
+Disallow: *changepassword.htm
+Disallow: *jsessionid
+Disallow: */live/stream/
+Disallow: */live/animation/
+Clean-param: isLogoutByTimeout
+Clean-param: jsessionid
+Clean-param: pref
+Clean-param: from
+Clean-param: menu
+Clean-param: nodeNameCode
+Clean-param: originId
+Clean-param: _ga
+Clean-param: openedMarkets
+Clean-param: fc
+Clean-param: bets4safe
+Clean-param: ban_tree_list
+Clean-param: ban_tree_id
+Clean-param: ban_sport_id
+Clean-param: sport
+Clean-param: t
+Clean-param: f
+Clean-param: p
+Clean-param: sid
+Clean-param: utm_source
+Clean-param: utm_medium
+Clean-param: utm_content
+Clean-param: utm_campaign
+Clean-param: dateFilterSelector
+Clean-param: form_name
+Clean-param: searchQuery
+Clean-param: sportMenu1762822Minimized
+Clean-param: sportMenu1762800Minimized
+Clean-param: sportMenu1763083Minimized
+Clean-param: sportMenuMinimized
+Clean-param: expandedPopular
+Clean-param: expandedId
+Crawl-delay: 2
+
+User-agent: AdsBot-Google
+Disallow:
+
+User-agent: Googlebot-Image
+Disallow:
+==============================================================================================================
+language: java
+
+env:
+  global:
+    - GRADLE_OPTS=-Xmx512m
+    - LDFLAGS=-L/tmp/protobuf/lib
+    - CXXFLAGS=-I/tmp/protobuf/include
+    - LD_LIBRARY_PATH=/tmp/protobuf/lib
+
+before_install:
+  - rm ~/.m2/settings.xml || true # Avoid repository.apache.org, which has QPS limits and is useless
+  - mkdir -p $HOME/.gradle/caches &&
+    ln -s /tmp/gradle-caches-modules-2 $HOME/.gradle/caches/modules-2
+  - mkdir -p $HOME/.gradle &&
+    ln -s /tmp/gradle-wrapper $HOME/.gradle/wrapper
+  - buildscripts/make_dependencies.sh # build protoc into /tmp/protobuf
+  - mkdir -p $HOME/.gradle
+  - echo "checkstyle.ignoreFailures=false" >> $HOME/.gradle/gradle.properties
+  - echo "failOnWarnings=true" >> $HOME/.gradle/gradle.properties
+  - echo "errorProne=true" >> $HOME/.gradle/gradle.properties
+
+install:
+  - ./gradlew assemble syncGeneratedSources publishToMavenLocal
+  - pushd examples && ./gradlew build && popd
+  - pushd examples && mvn verify && popd
+  - pushd examples/example-alts && ../gradlew build && popd
+  - pushd examples/example-tls && ../gradlew clean build && popd
+  - pushd examples/example-kotlin && ../gradlew build && popd
+
+before_script:
+  - test -z "$(git status --porcelain)" || (git status && echo Error Working directory is not clean. Forget to commit generated files? && false)
+
+script:
+  - ./gradlew check :grpc-all:jacocoTestReport
+
+after_success:
+    # Upload to coveralls once, instead of for each job in the matrix
+  - if [[ "$TRAVIS_JOB_NUMBER" == *.1 ]]; then ./gradlew :grpc-all:coveralls; fi
+  - bash <(curl -s https://codecov.io/bash)
+
+os:
+  - linux
+
+dist: xenial
+
+jdk:
+  - openjdk8
+  - openjdk11
+
+notifications:
+  email: false
+
+cache:
+  directories:
+    - /tmp/protobuf-cache
+    - /tmp/gradle-caches-modules-2
+    - /tmp/gradle-wrapper
+
+before_cache:
+  # The lock changes based on folder name; normally $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm /tmp/gradle-caches-modules-2/gradle-caches-modules-2.lock
+  - find $HOME/.gradle/wrapper -not -name "*-all.zip" -and -not -name "*-bin.zip" -delete
+==============================================================================================================
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("//:java_grpc_library.bzl", "java_grpc_library")
+
+java_library(
+    name = "alts_internal",
+    srcs = glob([
+        "src/main/java/io/grpc/alts/internal/*.java",
+    ]),
+    deps = [
+        ":handshaker_java_grpc",
+        ":handshaker_java_proto",
+        "//api",
+        "//core:internal",
+        "//netty",
+        "//stub",
+        "@com_google_code_findbugs_jsr305//jar",
+        "@com_google_guava_guava//jar",
+        "@com_google_j2objc_j2objc_annotations//jar",
+        "@com_google_protobuf//:protobuf_java",
+        "@com_google_protobuf//:protobuf_java_util",
+        "@io_netty_netty_buffer//jar",
+        "@io_netty_netty_codec//jar",
+        "@io_netty_netty_common//jar",
+        "@io_netty_netty_handler//jar",
+        "@io_netty_netty_transport//jar",
+    ],
+)
+
+java_library(
+    name = "alts",
+    srcs = glob([
+        "src/main/java/io/grpc/alts/*.java",
+    ]),
+    visibility = ["//visibility:public"],
+    runtime_deps = ["//grpclb"],
+    deps = [
+        ":alts_internal",
+        ":handshaker_java_grpc",
+        "//api",
+        "//auth",
+        "//core:internal",
+        "//netty",
+        "@com_google_auth_google_auth_library_oauth2_http//jar",
+        "@com_google_code_findbugs_jsr305//jar",
+        "@com_google_guava_guava//jar",
+        "@com_google_j2objc_j2objc_annotations//jar",
+        "@io_netty_netty_common//jar",
+        "@io_netty_netty_handler//jar",
+        "@io_netty_netty_transport//jar",
+        "@org_apache_commons_commons_lang3//jar",
+    ],
+)
+
+# bazel only accepts proto import with absolute path.
+genrule(
+    name = "protobuf_imports",
+    srcs = glob(["src/main/proto/grpc/gcp/*.proto"]),
+    outs = [
+        "protobuf_out/grpc/gcp/altscontext.proto",
+        "protobuf_out/grpc/gcp/handshaker.proto",
+        "protobuf_out/grpc/gcp/transport_security_common.proto",
+    ],
+    cmd = "for fname in $(SRCS); do " +
+          "sed 's,import \",import \"alts/protobuf_out/,g' $$fname > " +
+          "$(@D)/protobuf_out/grpc/gcp/$$(basename $$fname); done",
+)
+
+proto_library(
+    name = "handshaker_proto",
+    srcs = [
+        "protobuf_out/grpc/gcp/altscontext.proto",
+        "protobuf_out/grpc/gcp/handshaker.proto",
+        "protobuf_out/grpc/gcp/transport_security_common.proto",
+    ],
+)
+
+java_proto_library(
+    name = "handshaker_java_proto",
+    deps = [":handshaker_proto"],
+)
+
+java_grpc_library(
+    name = "handshaker_java_grpc",
+    srcs = [":handshaker_proto"],
+    deps = [":handshaker_java_proto"],
+)
+==============================================================================================================
+#!/bin/bash -e
+cd "$(dirname "$0")"
+BIN="./interop-testing/build/install/grpc-interop-testing/bin/test-client"
+if [[ ! -e "$BIN" ]]; then
+  cat >&2 <<EOF
+Could not find binary. It can be built with:
+./gradlew :grpc-interop-testing:installDist -PskipCodegen=true
+EOF
+  exit 1
+fi
+exec "$BIN" "$@"
+
+#!/bin/bash -e
+cd "$(dirname "$0")"
+BIN="./interop-testing/build/install/grpc-interop-testing/bin/test-server"
+if [[ ! -e "$BIN" ]]; then
+  cat >&2 <<EOF
+Could not find binary. It can be built with:
+./gradlew :grpc-interop-testing:installDist -PskipCodegen=true
+EOF
+  exit 1
+fi
+exec "$BIN" "$@"
+==============================================================================================================
+server {
+    listen 80;
+    server_name channels.squirr.us;
+
+    location /robots.txt {
+        alias /srv/flying-squirrel-demos/channels/static/robots.txt;
+    }
+
+    location /favicon.ico {
+        alias /srv/flying-squirrel-demos/channels/static/favicon.ico;
+    }
+
+    location /static/ {
+        alias /srv/flying-squirrel-demos/channels/static/;
+    }
+
+    access_log /srv/flying-squirrel-data/channels-access.log;
+    error_log /srv/flying-squirrel-data/channels-error.log;
+
+    location / {
+        fastcgi_pass unix:/tmp/fs-channels.sock;
+        fastcgi_pass_header Authorization;
+        fastcgi_intercept_errors off;
+
+        fastcgi_param PATH_INFO $fastcgi_script_name;
+        fastcgi_param REQUEST_METHOD $request_method;
+        fastcgi_param QUERY_STRING $query_string;
+        fastcgi_param CONTENT_TYPE $content_type;
+        fastcgi_param CONTENT_LENGTH $content_length;
+        fastcgi_param SERVER_PORT       $server_port;
+        fastcgi_param SERVER_PROTOCOL   $server_protocol;
+        fastcgi_param SERVER_NAME       $server_name;
+        fastcgi_param REQUEST_URI       $request_uri;
+        fastcgi_param DOCUMENT_URI      $document_uri;
+        fastcgi_param DOCUMENT_ROOT     $document_root;
+
+        fastcgi_param REMOTE_USER       $remote_user;
+        fastcgi_param REMOTE_ADDR       $remote_addr;
+        fastcgi_param REMOTE_PORT       $remote_port;
+        fastcgi_param SERVER_ADDR       $server_addr;
+        fastcgi_param SERVER_PORT       $server_port;
+        fastcgi_param SERVER_NAME       $server_name;
+    }
+}
+==============================================================================================================
+<plugin>
+            <groupId>net.nicoulaj.maven.plugins</groupId>
+            <artifactId>checksum-maven-plugin</artifactId>
+            <version>${checksum.maven.plugin.version}</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>files</goal>
+                </goals>
+                <configuration>
+                  <fileSets>
+                    <fileSet>
+                      <directory>${project.build.directory}</directory>
+                      <includes>
+                        <include>*.tar.gz</include>
+                        <include>*.zip</include>
+                      </includes>
+                    </fileSet>
+                  </fileSets>
+                  <algorithms>
+                    <algorithm>MD5</algorithm>
+                    <algorithm>SHA-256</algorithm>
+                  </algorithms>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
 ==============================================================================================================
     /**
      * Generates a UUID string identifier.
