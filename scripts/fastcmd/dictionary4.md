@@ -20204,6 +20204,1787 @@ public interface InternalInstrumented<T> extends InternalWithLogId {
   ListenableFuture<T> getStats();
 }
 ==============================================================================================================
+import static com.google.common.base.Charsets.US_ASCII;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
+import com.google.common.io.BaseEncoding;
+import com.google.common.io.ByteStreams;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import javax.annotation.Nullable;
+import javax.annotation.concurrent.Immutable;
+import javax.annotation.concurrent.NotThreadSafe;
+
+/**
+ * Provides access to read and write metadata values to be exchanged during a call.
+ *
+ * <p>Keys are allowed to be associated with more than one value.
+ *
+ * <p>This class is not thread safe, implementations should ensure that header reads and writes do
+ * not occur in multiple threads concurrently.
+ */
+@NotThreadSafe
+public final class Metadata {
+
+  /**
+   * All binary headers should have this suffix in their names. Vice versa.
+   *
+   * <p>Its value is {@code "-bin"}. An ASCII header's name must not end with this.
+   */
+  public static final String BINARY_HEADER_SUFFIX = "-bin";
+
+  /**
+   * Simple metadata marshaller that encodes bytes as is.
+   *
+   * <p>This should be used when raw bytes are favored over un-serialized version of object. Can be
+   * helpful in situations where more processing to bytes is needed on application side, avoids
+   * double encoding/decoding.
+   *
+   * <p>Both {@link BinaryMarshaller#toBytes} and {@link BinaryMarshaller#parseBytes} methods do not
+   * return a copy of the byte array. Do _not_ modify the byte arrays of either the arguments or
+   * return values.
+   */
+  public static final BinaryMarshaller<byte[]> BINARY_BYTE_MARSHALLER =
+      new BinaryMarshaller<byte[]>() {
+
+        @Override
+        public byte[] toBytes(byte[] value) {
+          return value;
+        }
+
+        @Override
+        public byte[] parseBytes(byte[] serialized) {
+          return serialized;
+        }
+      };
+
+  /**
+   * Simple metadata marshaller that encodes strings as is.
+   *
+   * <p>This should be used with ASCII strings that only contain the characters listed in the class
+   * comment of {@link AsciiMarshaller}. Otherwise the output may be considered invalid and
+   * discarded by the transport, or the call may fail.
+   */
+  public static final AsciiMarshaller<String> ASCII_STRING_MARSHALLER =
+      new AsciiMarshaller<String>() {
+
+        @Override
+        public String toAsciiString(String value) {
+          return value;
+        }
+
+        @Override
+        public String parseAsciiString(String serialized) {
+          return serialized;
+        }
+      };
+
+  static final BaseEncoding BASE64_ENCODING_OMIT_PADDING = BaseEncoding.base64().omitPadding();
+
+  /**
+   * Constructor called by the transport layer when it receives binary metadata. Metadata will
+   * mutate the passed in array.
+   */
+  Metadata(byte[]... binaryValues) {
+    this(binaryValues.length / 2, binaryValues);
+  }
+
+  /**
+   * Constructor called by the transport layer when it receives binary metadata. Metadata will
+   * mutate the passed in array.
+   *
+   * @param usedNames the number of names
+   */
+  Metadata(int usedNames, byte[]... binaryValues) {
+    this(usedNames, (Object[]) binaryValues);
+  }
+
+  /**
+   * Constructor called by the transport layer when it receives partially-parsed metadata.
+   * Metadata will mutate the passed in array.
+   *
+   * @param usedNames the number of names
+   * @param namesAndValues an array of interleaved names and values, with each name
+   *     (at even indices) represented by a byte array, and values (at odd indices) as
+   *     described by {@link InternalMetadata#newMetadataWithParsedValues}.
+   */
+  Metadata(int usedNames, Object[] namesAndValues) {
+    assert (namesAndValues.length & 1) == 0
+        : "Odd number of key-value pairs " + namesAndValues.length;
+    size = usedNames;
+    this.namesAndValues = namesAndValues;
+  }
+
+  private Object[] namesAndValues;
+  // The unscaled number of headers present.
+  private int size;
+
+  private byte[] name(int i) {
+    return (byte[]) namesAndValues[i * 2];
+  }
+
+  private void name(int i, byte[] name) {
+    namesAndValues[i * 2] = name;
+  }
+
+  private Object value(int i) {
+    return namesAndValues[i * 2 + 1];
+  }
+
+  private void value(int i, byte[] value) {
+    namesAndValues[i * 2 + 1] = value;
+  }
+
+  private void value(int i, Object value) {
+    if (namesAndValues instanceof byte[][]) {
+      // Reallocate an array of Object.
+      expand(cap());
+    }
+    namesAndValues[i * 2 + 1] = value;
+  }
+
+  private byte[] valueAsBytes(int i) {
+    Object value = value(i);
+    if (value instanceof byte[]) {
+      return (byte[]) value;
+    } else {
+      return ((LazyValue<?>) value).toBytes();
+    }
+  }
+
+  private Object valueAsBytesOrStream(int i) {
+    Object value = value(i);
+    if (value instanceof byte[]) {
+      return value;
+    } else {
+      return ((LazyValue<?>) value).toStream();
+    }
+  }
+
+  private <T> T valueAsT(int i, Key<T> key) {
+    Object value = value(i);
+    if (value instanceof byte[]) {
+      return key.parseBytes((byte[]) value);
+    } else {
+      return ((LazyValue<?>) value).toObject(key);
+    }
+  }
+
+  private int cap() {
+    return namesAndValues != null ? namesAndValues.length : 0;
+  }
+
+  // The scaled version of size.
+  private int len() {
+    return size * 2;
+  }
+
+  private boolean isEmpty() {
+    /** checks when {@link #namesAndValues} is null or has no elements */
+    return size == 0;
+  }
+
+  /** Constructor called by the application layer when it wants to send metadata. */
+  public Metadata() {}
+
+  /** Returns the total number of key-value headers in this metadata, including duplicates. */
+  int headerCount() {
+    return size;
+  }
+
+  /**
+   * Returns true if a value is defined for the given key.
+   *
+   * <p>This is done by linear search, so if it is followed by {@link #get} or {@link #getAll},
+   * prefer calling them directly and checking the return value against {@code null}.
+   */
+  public boolean containsKey(Key<?> key) {
+    for (int i = 0; i < size; i++) {
+      if (bytesEqual(key.asciiName(), name(i))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Returns the last metadata entry added with the name 'name' parsed as T.
+   *
+   * @return the parsed metadata entry or null if there are none.
+   */
+  @Nullable
+  public <T> T get(Key<T> key) {
+    for (int i = size - 1; i >= 0; i--) {
+      if (bytesEqual(key.asciiName(), name(i))) {
+        return valueAsT(i, key);
+      }
+    }
+    return null;
+  }
+
+  private final class IterableAt<T> implements Iterable<T> {
+    private final Key<T> key;
+    private int startIdx;
+
+    private IterableAt(Key<T> key, int startIdx) {
+      this.key = key;
+      this.startIdx = startIdx;
+    }
+
+    @Override
+    public Iterator<T> iterator() {
+      return new Iterator<T>() {
+        private boolean hasNext = true;
+        private int idx = startIdx;
+
+        @Override
+        public boolean hasNext() {
+          if (hasNext) {
+            return true;
+          }
+          for (; idx < size; idx++) {
+            if (bytesEqual(key.asciiName(), name(idx))) {
+              hasNext = true;
+              return hasNext;
+            }
+          }
+          return false;
+        }
+
+        @Override
+        public T next() {
+          if (hasNext()) {
+            hasNext = false;
+            return valueAsT(idx++, key);
+          }
+          throw new NoSuchElementException();
+        }
+
+        @Override
+        public void remove() {
+          throw new UnsupportedOperationException();
+        }
+      };
+    }
+  }
+
+  /**
+   * Returns all the metadata entries named 'name', in the order they were received, parsed as T, or
+   * null if there are none. The iterator is not guaranteed to be "live." It may or may not be
+   * accurate if Metadata is mutated.
+   */
+  @Nullable
+  public <T> Iterable<T> getAll(final Key<T> key) {
+    for (int i = 0; i < size; i++) {
+      if (bytesEqual(key.asciiName(), name(i))) {
+        return new IterableAt<>(key, i);
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Returns set of all keys in store.
+   *
+   * @return unmodifiable Set of keys
+   */
+  @SuppressWarnings("deprecation") // The String ctor is deprecated, but fast.
+  public Set<String> keys() {
+    if (isEmpty()) {
+      return Collections.emptySet();
+    }
+    Set<String> ks = new HashSet<>(size);
+    for (int i = 0; i < size; i++) {
+      ks.add(new String(name(i), 0 /* hibyte */));
+    }
+    // immutable in case we decide to change the implementation later.
+    return Collections.unmodifiableSet(ks);
+  }
+
+  /**
+   * Adds the {@code key, value} pair. If {@code key} already has values, {@code value} is added to
+   * the end. Duplicate values for the same key are permitted.
+   *
+   * @throws NullPointerException if key or value is null
+   */
+  public <T> void put(Key<T> key, T value) {
+    Preconditions.checkNotNull(key, "key");
+    Preconditions.checkNotNull(value, "value");
+    maybeExpand();
+    name(size, key.asciiName());
+    if (key.serializesToStreams()) {
+      value(size, LazyValue.create(key, value));
+    } else {
+      value(size, key.toBytes(value));
+    }
+    size++;
+  }
+
+  private void maybeExpand() {
+    if (len() == 0 || len() == cap()) {
+      expand(Math.max(len() * 2, 8));
+    }
+  }
+
+  // Expands to exactly the desired capacity.
+  private void expand(int newCapacity) {
+    Object[] newNamesAndValues = new Object[newCapacity];
+    if (!isEmpty()) {
+      System.arraycopy(namesAndValues, 0, newNamesAndValues, 0, len());
+    }
+    namesAndValues = newNamesAndValues;
+  }
+
+  /**
+   * Removes the first occurrence of {@code value} for {@code key}.
+   *
+   * @param key key for value
+   * @param value value
+   * @return {@code true} if {@code value} removed; {@code false} if {@code value} was not present
+   * @throws NullPointerException if {@code key} or {@code value} is null
+   */
+  public <T> boolean remove(Key<T> key, T value) {
+    Preconditions.checkNotNull(key, "key");
+    Preconditions.checkNotNull(value, "value");
+    for (int i = 0; i < size; i++) {
+      if (!bytesEqual(key.asciiName(), name(i))) {
+        continue;
+      }
+      T stored = valueAsT(i, key);
+      if (!value.equals(stored)) {
+        continue;
+      }
+      int writeIdx = i * 2;
+      int readIdx = (i + 1) * 2;
+      int readLen = len() - readIdx;
+      System.arraycopy(namesAndValues, readIdx, namesAndValues, writeIdx, readLen);
+      size -= 1;
+      name(size, null);
+      value(size, (byte[]) null);
+      return true;
+    }
+    return false;
+  }
+
+  /** Remove all values for the given key. If there were no values, {@code null} is returned. */
+  public <T> Iterable<T> removeAll(Key<T> key) {
+    if (isEmpty()) {
+      return null;
+    }
+    int writeIdx = 0;
+    int readIdx = 0;
+    List<T> ret = null;
+    for (; readIdx < size; readIdx++) {
+      if (bytesEqual(key.asciiName(), name(readIdx))) {
+        ret = ret != null ? ret : new ArrayList<T>();
+        ret.add(valueAsT(readIdx, key));
+        continue;
+      }
+      name(writeIdx, name(readIdx));
+      value(writeIdx, value(readIdx));
+      writeIdx++;
+    }
+    int newSize = writeIdx;
+    // Multiply by two since namesAndValues is interleaved.
+    Arrays.fill(namesAndValues, writeIdx * 2, len(), null);
+    size = newSize;
+    return ret;
+  }
+
+  /**
+   * Remove all values for the given key without returning them. This is a minor performance
+   * optimization if you do not need the previous values.
+   */
+  @ExperimentalApi("https://github.com/grpc/grpc-java/issues/4691")
+  public <T> void discardAll(Key<T> key) {
+    if (isEmpty()) {
+      return;
+    }
+    int writeIdx = 0;
+    int readIdx = 0;
+    for (; readIdx < size; readIdx++) {
+      if (bytesEqual(key.asciiName(), name(readIdx))) {
+        continue;
+      }
+      name(writeIdx, name(readIdx));
+      value(writeIdx, value(readIdx));
+      writeIdx++;
+    }
+    int newSize = writeIdx;
+    // Multiply by two since namesAndValues is interleaved.
+    Arrays.fill(namesAndValues, writeIdx * 2, len(), null);
+    size = newSize;
+  }
+
+  /**
+   * Serialize all the metadata entries.
+   *
+   * <p>It produces serialized names and values interleaved. result[i*2] are names, while
+   * result[i*2+1] are values.
+   *
+   * <p>Names are ASCII string bytes that contains only the characters listed in the class comment
+   * of {@link Key}. If the name ends with {@code "-bin"}, the value can be raw binary. Otherwise,
+   * the value must contain only characters listed in the class comments of {@link AsciiMarshaller}
+   *
+   * <p>The returned individual byte arrays <em>must not</em> be modified. However, the top level
+   * array may be modified.
+   *
+   * <p>This method is intended for transport use only.
+   */
+  @Nullable
+  byte[][] serialize() {
+    byte[][] serialized = new byte[len()][];
+    if (namesAndValues instanceof byte[][]) {
+      System.arraycopy(namesAndValues, 0, serialized, 0, len());
+    } else {
+      for (int i = 0; i < size; i++) {
+        serialized[i * 2] = name(i);
+        serialized[i * 2 + 1] = valueAsBytes(i);
+      }
+    }
+    return serialized;
+  }
+
+  /**
+   * Serializes all metadata entries, leaving some values as {@link InputStream}s.
+   *
+   * <p>Produces serialized names and values interleaved. result[i*2] are names, while
+   * result[i*2+1] are values.
+   *
+   * <p>Names are byte arrays as described according to the {@link #serialize}
+   * method. Values are either byte arrays or {@link InputStream}s.
+   *
+   * <p>This method is intended for transport use only.
+   */
+  @Nullable
+  Object[] serializePartial() {
+    Object[] serialized = new Object[len()];
+    for (int i = 0; i < size; i++) {
+      serialized[i * 2] = name(i);
+      serialized[i * 2 + 1] = valueAsBytesOrStream(i);
+    }
+    return serialized;
+  }
+
+  /**
+   * Perform a simple merge of two sets of metadata.
+   *
+   * <p>This is a purely additive operation, because a single key can be associated with multiple
+   * values.
+   */
+  public void merge(Metadata other) {
+    if (other.isEmpty()) {
+      return;
+    }
+    int remaining = cap() - len();
+    if (isEmpty() || remaining < other.len()) {
+      expand(len() + other.len());
+    }
+    System.arraycopy(other.namesAndValues, 0, namesAndValues, len(), other.len());
+    size += other.size;
+  }
+
+  /**
+   * Merge values from the given set of keys into this set of metadata. If a key is present in keys,
+   * then all of the associated values will be copied over.
+   *
+   * @param other The source of the new key values.
+   * @param keys The subset of matching key we want to copy, if they exist in the source.
+   */
+  public void merge(Metadata other, Set<Key<?>> keys) {
+    Preconditions.checkNotNull(other, "other");
+    // Use ByteBuffer for equals and hashCode.
+    Map<ByteBuffer, Key<?>> asciiKeys = new HashMap<>(keys.size());
+    for (Key<?> key : keys) {
+      asciiKeys.put(ByteBuffer.wrap(key.asciiName()), key);
+    }
+    for (int i = 0; i < other.size; i++) {
+      ByteBuffer wrappedNamed = ByteBuffer.wrap(other.name(i));
+      if (asciiKeys.containsKey(wrappedNamed)) {
+        maybeExpand();
+        name(size, other.name(i));
+        value(size, other.value(i));
+        size++;
+      }
+    }
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder("Metadata(");
+    for (int i = 0; i < size; i++) {
+      if (i != 0) {
+        sb.append(',');
+      }
+      String headerName = new String(name(i), US_ASCII);
+      sb.append(headerName).append('=');
+      if (headerName.endsWith(BINARY_HEADER_SUFFIX)) {
+        sb.append(BASE64_ENCODING_OMIT_PADDING.encode(valueAsBytes(i)));
+      } else {
+        String headerValue = new String(valueAsBytes(i), US_ASCII);
+        sb.append(headerValue);
+      }
+    }
+    return sb.append(')').toString();
+  }
+
+  private boolean bytesEqual(byte[] left, byte[] right) {
+    return Arrays.equals(left, right);
+  }
+
+  /** Marshaller for metadata values that are serialized into raw binary. */
+  public interface BinaryMarshaller<T> {
+    /**
+     * Serialize a metadata value to bytes.
+     *
+     * @param value to serialize
+     * @return serialized version of value
+     */
+    byte[] toBytes(T value);
+
+    /**
+     * Parse a serialized metadata value from bytes.
+     *
+     * @param serialized value of metadata to parse
+     * @return a parsed instance of type T
+     */
+    T parseBytes(byte[] serialized);
+  }
+
+  /**
+   * Marshaller for metadata values that are serialized into ASCII strings. The strings contain only
+   * following characters:
+   *
+   * <ul>
+   * <li>Space: {@code 0x20}, but must not be at the beginning or at the end of the value. Leading
+   *     or trailing whitespace may not be preserved.
+   * <li>ASCII visible characters ({@code 0x21-0x7E}).
+   * </ul>
+   *
+   * <p>Note this has to be the subset of valid characters in {@code field-content} from RFC 7230
+   * Section 3.2.
+   */
+  public interface AsciiMarshaller<T> {
+    /**
+     * Serialize a metadata value to a ASCII string that contains only the characters listed in the
+     * class comment of {@link AsciiMarshaller}. Otherwise the output may be considered invalid and
+     * discarded by the transport, or the call may fail.
+     *
+     * @param value to serialize
+     * @return serialized version of value, or null if value cannot be transmitted.
+     */
+    String toAsciiString(T value);
+
+    /**
+     * Parse a serialized metadata value from an ASCII string.
+     *
+     * @param serialized value of metadata to parse
+     * @return a parsed instance of type T
+     */
+    T parseAsciiString(String serialized);
+  }
+
+  /** Marshaller for metadata values that are serialized to an InputStream. */
+  @ExperimentalApi("https://github.com/grpc/grpc-java/issues/6575")
+  public interface BinaryStreamMarshaller<T> {
+    /**
+     * Serializes a metadata value to an {@link InputStream}.
+     *
+     * @param value to serialize
+     * @return serialized version of value
+     */
+    InputStream toStream(T value);
+
+    /**
+     * Parses a serialized metadata value from an {@link InputStream}.
+     *
+     * @param stream of metadata to parse
+     * @return a parsed instance of type T
+     */
+    T parseStream(InputStream stream);
+  }
+
+  /**
+   * Key for metadata entries. Allows for parsing and serialization of metadata.
+   *
+   * <h3>Valid characters in key names</h3>
+   *
+   * <p>Only the following ASCII characters are allowed in the names of keys:
+   *
+   * <ul>
+   * <li>digits: {@code 0-9}
+   * <li>uppercase letters: {@code A-Z} (normalized to lower)
+   * <li>lowercase letters: {@code a-z}
+   * <li>special characters: {@code -_.}
+   * </ul>
+   *
+   * <p>This is a strict subset of the HTTP field-name rules. Applications may not send or receive
+   * metadata with invalid key names. However, the gRPC library may preserve any metadata received
+   * even if it does not conform to the above limitations. Additionally, if metadata contains non
+   * conforming field names, they will still be sent. In this way, unknown metadata fields are
+   * parsed, serialized and preserved, but never interpreted. They are similar to protobuf unknown
+   * fields.
+   *
+   * <p>Note this has to be the subset of valid HTTP/2 token characters as defined in RFC7230
+   * Section 3.2.6 and RFC5234 Section B.1
+   *
+   * <p>Note that a key is immutable but it may not be deeply immutable, because the key depends on
+   * its marshaller, and the marshaller can be mutable though not recommended.
+   *
+   * @see <a href="https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md">Wire Spec</a>
+   * @see <a href="https://tools.ietf.org/html/rfc7230#section-3.2.6">RFC7230</a>
+   * @see <a href="https://tools.ietf.org/html/rfc5234#appendix-B.1">RFC5234</a>
+   */
+  @Immutable
+  public abstract static class Key<T> {
+
+    /** Valid characters for field names as defined in RFC7230 and RFC5234. */
+    private static final BitSet VALID_T_CHARS = generateValidTChars();
+
+    /**
+     * Creates a key for a binary header.
+     *
+     * @param name Must contain only the valid key characters as defined in the class comment. Must
+     *     end with {@link #BINARY_HEADER_SUFFIX}.
+     */
+    public static <T> Key<T> of(String name, BinaryMarshaller<T> marshaller) {
+      return new BinaryKey<>(name, marshaller);
+    }
+
+    /**
+     * Creates a key for a binary header, serializing to input streams.
+     *
+     * @param name Must contain only the valid key characters as defined in the class comment. Must
+     *     end with {@link #BINARY_HEADER_SUFFIX}.
+     */
+    @ExperimentalApi("https://github.com/grpc/grpc-java/issues/6575")
+    public static <T> Key<T> of(String name, BinaryStreamMarshaller<T> marshaller) {
+      return new LazyStreamBinaryKey<>(name, marshaller);
+    }
+
+    /**
+     * Creates a key for an ASCII header.
+     *
+     * @param name Must contain only the valid key characters as defined in the class comment. Must
+     *     <b>not</b> end with {@link #BINARY_HEADER_SUFFIX}
+     */
+    public static <T> Key<T> of(String name, AsciiMarshaller<T> marshaller) {
+      return of(name, false, marshaller);
+    }
+
+    static <T> Key<T> of(String name, boolean pseudo, AsciiMarshaller<T> marshaller) {
+      return new AsciiKey<>(name, pseudo, marshaller);
+    }
+
+    static <T> Key<T> of(String name, boolean pseudo, TrustedAsciiMarshaller<T> marshaller) {
+      return new TrustedAsciiKey<>(name, pseudo, marshaller);
+    }
+
+    private final String originalName;
+
+    private final String name;
+    private final byte[] nameBytes;
+    private final Object marshaller;
+
+    private static BitSet generateValidTChars() {
+      BitSet valid = new BitSet(0x7f);
+      valid.set('-');
+      valid.set('_');
+      valid.set('.');
+      for (char c = '0'; c <= '9'; c++) {
+        valid.set(c);
+      }
+      // Only validates after normalization, so we exclude uppercase.
+      for (char c = 'a'; c <= 'z'; c++) {
+        valid.set(c);
+      }
+      return valid;
+    }
+
+    private static String validateName(String n, boolean pseudo) {
+      checkNotNull(n, "name");
+      checkArgument(!n.isEmpty(), "token must have at least 1 tchar");
+      for (int i = 0; i < n.length(); i++) {
+        char tChar = n.charAt(i);
+        if (pseudo && tChar == ':' && i == 0) {
+          continue;
+        }
+
+        checkArgument(
+            VALID_T_CHARS.get(tChar), "Invalid character '%s' in key name '%s'", tChar, n);
+      }
+      return n;
+    }
+
+    private Key(String name, boolean pseudo, Object marshaller) {
+      this.originalName = checkNotNull(name, "name");
+      this.name = validateName(this.originalName.toLowerCase(Locale.ROOT), pseudo);
+      this.nameBytes = this.name.getBytes(US_ASCII);
+      this.marshaller = marshaller;
+    }
+
+    /**
+     * @return The original name used to create this key.
+     */
+    public final String originalName() {
+      return originalName;
+    }
+
+    /**
+     * @return The normalized name for this key.
+     */
+    public final String name() {
+      return name;
+    }
+
+    /**
+     * Get the name as bytes using ASCII-encoding.
+     *
+     * <p>The returned byte arrays <em>must not</em> be modified.
+     *
+     * <p>This method is intended for transport use only.
+     */
+    // TODO (louiscryan): Migrate to ByteString
+    @VisibleForTesting
+    byte[] asciiName() {
+      return nameBytes;
+    }
+
+    /**
+     * Returns true if the two objects are both Keys, and their names match (case insensitive).
+     */
+    @SuppressWarnings("EqualsGetClass")
+    @Override
+    public final boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      Key<?> key = (Key<?>) o;
+      return name.equals(key.name);
+    }
+
+    @Override
+    public final int hashCode() {
+      return name.hashCode();
+    }
+
+    @Override
+    public String toString() {
+      return "Key{name='" + name + "'}";
+    }
+
+    /**
+     * Serialize a metadata value to bytes.
+     *
+     * @param value to serialize
+     * @return serialized version of value
+     */
+    abstract byte[] toBytes(T value);
+
+    /**
+     * Parse a serialized metadata value from bytes.
+     *
+     * @param serialized value of metadata to parse
+     * @return a parsed instance of type T
+     */
+    abstract T parseBytes(byte[] serialized);
+
+    /**
+     * @return whether this key will be serialized to bytes lazily.
+     */
+    boolean serializesToStreams() {
+      return false;
+    }
+
+    /**
+     * Gets this keys (implementation-specific) marshaller, or null if the
+     * marshaller is not of the given type.
+     *
+     * @param marshallerClass The type we expect the marshaller to be.
+     * @return the marshaller object for this key, or null.
+     */
+    @Nullable
+    final <M> M getMarshaller(Class<M> marshallerClass) {
+      if (marshallerClass.isInstance(marshaller)) {
+        return marshallerClass.cast(marshaller);
+      }
+      return null;
+    }
+  }
+
+  private static class BinaryKey<T> extends Key<T> {
+    private final BinaryMarshaller<T> marshaller;
+
+    /** Keys have a name and a binary marshaller used for serialization. */
+    private BinaryKey(String name, BinaryMarshaller<T> marshaller) {
+      super(name, false /* not pseudo */, marshaller);
+      checkArgument(
+          name.endsWith(BINARY_HEADER_SUFFIX),
+          "Binary header is named %s. It must end with %s",
+          name,
+          BINARY_HEADER_SUFFIX);
+      checkArgument(name.length() > BINARY_HEADER_SUFFIX.length(), "empty key name");
+      this.marshaller = checkNotNull(marshaller, "marshaller is null");
+    }
+
+    @Override
+    byte[] toBytes(T value) {
+      return marshaller.toBytes(value);
+    }
+
+    @Override
+    T parseBytes(byte[] serialized) {
+      return marshaller.parseBytes(serialized);
+    }
+  }
+
+  /** A binary key for values which should be serialized lazily to {@Link InputStream}s. */
+  private static class LazyStreamBinaryKey<T> extends Key<T> {
+
+    private final BinaryStreamMarshaller<T> marshaller;
+
+    /** Keys have a name and a stream marshaller used for serialization. */
+    private LazyStreamBinaryKey(String name, BinaryStreamMarshaller<T> marshaller) {
+      super(name, false /* not pseudo */, marshaller);
+      checkArgument(
+          name.endsWith(BINARY_HEADER_SUFFIX),
+          "Binary header is named %s. It must end with %s",
+          name,
+          BINARY_HEADER_SUFFIX);
+      checkArgument(name.length() > BINARY_HEADER_SUFFIX.length(), "empty key name");
+      this.marshaller = checkNotNull(marshaller, "marshaller is null");
+    }
+
+    @Override
+    byte[] toBytes(T value) {
+      return streamToBytes(marshaller.toStream(value));
+    }
+
+    @Override
+    T parseBytes(byte[] serialized) {
+      return marshaller.parseStream(new ByteArrayInputStream(serialized));
+    }
+
+    @Override
+    boolean serializesToStreams() {
+      return true;
+    }
+  }
+
+  /** Internal holder for values which are serialized/de-serialized lazily. */
+  static final class LazyValue<T> {
+    private final BinaryStreamMarshaller<T> marshaller;
+    private final T value;
+    private volatile byte[] serialized;
+
+    static <T> LazyValue<T> create(Key<T> key, T value) {
+      return new LazyValue<>(checkNotNull(getBinaryStreamMarshaller(key)), value);
+    }
+
+    /** A value set by the application. */
+    LazyValue(BinaryStreamMarshaller<T> marshaller, T value) {
+      this.marshaller = marshaller;
+      this.value = value;
+    }
+
+    InputStream toStream() {
+      return marshaller.toStream(value);
+    }
+
+    byte[] toBytes() {
+      if (serialized == null) {
+        synchronized (this) {
+          if (serialized == null) {
+            serialized = streamToBytes(toStream());
+          }
+        }
+      }
+      return serialized;
+    }
+
+    <T2> T2 toObject(Key<T2> key) {
+      if (key.serializesToStreams()) {
+        BinaryStreamMarshaller<T2> marshaller = getBinaryStreamMarshaller(key);
+        if (marshaller != null) {
+          return marshaller.parseStream(toStream());
+        }
+      }
+      return key.parseBytes(toBytes());
+    }
+
+    @Nullable
+    @SuppressWarnings("unchecked")
+    private static <T> BinaryStreamMarshaller<T> getBinaryStreamMarshaller(Key<T> key) {
+      return (BinaryStreamMarshaller<T>) key.getMarshaller(BinaryStreamMarshaller.class);
+    }
+  }
+
+  private static class AsciiKey<T> extends Key<T> {
+    private final AsciiMarshaller<T> marshaller;
+
+    /** Keys have a name and an ASCII marshaller used for serialization. */
+    private AsciiKey(String name, boolean pseudo, AsciiMarshaller<T> marshaller) {
+      super(name, pseudo, marshaller);
+      Preconditions.checkArgument(
+          !name.endsWith(BINARY_HEADER_SUFFIX),
+          "ASCII header is named %s.  Only binary headers may end with %s",
+          name,
+          BINARY_HEADER_SUFFIX);
+      this.marshaller = Preconditions.checkNotNull(marshaller, "marshaller");
+    }
+
+    @Override
+    byte[] toBytes(T value) {
+      return marshaller.toAsciiString(value).getBytes(US_ASCII);
+    }
+
+    @Override
+    T parseBytes(byte[] serialized) {
+      return marshaller.parseAsciiString(new String(serialized, US_ASCII));
+    }
+  }
+
+  private static final class TrustedAsciiKey<T> extends Key<T> {
+    private final TrustedAsciiMarshaller<T> marshaller;
+
+    /** Keys have a name and an ASCII marshaller used for serialization. */
+    private TrustedAsciiKey(String name, boolean pseudo, TrustedAsciiMarshaller<T> marshaller) {
+      super(name, pseudo, marshaller);
+      Preconditions.checkArgument(
+          !name.endsWith(BINARY_HEADER_SUFFIX),
+          "ASCII header is named %s.  Only binary headers may end with %s",
+          name,
+          BINARY_HEADER_SUFFIX);
+      this.marshaller = Preconditions.checkNotNull(marshaller, "marshaller");
+    }
+
+    @Override
+    byte[] toBytes(T value) {
+      return marshaller.toAsciiString(value);
+    }
+
+    @Override
+    T parseBytes(byte[] serialized) {
+      return marshaller.parseAsciiString(serialized);
+    }
+  }
+
+  /**
+   * A specialized plain ASCII marshaller. Both input and output are assumed to be valid header
+   * ASCII.
+   */
+  @Immutable
+  interface TrustedAsciiMarshaller<T> {
+    /**
+     * Serialize a metadata value to a ASCII string that contains only the characters listed in the
+     * class comment of {@link io.grpc.Metadata.AsciiMarshaller}. Otherwise the output may be
+     * considered invalid and discarded by the transport, or the call may fail.
+     *
+     * @param value to serialize
+     * @return serialized version of value, or null if value cannot be transmitted.
+     */
+    byte[] toAsciiString(T value);
+
+    /**
+     * Parse a serialized metadata value from an ASCII string.
+     *
+     * @param serialized value of metadata to parse
+     * @return a parsed instance of type T
+     */
+    T parseAsciiString(byte[] serialized);
+  }
+
+  private static byte[] streamToBytes(InputStream stream) {
+    try {
+      return ByteStreams.toByteArray(stream);
+    } catch (IOException ioe) {
+      throw new RuntimeException("failure reading serialized stream", ioe);
+    }
+  }
+}
+==============================================================================================================
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject",
+    "build-css": "node-sass src/ -o src/",
+    "watch-css": "npm run build-css && node-sass src/ -o src/ --watch --recursive",
+    "start:dev": "npm-run-all -p watch-css start-js",
+    "build:dev": "npm run build-css && react-scripts build"
+  },
+==============================================================================================================
+yarn --ignore-engines
+
+install v8 and try again:
+curl https://raw.githubusercontent.com/creationix/nvm/v0.25.0/install.sh | bash
+source ~/.bashrc
+nvm install v8
+nvm use v8
+==============================================================================================================
+const composeEnhancers = (typeof window !== 'undefined' && window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__) || compose;
+
+const composeEnhancers = (window as any).__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
+
+npm install --save redux-devtools-extension
+==============================================================================================================
+SET DATABASE UNIQUE NAME HSQLDB5F2C12D63E
+SET DATABASE GC 0
+SET DATABASE DEFAULT RESULT MEMORY ROWS 0
+SET DATABASE EVENT LOG LEVEL 0
+SET DATABASE TRANSACTION CONTROL LOCKS
+SET DATABASE DEFAULT ISOLATION LEVEL READ COMMITTED
+SET DATABASE TRANSACTION ROLLBACK ON CONFLICT TRUE
+SET DATABASE TEXT TABLE DEFAULTS ''
+SET DATABASE SQL NAMES FALSE
+SET DATABASE SQL REFERENCES FALSE
+SET DATABASE SQL SIZE TRUE
+SET DATABASE SQL TYPES FALSE
+SET DATABASE SQL TDC DELETE TRUE
+SET DATABASE SQL TDC UPDATE TRUE
+SET DATABASE SQL CONCAT NULLS TRUE
+SET DATABASE SQL UNIQUE NULLS TRUE
+SET DATABASE SQL CONVERT TRUNCATE TRUE
+SET DATABASE SQL AVG SCALE 0
+SET DATABASE SQL DOUBLE NAN TRUE
+SET FILES WRITE DELAY 500 MILLIS
+SET FILES BACKUP INCREMENT TRUE
+SET FILES CACHE SIZE 10000
+SET FILES CACHE ROWS 50000
+SET FILES SCALE 32
+SET FILES LOB SCALE 32
+SET FILES DEFRAG 0
+SET FILES NIO TRUE
+SET FILES NIO SIZE 256
+SET FILES LOG TRUE
+SET FILES LOG SIZE 50
+CREATE USER SA PASSWORD DIGEST 'd41d8cd98f00b204e9800998ecf8427e'
+ALTER USER SA SET LOCAL TRUE
+CREATE SCHEMA PUBLIC AUTHORIZATION DBA
+SET SCHEMA PUBLIC
+CREATE MEMORY TABLE PUBLIC.ACCOUNTS(ID VARCHAR(36) NOT NULL PRIMARY KEY,BALANCE INTEGER DEFAULT 0 NOT NULL)
+ALTER SEQUENCE SYSTEM_LOBS.LOB_ID RESTART WITH 1
+SET DATABASE DEFAULT INITIAL SCHEMA PUBLIC
+GRANT USAGE ON DOMAIN INFORMATION_SCHEMA.SQL_IDENTIFIER TO PUBLIC
+GRANT USAGE ON DOMAIN INFORMATION_SCHEMA.YES_OR_NO TO PUBLIC
+GRANT USAGE ON DOMAIN INFORMATION_SCHEMA.TIME_STAMP TO PUBLIC
+GRANT USAGE ON DOMAIN INFORMATION_SCHEMA.CARDINAL_NUMBER TO PUBLIC
+GRANT USAGE ON DOMAIN INFORMATION_SCHEMA.CHARACTER_DATA TO PUBLIC
+GRANT DBA TO SA
+SET SCHEMA SYSTEM_LOBS
+INSERT INTO BLOCKS VALUES(0,2147483647,0)
+
+==============================================================================================================
+SET DATABASE UNIQUE NAME HSQLDB5F2C12D57E
+SET DATABASE GC 0
+SET DATABASE DEFAULT RESULT MEMORY ROWS 0
+SET DATABASE EVENT LOG LEVEL 0
+SET DATABASE TRANSACTION CONTROL LOCKS
+SET DATABASE DEFAULT ISOLATION LEVEL READ COMMITTED
+SET DATABASE TRANSACTION ROLLBACK ON CONFLICT TRUE
+SET DATABASE TEXT TABLE DEFAULTS ''
+SET DATABASE SQL NAMES FALSE
+SET DATABASE SQL REFERENCES FALSE
+SET DATABASE SQL SIZE TRUE
+SET DATABASE SQL TYPES FALSE
+SET DATABASE SQL TDC DELETE TRUE
+SET DATABASE SQL TDC UPDATE TRUE
+SET DATABASE SQL CONCAT NULLS TRUE
+SET DATABASE SQL UNIQUE NULLS TRUE
+SET DATABASE SQL CONVERT TRUNCATE TRUE
+SET DATABASE SQL AVG SCALE 0
+SET DATABASE SQL DOUBLE NAN TRUE
+SET FILES WRITE DELAY 500 MILLIS
+SET FILES BACKUP INCREMENT TRUE
+SET FILES CACHE SIZE 10000
+SET FILES CACHE ROWS 50000
+SET FILES SCALE 32
+SET FILES LOB SCALE 32
+SET FILES DEFRAG 0
+SET FILES NIO TRUE
+SET FILES NIO SIZE 256
+SET FILES LOG TRUE
+SET FILES LOG SIZE 50
+CREATE USER SA PASSWORD DIGEST 'd41d8cd98f00b204e9800998ecf8427e'
+ALTER USER SA SET LOCAL TRUE
+CREATE SCHEMA PUBLIC AUTHORIZATION DBA
+SET SCHEMA PUBLIC
+CREATE MEMORY TABLE PUBLIC.ACCOUNTS(ID VARCHAR(36) NOT NULL PRIMARY KEY,BALANCE INTEGER DEFAULT 0 NOT NULL)
+CREATE MEMORY TABLE PUBLIC.TRANSACTIONS(ID VARCHAR(36) NOT NULL PRIMARY KEY,AMOUNT INTEGER NOT NULL,STATUS VARCHAR(20) NOT NULL,SOURCE VARCHAR(36) NOT NULL,TARGET VARCHAR(36) NOT NULL)
+ALTER SEQUENCE SYSTEM_LOBS.LOB_ID RESTART WITH 1
+SET DATABASE DEFAULT INITIAL SCHEMA PUBLIC
+GRANT USAGE ON DOMAIN INFORMATION_SCHEMA.SQL_IDENTIFIER TO PUBLIC
+GRANT USAGE ON DOMAIN INFORMATION_SCHEMA.YES_OR_NO TO PUBLIC
+GRANT USAGE ON DOMAIN INFORMATION_SCHEMA.TIME_STAMP TO PUBLIC
+GRANT USAGE ON DOMAIN INFORMATION_SCHEMA.CARDINAL_NUMBER TO PUBLIC
+GRANT USAGE ON DOMAIN INFORMATION_SCHEMA.CHARACTER_DATA TO PUBLIC
+GRANT DBA TO SA
+SET SCHEMA SYSTEM_LOBS
+INSERT INTO BLOCKS VALUES(0,2147483647,0)
+SET SCHEMA PUBLIC
+INSERT INTO ACCOUNTS VALUES('0571f011-25e7-4bc6-ae34-3e990d41265a',10)
+INSERT INTO ACCOUNTS VALUES('0a4fbd4e-f5be-4b4b-b82a-5736b99a3b3f',10)
+INSERT INTO ACCOUNTS VALUES('1903a0b0-9462-40d6-8a82-173cbe8d4c75',0)
+INSERT INTO ACCOUNTS VALUES('1c7ecb45-d31a-45e1-8c54-bad666168864',25)
+INSERT INTO ACCOUNTS VALUES('1d8db257-8edd-441a-90bd-37c334b97b34',25)
+INSERT INTO ACCOUNTS VALUES('378a926f-9e26-44ff-b600-d725b033a6c1',75)
+INSERT INTO ACCOUNTS VALUES('3d062aef-136f-4db1-8b65-d735c9eb61da',25)
+INSERT INTO ACCOUNTS VALUES('4045789b-4aa7-4f1e-aa3d-24db94909cbe',25)
+INSERT INTO ACCOUNTS VALUES('43c32675-8c27-4389-9c5c-d2a43fcb44ad',25)
+INSERT INTO ACCOUNTS VALUES('4c954d2e-def6-4231-9be2-e682bca0ea71',0)
+INSERT INTO ACCOUNTS VALUES('593428aa-372b-44a6-b369-b85b9710796b',10)
+INSERT INTO ACCOUNTS VALUES('5c3dfc3a-5e67-46ab-85e0-8809c2b9d0b8',0)
+INSERT INTO ACCOUNTS VALUES('6abdaff0-b2bd-4c93-b3d8-9969788c047c',10)
+INSERT INTO ACCOUNTS VALUES('6f51ac68-5048-4868-a028-8c8db553468a',0)
+INSERT INTO ACCOUNTS VALUES('71387a41-b0b2-477c-88af-381520525daf',0)
+INSERT INTO ACCOUNTS VALUES('76b6ca50-431e-4041-a668-8d5d25fe4831',10)
+INSERT INTO ACCOUNTS VALUES('7a7793e3-d93b-44e2-9f58-ea7566b67c70',10)
+INSERT INTO ACCOUNTS VALUES('7bd78582-a2ec-4cdd-9137-0992d15d78ca',0)
+INSERT INTO ACCOUNTS VALUES('7fd2195e-3cff-4f8a-94f0-74119204a5ef',75)
+INSERT INTO ACCOUNTS VALUES('80b96db8-0ce6-4ffa-a3ec-f999fa6b2551',10)
+INSERT INTO ACCOUNTS VALUES('8583a75b-5858-416b-9983-a7b552c527fc',75)
+INSERT INTO ACCOUNTS VALUES('8f72739d-75bd-4df4-8eb3-bbe05a753c15',75)
+INSERT INTO ACCOUNTS VALUES('9313c500-a125-47f8-be6f-89d0341b0d74',25)
+INSERT INTO ACCOUNTS VALUES('93c4676f-5c13-4215-8e2a-b5d554e96937',0)
+INSERT INTO ACCOUNTS VALUES('9e003161-051d-414b-96c7-a50a6f435d64',75)
+INSERT INTO ACCOUNTS VALUES('a84b2c9d-4d31-40f4-ac05-7ac3b172d488',6)
+INSERT INTO ACCOUNTS VALUES('c070c052-b55c-469b-b61f-85975493dcfe',0)
+INSERT INTO ACCOUNTS VALUES('caec8c94-5511-4729-8899-a599c03c2788',10)
+INSERT INTO ACCOUNTS VALUES('cb910baa-eba9-47d5-a69d-097234828678',75)
+INSERT INTO ACCOUNTS VALUES('d84cda30-6797-41a0-b048-730404dd7541',25)
+INSERT INTO ACCOUNTS VALUES('ddce04c9-4b73-471f-9201-179b70cbfccc',0)
+INSERT INTO ACCOUNTS VALUES('deb85e01-e8cf-4c47-aacb-1153dcd7a9db',10)
+INSERT INTO ACCOUNTS VALUES('e0deee62-5eb8-46d3-a71d-6c8926dfaa0e',0)
+INSERT INTO ACCOUNTS VALUES('ed5440c5-98c5-4bf6-b945-cdd0cb41af1b',75)
+INSERT INTO ACCOUNTS VALUES('f638c444-2be0-4017-a7f9-1e703a672f8c',0)
+INSERT INTO ACCOUNTS VALUES('f6d29dd0-fc15-46ea-bc0f-5bc9e53b58dc',25)
+INSERT INTO ACCOUNTS VALUES('f9d162ad-052a-41d4-a9ad-4b6b1d0e8a75',75)
+INSERT INTO ACCOUNTS VALUES('fb5525b7-d841-474a-82a5-179d4e099ce0',10)
+INSERT INTO TRANSACTIONS VALUES('0c239d09-3d42-48a9-8359-e46fe458b6d1',10,'CONFIRMED','fromAccount','toAccount')
+INSERT INTO TRANSACTIONS VALUES('e40a7286-5309-4c3f-8997-4b06ed206b41',10,'CONFIRMED','fromAccount','toAccount')
+
+==============================================================================================================
+SET DATABASE UNIQUE NAME HSQLDB5F2C12D5F7
+SET DATABASE GC 0
+SET DATABASE DEFAULT RESULT MEMORY ROWS 0
+SET DATABASE EVENT LOG LEVEL 0
+SET DATABASE TRANSACTION CONTROL LOCKS
+SET DATABASE DEFAULT ISOLATION LEVEL READ COMMITTED
+SET DATABASE TRANSACTION ROLLBACK ON CONFLICT TRUE
+SET DATABASE TEXT TABLE DEFAULTS ''
+SET DATABASE SQL NAMES FALSE
+SET DATABASE SQL REFERENCES FALSE
+SET DATABASE SQL SIZE TRUE
+SET DATABASE SQL TYPES FALSE
+SET DATABASE SQL TDC DELETE TRUE
+SET DATABASE SQL TDC UPDATE TRUE
+SET DATABASE SQL CONCAT NULLS TRUE
+SET DATABASE SQL UNIQUE NULLS TRUE
+SET DATABASE SQL CONVERT TRUNCATE TRUE
+SET DATABASE SQL AVG SCALE 0
+SET DATABASE SQL DOUBLE NAN TRUE
+SET FILES WRITE DELAY 500 MILLIS
+SET FILES BACKUP INCREMENT TRUE
+SET FILES CACHE SIZE 10000
+SET FILES CACHE ROWS 50000
+SET FILES SCALE 32
+SET FILES LOB SCALE 32
+SET FILES DEFRAG 0
+SET FILES NIO TRUE
+SET FILES NIO SIZE 256
+SET FILES LOG TRUE
+SET FILES LOG SIZE 50
+CREATE USER SA PASSWORD DIGEST 'd41d8cd98f00b204e9800998ecf8427e'
+ALTER USER SA SET LOCAL TRUE
+CREATE SCHEMA PUBLIC AUTHORIZATION DBA
+SET SCHEMA PUBLIC
+CREATE MEMORY TABLE PUBLIC.TRANSACTIONS(ID VARCHAR(36) NOT NULL PRIMARY KEY,AMOUNT INTEGER NOT NULL,STATUS VARCHAR(20) NOT NULL,SOURCE VARCHAR(36) NOT NULL,TARGET VARCHAR(36) NOT NULL)
+ALTER SEQUENCE SYSTEM_LOBS.LOB_ID RESTART WITH 1
+SET DATABASE DEFAULT INITIAL SCHEMA PUBLIC
+GRANT USAGE ON DOMAIN INFORMATION_SCHEMA.SQL_IDENTIFIER TO PUBLIC
+GRANT USAGE ON DOMAIN INFORMATION_SCHEMA.YES_OR_NO TO PUBLIC
+GRANT USAGE ON DOMAIN INFORMATION_SCHEMA.TIME_STAMP TO PUBLIC
+GRANT USAGE ON DOMAIN INFORMATION_SCHEMA.CARDINAL_NUMBER TO PUBLIC
+GRANT USAGE ON DOMAIN INFORMATION_SCHEMA.CHARACTER_DATA TO PUBLIC
+GRANT DBA TO SA
+SET SCHEMA SYSTEM_LOBS
+INSERT INTO BLOCKS VALUES(0,2147483647,0)
+
+==============================================================================================================
+# the application will be server from the root path
+server.contextPath=/
+# the server will listen on port 8080
+server.port=8080
+# it relies on a relational database to store both accounts and transactions
+spring.datasource.url=jdbc:hsqldb:hsql://hsqldb:9001/monolith
+# the database credentials are hardcoded here for simplicity
+spring.datasource.username=sa
+spring.datasource.password=
+# and the RDBMS of choice is Postgres
+spring.datasource.driver-class-name=org.hsqldb.jdbc.JDBCDriver
+
+==============================================================================================================
+version: '3.1'
+
+services:
+
+  # The main database server
+  # For convenience it is exposes to the host and used during tests
+  hsqldb:
+    image: java:alpine
+    volumes:
+      - ./db/target/hsqldb.jar:/var/hsqldb.jar:z
+      - ./db/data/monolith.properties:/var/lib/monolith.properties:Z
+      - ./db/data/monolith.script:/var/lib/monolith.script:Z
+    command: java -cp /var/hsqldb.jar org.hsqldb.Server -database.0 file:/var/lib/monolith -dbname.0 monolith
+    ports:
+      - 9001:9001
+
+#  # TODO: (REFACTOR 11) uncomment me!
+#  # A unique database server to the account microservice
+#  hsqldb-account:
+#    image: java:alpine
+#    volumes:
+#      - ./db/target/hsqldb.jar:/var/hsqldb.jar:z
+#      - ./db/data/account.properties:/var/lib/account.properties:Z
+#      - ./db/data/account.script:/var/lib/account.script:Z
+#    command: java -cp /var/hsqldb.jar org.hsqldb.Server -database.0 file:/var/lib/account -dbname.0 account
+
+#  # TODO: (REFACTOR 11) uncomment me!
+#  # A unique database server to the transaction microservice
+#  hsqldb-transaction:
+#    image: java:alpine
+#    volumes:
+#      - ./db/target/hsqldb.jar:/var/hsqldb.jar:z
+#      - ./db/data/transaction.properties:/var/lib/transaction.properties:Z
+#      - ./db/data/transaction.script:/var/lib/transaction.script:Z
+#    command: java -cp /var/hsqldb.jar org.hsqldb.Server -database.0 file:/var/lib/transaction -dbname.0 transaction
+
+#  # TODO: (REFACTOR 10) uncomment me!
+#  # the runnable account microservice
+#  account:
+#    image: java:alpine
+#    volumes:
+#      # mount the hand maintained config file in the container
+#      - ./account/src/main/conf/config.json:/var/config.json:z
+#      - ./account/target/account-1.0.0-fat.jar:/var/app.jar:z
+#    # run the application with the provider configuration json
+#    command: java -jar /var/app.jar -conf /var/config.json -cluster
+#     # TODO: (REFACTOR 12) uncomment me!
+##    environment:
+##      DBHOST: hsqldb-account:9001
+##      DBNAME: account
+##      DBUSER: SA
+##      DBPASSWORD: ""
+##    depends_on:
+##      - hsqldb-account
+
+#  # TODO: (REFACTOR 10) uncomment me!
+#  # the runnable transaction microservice
+#  transaction:
+#    image: java:alpine
+#    volumes:
+#      # mount the hand maintained config file in the container
+#      - ./transaction/src/main/conf/config.json:/var/config.json:z
+#      - ./transaction/target/transaction-1.0.0-fat.jar:/var/app.jar:z
+#    # run the application with the provider configuration json
+#    command: java -jar /var/app.jar -conf /var/config.json -cluster
+#     # TODO: (REFACTOR 12) uncomment me!
+##    environment:
+##      DBHOST: hsqldb-transaction:9001
+##      DBNAME: transaction
+##      DBUSER: SA
+##      DBPASSWORD: ""
+##    depends_on:
+##      - hsqldb-transaction
+
+#  # TODO: (REFACTOR 10) uncomment me!
+#  # the web frontend application and API entrypoint
+#  web:
+#    image: java:alpine
+#    volumes:
+#      - ./web/target/web-1.0.0-fat.jar:/var/app.jar:z
+#    command: java -jar /var/app.jar -cluster
+#    ports:
+#      - 80:8080
+#    environment:
+#      CLIENTID: 598d9e50aae1d575926b
+#      CLIENTSECRET: dc6ef4fc7e76c8becbd4d3369b284499ef54632a
+#    depends_on:
+#      - account
+#      - transaction
+
+  # TODO: (REFACTOR 10) comment me!
+  # The initial monolith
+  monolith:
+    image: java:alpine
+    volumes:
+      - ./monolith/target/monolith-1.0.0.jar:/var/app.jar:z
+    command: java -jar /var/app.jar
+    ports:
+      - 80:8080
+
+==============================================================================================================
+syntax = "proto3";
+
+import "grpc/testing/payloads.proto";
+import "grpc/testing/stats.proto";
+
+package grpc.testing;
+
+option java_package = "io.grpc.benchmarks.proto";
+option java_outer_classname = "Control";
+
+enum ClientType {
+  // Many languages support a basic distinction between using
+  // sync or async client, and this allows the specification
+  SYNC_CLIENT = 0;
+  ASYNC_CLIENT = 1;
+  OTHER_CLIENT = 2; // used for some language-specific variants
+}
+
+enum ServerType {
+  SYNC_SERVER = 0;
+  ASYNC_SERVER = 1;
+  ASYNC_GENERIC_SERVER = 2;
+  OTHER_SERVER = 3; // used for some language-specific variants
+}
+
+enum RpcType {
+  UNARY = 0;
+  STREAMING = 1;
+  STREAMING_FROM_CLIENT = 2;
+  STREAMING_FROM_SERVER = 3;
+  STREAMING_BOTH_WAYS = 4;
+}
+
+// Parameters of poisson process distribution, which is a good representation
+// of activity coming in from independent identical stationary sources.
+message PoissonParams {
+  // The rate of arrivals (a.k.a. lambda parameter of the exp distribution).
+  double offered_load = 1;
+}
+
+// Once an RPC finishes, immediately start a new one.
+// No configuration parameters needed.
+message ClosedLoopParams {}
+
+message LoadParams {
+  oneof load {
+    ClosedLoopParams closed_loop = 1;
+    PoissonParams poisson = 2;
+  };
+}
+
+// presence of SecurityParams implies use of TLS
+message SecurityParams {
+  bool use_test_ca = 1;
+  string server_host_override = 2;
+}
+
+message ChannelArg {
+  string name = 1;
+  oneof value {
+    string str_value = 2;
+    int32 int_value = 3;
+  }
+}
+
+message ClientConfig {
+  // List of targets to connect to. At least one target needs to be specified.
+  repeated string server_targets = 1;
+  ClientType client_type = 2;
+  SecurityParams security_params = 3;
+  // How many concurrent RPCs to start for each channel.
+  // For synchronous client, use a separate thread for each outstanding RPC.
+  int32 outstanding_rpcs_per_channel = 4;
+  // Number of independent client channels to create.
+  // i-th channel will connect to server_target[i % server_targets.size()]
+  int32 client_channels = 5;
+  // Only for async client. Number of threads to use to start/manage RPCs.
+  int32 async_client_threads = 7;
+  RpcType rpc_type = 8;
+  // The requested load for the entire client (aggregated over all the threads).
+  LoadParams load_params = 10;
+  PayloadConfig payload_config = 11;
+  HistogramParams histogram_params = 12;
+
+  // Specify the cores we should run the client on, if desired
+  repeated int32 core_list = 13;
+  int32 core_limit = 14;
+
+  // If we use an OTHER_CLIENT client_type, this string gives more detail
+  string other_client_api = 15;
+
+  repeated ChannelArg channel_args = 16;
+
+  // Number of messages on a stream before it gets finished/restarted
+  int32 messages_per_stream = 18;
+}
+
+message ClientStatus { ClientStats stats = 1; }
+
+// Request current stats
+message Mark {
+  // if true, the stats will be reset after taking their snapshot.
+  bool reset = 1;
+}
+
+message ClientArgs {
+  oneof argtype {
+    ClientConfig setup = 1;
+    Mark mark = 2;
+  }
+}
+
+message ServerConfig {
+  ServerType server_type = 1;
+  SecurityParams security_params = 2;
+  // Port on which to listen. Zero means pick unused port.
+  int32 port = 4;
+  // Only for async server. Number of threads used to serve the requests.
+  int32 async_server_threads = 7;
+  // Specify the number of cores to limit server to, if desired
+  int32 core_limit = 8;
+  // payload config, used in generic server.
+  // Note this must NOT be used in proto (non-generic) servers. For proto servers,
+  // 'response sizes' must be configured from the 'response_size' field of the
+  // 'SimpleRequest' objects in RPC requests.
+  PayloadConfig payload_config = 9;
+
+  // Specify the cores we should run the server on, if desired
+  repeated int32 core_list = 10;
+
+  // If we use an OTHER_SERVER client_type, this string gives more detail
+  string other_server_api = 11;
+
+  // c++-only options (for now) --------------------------------
+
+  // Buffer pool size (no buffer pool specified if unset)
+  int32 resource_quota_size = 1001;
+}
+
+message ServerArgs {
+  oneof argtype {
+    ServerConfig setup = 1;
+    Mark mark = 2;
+  }
+}
+
+message ServerStatus {
+  ServerStats stats = 1;
+  // the port bound by the server
+  int32 port = 2;
+  // Number of cores available to the server
+  int32 cores = 3;
+}
+
+message CoreRequest {
+}
+
+message CoreResponse {
+  // Number of cores available on the server
+  int32 cores = 1;
+}
+
+message Void {
+}
+
+// A single performance scenario: input to qps_json_driver
+message Scenario {
+  // Human readable name for this scenario
+  string name = 1;
+  // Client configuration
+  ClientConfig client_config = 2;
+  // Number of clients to start for the test
+  int32 num_clients = 3;
+  // Server configuration
+  ServerConfig server_config = 4;
+  // Number of servers to start for the test
+  int32 num_servers = 5;
+  // Warmup period, in seconds
+  int32 warmup_seconds = 6;
+  // Benchmark time, in seconds
+  int32 benchmark_seconds = 7;
+  // Number of workers to spawn locally (usually zero)
+  int32 spawn_local_worker_count = 8;
+}
+
+// A set of scenarios to be run with qps_json_driver
+message Scenarios {
+  repeated Scenario scenarios = 1;
+}
+
+// Basic summary that can be computed from ClientStats and ServerStats
+// once the scenario has finished.
+message ScenarioResultSummary
+{
+  // Total number of operations per second over all clients.
+  double qps = 1;
+  // QPS per one server core.
+  double qps_per_server_core = 2;
+  // server load based on system_time (0.85 => 85%)
+  double server_system_time = 3;
+  // server load based on user_time (0.85 => 85%)
+  double server_user_time = 4;
+  // client load based on system_time (0.85 => 85%)
+  double client_system_time = 5;
+  // client load based on user_time (0.85 => 85%)
+  double client_user_time = 6;
+
+  // X% latency percentiles (in nanoseconds)
+  double latency_50 = 7;
+  double latency_90 = 8;
+  double latency_95 = 9;
+  double latency_99 = 10;
+  double latency_999 = 11;
+
+  // server cpu usage percentage
+  double server_cpu_usage = 12;
+
+  // Number of requests that succeeded/failed
+  double successful_requests_per_second = 13;
+  double failed_requests_per_second = 14;
+
+  // Number of polls called inside completion queue per request
+  double client_polls_per_request = 15;
+  double server_polls_per_request = 16;
+}
+
+// Results of a single benchmark scenario.
+message ScenarioResult {
+  // Inputs used to run the scenario.
+  Scenario scenario = 1;
+  // Histograms from all clients merged into one histogram.
+  HistogramData latencies = 2;
+  // Client stats for each client
+  repeated ClientStats client_stats = 3;
+  // Server stats for each server
+  repeated ServerStats server_stats = 4;
+  // Number of cores available to each server
+  repeated int32 server_cores = 5;
+  // An after-the-fact computed summary
+  ScenarioResultSummary summary = 6;
+  // Information on success or failure of each worker
+  repeated bool client_success = 7;
+  repeated bool server_success = 8;
+  // Number of failed requests (one row per status code seen)
+  repeated RequestResultCount request_results = 9;
+}
+==============================================================================================================
+syntax = "proto3";
+
+package grpc.testing;
+
+option java_package = "io.grpc.benchmarks.proto";
+option java_outer_classname = "Messages";
+
+// TODO(dgq): Go back to using well-known types once
+// https://github.com/grpc/grpc/issues/6980 has been fixed.
+// import "google/protobuf/wrappers.proto";
+message BoolValue {
+  // The bool value.
+  bool value = 1;
+}
+
+// DEPRECATED, don't use. To be removed shortly.
+// The type of payload that should be returned.
+enum PayloadType {
+  // Compressable text format.
+  COMPRESSABLE = 0;
+}
+
+// A block of data, to simply increase gRPC message size.
+message Payload {
+  // DEPRECATED, don't use. To be removed shortly.
+  // The type of data in body.
+  PayloadType type = 1;
+  // Primary contents of payload.
+  bytes body = 2;
+}
+
+// A protobuf representation for grpc status. This is used by test
+// clients to specify a status that the server should attempt to return.
+message EchoStatus {
+  int32 code = 1;
+  string message = 2;
+}
+
+// Unary request.
+message SimpleRequest {
+  // DEPRECATED, don't use. To be removed shortly.
+  // Desired payload type in the response from the server.
+  // If response_type is RANDOM, server randomly chooses one from other formats.
+  PayloadType response_type = 1;
+
+  // Desired payload size in the response from the server.
+  int32 response_size = 2;
+
+  // Optional input payload sent along with the request.
+  Payload payload = 3;
+
+  // Whether SimpleResponse should include username.
+  bool fill_username = 4;
+
+  // Whether SimpleResponse should include OAuth scope.
+  bool fill_oauth_scope = 5;
+
+  // Whether to request the server to compress the response. This field is
+  // "nullable" in order to interoperate seamlessly with clients not able to
+  // implement the full compression tests by introspecting the call to verify
+  // the response's compression status.
+  BoolValue response_compressed = 6;
+
+  // Whether server should return a given status
+  EchoStatus response_status = 7;
+
+  // Whether the server should expect this request to be compressed.
+  BoolValue expect_compressed = 8;
+}
+
+// Unary response, as configured by the request.
+message SimpleResponse {
+  // Payload to increase message size.
+  Payload payload = 1;
+  // The user the request came from, for verifying authentication was
+  // successful when the client expected it.
+  string username = 2;
+  // OAuth scope.
+  string oauth_scope = 3;
+}
+
+// Client-streaming request.
+message StreamingInputCallRequest {
+  // Optional input payload sent along with the request.
+  Payload payload = 1;
+
+  // Whether the server should expect this request to be compressed. This field
+  // is "nullable" in order to interoperate seamlessly with servers not able to
+  // implement the full compression tests by introspecting the call to verify
+  // the request's compression status.
+  BoolValue expect_compressed = 2;
+
+  // Not expecting any payload from the response.
+}
+
+// Client-streaming response.
+message StreamingInputCallResponse {
+  // Aggregated size of payloads received from the client.
+  int32 aggregated_payload_size = 1;
+}
+
+// Configuration for a particular response.
+message ResponseParameters {
+  // Desired payload sizes in responses from the server.
+  int32 size = 1;
+
+  // Desired interval between consecutive responses in the response stream in
+  // microseconds.
+  int32 interval_us = 2;
+
+  // Whether to request the server to compress the response. This field is
+  // "nullable" in order to interoperate seamlessly with clients not able to
+  // implement the full compression tests by introspecting the call to verify
+  // the response's compression status.
+  BoolValue compressed = 3;
+}
+
+// Server-streaming request.
+message StreamingOutputCallRequest {
+  // DEPRECATED, don't use. To be removed shortly.
+  // Desired payload type in the response from the server.
+  // If response_type is RANDOM, the payload from each response in the stream
+  // might be of different types. This is to simulate a mixed type of payload
+  // stream.
+  PayloadType response_type = 1;
+
+  // Configuration for each expected response message.
+  repeated ResponseParameters response_parameters = 2;
+
+  // Optional input payload sent along with the request.
+  Payload payload = 3;
+
+  // Whether server should return a given status
+  EchoStatus response_status = 7;
+}
+
+// Server-streaming response, as configured by the request and parameters.
+message StreamingOutputCallResponse {
+  // Payload to increase response size.
+  Payload payload = 1;
+}
+
+// For reconnect interop test only.
+// Client tells server what reconnection parameters it used.
+message ReconnectParams {
+  int32 max_reconnect_backoff_ms = 1;
+}
+
+// For reconnect interop test only.
+// Server tells client whether its reconnects are following the spec and the
+// reconnect backoffs it saw.
+message ReconnectInfo {
+  bool passed = 1;
+  repeated int32 backoff_ms = 2;
+}
+==============================================================================================================
+syntax = "proto3";
+
+package grpc.testing;
+
+option java_package = "io.grpc.benchmarks.proto";
+option java_outer_classname = "Payloads";
+
+message ByteBufferParams {
+  int32 req_size = 1;
+  int32 resp_size = 2;
+}
+
+message SimpleProtoParams {
+  int32 req_size = 1;
+  int32 resp_size = 2;
+}
+
+message ComplexProtoParams {
+  // TODO (vpai): Fill this in once the details of complex, representative
+  //              protos are decided
+}
+
+message PayloadConfig {
+  oneof payload {
+    ByteBufferParams bytebuf_params = 1;
+    SimpleProtoParams simple_params = 2;
+    ComplexProtoParams complex_params = 3;
+  }
+}
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
 /**
  * A {@link ClientCall} which forwards all of it's methods to another {@link ClientCall}.
  */
@@ -20244,12 +22025,1555 @@ public abstract class ForwardingClientCall<ReqT, RespT>
   }
 }
 ==============================================================================================================
+syntax = "proto3";
+
+import "grpc/testing/messages.proto";
+import "grpc/testing/control.proto";
+
+package grpc.testing;
+
+option java_package = "io.grpc.benchmarks.proto";
+option java_outer_classname = "Services";
+
+service BenchmarkService {
+  // One request followed by one response.
+  // The server returns the client payload as-is.
+  rpc UnaryCall(SimpleRequest) returns (SimpleResponse);
+
+  // Repeated sequence of one request followed by one response.
+  // Should be called streaming ping-pong
+  // The server returns the client payload as-is on each response
+  rpc StreamingCall(stream SimpleRequest) returns (stream SimpleResponse);
+
+  // Single-sided unbounded streaming from client to server
+  // The server returns the client payload as-is once the client does WritesDone
+  rpc StreamingFromClient(stream SimpleRequest) returns (SimpleResponse);
+
+  // Single-sided unbounded streaming from server to client
+  // The server repeatedly returns the client payload as-is
+  rpc StreamingFromServer(SimpleRequest) returns (stream SimpleResponse);
+
+  // Two-sided unbounded streaming between server to client
+  // Both sides send the content of their own choice to the other
+  rpc StreamingBothWays(stream SimpleRequest) returns (stream SimpleResponse);
+}
+
+service WorkerService {
+  // Start server with specified workload.
+  // First request sent specifies the ServerConfig followed by ServerStatus
+  // response. After that, a "Mark" can be sent anytime to request the latest
+  // stats. Closing the stream will initiate shutdown of the test server
+  // and once the shutdown has finished, the OK status is sent to terminate
+  // this RPC.
+  rpc RunServer(stream ServerArgs) returns (stream ServerStatus);
+
+  // Start client with specified workload.
+  // First request sent specifies the ClientConfig followed by ClientStatus
+  // response. After that, a "Mark" can be sent anytime to request the latest
+  // stats. Closing the stream will initiate shutdown of the test client
+  // and once the shutdown has finished, the OK status is sent to terminate
+  // this RPC.
+  rpc RunClient(stream ClientArgs) returns (stream ClientStatus);
+
+  // Just return the core count - unary call
+  rpc CoreCount(CoreRequest) returns (CoreResponse);
+
+  // Quit this worker
+  rpc QuitWorker(Void) returns (Void);
+}
+
+service ReportQpsScenarioService {
+  // Report results of a QPS test benchmark scenario.
+  rpc ReportScenario(ScenarioResult) returns (Void);
+}
+==============================================================================================================
+syntax = "proto3";
+
+package grpc.testing;
+
+option java_package = "io.grpc.benchmarks.proto";
+option java_outer_classname = "Stats";
+
+message ServerStats {
+  // wall clock time change in seconds since last reset
+  double time_elapsed = 1;
+
+  // change in user time (in seconds) used by the server since last reset
+  double time_user = 2;
+
+  // change in server time (in seconds) used by the server process and all
+  // threads since last reset
+  double time_system = 3;
+
+  // change in total cpu time of the server (data from proc/stat)
+  uint64 total_cpu_time = 4;
+
+  // change in idle time of the server (data from proc/stat)
+  uint64 idle_cpu_time = 5;
+
+  // Number of polls called inside completion queue
+  uint64 cq_poll_count = 6;
+}
+
+// Histogram params based on grpc/support/histogram.c
+message HistogramParams {
+  double resolution = 1;   // first bucket is [0, 1 + resolution)
+  double max_possible = 2; // use enough buckets to allow this value
+}
+
+// Histogram data based on grpc/support/histogram.c
+message HistogramData {
+  repeated uint32 bucket = 1;
+  double min_seen = 2;
+  double max_seen = 3;
+  double sum = 4;
+  double sum_of_squares = 5;
+  double count = 6;
+}
+
+message RequestResultCount {
+  int32 status_code = 1;
+  int64 count = 2;
+}
+
+message ClientStats {
+  // Latency histogram. Data points are in nanoseconds.
+  HistogramData latencies = 1;
+
+  // See ServerStats for details.
+  double time_elapsed = 2;
+  double time_user = 3;
+  double time_system = 4;
+
+  // Number of failed requests (one row per status code seen)
+  repeated RequestResultCount request_results = 5;
+
+  // Number of polls called inside completion queue
+  uint64 cq_poll_count = 6;
+}
+==============================================================================================================
+#!/bin/bash
+set -eu -o pipefail
+
+quote() {
+  local arg
+  for arg in "$@"; do
+    printf "'"
+    printf "%s" "$arg" | sed -e "s/'/'\\\\''/g"
+    printf "' "
+  done
+}
+
+readonly grpc_java_dir="$(dirname "$(readlink -f "$0")")/.."
+if [[ -t 0 ]]; then
+  DOCKER_ARGS="-it"
+else
+  # The input device on kokoro is not a TTY, so -it does not work.
+  DOCKER_ARGS=
+fi
+# Use a trap function to fix file permissions upon exit, without affecting
+# the original exit code. $DOCKER_ARGS can not be quoted, otherwise it becomes a '' which confuses
+# docker.
+exec docker run $DOCKER_ARGS --rm=true -v "${grpc_java_dir}":/grpc-java -w /grpc-java \
+  protoc-artifacts \
+  bash -c "function fixFiles() { chown -R $(id -u):$(id -g) /grpc-java; }; trap fixFiles EXIT; $(quote "$@")"
+==============================================================================================================
+import java.net.SocketAddress;
+
+/**
+ * All of the supported transports.
+ */
+public enum Transport {
+  NETTY_NIO(true, "The Netty Java NIO transport. Using this with TLS requires "
+      + "that the Java bootclasspath be configured with Jetty ALPN boot.",
+      SocketAddressValidator.INET),
+  NETTY_EPOLL(true, "The Netty native EPOLL transport. Using this with TLS requires that "
+      + "OpenSSL be installed and configured as described in "
+      + "http://netty.io/wiki/forked-tomcat-native.html. Only supported on Linux.",
+      SocketAddressValidator.INET),
+  NETTY_UNIX_DOMAIN_SOCKET(false, "The Netty Unix Domain Socket transport. This currently "
+      + "does not support TLS.", SocketAddressValidator.UDS),
+  OK_HTTP(true, "The OkHttp transport.", SocketAddressValidator.INET);
+
+  public final boolean tlsSupported;
+  final String description;
+  final SocketAddressValidator socketAddressValidator;
+
+  Transport(boolean tlsSupported, String description,
+            SocketAddressValidator socketAddressValidator) {
+    this.tlsSupported = tlsSupported;
+    this.description = description;
+    this.socketAddressValidator = socketAddressValidator;
+  }
+
+  /**
+   * Validates the given address for this transport.
+   *
+   * @throws IllegalArgumentException if the given address is invalid for this transport.
+   */
+  public void validateSocketAddress(SocketAddress address) {
+    if (!socketAddressValidator.isValidSocketAddress(address)) {
+      throw new IllegalArgumentException(
+          "Invalid address " + address + " for transport " + this);
+    }
+  }
+
+  /**
+   * Describe the {@link Transport}.
+   */
+  public static String getDescriptionString() {
+    StringBuilder builder = new StringBuilder("Select the transport to use. Options:\n");
+    boolean first = true;
+    for (Transport transport : Transport.values()) {
+      if (!first) {
+        builder.append("\n");
+      }
+      builder.append(transport.name().toLowerCase());
+      builder.append(": ");
+      builder.append(transport.description);
+      first = false;
+    }
+    return builder.toString();
+  }
+}
+==============================================================================================================
+/**
+ * Abstract base class for {@link ReadableBuffer} implementations.
+ */
+public abstract class AbstractReadableBuffer implements ReadableBuffer {
+  @Override
+  public final int readInt() {
+    checkReadable(4);
+    int b1 = readUnsignedByte();
+    int b2 = readUnsignedByte();
+    int b3 = readUnsignedByte();
+    int b4 = readUnsignedByte();
+    return (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
+  }
+
+  @Override
+  public boolean hasArray() {
+    return false;
+  }
+
+  @Override
+  public byte[] array() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public int arrayOffset() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void close() {}
+
+  protected final void checkReadable(int length) {
+    if (readableBytes() < length) {
+      throw new IndexOutOfBoundsException();
+    }
+  }
+}
+==============================================================================================================
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.util.ArrayDeque;
+import java.util.Queue;
+
+/**
+ * A {@link ReadableBuffer} that is composed of 0 or more {@link ReadableBuffer}s. This provides a
+ * facade that allows multiple buffers to be treated as one.
+ *
+ * <p>When a buffer is added to a composite, its life cycle is controlled by the composite. Once
+ * the composite has read past the end of a given buffer, that buffer is automatically closed and
+ * removed from the composite.
+ */
+public class CompositeReadableBuffer extends AbstractReadableBuffer {
+
+  private int readableBytes;
+  private final Queue<ReadableBuffer> buffers = new ArrayDeque<>();
+
+  /**
+   * Adds a new {@link ReadableBuffer} at the end of the buffer list. After a buffer is added, it is
+   * expected that this {@code CompositeBuffer} has complete ownership. Any attempt to modify the
+   * buffer (i.e. modifying the readable bytes) may result in corruption of the internal state of
+   * this {@code CompositeBuffer}.
+   */
+  public void addBuffer(ReadableBuffer buffer) {
+    if (!(buffer instanceof CompositeReadableBuffer)) {
+      buffers.add(buffer);
+      readableBytes += buffer.readableBytes();
+      return;
+    }
+
+    CompositeReadableBuffer compositeBuffer = (CompositeReadableBuffer) buffer;
+    while (!compositeBuffer.buffers.isEmpty()) {
+      ReadableBuffer subBuffer = compositeBuffer.buffers.remove();
+      buffers.add(subBuffer);
+    }
+    readableBytes += compositeBuffer.readableBytes;
+    compositeBuffer.readableBytes = 0;
+    compositeBuffer.close();
+  }
+
+  @Override
+  public int readableBytes() {
+    return readableBytes;
+  }
+
+  @Override
+  public int readUnsignedByte() {
+    ReadOperation op = new ReadOperation() {
+      @Override
+      int readInternal(ReadableBuffer buffer, int length) {
+        return buffer.readUnsignedByte();
+      }
+    };
+    execute(op, 1);
+    return op.value;
+  }
+
+  @Override
+  public void skipBytes(int length) {
+    execute(new ReadOperation() {
+      @Override
+      public int readInternal(ReadableBuffer buffer, int length) {
+        buffer.skipBytes(length);
+        return 0;
+      }
+    }, length);
+  }
+
+  @Override
+  public void readBytes(final byte[] dest, final int destOffset, int length) {
+    execute(new ReadOperation() {
+      int currentOffset = destOffset;
+      @Override
+      public int readInternal(ReadableBuffer buffer, int length) {
+        buffer.readBytes(dest, currentOffset, length);
+        currentOffset += length;
+        return 0;
+      }
+    }, length);
+  }
+
+  @Override
+  public void readBytes(final ByteBuffer dest) {
+    execute(new ReadOperation() {
+      @Override
+      public int readInternal(ReadableBuffer buffer, int length) {
+        // Change the limit so that only lengthToCopy bytes are available.
+        int prevLimit = dest.limit();
+        dest.limit(dest.position() + length);
+
+        // Write the bytes and restore the original limit.
+        buffer.readBytes(dest);
+        dest.limit(prevLimit);
+        return 0;
+      }
+    }, dest.remaining());
+  }
+
+  @Override
+  public void readBytes(final OutputStream dest, int length) throws IOException {
+    ReadOperation op = new ReadOperation() {
+      @Override
+      public int readInternal(ReadableBuffer buffer, int length) throws IOException {
+        buffer.readBytes(dest, length);
+        return 0;
+      }
+    };
+    execute(op, length);
+
+    // If an exception occurred, throw it.
+    if (op.isError()) {
+      throw op.ex;
+    }
+  }
+
+  @Override
+  public CompositeReadableBuffer readBytes(int length) {
+    checkReadable(length);
+    readableBytes -= length;
+
+    CompositeReadableBuffer newBuffer = new CompositeReadableBuffer();
+    while (length > 0) {
+      ReadableBuffer buffer = buffers.peek();
+      if (buffer.readableBytes() > length) {
+        newBuffer.addBuffer(buffer.readBytes(length));
+        length = 0;
+      } else {
+        newBuffer.addBuffer(buffers.poll());
+        length -= buffer.readableBytes();
+      }
+    }
+    return newBuffer;
+  }
+
+  @Override
+  public void close() {
+    while (!buffers.isEmpty()) {
+      buffers.remove().close();
+    }
+  }
+
+  /**
+   * Executes the given {@link ReadOperation} against the {@link ReadableBuffer}s required to
+   * satisfy the requested {@code length}.
+   */
+  private void execute(ReadOperation op, int length) {
+    checkReadable(length);
+
+    if (!buffers.isEmpty()) {
+      advanceBufferIfNecessary();
+    }
+
+    for (; length > 0 && !buffers.isEmpty(); advanceBufferIfNecessary()) {
+      ReadableBuffer buffer = buffers.peek();
+      int lengthToCopy = Math.min(length, buffer.readableBytes());
+
+      // Perform the read operation for this buffer.
+      op.read(buffer, lengthToCopy);
+      if (op.isError()) {
+        return;
+      }
+
+      length -= lengthToCopy;
+      readableBytes -= lengthToCopy;
+    }
+
+    if (length > 0) {
+      // Should never get here.
+      throw new AssertionError("Failed executing read operation");
+    }
+  }
+
+  /**
+   * If the current buffer is exhausted, removes and closes it.
+   */
+  private void advanceBufferIfNecessary() {
+    ReadableBuffer buffer = buffers.peek();
+    if (buffer.readableBytes() == 0) {
+      buffers.remove().close();
+    }
+  }
+
+  /**
+   * A simple read operation to perform on a single {@link ReadableBuffer}. All state management for
+   * the buffers is done by {@link CompositeReadableBuffer#execute(ReadOperation, int)}.
+   */
+  private abstract static class ReadOperation {
+    /**
+     * Only used by {@link CompositeReadableBuffer#readUnsignedByte()}.
+     */
+    int value;
+
+    /**
+     * Only used by {@link CompositeReadableBuffer#readBytes(OutputStream, int)}.
+     */
+    IOException ex;
+
+    final void read(ReadableBuffer buffer, int length) {
+      try {
+        value = readInternal(buffer, length);
+      } catch (IOException e) {
+        ex = e;
+      }
+    }
+
+    final boolean isError() {
+      return ex != null;
+    }
+
+    abstract int readInternal(ReadableBuffer buffer, int length) throws IOException;
+  }
+}
+==============================================================================================================
+		<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-ejb-plugin</artifactId>
+				<version>2.3</version>
+				<configuration>
+					<ejbVersion>3.1</ejbVersion>
+					<jarName>cross-server-common</jarName>
+					<generateClient>true</generateClient>
+				</configuration>
+			</plugin>
+==============================================================================================================
+java -XX:+UseG1GC -Xloggc:gc.log -XX:+PrintGCDateStamps -XX:+PrintGCDetails -XX:+UnlockDiagnosticVMOptions -XX:+G1TraceFullGCAllocations -XX:TraceLargerAllocations=500k
+==============================================================================================================
+	/**
+	 * Property corresponding to the {@link #failFast} method.
+	 * Accepts {@code true} or {@code false}. Defaults to {@code false}.
+	 */
+	String FAIL_FAST = "hibernate.validator.fail_fast";
+
+	/**
+	 * Property corresponding to the {@link #allowOverridingMethodAlterParameterConstraint} method.
+	 * Accepts {@code true} or {@code false}.
+	 * Defaults to {@code false}.
+	 */
+	String ALLOW_PARAMETER_CONSTRAINT_OVERRIDE = "hibernate.validator.allow_parameter_constraint_override";
+
+	/**
+	 * Property corresponding to the {@link #allowMultipleCascadedValidationOnReturnValues} method.
+	 * Accepts {@code true} or {@code false}.
+	 * Defaults to {@code false}.
+	 */
+	String ALLOW_MULTIPLE_CASCADED_VALIDATION_ON_RESULT = "hibernate.validator.allow_multiple_cascaded_validation_on_result";
+
+	/**
+	 * Property corresponding to the {@link #allowParallelMethodsDefineParameterConstraints} method.
+	 * Accepts {@code true} or {@code false}.
+	 * Defaults to {@code false}.
+	 */
+	String ALLOW_PARALLEL_METHODS_DEFINE_PARAMETER_CONSTRAINTS = "hibernate.validator.allow_parallel_method_parameter_constraint";
+
+	/**
+	 * @deprecated planned for removal. Use hibernate.validator.constraint_mapping_contributors instead.
+	 * @since 5.2
+	 */
+	@Deprecated
+	String CONSTRAINT_MAPPING_CONTRIBUTOR = "hibernate.validator.constraint_mapping_contributor";
+
+	/**
+	 * Property for configuring constraint mapping contributors, allowing to set up one or more constraint mappings for
+	 * the default validator factory. Accepts a String with the comma separated fully-qualified class names of one or more
+	 * {@link org.hibernate.validator.spi.cfg.ConstraintMappingContributor} implementations.
+	 *
+	 * @since 5.3
+	 */
+	String CONSTRAINT_MAPPING_CONTRIBUTORS = "hibernate.validator.constraint_mapping_contributors";
+
+	/**
+	 * Property corresponding to the {@link #enableTraversableResolverResultCache(boolean)}.
+	 * Accepts {@code true} or {@code false}.
+	 * Defaults to {@code true}.
+	 *
+	 * @since 6.0.3
+	 */
+	String ENABLE_TRAVERSABLE_RESOLVER_RESULT_CACHE = "hibernate.validator.enable_traversable_resolver_result_cache";
+
+	/**
+	 * Property for configuring the script evaluator factory, allowing to set up which factory will be used to create
+	 * {@link ScriptEvaluator}s for evaluation of script expressions in
+	 * {@link ScriptAssert} and {@link ParameterScriptAssert}
+	 * constraints. A fully qualified name of a class implementing {@link ScriptEvaluatorFactory} is expected as a value.
+	 *
+	 * @since 6.0.3
+	 */
+	@Incubating
+	String SCRIPT_EVALUATOR_FACTORY_CLASSNAME = "hibernate.validator.script_evaluator_factory";
+
+	/**
+	 * Property for configuring temporal validation tolerance, allowing to set the acceptable margin of error when
+	 * comparing date/time in temporal constraints. In milliseconds.
+	 *
+	 * @since 6.0.5
+	 */
+	@Incubating
+	String TEMPORAL_VALIDATION_TOLERANCE = "hibernate.validator.temporal_validation_tolerance";
+==============================================================================================================
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/**
+ * @author pandric on 09/09/16.
+ */
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class MessageResponse {
+    @SerializedName("gcm.notification.messageId")
+    String messageId;
+
+    @SerializedName("gcm.notification.title")
+    String title;
+
+    @SerializedName("gcm.notification.body")
+    String body;
+
+    @SerializedName("gcm.notification.sound")
+    String sound;
+
+    @SerializedName("gcm.notification.vibrate")
+    String vibrate;
+
+    @SerializedName("gcm.notification.silent")
+    String silent;
+
+    @SerializedName("gcm.notification.category")
+    String category;
+
+    @Expose
+    String customPayload;
+
+    @Expose
+    String internalData;
+}
+==============================================================================================================
+import android.app.PendingIntent;
+import android.content.Intent;
+
+/**
+ * @author mstipanov
+ * @since 07.04.2016.
+ */
+public enum MobileMessagingProperty {
+
+    // START: prefs required for successfully connected Firebase registration with Push server
+    API_URI("org.infobip.mobile.messaging.infobip.API_URI", "https://mobile.infobip.com/"),
+    APPLICATION_CODE("org.infobip.mobile.messaging.infobip.APPLICATION_CODE", null, true),
+    SENDER_ID("org.infobip.mobile.messaging.gcm.GCM_SENDER_ID", null, true),
+    INFOBIP_REGISTRATION_ID("org.infobip.mobile.messaging.infobip.REGISTRATION_ID", null, true),
+    CLOUD_TOKEN("org.infobip.mobile.messaging.gcm.REGISTRATION_ID", null, true),
+    CLOUD_TOKEN_REPORTED("org.infobip.mobile.messaging.gcm.GCM_REGISTRATION_ID_REPORTED", false),
+    REPORTED_PUSH_SERVICE_TYPE("org.infobip.mobile.messaging.REPORTED_PUSH_SERVICE_TYPE"),
+    PERFORMED_USER_DATA_MIGRATION("org.infobip.mobile.messaging.PERFORMED_USER_DATA_MIGRATION"),
+    USE_PRIVATE_SHARED_PREFS("org.infobip.mobile.messaging.infobip.USE_PRIVATE_SHARED_PREFS", false),
+    // END
+
+    // START: prefs required for keeping up-to-date state of MM SDK
+    BATCH_REPORTING_DELAY("org.infobip.mobile.messaging.notification.BATCH_REPORTING_DELAY", 5000L),
+    VERSION_CHECK_INTERVAL_DAYS("org.infobip.mobile.messaging.notification.VERSION_CHECK_INTERVAL_DAYS", 1),
+    VERSION_CHECK_LAST_TIME("org.infobip.mobile.messaging.notification.VERSION_CHECK_LAST_TIME", 0L),
+
+    DEFAULT_MAX_RETRY_COUNT("org.infobip.mobile.messaging.infobip.DEFAULT_MAX_RETRY_COUNT", 3),
+    DEFAULT_EXP_BACKOFF_MULTIPLIER("org.infobip.mobile.messaging.infobip.DEFAULT_EXP_BACKOFF_MULTIPLIER", 2),
+    // END
+
+    // START: MO/MT messages related prefs
+    LAST_HTTP_EXCEPTION("org.infobip.mobile.messaging.infobip.LAST_HTTP_EXCEPTION"),
+    INFOBIP_UNREPORTED_MESSAGE_IDS("org.infobip.mobile.messaging.infobip.INFOBIP_UNREPORTED_MESSAGE_IDS", new String[0]),
+    INFOBIP_UNREPORTED_SEEN_MESSAGE_IDS("org.infobip.mobile.messaging.infobip.INFOBIP_UNREPORTED_SEEN_MESSAGE_IDS", new String[0]),
+    INFOBIP_GENERATED_MESSAGE_IDS("org.infobip.mobile.messaging.infobip.INFOBIP_GENERATED_MESSAGE_IDS", new String[0]),
+    INFOBIP_SYNC_MESSAGES_IDS("org.infobip.mobile.messaging.infobip.INFOBIP_SYNC_MESSAGES_IDS", new String[0]),
+    MESSAGE_STORE_CLASS("org.infobip.mobile.messaging.infobip.MESSAGE_STORE_CLASS"),
+    UNSENT_MO_MESSAGES("org.infobip.mobile.messaging.infobip.UNSENT_MO_MESSAGES", new String[0]),
+    // END
+
+    // START: notifications config
+    DISPLAY_NOTIFICATION_ENABLED("org.infobip.mobile.messaging.notification.DISPLAY_NOTIFICATION_ENABLED", true),
+    CALLBACK_ACTIVITY("org.infobip.mobile.messaging.notification.CALLBACK_ACTIVITY"),
+    DEFAULT_ICON("org.infobip.mobile.messaging.notification.DEFAULT_ICON", 0),
+    DEFAULT_COLOR("org.infobip.mobile.messaging.notification.DEFAULT_COLOR", 0),
+    DEFAULT_TITLE("org.infobip.mobile.messaging.notification.DEFAULT_TITLE", "Message"),
+    INTENT_FLAGS("org.infobip.mobile.messaging.notification.INTENT_FLAGS", Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP),
+    PENDING_INTENT_FLAGS("org.infobip.mobile.messaging.notification.PENDING_INTENT_FLAGS", PendingIntent.FLAG_CANCEL_CURRENT),
+    NOTIFICATION_AUTO_CANCEL("org.infobip.mobile.messaging.notification.NOTIFICATION_AUTO_CANCEL", true),
+    FOREGROUND_NOTIFICATION_ENABLED("org.infobip.mobile.messaging.notification.FOREGROUND_NOTIFICATION_ENABLED", true),
+    MULTIPLE_NOTIFICATIONS_ENABLED("org.infobip.mobile.messaging.infobip.MULTIPLE_NOTIFICATIONS_ENABLED", false),
+    HEADSUP_NOTIFICATIONS_ENABLED("org.infobip.mobile.messaging.infobip.HEADSUP_NOTIFICATIONS_ENABLED", true),
+    MARK_SEEN_ON_NOTIFICATION_TAP("org.infobip.mobile.messaging.infobip.MARK_SEEN_ON_NOTIFICATION_TAP", true),
+    INTERACTIVE_CATEGORIES("org.infobip.mobile.messaging.infobip.INTERACTIVE_CATEGORIES"),
+
+    GEOFENCING_ACTIVATED("org.infobip.mobile.messaging.geo.GEOFENCING_ACTIVATED", false),
+    // END
+
+    // START: privacy settings prefs
+    REPORT_CARRIER_INFO("org.infobip.mobile.messaging.infobip.REPORT_CARRIER_INFO", true),
+    REPORT_SYSTEM_INFO("org.infobip.mobile.messaging.infobip.REPORT_SYSTEM_INFO", true),
+    SAVE_USER_DATA_ON_DISK("org.infobip.mobile.messaging.infobip.SAVE_USER_DATA_ON_DISK", true),
+    SAVE_APP_CODE_ON_DISK("org.infobip.mobile.messaging.infobip.SAVE_APP_CODE_ON_DISK", true),
+    ALLOW_UNTRUSTED_SSL_ON_ERROR("org.infobip.mobile.messaging.infobip.ALLOW_UNTRUSTED_SSL_ON_ERROR", false),
+    APP_CODE_PROVIDER_CANONICAL_CLASS_NAME("org.infobip.mobile.messaging.infobip.APP_CODE_PROVIDER_CANONICAL_CLASS_NAME"),
+    // END
+
+    // START: installation (primary, app user ID, system, ...) and user related prefs
+    MOBILE_CARRIER_NAME("org.infobip.mobile.messaging.infobip.MOBILE_CARRIER_NAME", ""),
+    MOBILE_COUNTRY_CODE("org.infobip.mobile.messaging.infobip.MCC", ""),
+    MOBILE_NETWORK_CODE("org.infobip.mobile.messaging.infobip.MNC", ""),
+    SIM_CARRIER_NAME("org.infobip.mobile.messaging.infobip.SIM_CARRIER_NAME", ""),
+    SIM_COUNTRY_CODE("org.infobip.mobile.messaging.infobip.SIM_MCC", ""),
+    SIM_NETWORK_CODE("org.infobip.mobile.messaging.infobip.SIM_MNC", ""),
+
+    UNREPORTED_SYSTEM_DATA("org.infobip.mobile.messaging.infobip.UNREPORTED_SYSTEM_DATA"),
+    REPORTED_SYSTEM_DATA_HASH("org.infobip.mobile.messaging.infobip.REPORTED_SYSTEM_DATA_HASH", 0),
+    SYSTEM_DATA_VERSION_POSTFIX("org.infobip.mobile.messaging.SYSTEM_DATA_VERSION_POSTFIX"),
+
+    IS_PRIMARY("org.infobip.mobile.messaging.infobip.IS_PRIMARY", false),
+    IS_PRIMARY_UNREPORTED("org.infobip.mobile.messaging.infobip.IS_PRIMARY_UNREPORTED"),
+    APP_USER_ID("org.infobip.mobile.messaging.infobip.APP_USER_ID"),
+    IS_APP_USER_ID_UNREPORTED("org.infobip.mobile.messaging.infobip.IS_APP_USER_ID_UNREPORTED", false),
+    CUSTOM_ATTRIBUTES("org.infobip.mobile.messaging.infobip.CUSTOM_ATTRIBUTES"),
+    UNREPORTED_CUSTOM_ATTRIBUTES("org.infobip.mobile.messaging.infobip.UNREPORTED_CUSTOM_ATTRIBUTES"),
+    PUSH_REGISTRATION_ENABLED("org.infobip.mobile.messaging.infobip.PUSH_REGISTRATION_ENABLED", true),
+    UNREPORTED_PUSH_REGISTRATION_ENABLED("org.infobip.mobile.messaging.infobip.UNREPORTED_PUSH_REGISTRATION_ENABLED"),
+
+    IS_DEPERSONALIZE_UNREPORTED("org.infobip.mobile.messaging.infobip.IS_DEPERSONALIZE_UNREPORTED", false),
+    SHOULD_REPERSONALIZE("org.infobip.mobile.messaging.infobip.SHOULD_REPERSONALIZE", false),
+
+    UNREPORTED_USER_DATA("org.infobip.mobile.messaging.infobip.UNREPORTED_USER_DATA"),
+    USER_DATA("org.infobip.mobile.messaging.infobip.USER_DATA"),
+    USER_INSTALLATIONS_EXPIRE_AT("org.infobip.mobile.messaging.infobip.USER_INSTALLATIONS_EXPIRE_AT");
+    // END
+
+    private final String key;
+    private final Object defaultValue;
+    private final boolean encrypted;
+
+    MobileMessagingProperty(String key) {
+        this(key, null, false);
+    }
+
+    MobileMessagingProperty(String key, Object defaultValue) {
+        this(key, defaultValue, false);
+    }
+
+    MobileMessagingProperty(String key, Object defaultValue, boolean encrypted) {
+        this.key = key;
+        this.defaultValue = defaultValue;
+        this.encrypted = encrypted;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public Object getDefaultValue() {
+        return defaultValue;
+    }
+
+    public boolean isEncrypted() {
+        return encrypted;
+    }
+}
+==============================================================================================================
+    /**
+     * This method compares ONLY times of two dates. Year, month and day are ignored in this comparison.
+     *
+     * @return difference of two timestamps
+     */
+    public static int compareTimes(Date d1, Date d2) {
+        int t1 = (int) (d1.getTime() % (24 * 60 * 60 * 1000L));
+        int t2 = (int) (d2.getTime() % (24 * 60 * 60 * 1000L));
+        return (t1 - t2);
+    }
+==============================================================================================================
+    private Pattern defaultPattern(String repositoryName) {
+
+        return Pattern.compile("\\[maven-release-plugin\\] prepare release " + repositoryName +
+                                       "-(?<" + VERSION_REGEX_CAPTURING_GROUP_NAME + ">.*)");
+    }
+==============================================================================================================
+import com.google.common.collect.Lists;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class Tasks {
+  private static final Logger LOG = LoggerFactory.getLogger(Tasks.class);
+
+  private Tasks() {}
+
+  public static class UnrecoverableException extends RuntimeException {
+    public UnrecoverableException(String message) {
+      super(message);
+    }
+
+    public UnrecoverableException(String message, Throwable cause) {
+      super(message, cause);
+    }
+
+    public UnrecoverableException(Throwable cause) {
+      super(cause);
+    }
+  }
+
+  public interface FailureTask<I, E extends Exception> {
+    void run(I item, Exception exception) throws E;
+  }
+
+  public interface Task<I, E extends Exception> {
+    void run(I item) throws E;
+  }
+
+  public static class Builder<I> {
+    private final Iterable<I> items;
+    private ExecutorService service = null;
+    private FailureTask<I, ?> onFailure = null;
+    private boolean stopOnFailure = false;
+    private boolean throwFailureWhenFinished = true;
+    private Task<I, ?> revertTask = null;
+    private boolean stopRevertsOnFailure = false;
+    private Task<I, ?> abortTask = null;
+    private boolean stopAbortsOnFailure = false;
+
+    // retry settings
+    @SuppressWarnings("unchecked")
+    private List<Class<? extends Exception>> stopRetryExceptions = Lists.newArrayList(
+        UnrecoverableException.class);
+    private List<Class<? extends Exception>> onlyRetryExceptions = null;
+    private int maxAttempts = 1;          // not all operations can be retried
+    private long minSleepTimeMs = 1000;   // 1 second
+    private long maxSleepTimeMs = 600000; // 10 minutes
+    private long maxDurationMs = 600000;  // 10 minutes
+    private double scaleFactor = 2.0;     // exponential
+
+    public Builder(Iterable<I> items) {
+      this.items = items;
+    }
+
+    public Builder<I> executeWith(ExecutorService svc) {
+      this.service = svc;
+      return this;
+    }
+
+    public Builder<I> onFailure(FailureTask<I, ?> task) {
+      this.onFailure = task;
+      return this;
+    }
+
+    public Builder<I> stopOnFailure() {
+      this.stopOnFailure = true;
+      return this;
+    }
+
+    public Builder<I> throwFailureWhenFinished() {
+      this.throwFailureWhenFinished = true;
+      return this;
+    }
+
+    public Builder<I> throwFailureWhenFinished(boolean throwWhenFinished) {
+      this.throwFailureWhenFinished = throwWhenFinished;
+      return this;
+    }
+
+    public Builder<I> suppressFailureWhenFinished() {
+      this.throwFailureWhenFinished = false;
+      return this;
+    }
+
+    public Builder<I> revertWith(Task<I, ?> task) {
+      this.revertTask = task;
+      return this;
+    }
+
+    public Builder<I> stopRevertsOnFailure() {
+      this.stopRevertsOnFailure = true;
+      return this;
+    }
+
+    public Builder<I> abortWith(Task<I, ?> task) {
+      this.abortTask = task;
+      return this;
+    }
+
+    public Builder<I> stopAbortsOnFailure() {
+      this.stopAbortsOnFailure = true;
+      return this;
+    }
+
+    public Builder<I> stopRetryOn(Class<? extends Exception>... exceptions) {
+      stopRetryExceptions.addAll(Arrays.asList(exceptions));
+      return this;
+    }
+
+    public Builder<I> noRetry() {
+      this.maxAttempts = 1;
+      return this;
+    }
+
+    public Builder<I> retry(int nTimes) {
+      this.maxAttempts = nTimes + 1;
+      return this;
+    }
+
+    public Builder<I> onlyRetryOn(Class<? extends Exception> exception) {
+      this.onlyRetryExceptions = Collections.singletonList(exception);
+      return this;
+    }
+
+    public Builder<I> onlyRetryOn(Class<? extends Exception>... exceptions) {
+      this.onlyRetryExceptions = Lists.newArrayList(exceptions);
+      return this;
+    }
+
+    public Builder<I> exponentialBackoff(long backoffMinSleepTimeMs,
+                                         long backoffMaxSleepTimeMs,
+                                         long backoffMaxRetryTimeMs,
+                                         double backoffScaleFactor) {
+      this.minSleepTimeMs = backoffMinSleepTimeMs;
+      this.maxSleepTimeMs = backoffMaxSleepTimeMs;
+      this.maxDurationMs = backoffMaxRetryTimeMs;
+      this.scaleFactor = backoffScaleFactor;
+      return this;
+    }
+
+    public boolean run(Task<I, RuntimeException> task) {
+      return run(task, RuntimeException.class);
+    }
+
+    public <E extends Exception> boolean run(Task<I, E> task,
+                                             Class<E> exceptionClass) throws E {
+      if (service != null) {
+        return runParallel(task, exceptionClass);
+      } else {
+        return runSingleThreaded(task, exceptionClass);
+      }
+    }
+
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
+    private <E extends Exception> boolean runSingleThreaded(
+        Task<I, E> task, Class<E> exceptionClass) throws E {
+      List<I> succeeded = Lists.newArrayList();
+      List<Throwable> exceptions = Lists.newArrayList();
+
+      Iterator<I> iterator = items.iterator();
+      boolean threw = true;
+      try {
+        while (iterator.hasNext()) {
+          I item = iterator.next();
+          try {
+            runTaskWithRetry(task, item);
+            succeeded.add(item);
+
+          } catch (Exception e) {
+            exceptions.add(e);
+
+            if (onFailure != null) {
+              tryRunOnFailure(item, e);
+            }
+
+            if (stopOnFailure) {
+              break;
+            }
+          }
+        }
+
+        threw = false;
+
+      } finally {
+        // threw handles exceptions that were *not* caught by the catch block,
+        // and exceptions that were caught and possibly handled by onFailure
+        // are kept in exceptions.
+        if (threw || !exceptions.isEmpty()) {
+          if (revertTask != null) {
+            boolean failed = false;
+            for (I item : succeeded) {
+              try {
+                revertTask.run(item);
+              } catch (Exception e) {
+                failed = true;
+                LOG.error("Failed to revert task", e);
+                // keep going
+              }
+              if (stopRevertsOnFailure && failed) {
+                break;
+              }
+            }
+          }
+
+          if (abortTask != null) {
+            boolean failed = false;
+            while (iterator.hasNext()) {
+              try {
+                abortTask.run(iterator.next());
+              } catch (Exception e) {
+                failed = true;
+                LOG.error("Failed to abort task", e);
+                // keep going
+              }
+              if (stopAbortsOnFailure && failed) {
+                break;
+              }
+            }
+          }
+        }
+      }
+
+      if (throwFailureWhenFinished && !exceptions.isEmpty()) {
+        Tasks.throwOne(exceptions, exceptionClass);
+      } else if (throwFailureWhenFinished && threw) {
+        throw new RuntimeException(
+            "Task set failed with an uncaught throwable");
+      }
+
+      return !threw;
+    }
+
+    private void tryRunOnFailure(I item, Exception failure) {
+      try {
+        onFailure.run(item, failure);
+      } catch (Exception failException) {
+        failure.addSuppressed(failException);
+        LOG.error("Failed to clean up on failure", failException);
+        // keep going
+      }
+    }
+
+    private <E extends Exception> boolean runParallel(final Task<I, E> task,
+                                                      Class<E> exceptionClass)
+        throws E {
+      final Queue<I> succeeded = new ConcurrentLinkedQueue<>();
+      final Queue<Throwable> exceptions = new ConcurrentLinkedQueue<>();
+      final AtomicBoolean taskFailed = new AtomicBoolean(false);
+      final AtomicBoolean abortFailed = new AtomicBoolean(false);
+      final AtomicBoolean revertFailed = new AtomicBoolean(false);
+
+      List<Future<?>> futures = Lists.newArrayList();
+
+      for (final I item : items) {
+        // submit a task for each item that will either run or abort the task
+        futures.add(service.submit(new Runnable() {
+          @Override
+          public void run() {
+            if (!(stopOnFailure && taskFailed.get())) {
+              // run the task with retries
+              boolean threw = true;
+              try {
+                runTaskWithRetry(task, item);
+
+                succeeded.add(item);
+
+                threw = false;
+
+              } catch (Exception e) {
+                taskFailed.set(true);
+                exceptions.add(e);
+
+                if (onFailure != null) {
+                  tryRunOnFailure(item, e);
+                }
+              } finally {
+                if (threw) {
+                  taskFailed.set(true);
+                }
+              }
+
+            } else if (abortTask != null) {
+              // abort the task instead of running it
+              if (stopAbortsOnFailure && abortFailed.get()) {
+                return;
+              }
+
+              boolean failed = true;
+              try {
+                abortTask.run(item);
+                failed = false;
+              } catch (Exception e) {
+                LOG.error("Failed to abort task", e);
+                // swallow the exception
+              } finally {
+                if (failed) {
+                  abortFailed.set(true);
+                }
+              }
+            }
+          }
+        }));
+      }
+
+      // let the above tasks complete (or abort)
+      exceptions.addAll(waitFor(futures));
+      futures.clear();
+
+      if (taskFailed.get() && revertTask != null) {
+        // at least one task failed, revert any that succeeded
+        for (final I item : succeeded) {
+          futures.add(service.submit(new Runnable() {
+            @Override
+            public void run() {
+              if (stopRevertsOnFailure && revertFailed.get()) {
+                return;
+              }
+
+              boolean failed = true;
+              try {
+                revertTask.run(item);
+                failed = false;
+              } catch (Exception e) {
+                LOG.error("Failed to revert task", e);
+                // swallow the exception
+              } finally {
+                if (failed) {
+                  revertFailed.set(true);
+                }
+              }
+            }
+          }));
+        }
+
+        // let the revert tasks complete
+        exceptions.addAll(waitFor(futures));
+      }
+
+      if (throwFailureWhenFinished && !exceptions.isEmpty()) {
+        Tasks.throwOne(exceptions, exceptionClass);
+      } else if (throwFailureWhenFinished && taskFailed.get()) {
+        throw new RuntimeException(
+            "Task set failed with an uncaught throwable");
+      }
+
+      return !taskFailed.get();
+    }
+
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
+    private <E extends Exception> void runTaskWithRetry(Task<I, E> task, I item)
+        throws E {
+      long start = System.currentTimeMillis();
+      int attempt = 0;
+      while (true) {
+        attempt += 1;
+        try {
+          task.run(item);
+          break;
+
+        } catch (Exception e) {
+          long durationMs = System.currentTimeMillis() - start;
+          if (attempt >= maxAttempts || (durationMs > maxDurationMs && attempt > 1)) {
+            if (durationMs > maxDurationMs) {
+              LOG.info("Stopping retries after {} ms", durationMs);
+            }
+            throw e;
+          }
+
+          if (onlyRetryExceptions != null) {
+            // if onlyRetryExceptions are present, then this retries if one is found
+            boolean matchedRetryException = false;
+            for (Class<? extends Exception> exClass : onlyRetryExceptions) {
+              if (exClass.isInstance(e)) {
+                matchedRetryException = true;
+                break;
+              }
+            }
+            if (!matchedRetryException) {
+              throw e;
+            }
+
+          } else {
+            // otherwise, always retry unless one of the stop exceptions is found
+            for (Class<? extends Exception> exClass : stopRetryExceptions) {
+              if (exClass.isInstance(e)) {
+                throw e;
+              }
+            }
+          }
+
+          int delayMs = (int) Math.min(
+              minSleepTimeMs * Math.pow(scaleFactor, attempt - 1),
+              maxSleepTimeMs);
+          int jitter = ThreadLocalRandom.current()
+              .nextInt(Math.max(1, (int) (delayMs * 0.1)));
+
+          LOG.warn("Retrying task after failure: {}", e.getMessage(), e);
+
+          try {
+            TimeUnit.MILLISECONDS.sleep(delayMs + jitter);
+          } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(ie);
+          }
+        }
+      }
+    }
+  }
+
+  @SuppressWarnings("checkstyle:CyclomaticComplexity")
+  private static Collection<Throwable> waitFor(Collection<Future<?>> futures) {
+    while (true) {
+      int numFinished = 0;
+      for (Future<?> future : futures) {
+        if (future.isDone()) {
+          numFinished += 1;
+        }
+      }
+
+      if (numFinished == futures.size()) {
+        List<Throwable> uncaught = new ArrayList<>();
+        // all of the futures are done, get any uncaught exceptions
+        for (Future<?> future : futures) {
+          try {
+            future.get();
+
+          } catch (InterruptedException e) {
+            LOG.warn("Interrupted while getting future results", e);
+            for (Throwable t : uncaught) {
+              e.addSuppressed(t);
+            }
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+
+          } catch (CancellationException e) {
+            // ignore cancellations
+
+          } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (Error.class.isInstance(cause)) {
+              for (Throwable t : uncaught) {
+                cause.addSuppressed(t);
+              }
+              throw (Error) cause;
+            }
+
+            if (cause != null) {
+              uncaught.add(e);
+            }
+
+            LOG.warn("Task threw uncaught exception", cause);
+          }
+        }
+
+        return uncaught;
+
+      } else {
+        try {
+          Thread.sleep(10);
+        } catch (InterruptedException e) {
+          LOG.warn("Interrupted while waiting for tasks to finish", e);
+
+          for (Future<?> future : futures) {
+            future.cancel(true);
+          }
+          Thread.currentThread().interrupt();
+          throw new RuntimeException(e);
+        }
+      }
+    }
+  }
+
+  /**
+   * A range, [ 0, size )
+   */
+  private static class Range implements Iterable<Integer> {
+    private int size;
+
+    Range(int size) {
+      this.size = size;
+    }
+
+    @Override
+    public Iterator<Integer> iterator() {
+      return new Iterator<Integer>() {
+        private int current = 0;
+
+        @Override
+        public boolean hasNext() {
+          return current < size;
+        }
+
+        @Override
+        public Integer next() {
+          int ret = current;
+          current += 1;
+          return ret;
+        }
+      };
+    }
+  }
+
+  public static Builder<Integer> range(int upTo) {
+    return new Builder<>(new Range(upTo));
+  }
+
+  public static <I> Builder<I> foreach(Iterable<I> items) {
+    return new Builder<>(items);
+  }
+
+  public static <I> Builder<I> foreach(I... items) {
+    return new Builder<>(Arrays.asList(items));
+  }
+
+  @SuppressWarnings("unchecked")
+  private static <E extends Exception> void throwOne(
+      Collection<Throwable> exceptions, Class<E> allowedException) throws E {
+    Iterator<Throwable> iter = exceptions.iterator();
+    Throwable exception = iter.next();
+    Class<? extends Throwable> exceptionClass = exception.getClass();
+
+    while (iter.hasNext()) {
+      Throwable other = iter.next();
+      if (!exceptionClass.isInstance(other)) {
+        exception.addSuppressed(other);
+      }
+    }
+
+    ExceptionUtil.castAndThrow(exception, allowedException);
+  }
+
+}
+==============================================================================================================
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Static registration and notification for listeners.
+ */
+public class Listeners {
+  private Listeners() {
+  }
+
+  private static final Map<Class<?>, List<Listener<?>>> listeners = Maps.newConcurrentMap();
+
+  public static <E> void register(Listener<E> listener, Class<E> eventType) {
+    List<Listener<?>> list = listeners.get(eventType);
+
+    if (list == null) {
+      synchronized (listeners) {
+        list = listeners.get(eventType);
+        if (list == null) {
+          list = Lists.newArrayList();
+          listeners.put(eventType, list);
+        }
+      }
+    }
+
+    list.add(listener);
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <E> void notifyAll(E event) {
+    Preconditions.checkNotNull(event, "Cannot notify listeners for a null event.");
+
+    List<Listener<?>> list = listeners.get(event.getClass());
+    if (list != null) {
+      Iterator<Listener<?>> iter = list.iterator();
+      while (iter.hasNext()) {
+        Listener<E> listener = (Listener<E>) iter.next();
+        listener.notify(event);
+      }
+    }
+  }
+}
+
+
+/**
+ * A listener interface that can receive notifications.
+ */
+public interface Listener<E> {
+  void notify(E event);
+}
+==============================================================================================================
+yarn create react-app my-app
+npm init react-app my-app
+npx create-react-app my-app
 ==============================================================================================================
 ==============================================================================================================
 ==============================================================================================================
 ==============================================================================================================
 ==============================================================================================================
 ==============================================================================================================
+    private List<IssueKey> getIssueKeys(Commit commit, ProjectKey projectKey) {
+
+        return Optional.ofNullable(commit.getMessage())
+                .map(message -> {
+                    Pattern pattern = Pattern.compile(projectKey.getValue() + "-([0-9]+)");
+                    Matcher matcher = pattern.matcher(message);
+                    List<IssueKey> issueKeys = new ArrayList<>();
+                    while (matcher.find()) {
+                        issueKeys.add(new IssueKey(projectKey, new IssueId(matcher.group(1))));
+                    }
+                    return issueKeys;
+                }).orElse(Collections.emptyList());
+    }
+==============================================================================================================
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableSet;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
+
+import javax.validation.constraints.NotEmpty;
+import java.io.Serializable;
+import java.util.Set;
+
+/**
+ * Cluster Criteria.
+ *
+ * @author amsharma
+ * @author tgianos
+ * @since 2.0.0
+ */
+@Getter
+@EqualsAndHashCode(doNotUseGetters = true)
+public class ClusterCriteria implements Serializable {
+
+    private static final long serialVersionUID = 1782794735938665541L;
+
+    @NotEmpty(message = "No valid (e.g. non-blank) tags present")
+    private Set<String> tags;
+
+    /**
+     * Create a cluster criteria object with the included tags.
+     *
+     * @param tags The tags to add. Not null or empty and must have at least one non-empty tag.
+     */
+    @JsonCreator
+    public ClusterCriteria(
+        @JsonProperty(value = "tags", required = true) final Set<String> tags
+    ) {
+        final ImmutableSet.Builder<String> builder = ImmutableSet.builder();
+        tags.forEach(
+            tag -> {
+                if (StringUtils.isNotBlank(tag)) {
+                    builder.add(tag);
+                }
+            }
+        );
+        this.tags = builder.build();
+    }
+}
+==============================================================================================================
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
+
+/**
+ * A summary of the resources used by a given user.
+ *
+ * @author mprimi
+ * @since 4.0.0
+ */
+@AllArgsConstructor
+@Getter
+@EqualsAndHashCode(doNotUseGetters = true)
+@ToString(doNotUseGetters = true)
+public class UserResourcesSummary {
+    private final String user;
+    private final long runningJobsCount;
+    private final long usedMemory;
+}
+==============================================================================================================
+Movie Ratings Analysis
+This example shows a movie ratings web application that logs rating events to HDFS for follow-on analysis. Start by running the web application.
+
+Setup
+These instructions are intended for the [QuickStart VM][quickstart-vm], but should work on most Hadoop clusters. Start by cloning this repository:
+
+git clone https://github.com/rdblue/ratings-crunch.git
+cd ratings-crunch
+Average ratings using Crunch
+mvn package
+mvn kite:run-tool
+hadoop fs -cat average_ratings/part-r-00000
+Average ratings using Impala
+First we need to tell Impala to refresh its metastore so the new ratings table will be visible:
+
+impala-shell -q 'invalidate metadata ratings'
+Then we can issue queries:
+
+impala-shell -q 'select movie_id, avg(rating) from ratings group by movie_id'
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+	<plugin>
+				<groupId>com.atlassian.maven.plugins</groupId>
+				<artifactId>bitbucket-maven-plugin</artifactId>
+				<version>${amps.version}</version>
+				<extensions>true</extensions>
+				<configuration>
+					<products>
+						<product>
+							<id>bitbucket</id>
+							<instanceId>bitbucket</instanceId>
+							<version>${bitbucket.version}</version>
+							<dataVersion>${bitbucket.data.version}</dataVersion>
+						</product>
+					</products>
+					<pluginArtifacts>
+						<pluginArtifact>
+							<groupId>com.atlassian.labs.plugins</groupId>
+							<artifactId>quickreload</artifactId>
+							<version>${bitbucket-maven-plugin.version}</version>
+						</pluginArtifact>
+					</pluginArtifacts>
+				</configuration>
+			</plugin>
+==============================================================================================================
+import javax.validation.GroupSequence;
+import javax.validation.groups.Default;
+
+@GroupSequence({Default.class, Expensive.class})
+public interface ExpensiveSequence {
+}
+==============================================================================================================
+		<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-ear-plugin</artifactId>
+				
+				<configuration>
+				 <filtering>true</filtering>
+				  <packagingExcludes>${excludes}</packagingExcludes>
+					<modules>
+						<ejbModule>
+							<groupId>com.infobip.migration</groupId>
+							<artifactId>cross-server-ejb-jboss6</artifactId>
+							<bundleFileName>cross-server-ejb-jboss6.jar</bundleFileName>
+							<excluded>${iswildfly9}</excluded>
+						</ejbModule>
+						<ejbModule>
+							<groupId>com.infobip.migration</groupId>
+							<artifactId>cross-server-ejb-wildfly9</artifactId>
+							<bundleFileName>cross-server-ejb-wildfly9.jar</bundleFileName>
+							<excluded>${isjboss6}</excluded>
+						</ejbModule>
+					</modules>
+				</configuration>
+			</plugin>
+==============================================================================================================
+	<profiles>
+		<profile>
+			<id>wildfly9</id>
+			<properties>
+				<isjboss6>false</isjboss6>
+				<iswildfly9>true</iswildfly9>
+				<client.lib.location>D:/jboss-as-distribution-6.1.0.Final/jboss-6.1.0.Final/client</client.lib.location>
+				<excludes></excludes>
+			</properties>
+			
+		</profile>
+		<profile>
+			<id>jboss6</id>
+			<properties>
+				<isjboss6>true</isjboss6>
+				<iswildfly9>false</iswildfly9>
+				<client.lib.location>D:/wildfly-9.0.2.Final - instance1/bin</client.lib.location>
+				<excludes>META-INF/jboss-deployment-structure.xml</excludes>
+			</properties>
+		</profile>
+	</profiles>
+==============================================================================================================
+    <distributionManagement>
+        <repository>
+            <id>ossrh-releases</id>
+            <name>SonatypeReleases</name>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+        </repository>
+        <snapshotRepository>
+            <id>ossrh-snapshots</id>
+            <name>SonatypeSnapshots</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
 ==============================================================================================================
 ==============================================================================================================
 ==============================================================================================================
