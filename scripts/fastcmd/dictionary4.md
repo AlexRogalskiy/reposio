@@ -26114,6 +26114,65 @@ public final class PreReservedTicketDistributor implements Collector<Pair<Intege
     }
 }
 ==============================================================================================================
+Trailings metrics - data stream procesing toolkit
+
+Install dependencies:
+
+mvn install
+Build package with dependencies:
+
+mvn clean compile assembly:single
+Run program cycle:
+
+mvn package
+==============================================================================================================
+sudo: true
+language: java
+dist: trusty
+before_install:
+  - cat /etc/hosts # optionally check the content *before*
+  - sudo hostname "$(hostname | cut -c1-63)"
+  - sed -e "s/^\\(127\\.0\\.0\\.1.*\\)/\\1 $(hostname | cut -c1-63)/" /etc/hosts > /tmp/hosts
+  - sudo mv /tmp/hosts /etc/hosts
+  - cat /etc/hosts # optionally check the content *after*
+  - sudo ant download-ivy -Dskip.download=false
+  - "export DISPLAY=:99.0"
+  - "sh -e /etc/init.d/xvfb start"
+script: ant test -Dskip.download=true
+jdk:
+  - oraclejdk8
+ #- oraclejdk7 #  Jdk7 broken on container based trusty travis-ci#7019 
+ # - openjdk7
+  - openjdk8
+ # - oraclejdk9
+ # - oraclejdk11
+
+==============================================================================================================
+{
+    "namespace":"com.example.avroSample.model",
+    "type":"record",
+    "name":"Automobile",
+    "fields":[
+        {
+            "name":"modelName",
+            "type":"string"
+        },
+        {
+            "name":"make",
+            "type":"string"
+        },
+        {
+            "name":"modelYear",
+            "type":"int"
+        },
+        {
+            "name":"passengerCapacity",
+            "type":"int"
+        }
+         
+    ]
+}
+==============================================================================================================
 #!/bin/bash
 if test -z "$MONGODB_PASSWORD"; then
     echo "MONGODB_PASSWORD not defined"
