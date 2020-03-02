@@ -26154,7 +26154,46 @@ service ABCIApplication {
   rpc EndBlock(RequestEndBlock) returns (ResponseEndBlock);
 }
 -----------------------------------------------------------------------------------------
+Tableau Desktop & Server	 Oracle BI
+ QlikView	 SAP BusinessObjects
+ Birst Networked Analytics & BI	 Domo
+ Dundas BI	 Microsoft Power BI
+ Sisense	 MicroStrategy Enterprise Analytics
+ IBM Cognos	 Other (Pricing on 130 systems available)
 -----------------------------------------------------------------------------------------
+hadoop fs -put fakedata_uuid.dat /tmp/fakedata_uuid.dat
+hadoop fs -mkdir -p /user/hive/warehouse/stratany2014.db/wide_table_text
+hadoop jar /opt/cloudera/parcels/CDH-5.1.2-1.cdh5.1.2.p0.3/lib/hadoop-mapreduce/hadoop-streaming.jar -D mapred.reduce.tasks=0 -D mapreduce.output.fileoutputformat.compress=true -D mapreduce.output.fileoutputformat.compress.codec=org.apache.hadoop.io.compress.SnappyCodec -mapper /bin/cat -input /tmp/fakedata_uuid.dat -output /tmp/fakedata_uuid.dat.snappy
+hadoop fs -mv /tmp/fakedata_uuid.dat.snappy/p* /user/hive/warehouse/stratany2014.db/wide_table_text
+
+hadoop fs -mkdir -p /user/hive/warehouse/stratany2014.db/drwho_text
+hadoop fs -put drwho.dat /user/hive/warehouse/stratany2014.db/drwho_text/.
+-----------------------------------------------------------------------------------------
+
+__author__ = 'steveo'
+from faker import Factory
+#----------------------------------------------------------------------
+def create_names(fake):
+    """"""
+    for i in range(10000000):
+        print fake.first_name() \
+        + "|" + fake.last_name() \
+              + "|" + fake.email() \
+              + "|" + fake.company() \
+        + "|" + fake.job() \
+        + "|" + fake.street_address() \
+        + "|" + fake.city() \
+        + "|" + fake.state_abbr() \
+        + "|" + fake.zipcode_plus4() \
+        + "|" + fake.url() \
+        + "|" + fake.phone_number() \
+        + "|" + fake.user_agent() \
+        + "|" + fake.user_name() \
+        + "|" + str(fake.unix_time()) \
+        + "|" + str(fake.date_time_between(start_date="-70y", end_date="-20y"))
+if __name__ == "__main__":
+    fake = Factory.create()
+    create_names(fake)
 -----------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------

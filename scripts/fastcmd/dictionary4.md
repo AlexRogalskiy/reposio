@@ -23480,6 +23480,1871 @@ Then we can issue queries:
 
 impala-shell -q 'select movie_id, avg(rating) from ratings group by movie_id'
 ==============================================================================================================
+import org.apache.crunch.PCollection;
+import org.apache.crunch.Target;
+import org.apache.crunch.Target.WriteMode;
+import org.apache.crunch.fn.IdentityFn;
+import org.apache.crunch.io.At;
+import org.apache.crunch.io.To;
+import org.apache.crunch.types.PType;
+import org.apache.crunch.types.PTypeFamily;
+import org.apache.crunch.types.avro.AvroType;
+import org.apache.crunch.types.avro.AvroTypeFamily;
+import org.apache.crunch.types.writable.WritableTypeFamily;
+import org.apache.mahout.math.Vector;
+
+import com.beust.jcommander.Parameter;
+import com.cloudera.science.ml.client.cmd.CommandException;
+import com.cloudera.science.ml.mahout.types.MLWritables;
+import com.cloudera.science.ml.parallel.types.MLAvros;
+
+public class OutputParameters {
+
+  @Parameter(names = "--output-type",
+      description = "One of 'avro' or 'seq', for Avro or SequenceFile output files", required=true)
+  private String outputType;
+  
+  public PType<Vector> getVectorPType() {
+    outputType = outputType.toLowerCase();
+    if ("avro".equals(outputType)) {
+      return MLAvros.vector();
+    } else if ("seq".equals(outputType)) {
+      return MLWritables.vector();
+    } else {
+      throw new CommandException("Unsupported Vector output type: " + outputType);
+    }
+  }
+  
+  public <T> void write(PCollection<T> collect, String output) {
+    outputType = outputType.toLowerCase();
+    PTypeFamily ptf = collect.getTypeFamily();
+    PType<T> ptype = collect.getPType();
+    Target target = null;
+    if ("text".equals(outputType)) {
+      target = To.textFile(output);
+    } else if ("avro".equals(outputType)) {
+      if (AvroTypeFamily.getInstance() != ptf) {
+        // Attempt to force conversion
+        ptype = AvroTypeFamily.getInstance().as(ptype);
+        if (ptype == null) {
+          forceConversionException(output, ptype, "avro");
+        }
+        collect = collect.parallelDo(IdentityFn.<T>getInstance(), ptype);
+      }
+      target = At.avroFile(output, (AvroType<T>) ptype);
+    } else if ("seq".equals(outputType)) {
+      if (WritableTypeFamily.getInstance() != ptf) {
+        ptype = WritableTypeFamily.getInstance().as(ptype);
+        if (ptype == null) {
+          forceConversionException(output, ptype, "seq");
+        }
+        collect = collect.parallelDo(IdentityFn.<T>getInstance(), ptype);
+      }
+      target = At.sequenceFile(output, ptype);
+    } else {
+      throw new CommandException("Unknown output type: " + outputType);
+    }
+    collect.write(target, WriteMode.OVERWRITE);
+  }
+  
+  private void forceConversionException(String outputFile, PType<?> ptype, String type) {
+    String msg = String.format(
+        "Could not convert type %s into %s format for output: %s",
+        ptype.getTypeClass().getCanonicalName(), type, outputFile);
+    throw new CommandException(msg);
+  }
+}
+==============================================================================================================
+root@kafka:/# /opt/kafka_2.11-0.10.1.0/bin/kafka-topics.sh --zookeeper kafka:2181 --create --topic test_topic --partitions 3 --replication-factor 1
+==============================================================================================================
+ssh -i .ssh/hi_mark.pem ec2-user@ec2-50-17-153-88.compute-1.amazonaws.com 'hostname'
+==============================================================================================================
+USE [SRSAnalysis]
+GO
+/****** Object:  StoredProcedure [dbo].[CleanAllResults]    Script Date: 05/16/2014 16:40:22 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CleanAllResults]') AND type in (N'P', N'PC'))
+BEGIN
+EXEC dbo.sp_executesql @statement = N'-- =============================================
+-- Author:		Arthur Wiedmer
+-- Create date: 2012-08-24
+-- Description:	
+-- =============================================
+CREATE PROCEDURE [dbo].[CleanAllResults] 
+	-- Add the parameters for the stored procedure here
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+    -- Insert statements for procedure here
+    if exists (
+		select * from sysobjects 
+			where id = OBJECT_ID(N''allresults_clean'')
+				and OBJECTPROPERTY(id,N''IsUserTable'') = 1
+	)
+		drop table [SRSAnalysis].[dbo].[allresults_clean]
+    
+	--Create allresults_clean table
+	select [ANALYSIS_DATE]
+      ,[ANALYSIS_TIME]
+      ,[ANALYTE_ID]
+      ,[ANALYTE_NAME]
+      ,[RESULT]
+      ,[RESULT_UNITS]
+      ,[ERROR]
+      ,[DILUTION_FACTOR]
+      ,[ANALYTE_TYPE]
+      ,[DETECTION_LIMIT] as MDL
+      ,[DETECTION_UNITS] as MDL_UNITS
+      ,[INSTRUMENT_DETECTION_LIMIT] as IDL
+      ,[INSTRUMENT_DETECTION_UNITS] as IDL_UNITS
+      ,[LAB_QUALIFIER]
+      ,[REVIEW_QUALIFIER]
+      ,[QC1]
+      ,[PREP_DATE]
+      ,[PREP_TIME]
+      ,[RECORD_CREATED_DATE]
+      ,[RETENTION_TIME]
+      ,[SAMPLE_QUANTITATION_LIMIT] as PQL
+      ,[SAMPLE_QUANTITATION_UNITS] as PQL_UNITS
+      ,[SAMPLE_SEQ]
+      ,[RESULT_SEQ]
+      ,[RESULT_TYPE] 
+	into [SRSAnalysis].[dbo].[allresults_clean]
+	from
+	[SRSAnalysis].[dbo].[allresults] as t
+	where t.RESULT_UNITS<>''%'' and t.RESULT_UNITS is not NULL and t.RESULT is not NULL
+	
+		--ALTER INDEX COLUMNS
+		ALTER TABLE [SRSAnalysis].[dbo].[allresults_clean]
+		ALTER COLUMN RESULT_SEQ int
+		
+		ALTER TABLE [SRSAnalysis].[dbo].[allresults_clean]
+		ALTER COLUMN SAMPLE_SEQ int
+		
+		
+		--Create index on SAMPLE_SEQ
+		create index AllResults2_sampleseq_idx
+		on allresults_clean(SAMPLE_SEQ);
+		
+		create index AllResults2_resultseq_idx
+		on allresults_clean(RESULT_SEQ);
+		
+		
+	--Unit conversions
+	
+	--	ng/L --> ug/L
+	
+	update analytes
+	set result = convert(float(53), result) / 1000.0,
+	    result_units = ''ug/L''
+	from allresults_clean analytes
+	where result_units = ''ng/L''
+	--
+	update analytes
+	set mdl = convert(float(53), mdl) / 1000.0,
+	    mdl_units = ''ug/L''
+	from allresults_clean analytes
+	where mdl_units = ''ng/L''	
+	--
+	update analytes
+	set pql = convert(float(53), pql) / 1000.0,
+	    pql_units = ''ug/L''
+	from allresults_clean analytes
+	where pql_units = ''ng/L''	
+	--
+	update analytes
+	set idl = convert(float(53), idl) / 1000.0,
+	    idl_units = ''ug/L''
+	from allresults_clean analytes
+	where idl_units = ''ng/L''
+	-- mg/L --> ug/L
+		
+	update analytes
+	set result = convert(float(53), result) * 1000.0,
+	    result_units = ''ug/L''
+	from allresults_clean analytes
+	where result_units = ''mg/L''
+	--
+	update analytes
+	set mdl = convert(float(53), mdl) * 1000.0,
+	    mdl_units = ''ug/L''
+	from allresults_clean analytes
+	where mdl_units = ''mg/L''	
+	--
+	update analytes
+	set pql = convert(float(53), pql) * 1000.0,
+	    pql_units = ''ug/L''
+	from allresults_clean analytes
+	where pql_units = ''mg/L''
+	--
+	update analytes
+	set idl = convert(float(53), idl) * 1000.0,
+	    idl_units = ''ug/L''
+	from allresults_clean analytes
+	where idl_units = ''mg/L''	
+	
+	-- mg/kg --> ug/kg
+	
+	update analytes
+	set result = convert(float(53), result) * 1000.0,
+	    result_units = ''ug/kg''
+	from allresults_clean analytes
+	where result_units = ''mg/kg''
+	--
+	update analytes
+	set mdl = convert(float(53), mdl) * 1000.0,
+	    mdl_units = ''ug/kg''
+	from allresults_clean analytes
+	where mdl_units = ''mg/kg''	
+	--
+	update analytes
+	set pql = convert(float(53), pql) * 1000.0,
+	    pql_units = ''ug/kg''
+	from allresults_clean analytes
+	where pql_units = ''mg/kg''
+	--
+	update analytes
+	set idl = convert(float(53), idl) * 1000.0,
+	    idl_units = ''ug/kg''
+	from allresults_clean analytes
+	where idl_units = ''mg/kg''		
+	
+	-- pCi/ml --> pCi/L
+		
+	update analytes
+	set result = convert(float(53), result) * 1000.0,
+	    error = convert(float(53), error) * 1000.0,
+	    result_units = ''pCi/L''
+	from allresults_clean analytes
+	where result_units = ''pCi/mL''
+	--
+	update analytes
+	set mdl = convert(float(53), mdl) * 1000.0,
+	    mdl_units = ''pCi/L''
+	from allresults_clean analytes
+	where mdl_units = ''pCi/mL''	
+	--
+	update analytes
+	set pql = convert(float(53), pql) * 1000.0,
+	    pql_units = ''pCi/L''
+	from allresults_clean analytes
+	where pql_units = ''pCi/mL''
+	--
+	update analytes
+	set idl = convert(float(53), idl) * 1000.0,
+	    idl_units = ''pCi/L''
+	from allresults_clean analytes
+	where idl_units = ''pCi/mL''
+		
+	
+	--Datatype conversion
+	/*update  allresults
+	set =convert(float(53),)
+	*/
+	
+	/*update  allresults
+	set [NORTHING]=convert(numeric(32,10),[NORTHING])
+    update  allresults
+	set [EASTING]=convert(numeric(32,10),[EASTING])
+	
+	update  allresults
+	set [LONGITUDE]=CONVERT(numeric(32,14),[LONGITUDE])
+      
+    update  allresults
+	set [LATITUDE]=convert(numeric(32,14),[LATITUDE])
+	
+	update  allresults
+	set [GROUND_ELEVATION]=convert(numeric(32,4),[GROUND_ELEVATION])
+	
+	update  allresults
+	set [REFERENCE_ELEVATION]=convert(numeric(32,4),[REFERENCE_ELEVATION])*/
+	
+	--Add flag for geometry selection
+	/*ALTER TABLE allresults
+	ADD areaflag bit NULL;
+	
+	UPDATE allresults
+	SET areaflag = dbo.n_isinfharea(LATITUDE,LONGITUDE)*/
+		
+END
+' 
+END
+GO
+==============================================================================================================
+import org.junit.jupiter.api.Test;
+
+import java.util.Optional;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class TeeingCollectorTest {
+    @Test
+    void canCollectStreamFromTwoCollectorsAndMergeResult() {
+        SalaryRange salaryRange = Stream
+                .of(56700, 67600, 45200, 120000, 77600, 85000)
+                .collect(teeing(
+                        minBy(Integer::compareTo),
+                        maxBy(Integer::compareTo),
+                        SalaryRange::fromOptional));
+        assertEquals("Salaries range between 45200 and 120000.", salaryRange.toString());
+    }
+
+    private static class SalaryRange {
+        private final Integer min;
+        private final Integer max;
+
+        private SalaryRange(Integer min, Integer max) {
+            this.min = min;
+            this.max = max;
+        }
+
+        public static SalaryRange fromOptional(Optional<Integer> min, Optional<Integer> max) {
+            if (min.isEmpty() || max.isEmpty()) {
+                throw new IllegalStateException("Minimum and maximum salaries cannot be null");
+            }
+            return new SalaryRange(min.get(), max.get());
+        }
+
+        @Override
+        public String toString() {
+            return "Salaries range between " + min + " and " + max + ".";
+        }
+    }
+}
+==============================================================================================================
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class SwitchExpressionTest {
+    @DisplayName("Can use traditional switch statement")
+    @ParameterizedTest
+    @MethodSource("storageTypes")
+    void canUseSwitchStatement(StorageType storageType, String target)
+            throws URISyntaxException {
+        URI result;
+
+        switch (storageType) {
+            case LOCAL_FILE: result = new URI("file://~/storage");
+                             break;
+            case CLOUD: result = new URI("http://mycloud.com/data");
+                        break;
+            default: throw new IllegalArgumentException("Unknown storage type");
+        }
+
+        assertEquals(new URI(target), result);
+    }
+
+    @DisplayName("Can use switch arrow syntax and avoid break statement")
+    @ParameterizedTest
+    @MethodSource("storageTypes")
+    void canUseSwitchArrowSyntaxToAvoidBreakStatement(StorageType storageType, String target)
+            throws URISyntaxException {
+        URI result = switch (storageType) {
+            case LOCAL_FILE -> new URI("file://~/storage");
+            case CLOUD -> new URI("http://mycloud.com/data");
+            default -> throw new IllegalArgumentException("Unknown storage type");
+        };
+
+        assertEquals(new URI(target), result);
+    }
+
+    @DisplayName("Can use switch arrow syntax and break with return value")
+    @ParameterizedTest
+    @MethodSource("storageTypes")
+    void canUseSwitchArrowSyntaxAndReturnWithBreakStatement(StorageType storageType, String target)
+            throws URISyntaxException {
+        URI result = switch (storageType) {
+            case LOCAL_FILE -> {
+                System.out.println("Retrieving the local file storage URI");
+                break new URI("file://~/storage");
+            }
+            case CLOUD -> {
+                System.out.println("Retrieving the cloud storage URI");
+                break new URI("http://mycloud.com/data");
+            }
+            default -> throw new IllegalArgumentException("Unknown storage type");
+        };
+
+        assertEquals(new URI(target), result);
+    }
+
+    private enum StorageType {
+        LOCAL_FILE,
+        CLOUD
+    }
+
+    private static Stream<Arguments> storageTypes() {
+        return Stream.of(
+                Arguments.of(StorageType.LOCAL_FILE, "file://~/storage"),
+                Arguments.of(StorageType.CLOUD, "http://mycloud.com/data")
+        );
+    }
+}
+==============================================================================================================
+spring.cache.cache-names=latestFinalGradleVersion,releaseCandidateGradleVersion,nightlyGradleVersion
+spring.cache.caffeine.spec=maximumSize=15,expireAfterWrite=600s
+==============================================================================================================
+$ ./gradlew bootRun --args='--server.port=9090'
+==============================================================================================================
+import com.bmuschko.gradle.initializr.archive.Archiver;
+import com.bmuschko.gradle.initializr.generator.ProjectGenerator;
+import com.bmuschko.gradle.initializr.metadata.GradleVersionReader;
+import com.bmuschko.gradle.initializr.model.ProjectRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.util.FileSystemUtils;
+import org.springframework.util.StreamUtils;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
+
+@Service
+public class DefaultGradleInitializrService implements GradleInitializrService {
+
+    private final Logger logger = LoggerFactory.getLogger(DefaultGradleInitializrService.class);
+    private final ProjectGenerator projectGenerator;
+    private final Archiver archiver;
+    private final GradleVersionReader gradleVersionReader;
+
+    public DefaultGradleInitializrService(ProjectGenerator projectGenerator, Archiver archiver, GradleVersionReader gradleVersionReader) {
+        this.projectGenerator = projectGenerator;
+        this.archiver = archiver;
+        this.gradleVersionReader = gradleVersionReader;
+    }
+
+    public byte[] createZip(ProjectRequest projectRequest) {
+        return createDownloadFile((tmpDir) -> createZip(tmpDir, projectRequest));
+    }
+
+    public byte[] createTgz(ProjectRequest projectRequest) {
+        return createDownloadFile((tmpDir) -> createTar(tmpDir, projectRequest));
+    }
+
+    private byte[] createDownloadFile(Function<File, File> action) {
+        Path tmpDir = null;
+
+        try {
+            tmpDir = createTempDir();
+
+            if (logger.isDebugEnabled()) {
+                logger.debug("Generating project in temporary directory " + tmpDir.toFile());
+            }
+
+            File download = action.apply(tmpDir.toFile());
+            return fileToByteArray(download);
+        } catch(Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (tmpDir != null) {
+                if (!FileSystemUtils.deleteRecursively(tmpDir.toFile())) {
+                    logger.warn("Unable to delete temporary directory " + tmpDir.toFile());
+                }
+            }
+        }
+    }
+
+    private Path createTempDir() throws IOException {
+        return Files.createTempDirectory("gradle-initializr");
+    }
+
+    private File createZip(File targetDir, ProjectRequest projectRequest) {
+        generateProject(targetDir, projectRequest);
+        File file = new File(targetDir, "starter.zip");
+        archiver.zip(targetDir, file);
+        return file;
+    }
+
+    private File createTar(File targetDir, ProjectRequest projectRequest) {
+        generateProject(targetDir, projectRequest);
+        File file = new File(targetDir, "starter.tar");
+        archiver.tar(targetDir, file);
+        return file;
+    }
+
+    private void generateProject(File targetDir, ProjectRequest projectRequest) {
+        projectGenerator.generate(targetDir, projectRequest);
+    }
+
+    private byte[] fileToByteArray(File file) throws IOException {
+        return StreamUtils.copyToByteArray(new FileInputStream(file));
+    }
+
+    @Override
+    public List<AnnotatedGradleVersion> getGradleVersions() {
+        List<AnnotatedGradleVersion> annotatedGradleVersions = new ArrayList<>();
+        String latestFinal = gradleVersionReader.getLatestFinalVersion();
+        String releaseCandidate = gradleVersionReader.getReleaseCandidateVersion();
+        String nightly = gradleVersionReader.getNightlyVersion();
+        annotatedGradleVersions.add(new AnnotatedGradleVersion(latestFinal));
+
+        if (releaseCandidate != null) {
+            annotatedGradleVersions.add(new AnnotatedGradleVersion(releaseCandidate, "release candidate"));
+        }
+
+        if (nightly != null) {
+            annotatedGradleVersions.add(new AnnotatedGradleVersion(nightly, "nightly"));
+        }
+
+        return annotatedGradleVersions;
+    }
+}
+==============================================================================================================
+import com.bmuschko.todo.webapp.model.ToDoItem;
+import com.bmuschko.todo.webapp.service.ToDoService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Controller
+public class ToDoController {
+    public static final String INDEX_PAGE = "todo-list";
+
+    private ToDoService toDoService;
+
+    @Autowired
+    public ToDoController(ToDoService toDoService) {
+        this.toDoService = toDoService;
+    }
+
+    @RequestMapping("/")
+    public String index(){
+        return "redirect:/all";
+    }
+
+    @RequestMapping(value = "/all", method = RequestMethod.GET)
+    public String allItems(Model model) {
+        List<ToDoItem> toDoItems = toDoService.findAll();
+        model.addAttribute("toDoItems", toDoItems);
+        model.addAttribute("stats", determineStats(toDoItems));
+        model.addAttribute("filter", "all");
+        return INDEX_PAGE;
+    }
+
+    @RequestMapping(value = "/active", method = RequestMethod.GET)
+    public String activeItems(Model model) {
+        List<ToDoItem> toDoItems = toDoService.findAll();
+        model.addAttribute("toDoItems", filterBasedOnStatus(toDoItems, true));
+        model.addAttribute("stats", determineStats(toDoItems));
+        model.addAttribute("filter", "active");
+        return INDEX_PAGE;
+    }
+
+    @RequestMapping(value = "/completed", method = RequestMethod.GET)
+    public String completedItems(Model model) {
+        List<ToDoItem> toDoItems = toDoService.findAll();
+        model.addAttribute("toDoItems", filterBasedOnStatus(toDoItems, false));
+        model.addAttribute("stats", determineStats(toDoItems));
+        model.addAttribute("filter", "active");
+        return INDEX_PAGE;
+    }
+
+    @RequestMapping(value = "/insert", method = RequestMethod.POST)
+    public String insertItem(@RequestParam String name, @RequestParam String filter) {
+        ToDoItem toDoItem = new ToDoItem();
+        toDoItem.setName(name);
+        toDoService.save(toDoItem);
+        return "redirect:" + filter;
+    }
+
+    @RequestMapping(value = "/update", method = RequestMethod.POST)
+    public String updateItem(@RequestParam Long id, @RequestParam String name, @RequestParam String filter) {
+        ToDoItem toDoItem = toDoService.findOne(id);
+
+        if(toDoItem != null) {
+            toDoItem.setName(name);
+            toDoService.save(toDoItem);
+        }
+
+        return "redirect:" + filter;
+    }
+
+    @RequestMapping(value = "/delete", method = RequestMethod.POST)
+    public String deleteItem(@RequestParam Long id, @RequestParam String filter) {
+        ToDoItem toDoItem = toDoService.findOne(id);
+
+        if(toDoItem != null) {
+            toDoService.delete(toDoItem);
+        }
+
+        return "redirect:" + filter;
+    }
+
+    @RequestMapping(value = "/toggleStatus", method = RequestMethod.POST)
+    public String toggleStatus(@RequestParam Long id, @RequestParam(required = false) Boolean toggle, @RequestParam String filter) {
+        ToDoItem toDoItem = toDoService.findOne(id);
+
+        if(toDoItem != null) {
+            boolean completed = (toggle == null || toggle == Boolean.FALSE) ? false : true;
+            toDoItem.setCompleted(completed);
+            toDoService.save(toDoItem);
+        }
+
+        return "redirect:" + filter;
+    }
+
+    @RequestMapping(value = "/clearCompleted", method = RequestMethod.POST)
+    public String clearCompleted(@RequestParam String filter) {
+        List<ToDoItem> toDoItems = toDoService.findAll();
+
+        for(ToDoItem toDoItem : toDoItems) {
+            if(toDoItem.isCompleted()) {
+                toDoService.delete(toDoItem);
+            }
+        }
+
+        return "redirect:" + filter;
+    }
+
+    private List<ToDoItem> filterBasedOnStatus(List<ToDoItem> toDoItems, boolean active) {
+        List<ToDoItem> filteredToDoItems = new ArrayList<>();
+
+        for(ToDoItem toDoItem : toDoItems) {
+            if(toDoItem.isCompleted() != active) {
+                filteredToDoItems.add(toDoItem);
+            }
+        }
+
+        return filteredToDoItems;
+    }
+
+
+    private ToDoListStats determineStats(List<ToDoItem> toDoItems) {
+        ToDoListStats toDoListStats = new ToDoListStats();
+
+        for(ToDoItem toDoItem : toDoItems) {
+            if(toDoItem.isCompleted()) {
+                toDoListStats.addCompleted();
+            }
+            else {
+                toDoListStats.addActive();
+            }
+        }
+
+        return toDoListStats;
+    }
+
+    public static class ToDoListStats {
+        private int active;
+        private int completed;
+
+        private void addActive() {
+            active++;
+        }
+
+        private void addCompleted() {
+            completed++;
+        }
+
+        public int getActive() {
+            return active;
+        }
+
+        public int getCompleted() {
+            return completed;
+        }
+
+        public int getAll() {
+            return active + completed;
+        }
+
+        void setActive(int active) {
+            this.active = active;
+        }
+
+        void setCompleted(int completed) {
+            this.completed = completed;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ToDoListStats stats = (ToDoListStats) o;
+
+            if (active != stats.active) return false;
+            return completed == stats.completed;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = active;
+            result = 31 * result + completed;
+            return result;
+        }
+    }
+}
+==============================================================================================================
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant::Config.run do |config|
+  config.vm.box = "lucid32"
+  config.vm.box_url = "http://files.vagrantup.com/lucid32.box"
+
+  config.vm.define "tomcat" do |tomcat|
+    tomcat.vm.network :hostonly, "192.168.1.33"
+    tomcat.vm.provision :puppet do |puppet|
+      puppet.manifests_path = "manifests"
+      puppet.manifest_file = "tomcat.pp"
+    end
+  end
+end
+==============================================================================================================
+$ ./mvnw spring-boot:run -Dspring-boot.run.jvmArguments="-Dserver.port=9090"
+==============================================================================================================
+#!/bin/bash -ex
+
+case "$1" in
+    pre_machine)
+        # copy certificates to default directory ~/.docker
+        mkdir .docker
+        cp $CIRCLE_PROJECT_REPONAME/etc/certs/* .docker
+
+        # configure docker deamon to use SSL and provide the path to the certificates
+        docker_opts='DOCKER_OPTS="$DOCKER_OPTS -H tcp://127.0.0.1:2376 --tlsverify --tlscacert='$HOME'/.docker/ca.pem --tlscert='$HOME'/.docker/server-cert.pem --tlskey='$HOME'/.docker/server-key.pem"'
+        sudo sh -c "echo '$docker_opts' >> /etc/default/docker"
+
+        # debug output
+        cat /etc/default/docker
+        ls -la $HOME/.docker
+        ;;
+
+    post_machine)
+        # fix permissions on docker.log so it can be collected as an artifact
+        sudo chown ubuntu:ubuntu /var/log/upstart/docker.log
+
+        # validate that docker is working
+        docker version
+        ;;
+
+    dependencies)
+        mvn clean install -T 2 -Dmaven.javadoc.skip=true -DskipTests=true -B -V
+        ;;
+
+    test)
+        mvn clean verify
+        ;;
+
+    collect_artifacts)
+        # collect artifacts into the artifacts dir
+        cp target/*.jar $CIRCLE_ARTIFACTS
+        ;;
+
+    collect_test_reports)
+        mkdir -p $CIRCLE_TEST_REPORTS/surefire
+        mkdir -p $CIRCLE_TEST_REPORTS/failsafe
+        cp target/surefire-reports/TEST-*.xml $CIRCLE_TEST_REPORTS/surefire
+        cp target/failsafe-reports/TEST-*.xml $CIRCLE_TEST_REPORTS/failsafe
+        ;;
+esac
+
+==============================================================================================================
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Representation of filters to SwarmNodes lists
+ */
+public class SwarmNodesFiltersBuilder {
+
+    private Map<String, List<String>> filters = new HashMap<String, List<String>>();
+
+    public SwarmNodesFiltersBuilder() {
+
+    }
+
+    public SwarmNodesFiltersBuilder withFilter(String key, String... value) {
+        filters.put(key, Arrays.asList(value));
+        return this;
+    }
+
+    public SwarmNodesFiltersBuilder withFilter(String key, List<String> value) {
+        filters.put(key, value);
+        return this;
+    }
+
+    public List<String> getFilter(String key) {
+        return filters.get(key);
+    }
+
+    public SwarmNodesFiltersBuilder withIds(List<String> ids) {
+        withFilter("id", ids);
+        return this;
+    }
+
+    public List<String> getIds() {
+        return getFilter("id");
+    }
+
+    public SwarmNodesFiltersBuilder withNames(List<String> names) {
+        withFilter("name", names);
+        return this;
+    }
+
+    public SwarmNodesFiltersBuilder withMemberships(List<String> memberships) {
+        withFilter("membership", memberships);
+        return this;
+    }
+
+    public List<String> getMemberships() {
+        return getFilter("membership");
+    }
+
+    public SwarmNodesFiltersBuilder withRoles(List<String> roles) {
+        withFilter("role", roles);
+        return this;
+    }
+
+    public List<String> getRoles() {
+        return getFilter("role");
+    }
+
+    public List<String> getNames() {
+        return getFilter("names");
+    }
+
+    // CHECKSTYLE:OFF
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+
+        SwarmNodesFiltersBuilder filters1 = (SwarmNodesFiltersBuilder) o;
+
+        return filters.equals(filters1.filters);
+
+    }
+
+    // CHECKSTYLE:ON
+
+    @Override
+    public int hashCode() {
+        return filters.hashCode();
+    }
+
+    public Map<String, List<String>> build() {
+        return filters;
+    }
+}
+==============================================================================================================
+import static com.github.dockerjava.core.util.FilePathUtil.relativize;
+import static java.nio.file.FileVisitOption.FOLLOW_LINKS;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.EnumSet;
+import java.util.zip.GZIPOutputStream;
+
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
+import org.apache.commons.io.FileUtils;
+
+import com.google.common.io.ByteStreams;
+
+public class CompressArchiveUtil {
+    private CompressArchiveUtil() {
+        // utility class
+    }
+
+    static void putTarEntry(TarArchiveOutputStream tarOutputStream, TarArchiveEntry tarEntry, Path file)
+            throws IOException {
+        tarEntry.setSize(Files.size(file));
+        tarOutputStream.putArchiveEntry(tarEntry);
+        try (InputStream input = new BufferedInputStream(Files.newInputStream(file))) {
+            ByteStreams.copy(input, tarOutputStream);
+            tarOutputStream.closeArchiveEntry();
+        }
+    }
+
+    private static TarArchiveOutputStream buildTarStream(Path outputPath, boolean gZipped) throws IOException {
+        OutputStream outputStream = new BufferedOutputStream(Files.newOutputStream(outputPath));
+        if (gZipped) {
+            outputStream = new GzipCompressorOutputStream(outputStream);
+        }
+        TarArchiveOutputStream tarArchiveOutputStream = new TarArchiveOutputStream(outputStream);
+        tarArchiveOutputStream.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
+        return tarArchiveOutputStream;
+    }
+
+    /**
+     * Recursively tar file
+     *
+     * @param inputPath
+     *            file path can be directory
+     * @param outputPath
+     *            where to put the archived file
+     * @param childrenOnly
+     *            if inputPath is directory and if childrenOnly is true, the archive will contain all of its children, else the archive
+     *            contains unique entry which is the inputPath itself
+     * @param gZipped
+     *            compress with gzip algorithm
+     */
+    public static void tar(Path inputPath, Path outputPath, boolean gZipped, boolean childrenOnly) throws IOException {
+        if (!Files.exists(inputPath)) {
+            throw new FileNotFoundException("File not found " + inputPath);
+        }
+        FileUtils.touch(outputPath.toFile());
+
+        try (TarArchiveOutputStream tarArchiveOutputStream = buildTarStream(outputPath, gZipped)) {
+            if (!Files.isDirectory(inputPath)) {
+                TarArchiveEntry tarEntry = new TarArchiveEntry(inputPath.getFileName().toString());
+                if (inputPath.toFile().canExecute()) {
+                    tarEntry.setMode(tarEntry.getMode() | 0755);
+                }
+                putTarEntry(tarArchiveOutputStream, tarEntry, inputPath);
+            } else {
+                Path sourcePath = inputPath;
+                if (!childrenOnly) {
+                    // In order to have the dossier as the root entry
+                    sourcePath = inputPath.getParent();
+                }
+                Files.walkFileTree(inputPath, EnumSet.of(FOLLOW_LINKS), Integer.MAX_VALUE,
+                        new TarDirWalker(sourcePath, tarArchiveOutputStream));
+            }
+            tarArchiveOutputStream.flush();
+        }
+    }
+
+    public static File archiveTARFiles(File base, Iterable<File> files, String archiveNameWithOutExtension)
+            throws IOException {
+        File tarFile = new File(FileUtils.getTempDirectoryPath(), archiveNameWithOutExtension + ".tar");
+        tarFile.deleteOnExit();
+        try (TarArchiveOutputStream tos = new TarArchiveOutputStream(new GZIPOutputStream(new BufferedOutputStream(
+                new FileOutputStream(tarFile))))) {
+            tos.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
+            for (File file : files) {
+                TarArchiveEntry tarEntry = new TarArchiveEntry(file);
+                tarEntry.setName(relativize(base, file));
+
+                if (!file.isDirectory() && file.canExecute()) {
+                    tarEntry.setMode(tarEntry.getMode() | 0755);
+                }
+
+                tos.putArchiveEntry(tarEntry);
+
+                if (!file.isDirectory()) {
+                    FileUtils.copyFile(file, tos);
+                }
+                tos.closeArchiveEntry();
+            }
+        }
+
+        return tarFile;
+    }
+}
+==============================================================================================================
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.spec.InvalidKeySpecException;
+import java.util.ArrayList;
+import java.util.List;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.PEMKeyPair;
+import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.CheckForNull;
+
+import static java.util.Objects.requireNonNull;
+
+public class CertificateUtils {
+    private static final Logger LOG = LoggerFactory.getLogger(CertificateUtils.class);
+
+    private CertificateUtils() {
+        // utility class
+    }
+
+    public static boolean verifyCertificatesExist(String dockerCertPath) {
+        String[] files = {"ca.pem", "cert.pem", "key.pem"};
+        boolean result = true;
+        for (String file : files) {
+            File path = new File(dockerCertPath, file);
+            result &= path.exists();
+        }
+
+        return result;
+    }
+
+    @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
+    public static KeyStore createKeyStore(final String keypem, final String certpem) throws NoSuchAlgorithmException,
+            InvalidKeySpecException, IOException, CertificateException, KeyStoreException {
+        PrivateKey privateKey = loadPrivateKey(keypem);
+        requireNonNull(privateKey);
+        List<Certificate> privateCertificates = loadCertificates(certpem);
+
+        KeyStore keyStore = KeyStore.getInstance("JKS");
+        keyStore.load(null);
+
+        keyStore.setKeyEntry("docker",
+                privateKey,
+                "docker".toCharArray(),
+                privateCertificates.toArray(new Certificate[privateCertificates.size()])
+        );
+
+        return keyStore;
+    }
+
+    /**
+     * from "cert.pem" String
+     */
+    public static List<Certificate> loadCertificates(final String certpem) throws IOException,
+            CertificateException {
+        final StringReader certReader = new StringReader(certpem);
+        try (BufferedReader reader = new BufferedReader(certReader)) {
+            return loadCertificates(reader);
+        }
+    }
+
+    /**
+     * "cert.pem" from reader
+     */
+    public static List<Certificate> loadCertificates(final Reader reader) throws IOException,
+            CertificateException {
+        try (PEMParser pemParser = new PEMParser(reader)) {
+            List<Certificate> certificates = new ArrayList<>();
+
+            JcaX509CertificateConverter certificateConverter = new JcaX509CertificateConverter()
+                    .setProvider(BouncyCastleProvider.PROVIDER_NAME);
+            Object certObj = pemParser.readObject();
+
+            if (certObj instanceof X509CertificateHolder) {
+                X509CertificateHolder certificateHolder = (X509CertificateHolder) certObj;
+                certificates.add(certificateConverter.getCertificate(certificateHolder));
+            }
+
+            return certificates;
+        }
+    }
+
+
+    /**
+     * Return private key ("key.pem") from Reader
+     */
+    @CheckForNull
+    public static PrivateKey loadPrivateKey(final Reader reader) throws IOException, NoSuchAlgorithmException,
+            InvalidKeySpecException {
+        try (PEMParser pemParser = new PEMParser(reader)) {
+            Object readObject = pemParser.readObject();
+            while (readObject != null) {
+                PrivateKeyInfo privateKeyInfo = getPrivateKeyInfoOrNull(readObject);
+                if (privateKeyInfo != null) {
+                    return new JcaPEMKeyConverter().getPrivateKey(privateKeyInfo);
+                }
+                readObject = pemParser.readObject();
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Find a PrivateKeyInfo in the PEM object details. Returns null if the PEM object type is unknown.
+     */
+    @CheckForNull
+    private static PrivateKeyInfo getPrivateKeyInfoOrNull(Object pemObject) throws NoSuchAlgorithmException {
+        PrivateKeyInfo privateKeyInfo = null;
+        if (pemObject instanceof PEMKeyPair) {
+            PEMKeyPair pemKeyPair = (PEMKeyPair) pemObject;
+            privateKeyInfo = pemKeyPair.getPrivateKeyInfo();
+        } else if (pemObject instanceof PrivateKeyInfo) {
+            privateKeyInfo = (PrivateKeyInfo) pemObject;
+        } else if (pemObject instanceof ASN1ObjectIdentifier) {
+            // no idea how it can be used
+            final ASN1ObjectIdentifier asn1ObjectIdentifier = (ASN1ObjectIdentifier) pemObject;
+            LOG.trace("Ignoring asn1ObjectIdentifier {}", asn1ObjectIdentifier);
+        } else {
+            LOG.warn("Unknown object '{}' from PEMParser", pemObject);
+        }
+        return privateKeyInfo;
+    }
+
+    /**
+     * Return KeyPair from "key.pem"
+     */
+    @CheckForNull
+    public static PrivateKey loadPrivateKey(final String keypem) throws IOException, NoSuchAlgorithmException,
+            InvalidKeySpecException {
+        try (StringReader certReader = new StringReader(keypem);
+             BufferedReader reader = new BufferedReader(certReader)) {
+            return loadPrivateKey(reader);
+        }
+    }
+
+    /**
+     * "ca.pem" from String
+     */
+    public static KeyStore createTrustStore(String capem) throws IOException, CertificateException,
+            KeyStoreException, NoSuchAlgorithmException {
+        try (Reader certReader = new StringReader(capem)) {
+            return createTrustStore(certReader);
+        }
+    }
+
+    /**
+     * "ca.pem" from Reader
+     */
+    public static KeyStore createTrustStore(final Reader certReader) throws IOException, CertificateException,
+            KeyStoreException, NoSuchAlgorithmException {
+        try (PEMParser pemParser = new PEMParser(certReader)) {
+
+            KeyStore trustStore = KeyStore.getInstance("JKS");
+            trustStore.load(null);
+
+            int index = 1;
+            Object pemCert;
+
+            while ((pemCert = pemParser.readObject()) != null) {
+                Certificate caCertificate = new JcaX509CertificateConverter()
+                        .setProvider(BouncyCastleProvider.PROVIDER_NAME)
+                        .getCertificate((X509CertificateHolder) pemCert);
+                trustStore.setCertificateEntry("ca-" + index, caCertificate);
+                index++;
+            }
+
+            return trustStore;
+        }
+    }
+
+}
+==============================================================================================================
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+public class DefaultFileReader implements FileReader {
+
+    @Override
+    public String readContent(Path path) throws IOException {
+        if (Files.notExists(path)) {
+            throw new IOException("File does not exist");
+        }
+
+        return new String(Files.readAllBytes(path));
+    }
+}
+
+import java.io.IOException;
+import java.nio.file.Path;
+
+public class DefaultFileManager implements FileManager {
+
+    private final FileReader fileReader;
+
+    public DefaultFileManager(FileReader fileReader) {
+        this.fileReader = fileReader;
+    }
+
+    @Override
+    public String readContent(Path path) throws IOException {
+        return fileReader.readContent(path);
+    }
+}
+==============================================================================================================
+$ java -Xms512m -Xmx1g -jar categolj2-backend.jar --server.port 8080 --spring.jpa.database=MYSQL --spring.datasource.driverClassName=com.mysql.jdbc.Driver --spring.datasource.url=jdbc:mysql://localhost:3306/categolj2?zeroDateTimeBehavior=convertToNull --spring.datasource.username=root --spring.datasource.password=password
+==============================================================================================================
+        <profile>
+            <id>mysql</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <database>MYSQL</database>
+                <flyway.url>jdbc:mysql://localhost:3306/categolj2?zeroDateTimeBehavior=convertToNull</flyway.url>
+                <flyway.user>root</flyway.user>
+                <flyway.password>password</flyway.password>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.googlecode.flyway</groupId>
+                        <artifactId>flyway-maven-plugin</artifactId>
+                        <version>${flyway.plugin.version}</version>
+                        <configuration>
+                            <url>${flyway.url}</url>
+                            <user>${flyway.user}</user>
+                            <password>${flyway.password}</password>
+                            <locations>
+                                <location>db/migration/${database}</location>
+                            </locations>
+                        </configuration>
+                        <dependencies>
+                            <dependency>
+                                <groupId>mysql</groupId>
+                                <artifactId>mysql-connector-java</artifactId>
+                                <version>5.1.23</version>
+                            </dependency>
+                        </dependencies>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>h2</id>
+            <properties>
+                <database>H2</database>
+                <flyway.url>jdbc:h2:file:/tmp/categolj2</flyway.url>
+                <flyway.user>sa</flyway.user>
+                <flyway.password></flyway.password>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.googlecode.flyway</groupId>
+                        <artifactId>flyway-maven-plugin</artifactId>
+                        <version>${flyway.plugin.version}</version>
+                        <configuration>
+                            <url>${flyway.url}</url>
+                            <user>${flyway.user}</user>
+                            <password>${flyway.password}</password>
+                            <locations>
+                                <location>db/migration/${database}</location>
+                            </locations>
+                        </configuration>
+                        <dependencies>
+                            <dependency>
+                                <groupId>com.h2database</groupId>
+                                <artifactId>h2</artifactId>
+                                <version>1.3.170</version>
+                            </dependency>
+                        </dependencies>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+==============================================================================================================
+categolj2:
+  url: http://blog.ik.am
+  title: BLOG.IK.AM
+  description: making's memo
+  db: ${spring.jpa.database:H2}
+  filedownload.cache.seconds: 345600 # 60 * 60 * 24 * 4
+  admin:
+    clientId: categolj2-admin
+    clientSecret: categolj2-secret
+    forceHttps: true
+
+aws:
+  accesskey.id: <Your Accesskey ID for AWS>
+  secret.accesskey: <Your Secret Accesskey for AWS>
+  endpoint: https://ecs.amazonaws.jp
+  associate.tag: ikam-22
+
+spring:
+  profiles:
+    active: cache.guava,db.property
+  main:
+    show-banner: false
+  jmx:
+    enabled: false
+  jpa:
+    hibernate.ddl-auto: validate
+    properties:
+      hibernate:
+        use_sql_comments: true
+        connection.charSet: UTF-8
+        jdbc:
+          batch_size: 30
+          fetch_size: 100
+        search:
+          default:
+            directory_provider: ${hibernate.search.default.directory_provider:filesystem}
+            indexBase: ${hibernate.search.default.indexBase:/tmp/lucene}
+            locking_strategy: ${hibernate.search.default.locking_strategy:single}
+          analyzer: org.apache.lucene.analysis.ja.JapaneseAnalyzer
+          lucene_version: LUCENE_4_10_2
+  datasource:
+    url: jdbc:h2:file:${categolj2.h2.datadir:/tmp}/categolj2
+  thymeleaf.cache: false
+  resources:
+    cachePeriod: 604800
+
+multipart:
+  maxFileSize: 50Mb
+  maxRequestSize: 256Mb
+  fileSizeThreshold: 0
+
+management:
+  contextPath: /management
+
+flyway.locations: classpath:db/migration/${categolj2.db:H2}
+security.basic.enabled: false
+
+server:
+  port: 8443
+  ssl:
+    key-store: classpath:server.jks
+    key-store-password: letmein
+    key-password: changeme
+==============================================================================================================
+docker run -d \
+--name categolj2 \
+-p 80:80 \
+-p 443:443 \
+-v /tmp/categolj2:/tmp \
+-v /var/log/categolj2:/var/log/categolj2 \
+-e "_JAVA_OPTIONS=-Duser.timezone=JST \
+-Xms512m \
+-Xmx1g" \
+making/categolj2-backend \
+--spring.thymeleaf.cache=true \
+--log.verbose=WARN \
+--logging.level.jdbc.resultsettable=ERROR \
+--logging.level.jdbc.sqltiming=ERROR \
+--logging.level.org=WARN \
+--logging.level.am=WARN \
+--logging.level./=WARN \
+--logging.level.am.ik.categolj2.App=INFO \
+--logging.level.org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter=INFO
+==============================================================================================================
+manifest.yml
+
+applications:
+  - name: blog
+    path: blog-frontend-server/target/blog-frontend-server-5.0.0-SNAPSHOT.jar
+    memory: 256m
+    env:
+      JAVA_OPTS: '-XX:ReservedCodeCacheSize=32M -XX:MaxDirectMemorySize=32M'
+      JBP_CONFIG_OPEN_JDK_JRE: '[memory_calculator: {stack_threads: 30}]'
+==============================================================================================================
+kubectl create -n blog secret generic blog-frontend \
+  --from-literal=predender-token=${PRERENDER_TOKEN} \
+  --dry-run -o yaml > k8s/blog-frontend-secret.yml
+export REACT_APP_BLOG_API=https://blog-api.ik.am
+export REACT_APP_BLOG_UI=https://blog.ik.am
+BOOT_VERSION=$(grep '<version>' pom.xml | head -n 1 | sed -e 's|<version>||g' -e 's|</version>||g' -e 's|<.*>||g' -e 's| ||g')
+./mvnw clean package -Dspring-boot.version=${BOOT_VERSION} -DskipTests=true  && ./build-image.sh 
+
+kbld -f k8s | kubectl apply -f -
+==============================================================================================================
+apiVersion: gateway.cloud.ik.am/v1beta1
+kind: RouteDefinition
+metadata:
+  name: blog-frontend
+  namespace: blog
+spec:
+  serviceName: blog-frontend
+  route:
+    predicates:
+      - Host=blog.ik.am
+    filters:
+      - RequestLogging=
+      - PreserveHostHeader
+      - name: Retry
+        args:
+          retries: "3"
+          statuses: BAD_GATEWAY
+==============================================================================================================
+kind: Service
+apiVersion: v1
+metadata:
+  name: blog-frontend
+  namespace: blog
+  labels:
+    app: blog-frontend
+spec:
+  selector:
+    app: blog-frontend
+  ports:
+    - protocol: TCP
+      port: 8080
+      name: http
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blog-frontend
+  namespace: blog
+  labels:
+    app: blog-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: blog-frontend
+  template:
+    metadata:
+      labels:
+        app: blog-frontend
+    spec:
+      containers:
+      - name: blog-frontend
+        image: making/blog-frontend:5.0.0-SNAPSHOT
+        ports:
+          - containerPort: 8080
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: kubernetes
+        - name: PROMETHEUS_URL
+          value: https://prometheus-generous-bear-lx.apps.pcfone.io/
+        - name: JAVA_OPTS
+          value: " -XX:ReservedCodeCacheSize=32M -Xss512k -Duser.timezone=Asia/Tokyo -Duser.language=ja -Duser.country=JP"
+        - name: BPL_THREAD_COUNT
+          value: "20"
+        - name: SPRING_ZIPKIN_SERVICE_NAME
+          value: "${INFO_K8S_NAMESPACE}:blog-frontend"
+        - name: SPRING_ZIPKIN_BASE_URL
+          value: https://zipkin.dev.ik.am
+        - name: LOGGING_EXCEPTION_CONVERSION_WORD
+          value: "\t%replace(%replace(%xEx){'\n','@n@'}){'\t','    '}%nopex"
+        - name: LOGGING_PATTERN_CONSOLE
+          value: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${logging.pattern.level:%5p}) %clr(${PID: }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %replace(%m){'\n','@n@'}${logging.exception-conversion-word:%wEx}%n"
+        - name: SPRING_SLEUTH_SAMPLER_RATE
+          value: "30"
+        - name: PRERENDER_URL
+          value: https://service.prerender.io
+        - name: PRERENDER_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: blog-frontend
+              key: predender-token
+        - name: INFO_K8S_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: INFO_K8S_POD
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: INFO_K8S_APP
+          value: "${spring.application.name}"
+        - name: MANAGEMENT_METRICS_EXPORT_PROMETHEUS_RSOCKET_HOST
+          value: prometheus-proxy.dev.bosh.tokyo
+        - name: MANAGEMENT_METRICS_TAGS_ORGANIZATION
+          value: cfcr-aws
+        - name: MANAGEMENT_METRICS_TAGS_SPACE
+          value: "${INFO_K8S_NAMESPACE}"
+        - name: MANAGEMENT_METRICS_TAGS_APPLICATION
+          value: "${INFO_K8S_APP}"
+        - name: MANAGEMENT_METRICS_TAGS_INSTANCE_ID
+          value: "${INFO_K8S_POD}"
+        resources:
+          limits:
+            memory: "200Mi"
+          requests:
+            memory: "200Mi"
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 10
+          timeoutSeconds: 3
+          periodSeconds: 10
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /actuator/info
+            port: 8080
+          initialDelaySeconds: 60
+          timeoutSeconds: 3
+          periodSeconds: 10
+          failureThreshold: 3
+      affinity:
+         podAntiAffinity:
+           requiredDuringSchedulingIgnoredDuringExecution:
+             - labelSelector:
+                 matchExpressions:
+                   - key: "app"
+                     operator: In
+                     values:
+                     - blog-frontend
+               topologyKey: "kubernetes.io/hostname"
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: blog-frontend
+  namespace: blog
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: blog-frontend
+==============================================================================================================
+APP_PORT=8888
+## Options
+### HeapSize
+APP_JAVA_OPTIONS="$APP_JAVA_OPTIONS -Xmx2g -Xms2g -Xmn600m -XX:MaxMetaspaceSize=1g"
+### HeapDump
+APP_JAVA_OPTIONS="$APP_JAVA_OPTIONS -XX:+HeapDumpOnOutOfMemoryError"
+APP_JAVA_OPTIONS="$APP_JAVA_OPTIONS -XX:HeapDumpPath=/var/log/categolj2/"
+### GCLog
+APP_JAVA_OPTIONS="$APP_JAVA_OPTIONS -Xloggc:/var/log/categolj2/gc.log"
+APP_JAVA_OPTIONS="$APP_JAVA_OPTIONS -XX:+PrintGCDetails -XX:+PrintGCDateStamps"
+APP_JAVA_OPTIONS="$APP_JAVA_OPTIONS -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=10M"
+### CMS
+# -XX:+UseParNewGCと-XX:+CMSClassUnloadingEnabledはJava8ではデフォルトなのでつけない
+APP_JAVA_OPTIONS="$APP_JAVA_OPTIONS -XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=80 -XX:MaxTenuringThreshold=10"
+### JVMError
+APP_JAVA_OPTIONS="$APP_JAVA_OPTIONS -XX:ErrorFile=/var/log/categolj2/hs_err_pid%p.log"
+### Etc
+APP_JAVA_OPTIONS="$APP_JAVA_OPTIONS -Dfile.encoding=UTF-8 -Duser.timezone=JST -Djava.awt.headless=true"
+APP_JAVA_OPTIONS="$APP_JAVA_OPTIONS -DLOG_PATH=/var/log/spring -Dlog.verbose=WARN"
+### NewRelic(必要な場合のみ)
+APP_JAVA_OPTIONS="$APP_JAVA_OPTIONS -javaagent:/opt/categolj2/newrelic/newrelic.jar -Dnewrelic.enable.java.8"
+## Parameters
+APP_ARGS="$APP_ARGS --spring.profiles.active=cache.hazelcast,db.property"
+APP_ARGS="$APP_ARGS --spring.thymeleaf.cache=true"
+APP_ARGS="$APP_ARGS --logging.level.jdbc.resultsettable=ERROR"
+APP_ARGS="$APP_ARGS --logging.level.jdbc.sqltiming=ERROR"
+APP_ARGS="$APP_ARGS --logging.level.am.ik.categolj2.App=INFO"
+APP_ARGS="$APP_ARGS --hibernate.search.default.indexBase=/tmp/hibernate-search"
+APP_ARGS="$APP_ARGS --aws.accesskey.id=xxxx"
+APP_ARGS="$APP_ARGS --aws.secret.accesskey=xxxx"
+# 本番DBはRDSのMYSQL想定
+APP_ARGS="$APP_ARGS --spring.datasource.url=jdbc:mysql://xxxxxxxxxxx.xxxxxxxxxx.ap-northeast-1.rds.amazonaws.com:3306/categolj2?zeroDateTimeBehavior=convertToNull"
+APP_ARGS="$APP_ARGS --spring.datasource.driverClassName=com.mysql.jdbc.Driver"
+APP_ARGS="$APP_ARGS --spring.datasource.username=xxxx"
+APP_ARGS="$APP_ARGS --spring.datasource.password=xxxx"
+APP_ARGS="$APP_ARGS --spring.datasource.testOnBorrow=true"
+APP_ARGS="$APP_ARGS --spring.datasource.validationQuery=\"SELECT 1\""
+APP_ARGS="$APP_ARGS --spring.jpa.database=MYSQL"
+==============================================================================================================
+#!/bin/bash
+set -e
+
+export EXIT_STATUS=0
+
+echo "Executing tests for branch $TRAVIS_BRANCH"
+
+./gradlew -Dgeb.env=chromeHeadless check || EXIT_STATUS=$?
+
+exit $EXIT_STATUS
+
+
+#!/bin/bash
+set -e
+
+export EXIT_STATUS=0
+
+./gradlew complete:test || EXIT_STATUS=$?
+
+if [[ $EXIT_STATUS -ne 0 ]]; then
+  exit $EXIT_STATUS
+fi
+
+curl -O https://raw.githubusercontent.com/micronaut-projects/micronaut-guides/master/travis/build-guide
+chmod 777 build-guide
+
+./build-guide || EXIT_STATUS=$?
+
+curl -O https://raw.githubusercontent.com/micronaut-projects/micronaut-guides/master/travis/republish-guides-website.sh
+chmod 777 republish-guides-website.sh
+
+./republish-guides-website.sh || EXIT_STATUS=$?
+
+exit $EXIT_STATUS
+==============================================================================================================
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.info.Info;
+import org.springframework.boot.actuate.info.InfoContributor;
+import org.springframework.core.env.Environment;
+import org.springframework.stereotype.Component;
+
+import java.util.Collections;
+
+@Component
+public class DatabaseUrlInfoContributor implements InfoContributor {
+
+    @Autowired
+    private Environment env;
+
+    @Override
+    public void contribute(Info.Builder builder) {
+        builder.withDetail("database", Collections.singletonMap("database-url", env.getProperty("spring.datasource.url")));
+    }
+}
+==============================================================================================================
+  
+jobs:
+  include:
+    - stage: pull_request
+      if: type = pull_request
+      script:
+        - echo "a pull request, for now do nothing"
+    - stage: migrate
+      if: branch = master
+      script:
+        - ./gradlew clean run
+cache:
+  directories:
+  - "$HOME/.gradle"
+notifications:
+  slack: sdkman:QdA1XVUuYDjlYL4Z7gm16OEc
+==============================================================================================================
+DOCKER_OPTS="-H tcp://127.0.0.1:2375 -H unix:///var/run/docker.sock"
+DOCKER_HOST=tcp://127.0.0.1:2376
+DOCKER_TLS_VERIFY=1
+DOCKER_CERT_PATH=/Users/marcus/.docker/machine/machines/docker-1.11.2
+==============================================================================================================
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.env.EnvironmentPostProcessor;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.PropertiesPropertySource;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.util.StreamUtils;
+
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.Properties;
+
+public class DockerSecretsDatabasePasswordProcessor implements EnvironmentPostProcessor {
+
+    private final Logger logger = LoggerFactory.getLogger(DockerSecretsDatabasePasswordProcessor.class);
+
+    @Override
+    public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
+        Resource resource = new FileSystemResource("/run/secrets/db-password");
+
+        if (resource.exists()) {
+            try {
+                if (logger.isInfoEnabled()) {
+                    logger.info("Using database password from injected Docker secret file");
+                }
+
+                String dbPassword = StreamUtils.copyToString(resource.getInputStream(), Charset.defaultCharset());
+                Properties props = new Properties();
+                props.put("spring.datasource.password", dbPassword);
+                environment.getPropertySources().addLast(new PropertiesPropertySource("dbProps", props));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+}
+==============================================================================================================
+import com.bmuschko.gradle.initializr.model.ProjectRequest;
+
+import java.util.List;
+
+public interface GradleInitializrService {
+
+    byte[] createZip(ProjectRequest projectRequest);
+    byte[] createTgz(ProjectRequest projectRequest);
+    List<AnnotatedGradleVersion> getGradleVersions();
+}
+
+import com.bmuschko.gradle.initializr.model.ProjectRequest;
+import com.bmuschko.gradle.initializr.service.GradleInitializrService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import java.util.Map;
+
+@Controller
+public class GradleInitializrController {
+
+    private static final String ZIP_CONTENT_TYPE = "application/zip";
+    private static final String LZW_CONTENT_TYPE = "application/x-compress";
+    private final GradleInitializrService gradleInitializrService;
+
+    public GradleInitializrController(GradleInitializrService gradleInitializrService) {
+        this.gradleInitializrService = gradleInitializrService;
+    }
+
+    @RequestMapping("/")
+    public String home(Map<String, Object> model) {
+        model.put("gradleVersions", gradleInitializrService.getGradleVersions());
+        return "home";
+    }
+
+    @RequestMapping("/starter")
+    public String starter(ProjectRequest projectRequest) {
+        switch (projectRequest.getArchive()) {
+            case "zip": return "forward:/starter.zip";
+            case "tgz": return "forward:/starter.tgz";
+            default: return "redirect:/error";
+        }
+    }
+
+    @RequestMapping("/starter.zip")
+    @ResponseBody
+    public ResponseEntity<byte[]> starterZip(ProjectRequest projectRequest) {
+        byte[] bytes = gradleInitializrService.createZip(projectRequest);
+        return createResponseEntity(bytes, ZIP_CONTENT_TYPE, "starter.zip");
+    }
+
+    @RequestMapping(value = "/starter.tgz", produces = LZW_CONTENT_TYPE)
+    @ResponseBody
+    public ResponseEntity<byte[]> starterTgz(ProjectRequest projectRequest) {
+        byte[] bytes = gradleInitializrService.createTgz(projectRequest);
+        return createResponseEntity(bytes, LZW_CONTENT_TYPE, "starter.tar.gz");
+    }
+
+    private ResponseEntity<byte[]> createResponseEntity(byte[] content, String contentType, String fileName) {
+        String contentDispositionValue = "attachment; filename=\"" + fileName + "\"";
+        return ResponseEntity.ok().header("Content-Type", contentType).header("Content-Disposition", contentDispositionValue).body(content);
+    }
+}
+==============================================================================================================
+pipeline {
+    agent any
+    stages {
+        stage('Compile') {
+            steps {
+                sh './mvnw clean compile'
+            }
+        }
+        stage('Build And Push Image') {
+            steps {
+                sh './mvnw com.google.cloud.tools:jib-maven-plugin:1.4.0:dockerBuild'
+            }
+        }
+        stage('Test') {
+            steps {
+                sh './mvnw test'
+            }
+            post {
+                always {
+                    junit '**/target/surefire-reports/TEST-*.xml'
+                }
+            }
+        }
+    }
+}
+==============================================================================================================
+import javax.jws.WebMethod;
+import javax.jws.WebService;
+import javax.jws.soap.SOAPBinding;
+import javax.jws.soap.SOAPBinding.Style;
+
+@WebService(name = "HelloService", targetNamespace = "http://my.webservice.com")
+@SOAPBinding(style = Style.DOCUMENT)
+public interface HelloService {
+    @WebMethod
+    String sayHello(String msg);
+}
+==============================================================================================================
+#!/bin/bash
+#
+# Copyright 2014 Silicon Valley Data Science.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+set -x
+curl -X GET "http://localhost:8080/resettest/v1/genericData/count/hive/fake-people-parquet"
+echo ""
+curl -X GET "http://localhost:8080/resettest/v1/genericData/count/hive/fake-people-parquet?operator__zipcode_plus4=stringlike&column__zipcode_plus4=12345%25&operator__first_name=stringlike&column__first_name=J%25&limit=10"
+echo ""
+curl -X GET "http://localhost:8080/resettest/v1/genericData/count/hive/fake-people-parquet?operator__zipcode_plus4=stringlike&column__zipcode_plus4=90120%25&operator__first_name=stringlike&column__first_name=J%25&limit=10"
+echo ""
+curl -X GET "http://localhost:8080/resettest/v1/genericData/results/hive/fake-people-parquet?operator__zipcode_plus4=stringlike&column__zipcode_plus4=12345%25&operator__first_name=stringlike&column__first_name=J%25&limit=10"
+echo ""
+curl -X GET "http://localhost:8080/resettest/v1/genericData/results/hive/fake-people-parquet?operator__zipcode_plus4=stringlike&column__zipcode_plus4=90120%25&operator__first_name=stringlike&column__first_name=J%25&limit=10"
+==============================================================================================================
+# Builds a docker image for this connector.
+# Expects links to "zookeeper", "kafka", "schema-registry" & "confluent-control-center" containers.
+#
+# Usage:
+#   docker build -t jeffsvds/kafka-connect-opentsdb .
+#   docker push jeffsvds/kafka-connect-opentsdb
+
+FROM confluent/platform
+
+COPY src/main/resources/connect-avro-standalone.properties /etc/schema-registry/
+COPY src/main/resources/connect-avro-distributed.properties /etc/schema-registry/
+COPY src/main/resources/connect-opentsdb-sink.properties /etc/kafka-connect-opentsdb/sink.properties
+COPY target/scala-2.11/*.jar /usr/local/lib/
+
+ENV CLASSPATH=$CLASSPATH:/usr/local/lib/kafka-connect-opentsdb-assembly-0.0.1.jar
+
+EXPOSE 8083
+
+USER confluent
+ENTRYPOINT ["/usr/bin/connect-standalone", "/etc/schema-registry/connect-avro-standalone.properties", "/etc/kafka-connect-opentsdb/sink.properties"]
+#ENTRYPOINT ["/usr/bin/connect-distributed", "/etc/schema-registry/connect-avro-distributed.properties"]
+==============================================================================================================
+SCALA=`type -p scala`
+MVN=`type -p mvn`
+
+[ -f "pom.xml" ] || { echo "Please run me from the top level project directory" ; exit 1 ; }
+[ -x "$SCALA" ] || { echo "Unable to find the scala executable (check your path)" ; exit 1 ; }
+[ -x "$MVN" ] || { echo "Unable to find the mvn executable (check your path)" ; exit 1 ; }
+
+[ -d "target/classes" ] || { echo "No target/classes directory (did you do a mvn compile yet?)" ; exit 1 ; }
+
+echo "== Determining classpath. Please wait..."
+
+dep_classpath=`$MVN dependency:build-classpath | grep -v '^\['`
+full_classpath="target/test-classes:target/classes:$dep_classpath"
+
+echo "== Starting a shell with CDK Data classes"
+
+"$SCALA" -cp "$full_classpath" -i tools/data-shell/data-shell-inc.scala $*
 ==============================================================================================================
 ==============================================================================================================
 ==============================================================================================================
