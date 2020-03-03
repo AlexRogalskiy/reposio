@@ -26126,6 +26126,1485 @@ Run program cycle:
 
 mvn package
 ==============================================================================================================
+for ((i=1901;i<=2000;i+=1))
+do
+  echo s3n://hadoopbook/ncdc/raw/isd-$i.tar.bz2
+done
+
+hadoop jar $HADOOP_HOME/share/hadoop/tools/lib/hadoop-streaming-*.jar \
+  -D mapred.reduce.tasks=0 \
+  -D mapred.map.tasks.speculative.execution=false \
+  -D mapred.task.timeout=12000000 \
+  -input ncdc_files.txt \
+  -inputformat org.apache.hadoop.mapred.lib.NLineInputFormat \
+  -output output \
+  -mapper load_ncdc_map.sh \
+  -file load_ncdc_map.sh
+  
+#!/usr/bin/env bash
+
+# Format NLineInputFormat zwraca pojedyncze wiersze - 
+# klucz to pozycja, a wartość to identyfikator URI z usługi S3
+read offset s3file
+
+# Pobieranie pliku z usługi S3 na dysk lokalny
+echo "reporter:status:Pobieranie $s3file" >&2
+$HADOOP_INSTALL/bin/hadoop fs -get $s3file .
+
+# Wypakowywanie lokalnego pliku z formatów bzip i tar
+target=`basename $s3file .tar.bz2`
+mkdir -p $target
+echo "reporter:status:Wypakowywanie (tar) $s3file do $target" >&2
+tar jxf `basename $s3file` -C $target
+
+# Wypakowywanie plików dla stacji z formatu gzip i złączanie ich w jeden plik
+echo "reporter:status:Wypakowywanie (gzip) $target" >&2
+for file in $target/*/*
+do
+  gunzip -c $file >> $target.all
+  echo "reporter:status:Przetworzono plik $file" >&2
+done
+
+# Umieszczanie pliku w formacie gzip w systemie HDFS
+echo "reporter:status:Pakowanie (gzip) $target i umieszczanie w HDFS" >&2
+gzip -c $target.all | $HADOOP_INSTALL/bin/hadoop fs -put - gz/$target.gz
+
+
+
+==============================================================================================================
+: == har_ls_files
+: == har_create
+: == har_inspect
+: == har_ls
+: == har_ls_long
+: == har_rmr
+rsync -avz --exclude '.svn' /Users/tom/workspace/htdg/input/fileinput/ /tmp/fileinput
+hadoop fs -copyFromLocal /tmp/fileinput /my/files
+rm -rf /tmp/fileinput
+: vv har_ls_files
+hadoop fs -lsr /my/files
+: ^^ har_ls_files
+: vv har_create
+hadoop archive -archiveName files.har /my/files /my
+: ^^ har_create
+: vv har_inspect
+hadoop fs -ls /my
+hadoop fs -ls /my/files.har
+: ^^ har_inspect
+: vv har_ls
+hadoop fs -lsr har:///my/files.har
+: ^^ har_ls
+: vv har_ls_long
+hadoop fs -lsr har:///my/files.har/my/files/dir
+hadoop fs -lsr har://hdfs-localhost:8020/my/files.har/my/files/dir
+: ^^ har_ls_long
+: vv har_rmr
+hadoop fs -rmr /my/files.har
+: ^^ har_rmr
+hadoop fs -rmr /my/files
+==============================================================================================================
+
+<?xml version="1.0"?>
+<configuration>
+  <property>
+    <name>yarn.scheduler.capacity.root.queues</name>
+    <value>prod,dev</value>
+  </property>
+  <property>
+    <name>yarn.scheduler.capacity.root.dev.queues</name>
+    <value>eng,science</value>
+  </property>
+  <property>
+    <name>yarn.scheduler.capacity.root.prod.capacity</name>
+    <value>40</value>
+  </property>
+  <property>
+    <name>yarn.scheduler.capacity.root.dev.capacity</name>
+    <value>60</value>
+  </property>
+  <property>
+    <name>yarn.scheduler.capacity.root.dev.maximum-capacity</name>
+    <value>75</value>
+  </property>
+  <property>
+    <name>yarn.scheduler.capacity.root.dev.eng.capacity</name>
+    <value>50</value>
+  </property>
+  <property>
+    <name>yarn.scheduler.capacity.root.dev.science.capacity</name>
+    <value>50</value>
+  </property>
+</configuration>
+==============================================================================================================
+
+# A properties file used to submit an Oozie workflow job.
+# This file is not bundled as a part of the workflow application.
+nameNode=hdfs://localhost:8020
+resourceManager=localhost:8032
+oozie.wf.application.path=${nameNode}/user/${user.name}/max-temp-workflow
+==============================================================================================================
+import java.io.*;
+
+import org.apache.hadoop.io.*;
+
+public class TextPair implements WritableComparable<TextPair> {
+
+  private Text first;
+  private Text second;
+  
+  public TextPair() {
+    set(new Text(), new Text());
+  }
+  
+  public TextPair(String first, String second) {
+    set(new Text(first), new Text(second));
+  }
+  
+  public TextPair(Text first, Text second) {
+    set(first, second);
+  }
+  
+  public void set(Text first, Text second) {
+    this.first = first;
+    this.second = second;
+  }
+  
+  public Text getFirst() {
+    return first;
+  }
+
+  public Text getSecond() {
+    return second;
+  }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
+    first.write(out);
+    second.write(out);
+  }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    first.readFields(in);
+    second.readFields(in);
+  }
+  
+  @Override
+  public int hashCode() {
+    return first.hashCode() * 163 + second.hashCode();
+  }
+  
+  @Override
+  public boolean equals(Object o) {
+    if (o instanceof TextPair) {
+      TextPair tp = (TextPair) o;
+      return first.equals(tp.first) && second.equals(tp.second);
+    }
+    return false;
+  }
+
+  @Override
+  public String toString() {
+    return first + "\t" + second;
+  }
+  
+  @Override
+  public int compareTo(TextPair tp) {
+    int cmp = first.compareTo(tp.first);
+    if (cmp != 0) {
+      return cmp;
+    }
+    return second.compareTo(tp.second);
+  }
+
+  public static class Comparator extends WritableComparator {
+    
+    private static final Text.Comparator TEXT_COMPARATOR = new Text.Comparator();
+    
+    public Comparator() {
+      super(TextPair.class);
+    }
+
+    @Override
+    public int compare(byte[] b1, int s1, int l1,
+                       byte[] b2, int s2, int l2) {
+      
+      try {
+        int firstL1 = WritableUtils.decodeVIntSize(b1[s1]) + readVInt(b1, s1);
+        int firstL2 = WritableUtils.decodeVIntSize(b2[s2]) + readVInt(b2, s2);
+        int cmp = TEXT_COMPARATOR.compare(b1, s1, firstL1, b2, s2, firstL2);
+        if (cmp != 0) {
+          return cmp;
+        }
+        return TEXT_COMPARATOR.compare(b1, s1 + firstL1, l1 - firstL1,
+                                       b2, s2 + firstL2, l2 - firstL2);
+      } catch (IOException e) {
+        throw new IllegalArgumentException(e);
+      }
+    }
+  }
+
+  static {
+    WritableComparator.define(TextPair.class, new Comparator());
+  }
+
+  public static class FirstComparator extends WritableComparator {
+    
+    private static final Text.Comparator TEXT_COMPARATOR = new Text.Comparator();
+    
+    public FirstComparator() {
+      super(TextPair.class);
+    }
+
+    @Override
+    public int compare(byte[] b1, int s1, int l1,
+                       byte[] b2, int s2, int l2) {
+      
+      try {
+        int firstL1 = WritableUtils.decodeVIntSize(b1[s1]) + readVInt(b1, s1);
+        int firstL2 = WritableUtils.decodeVIntSize(b2[s2]) + readVInt(b2, s2);
+        return TEXT_COMPARATOR.compare(b1, s1, firstL1, b2, s2, firstL2);
+      } catch (IOException e) {
+        throw new IllegalArgumentException(e);
+      }
+    }
+    
+    @Override
+    public int compare(WritableComparable a, WritableComparable b) {
+      if (a instanceof TextPair && b instanceof TextPair) {
+        return ((TextPair) a).first.compareTo(((TextPair) b).first);
+      }
+      return super.compare(a, b);
+    }
+  }
+}
+==============================================================================================================
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import com.rabbitmq.client.Channel;
+
+import cn.hutool.json.JSONUtil;
+import cn.lqdev.learning.springboot.chapter38.constant.ApplicationConstant;
+import cn.lqdev.learning.springboot.chapter38.entity.HttpEntity;
+import cn.lqdev.learning.springboot.chapter38.service.HttpMessagerService;
+import lombok.extern.slf4j.Slf4j;
+
+/** 
+*
+* @ClassName   类名：HttpMessagerLister 
+* @Description 功能说明：http通知消费监听接口
+* <p>
+* TODO
+*</p>
+************************************************************************
+* @date        创建日期：2019年7月17日
+* @author      创建人：oKong
+* @version     版本号：V1.0
+*<p>
+***************************修订记录*************************************
+* 
+*   2019年7月17日   oKong   创建该类功能。
+*
+***********************************************************************
+*</p>
+*/
+@Component
+@Slf4j
+public class HttpMessagerLister {
+	
+	@Autowired
+	HttpMessagerService messagerService;
+	
+	@RabbitListener(id = "httpMessageNotifyConsumer", queues = {ApplicationConstant.HTTP_MESSAGE_START_QUEUE_NAME}, containerFactory = "notifyListenerContainer")
+	public void httpMessageNotifyConsumer(Message message, Channel channel) throws Exception {
+		doHandler(message, channel);
+	}
+	
+	@RabbitListener(id= "httpDelayMessageNotifyConsumer", queues = {
+			ApplicationConstant.HTTP_MESSAGE_ONE_QUEUE_NAME,}, containerFactory = "delayNotifyListenerContainer")
+	public void httpDelayMessageNotifyConsumer(Message message, Channel channel) throws Exception {
+		doHandler(message, channel);
+	}
+	
+	private void doHandler(Message message, Channel channel) throws Exception {
+		String body = new String(message.getBody(),"utf-8");
+		String queue = message.getMessageProperties().getConsumerQueue();
+		log.info("接收到通知请求：{}，队列名：{}",body, queue);
+		//消息对象转换
+		try {
+			HttpEntity httpNotifyDto = JSONUtil.toBean(body, HttpEntity.class);
+			channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+			//发送通知
+			messagerService.notify(queue, httpNotifyDto);
+		} catch(Exception e) {
+			log.error(e.getMessage());
+			//ack
+			channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+		}
+	}
+
+}
+==============================================================================================================
+@startuml
+(Crawler)
+actor User
+
+node "frontend" {
+  [ui]
+  [server]
+}
+
+node "api"  {
+}
+
+database "db" {
+}
+
+cloud "Prerender" {
+}
+
+
+[server] --> Prerender
+[ui] --> api
+api -> db
+
+Prerender -> ui
+
+User -> ui
+Crawler -> [server]
+@enduml
+==============================================================================================================
+import com.fasterxml.jackson.databind.JsonNode;
+import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
+
+import java.time.Duration;
+import java.time.Instant;
+
+@Component
+public class PrometheusClient {
+
+    private final WebClient webClient;
+
+    public PrometheusClient(WebClient.Builder builder, Prometheus prometheus) {
+        this.webClient = builder
+            .baseUrl(prometheus.getUrl())
+            .build();
+    }
+
+    public Mono<JsonNode> queryRange(String promql, Duration duration) {
+        final Instant end = Instant.now();
+        final Instant begin = end.minus(duration);
+        final long step = 400;
+        return this.webClient.get()
+            .uri("/api/v1/query_range?query={promql}&start={start}&end={end}&step={step}",
+                promql,
+                begin.toEpochMilli() / 1000.0,
+                end.toEpochMilli() / 1000.0,
+                step)
+            .retrieve()
+            .bodyToMono(JsonNode.class);
+    }
+}
+==============================================================================================================
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.cloud.sleuth.annotation.NewSpan;
+import org.springframework.http.HttpMethod;
+import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.cache.CacheMono;
+import reactor.core.publisher.Mono;
+import reactor.core.publisher.Signal;
+
+import java.net.URI;
+import java.time.Duration;
+
+@Component
+public class PrerenderClient {
+
+    private static final Logger log = LoggerFactory.getLogger(PrerenderClient.class);
+
+    private final WebClient webClient;
+
+    private final Prerender prerender;
+
+    private final Cache<String, ? super Signal<? extends String>> cache
+        = Caffeine.newBuilder()
+        .maximumSize(100)
+        .expireAfterAccess(Duration.ofHours(1))
+        .removalListener((key, value, cause) -> log.info("Removing cache({}) because of {}", key, cause))
+        .build();
+
+    public PrerenderClient(WebClient.Builder builder, Prerender prerender) {
+        this.webClient = builder.build();
+        this.prerender = prerender;
+    }
+
+    @NewSpan("prerender")
+    public Mono<String> invoke(HttpMethod method, String url) {
+        if (method == HttpMethod.HEAD) {
+            return this.prerender(method, url);
+        }
+        return CacheMono.lookup(this.cache.asMap(), url)
+            .onCacheMissResume(() -> this.prerender(method, url));
+    }
+
+    private Mono<String> prerender(HttpMethod method, String url) {
+        final URI uri = URI.create(prerender.getUrl() + "/" + url);
+        return this.webClient.method(method)
+            .uri(uri)
+            .header("X-Prerender-Token", this.prerender.getToken())
+            .retrieve()
+            .bodyToMono(String.class);
+    }
+}
+==============================================================================================================
+import com.fasterxml.jackson.databind.JsonNode;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.reactive.function.server.RouterFunction;
+import org.springframework.web.reactive.function.server.RouterFunctions;
+import org.springframework.web.reactive.function.server.ServerRequest;
+import org.springframework.web.reactive.function.server.ServerResponse;
+import reactor.core.publisher.Mono;
+
+import java.time.Duration;
+
+@Controller
+public class DashboardHandler {
+
+    private final PrometheusClient prometheusClient;
+
+    public DashboardHandler(PrometheusClient prometheusClient) {
+        this.prometheusClient = prometheusClient;
+    }
+
+    RouterFunction<ServerResponse> routes() {
+        return RouterFunctions.route()
+            .GET("/dashboard/sli", this::sli)
+            .GET("/dashboard/error_budget", this::errorBudget)
+            .build();
+    }
+
+    private Mono<ServerResponse> sli(ServerRequest req) {
+        final String instance = req.queryParam("instance").map(s -> s.replace(',', '|')).orElse("null");
+        final Duration duration = Duration.ofDays(7);
+        final String promql = String.format("100 * avg_over_time(probe_success{instance=~\"%s\"}[%ds])", instance, duration.getSeconds());
+        final Mono<JsonNode> result = this.prometheusClient.queryRange(promql, duration);
+        return ServerResponse.ok()
+            .header("Access-Control-Allow-Origin", "*")
+            .body(result, JsonNode.class);
+    }
+
+    private Mono<ServerResponse> errorBudget(ServerRequest req) {
+        final String instance = req.queryParam("instance").map(s -> s.replace(',', '|')).orElse("null");
+        final float slo = req.queryParam("slo").map(Float::parseFloat).orElse(0.0f);
+        final Duration duration = Duration.ofDays(7);
+        final String promql = String.format("(avg_over_time(probe_success{instance=~\"%s\"}[%ds]) - %f) * (%d / 60)", instance, duration.getSeconds(), slo, duration.getSeconds());
+        final Mono<JsonNode> result = this.prometheusClient.queryRange(promql, duration);
+        return ServerResponse.ok()
+            .header("Access-Control-Allow-Origin", "*")
+            .body(result, JsonNode.class);
+    }
+}
+==============================================================================================================
+import io.micrometer.core.instrument.config.MeterFilter;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.web.embedded.netty.NettyReactiveWebServerFactory;
+import org.springframework.boot.web.server.WebServerFactoryCustomizer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.server.RouterFunction;
+import reactor.netty.http.client.HttpClient;
+
+@SpringBootApplication
+public class App {
+
+    public static void main(String[] args) {
+        SpringApplication.run(App.class, args);
+    }
+
+    @Bean
+    public RouterFunction<?> routes(
+        DashboardHandler dashboardHandler,
+        BlogHandler blogHandler) {
+        return dashboardHandler.routes()
+            .and(blogHandler.routes());
+    }
+
+    @Bean
+    public MeterRegistryCustomizer meterRegistryCustomizer() {
+        return registry -> registry.config() //
+            .meterFilter(MeterFilter.deny(id -> {
+                String uri = id.getTag("uri");
+                return uri != null && uri.startsWith("/actuator");
+            }));
+    }
+
+    @Bean
+    public WebServerFactoryCustomizer<NettyReactiveWebServerFactory> customizer() {
+        return factory -> factory.addServerCustomizers(builder -> builder.metrics(true));
+    }
+
+    @Bean
+    public WebClient.Builder webClientBuilder() {
+        return WebClient.builder()
+            .clientConnector(new ReactorClientHttpConnector(HttpClient.create().tcpConfiguration(builder -> builder.metrics(true))));
+    }
+}
+==============================================================================================================
+categolj2:
+  url: http://blog.ik.am
+  title: BLOG.IK.AM
+  description: making's memo
+  db: ${spring.jpa.database:H2}
+  filedownload.cache.seconds: 345600 # 60 * 60 * 24 * 4
+  admin:
+    clientId: categolj2-admin
+    clientSecret: categolj2-secret
+    forceHttps: true
+
+aws:
+  accesskey.id: <Your Accesskey ID for AWS>
+  secret.accesskey: <Your Secret Accesskey for AWS>
+  endpoint: https://ecs.amazonaws.jp
+  associate.tag: ikam-22
+
+spring:
+  profiles:
+    active: cache.guava,db.property
+  main:
+    show-banner: false
+  jmx:
+    enabled: false
+  jpa:
+    hibernate.ddl-auto: validate
+    properties:
+      hibernate:
+        use_sql_comments: true
+        connection.charSet: UTF-8
+        jdbc:
+          batch_size: 30
+          fetch_size: 100
+        search:
+          default:
+            directory_provider: ${hibernate.search.default.directory_provider:filesystem}
+            indexBase: ${hibernate.search.default.indexBase:/tmp/lucene}
+            locking_strategy: ${hibernate.search.default.locking_strategy:single}
+          analyzer: org.apache.lucene.analysis.ja.JapaneseAnalyzer
+          lucene_version: LUCENE_4_10_2
+  datasource:
+    url: jdbc:h2:file:${categolj2.h2.datadir:/tmp}/categolj2
+  thymeleaf.cache: false
+  resources:
+    cachePeriod: 604800
+
+multipart:
+  maxFileSize: 50Mb
+  maxRequestSize: 256Mb
+  fileSizeThreshold: 0
+
+management:
+  contextPath: /management
+
+flyway.locations: classpath:db/migration/${categolj2.db:H2}
+security.basic.enabled: false
+
+server:
+  port: 8443
+  ssl:
+    key-store: classpath:server.jks
+    key-store-password: letmein
+    key-password: changeme
+	
+	
+dozer.autoregister.jmx.beans=false
+==============================================================================================================
+#!/bin/bash
+
+for i in $*
+do
+  if [[ $i == -D* ]]
+  then
+    def="$def $i"
+  else
+    arg="$arg $i"
+  fi
+done
+
+mvn test -DskipTests=false $def -Dargs="$arg"
+==============================================================================================================
+import java.util.Arrays;
+
+import com.aerospike.client.command.Buffer;
+import com.aerospike.client.util.Crypto;
+
+/**
+ * Unique record identifier. Records can be identified using a specified namespace,
+ * an optional set name, and a user defined key which must be unique within a set.
+ * Records can also be identified by namespace/digest which is the combination used
+ * on the server.
+ */
+public final class Key {
+	/**
+	 * Namespace. Equivalent to database name.
+	 */
+	public final String namespace;
+
+	/**
+	 * Optional set name. Equivalent to database table.
+	 */
+	public final String setName;
+
+	/**
+	 * Unique server hash value generated from set name and user key.
+	 */
+	public final byte[] digest;
+
+	/**
+	 * Original user key. This key is immediately converted to a hash digest.
+	 * This key is not used or returned by the server by default. If the user key needs
+	 * to persist on the server, use one of the following methods:
+	 * <ul>
+	 * <li>Set "WritePolicy.sendKey" to true. In this case, the key will be sent to the server for storage on writes
+	 * and retrieved on multi-record scans and queries.</li>
+	 * <li>Explicitly store and retrieve the key in a bin.</li>
+	 * </ul>
+	 */
+	public final Value userKey;
+
+	/**
+	 * Initialize key from namespace, optional set name and user key.
+	 * The set name and user defined key are converted to a digest before sending to the server.
+	 * The user key is not used or returned by the server by default. If the user key needs
+	 * to persist on the server, use one of the following methods:
+	 * <ul>
+	 * <li>Set "WritePolicy.sendKey" to true. In this case, the key will be sent to the server for storage on writes
+	 * and retrieved on multi-record scans and queries.</li>
+	 * <li>Explicitly store and retrieve the key in a bin.</li>
+	 * </ul>
+	 * <p>
+	 * The key is converted to bytes to compute the digest.  The key's byte size is
+	 * limited to the current thread's buffer size (min 8KB).  To store keys > 8KB, do one of the
+	 * following:
+	 * <ul>
+	 * <li>Set once: <pre>{@code ThreadLocalData.DefaultBufferSize = maxKeySize + maxSetNameSize + 1;}</pre></li>
+	 * <li>Or for every key:
+	 * <pre>
+	 * {@code int len = key.length() + setName.length() + 1;
+	 * if (len > ThreadLocalData.getBuffer().length))
+	 *     ThreadLocalData.resizeBuffer(len);}
+	 * </pre>
+	 * </li>
+	 * </ul>
+	 *
+	 * @param namespace				namespace
+	 * @param setName				optional set name, enter null when set does not exist
+	 * @param key					user defined unique identifier within set.
+	 * @throws AerospikeException	if digest computation fails
+	 */
+	public Key(String namespace, String setName, String key) throws AerospikeException {
+		this.namespace = namespace;
+		this.setName = setName;
+		this.userKey = new Value.StringValue(key);
+		digest = Crypto.computeDigest(setName, this.userKey);
+	}
+
+	/**
+	 * Initialize key from namespace, optional set name and user key.
+	 * The set name and user defined key are converted to a digest before sending to the server.
+	 * The user key is not used or returned by the server by default. If the user key needs
+	 * to persist on the server, use one of the following methods:
+	 * <ul>
+	 * <li>Set "WritePolicy.sendKey" to true. In this case, the key will be sent to the server for storage on writes
+	 * and retrieved on multi-record scans and queries.</li>
+	 * <li>Explicitly store and retrieve the key in a bin.</li>
+	 * </ul>
+	 * <p>
+	 * The key's byte size is limited to the current thread's buffer size (min 8KB).  To store keys > 8KB, do one of the
+	 * following:
+	 * <ul>
+	 * <li>Set once: <pre>{@code ThreadLocalData.DefaultBufferSize = maxKeySize + maxSetNameSize + 1;}</pre></li>
+	 * <li>Or for every key:
+	 * <pre>
+	 * {@code int len = key.length + setName.length() + 1;
+	 * if (len > ThreadLocalData.getBuffer().length))
+	 *     ThreadLocalData.resizeBuffer(len);}
+	 * </pre>
+	 * </li>
+	 * </ul>
+	 *
+	 * @param namespace				namespace
+	 * @param setName				optional set name, enter null when set does not exist
+	 * @param key					user defined unique identifier within set.
+	 * @throws AerospikeException	if digest computation fails
+	 */
+	public Key(String namespace, String setName, byte[] key) throws AerospikeException {
+		this.namespace = namespace;
+		this.setName = setName;
+		this.userKey = new Value.BytesValue(key);
+		digest = Crypto.computeDigest(setName, this.userKey);
+	}
+
+	/**
+	 * Initialize key from namespace, optional set name and user key.
+	 * The set name and user defined key are converted to a digest before sending to the server.
+	 * The user key is not used or returned by the server by default. If the user key needs
+	 * to persist on the server, use one of the following methods:
+	 * <ul>
+	 * <li>Set "WritePolicy.sendKey" to true. In this case, the key will be sent to the server for storage on writes
+	 * and retrieved on multi-record scans and queries.</li>
+	 * <li>Explicitly store and retrieve the key in a bin.</li>
+	 * </ul>
+	 * <p>
+	 * The key's byte size is limited to the current thread's buffer size (min 8KB).  To store keys > 8KB, do one of the
+	 * following:
+	 * <ul>
+	 * <li>Set once: <pre>{@code ThreadLocalData.DefaultBufferSize = maxKeySize + maxSetNameSize + 1;}</pre></li>
+	 * <li>Or for every key:
+	 * <pre>
+	 * {@code int len = length + setName.length() + 1;
+	 * if (len > ThreadLocalData.getBuffer().length))
+	 *     ThreadLocalData.resizeBuffer(len);}
+	 * </pre>
+	 * </li>
+	 * </ul>
+	 *
+	 * @param namespace				namespace
+	 * @param setName				optional set name, enter null when set does not exist
+	 * @param key					user defined unique identifier within set.
+	 * @param offset				byte array segment offset
+	 * @param length				byte array segment length
+	 * @throws AerospikeException	if digest computation fails
+	 */
+	public Key(String namespace, String setName, byte[] key, int offset, int length) throws AerospikeException {
+		this.namespace = namespace;
+		this.setName = setName;
+		this.userKey = new Value.ByteSegmentValue(key, offset, length);
+		digest = Crypto.computeDigest(setName, this.userKey);
+	}
+
+	/**
+	 * Initialize key from namespace, optional set name and user key.
+	 * The set name and user defined key are converted to a digest before sending to the server.
+	 * The user key is not used or returned by the server by default. If the user key needs
+	 * to persist on the server, use one of the following methods:
+	 * <ul>
+	 * <li>Set "WritePolicy.sendKey" to true. In this case, the key will be sent to the server for storage on writes
+	 * and retrieved on multi-record scans and queries.</li>
+	 * <li>Explicitly store and retrieve the key in a bin.</li>
+	 * </ul>
+	 *
+	 * @param namespace				namespace
+	 * @param setName				optional set name, enter null when set does not exist
+	 * @param key					user defined unique identifier within set.
+	 * @throws AerospikeException	if digest computation fails
+	 */
+	public Key(String namespace, String setName, int key) throws AerospikeException {
+		this.namespace = namespace;
+		this.setName = setName;
+		this.userKey = new Value.LongValue(key);
+		digest = Crypto.computeDigest(setName, this.userKey);
+	}
+
+	/**
+	 * Initialize key from namespace, optional set name and user key.
+	 * The set name and user defined key are converted to a digest before sending to the server.
+	 * The user key is not used or returned by the server by default. If the user key needs
+	 * to persist on the server, use one of the following methods:
+	 * <ul>
+	 * <li>Set "WritePolicy.sendKey" to true. In this case, the key will be sent to the server for storage on writes
+	 * and retrieved on multi-record scans and queries.</li>
+	 * <li>Explicitly store and retrieve the key in a bin.</li>
+	 * </ul>
+	 *
+	 * @param namespace				namespace
+	 * @param setName				optional set name, enter null when set does not exist
+	 * @param key					user defined unique identifier within set.
+	 * @throws AerospikeException	if digest computation fails
+	 */
+	public Key(String namespace, String setName, long key) throws AerospikeException {
+		this.namespace = namespace;
+		this.setName = setName;
+		this.userKey = new Value.LongValue(key);
+		digest = Crypto.computeDigest(setName, this.userKey);
+	}
+
+	/**
+	 * Initialize key from namespace, optional set name and user key.
+	 * The set name and user defined key are converted to a digest before sending to the server.
+	 * The user key is not used or returned by the server by default. If the user key needs
+	 * to persist on the server, use one of the following methods:
+	 * <ul>
+	 * <li>Set "WritePolicy.sendKey" to true. In this case, the key will be sent to the server for storage on writes
+	 * and retrieved on multi-record scans and queries.</li>
+	 * <li>Explicitly store and retrieve the key in a bin.</li>
+	 * </ul>
+	 *
+	 * @param namespace				namespace
+	 * @param setName				optional set name, enter null when set does not exist
+	 * @param key					user defined unique identifier within set.
+	 * @throws AerospikeException	if digest computation fails
+	 */
+	public Key(String namespace, String setName, Value key) throws AerospikeException {
+		this.namespace = namespace;
+		this.setName = setName;
+		this.userKey = key;
+
+		// Some value types can't be used as keys (jblob, list, map, null).  Verify key type.
+		key.validateKeyType();
+
+		digest = Crypto.computeDigest(setName, key);
+	}
+
+	/*
+	 * Removed Object constructor because the type must be determined using multiple "instanceof"
+	 * checks.  If the type is not known, java serialization (slow) is used for byte conversion.
+	 * These two performance penalties make this constructor unsuitable in all cases from
+	 * a performance perspective.
+	 *
+	 * The preferred method when using compound java key objects is to explicitly convert the
+	 * object to a byte[], String (or other known type) and call the associated Key constructor.
+	 *
+	public Key(String namespace, String setName, Object key) throws AerospikeException {
+		this.namespace = namespace;
+		this.setName = setName;
+		this.userKey = key;
+		digest = computeDigest(setName, Value.get(key));
+	} */
+
+	/**
+	 * Initialize key from namespace, digest, optional set name and optional userKey.
+	 *
+	 * @param namespace				namespace
+	 * @param digest				unique server hash value
+	 * @param setName				optional set name, enter null when set does not exist
+	 * @param userKey				optional original user key (not hash digest).
+	 */
+	public Key(String namespace, byte[] digest, String setName, Value userKey) {
+		this.namespace = namespace;
+		this.digest = digest;
+		this.setName = setName;
+		// Do not try to validate userKey type because it is most likely null.
+		this.userKey = userKey;
+	}
+
+	/**
+	 * Hash lookup uses namespace and digest.
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = prime + Arrays.hashCode(digest);
+		return prime * result + namespace.hashCode();
+	}
+
+	/**
+	 * Equality uses namespace and digest.
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		Key other = (Key) obj;
+
+		if (! Arrays.equals(digest, other.digest))
+			return false;
+
+		return namespace.equals(other.namespace);
+	}
+
+	/**
+	 * Generate unique server hash value from set name, key type and user defined key.
+	 * The hash function is RIPEMD-160 (a 160 bit hash).
+	 *
+	 * @param setName				optional set name, enter null when set does not exist
+	 * @param key					record identifier, unique within set
+	 * @return						unique server hash value
+	 * @throws AerospikeException	if digest computation fails
+	 */
+	public static byte[] computeDigest(String setName, Value key) throws AerospikeException {
+		return Crypto.computeDigest(setName, key);
+	}
+
+	@Override
+	public String toString() {
+		return this.namespace + ":" + this.setName + ":" + this.userKey + ":" + Buffer.bytesToHexString(this.digest);
+	}
+}
+==============================================================================================================
+import com.aerospike.client.AerospikeException;
+
+/**
+ * Permission codes define the type of permission granted for a user's role.
+ */
+public enum PrivilegeCode {
+	/**
+	 * User can edit/remove other users.  Global scope only.
+	 */
+	USER_ADMIN(0, Role.UserAdmin),
+
+	/**
+	 * User can perform systems administration functions on a database that do not involve user
+	 * administration.  Examples include server configuration.
+	 * Global scope only.
+	 */
+	SYS_ADMIN(1, Role.SysAdmin),
+
+	/**
+	 * User can perform data administration functions on a database that do not involve user
+	 * administration.  Examples include index and user defined function management.
+	 * Global scope only.
+	 */
+	DATA_ADMIN(2, Role.DataAdmin),
+
+	/**
+	 * User can read data.
+	 */
+	READ(10, Role.Read),
+
+	/**
+	 * User can read and write data.
+	 */
+	READ_WRITE(11, Role.ReadWrite),
+
+	/**
+	 * User can read and write data through user defined functions.
+	 */
+	READ_WRITE_UDF(12, Role.ReadWriteUdf),
+
+	/**
+	 * User can write data.
+	 */
+	WRITE(13, Role.Write);
+
+	/**
+	 * Privilege code ID used in wire protocol.
+	 */
+	public final int id;
+	private final String value;
+
+	private PrivilegeCode(int id, String value) {
+		this.id = id;
+		this.value = value;
+	}
+
+	/**
+	 * Can privilege be scoped with namespace and set.
+	 */
+	public boolean canScope() {
+		return id >= 10;
+	}
+
+	/**
+	 * Convert ID to privilege code enum.
+	 */
+	public static PrivilegeCode fromId(int id) {
+		switch (id) {
+		case 0:
+			return USER_ADMIN;
+
+		case 1:
+			return SYS_ADMIN;
+
+		case 2:
+			return DATA_ADMIN;
+
+		case 10:
+			return READ;
+
+		case 11:
+			return READ_WRITE;
+
+		case 12:
+			return READ_WRITE_UDF;
+
+		case 13:
+			return WRITE;
+
+		default:
+			throw new AerospikeException("Invalid privilege code: " + id);
+		}
+	}
+
+	/**
+	 * Convert code to string.
+	 */
+	@Override
+	public String toString() {
+		return value;
+	}
+}
+==============================================================================================================
+  
+# x0xx fw (Framework)
+# x1xx us (User Management)
+# x2xx en (Entry Management)
+# x3xx ln (Link Management)
+# x4xx up (UploadFile Management)
+# x5xx bo (Book Management)
+
+e.ct.fw.5001 = Resource not found.
+e.ct.fw.6001 = Request method not supported.
+e.ct.fw.6002 = Specified representation format not supported.
+e.ct.fw.6003 = Specified media type in the request body not supported.
+e.ct.fw.7001 = Validation error occurred on item in the request body.
+e.ct.fw.7002 = Validation error occurred on item in the request parameters.
+e.ct.fw.7003 = Request body format error occurred.
+e.ct.fw.7004 = Unknown field exists in JSON.
+e.ct.fw.7005 = Type mismatch error occurred in JSON field.
+e.ct.fw.7006 = Type mismatch error occurred in request parameter or header or path variable.
+e.ct.fw.8001 = Business error occurred.
+e.ct.fw.8002 = Conflict with other processing occurred.
+e.ct.us.8101 = Th requested user is not found. [username={0}]
+e.ct.us.8102 = The given username (or email) is not found. [username={0}]
+e.ct.us.8103 = The given username is already used. [username={0}]
+e.ct.us.8104 = The given email is already used. [email={0}]
+e.ct.us.8105 = The given user does not exist. [username={0}]
+e.ct.us.8106 = At least one active admin must exist!
+e.ct.us.8107 = At least one unlocked admin must exist!
+e.ct.us.8108 = At least one enabled admin must exist!
+e.ct.us.8109 = The given role is invalid. [roleId={0,number,#}]
+e.ct.en.8201 = The requested entry is not found. [entryId={0,number,#}]
+e.ct.ln.8301 = The requested link is not found. [url={0}]
+e.ct.uf.8401 = The requested file is not found. [fileId={0}]
+e.ct.cf.8501 = The requested config is already registered. [configName={0}]
+e.ct.cf.8502 = The requested config is not found. [configName={0}]
+e.ct.fw.9001 = System error occurred.
+e.ct.fw.9002 = DataAccess error occurred.
+e.ct.fw.9003 = System error occurred.
+e.ct.bo.9501 = Search API execution failed
+==============================================================================================================
+import java.io.File;
+import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import java.util.List;
+
+import javax.net.ssl.SSLContext;
+
+import com.aerospike.client.policy.TlsPolicy;
+
+import org.apache.http.ssl.SSLContextBuilder;
+import org.apache.http.ssl.SSLContexts;
+
+public class TLSPolicyBuilder  {
+
+    boolean enabled;
+    String keystorePath;
+    char[] keystorePassword;
+    char[] keyPassword;
+    String truststorePath;
+    char[] truststorePassword;
+    List<String> allowedCiphers;
+    List<String> allowedProtocols;
+    boolean forLoginOnly;
+
+    public TLSPolicyBuilder(
+        boolean enabled,
+        String keystorePath,
+        char[] keystorePassword,
+        char[] keyPassword,
+        String truststorePath,
+        char[] truststorePassword,
+        List<String> allowedCiphers,
+        List<String> allowedProtocols,
+        boolean forLoginOnly
+    ) {
+        this.enabled = enabled;
+        this.keystorePath = keystorePath;
+        this.keystorePassword = keystorePassword;
+        this.keyPassword = keyPassword;
+        this.truststorePath = truststorePath;
+        this.truststorePassword = truststorePassword;
+        this.allowedCiphers = allowedCiphers;
+        this.allowedProtocols = allowedProtocols;
+        this.forLoginOnly = forLoginOnly;
+    }
+
+    public TlsPolicy build() {
+        if (!enabled) {
+            return null;
+        }
+   
+        TlsPolicy policy = new TlsPolicy();
+        if (keystorePath != null || truststorePath != null) {
+            addSSLContext(policy);
+        }
+
+        if (allowedCiphers != null) {
+            policy.ciphers = allowedCiphers.toArray(new String[] {});
+        }
+
+        if (allowedProtocols != null) {
+            policy.protocols = allowedProtocols.toArray(new String[] {});
+        }
+
+        policy.forLoginOnly = forLoginOnly;
+
+        return policy;
+    }
+
+    private void addSSLContext(TlsPolicy tlsPolicy) {
+        tlsPolicy.context = getSSLContext();
+    }
+
+    private SSLContext getSSLContext() {
+        SSLContextBuilder ctxBuilder = SSLContexts.custom();
+
+        if (keystorePath != null) {
+            loadKeyStore(ctxBuilder);
+        }
+
+        if (truststorePath != null) {
+            loadTrustStore(ctxBuilder);
+        }
+
+        try {
+            return ctxBuilder.build();
+        } catch (KeyManagementException | NoSuchAlgorithmException e) {
+            throw new ASTLSConfigException("Failed to build SSLContext.");
+        }
+    }
+
+    private void loadTrustStore(SSLContextBuilder ctxBuilder) {
+        File tsFile = new File(truststorePath);
+
+        try {
+            if (truststorePassword != null) {
+                ctxBuilder.loadTrustMaterial(tsFile, truststorePassword);
+            } else {
+                ctxBuilder.loadTrustMaterial(tsFile);
+            }
+        } catch (NoSuchAlgorithmException | KeyStoreException | CertificateException | IOException e) {
+            throw new ASTLSConfigException("Failed To load truststore.");
+        }
+    }
+
+    private void loadKeyStore(SSLContextBuilder ctxBuilder) {
+        File ksFile = new File(keystorePath);
+
+        if (keystorePassword == null) {
+            throw new ASTLSConfigException("If Keystore Path is provided, Keystore Password must be provided.");
+        }
+
+        try {
+            if (keyPassword == null) {
+                // If keyPass is not provided, assume it is the same as the keystore password
+                ctxBuilder.loadKeyMaterial(ksFile, keystorePassword, keystorePassword);
+            } else {
+                ctxBuilder.loadKeyMaterial(ksFile, keystorePassword, keyPassword);
+            }
+        } catch (NoSuchAlgorithmException | KeyStoreException | CertificateException | UnrecoverableKeyException | IOException e) {
+            throw new ASTLSConfigException("Failed To load keystore.");
+        }
+    }
+
+}
+
+class ASTLSConfigException extends RuntimeException {
+
+	private static final long serialVersionUID = 7499868056464128887L;
+
+	public ASTLSConfigException(String msg) {
+		super(msg);
+	}
+
+}
+==============================================================================================================
+@Value("${aerospike_node_properties:#{null}}")
+	private String aerospikeNodeProps;
+==============================================================================================================
+$ git submodule update --init
+$ gradle configureYCSB
+$ gradle assemble
+==============================================================================================================
+	/*
+	Our bosh deploy script on CF **may** push properties from a link which will look like:
+	{
+		"aerospike": {
+			"network": {
+				"service_port": ####,
+				"fabric_port": ####,
+				"heartbeat_port": ####,
+				"info_port": ####
+			}
+		}
+	}
+	If the link was null, this is a noop.
+	*/
+	private int getPortFromLink(String jsonNodeProperties, int defaultPort) {
+		if (jsonNodeProperties == null) {
+			return defaultPort;
+		}
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			JsonNode aerospikeNode = mapper.readTree(jsonNodeProperties);
+			return aerospikeNode.get("aerospike").get("network").get("service_port").intValue();
+		} catch(IOException e) {
+			e.printStackTrace();
+			return defaultPort;
+		} catch(NullPointerException e) {
+			/* If any of these intermediate nodes don't exist, we'll get this error */
+			e.printStackTrace();
+			return defaultPort;
+		}
+	}
+==============================================================================================================
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
+import com.aerospike.restclient.util.AerospikeAPIConstants;
+import com.aerospike.restclient.util.QueryParamDescriptors;
+
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
+
+/* Annotation which tells swagger to render all of the Batch Policy options as query parameters */
+@ApiImplicitParams(value= {
+		@ApiImplicitParam(
+				name=AerospikeAPIConstants.SEND_KEY,
+				dataType="boolean",
+				paramType="query",
+				value=QueryParamDescriptors.POLICY_SEND_KEY_NOTES,
+				defaultValue=QueryParamDescriptors.POLICY_SEND_KEY_DEFAULT),
+		@ApiImplicitParam(
+				name=AerospikeAPIConstants.REPLICA,
+				dataType="string",
+				paramType="query",
+				allowableValues=QueryParamDescriptors.POLICY_REPLICA_ALLOWABLE_VALUES,
+				value=QueryParamDescriptors.POLICY_REPLICA_NOTES,
+				defaultValue=QueryParamDescriptors.POLICY_REPLICA_DEFAULT)
+})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface ASRestClientBatchPolicyQueryParams {}
+==============================================================================================================
+mkdir $KVROOT
+java -jar $KVHOME/lib/kvstore-1.2.123.jar makebootconfig \
+   -root $KVROOT -port 5000 -admin 5001 -host localhost \
+   -harange 5010,5020
+java -jar $KVHOME/lib/kvstore-1.2.123.jar start -root $KVROOT
+java -jar $KVHOME/lib/kvstore-1.2.123.jar runadmin \
+    -port 5000 -host localhost -script $YCSBHOME/conf/script.txt
+==============================================================================================================
+import java.io.IOException;
+
+import org.msgpack.jackson.dataformat.MessagePackExtensionType;
+import org.msgpack.jackson.dataformat.MessagePackGenerator;
+
+import com.aerospike.client.Value.GeoJSONValue;
+import com.aerospike.client.command.ParticleType;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+
+
+
+public class MsgPackGeoJSONSerializer extends StdSerializer<GeoJSONValue>{
+
+	private static final long serialVersionUID = 1L;
+
+	public MsgPackGeoJSONSerializer() {
+		this(null);
+	}
+
+	public MsgPackGeoJSONSerializer(Class<GeoJSONValue> t) {
+		super(t);
+	}
+
+	/*
+	We serialize aerospike GeoJSONValue values as a MessagePack extension of type 23.
+	 */
+	@Override
+	public void serialize(GeoJSONValue geoVal, JsonGenerator gen, SerializerProvider provider) throws IOException {
+		MessagePackExtensionType geoExt = new MessagePackExtensionType((byte) ParticleType.GEOJSON, geoVal.toString().getBytes());
+		((MessagePackGenerator)gen).writeExtensionType(geoExt);
+	}
+}
+
+import java.io.IOException;
+
+import org.msgpack.jackson.dataformat.MessagePackGenerator;
+import org.msgpack.jackson.dataformat.MessagePackSerializedString;
+
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+
+
+/*
+ * When we are using MessagePack, we can have non string keys. This lets us write an arbitrary Object as a key
+ * Instead of key.toString()
+ */
+public class MsgPackObjKeySerializer extends StdSerializer<Object>{
+
+	public MsgPackObjKeySerializer() {
+		this(null);
+	}
+
+	private static final long serialVersionUID = 1L;
+
+	public MsgPackObjKeySerializer(Class<Object> object) {
+		super(object);
+	}
+
+	@Override
+	public void serialize(Object value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+		((MessagePackGenerator)gen).writeFieldName(new MessagePackSerializedString(value));
+	}
+}
+==============================================================================================================
+# Start mongodb server
+docker run -p 27017:27017 mongo
+
+# Start nodejs backend
+yarn --cwd server
+yarn --cwd server start
+
+# Start Angular dev server
+yarn
+yarn start
+==============================================================================================================
+# Client configuration
+aerospike_db_host: localhost
+aerospike_db_port: 3000
+aerospike_license_type: enterprise
+aerospike_admin_namespace: cf_admin
+aerospike_admin_user: cf_admin
+aerospike_admin_password: cf_admin
+
+# Catalog configuration
+aerospike_service_id: aerospike-service-broker
+aerospike_service_name: aerospike
+aerospike_service_description: Aerospike Enterprise Edition Managed Service
+==============================================================================================================
+	@ApiOperation(value="Return multiple records from the server in a single request.", nickname="performBatchGet")
+	@RequestMapping(method=RequestMethod.POST, consumes={"application/json", "application/msgpack"}, produces={"application/json", "application/msgpack"})
+	@ApiResponses(value= {
+			@ApiResponse(code=404, response=RestClientError.class, message = "Non existent namespace used in one or more key.",
+					examples= @Example(value = {@ExampleProperty(mediaType="Example json", value = "{'inDoubt': false, 'message': 'A message' ")})),
+			@ApiResponse(code=403, response=RestClientError.class, message = "Not authorized to access the resource",
+			examples= @Example(value = {@ExampleProperty(mediaType="Example json", value = "{'inDoubt': false, 'message': 'A message' ")})),
+			@ApiResponse(code=400, response=RestClientError.class, message = "Invalid parameters or request",
+			examples= @Example(value = {@ExampleProperty(mediaType="Example json", value = "{'inDoubt': false, 'message': 'A message' ")}))
+
+	})
+	@ASRestClientBatchPolicyQueryParams
+	public List<RestClientBatchReadResponse> performBatchGet(@RequestBody List<RestClientBatchReadBody> batchKeys,
+			@ApiIgnore @RequestParam Map<String, String>requestParams) {
+
+		BatchPolicy policy = RequestParamHandler.getBatchPolicy(requestParams);
+
+		return service.batchGet(batchKeys, policy);
+	}
+==============================================================================================================
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
+
+@SpringBootApplication
+public class AerospikeRestClientApplication extends SpringBootServletInitializer {
+
+	public static void main(String[] args) {
+		SpringApplication.run(AerospikeRestClientApplication.class, args);
+	}
+
+	@Override
+	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+		return application.sources(AerospikeRestClientApplication.class);
+	}
+}
+==============================================================================================================
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+
+@Configuration
+public class MyConfiguration {
+
+	@Bean
+	public WebMvcConfigurer corsConfigurer() {
+		return new WebMvcConfigurerAdapter() {
+			@Override
+			public void addCorsMappings(CorsRegistry registry) {
+				registry.addMapping("/api/**").allowedOrigins("https://blog.lqdev.cn");
+			}
+		};
+	}
+}
+==============================================================================================================
+set MAVEN_OPTS= -Xms512m -Xmx2048m
+
+start mvn clean install
+==============================================================================================================
+hadoop fs -touchz quangle
+hadoop fs -rm quangle
+hadoop fs -lsr .Trash
+hadoop fs -mv .Trash/Current/quangle .
+hadoop fs -ls .
+==============================================================================================================
+hadoop jar $HADOOP_HOME/share/hadoop/tools/lib/hadoop-streaming-*.jar \
+  -input input/ncdc/sample.txt \
+  -output output \
+  -mapper /bin/cat
+  
+hadoop jar $HADOOP_HOME/share/hadoop/tools/lib/hadoop-streaming-*.jar \
+  -input input/ncdc/sample.txt \
+  -output output \
+  -inputformat org.apache.hadoop.mapred.TextInputFormat \
+  -mapper /bin/cat \
+  -partitioner org.apache.hadoop.mapred.lib.HashPartitioner \
+  -numReduceTasks 1 \
+  -reducer org.apache.hadoop.mapred.lib.IdentityReducer \
+  -outputformat org.apache.hadoop.mapred.TextOutputFormat
+==============================================================================================================
+  
+<?xml version="1.0"?>
+<allocations>
+  <defaultQueueSchedulingPolicy>fair</defaultQueueSchedulingPolicy>
+
+  <queue name="prod">
+    <weight>40</weight>
+    <schedulingPolicy>fifo</schedulingPolicy>
+  </queue>
+
+  <queue name="dev">
+    <weight>60</weight>
+    <queue name="eng" />
+    <queue name="science" />
+  </queue>
+
+  <queuePlacementPolicy>
+    <rule name="specified" create="false" />
+    <rule name="primaryGroup" create="false" />
+    <rule name="default" queue="dev.eng" />
+  </queuePlacementPolicy>
+</allocations>
+==============================================================================================================
+#!/usr/bin/env bash
+for year in all/*
+do
+  echo -ne `basename $year .gz`"\t"
+  gunzip -c $year | \
+    awk '{ temp = substr($0, 88, 5) + 0;
+           q = substr($0, 93, 1);
+           if (temp !=9999 && q ~ /[01459]/ && temp > max) max = temp }
+         END { print max }'
+done
+==============================================================================================================
 sudo: true
 language: java
 dist: trusty
