@@ -28171,12 +28171,284 @@ public class AsyncFailsafeTest extends AbstractFailsafeTest {
 }
 
 ==============================================================================================================
+import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.ReplyException;
+import io.vertx.core.eventbus.ReplyFailure;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
+import net.jodah.failsafe.util.concurrent.DefaultScheduledFuture;
+import net.jodah.failsafe.util.concurrent.Scheduler;
+
+import java.time.Duration;
+import java.util.concurrent.atomic.AtomicInteger;
+
+public class VertxExample {
+  static Vertx vertx = Vertx.vertx();
+
+  /** Create RetryPolicy to handle Vert.x failures */
+  static RetryPolicy<Object> retryPolicy = new RetryPolicy<>()
+      .handleIf((ReplyException failure) -> ReplyFailure.RECIPIENT_FAILURE.equals(failure.failureType())
+          || ReplyFailure.TIMEOUT.equals(failure.failureType()));
+
+  /** Adapt Vert.x timer to a Failsafe Scheduler */
+  static Scheduler scheduler = (callable, delay, unit) -> {
+    Runnable runnable = () -> {
+      try {
+        callable.call();
+      } catch (Exception ignore) {
+      }
+    };
+    return new DefaultScheduledFuture<Object>() {
+      long timerId;
+
+      {
+        if (delay == 0)
+          vertx.getOrCreateContext().runOnContext(e -> runnable.run());
+        else
+          timerId = vertx.setTimer(unit.toMillis(delay), tid -> runnable.run());
+      }
+
+      @Override
+      public boolean cancel(boolean mayInterruptIfRunning) {
+        return delay != 0 && vertx.cancelTimer(timerId);
+      }
+    };
+  };
+
+  /**
+   * A Vert.x sender and retryable receiver example.
+   */
+  public static void main(String... args) throws Throwable {
+    // Receiver that fails 3 times then succeeds
+    AtomicInteger failures = new AtomicInteger();
+    vertx.eventBus().consumer("ping-address", message -> {
+      if (failures.getAndIncrement() < 3)
+        message.fail(1, "Failed");
+      else {
+        message.reply("pong!");
+      }
+    });
+
+    // Retryable sender
+    Failsafe.with(retryPolicy.copy().withDelay(Duration.ofSeconds(1)))
+        .with(scheduler)
+        .runAsyncExecution(execution -> vertx.eventBus().send("ping-address", "ping!", reply -> {
+          if (reply.succeeded())
+            System.out.println("Received reply " + reply.result().body());
+          else if (!execution.retryOn(reply.cause()))
+            System.out.println("Execution and retries failed");
+        }));
+
+    Thread.sleep(5000);
+  }
+}
+==============================================================================================================
+public class CreateInstancSaga extends AbstractSaga {
+  private final transient ComputeClient computeClient;
+  private final transient InstanceDAO dao;
+  private int instanceId;
+  
+  public CreateInstancSaga(ComputeClient computeClient, InstanceDAO dao) {
+    this.computeClient = computeClient;
+    this.dao = dao;
+  }
+
+  /* Configure the properties on which messages should be correlated to this saga */
+  @Override
+  protected void configure() {
+    // Correlates messages to this saga by their instanceId
+    map("instanceId").to(InstanceStartingEvent.class, InstanceCreatedEvent.class, InstanceDiedEvent.class);
+  }
+ 
+  @StartsSaga
+  public void handle(CreateInstanceCommand command) {
+    instanceId = computeClient.createInstance();
+    dao.createInstance(instanceId);
+    requestTimeout(10, TimeUnit.MINUTES);
+  }
+ 
+  @HandlesMessage
+  public void handle(InstanceStartingEvent event) {
+    dao.updateInstance(instanceId, "STARTING");
+  }
+ 
+  @EndsSaga
+  public void handle(InstanceCreatedEvent event) {
+    dao.updateInstance(instanceId, "COMPLETED");
+  }
+ 
+  @EndsSaga
+  public void handle(InstanceDiedEvent event) {
+    dao.updateInstance(instanceId, "DIED");
+  }
+ 
+  @Override
+  protected void timeout(Object state) {
+    dao.updateInstance(instanceId, "TIMED_OUT");
+    computeClient.killInstance(instanceId);
+    end();
+  }
+}
+Register the saga:
+
+Epicary epicary = new Epicary()
+epicary.register(CreateInstanceSaga.class);
+Initiate a new instance of the saga by sending a starting message:
+
+epicary.send(new CreateInstanceCommand());
+Subsequent messages will be correlated to the same saga instance if their instanceIds match:
+
+epicary.send(new InstanceCreatedEvent(1234));
+==============================================================================================================
+@Warmup(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
+@Fork(value = 3, jvmArgsAppend = {"-XX:+UseParallelGC", "-Xms1g", "-Xmx1g"})
+@BenchmarkMode(Mode.AverageTime)
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
+@State(Scope.Benchmark)
+public class ToArrayBench {
+
+    @Param({"0", "1", "10", "100", "1000"})
+    int size;
+
+    @Param({"arraylist", "hashset"})
+    String type;
+
+    Collection<Foo> coll;
+
+    @Setup
+    public void setup() {
+        if (type.equals("arraylist")) {
+            coll = new ArrayList<Foo>();
+        } else if (type.equals("hashset")) {
+            coll = new HashSet<Foo>();
+        } else {
+            throw new IllegalStateException();
+        }
+        for (int i = 0; i < size; i++) {
+            coll.add(new Foo(i));
+        }
+    }
+
+    @Benchmark
+    public Object[] simple() {
+        return coll.toArray();
+    }
+
+    @Benchmark
+    public Foo[] zero() {
+        return coll.toArray(new Foo[0]);
+    }
+
+    @Benchmark
+    public Foo[] sized() {
+        return coll.toArray(new Foo[coll.size()]);
+    }
+
+    public static class Foo {
+        private int i;
+
+        public Foo(int i) {
+            this.i = i;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Foo foo = (Foo) o;
+            return i == foo.i;
+        }
+
+        @Override
+        public int hashCode() {
+            return i;
+        }
+    }
+}
+==============================================================================================================
+java -jar target/benchmarks.jar zero -f 1 -p size=1000 -p type=arraylist -prof perfasm
+
+$ tail ~/.bashrc
+# Collect Java+native, clock profiling
+alias 'perfanal'="collect -o test.1.er -S on -j on -A on "
+
+# Collect native only (useful when loading *lots* of classes
+# -- avoids profiler's JVMTI hooks overheads), clock profiling
+alias 'perfanal-native'="collect -o test.1.er -S on -j off -A on "
+
+# Collect Java+native, hardware counter profiling
+alias 'perfanal-hwc'="collect -o test.1.er -S on -j on -A on -h cycles,on,insts,on "
+
+# Collect native only, hardware counting profiling
+alias 'perfanal-hwc-native'="collect -o test.1.er -S on -j off -A on -h cycles,on,insts,on "
+
+perfanal-hwc java -jar benchmarks.jar -f 1 -p size=1000 -p type=arraylist
+
+# -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_newArray
+==============================================================================================================
+@Warmup(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
+@Fork(value = 3, jvmArgsAppend = {"-XX:+UseParallelGC", "-Xms1g", "-Xmx1g"})
+@BenchmarkMode(Mode.AverageTime)
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
+@State(Scope.Benchmark)
+public class EmptyArrayBench {
+
+#for L in 0..512
+    int v$L = $L;
+
+    @Benchmark
+    public Foo[] field_$L() {
+        return new Foo[v$L];
+    }
+
+    @Benchmark
+    public Foo[] const_$L() {
+        return new Foo[$L];
+    }
+#done
+}
+==============================================================================================================
+ mvn archetype:generate
+          -DinteractiveMode=false
+          -DarchetypeGroupId=org.openjdk.jmh
+          -DarchetypeArtifactId=jmh-java-benchmark-archetype
+          -DgroupId=com.jenkov
+          -DartifactId=first-benchmark
+          -Dversion=1.0
+==============================================================================================================
 <!-- https://mvnrepository.com/artifact/com.github.kongchen/swagger-maven-plugin -->
 <dependency>
     <groupId>com.github.kongchen</groupId>
     <artifactId>swagger-maven-plugin</artifactId>
     <version>3.1.8</version>
 </dependency>
+==============================================================================================================
+ mvn package, it will generate a benchmarks.jar, just start the JAR normally.
+
+Terminal
+$ mvn package 
+
+$ java -jar target\benchmarks.jar BenchmarkLoop
+==============================================================================================================
+#!/bin/sh
+# run from top level dir
+
+PROJECT=expiringmap
+
+mvn javadoc:javadoc -Djv=$apiVersion
+rm -rf target/docs
+git clone git@github.com:jhalterman/$PROJECT.git target/docs -b gh-pages
+cd target/docs
+git rm -rf javadoc
+mkdir -p javadoc
+mv -v ../site/apidocs/* javadoc
+git add -A -f javadoc
+git commit -m "Updated JavaDocs"
+git push -fq origin gh-pages > /dev/null
+
+echo "Published JavaDocs"
 ==============================================================================================================
 $ ./bin/alluxio fs mount \
 --option aws.accessKeyId=<AWS_ACCESS_KEY_ID> \
