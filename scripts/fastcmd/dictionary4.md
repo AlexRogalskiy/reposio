@@ -28425,12 +28425,359 @@ public class EmptyArrayBench {
     <version>3.1.8</version>
 </dependency>
 ==============================================================================================================
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.DeliveryMode;
+import javax.jms.Destination;
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+import javax.jms.TemporaryQueue;
+import javax.jms.TextMessage;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+
+public class Client {
+    public static void main(String[] args) throws Exception {
+        try {
+            // The configuration for the Qpid InitialContextFactory has been supplied in
+            // a jndi.properties file in the classpath, which results in it being picked
+            // up automatically by the InitialContext constructor.
+            Context context = new InitialContext();
+
+            ConnectionFactory factory = (ConnectionFactory) context.lookup("myFactoryLookup");
+            Destination queue = (Destination) context.lookup("myQueueLookup");
+
+            Connection connection = factory.createConnection(System.getProperty("USER"), System.getProperty("PASSWORD"));
+            connection.setExceptionListener(new MyExceptionListener());
+            connection.start();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            //Create a temporary queue and consumer to receive responses, and a producer to send requests.
+            TemporaryQueue responseQueue = session.createTemporaryQueue();
+            MessageConsumer messageConsumer = session.createConsumer(responseQueue);
+            MessageProducer messageProducer = session.createProducer(queue);
+
+            //Send some requests and receive the responses.
+            String[] requests = new String[] { "Twas brillig, and the slithy toves",
+                                               "Did gire and gymble in the wabe.",
+                                               "All mimsy were the borogroves,",
+                                               "And the mome raths outgrabe." };
+
+            for (String request : requests) {
+                TextMessage requestMessage = session.createTextMessage(request);
+                requestMessage.setJMSReplyTo(responseQueue);
+
+                messageProducer.send(requestMessage, DeliveryMode.NON_PERSISTENT, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
+
+                TextMessage responseMessage = (TextMessage) messageConsumer.receive(2000);
+                if (responseMessage != null) {
+                    System.out.println("[CLIENT] " + request + " ---> " + responseMessage.getText());
+                } else {
+                    System.out.println("[CLIENT] Response for '" + request +"' was not received within the timeout, exiting.");
+                    break;
+                }
+            }
+
+            connection.close();
+        } catch (Exception exp) {
+            System.out.println("[CLIENT] Caught exception, exiting.");
+            exp.printStackTrace(System.out);
+            System.exit(1);
+        }
+    }
+
+    private static class MyExceptionListener implements ExceptionListener {
+        @Override
+        public void onException(JMSException exception) {
+            System.out.println("[CLIENT] Connection ExceptionListener fired, exiting.");
+            exception.printStackTrace(System.out);
+            System.exit(1);
+        }
+    }
+}
+
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.Destination;
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.Session;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+
+public class Receiver {
+    private static final int DEFAULT_COUNT = 10;
+
+    public static void main(String[] args) throws Exception {
+        int count = DEFAULT_COUNT;
+        if (args.length == 0) {
+            System.out.println("Consuming up to " + count + " messages.");
+            System.out.println("Specify a message count as the program argument if you wish to consume a different amount.");
+        } else {
+            count = Integer.parseInt(args[0]);
+            System.out.println("Consuming up to " + count + " messages.");
+        }
+
+        try {
+            // The configuration for the Qpid InitialContextFactory has been supplied in
+            // a jndi.properties file in the classpath, which results in it being picked
+            // up automatically by the InitialContext constructor.
+            Context context = new InitialContext();
+
+            ConnectionFactory factory = (ConnectionFactory) context.lookup("myFactoryLookup");
+            Destination queue = (Destination) context.lookup("myQueueLookup");
+
+            Connection connection = factory.createConnection(System.getProperty("USER"), System.getProperty("PASSWORD"));
+            connection.setExceptionListener(new MyExceptionListener());
+            connection.start();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            MessageConsumer messageConsumer = session.createConsumer(queue);
+
+            long start = System.currentTimeMillis();
+
+            int actualCount = 0;
+            boolean deductTimeout = false;
+            int timeout = 1000;
+            for (int i = 1; i <= count; i++, actualCount++) {
+                Message message = messageConsumer.receive(timeout);
+                if (message == null) {
+                    System.out.println("Message " + i + " not received within timeout, stopping.");
+                    deductTimeout = true;
+                    break;
+                }
+                if (i % 100 == 0) {
+                    System.out.println("Got message " + i);
+                }
+            }
+
+            long finish = System.currentTimeMillis();
+            long taken = finish - start;
+            if (deductTimeout) {
+                taken -= timeout;
+            }
+            System.out.println("Received " + actualCount + " messages in " + taken + "ms");
+
+            connection.close();
+        } catch (Exception exp) {
+            System.out.println("Caught exception, exiting.");
+            exp.printStackTrace(System.out);
+            System.exit(1);
+        }
+    }
+
+    private static class MyExceptionListener implements ExceptionListener {
+        @Override
+        public void onException(JMSException exception) {
+            System.out.println("Connection ExceptionListener fired, exiting.");
+            exception.printStackTrace(System.out);
+            System.exit(1);
+        }
+    }
+}
+
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.DeliveryMode;
+import javax.jms.Destination;
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+
+public class Sender {
+    private static final int DEFAULT_COUNT = 10;
+    private static final int DELIVERY_MODE = DeliveryMode.NON_PERSISTENT;
+
+    public static void main(String[] args) throws Exception {
+        int count = DEFAULT_COUNT;
+        if (args.length == 0) {
+            System.out.println("Sending up to " + count + " messages.");
+            System.out.println("Specify a message count as the program argument if you wish to send a different amount.");
+        } else {
+            count = Integer.parseInt(args[0]);
+            System.out.println("Sending up to " + count + " messages.");
+        }
+
+        try {
+            // The configuration for the Qpid InitialContextFactory has been supplied in
+            // a jndi.properties file in the classpath, which results in it being picked
+            // up automatically by the InitialContext constructor.
+            Context context = new InitialContext();
+
+            ConnectionFactory factory = (ConnectionFactory) context.lookup("myFactoryLookup");
+            Destination queue = (Destination) context.lookup("myQueueLookup");
+
+            Connection connection = factory.createConnection(System.getProperty("USER"), System.getProperty("PASSWORD"));
+            connection.setExceptionListener(new MyExceptionListener());
+            connection.start();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            MessageProducer messageProducer = session.createProducer(queue);
+
+            long start = System.currentTimeMillis();
+            for (int i = 1; i <= count; i++) {
+                TextMessage message = session.createTextMessage("Text!");
+                messageProducer.send(message, DELIVERY_MODE, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
+
+                if (i % 100 == 0) {
+                    System.out.println("Sent message " + i);
+                }
+            }
+
+            long finish = System.currentTimeMillis();
+            long taken = finish - start;
+            System.out.println("Sent " + count + " messages in " + taken + "ms");
+
+            connection.close();
+        } catch (Exception exp) {
+            System.out.println("Caught exception, exiting.");
+            exp.printStackTrace(System.out);
+            System.exit(1);
+        }
+    }
+
+    private static class MyExceptionListener implements ExceptionListener {
+        @Override
+        public void onException(JMSException exception) {
+            System.out.println("Connection ExceptionListener fired, exiting.");
+            exception.printStackTrace(System.out);
+            System.exit(1);
+        }
+    }
+}
+==============================================================================================================
+Let us look at the steps you will need to follow (for now):
+
+Start by downloading the latest version of the skupper CLI from https://github.com/skupperproject/skupper-cli/releases . Add it to your path and make it executable.
+Log into your remote cluster with oc or kubectl.
+Install Skupper on the remote cluster:
+$ skupper init --id public
+Make the skupper router accessible from outside the cluster:
+$ oc apply -f - << EOF
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: skupper-messaging
+spec:
+  to:
+    kind: Service
+    name: skupper-messaging
+    weight: 100
+  port:
+    targetPort: amqps
+  tls:
+    termination: passthrough
+    insecureEdgeTerminationPolicy: None
+  wildcardPolicy: None
+EOF
+Create a service on the cluster representing the local echo service. This service will not have an implementation, it is just to help Skupper to correctly handle this feature:
+$ oc apply -f - << EOF
+kind: Service
+apiVersion: v1
+metadata:
+  name: echo
+  annotations:
+    skupper.io/proxy: tcp
+spec:
+  ports:
+    - protocol: TCP
+      port: 2000
+      targetPort: 2000
+  selector:
+    dummy: selector
+EOF
+Clone the skupper-proxy project:
+$ git clone git@github.com:skupperproject/skupper-proxy.git
+Go to that project’s bin/ directory with:
+$ cd skupper-proxy/bin
+Extract certificates that are needed to mutually authenticate your connection:
+$ oc extract secret/skupper
+Modify connection.json to look like this:
+{
+    "scheme": "amqps",
+    "host": "",
+    "port": "443",
+    "verify": false,
+    "tls": {
+        "ca": "ca.crt",
+        "cert": "tls.crt",
+        "key": "tls.key",
+        "verify": false
+    }
+}
+where the host can be obtained by:
+
+$ oc get route skupper-messaging -o=jsonpath='{.spec.host}{"\n"}'
+Run a simple Bash TCP echo service on port 2000 locally in a separate shell that will be kept running:
+$ nc -l 2000 -k -c 'xargs -n1 echo'
+Connect to the Skupper running on the remote cluster. Note that the port must match the one used by the echo service in step 10 (i.e., 2000) and echo must match the name of the service you created on the cluster earlier:
+$ node ./simple.js 'amqp:echo=>tcp:2000'
+Now. everything is set. You can go the remote cluster, use a pod that has the Netcat command nc installed like busybox:latest, and run:
+
+$ nc localhost echo
+Type a word, and you should see it echoed back as it passes through skupper-proxy-pod -> skupper routerrouter -> simple.js on your laptop -> the TCP echo service on your laptop, and back!
+==============================================================================================================
+“systemctl start jenkins“, “systemctl enable jenkins“, “systemctl start docker“
+
+==============================================================================================================
+npm insatll -g coffee-script
+coffee -c test.coffee
+cofee -cw test.coffee
+coffee -c src -o js
+coffee -wc src -o js
+==============================================================================================================
+#!/bin/bash
+mvn install
+mvn clean verify -P integration-test
+
+sudo docker build -t devops .
+
+https://medium.com/edureka/ci-cd-pipeline-5508227b19ca
+==============================================================================================================
+<plugin>
+  <groupId>io.thorntail</groupId>
+  <artifactId>thorntail-maven-plugin</artifactId>
+  <version>${version.thorntail}</version>
+  <executions>
+    <execution>
+      <goals>
+        <goal>package</goal>
+      </goals>
+    </execution>
+  </executions>
+</plugin>
+
+
+<dependency>
+  <groupId>io.thorntail</groupId>
+  <artifactId>jaxrs</artifactId>
+</dependency>
+
+mvn package
+java -jar <myapp>-thorntail.jar
+==============================================================================================================
  mvn package, it will generate a benchmarks.jar, just start the JAR normally.
 
 Terminal
 $ mvn package 
 
 $ java -jar target\benchmarks.jar BenchmarkLoop
+==============================================================================================================
+pip install -U Sphinx
 ==============================================================================================================
 #!/bin/sh
 # run from top level dir
