@@ -28740,6 +28740,1120 @@ cofee -cw test.coffee
 coffee -c src -o js
 coffee -wc src -o js
 ==============================================================================================================
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+
+/**
+ * Benchmark is a small utility to quickly and easily run simple
+ * Benchmarks on Java code. The code is based entirely on the benchmark
+ * utility from Go (see http://golang.org/pkg/testing/).
+ * <p>
+ * In order to write benchmarks, you need to provide a class that has
+ * methods with signatures of the form:
+ * <p>
+ * <pre> public void methodNameIrrelevant (Benchmark b) {...} </pre>
+ *
+ * The benchmarks in the class you wrote will be executed when the
+ * following command is run:
+ *
+ * <pre> java -jar Benchmark
+ *  {name.of.class.containing.my.BenchmarkMethods} </pre>
+ * <p>
+ * ( The above seems to have some classloader issues ... )
+ * <p>
+ * Alternatively, you can run benchmarks within Java code by calling:
+ * <p>
+ * <pre> Benchmark.runBenchmark(MyBenchMark.class); </pre>
+ *
+ * The Benchmark utility will vary the number of times to run the
+ * benchmark until it runs long enough to be measured accurately.
+ *
+ * The number of times that a benchmark is supposed to run is signaled
+ * to your benchmark function by the field <code> N </code> in the
+ * <code>Benchmark</code> argument to the function.
+ *
+ * N.B. it is the responsibility of the benchmark function you provide
+ * to run the code <code>N</code> number of times and not up to the
+ * Benchmark utility! A typical benchmark function will look like this:
+ *
+ * <pre>
+ *      public static void string (Benchmark b) {
+ *        for (int n =0; n!= b.N; ++n) {
+ *          String sum = "";
+ *          for (int i = 1; i!= 1000; ++i) {
+ *            sum += i;
+ *          }
+ *          if (n == 0) {
+ *            b.setBytes(sum.getBytes().length);
+ *          }
+ *        }
+ *      }
+ *
+ *  </pre>
+ * <p>
+ * If <code>setBytes(...)</code> is called in the benchmark test, the
+ * benchmarks will display information about the throughput (MB/s) of the code
+ * as well as the the average time per operation. The value passed to
+ * <code>setBytes(...)</code> is the number of bytes processed in a
+ * single iteration, not how many bytes were processed in
+ * <code>b.N</code> loop iterations.
+ * <p>
+ * In case the benchmark test requires lengthy setup that should be
+ * ignored, you can stop and restart the internal timer like this:
+ * <p>
+ * <pre>
+ *    public void myBenchmark (Benchmark b) {
+ *      b.stopTimer();
+ *      reallyLengthySetup();
+ *      b.startTimer();
+ *      for (int i =0; i!= b.N, ++i) {
+ *        ... whatever ...
+ *      }
+ *    }
+ *  </pre>
+ * <p>
+ * This class contains three sample benchmarks measuring the
+ * performance of string concatenation of <code>String</code>,
+ * <code>StringBuffer</code> and <code>StringBuilder</code>. These can
+ * be run as follows:
+ * <p>
+ * <pre>
+ *     $ java -jar lib/benchmark.jar benchmark.Benchmark
+ *            string	     500	   6523698 ns/op	   0.44 MB/s
+ *      stringBuffer	   50000	     38646 ns/op	  74.76 MB/s
+ *     stringBuilder	   50000	     32237 ns/op	  89.62 MB/s
+ *  </pre>
+ * <p>
+ * The results printed are:
+ * <p>
+ * <ul>
+ * <li>name of the benchmark method</li>
+ * <li>number of times the utility ran the benchmark</li>
+ * <li>number of ns per loop</li>
+ * <li>number of MB processed per second</li>
+ * </ul>
+ * <p>
+ * The tool may also be call as follows:
+ * <p>
+ * <pre>
+ *     $ java -jar lib/benchmark.jar benchmark.Benchmark stringB.*
+ *      stringBuffer	   50000	     38646 ns/op	  74.76 MB/s
+ *     stringBuilder	   50000	     32237 ns/op	  89.62 MB/s
+ *  </pre>
+ * <p>
+ * The final argument is an optional regular expression, if provided,
+ * only benchmark methods matching this expression are run.
+ */
+public class Benchmark {
+    /**
+     * the number of times the Benchmark utility expects you to perform
+     * whatever it is you're benchmarking.
+     * <p>
+     * A typical benchmark method will look like this:
+     * <p>
+     * <pre>
+     *   public void benchmarkMethod (Benchmark b) {
+     *      for (int i = 0; i != b.N; ++i) {
+     *        ... my benchmark code ...
+     *      }
+     *   }
+     * </pre>
+     * <p>
+     * The responsibility of running the benchmark <code>N</code> is up to
+     * you, the the utility just tells you the value of N...
+     */
+    public int N;
+
+    InternalBenchmark internal;
+    long ns;
+    long bytes;
+    long start;
+
+    static long min(long x, long y) {
+        return x > y ? y : x;
+    }
+
+    static long max(long x, long y) {
+        return x < y ? y : x;
+    }
+
+    // roundDown10 rounds a number down to the nearest power of 10.
+    static int roundDown10(int n) {
+        int tens = 0;
+        while (n > 10) {
+            n /= 10;
+            ++tens;
+        }
+        int result = 1;
+        for (int i = 0; i < tens; ++i) {
+            result *= 10;
+        }
+        return result;
+
+    }
+
+    // roundUp rounds x up to a number of the form [1eX, 2eX, 5eX].
+    static int roundUp(int n) {
+        int base = roundDown10(n);
+        if (n < (2 * base)) {
+            return 2 * base;
+        }
+        if (n < (5 * base)) {
+            return 5 * base;
+        }
+        return 10 * base;
+    }
+
+    static boolean hasBenchmarkParam(Method m) {
+        Class[] paramTypes = m.getParameterTypes();
+        if (paramTypes == null || paramTypes.length != 1) {
+            return false;
+        }
+        return paramTypes[0].equals(Benchmark.class);
+    }
+
+    public static void runBenchmark(final Class c, String regexp) throws InstantiationException, IllegalAccessException {
+        Pattern pattern = null;
+        if (null != regexp) {
+            pattern = Pattern.compile(regexp);
+        }
+        List<Method> list = new ArrayList<Method>();
+        int maxName = 0;
+        for (Method m : c.getMethods()) {
+            if (m.getReturnType() != Void.TYPE || !hasBenchmarkParam(m)) {
+                continue;
+            }
+            if (null != pattern) {
+                Matcher matcher = pattern.matcher(m.getName());
+                if (!matcher.matches()) {
+                    continue;
+                }
+            }
+            list.add(m);
+            maxName = m.getName().length() > maxName ? m.getName().length() : maxName;
+        }
+        for (final Method m : list) {
+            InternalBenchmark ib = new InternalBenchmark() {
+                Object o = c.newInstance();
+
+                void runBenchmark(Benchmark b) {
+                    try {
+                        m.invoke(o, b);
+                    } catch (Throwable iae) {
+                        throw new RuntimeException(iae);
+                    }
+                }
+            };
+            ib.name = m.getName();
+            Benchmark b = new Benchmark();
+            b.internal = ib;
+            BenchmarkResult res = b.run();
+            System.out.println(String.format("%" + maxName + "s\t%s", ib.name, res));
+        }
+    }
+
+    public static void runBenchmark(final Class c) throws InstantiationException, IllegalAccessException {
+        runBenchmark(c, null);
+    }
+
+    /**
+     * Example:
+     * <p>
+     * <pre>
+     *   public static void stringBuilder (Benchmark b) {
+     *     for (int n =0; n!= b.N; ++n) {
+     *       StringBuilder sum = new StringBuilder();
+     *       for (int i = 1; i!= 1000; ++i) {
+     *         sum.append(i);
+     *       }
+     *       if (n == 0) {
+     *         b.setBytes(sum.length());
+     *       }
+     *     }
+     *   }
+     * </pre>
+     */
+    public static void stringBuilder(Benchmark b) {
+        for (int n = 0; n != b.N; ++n) {
+            StringBuilder sum = new StringBuilder();
+            for (int i = 1; i != 1000; ++i) {
+                sum.append(i);
+            }
+            if (n == 0) {
+                b.setBytes(sum.length());
+            }
+        }
+    }
+
+    /**
+     * Example:
+     * <p>
+     * <pre>
+     *
+     *   public static void string (Benchmark b) {
+     *     for (int n =0; n!= b.N; ++n) {
+     *       String sum = "";
+     *       for (int i = 1; i!= 1000; ++i) {
+     *         sum += i;
+     *       }
+     *       if (n == 0) {
+     *         b.setBytes(sum.getBytes().length);
+     *       }
+     *     }
+     *   }
+     * </pre>
+     */
+    public static void string(Benchmark b) {
+        for (int n = 0; n != b.N; ++n) {
+            String sum = "";
+            for (int i = 1; i != 1000; ++i) {
+                sum += i;
+            }
+            if (n == 0) {
+                b.setBytes(sum.getBytes().length);
+            }
+        }
+    }
+
+    static void usage() {
+        System.err.println("usage: [jre] Benchmark <name of benchmark class> [optional regexp]");
+        System.exit(1);
+    }
+
+    public static void main(String[] args) throws Throwable {
+        String regexp = null;
+        if (args.length != 1 && args.length != 2) {
+            usage();
+        }
+        if (args.length == 2) {
+            regexp = args[1];
+        }
+        Class c = Class.forName(args[0]);
+        runBenchmark(c, regexp);
+    }
+
+    //
+    // Reflection stuff to load benchmarks
+    //
+
+    /**
+     * starts timing a test.  This function is called automatically
+     * before a benchmark starts, but it can also used to resume timing after
+     * a call to StopTimer.
+     */
+    public void startTimer() {
+        this.start = System.nanoTime();
+    }
+
+    /**
+     * stops timing a test.  This can be used to pause the timer
+     * while performing complex initialization that you don't
+     * want to measure.
+     */
+    public void stopTimer() {
+        if (this.start > 0) {
+            this.ns += System.nanoTime() - this.start;
+        }
+        this.start = 0;
+    }
+
+    /**
+     * stops the timer and sets the elapsed benchmark time to zero.
+     */
+    public void resetTimer() {
+        this.start = 0;
+        this.ns = 0;
+    }
+
+
+    // Test Benchmarks ...
+
+    /**
+     * records the number of bytes processed in a single operation.
+     * If this is called, the benchmark will report ns/op and MB/s.
+     */
+    public void setBytes(long n) {
+        this.bytes = n;
+    }
+
+    long nsPerOp() {
+        if (this.N <= 0) {
+            return 0;
+        }
+        return this.ns / this.N;
+    }
+
+    // runN runs a single benchmark for the specified number of iterations.
+    void runN(int n) {
+        this.N = n;
+        this.resetTimer();
+        this.startTimer();
+        this.internal.runBenchmark(this);
+        this.stopTimer();
+    }
+
+    /**
+     * <code>run</code> times the benchmark function.  It gradually increases the number
+     * of benchmark iterations until the benchmark runs for a second in order
+     * to get a reasonable measurement.  It prints timing information in this form:
+     * <p>
+     * <pre>
+     * 		testing.BenchmarkHello	100000		19 ns/op
+     * </pre>
+     */
+    public BenchmarkResult run() {
+        int n = 1;
+        // Run the benchmark for a single iteration in case it's expensive.
+        this.runN(n);
+        // Run the benchmark for at least a second.
+        while (this.ns < 1e9 && n < 1e9) {
+            long last = n;
+            // Predict iterations/sec.
+            if (this.nsPerOp() == 0) {
+                n = (int) 1e9;
+            } else {
+                n = (int) (1e9 / this.nsPerOp());
+            }
+            // Run more iterations than we think we'll need for a second (1.5x).
+            // Don't grow too fast in case we had timing errors previously.
+            // Be sure to run at least one more than last time.
+            n = (int) max(min(n + n / 2, 100 * last), last + 1);
+            // Round up to something easy to read.
+            n = roundUp(n);
+            this.runN(n);
+        }
+        return new BenchmarkResult(this.N, this.ns, this.bytes);
+    }
+
+    /**
+     * Example:
+     * <p>
+     * <pre>
+     *   public void stringBuffer (Benchmark b) {
+     *     for (int n =0; n!= b.N; ++n) {
+     *       StringBuffer sum = new StringBuffer();
+     *       for (int i = 1; i!= 1000; ++i) {
+     *         sum.append(i);
+     *       }
+     *       if (n == 0) {
+     *         b.setBytes(sum.length());
+     *       }
+     *     }
+     *   }
+     * </pre>
+     */
+    public void stringBuffer(Benchmark b) {
+        for (int n = 0; n != b.N; ++n) {
+            StringBuffer sum = new StringBuffer();
+            for (int i = 1; i != 1000; ++i) {
+                sum.append(i);
+            }
+            if (n == 0) {
+                b.setBytes(sum.length());
+            }
+        }
+    }
+
+
+
+}
+
+abstract class InternalBenchmark {
+	String name;
+
+	abstract void runBenchmark(Benchmark b);
+}
+
+class BenchmarkResult {
+
+	int n;
+	long ns;
+	long bytes;
+
+	BenchmarkResult(int n, long ns, long bytes) {
+		this.n = n;
+		this.ns = ns;
+		this.bytes = bytes;
+	}
+
+	long nsPerOp() {
+		return this.n <= 0 ? 0 : this.ns / this.n;
+	}
+
+	public String toString() {
+		long ns = this.nsPerOp();
+		String mb = "";
+		if (ns > 0 && this.bytes > 0) {
+			mb = String.format("\t%7.2f MB/s", (this.bytes / 1e6) / (ns / 1e9));
+		}
+		return String.format("%8d\t%10d ns/op%s", this.n, ns, mb);
+	}
+}
+==============================================================================================================
+var net = require("net")
+
+var c = net.createConnection(8080, "localhost").on("connect", function() {
+      var ips = ["8.8.8.8", "92.241.170.203","213.165.64.71"]
+      for (var i = 0; i!=ips.length; ++i) {
+        c.write(ips[i]);
+        c.write("\n");
+      }
+    }).on("data", function(data){
+      var str = data.toString(),
+          arr = str.split("\n")
+
+      for (var i=0; i!= arr.length; ++i){
+        console.log(JSON.parse(arr[i]))
+      }      
+    })
+==============================================================================================================
+#set($hash = '#')
+spring.datasource:
+  url: jdbc:h2:./camunda-db;DB_CLOSE_DELAY=-1;MVCC=TRUE;DB_CLOSE_ON_EXIT=FALSE
+${hash}shareable h2 database: jdbc:h2:./camunda-db;DB_CLOSE_DELAY=-1;MVCC=TRUE;DB_CLOSE_ON_EXIT=FALSE;AUTO_SERVER=TRUE
+  username: sa
+  password: sa
+spring.h2.console.enabled: true
+camunda.bpm:
+  admin-user:
+    id: demo
+    password: demo
+    firstName: Demo
+    lastName: Demo
+  filter:
+    create: All Tasks
+server.port: 8080
+==============================================================================================================
+mvn clean package spring-boot:run
+==============================================================================================================
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype-descriptor name="camunda-archetype-spring-boot-demo" xsi:schemaLocation="http://maven.apache.org/plugins/maven-archetype-plugin/archetype-descriptor/1.0.0 http://maven.apache.org/xsd/archetype-descriptor-1.0.0.xsd"
+    xmlns="http://maven.apache.org/plugins/maven-archetype-plugin/archetype-descriptor/1.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <requiredProperties>
+    <requiredProperty key="project-name"><defaultValue>Camunda Spring Boot Application</defaultValue></requiredProperty>
+    <requiredProperty key="project-description"><defaultValue>Spring Boot Application using [Camunda](http://docs.camunda.org).</defaultValue></requiredProperty>
+    <requiredProperty key="camunda-version"><defaultValue>${version.camunda}</defaultValue></requiredProperty>
+    <requiredProperty key="camunda-spring-boot-version"><defaultValue>${version.camundaSpringBoot}</defaultValue></requiredProperty>
+    <requiredProperty key="spring-boot-version"><defaultValue>${version.springBoot}</defaultValue></requiredProperty>
+    <requiredProperty key="archetype-groupId"><defaultValue>${project.groupId}</defaultValue></requiredProperty>
+    <requiredProperty key="archetype-artifactId"><defaultValue>${project.artifactId}</defaultValue></requiredProperty>
+    <requiredProperty key="archetype-version"><defaultValue>${project.version}</defaultValue></requiredProperty>
+  </requiredProperties>
+  <fileSets>
+    <fileSet filtered="true" packaged="true" encoding="UTF-8">
+      <directory>src/main/java</directory>
+      <includes>
+        <include>**/*.java</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="true" encoding="UTF-8">
+      <directory>src/main/resources</directory>
+      <includes>
+        <include>**/*.xml</include>
+        <include>**/*.bpmn</include>
+        <include>**/*.yaml</include>
+        <include>**/*.html</include>
+      </includes>
+    </fileSet>
+    <fileSet encoding="UTF-8">
+      <directory>src/main/resources</directory>
+      <includes>
+        <include>**/*.png</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="true" packaged="true" encoding="UTF-8">
+      <directory>src/test/java</directory>
+      <includes>
+        <include>**/*.java</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="true" encoding="UTF-8">
+      <directory>src/test/resources</directory>
+      <includes>
+        <include>**/*.xml</include>
+        <include>**/*.yaml</include>
+      </includes>
+    </fileSet>
+    <fileSet encoding="UTF-8">
+      <directory>src/test/resources</directory>
+      <includes>
+        <include>**/*.properties</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="true" encoding="UTF-8">
+      <directory></directory>
+      <includes>
+        <include>README.md</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="false" encoding="UTF-8">
+      <directory></directory>
+      <includes>
+        <include>.gitignore</include>
+        <include>settings.xml</include>
+      </includes>
+    </fileSet>
+  </fileSets>
+</archetype-descriptor>
+==============================================================================================================
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+
+<!--
+ | This is the configuration file for Maven. It can be specified at two levels:
+ |
+ |  1. User Level. This settings.xml file provides configuration for a single user,
+ |                 and is normally provided in ${user.home}/.m2/settings.xml.
+ |
+ |                 NOTE: This location can be overridden with the CLI option:
+ |
+ |                 -s /path/to/user/settings.xml
+ |
+ |  2. Global Level. This settings.xml file provides configuration for all Maven
+ |                 users on a machine (assuming they're all using the same Maven
+ |                 installation). It's normally provided in
+ |                 ${maven.home}/conf/settings.xml.
+ |
+ |                 NOTE: This location can be overridden with the CLI option:
+ |
+ |                 -gs /path/to/global/settings.xml
+ |-->
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
+  <!-- proxies
+   | This is a list of proxies which can be used on this machine to connect to the network.
+   | Unless otherwise specified (by system property or command-line switch), the first proxy
+   | specification in this list marked as active will be used.
+   |-->
+  <proxies>
+    <!-- proxy
+     | Specification for one proxy, to be used in connecting to the network.
+     |
+    <proxy>
+      <id>optional</id>
+      <active>true</active>
+      <protocol>http</protocol>
+      <username>proxyuser</username>
+      <password>proxypass</password>
+      <host>proxy.host.net</host>
+      <port>80</port>
+      <nonProxyHosts>local.net|some.host.com</nonProxyHosts>
+    </proxy>
+    -->
+  </proxies>
+
+  <!-- servers
+   | This is a list of authentication profiles, keyed by the server-id used within the system.
+   | Authentication profiles can be used whenever maven must make a connection to a remote server.
+   |-->
+  <servers>
+    <server>
+	<id>camunda-bpm-nexus-ee</id>
+	<username>YOUR_USERNAME</username>
+	<password>YOUR_PASSWORD</password>
+    </server>
+  </servers>
+
+  <!-- mirrors
+   | This is a list of mirrors to be used in downloading artifacts from remote repositories.
+   |
+   | It works like this: a POM may declare a repository to use in resolving certain artifacts.
+   | However, this repository may have problems with heavy traffic at times, so people have mirrored
+   | it to several places.
+   |
+   | That repository definition will have a unique id, so we can create a mirror reference for that
+   | repository, to be used as an alternate download site. The mirror site will be the preferred
+   | server for that repository.
+   |-->
+  <mirrors>
+    <!-- mirror
+     | Specifies a repository mirror site to use instead of a given repository. The repository that
+     | this mirror serves has an ID that matches the mirrorOf element of this mirror. IDs are used
+     | for inheritance and direct lookup purposes, and must be unique across the set of mirrors.
+     |
+    <mirror>
+      <id>mirrorId</id>
+      <mirrorOf>repositoryId</mirrorOf>
+      <name>Human Readable Name for this Mirror.</name>
+      <url>http://my.repository.com/repo/path</url>
+    </mirror>
+     -->
+  </mirrors>
+
+</settings>
+==============================================================================================================
+import org.springframework.boot.autoconfigure.condition.ConditionMessage;
+import org.springframework.boot.autoconfigure.condition.ConditionOutcome;
+import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
+import org.springframework.context.annotation.ConditionContext;
+import org.springframework.core.type.AnnotatedTypeMetadata;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+
+/**
+ * Condition that checks for {@link EnableOAuth2Sso} on a
+ * {@link WebSecurityConfigurerAdapter}.
+ *
+ * @author Dave Syer
+ */
+class EnableOAuth2SsoCondition extends SpringBootCondition {
+
+	@Override
+	public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata metadata) {
+		String[] enablers = context.getBeanFactory().getBeanNamesForAnnotation(EnableOAuth2Sso.class);
+		ConditionMessage.Builder message = ConditionMessage.forCondition("@EnableOAuth2Sso Condition");
+		for (String name : enablers) {
+			if (context.getBeanFactory().isTypeMatch(name, WebSecurityConfigurerAdapter.class)) {
+				return ConditionOutcome.match(
+						message.found("@EnableOAuth2Sso annotation on WebSecurityConfigurerAdapter").items(name));
+			}
+		}
+		return ConditionOutcome.noMatch(
+				message.didNotFind("@EnableOAuth2Sso annotation " + "on any WebSecurityConfigurerAdapter").atAll());
+	}
+
+}
+==============================================================================================================
+import static org.apache.maven.plugins.annotations.LifecyclePhase.GENERATE_SOURCES;
+import static org.apache.maven.plugins.annotations.ResolutionScope.COMPILE_PLUS_RUNTIME;
+import static org.camunda.bpm.swagger.maven.spoon.SpoonProcessingMojo.GOAL;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
+
+import java.io.File;
+import java.nio.file.Files;
+import java.util.Arrays;
+
+import org.apache.maven.execution.MavenSession;
+import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.BuildPluginManager;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProject;
+import org.camunda.bpm.swagger.docs.DtoDocsYaml;
+import org.camunda.bpm.swagger.docs.ServiceDocsYaml;
+import org.camunda.bpm.swagger.docs.model.DtoDocs;
+import org.camunda.bpm.swagger.docs.model.ServiceDocs;
+import org.camunda.bpm.swagger.maven.spoon.fn.DownloadCamundaSources;
+import org.camunda.bpm.swagger.maven.spoon.processor.*;
+import org.twdata.maven.mojoexecutor.MojoExecutor;
+
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import spoon.Launcher;
+import spoon.SpoonAPI;
+
+@Mojo(
+    name = GOAL,
+    defaultPhase = GENERATE_SOURCES,
+    requiresDependencyResolution = COMPILE_PLUS_RUNTIME
+    )
+@Slf4j
+public class SpoonProcessingMojo extends AbstractMojo {
+
+  @Builder
+  @Getter
+  public static class Context {
+
+    private final boolean shouldCompile;
+    private final boolean autoImports;
+    private final boolean noClasspath;
+
+    @NonNull
+    private final File unpackDirectory;
+
+    @NonNull
+    private final File outputDirectory;
+
+    @NonNull
+    private final String camundaVersion;
+
+    @NonNull
+    private final MojoExecutor.ExecutionEnvironment executionEnvironment;
+
+    private final File dtoYamlFile;
+    private final File serviceYamlFile;
+
+    // late init
+    private DtoDocs dtoDocumentation;
+    // late init
+    private ServiceDocs serviceDocumentation;
+
+    @SneakyThrows
+    public Context initDirectory() {
+      if (!unpackDirectory.exists()) {
+        Files.createDirectories(unpackDirectory.toPath());
+      }
+
+      return this;
+    }
+
+    @SneakyThrows
+    private SpoonAPI spoon() {
+      final Launcher spoon = new Launcher();
+      spoon.getEnvironment().setShouldCompile(shouldCompile);
+      spoon.getEnvironment().setAutoImports(autoImports);
+      spoon.getEnvironment().setNoClasspath(noClasspath);
+
+      // DTO
+      spoon.addProcessor(new ApiModelProcessor());
+      spoon.addProcessor(new ApiModelPropertyProcessor(this));
+      // Sub Resources
+      spoon.addProcessor(new RestResourceProcessor(this));
+      spoon.addProcessor(new RestResourceMethodProcessor( this ));
+      // Service
+      spoon.addProcessor(new RestServiceProcessor(this));
+      spoon.addProcessor(new RestServiceMethodProcessor(this));
+
+      final String[] classpathElements = executionEnvironment.getMavenProject()
+          .getCompileClasspathElements()
+          .stream()
+          .filter(s -> !executionEnvironment.getMavenProject().getBuild().getOutputDirectory().equals(s))
+          .toArray(String[]::new);
+
+      final StringBuilder builder = new StringBuilder();
+      Arrays.stream(classpathElements).forEach(builder::append);
+      log.debug("Using classpath: {}", builder.toString());
+
+      spoon.getEnvironment().setSourceClasspath(classpathElements);
+
+      spoon.addInputResource(unpackDirectory.getPath());
+      spoon.setSourceOutputDirectory(outputDirectory.getPath());
+
+      return spoon;
+    }
+
+    public Context loadDtoDocumentation() {
+      this.dtoDocumentation = new DtoDocsYaml().apply(dtoYamlFile);
+      return this;
+    }
+
+    public Context loadServiceDocumentation() {
+      this.serviceDocumentation = new ServiceDocsYaml().apply(serviceYamlFile);
+      return this;
+    }
+
+
+    public Context downloadSources() {
+      new DownloadCamundaSources(this).run();
+      return this;
+    }
+
+    public Context processSources() {
+      spoon().run();
+      return this;
+    }
+  }
+
+  public static final String GOAL = "process";
+
+  @Parameter(property = "camunda.version", required = true)
+  protected String camundaVersion;
+
+  @Parameter(property = "project", required = true, readonly = true)
+  protected MavenProject project;
+
+  @Parameter(property = "session", required = true, readonly = true)
+  protected MavenSession session;
+
+  @Parameter(defaultValue = "target/unpack")
+  protected File unpackDirectory;
+
+  @Parameter(defaultValue = "target/generated-sources/java")
+  protected File outputDirectory;
+
+  @Parameter(defaultValue = "${project.build.directory}/generated-sources/camunda-rest-dto-docs.yaml", required = true, readonly = true)
+  protected File dtoYamlFile;
+
+  @Parameter(defaultValue = "${project.build.directory}/generated-sources/camunda-rest-service-docs.yaml", required = true, readonly = true)
+  protected File serviceYamlFile;
+
+  @Component
+  protected BuildPluginManager buildPluginManager;
+
+  @Override
+  @SneakyThrows
+  public void execute() throws MojoExecutionException, MojoFailureException {
+    Context.builder()
+    .executionEnvironment(executionEnvironment(project, session, buildPluginManager))
+    .camundaVersion(camundaVersion)
+    .unpackDirectory(unpackDirectory)
+    .outputDirectory(outputDirectory)
+    .noClasspath(false)
+    .autoImports(false)
+    .shouldCompile(false)
+    .dtoYamlFile(dtoYamlFile)
+    .serviceYamlFile(serviceYamlFile)
+    .build()
+    .initDirectory()
+    .downloadSources()
+    .loadDtoDocumentation()
+    .loadServiceDocumentation()
+    .processSources()
+    ;
+  }
+}
+==============================================================================================================
+'use strict';
+
+module.exports.asyncSeries = function(fns, done) {
+
+  var idx = 0;
+
+  function next(err) {
+
+    if (err) {
+      return done(err);
+    }
+
+    var fn = fns[idx++];
+
+    if (!fn) {
+      return done();
+    } else {
+      fn(next);
+    }
+  }
+
+  next();
+};
+==============================================================================================================
+  @EventListener
+  public void run(PostDeployEvent event) {
+    event.getProcessEngine().getRepositoryService().createDeployment()
+      .addModelInstance("dummy.bpmn", Bpmn.createExecutableProcess("dummy")
+        .startEvent()
+        .userTask("task").name("Do Stuff")
+        .endEvent()
+      .done())
+      .deploy();
+
+  }
+==============================================================================================================
+const { Client, logger } = require('camunda-external-task-client-js');
+const open = require('open');
+
+// configuration for the Client:
+//  - 'baseUrl': url to the Process Engine
+//  - 'logger': utility to automatically log important events
+//  - 'asyncResponseTimeout': long polling timeout (then a new request will be issued)
+const config = { baseUrl: 'http://localhost:8080/engine-rest', use: logger, asyncResponseTimeout: 10000 };
+
+// create a Client instance with custom configuration
+const client = new Client(config);
+
+// susbscribe to the topic: 'charge-card'
+client.subscribe('charge-card', async function({ task, taskService }) {
+  // Put your business logic here
+
+  // Get a process variable
+  const amount = task.variables.get('amount');
+  const item = task.variables.get('item');
+
+  console.log(`Charging credit card with an amount of ${amount}€ for the item '${item}'...`);
+  
+  open('https://docs.camunda.org/get-started/quick-start/success');
+  
+  // Complete the task
+  await taskService.complete(task);
+});
+==============================================================================================================
+import java.awt.Desktop;
+import java.net.URI;
+import java.util.logging.Logger;
+
+import org.camunda.bpm.client.ExternalTaskClient;
+
+public class ChargeCardWorker {
+	private final static Logger LOGGER = Logger.getLogger(ChargeCardWorker.class.getName());
+
+	public static void main(String[] args) {
+		ExternalTaskClient client = ExternalTaskClient.create()
+				.baseUrl("http://localhost:8080/engine-rest")
+				.asyncResponseTimeout(10000) // long polling timeout
+				.build();
+
+		// subscribe to an external task topic as specified in the process
+		client.subscribe("charge-card")
+				.lockDuration(1000) // the default lock duration is 20 seconds, but you can override this
+				.handler((externalTask, externalTaskService) -> {
+					// Put your business logic here
+
+					// Get a process variable
+					String item = (String) externalTask.getVariable("item");
+					Long amount = (Long) externalTask.getVariable("amount");
+					LOGGER.info("Charging credit card with an amount of '" + amount + "'€ for the item '" + item + "'...");
+					
+					try {
+						Desktop.getDesktop().browse(new URI("https://docs.camunda.org/get-started/quick-start/complete"));
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+
+					// Complete the task
+					externalTaskService.complete(externalTask);
+				})
+				.open();
+	}
+}
+==============================================================================================================
+spring.data.redis.repositories.enabled: false
+spring.autoconfigure.exclude:
+    - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+==============================================================================================================
+    <extensions>
+      <extension>
+        <groupId>org.apache.maven.archetype</groupId>
+        <artifactId>archetype-packaging</artifactId>
+        <version>3.1.0</version>
+      </extension>
+    </extensions>
+	
+	    <extensions>
+      <extension>
+        <groupId>org.apache.maven.archetype</groupId>
+        <artifactId>archetype-packaging</artifactId>
+        <version>3.1.0</version>
+      </extension>
+    </extensions>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <configuration>
+          <!-- Required so that .gitignore gets included in archetypes; see https://issues.apache.org/jira/browse/MRESOURCES-190 -->
+          <addDefaultExcludes>false</addDefaultExcludes>
+        </configuration>
+      </plugin>
+    </plugins>
+==============================================================================================================
+import org.camunda.bpm.spring.boot.starter.annotation.EnableProcessApplication;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+@EnableProcessApplication("${artifactId}")
+public class CamundaApplication {
+  public static void main(String... args) {
+    SpringApplication.run(CamundaApplication.class, args);
+  }
+}
+==============================================================================================================
+      <plugin>
+          <groupId>org.sonatype.plugins</groupId>
+          <artifactId>nexus-staging-maven-plugin</artifactId>
+          <version>${plugin.version.nexus-staging}</version>
+          <executions>
+            <execution>
+              <id>central-deploy</id>
+              <phase>deploy</phase>
+              <goals>
+                <goal>deploy</goal>
+              </goals>
+              <configuration>
+                <serverId>central</serverId>
+                <nexusUrl>https://oss.sonatype.org</nexusUrl>
+                <skipNexusStagingDeployMojo>${skip.central.release}</skipNexusStagingDeployMojo>
+                <keepStagingRepositoryOnCloseRuleFailure>true</keepStagingRepositoryOnCloseRuleFailure>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+==============================================================================================================
+Clone the git repository:
+
+git clone git@github.com:camunda/camunda-bpm-workbench.git
+Install client dependencies:
+
+(cd webapp/ && npm install && bower install)
+Build and start backend on localhost:9090:
+
+(cd api && mvn clean install)
+(cd api/debug-service-websocket && mvn exec:java -P develop)
+Build client and start it on localhost:9000
+
+(cd webapp/ && grunt auto-build)
+Open http://localhost:9000 in your browser.
+==============================================================================================================
+version: "3.3"
+
+services:
+  jboss.keycloak:
+    build: .
+    image: jboss/keycloak
+    restart: always
+    environment:
+      TZ: Europe/Berlin
+      KEYCLOAK_USER: keycloak
+      KEYCLOAK_PASSWORD: keycloak1!
+    ports:
+      - "8443:8443"
+==============================================================================================================
+sudo: false
+language: java
+jdk:
+  - openjdk11
+  - openjdk12
+  - openjdk-ea
+matrix:
+  allow_failures:
+    - jdk: openjdk-ea
+install: true
+cache:
+  directories:
+    - $HOME/.m2
+script: ./mvnw clean install -B -Pskip-selenium,webapp-qa-ce -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn com.mycila:license-maven-plugin:check
+
+==============================================================================================================
+server.tomcat.max-threads=250
+<Executor name="tomcatThreadPool" namePrefix="catalina-exec-" maxThreads="150" minSpareThreads="25"/>
+
+
+Next, let's update our Glassfish server.
+
+Glassfish uses an admin command in contrast to Tomcat's XML configuration file, server.xml. From the prompt, we run:
+
+1
+create-threadpool
+We can add to create-threadpool the flags maxthreadpoolsize and minthreadpoolsize. They function similarly to Tomcat minSpareThreads and maxThreads:
+
+1
+--maxthreadpoolsize 250 --minthreadpoolsize 25
+We can also specify how long a thread can be idle before returning to the pool:
+
+1
+--idletimeout=2
+And then, we supply the name of our thread pool at the end:
+
+1
+asadmin> create-threadpool --maxthreadpoolsize 250 --minthreadpoolsize 25 --idletimeout=2 threadpool-1
+==============================================================================================================
 #!/bin/bash
 mvn install
 mvn clean verify -P integration-test
