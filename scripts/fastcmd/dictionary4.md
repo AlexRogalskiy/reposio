@@ -29620,6 +29620,662 @@ public class SpoonProcessingMojo extends AbstractMojo {
   }
 }
 ==============================================================================================================
+npm install -g thinker
+==============================================================================================================
+On OS X, you can use brew install graphicsmagick.
+On Ubuntu, you can use apt-get install graphicsmagick.
+==============================================================================================================
+#!/usr/bin/env node
+
+var _ = require('underscore')._;
+var repubsub = require('./repubsub.js');
+
+module.exports = {
+    regexPublish: regexPublish,
+    regexSubscribe: regexSubscribe,
+    tagsPublish: tagsPublish,
+    tagsSubscribe: tagsSubscribe,
+    hierarchyPublish: hierarchyPublish,
+    hierarchySubscribe: hierarchySubscribe,
+    randomHierarchy: randomHierarchy,
+}
+
+
+// Publishes messages to a simple string topic
+function regexPublish(){
+    var exchange = new repubsub.Exchange('regex_demo', {db: 'repubsub'});
+
+    setInterval(function(){
+        var rnd = randomTopic();
+        var topicKey = rnd.category + '.' + rnd.chartype + '.' + rnd.character;
+        var payload = _.sample(CATEGORIES[rnd.category]);
+
+        console.log('Publishing on topic ' + topicKey + ': ' + payload);
+
+        exchange.topic(topicKey).publish(payload);
+    }, 500);
+}
+
+// Subscribes to messages on a topic that match a regex
+function regexSubscribe() {
+    var exchange = new repubsub.Exchange('regex_demo', {db: 'repubsub'});
+    var rnd = randomTopic();
+
+    var maybeCharacter = _.sample([rnd.character, '(.+)']);
+    var maybeChartype = _.sample([
+        rnd.chartype + '\\.' + maybeCharacter,
+        '(.+)',
+    ]);
+    var topicRegex = '^' + rnd.category + '\\.' + maybeChartype + '$';
+    var queue = exchange.queue(function(topic){
+        return topic.match(topicRegex);
+    });
+    
+    var subMessage = "Subscribed to: " + topicRegex;
+    printSubscription(subMessage);
+
+    var i = 0;
+    queue.subscribe(function(topic, payload){
+        if(i % 20 === 19){
+            // Reminder what we're subscribed to
+            printSubscription(subMessage);
+        }
+        console.log("Received on " + topic + ": " + payload);
+        i++;
+    });
+}
+
+// Publishes messages with an array of tags as a topic
+function tagsPublish(){
+    var exchange = new repubsub.Exchange('tags_demo', {db: 'repubsub'});
+
+    setInterval(function(){
+        // Get two random topics, remove duplicates, and sort them
+        // Sorting ensures that if two topics consist of the same
+        // tags, the same document in the database will be updated
+        // This should result in 270 possible tag values
+        var topicTags = _.union(_.values(randomTopic()),
+                                _.values(randomTopic())).sort();
+        var payload = _.sample(TEAMUPS.concat(EVENTS).concat(FIGHTS));
+        
+        console.log('Publishing on tags #' + topicTags.join(' #'));
+        console.log('\t' + payload);
+
+        exchange.topic(topicTags).publish(payload);
+    }, 500);
+}
+
+// Subscribes to messages that have specific tags in the topic
+function tagsSubscribe(){
+    var exchange = new repubsub.Exchange('tags_demo', {db: 'repubsub'});
+
+    var tags = _.sample(_.values(randomTopic()), 2);
+    var queue = exchange.queue(function(topic){
+        return topic.contains.apply(tags);
+    });
+
+    var subMessage = "Subscribed to messages with tags #" + tags.join(' #');
+    printSubscription(subMessage);
+
+    var i = 0;
+    queue.subscribe(function(topic, payload){
+        if(i % 10 === 9){
+            // Reminder what we're subscribed to 
+            printSubscription(subMessage);
+        }
+        console.log("Received message with tags: #" + topic.join(' #'));
+        console.log("\t" + payload);
+        i++;
+    });
+}
+
+// Publishes messages on a hierarchical topic
+function hierarchyPublish(){
+    var exchange = new repubsub.Exchange('hierarchy_demo', {db: 'repubsub'});
+
+    setInterval(function(){
+        var rnd = randomHierarchy();
+        var topicObj = rnd.topicObj, payload = rnd.payload;
+
+        console.log('Publishing on a hierarchical topic:');
+        printHierarchy(rnd.topicObj);
+        console.log(' -' + payload + '\n');
+
+        exchange.topic(rnd.topicObj).publish(rnd.payload);
+    }, 500);
+}
+
+// Subscribes to messages on a hierarchical topic
+function hierarchySubscribe(){
+    var exchange = new repubsub.Exchange('hierarchy_demo', {db: 'repubsub'});
+
+    var rnd = randomTopic();
+    var queue = exchange.queue(function(topic){
+        return topic(rnd.category)(rnd.chartype).contains(rnd.character);
+    });
+    var subMessage = "Subscribed to topic('" + rnd.category + "')('" + 
+            rnd.chartype + "').contains('" + rnd.character + "')";
+    printSubscription(subMessage);
+
+    var i = 0;
+    queue.subscribe(function(topic, payload){
+        if(i % 5 == 4){
+            printSubscription(subMessage);
+        }
+        console.log('Received message with topic:');
+        printHierarchy(topic);
+        console.log(' -' + payload + '\n');
+        i++;
+    });
+}
+
+// Returns an object with the pieces of a random topic
+function randomTopic(){
+    var ret = {
+        category: _.sample(_.keys(CATEGORIES)),
+        chartype: _.sample(_.keys(CHARACTERS)),
+    }
+    ret.character = _.sample(CHARACTERS[ret.chartype]);
+
+    return ret;
+}
+
+// Returns a random hierarchical topic
+function randomHierarchy(){
+    var topic = {};
+    var categories = [];
+    _.chain(CATEGORIES).keys().sample(_.random(1,2)).each(function(category){
+        Array.prototype.push.apply(categories, CATEGORIES[category]);
+        _.chain(CHARACTERS).keys().sample(_.random(1,2)).each(function(chartype){
+            _.sample(CHARACTERS[chartype], _.random(1,2)).forEach(function(character){
+                var cat = topic[category] || (topic[category] = {});
+                var ct = cat[chartype] || (cat[chartype] = []);
+                ct.push(character);
+                ct.sort();
+            });
+        });
+    });
+    return {topicObj: topic, payload: _.sample(categories)};
+}
+
+// Prints a topic hierarchy nicely
+function printHierarchy(obj){
+    _.pairs(obj).forEach(function(ccPair){
+        var category = ccPair[0], chartypes = ccPair[1];
+        console.log('    ' + category);
+        _.pairs(chartypes).forEach(function(ctPair){
+            var charType = ctPair[0], characters = ctPair[1];
+            console.log("        " + charType + ": " + characters.join(', '));
+        });
+    });
+}
+
+// Prints a subscription reminder message
+function printSubscription(sub){
+    console.log(new Array(sub.length + 1).join('='));
+    console.log(sub);
+    console.log(new Array(sub.length + 1).join('='));
+    console.log();
+}
+
+// These are used in the demos
+
+var CHARACTERS = {
+    superheroes: ['Batman', 'Superman', 'CaptainAmerica'],
+    supervillains: ['Joker', 'LexLuthor', 'RedSkull'],
+    sidekicks: ['Robin', 'JimmyOlsen', 'BuckyBarnes'],
+}
+
+var TEAMUPS = [
+    "You'll never guess who's teaming up",
+    'A completely one-sided fight between superheroes',
+    'Sidekick goes on rampage. Hundreds given parking tickets',
+    'Local politician warns of pairing between villains',
+    'Unexpected coalition teams up to take on opponents',
+]
+
+var FIGHTS = [
+    'A fight rages between combatants',
+    'Tussle between mighty foes continues',
+    'All out war in the streets between battling heroes',
+    "City's greatest hero defeated!",
+    "Villain locked in minimum security prison after defeat",
+]
+
+var EVENTS = [
+    "Scientists accidentally thaw a T-Rex and release it",
+    "Time vortex opens over downtown",
+    "EMP turns out the lights. You'll never guess who turned them back on",
+    "Inter-dimensional sludge released. Who can contain it?",
+    "Super computer-virus disables all police cars. City helpless.",
+]
+
+var CATEGORIES = {
+    teamups: TEAMUPS,
+    fights: FIGHTS,
+    events: EVENTS,
+}
+
+function main(){
+    var argv = require('yargs')
+      .usage('$0 {regex,tags,hierarchy} {publish,subscribe}\n' +
+             '\n' +
+             'Demo for RethinkDB pub-sub\n' +
+             '\n' +
+             'positional arguments:\n' +
+             '  {regex,tags,hierarchy}  Which demo to run\n' +
+             '  {publish,subscribe}     Whether to publish or subscribe'
+            )
+      .demand(2)
+      .check(function(argv){
+          var demos = ['regex', 'tags', 'hierarchy'];
+          var pubOrSub = ['publish', 'subscribe'];
+          if (!_.contains(demos, argv._[0])){
+              throw "First arg must be regex, tags or hierarchy";
+          }
+          if (!_.contains(pubOrSub, argv._[1])){
+              throw "Second arg must publish or subscribe";
+          }
+          return true;
+      })
+      .argv;
+
+    var demoName = argv._[0] + argv._[1].slice(0,1).toUpperCase() + argv._[1].slice(1);
+    module.exports[demoName]();
+}
+
+main()
+
+// Implementation of message queueing on top of RethinkDB changefeeds.
+
+// In this model, exchanges are databases, and documents are topics. The
+// current value of the topic in the database is just whatever the last
+// message sent happened to be. The document only exists to force
+// RethinkDB to generate change notifications for changefeed
+// subscribers. These notifications are the actual messages.
+
+// Internally, RethinkDB buffers changefeed notifications in a buffer per
+// client connection. These buffers are analogous to AMQP queues. This
+// has several benefits vs. (for example) having one document per
+// message:
+
+// * change notifications aren't created unless someone is subscribed
+// * notifications are deleted as soon as they're read from the buffer
+// * the notification buffers are implicitly ordered, so no sorting needs
+//   to happen at the query level.
+
+// One large difference from existing message queues like RabbitMQ is
+// that there is no way to cause the change buffers to be persisted
+// across connections. Because of this, if the client sends a STOP
+// request to the changefeed, or disconnects, the queue is effectively
+// lost. Any messages on the queue are unrecoverable.
+
+var util = require('util');
+var r = require('rethinkdb');
+
+module.exports = {
+    Exchange: Exchange,
+    Topic: Topic,
+    Queue: Queue
+};
+
+// Represents a message exchange which messages can be sent to and
+// consumed from. Each exchange has an underlying RethinkDB table.
+function Exchange(name, connOpts){
+    this.db = connOpts.db = connOpts.db || 'test';
+    this.name = name;
+    this.conn = null;
+    this.table = r.table(name);
+    this._asserted = false;
+
+    // Bluebird's .bind ensures `this` inside our callbacks is the exchange
+    this.promise = r.connect(connOpts).bind(this).then(function(conn){
+        this.conn = conn;
+    }).catch(r.Error.RqlRuntimeError, function(err){
+        console.log(err.message);
+        process.exit(1);
+    });
+}
+
+// Returns a topic in this exchange
+Exchange.prototype.topic = function(name){
+    return new Topic(this, name);
+};
+
+// Returns a new queue on this exchange that will filter messages by
+// the given query
+Exchange.prototype.queue = function(filterFunc){
+    return new Queue(this, filterFunc);
+};
+
+// The full ReQL query for a given filter function
+Exchange.prototype.fullQuery = function(filterFunc){
+    return this.table.changes()('new_val').filter(function(row){
+        return filterFunc(row('topic'));
+    });
+};
+
+// Publish a message to this exchange on the given topic
+Exchange.prototype.publish = function(topicKey, payload){
+    return this.assertTable().then(function(){
+        var topIsObj = Object.prototype.toString.call(
+            topicKey) === '[object Object]';
+        var topic = topIsObj ? r.literal(topicKey) : topicKey;
+        return this.table.filter({
+            topic: topic
+        }).update({
+            payload: payload,
+            updated_on: r.now
+        }).run(this.conn);
+    }).then(function(updateResult){
+        // If the topic doesn't exist yet, insert a new document. Note:
+        // it's possible someone else could have inserted it in the
+        // meantime and this would create a duplicate. That's a risk we
+        // take here. The consequence is that duplicated messages may
+        // be sent to the consumer.
+        if(updateResult.replaced === 0){
+            return this.table.insert({
+                topic: topicKey,
+                payload: payload,
+                updated_on: r.now()
+            }).run(this.conn);
+        }else{
+            return updateResult;
+        }
+    });
+};
+
+// Receives a callback that is called whenever a new message comes in
+// matching the filter function
+Exchange.prototype.subscribe = function(filterFunc, iterFunc){
+    return this.assertTable().then(function(){
+        return this.fullQuery(filterFunc).run(this.conn);
+    }).then(function(cursor){
+        cursor.each(function(err, message){
+            iterFunc(message.topic, message.payload);
+        });
+    });
+
+
+    return this.exchange.subscription(this.filterFunc).then(function(cursor){
+        cursor.each(iterFunc);
+    });
+};
+
+// Ensures the table specified exists and has the correct primary_key
+// and durability settings
+Exchange.prototype.assertTable = function(){
+    return this.promise.then(function(){
+        if (this._asserted){
+            return;
+        }
+
+        return r.dbCreate(this.db).run(this.conn).bind(this).finally(function(){
+            return r.db(this.db).tableCreate(this.name).run(this.conn).bind(this);
+        }).catch(r.Error.RqlRuntimeError, function(err){
+            if(err.msg.indexOf('already exists') === -1){
+                throw err;
+            }
+        }).then(function(){
+            this._asserted = true;
+        });
+    });
+};
+
+// Represents a topic that may be published to
+function Topic(exchange, topicKey) {
+    this.exchange = exchange;
+    this.key = topicKey;
+}
+
+// Publish a payload to the current topic
+Topic.prototype.publish = function(payload){
+    return this.exchange.publish(this.key, payload);
+};
+
+// A queue that filters messages in the exchange
+function Queue(exchange, filterFunc) {
+    this.exchange = exchange;
+    this.filterFunc = filterFunc;
+}
+
+// Returns the full ReQL query for this queue
+Queue.prototype.fullQuery = function(){
+    return this.exchange.fullQuery(this.filterFunc);
+};
+
+// Subscribe to messages from this queue's subscriptions
+Queue.prototype.subscribe = function(iterFunc){
+    return this.exchange.subscribe(this.filterFunc, iterFunc);
+};
+==============================================================================================================
+docker run -d -P --name rethink1 rethinkdb
+==============================================================================================================
+  
+#!/usr/bin/env bash
+#
+# Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
+# and other contributors as indicated by the @author tags.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+
+DIRNAME=`dirname "$0"`
+
+HWK_CLASSPATH=""
+HWK_CONFIG="${DIRNAME}/config"
+HWK_DATA="${DIRNAME}/data"
+HWK_LOGS="${DIRNAME}/logs"
+
+init_hawkular_folders() {
+    mkdir -p ${HWK_DATA} ${HWK_LOGS}
+}
+
+hwk_prop() {
+    grep "${1}" ${HWK_CONFIG}/hawkular.properties | cut -d'=' -f2
+}
+
+set_java_opts() {
+    JAVA_OPTS="$JAVA_OPTS -Xmx64m -Xms64m"
+    JAVA_OPTS="$JAVA_OPTS -Dhawkular.data=${HWK_DATA}"
+    JAVA_OPTS="$JAVA_OPTS -Dhawkular.configuration=${HWK_CONFIG}"
+    JAVA_OPTS="$JAVA_OPTS -Dlog4j.configurationFile=${HWK_CONFIG}/log4j2.xml"
+    JAVA_OPTS="$JAVA_OPTS -Djava.net.preferIPv4Stack=true"
+    JAVA_OPTS="$JAVA_OPTS -Dcom.sun.management.jmxremote"
+    JAVA_OPTS="$JAVA_OPTS -Dcom.sun.management.jmxremote.authenticate=false"
+    JAVA_OPTS="$JAVA_OPTS -Dcom.sun.management.jmxremote.port=$(hwk_prop 'hawkular.jmx-port')"
+    JAVA_OPTS="$JAVA_OPTS -Dcom.sun.management.jmxremote.ssl=false"
+    JAVA_OPTS="$JAVA_OPTS -Djava.rmi.server.hostname=$(hwk_prop 'hawkular.bind-address')"
+    # JGROUPS_BIND_ADDR="127.0.0.1"
+    # JAVA_OPTS="$JAVA_OPTS -Djgroups.bind_addr=${JGROUPS_BIND_ADDR}"
+    # JAVA_OPTS="$JAVA_OPTS -Dmail.smtp.port=2525"
+    # JAVA_OPTS="$JAVA_OPTS -agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=y"
+}
+
+set_hawkular_classpath() {
+    SEPARATOR=""
+    ISPN_LUCENE_JAR=""
+    for FILE in $(find ${DIRNAME}/lib -name "*.jar")
+    do
+        if [ "$FILE" == ${DIRNAME}/lib/infinispan-lucene-directory* ]
+        then
+            ISPN_LUCENE_JAR="$FILE"
+        else
+            HWK_CLASSPATH="$HWK_CLASSPATH$SEPARATOR$FILE"
+            if [ "x$SEPARATOR" = "x" ]
+            then
+                SEPARATOR=":"
+            fi
+        fi
+    done
+
+    # [lponce] Ispn needs to activate a service from lucene jar
+    # and for some reason in standalone mode jar needs to be placed first in classpath
+    HWK_CLASSPATH="$ISPN_LUCENE_JAR$SEPARATOR$HWK_CLASSPATH"
+}
+
+console_alerting() {
+    start_alerting
+    trap stop_alerting SIGINT SIGQUIT SIGTERM
+    tail -f "${HWK_LOGS}/HawkularServer.out"
+}
+
+start_alerting() {
+    java $JAVA_OPTS -cp "$HWK_CLASSPATH" "org.hawkular.HawkularServer" > ${HWK_LOGS}/HawkularServer.out 2>&1 &
+    echo "$!" > ${HWK_DATA}/HawkularServer.pid
+    HWK_PID=$(cat ${HWK_DATA}/HawkularServer.pid)
+    echo "Started HawkularServer PID ${HWK_PID}"
+    echo "Logs under ${HWK_LOGS}/HawkularServer.out"
+}
+
+stop_alerting() {
+    if [ -f ${HWK_DATA}/HawkularServer.pid ]
+    then
+        HWK_PID=$(cat ${HWK_DATA}/HawkularServer.pid)
+        rm ${HWK_DATA}/HawkularServer.pid
+        java -cp "$HWK_CLASSPATH" "org.hawkular.HawkularManager" "stop" "$(hwk_prop 'hawkular.bind-address')" "$(hwk_prop 'hawkular.jmx-port')"
+        echo "Stopping HawkularServer PID ${HWK_PID}"
+    fi
+}
+
+main() {
+    init_hawkular_folders
+    set_java_opts
+    set_hawkular_classpath
+    case "$1" in
+        "")
+        ;&
+        "start")
+            start_alerting
+            ;;
+        "stop")
+            stop_alerting
+            ;;
+        "console")
+            console_alerting
+            ;;
+        *)
+            echo $0 '[start|stop|console]'
+            ;;
+    esac
+}
+
+main "$@"
+==============================================================================================================
+To start with a specific data directory:
+
+rethinkdb.exe -d c:\RethinkDB\data\
+To specify a server name and another cluster to join:
+
+rethinkdb.exe -n jarvis -j cluster.example.com
+==============================================================================================================
+git clone git://github.com/rethinkdb/rethinkdb-example-flask-backbone-todo.git
+pip install Flask
+pip install rethinkdb
+
+python todo.py --setup
+Flask provides an easy way to run the app:
+
+python todo.py
+==============================================================================================================
+ <dependency>
+        <groupId>io.reactivex</groupId>
+        <artifactId>rxjava</artifactId>
+        <version>${version.io.reactivex.rxjava}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.reactivex</groupId>
+        <artifactId>rxjava-math</artifactId>
+        <version>${version.io.reactivex.rxjava-math}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.reactivex</groupId>
+        <artifactId>rxjava-guava</artifactId>
+        <version>${version.io.reactivex.rxjava-guava}</version>
+      </dependency>
+==============================================================================================================
+response.setContentType("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+==============================================================================================================
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>testcontainers</artifactId>
+        <version>${testcontainers.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>mysql</artifactId>
+        <version>${testcontainers.version}</version>
+      </dependency>
+<dependency>
+        <groupId>org.mariadb.jdbc</groupId>
+        <artifactId>mariadb-java-client</artifactId>
+        <version>${mariadb-java-client.version}</version>
+      </dependency>
+==============================================================================================================
+# Create a network for connecting Alluxio containers
+$ docker network create alluxio_nw
+# Create a volume for storing ufs data
+$ docker volume create ufs
+# Launch the Alluxio master
+$ docker run -d --net=alluxio_nw \
+    -p 19999:19999 \
+    --name=alluxio-master \
+    -v ufs:/opt/alluxio/underFSStorage \
+    alluxio/alluxio master
+# Launch the Alluxio worker
+$ export ALLUXIO_WORKER_MEMORY_SIZE=1G
+$ docker run -d --net=alluxio_nw \
+    --shm-size=${ALLUXIO_WORKER_MEMORY_SIZE} \
+    --name=alluxio-worker \
+    -v ufs:/opt/alluxio/underFSStorage \
+    -e ALLUXIO_JAVA_OPTS="-Dalluxio.worker.memory.size=${ALLUXIO_WORKER_MEMORY_SIZE} -Dalluxio.master.hostname=alluxio-master" \
+    alluxio/alluxio worker
+==============================================================================================================
+  
+dist: xenial
+language: java
+
+jdk:
+  - openjdk8
+
+services:
+  - docker
+
+before_install:
+  - docker pull rethinkdb:latest
+  - docker run -d -p 28015:28015 -p 29015:29015 -p 8080:8080 rethinkdb:latest
+  - docker ps -a
+
+before_cache:
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+
+cache:
+  directories:
+    - $HOME/.gradle/caches/
+    - $HOME/.gradle/wrapper/
+
+# Exclude the signArchives tasks, since the deploy configuration will be
+# added when vault is set up. The secrets should come from there.
+# TODO: @gabor-boros Integrate vault
+install:
+  - ./gradlew assemble --exclude-task signArchives
+
+notifications:
+    email: false
+==============================================================================================================
 'use strict';
 
 module.exports.asyncSeries = function(fns, done) {
