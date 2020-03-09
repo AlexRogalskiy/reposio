@@ -30207,6 +30207,209 @@ python todo.py
 ==============================================================================================================
 response.setContentType("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
 ==============================================================================================================
+		<dependency>
+			<groupId>io.netty</groupId>
+			<artifactId>netty</artifactId>
+			<version>3.10.4.Final</version>
+		</dependency>
+		<dependency>
+			<groupId>com.ning</groupId>
+			<artifactId>async-http-client</artifactId>
+			<version>1.9.31</version>
+		</dependency>
+		<dependency>
+			<groupId>com.squareup.retrofit</groupId>
+			<artifactId>retrofit</artifactId>
+			<version>2.0.0-beta2</version>
+		</dependency>
+		<dependency>
+			<groupId>com.mashape.unirest</groupId>
+			<artifactId>unirest-java</artifactId>
+			<version>1.4.6</version>
+		</dependency>
+==============================================================================================================
+git clone git@github.com:mthenw/vertx-sample.git # or clone your own fork
+cd vertx-sample
+foreman start
+==============================================================================================================
+# running in powershell
+echo "removing evaluation key"
+rm ~\.IntelliJIdea*\config\eval\*.key
+
+# for me it was not necessary
+echo "resetting evalsprt in options.xml"
+(Get-Content ~\.IntelliJIdea*\config\options\options.xml) | Select-String -pattern 'evlsprt' -nomatch | Set-Content ~\.IntelliJIdea*\config\options\options.xml
+
+# remove its registry key
+reg delete "HKEY_CURRENT_USER\Software\JavaSoft\Prefs\jetbrains\idea" /f
+==============================================================================================================
+$ npm install -g @aws-amplify/cli
+$ amplify configure
+
+$ yarn global add @quasar/cli
+# or
+$ npm install -g @quasar/cli
+==============================================================================================================
+heroku create --buildpack https://github.com/mthenw/heroku-buildpack-vertx.git
+git push heroku master
+heroku open
+
+npm adduser --registry http://localhost:4873
+==============================================================================================================
+# install git
+sudo apt-get update
+sudo apt-get install git
+
+# download and link
+sudo git clone https://github.com/openhab/openhabian.git /opt/openhabian
+sudo ln -s /opt/openhabian/openhabian-setup.sh /usr/local/bin/openhabian-config
+
+# execute
+sudo openhabian-config
+
+mvn spotless:check -Dspotless.check.skip=false
+==============================================================================================================
+https://mycroft-ai.gitbook.io/docs/using-mycroft-ai/get-mycroft/picroft
+
+You need to add the pi user to the gpio group with the command
+sudo usermod -g gpio pi
+You also need to install some additional packages:
+sudo apt-get install python-rpi.gpio && sudo apt-get install python3-rpi.gpio
+==============================================================================================================
+arecord -d 10 -o test.wav
+aplay test.wav
+
+sudo apt-get install pulseaudio
+alsamixer
+alsamixer is a command-line utility to adjust volume and muting of both inputs and outputs.
+pulseaudio -k kills the current instance of pulseaudio.
+pulseaudio --start will start pulseaudio.
+pavucontrol is a GUI mixer client for X.
+pacmd is an interactive shell version of pactl. Use help to see more once in the shell.
+
+mycroft-cli-client
+mycroft-start debug
+==============================================================================================================
+Manually configuring WPA2 Enterprise WiFi with MSCHAPV2 authentication
+If you are on an enterprise network, your network security might use WPA2 with MSCHAPV2 authentication. Configuring Picroft to use MSCHAPV2 is similar to the above, but requires some additional steps.
+First, we need to generate a hash of your SSID's password.
+echo -n your_password| iconv -t utf16le | openssl md4
+This will use the NTLM hash which is a 16 bit MD4 hash. Make sure to copy this as we will need it for later steps.
+Next, run the following commands:
+cd /etc/wpa_supplicant
+sudo nano wpa_supplicant.conf
+Add the following to the bottom of the wpa_supplicant.conf file, replacing ssid with your SSID name, identity with your username and password with the hash generated earlier. Type Ctrl + O to save, then Ctrl + x to exit.
+network={
+    ssid="ssid network name"
+    priority=1
+    proto=RSN
+    key_mgmt=WPA-EAP
+    pairwise=CCMP
+    auth_alg=OPEN
+    eap=PEAP
+    identity="user_name"
+    password=hash:hash_key_here
+    phase1="peaplabel=0"
+    phase2="auth=MSCHAPV2"
+}
+==============================================================================================================
+npm cache clean
+npm cache clean --force
+npm install --no-optional
+==============================================================================================================
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.karaf.tooling</groupId>
+        <artifactId>karaf-maven-plugin</artifactId>
+        <version>${karaf.version}</version>
+        <extensions>true</extensions>
+        <configuration>
+          <startLevel>80</startLevel>
+          <aggregateFeatures>true</aggregateFeatures>
+          <checkDependencyChange>true</checkDependencyChange>
+          <failOnDependencyChange>false</failOnDependencyChange>
+          <logDependencyChanges>true</logDependencyChanges>
+          <overwriteChangedDependencies>true</overwriteChangedDependencies>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+==============================================================================================================
+# install git
+sudo apt-get update
+sudo apt-get install git
+
+# download and link
+sudo git clone https://github.com/openhab/openhabian.git /opt/openhabian
+sudo ln -s /opt/openhabian/openhabian-setup.sh /usr/local/bin/openhabian-config
+
+# execute
+sudo openhabian-config
+==============================================================================================================
+vncserver -randr 1280x800
+==============================================================================================================
+var request = require("request");
+
+var access_token = 'A-2szoYus7mB13l5axDrr_1234AApSz8eu236GRNsoBQ';
+var amount = '0.00';
+var description = 'NodeJS Charging Description';
+var endUserId = '9771234567';
+var referenceCode = '26481000001';
+var transactionOperationStatus ='Charged';
+var duration = '0';
+
+var options = { method: 'POST',
+  url: 'https://devapi.globelabs.com.ph/payment/v1/transactions/amount',
+  qs: { 'access_token': access_token },
+  headers: { Host: 'devapi.globelabs.com.ph','Content-Type': 'application/json' },
+  body: 
+   { 'amount': amount,
+     'description': description,
+     'endUserId': endUserId,
+     'referenceCode': referenceCode,
+     'transactionOperationStatus': transactionOperationStatus,
+     'duration': duration },
+  json: true };
+
+request(options, function (error, response, body) {
+  if (error) throw new Error(error);
+
+  console.log(body);
+});
+==============================================================================================================
+    @Override
+    public Receive createReceive() {
+        return receiveBuilder()
+                .match(ReadLines.class, r -> {
+
+                    log.info("Received ReadLines message from " + getSender());
+
+                    String[] lines = text.split("\n");
+                    List<CompletableFuture> futures = new ArrayList<>();
+
+                    for (int i = 0; i < lines.length; i++) {
+                        String line = lines[i];
+                        ActorRef wordCounterActorRef = getContext().actorOf(Props.create(WordCounterActor.class), "word-counter-" + i);
+
+                        CompletableFuture<Object> future =
+                                ask(wordCounterActorRef, new WordCounterActor.CountWords(line), 1000).toCompletableFuture();
+                        futures.add(future);
+                    }
+
+                    Integer totalNumberOfWords = futures.stream()
+                            .map(CompletableFuture::join)
+                            .mapToInt(n -> (Integer) n)
+                            .sum();
+
+                    ActorRef printerActorRef = getContext().actorOf(Props.create(PrinterActor.class), "Printer-Actor");
+                    printerActorRef.forward(new PrinterActor.PrintFinalResult(totalNumberOfWords), getContext());
+//                    printerActorRef.tell(new PrinterActor.PrintFinalResult(totalNumberOfWords), getSelf());
+
+                })
+                .build();
+    }
+==============================================================================================================
       <dependency>
         <groupId>org.testcontainers</groupId>
         <artifactId>testcontainers</artifactId>
