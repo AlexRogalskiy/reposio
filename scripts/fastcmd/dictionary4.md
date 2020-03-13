@@ -30691,8 +30691,423 @@ npm cache clean
 npm cache clean --force
 npm install --no-optional
 ==============================================================================================================
-import com.hubspot.jackson.datatype.protobuf.ProtobufModule;
+<?xml version='1.0' encoding='UTF-8'?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+  <include file="db/release.xml" relativeToChangelogFile="true"/>
+  <include file="ddl/release.xml" relativeToChangelogFile="true"/>
+  <include file="triggers/release.xml" relativeToChangelogFile="true"/>
+  <include file="routines/release.xml" relativeToChangelogFile="true"/>
+  <include file="dml/release.xml" relativeToChangelogFile="true"/>
+</databaseChangeLog>
+
+USE intelliqueue_stats;
+CREATE DEFINER=CURRENT_USER TRIGGER `activate_chat_update` BEFORE UPDATE ON `tbl_acd_active_chats`
+  FOR EACH ROW
+BEGIN
+     DECLARE presented INT DEFAULT 1;
+     DECLARE accepted INT DEFAULT 0;
+     DECLARE abandoned INT DEFAULT 0;
+     DECLARE deflected INT DEFAULT 0;
+     DECLARE total_queue_time INT DEFAULT 0;
+     DECLARE total_chat_time INT DEFAULT 0;
+     DECLARE total_answer_time INT DEFAULT 0;
+     DECLARE total_abandon_time INT DEFAULT 0;
+ 
+ 
+     DECLARE connect INT DEFAULT 0;
+     DECLARE abandon INT DEFAULT 0;
+ 
+ 
+     IF NEW.archive = 1 AND OLD.archive = 0 THEN
+         SELECT
+              (CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END)
+        INTO
+            accepted
+        FROM intelliqueue_stats.tbl_acd_active_chat_sessions
+        WHERE uii = NEW.uii
+        AND is_dequeue_agent = 1;
+ 
+        SET total_queue_time = IFNULL(UNIX_TIMESTAMP(IFNULL(NEW.dequeue_time,NOW())) - UNIX_TIMESTAMP(IFNULL(NEW.enqueue_time,NOW())),0);
+ 
+        IF accepted = 1 THEN
+           SET total_answer_time = total_queue_time;
+        ELSE
+           IF NEW.chat_state IN ('IP-BLOCKED','QUEUE-CLOSED','NO-AGENTS','MAX-QUEUE-LIMIT','TRHOTTLED','END-CHAT') THEN
+              SET deflected = 1;
+           ELSE
+               SET total_abandon_time = total_queue_time;
+               SET abandoned = 1;
+           END IF;
+        END IF;
+ 
+        CALL intelliqueue_stats.proc_update_chat_stats(
+             NEW.chat_queue_id,
+             presented,
+             accepted,
+             abandoned,
+             deflected,
+             total_queue_time,
+             total_chat_time,
+             total_answer_time,
+                 total_abandon_time
+        );
+     END IF;
+END;
+
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+    <changeSet id="20200303_20.1.5_ddl_1" author="roman.pertsev@nordigy.ru"
+               context="iq" dbms="mysql" labels="20.1.5,ddl,column">
+        <preConditions onFail="MARK_RAN">
+            <columnExists columnName="archive"
+                          tableName="tbl_acd_agent_logins"/>
+        </preConditions>
+        <sqlFile path="sql/1_drop_archive_column_logins.sql"
+                 splitStatements="false"
+                 relativeToChangelogFile="true" stripComments="true" />
+        <rollback>
+            <sqlFile path="rollback/1_drop_archive_column_logins_rollback.sql"
+                     splitStatements="false"
+                     relativeToChangelogFile="true" stripComments="true" />
+        </rollback>
+    </changeSet>
+ 
+    <changeSet id="20200303_20.1.5_ddl_2" author="roman.pertsev@nordigy.ru"
+               context="iq" dbms="mysql" labels="20.1.5,ddl,column">
+        <preConditions onFail="MARK_RAN">
+            <columnExists columnName="archive"
+                          tableName="tbl_acd_agent_logins_history"/>
+        </preConditions>
+        <sqlFile path="sql/2_drop_archive_column_logins_history.sql"
+                 splitStatements="false"
+                 relativeToChangelogFile="true" stripComments="true" />
+        <rollback>
+            <sqlFile path="rollback/2_drop_archive_column_logins_history_rollback.sql"
+                     splitStatements="false"
+                     relativeToChangelogFile="true" stripComments="true" />
+        </rollback>
+    </changeSet>
+</databaseChangeLog>
+
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="20200303_20.1.5b_ddl_1" author="roman.pertsev@nordigy.ru"
+
+               context="iq" dbms="mysql" labels="20.1.5b,ddl,column">
+
+        <preConditions onFail="MARK_RAN">
+
+            <not>
+
+                <columnExists columnName="allow_multisocket"
+
+                              tableName="tbl_acd_agent_logins"/>
+
+            </not>
+
+        </preConditions>
+
+        <sqlFile path="sql/1_add_allow_multisocket_logins_column.sql"
+
+                 splitStatements="false"
+
+                 relativeToChangelogFile="true" stripComments="true" />
+
+        <rollback>
+
+            <sqlFile path="rollback/1_add_allow_multisocket_logins_column_rollback.sql"
+
+                     splitStatements="false"
+
+                     relativeToChangelogFile="true" stripComments="true" />
+
+        </rollback>
+
+    </changeSet>
+
+ 
+
+    <changeSet id="20200303_20.1.5b_ddl_2" author="roman.pertsev@nordigy.ru"
+
+               context="iq" dbms="mysql" labels="20.1.5b,ddl,column">
+
+        <preConditions onFail="MARK_RAN">
+
+            <not>
+
+                <columnExists columnName="allow_multisocket"
+
+                              tableName="tbl_acd_agent_logins_history"/>
+
+            </not>
+
+        </preConditions>
+
+        <sqlFile path="sql/2_add_allow_multisocket_logins_history_column.sql"
+
+                 splitStatements="false"
+
+                 relativeToChangelogFile="true" stripComments="true" />
+
+        <rollback>
+
+            <sqlFile path="rollback/2_add_allow_multisocket_logins_history_column_rollback.sql"
+
+                     splitStatements="false"
+
+                     relativeToChangelogFile="true" stripComments="true" />
+
+        </rollback>
+
+    </changeSet>
+
+ 
+
+    <changeSet id="20200303_20.1.5b_ddl_3" author="roman.pertsev@nordigy.ru"
+
+               context="iq" dbms="mysql" labels="20.1.5b,ddl,table">
+
+        <preConditions onFail="MARK_RAN">
+
+            <not>
+
+                <tableExists tableName="tbl_acd_agent_iqserver_mapping"/>
+
+            </not>
+
+        </preConditions>
+
+        <sqlFile path="sql/3_add_table_agent_iqserver_mapping.sql"
+
+                 splitStatements="false"
+
+                 relativeToChangelogFile="true" stripComments="true" />
+
+        <rollback>
+
+            <sqlFile path="rollback/3_add_table_agent_iqserver_mapping_rollback.sql"
+
+                     splitStatements="false"
+
+                    relativeToChangelogFile="true" stripComments="true" />
+
+        </rollback>
+
+    </changeSet>
+
+</databaseChangeLog>
 ==============================================================================================================
+#ErrorDocument 404 /eng
+#ErrorDocument 403 /eng
+#ErrorDocument 402 /eng
+
+AddDefaultCharset UTF-8
+RewriteEngine On
+RewriteBase /
+
+Options -Indexes
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_URI} !=/server-status
+RewriteRule ^(.*)$ 404 [L,QSA]
+
+#GW-9339
+<IfModule mod_expires.c>
+        ExpiresActive On
+        <FilesMatch "(?i)^.+\.(png|jpg|jpeg|gif|css|ico|pdf)$">
+                ExpiresDefault "access plus 2 days"
+        </FilesMatch>
+</IfModule>
+
+#GW-12101
+AddType video/webm .webm
+<FilesMatch  "(?i)^.+\.webm$">
+        ForceType video/webm
+</FilesMatch>
+
+#GW-12153
+AddType text/x-component .htc
+<FilesMatch  "(?i)^.+\.htc$">
+        ForceType text/x-component
+</FilesMatch>
+<IfModule mod_deflate.c>
+#	AddOutputFilterByType DEFLATE text/x-component
+        AddOutputFilter DEFLATE htc
+</IfModule>
+
+#GW-13128
+AddType video/quicktime .mov
+<FilesMatch  "(?i)^.+\.mov$">
+        ForceType video/quicktime
+</FilesMatch>
+
+<Files ~ "(?i)^.+\.(inc|backup)$">
+        deny from all
+</Files>
+
+php_value allow_call_time_pass_reference 1
+php_value magic_quotes_gpc 0
+php_value register_globals 1
+php_value upload_max_filesize 50M
+php_value post_max_size 60M
+php_value max_execution_time 360
+php_value max_input_time 0
+php_value error_prepend_string '<div style="background: #FFF; color: #DC143C;">'
+php_value error_append_string '</div>'
+php_value session.gc_maxlifetime 3600
+
+DirectoryIndex index.php
+==============================================================================================================
+cd configs
+for f in *.py.sample; do cp -- "$f" "${f%.sample}"; done
+
+echo '# LEM http://git.ringcentral.com:8888/lab/lem' >> ~/.bashrc
+echo 'alias lem="cd /path/to/lem/ && python3 lemcli.py"' >> ~/.bashrc
+echo 'source <(lem -- --completion)' >> ~/.bashrc
+==============================================================================================================
+wmic os get osarchitecture | find /i "32-bit" >nul 2>&1
+
+docker build --no-cache --pull -t pdv-tests --build-arg REGISTRY=${LAB_DOCKER_REGISTRY} .
+==============================================================================================================
+#################################
+## Pre-Call Stress test script
+## Please compile the sipp binary first.
+##
+## Created by Jimmy Xu	2016.09.01
+#################################
+
+#!/bin/sh
+
+# Define Sipp path
+SIPP_PATH="./sipp/sipp"
+
+# Define scenario Path
+SCENARIO_PATH="./options_msg.xml"
+
+# Define SBC IP and port. e.g. 192.209.31.43:5091
+REMOTE_IP_PORT="192.209.31.43:5091"
+
+# Define Local IP and port. eg. 10.32.60.231 Please dont specify local port. Port will be randomly picked by sipp automatically
+LOCAL_IP="10.32.35.9"
+
+# Define user count. Every user will be a sipp instance
+USER_COUNT="10"
+
+# Define OPTIONS request frequence (how many OPTIONS requests should be sent per sec per user)
+FREQUENCE="50"
+
+# Define OPTIONS request total amount (how many OPTIONS requests should be sent per user)
+TOTAL_AMOUNT="100"
+
+TOTAL_CALLS=$((TOTAL_AMOUNT*USER_COUNT))
+
+echo "############### Pre-Call Stress Test ####################"
+echo "- SBC IP: $REMOTE_IP_PORT"
+echo "- LOCAL IP: $LOCAL_IP"
+echo "- User count: $USER_COUNT"
+echo "- Frequence: $FREQUENCE / 1 sec / 1 user"
+echo "- Calls: $TOTAL_AMOUNT / 1 user"
+echo "- Total Calls: $TOTAL_CALLS"
+echo "- "
+echo "##########################################################"
+
+echo "Generation scenario XML ...";
+
+echo "<?xml version=\"1.0\" encoding=\"ISO-8859-1\" ?>
+<!DOCTYPE scenario SYSTEM \"sipp.dtd\">
+<scenario name=\"Pre-Call OPTIONS message\">
+  <Global variables=\"sendCount,recvCount,printResult\" />
+  <init>
+    <nop>
+      <action>
+        <assign assign_to=\"printResult\" value=\"\" />
+        <assign assign_to=\"sendCount\" value=\"0\" />
+        <assign assign_to=\"recvCount\" value=\"0\" />
+      </action>
+    </nop>
+  </init>
+
+        <send>
+    <![CDATA[
+
+
+      OPTIONS sip:sip.ringcentral.com SIP/2.0
+      Via: SIP/2.0/UDP [local_ip]:[local_port];branch=[branch]
+      From: <sip:networkQualityDetection[pid][call_number]@sip.ringcentral.com>;tag=test_[pid]_[call_number]
+      To: <sip:networkQualityDetection[pid][call_number]@sip.ringcentral.com>
+      Call-ID: [call_id]
+      Cseq: [call_number] OPTIONS
+      Max-Forwards: 0
+      Content-Length: 0
+
+
+    ]]>
+        <action>
+          <add assign_to=\"sendCount\" value=\"1\" />
+        </action>
+        </send>
+
+  <recv response=\"483\" timeout=\"5000\" ontimeout=\"1\" next=\"1\" test=\"2\">
+      <action>
+        <add assign_to=\"recvCount\" value=\"1\" />
+        <test assign_to=\"2\" variable=\"recvCount\" compare=\"greater_than_equal\" value=\"$TOTAL_AMOUNT\" />
+      </action>
+  </recv>
+
+  <label id=\"1\" />
+
+  <nop>
+          <action>
+            <exec command=\"echo [timestamp] PID: [pid] --- OPTIONS response received: [\$recvCount]/[\$sendCount]/$TOTAL_AMOUNT >> result.log\" />
+            <exec int_cmd=\"stop_now\"/>
+           </action>
+  </nop>
+</scenario>" > ${SCENARIO_PATH};
+
+tmp=0
+while [ $tmp -lt $USER_COUNT ]
+do
+        $SIPP_PATH $REMOTE_IP_PORT -i $LOCAL_IP -sf $SCENARIO_PATH -nr -r $FREQUENCE -rp 1s -m $TOTAL_AMOUNT -nd -bg
+        tmp=$((tmp+1))
+done
+==============================================================================================================
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation "com.nimbusds:nimbus-jose-jwt:7.8.1"
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+==============================================================================================================
+// Create an HMAC-protected JWS object with some payload
+JWSObject jwsObject = new JWSObject(new JWSHeader(JWSAlgorithm.HS256),
+                                    new Payload("Hello, world!"));
+
+// We need a 256-bit key for HS256 which must be pre-shared
+byte[] sharedKey = new byte[32];
+new SecureRandom().nextBytes(sharedKey);
+
+// Apply the HMAC to the JWS object
+jwsObject.sign(new MACSigner(sharedKey));
+
+// Output in URL-safe format
+System.out.println(jwsObject.serialize());
 ==============================================================================================================
       <plugin>
         <groupId>org.scalatest</groupId>
