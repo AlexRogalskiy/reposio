@@ -31085,6 +31085,2689 @@ do
         tmp=$((tmp+1))
 done
 ==============================================================================================================
+mvn dependency:purge-local-repository
+==============================================================================================================
+import java.math.BigInteger;
+
+
+/**
+ * Example Elliptic Curve key, copied from the JWS specification. This class is
+ * immutable.
+ */
+public final class ExampleECKey {
+	
+	public final static byte[] X_BYTES = { 
+		(byte) 127, (byte) 205, (byte) 206, (byte)  39, 
+		(byte) 112, (byte) 246, (byte) 196, (byte)  93, 
+		(byte)  65, (byte) 131, (byte) 203, (byte) 238, 
+		(byte) 111, (byte) 219, (byte)  75, (byte) 123, 
+		(byte)  88, (byte)   7, (byte)  51, (byte)  53, 
+		(byte) 123, (byte) 233, (byte) 239, (byte)  19, 
+		(byte) 186, (byte) 207, (byte) 110, (byte)  60, 
+		(byte) 123, (byte) 209, (byte)  84, (byte)  69 };
+
+
+	public final static byte[] Y_BYTES = { 
+		(byte) 199, (byte) 241, (byte)  68, (byte) 205, 
+		(byte)  27, (byte) 189, (byte) 155, (byte) 126, 
+		(byte) 135, (byte) 44,  (byte) 223, (byte) 237, 
+		(byte) 185, (byte) 238, (byte) 185, (byte) 244, 
+		(byte) 179, (byte) 105, (byte)  93, (byte) 110, 
+		(byte) 169, (byte)  11, (byte)  36, (byte) 173, 
+		(byte) 138, (byte)  70, (byte)  35, (byte)  40, 
+		(byte) 133, (byte) 136, (byte) 229, (byte) 173 };
+
+
+	public final static byte[] D_BYTES = { 
+		(byte) 142, (byte) 155, (byte)  16, (byte) 158, 
+		(byte) 113, (byte) 144, (byte) 152, (byte) 191, 
+		(byte) 152, (byte)   4, (byte) 135, (byte) 223, 
+		(byte)  31, (byte)  93, (byte) 119, (byte) 233, 
+		(byte) 203, (byte)  41, (byte)  96, (byte) 110, 
+		(byte) 190, (byte) 210, (byte)  38, (byte)  59, 
+		(byte)  95, (byte)  87, (byte) 194, (byte)  19, 
+		(byte) 223, (byte) 132, (byte) 244, (byte) 178 };
+	
+	
+	/**
+	 * The public 'x' parameter.
+	 */
+	public final static BigInteger X = new BigInteger(1, X_BYTES);
+	
+	
+	/**
+	 * The public 'y' parameter.
+	 */
+	public final static BigInteger Y = new BigInteger(1, Y_BYTES);
+	
+	
+	/**
+	 * The private 'd' parameter.
+	 */
+	public final static BigInteger D = new BigInteger(1, D_BYTES);
+	
+	
+	/**
+	 * Prevents public instantiation.
+	 */
+	private ExampleECKey() {}
+}
+==============================================================================================================
+#!/bin/bash
+
+set -o errexit -o nounset -o pipefail
+
+sudo docker build -t curve25519-benchmarking .
+sudo docker run -it \
+	--mount type=bind,source="${PWD}/workspace",dst=/workspace \
+	--mount type=bind,source="${PWD}/m2",dst=/root/.m2 \
+	curve25519-benchmarking
+
+==============================================================================================================
+<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>2.2</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<finalName>${uberjar.name}</finalName>
+							<transformers>
+								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+									<mainClass>org.openjdk.jmh.Main</mainClass>
+								</transformer>
+							</transformers>
+							<filters>
+								<filter>
+									<!--
+										Shading signed JARs will fail without this.
+										http://stackoverflow.com/questions/999489/invalid-signature-file-when-attempting-to-run-a-jar
+									-->
+									<artifact>*:*</artifact>
+									<excludes>
+										<exclude>META-INF/*.SF</exclude>
+										<exclude>META-INF/*.DSA</exclude>
+										<exclude>META-INF/*.RSA</exclude>
+									</excludes>
+								</filter>
+							</filters>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+==============================================================================================================
+import java.io.IOException;
+import java.util.List;
+
+import javax.ws.rs.core.Response;
+
+import org.apache.http.Header;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.message.BasicHeader;
+import org.kantarainitiative.umadev.dto.ErrorResponse;
+import org.kantarainitiative.umadev.util.HttpHelper;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+public class ResourceOwner {
+
+	private AuthorisationServer as;
+	private String pat;
+
+	public static ResourceOwner from(String pat, AuthorisationServer as) {
+		ResourceOwner resourceOwner = new ResourceOwner();
+		resourceOwner.pat = pat;
+		resourceOwner.as = as;
+		return resourceOwner;
+	}
+
+	public ResourceListResult listResources() {
+		HttpUriRequest request = RequestBuilder.get(as.getResourceSetRegistrationURI())
+				.addHeader(authorizationHeader(pat)).build();
+
+		try {
+			Response response = HttpHelper.makeRequest(request);
+
+			if (response.getStatus() != Response.Status.OK.getStatusCode()) {
+				return listErrorResponse(response);
+			}
+
+			List<String> result = new ObjectMapper().readValue(response.getEntity().toString(),
+					new TypeReference<List<String>>() {
+					});
+
+			ResourceList list = new ResourceList();
+			list.setIds(result);
+
+			return ResourceListResult.success(list);
+		} catch (IOException e) {
+			return ResourceListResult.error("Exception throw during list resources: " + e.getMessage());
+		}
+	}
+
+	public ResourceResult readResource(String id) {
+		HttpUriRequest request = RequestBuilder.get(as.getResourceSetRegistrationURI() + "/" + id)
+				.addHeader(authorizationHeader(pat)).build();
+		try {
+			Response response = HttpHelper.makeRequest(request);
+
+			if (response.getStatus() != Response.Status.OK.getStatusCode()) {
+				return errorResponse(response);
+			}
+
+			return ResourceResult
+					.success(new ObjectMapper().readValue(response.getEntity().toString(), Resource.class));
+		} catch (IOException e) {
+			return ResourceResult.error("Exception throw during create resource: " + e.getMessage());
+		}
+	}
+
+	public ResourceResult createResource(Resource resource) {
+		HttpUriRequest request = RequestBuilder.post(as.getResourceSetRegistrationURI())
+				.addHeader(authorizationHeader(pat)).setEntity(HttpHelper.marshallObject(resource)).build();
+		try {
+			Response response = HttpHelper.makeRequest(request);
+
+			if (response.getStatus() != Response.Status.CREATED.getStatusCode()) {
+				return errorResponse(response);
+			}
+
+			return ResourceResult
+					.success(new ObjectMapper().readValue(response.getEntity().toString(), Resource.class));
+		} catch (IOException e) {
+			return ResourceResult.error("Exception throw during create resource: " + e.getMessage());
+		}
+	}
+
+	public ResourceResult updateResource(Resource resource) {
+		HttpUriRequest request = RequestBuilder.put(as.getResourceSetRegistrationURI() + "/" + resource.getId())
+				.addHeader(authorizationHeader(pat)).setEntity(HttpHelper.marshallObject(resource)).build();
+		try {
+			Response response = HttpHelper.makeRequest(request);
+
+			if (response.getStatus() != Response.Status.OK.getStatusCode()) {
+				return errorResponse(response);
+			}
+
+			return ResourceResult.success(resource);
+		} catch (IOException e) {
+			return ResourceResult.error("Exception throw during update resource: " + e.getMessage());
+		}
+	}
+
+	public ResourceResult deleteResource(Resource resource) {
+		HttpUriRequest request = RequestBuilder.delete(as.getResourceSetRegistrationURI() + "/" + resource.getId())
+				.addHeader(authorizationHeader(pat)).build();
+		try {
+			Response response = HttpHelper.makeRequest(request);
+
+			if (response.getStatus() != Response.Status.NO_CONTENT.getStatusCode()) {
+				return errorResponse(response);
+			}
+
+			return ResourceResult.success(null);
+		} catch (IOException e) {
+			return ResourceResult.error("Exception throw during delete resource: " + e.getMessage());
+		}
+	}
+
+	public void registerPermissionRequest(Resource resource) {
+		// TODO Auto-generated method stub
+
+	}
+
+	private Header authorizationHeader(final String token) {
+		return new BasicHeader("Authorization", "Bearer " + token);
+	}
+
+	private ResourceResult errorResponse(Response response)
+			throws IOException, JsonParseException, JsonMappingException {
+		if (response.getEntity() != null) {
+			ErrorResponse error = new ObjectMapper().readValue(response.getEntity().toString(), ErrorResponse.class);
+			return ResourceResult.error(error);
+		} else {
+			return ResourceResult.error("Unexpected error response: " + response.getStatus());
+		}
+	}
+
+	private ResourceListResult listErrorResponse(Response response)
+			throws IOException, JsonParseException, JsonMappingException {
+		if (response.getEntity() != null) {
+			ErrorResponse error = new ObjectMapper().readValue(response.getEntity().toString(), ErrorResponse.class);
+			return ResourceListResult.error(error);
+		} else {
+			return ResourceListResult.error("Unexpected error response: " + response.getStatus());
+		}
+	}
+
+}
+
+import java.io.IOException;
+import java.util.Optional;
+
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import org.apache.http.Consts;
+import org.apache.http.Header;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.message.BasicHeader;
+import org.apache.http.util.EntityUtils;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+public class HttpHelper {
+
+	private static final String APPLICATION_JSON = "application/json; charset=utf-8";
+	private static final Header JSON_CONTENT_HEADER = new BasicHeader(HttpHeaders.CONTENT_TYPE, APPLICATION_JSON);
+
+	public static Optional<String> getJSON(String uri) {
+		HttpClientBuilder builder = HttpClientBuilder.create();
+		HttpUriRequest request = RequestBuilder.get(uri).build();
+
+		try (CloseableHttpClient httpClient = builder.build()) {
+
+			HttpResponse httpResponse = httpClient.execute(request);
+
+			if (httpResponse.getStatusLine().getStatusCode() == 200 && httpResponse.getEntity() != null) {
+				String response = EntityUtils.toString(httpResponse.getEntity());
+				return Optional.of(response);
+			}
+
+			return Optional.empty();
+		} catch (IOException e) {
+			e.printStackTrace();
+			return Optional.empty();
+		}
+	}
+
+	public static Response makeRequest(final HttpUriRequest request) throws IOException {
+
+		try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+
+			HttpResponse httpResponse = httpClient.execute(request);
+
+			Response.ResponseBuilder responseBuilder = Response.status(httpResponse.getStatusLine().getStatusCode());
+			Header[] headers = httpResponse.getAllHeaders();
+			for (Header header : headers) {
+				responseBuilder.header(header.getName(), header.getValue());
+			}
+
+			if (httpResponse.getEntity() != null) {
+				String response = EntityUtils.toString(httpResponse.getEntity());
+				responseBuilder.type(MediaType.APPLICATION_JSON).entity(response);
+			}
+
+			return responseBuilder.build();
+		}
+	}
+
+	public static HttpEntity marshallObject(final Object obj) {
+		StringEntity stringEntity = new StringEntity(marshallObjectToString(obj), Consts.UTF_8);
+		stringEntity.setContentType(JSON_CONTENT_HEADER);
+
+		return stringEntity;
+	}
+
+	public static String marshallObjectToString(final Object obj) {
+		try {
+			ObjectMapper objectMapper = new ObjectMapper();
+			return objectMapper.writeValueAsString(obj);
+
+		} catch (JsonProcessingException e) {
+			throw new IllegalArgumentException("Error marshalling domain object", e);
+		}
+	}
+
+}
+==============================================================================================================
+import com.streamsets.pipeline.api.ConfigDefBean;
+import com.streamsets.pipeline.api.ConfigGroups;
+import com.streamsets.pipeline.api.GenerateResourceBundle;
+import com.streamsets.pipeline.api.StageDef;
+import com.streamsets.pipeline.api.Target;
+import com.streamsets.pipeline.api.base.configurablestage.DTarget;
+
+@StageDef(
+  version = 3,
+  label = "Flume",
+  description = "Writes data to Flume Source",
+  icon = "flume.png",
+  upgrader = FlumeTargetUpgrader.class,
+  upgraderDef = "upgrader/FlumeDTarget.yaml",
+  onlineHelpRefUrl ="index.html?contextID=task_vft_g5p_yr"
+)
+@ConfigGroups(value = Groups.class)
+@GenerateResourceBundle
+public class FlumeDTarget extends DTarget {
+
+  @ConfigDefBean()
+  public FlumeConfigBean flumeConfigBean;
+
+  @Override
+  protected Target createTarget() {
+    return new FlumeTarget(flumeConfigBean);
+  }
+}
+
+  @ConfigDef(
+    required = false,
+    type = ConfigDef.Type.NUMBER,
+    defaultValue = "10000", // 10 seconds
+    label = "Retry Wait Time (ms)",
+    description = "Time to wait before resending data to Flume",
+    displayPosition = 110,
+    group = "FLUME",
+    min = 1,
+    max = Integer.MAX_VALUE
+  )
+  public long waitBetweenRetries;
+==============================================================================================================
+import com.streamsets.pipeline.api.Field;
+import com.streamsets.pipeline.api.Field.Type;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Mysql types supported by mysql connector.
+ */
+public enum MysqlType {
+  DECIMAL("decimal") {
+    @Override
+    public Field toField(Object value) {
+      return Field.create(Type.DECIMAL, value);
+    }
+  },
+  TINY_INT("tinyint") {
+    @Override
+    public Field toField(Object value) {
+      return Field.create(Type.INTEGER, value);
+    }
+  },
+  SMALL_INT("smallint") {
+    @Override
+    public Field toField(Object value) {
+      return Field.create(Type.INTEGER, value);
+    }
+  },
+  MEDIUM_INT("mediumint") {
+    @Override
+    public Field toField(Object value) {
+      return Field.create(Type.INTEGER, value);
+    }
+  },
+  FLOAT("float") {
+    @Override
+    public Field toField(Object value) {
+      return Field.create(Type.FLOAT, value);
+    }
+  },
+  DOUBLE("double") {
+    @Override
+    public Field toField(Object value) {
+      return Field.create(Type.DOUBLE, value);
+    }
+  },
+  TIMESTAMP("timestamp") {
+    @Override
+    public Field toField(Object value) {
+      return Field.create(Type.DATETIME, value);
+    }
+  },
+  BIGINT("bigint") {
+    @Override
+    public Field toField(Object value) {
+      return Field.create(Type.LONG, value);
+    }
+  },
+  INT("int") {
+    @Override
+    public Field toField(Object value) {
+      return Field.create(Type.INTEGER, value);
+    }
+  },
+  DATE("date") {
+    @Override
+    public Field toField(Object value) {
+      return Field.create(Type.DATE, value);
+    }
+  },
+  TIME("time") {
+    @Override
+    public Field toField(Object value) {
+      return Field.create(Type.TIME, value);
+    }
+  },
+  DATETIME("datetime") {
+    @Override
+    public Field toField(Object value) {
+      return Field.create(Type.DATETIME, value);
+    }
+  },
+  YEAR("year") {
+    @Override
+    public Field toField(Object value) {
+      return Field.create(Type.INTEGER, value);
+    }
+  },
+  VARCHAR("varchar") {
+    @Override
+    public Field toField(Object value) {
+      return Field.create(Type.STRING, value);
+    }
+  },
+  ENUM("enum") {
+    @Override
+    public Field toField(Object value) {
+      return Field.create(Type.INTEGER, value);
+    }
+  },
+  SET("set") {
+    @Override
+    public Field toField(Object value) {
+      return Field.create(Type.LONG, value);
+    }
+  },
+  TINY_BLOB("tinyblob") {
+    @Override
+    public Field toField(Object value) {
+      return Field.create(Type.BYTE_ARRAY, value);
+    }
+  },
+  MEDIUM_BLOB("mediumblob") {
+    @Override
+    public Field toField(Object value) {
+      return Field.create(Type.BYTE_ARRAY, value);
+    }
+  },
+  LONG_BLOB("longblob") {
+    @Override
+    public Field toField(Object value) {
+      return Field.create(Type.BYTE_ARRAY, value);
+    }
+  },
+  BLOB("blob") {
+    @Override
+    public Field toField(Object value) {
+      return Field.create(Type.BYTE_ARRAY, value);
+    }
+  },
+  TEXT("text") {
+    @Override
+    public Field toField(Object value) {
+      return stringField(value);
+    }
+  },
+  TINY_TEXT("tinytext") {
+    @Override
+    public Field toField(Object value) {
+      return stringField(value);
+    }
+  },
+  MEDIUM_TEXT("mediumtext") {
+    @Override
+    public Field toField(Object value) {
+      return stringField(value);
+    }
+  },
+  LONG_TEXT("longtext") {
+    @Override
+    public Field toField(Object value) {
+      return stringField(value);
+    }
+  },
+  UNSUPPORTED("unsupported") {
+    @Override
+    public Field toField(Object value) {
+      return stringField(value);
+    }
+  };
+
+  private static final Logger LOG = LoggerFactory.getLogger(MysqlType.class);
+
+  private static Field stringField(Object value) {
+    if (value == null) {
+      return Field.create(Type.STRING, null);
+    } else {
+      if (value instanceof byte[]) {
+        return Field.create(Type.STRING, new String((byte[]) value));
+      } else {
+        return Field.create(Type.STRING, value.toString());
+      }
+    }
+  }
+
+  private final String name;
+
+  public abstract Field toField(Object value);
+
+  MysqlType(String name) {
+    this.name = name;
+  }
+
+  public static MysqlType of(String name) {
+    // at least now we are not interested in precision - cut it off
+    String typeName = name;
+    int i = typeName.indexOf('(');
+    if (i > -1) {
+      typeName = typeName.substring(0, i);
+    }
+
+    for (MysqlType t : MysqlType.values()) {
+      if (t.name.toLowerCase().equals(typeName.toLowerCase())) {
+        return t;
+      }
+    }
+    LOG.warn("Encountered unsupported mysql type {}", name);
+    return UNSUPPORTED;
+  }
+}
+
+show global variables like '%s'
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import javax.sql.DataSource;
+
+public class Util {
+  private Util() {
+  }
+
+  /**
+   * Get global variable value.
+   * @param dataSource
+   * @param variable
+   * @return global variable value of empty string.
+   * @throws SQLException
+   */
+  public static String getGlobalVariable(DataSource dataSource, String variable) throws SQLException {
+    try (Connection conn = dataSource.getConnection()) {
+      try (
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery(String.format("show global variables like '%s'", variable));
+      ) {
+        if (rs.next()) {
+          return rs.getString(2);
+        } else {
+          return "";
+        }
+      }
+    }
+  }
+
+  /**
+   * Get gtidset executed by server.
+   * @param dataSource
+   * @return
+   * @throws SQLException
+   */
+  public static String getServerGtidExecuted(DataSource dataSource) throws SQLException {
+    return getGlobalVariable(dataSource, "gtid_executed");
+  }
+
+  /**
+   * Get gtidset purged from binlog.
+   * @param dataSource
+   * @return
+   * @throws SQLException
+   */
+  public static String getServerGtidPurged(DataSource dataSource) throws SQLException {
+    return getGlobalVariable(dataSource, "gtid_purged");
+  }
+}
+==============================================================================================================
+docker-compose pull --ignore-pull-failures
+==============================================================================================================
+https://github.com/streamsets/datacollector-api/blob/master/src/main/java/com/streamsets/pipeline/api/BatchContext.java
+https://github.com/streamsets/transformer-sample-processor/blob/master/pom.xml
+==============================================================================================================
+    <dependency>
+      <groupId>com.dimafeng</groupId>
+      <artifactId>testcontainers-scala_2.11</artifactId>
+      <version>0.20.0</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers</artifactId>
+      <version>1.9.1</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>1.9.1</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>kafka</artifactId>
+      <version>1.10.6</version>
+      <scope>test</scope>
+    </dependency>
+==============================================================================================================
+docker-machine start default
+docker-compose up
+==============================================================================================================
+import java.net.URI;
+import java.time.Instant;
+import java.util.Optional;
+
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.lang3.RandomStringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import io.bspk.oauth.xyz.authserver.data.api.ApprovalResponse;
+import io.bspk.oauth.xyz.authserver.repository.TransactionRepository;
+import io.bspk.oauth.xyz.crypto.Hash;
+import io.bspk.oauth.xyz.crypto.Hash.Method;
+import io.bspk.oauth.xyz.data.PendingApproval;
+import io.bspk.oauth.xyz.data.Transaction;
+import io.bspk.oauth.xyz.data.Transaction.Status;
+import io.bspk.oauth.xyz.data.User;
+import io.bspk.oauth.xyz.data.api.ApprovalRequest;
+import io.bspk.oauth.xyz.data.api.UserInteractionFormSubmission;
+
+/**
+ * @author jricher
+ *
+ */
+@Controller
+@RequestMapping("/api/as/interact")
+public class InteractionEndpoint {
+
+
+	@Autowired
+	private TransactionRepository transactionRepository;
+
+	@Value("${oauth.xyz.root}")
+	private String baseUrl;
+
+	@GetMapping("{id}")
+	public ResponseEntity<?> interact(@PathVariable ("id") String id, HttpSession session) {
+
+		Transaction transaction = transactionRepository.findFirstByInteractInteractId(id);
+
+		if (transaction != null) {
+
+			PendingApproval pending = new PendingApproval()
+				.setTransaction(transaction);
+
+			session.setAttribute("_pending_approval", pending);
+		}
+
+		return redirectToInteractionPage();
+
+	}
+
+
+	@PostMapping("approve")
+	public ResponseEntity<?> approve(@RequestBody ApprovalRequest approve, HttpSession session) {
+
+		PendingApproval pending = (PendingApproval) session.getAttribute("_pending_approval");
+
+		session.removeAttribute("_pending_approval");
+
+		if (pending != null && pending.getTransaction() != null) {
+			Transaction transaction = pending.getTransaction();
+
+			// burn this interaction
+			transaction.getInteract().setInteractId(null);
+			transaction.getInteract().setInteractionUrl(null);
+
+			if (approve.isApproved()) {
+				transaction.setStatus(Status.AUTHORIZED);
+
+				transaction.setUser(new User()
+					.setId(session.getId())
+					.setEmail("user@example.com")
+					.setPhone("555-user")
+					.setUpdatedAt(Instant.ofEpochMilli(session.getCreationTime()))
+					);
+			} else {
+
+				transaction.setStatus(Status.DENIED);
+
+			}
+
+			ApprovalResponse res = new ApprovalResponse();
+
+			if (transaction.getInteract().getCallback() != null) {
+				// set up an interaction handle
+				String interactRef = RandomStringUtils.randomAlphanumeric(30);
+				transaction.getInteract().setInteractRef(interactRef);
+
+				String clientNonce = transaction.getInteract().getCallback().getNonce();
+				String serverNonce = transaction.getInteract().getServerNonce();
+				Method method = transaction.getInteract().getCallback().getHashMethod();
+
+				String hash = Hash.CalculateInteractHash(clientNonce,
+						serverNonce,
+						interactRef,
+						method);
+
+
+				String callback = transaction.getInteract().getCallback().getUri();
+				URI callbackUri = UriComponentsBuilder.fromUriString(callback)
+					.queryParam("hash", hash)
+					.queryParam("interact", interactRef)
+					.build().toUri();
+
+				res.setUri(callbackUri);
+			} else {
+				// no callback, just set it to approved
+				res.setApproved(true);
+			}
+
+			transactionRepository.save(transaction);
+
+			return ResponseEntity.ok(res);
+
+		} else {
+			return ResponseEntity.notFound().build();
+		}
+
+	}
+
+	@GetMapping("/device")
+	public ResponseEntity<?> device(HttpSession session) {
+
+		// save the pending approval to the session
+		PendingApproval pending = new PendingApproval()
+			.setRequireCode(true);
+
+		session.setAttribute("_pending_approval", pending);
+
+		// send the user to the interaction page
+
+		return redirectToInteractionPage();
+
+	}
+
+	@PostMapping(value = "/device", consumes = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<?> processUserCode(HttpSession session, @RequestBody UserInteractionFormSubmission submit) {
+
+		PendingApproval pending = (PendingApproval) session.getAttribute("_pending_approval");
+
+		if (pending == null) {
+			return ResponseEntity.notFound().build();
+		}
+
+		String userCode = submit.getUserCode();
+
+		// normalize the input code
+		userCode = userCode.replace('l', '1');
+		userCode = userCode.toUpperCase();
+		userCode = userCode.replace('0', 'O');
+		userCode = userCode.replace('I', '1');
+		userCode = userCode.replaceAll("[^123456789ABCDEFGHJKLMNOPQRSTUVWXYZ]", "");
+
+		Transaction transaction = transactionRepository.findFirstByInteractUserCode(userCode);
+
+		if (transaction != null) {
+
+			// process the code submission
+
+			// TODO: add some kind of policy matching and ask the user and stuff
+
+
+			transaction.getInteract().setUserCode(null); // burn the user code
+			transaction.getInteract().setInteractionUrl(null);
+
+			/*
+			transaction.setStatus(Status.AUTHORIZED);
+
+			transactionRepository.save(transaction);
+			 */
+			// TODO: if we need to set up the approval page
+			pending.setRequireCode(false);
+			pending.setTransaction(transaction);
+
+			session.setAttribute("_pending_approval", pending);
+			//session.removeAttribute("_pending_approval");
+
+			return ResponseEntity.noContent().build();
+
+		} else {
+
+			return ResponseEntity.notFound().build();
+
+		}
+
+
+
+
+	}
+
+	private ResponseEntity<?> redirectToInteractionPage() {
+		URI interactionPage = UriComponentsBuilder.fromUriString(baseUrl)
+			.path("/as/interact")
+			.build().toUri();
+
+		return ResponseEntity.status(HttpStatus.FOUND)
+			.location(interactionPage)
+			.build();
+	}
+
+
+	@GetMapping("/pending")
+	public ResponseEntity<?> getPending(HttpSession session) {
+		PendingApproval pending = (PendingApproval) session.getAttribute("_pending_approval");
+
+		return ResponseEntity.of(Optional.ofNullable(pending));
+
+	}
+
+}
+==============================================================================================================
+#ErrorDocument 404 /eng
+#ErrorDocument 403 /eng
+#ErrorDocument 402 /eng
+
+AddDefaultCharset UTF-8
+RewriteEngine On
+RewriteBase /
+
+Options -Indexes
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_URI} !=/server-status
+RewriteRule ^(.*)$ 404 [L,QSA]
+
+#GW-9339
+<IfModule mod_expires.c>
+        ExpiresActive On
+        <FilesMatch "(?i)^.+\.(png|jpg|jpeg|gif|css|ico|pdf)$">
+                ExpiresDefault "access plus 2 days"
+        </FilesMatch>
+</IfModule>
+
+#GW-12101
+AddType video/webm .webm
+<FilesMatch  "(?i)^.+\.webm$">
+        ForceType video/webm
+</FilesMatch>
+
+#GW-12153
+AddType text/x-component .htc
+<FilesMatch  "(?i)^.+\.htc$">
+        ForceType text/x-component
+</FilesMatch>
+<IfModule mod_deflate.c>
+#	AddOutputFilterByType DEFLATE text/x-component
+        AddOutputFilter DEFLATE htc
+</IfModule>
+
+#GW-13128
+AddType video/quicktime .mov
+<FilesMatch  "(?i)^.+\.mov$">
+        ForceType video/quicktime
+</FilesMatch>
+
+<Files ~ "(?i)^.+\.(inc|backup)$">
+        deny from all
+</Files>
+
+php_value allow_call_time_pass_reference 1
+php_value magic_quotes_gpc 0
+php_value register_globals 1
+php_value upload_max_filesize 50M
+php_value post_max_size 60M
+php_value max_execution_time 360
+php_value max_input_time 0
+php_value error_prepend_string '<div style="background: #FFF; color: #DC143C;">'
+php_value error_append_string '</div>'
+php_value session.gc_maxlifetime 3600
+
+DirectoryIndex index.php
+==============================================================================================================
+
+<dependency>
+                        <groupId>com.jayway.jsonpath</groupId>
+                        <artifactId>json-path-assert</artifactId>
+                        <version>0.8.1</version>
+                        <scope>test</scope>
+                </dependency>
+
+<dependency>
+                        <groupId>com.jayway.jsonpath</groupId>
+                        <artifactId>json-path-assert</artifactId>
+                        <version>0.8.1</version>
+                        <scope>test</scope>
+                </dependency>
+
+<dependency>
+                        <groupId>com.jayway.jsonpath</groupId>
+                        <artifactId>json-path-assert</artifactId>
+                        <version>0.8.1</version>
+                        <scope>test</scope>
+                </dependency>
+
+<dependency>
+                        <groupId>com.jayway.jsonpath</groupId>
+                        <artifactId>json-path-assert</artifactId>
+                        <version>0.8.1</version>
+                        <scope>test</scope>
+                </dependency>
+
+<!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-api -->
+                <dependency>
+                        <groupId>io.jsonwebtoken</groupId>
+                        <artifactId>jjwt-api</artifactId>
+                        <version>0.10.5</version>
+                </dependency>
+
+                <!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-impl -->
+                <dependency>
+                        <groupId>io.jsonwebtoken</groupId>
+                        <artifactId>jjwt-impl</artifactId>
+                        <version>0.10.5</version>
+                </dependency>
+
+                <!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-jackson -->
+                <dependency>
+                        <groupId>io.jsonwebtoken</groupId>
+                        <artifactId>jjwt-jackson</artifactId>
+                        <version>0.10.5</version>
+                </dependency>
+<plugin>
+                                <groupId>org.apache.maven.plugins</groupId>
+                                <artifactId>maven-failsafe-plugin</artifactId>
+                                <version>2.19</version><!--$NO-MVN-MAN-VER$ -->
+                                <configuration>
+                                        <parallel>methods</parallel>
+                                        <useUnlimitedThreads>true</useUnlimitedThreads>
+                                        <forkCount>1</forkCount>
+                                        <argLine>-Duser.timezone=US/Eastern</argLine>
+                                </configuration>
+                                <executions>
+                                        <execution>
+                                                <goals>
+                                                        <goal>integration-test</goal>
+                                                </goals>
+                                        </execution>
+                                </executions>
+                        </plugin>
+<plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                                <configuration>
+                                                <argLine>-Duser.timezone=US/Eastern ${argLine}</argLine>
+                                </configuration>
+                        </plugin>
+
+ @Override
+    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+        ReflectionUtils.doWithFields(bean.getClass(), field -> {
+            if (field.getAnnotation(InjectPage.class) != null) {
+                ReflectionUtils.makeAccessible(field);
+                hooks.add(() -> field.set(bean, getPage(bean)));
+            }
+        });
+        return bean;
+    }
+
+
+    @Before
+    public void initSession() {
+        createAppiumDriver();
+        injectPages();
+    }
+
+    private void injectPages() {
+        hooks.forEach(Hook::call)
+    }
+
+    interface Hook {
+        void call();
+    }
+
+------------------------------------------------------------------------------------------------------
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Licensed to the Apache Software Foundation (ASF) under one or more contributor
+  license agreements. See the NOTICE file distributed with this work for additional
+  information regarding copyright ownership. The ASF licenses this file to
+  you under the Apache License, Version 2.0 (the "License"); you may not use
+  this file except in compliance with the License. You may obtain a copy of
+  the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required
+  by applicable law or agreed to in writing, software distributed under the
+  License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
+  OF ANY KIND, either express or implied. See the License for the specific
+  language governing permissions and limitations under the License. -->
+
+<assembly
+        xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd
+http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 ">
+    <id>dist</id>
+    <formats>
+        <format>tar.gz</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <fileSets>
+        <fileSet>
+            <directory>${basedir}</directory>
+            <includes>
+                <include>README*</include>
+                <include>LICENSE*</include>
+                <include>NOTICE*</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${basedir}/src/main/config</directory>
+            <includes>
+                <include>*.properties</include>
+            </includes>
+            <outputDirectory>config</outputDirectory>
+            <!-- filtered=true, so we do variable expansion so the yarn package path
+            always points to the correct spot on any machine -->
+            <filtered>true</filtered>
+        </fileSet>
+    </fileSets>
+    <files>
+        <file>
+            <source>${basedir}/src/main/resources/log4j.xml</source>
+            <outputDirectory>lib</outputDirectory>
+        </file>
+        <file>
+            <source>${basedir}/bin/run-wikipedia-zk-application.sh</source>
+            <outputDirectory>bin</outputDirectory>
+        </file>
+        <file>
+            <source>${basedir}/bin/run-event-hubs-zk-application.sh</source>
+            <outputDirectory>bin</outputDirectory>
+        </file>
+    </files>
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory>bin</outputDirectory>
+            <includes>
+                <include>org.apache.samza:samza-shell:tgz:dist:*</include>
+            </includes>
+            <fileMode>0744</fileMode>
+            <unpack>true</unpack>
+        </dependencySet>
+        <dependencySet>
+            <outputDirectory>lib</outputDirectory>
+            <includes>
+                <include>org.apache.samza:samza-core_2.11</include>
+                <include>org.apache.samza:samza-kafka_2.11</include>
+                <include>org.apache.samza:samza-yarn_2.11</include>
+                <include>org.apache.samza:samza-kv-rocksdb_2.11</include>
+                <include>org.apache.samza:samza-log4j</include>
+                <include>org.apache.samza:hello-samza</include>
+                <include>org.slf4j:slf4j-log4j12</include>
+                <include>org.apache.kafka:kafka_2.11</include>
+                <include>org.apache.hadoop:hadoop-hdfs</include>
+            </includes>
+            <useTransitiveFiltering>true</useTransitiveFiltering>
+        </dependencySet>
+    </dependencySets>
+</assembly>
+
+            <!-- plugin to build the tar.gz file filled with examples -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.2.0</version>
+                <configuration>
+                    <descriptors>
+                        <descriptor>src/main/assembly/src.xml</descriptor>
+                    </descriptors>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+------------------------------------------------------------------------------------------------------
+#!/bin/bash
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+if [ $# -lt 1 ];
+then
+  echo "USAGE: $0 classname [opts]"
+  exit 1
+fi
+
+home_dir=`pwd`
+base_dir=$(dirname $0)/..
+cd $base_dir
+base_dir=`pwd`
+cd $home_dir
+
+echo home_dir=$home_dir
+echo "framework base (location of this script). base_dir=$base_dir"
+
+if [ ! -d "$base_dir/lib" ]; then
+  echo "Unable to find $base_dir/lib, which is required to run."
+  exit 1
+fi
+
+HADOOP_YARN_HOME="${HADOOP_YARN_HOME:-$HOME/.samza}"
+HADOOP_CONF_DIR="${HADOOP_CONF_DIR:-$HADOOP_YARN_HOME/conf}"
+GC_LOG_ROTATION_OPTS="-XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=10241024"
+DEFAULT_LOG4J_FILE=$base_dir/lib/log4j.xml
+DEFAULT_LOG4J2_FILE=$base_dir/lib/log4j2.xml
+BASE_LIB_DIR="$base_dir/lib"
+# JOB_LIB_DIR will be set for yarn container in ContainerUtil.java
+# for others we set it to home_dir/lib
+JOB_LIB_DIR="${JOB_LIB_DIR:-$base_dir/lib}"
+
+export JOB_LIB_DIR=$JOB_LIB_DIR
+
+echo JOB_LIB_DIR=$JOB_LIB_DIR
+echo BASE_LIB_DIR=$BASE_LIB_DIR
+CLASSPATH=""
+if [ -d "$JOB_LIB_DIR" ] && [ "$JOB_LIB_DIR" != "$BASE_LIB_DIR" ]; then
+  # build a common classpath
+  # this class path will contain all the jars from the framework and the job's libs.
+  # in case of different version of the same lib - we pick the highest
+
+  #all jars from the fwk
+  base_jars=`ls $BASE_LIB_DIR/*.[jw]ar`
+  #all jars from the job
+  job_jars=`for file in $JOB_LIB_DIR/*.[jw]ar; do name=\`basename $file\`; if [[ $base_jars != *"$name"* ]]; then echo "$file"; fi; done`
+  # get all lib jars and reverse sort it by versions
+  all_jars=`for file in $base_jars $job_jars; do echo \`basename $file|sed 's/.*[-]\([0-9]\+\..*\)[jw]ar$/\1/'\` $file; done|sort -t. -k 1,1nr -k 2,2nr -k 3,3nr -k 4,4nr|awk '{print $2}'`
+  # generate the class path based on the sorted result, all the jars need to be appended on newlines
+  # to ensure java argument length of 72 bytes is not violated
+  for jar in $all_jars; do CLASSPATH=$CLASSPATH" $jar \n"; done
+
+  # for debug only
+  echo base_jars=$base_jars
+  echo job_jars=$job_jars
+  echo all_jars=$all_jars
+  echo generated combined CLASSPATH=$CLASSPATH
+else
+  # default behavior, all the jars need to be appended on newlines
+  # to ensure line argument length of 72 bytes is not violated
+  for file in $BASE_LIB_DIR/*.[jw]ar;
+  do
+    CLASSPATH=$CLASSPATH" $file \n"
+  done
+  echo generated from BASE_LIB_DIR CLASSPATH=$CLASSPATH
+fi
+
+if [ -z "$JAVA_HOME" ]; then
+  JAR="jar"
+else
+  JAR="$JAVA_HOME/bin/jar"
+fi
+
+# Newlines and spaces are intended to ensure proper parsing of manifest in pathing jar
+printf "Class-Path: \n $CLASSPATH \n" > manifest.txt
+# Creates a new archive and adds custom manifest information to pathing.jar
+eval "$JAR -cvmf manifest.txt pathing.jar"
+
+if [ -z "$JAVA_HOME" ]; then
+  JAVA="java"
+else
+  JAVA="$JAVA_HOME/bin/java"
+fi
+
+if [ -z "$SAMZA_LOG_DIR" ]; then
+  SAMZA_LOG_DIR="$base_dir"
+fi
+
+# add usercache directory
+mkdir -p $base_dir/tmp
+JAVA_TEMP_DIR=$base_dir/tmp
+
+# Check whether the JVM supports GC Log rotation, and enable it if so.
+function check_and_enable_gc_log_rotation {
+  `$JAVA -Xloggc:/dev/null $GC_LOG_ROTATION_OPTS -version 2> /dev/null`
+  if [ $? -eq 0 ] ; then
+    JAVA_OPTS="$JAVA_OPTS $GC_LOG_ROTATION_OPTS"
+  fi
+}
+
+# Try and use 64-bit mode if available in JVM_OPTS
+function check_and_enable_64_bit_mode {
+  `$JAVA -d64 -version`
+  if [ $? -eq 0 ] ; then
+    JAVA_OPTS="$JAVA_OPTS -d64"
+  fi
+}
+
+### Inherit JVM_OPTS from task.opts configuration, and initialize defaults ###
+
+# Make the MDC inheritable to child threads by setting the system property to true if config not explicitly specified
+[[ $JAVA_OPTS != *-DisThreadContextMapInheritable* ]] && JAVA_OPTS="$JAVA_OPTS -DisThreadContextMapInheritable=true"
+
+# Check if log4j configuration is specified. If not - set to lib/log4j.xml
+if [[ -n $(find "$base_dir/lib" -regex ".*samza-log4j2.*.jar*") ]]; then
+    [[ $JAVA_OPTS != *-Dlog4j.configurationFile* ]] && export JAVA_OPTS="$JAVA_OPTS -Dlog4j.configurationFile=file:$DEFAULT_LOG4J2_FILE"
+elif [[ -n $(find "$base_dir/lib" -regex ".*samza-log4j.*.jar*") ]]; then
+    [[ $JAVA_OPTS != *-Dlog4j.configuration* ]] && export JAVA_OPTS="$JAVA_OPTS -Dlog4j.configuration=file:$DEFAULT_LOG4J_FILE"
+fi
+
+# Check if samza.log.dir is specified. If not - set to environment variable if it is set
+[[ $JAVA_OPTS != *-Dsamza.log.dir* && ! -z "$SAMZA_LOG_DIR" ]] && JAVA_OPTS="$JAVA_OPTS -Dsamza.log.dir=$SAMZA_LOG_DIR"
+
+# Check if java.io.tmpdir is specified. If not - set to tmp in the base_dir
+[[ $JAVA_OPTS != *-Djava.io.tmpdir* ]] && JAVA_OPTS="$JAVA_OPTS -Djava.io.tmpdir=$JAVA_TEMP_DIR"
+
+# Check if a max-heap size is specified. If not - set a 768M heap
+[[ $JAVA_OPTS != *-Xmx* ]] && JAVA_OPTS="$JAVA_OPTS -Xmx768M"
+
+# Check if the GC related flags are specified. If not - add the respective flags to JVM_OPTS.
+[[ $JAVA_OPTS != *PrintGCDateStamps* && $JAVA_OPTS != *-Xloggc* ]] && JAVA_OPTS="$JAVA_OPTS -XX:+PrintGCDateStamps -Xloggc:$SAMZA_LOG_DIR/gc.log"
+
+# Check if GC log rotation is already enabled. If not - add the respective flags to JVM_OPTS
+[[ $JAVA_OPTS != *UseGCLogFileRotation* ]] && check_and_enable_gc_log_rotation
+
+# Check if 64 bit is set. If not - try and set it if it's supported
+[[ $JAVA_OPTS != *-d64* ]] && check_and_enable_64_bit_mode
+
+# HADOOP_CONF_DIR should be supplied to classpath explicitly for Yarn to parse configs
+echo $JAVA $JAVA_OPTS -cp $HADOOP_CONF_DIR:pathing.jar "$@"
+exec $JAVA $JAVA_OPTS -cp $HADOOP_CONF_DIR:pathing.jar "$@"
+------------------------------------------------------------------------------------------------------
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+<suite verbose="2" name="TSM" configfailurepolicy="continue">
+    <test verbose="2" name="Meta collector tests" preserve-order="false" parallel="false">
+        <packages>
+            <package name="com.ringcentral.qa.metacollector"/>
+        </packages>
+    </test>
+    <test verbose="2" name="Scheduller and Cleaner" preserve-order="false" parallel="false">
+        <classes>
+            <class name="com.ringcentral.qa.schedullerandcleaner.SchedulerTests"/>
+        </classes>
+    </test>
+    <test verbose="2" name="Create Records POST Meta" preserve-order="false" parallel="false">
+        <classes>
+            <class name="com.ringcentral.qa.createrecords.postmeta.CreateRecordsPOSTMetaPositive"/>
+            <class name="com.ringcentral.qa.createrecords.postmeta.CreateRecordsPOSTMetaNegative"/>
+        </classes>
+    </test>
+    <test verbose="2" name="Create Records POST Upload" preserve-order="false" parallel="false">
+        <classes>
+            <class name="com.ringcentral.qa.createrecords.postmetaupload.CreateRecordsPOSTUploadPositive"/>
+            <class name="com.ringcentral.qa.createrecords.postmetaupload.CreateRecordsPOSTUploadNegative"/>
+        </classes>
+    </test>
+    <test verbose="2" name="RMP tests" parallel="false">
+        <classes>
+            <class name="com.ringcentral.qa.rmptests.RmpGetMetaTests"/>
+            <class name="com.ringcentral.qa.rmptests.RmpPostResultTests"/>
+            <class name="com.ringcentral.qa.rmptests.RmpNegativeTests"/>
+        </classes>
+    </test>
+    <test verbose="2" name="Service-check tests" parallel="false">
+        <classes>
+            <class name="com.ringcentral.qa.servicecheck.ServiceCheckTests"/>
+        </classes>
+    </test>
+    <test verbose="2" name="cluster tests" parallel="false">
+        <classes>
+            <class name="com.ringcentral.qa.clustertests.ClusterTests"/>
+            <class name="com.ringcentral.qa.clustertests.ClusterNegativeTests"/>
+        </classes>
+    </test>
+</suite>
+
+------------------------------------------------------------------------------------------------------
+timestamps {
+    node('docker-builder') {
+        checkout scm
+        docker.withRegistry("https://index.docker.io") {
+            docker.image('groovy:alpine').inside("-v ${WORKSPACE}/scripts:/scripts") {
+                sh "#!/bin/sh\n groovy /scripts/HelloWorld.groovy Mark"
+            }
+        }
+        archiveArtifacts("scripts/*.txt")
+    }
+}
+
+------------------------------------------------------------------------------------------------------
+import groovy.transform.Field
+
+library("jenkins-rpm-utils")
+
+@Field String COMPONENT = "service-geo-tests"
+@Field String remoteDirectory
+@Field List<Map<String, Object>> publishingParameters = []
+
+def dockerRegistries = ["${LAB_DOCKER_REGISTRY}", "${INSECURE_DOCKER_REGISTRY}"]
+
+
+pipeline {
+    agent {
+        label 'docker-builder'
+    }
+    environment {
+        def currentTag = "${GIT_COMMIT[0..12]}".toLowerCase()
+        def stableTag = "stable"
+        def branchLower = "${BRANCH.toLowerCase()}"
+    }
+    parameters {
+        booleanParam(name: 'PUBLISH_SHARE',  defaultValue: true, description: 'Publish to shared storage?')
+        booleanParam(name: 'PUBLISH_DOCKER', defaultValue: true, description: 'Publish to docker registry?')
+        booleanParam(name: 'STABLE',         defaultValue: true, description: 'Release stable image?')
+    }
+    options {
+        timestamps()
+    }
+    stages {
+        stage('Build Service Geo tests') {
+            steps {
+                script {
+                    currentBuild.setDescription("$BRANCH")
+                    sh 'mvn clean package'
+                }
+            }
+        }
+        stage('Publish to Builder share') {
+            when {
+                expression { params.PUBLISH_SHARE }
+            }
+            steps{
+                script {
+                    remoteDirectory = "PACKAGES/${COMPONENT}/${env.BRANCH}/latest"
+
+                    publishingParameters.add(["flatten"        : true,
+                                              "remoteDirectory": remoteDirectory,
+                                              "removePrefix"   : "",
+                                              "sourceFiles"    : "**/*.zip"])
+
+                    CifsPublishRpmJob(publishingParameters)
+                }
+            }
+        }
+        stage('Publish to Eurolab') {
+            when {
+                expression { params.PUBLISH_SHARE }
+            }
+            steps{
+                script {
+                    SshPublishRpmJob(publishingParameters)
+                }
+            }
+        }
+        stage('Build and push Docker image') {
+            when {
+                expression { params.PUBLISH_DOCKER }
+            }
+            steps{
+                script {
+                    sh "docker build --no-cache --pull --build-arg REGISTRY=$LAB_DOCKER_REGISTRY -t $COMPONENT ."
+                    dockerRegistries.each { registry ->
+                        sh "docker tag $COMPONENT ${registry}:443/pdv/pdv-tests/$COMPONENT/${branchLower}:${currentTag}"
+                        sh "docker push ${registry}:443/pdv/pdv-tests/$COMPONENT/${branchLower}:${currentTag}"
+
+                        if(params.STABLE){
+                            sh "docker tag $COMPONENT ${registry}:443/pdv/pdv-tests/$COMPONENT/${branchLower}:${stableTag}"
+                            sh "docker push ${registry}:443/pdv/pdv-tests/$COMPONENT/${branchLower}:${stableTag}"
+                        }
+                    }
+                }
+            }
+        }
+        stage('Run Twistlock Scan') {
+            when {
+                expression { params.PUBLISH_DOCKER }
+            }
+            steps{
+                build  job: 'Twistlock-Scan-Docker-Image',
+                        parameters: [ string(name:'IMAGE', value: "pdv/pdv-tests/$COMPONENT/${branchLower}:${currentTag}") ],
+                        propagate: false
+
+            }
+        }
+    }
+}
+------------------------------------------------------------------------------------------------------
+#!/bin/bash
+
+#service rsyslog restart
+
+fuser -k -9 -n tcp 1080
+fuser -k -9 -n tcp 9212
+
+cd /opt/agwload
+
+sleep 5
+
+#nohup /opt/java/jdk-11/bin/java -XX:+UnlockExperimentalVMOptions -XX:+UseZGC -Xmx4096m -Xms4096m -XX:MaxMetaspaceSize=400m -Xdebug -Xrunjdwp:transport=dt_socket,address=9212,server=y,suspend=n \
+# -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/ringcentral -XX:OnOutOfMemoryError="/opt/agwload/runAgw.sh" -Dcom.sun.management.jmxremote \
+# -Dcom.sun.management.jmxremote.port=9027 -Dcom.sun.management.jmxremote.local.only=false -Dcom.sun.management.jmxremote.authenticate=false \
+# -Dcom.sun.management.jmxremote.ssl=false -Dagw.configuration=./agw.groovy -Dlogback.configurationFile=./logging.xml -Dio.netty.native.workdir=. \
+# -Dlog.dir=/var/log/ringcentral/agwloadlogs \
+# -Dio.netty.leakDetectionLevel=DISABLED \
+# -cp "agw-fulldeps.jar:netty-transport-native-epoll-4.1.0.CR4-SNAPSHOT-linux-x86_64.jar" \
+# com.ringcentral.platform.api.gateway.launcher.ApiGatewayNetty &
+
+nohup /usr/bin/java -Xmx4096m -Xms4096m -XX:MaxMetaspaceSize=400m -XX:+UseG1GC  -Xdebug -Xrunjdwp:transport=dt_socket,address=9212,server=y,suspend=n -XX:MaxGCPauseMillis=200 -XX:ParallelGCThreads=8 \
+ -XX:G1ReservePercent=25 -XX:InitiatingHeapOccupancyPercent=30 \
+ -XX:ConcGCThreads=2 -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/ringcentral -XX:OnOutOfMemoryError="/opt/agwload/runAgw.sh" -Dcom.sun.management.jmxremote \
+ -Xlog:gc:file="/var/log/ringcentral/agwloadlogs/gc.log" \
+ -XX:+PreserveFramePointer \
+ -Dcom.sun.management.jmxremote.port=9027 -Dcom.sun.management.jmxremote.local.only=false -Dcom.sun.management.jmxremote.authenticate=false \
+ -Dcom.sun.management.jmxremote.ssl=false -Dagw.configuration=./agw.groovy -Dlogback.configurationFile=./logging.xml -Dio.netty.native.workdir=. \
+ -Dlog.dir=/var/log/ringcentral/agwloadlogs \
+ -Dio.netty.leakDetectionLevel=DISABLED \
+ -Dgarm.modules="com.ringcentral.garm.modules;com.ringcentral.platform.api.gateway" \
+ -cp "agw-fulldeps.jar:netty-transport-native-epoll-4.1.0.CR4-SNAPSHOT-linux-x86_64.jar" \
+ com.ringcentral.platform.api.gateway.launcher.AGWLauncher &
+
+
+# -XX:+PreserveFramePointer \
+# -XX:+UseCompressedOops \
+# -XX:+UseCompressedOops -XX:+AggressiveOpts -XX:+DoEscapeAnalysis -XX:+EliminateLocks \
+# -agentpath:./libyjpagent.so \
+# -agentpath:./libyjpagent.so
+# -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCDateStamps \
+# -Xloggc:/var/log/ringcentral/agwloadlogs/gc.log -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:+PrintGCDetails -XX:GCLogFileSize=100M -XX:+PrintGCApplicationStoppedTime -XX:+PrintGCApplicationConcurrentTime -XX:+PrintGCDateStamps \
+------------------------------------------------------------------------------------------------------
+#!/bin/bash
+
+# By convension default JMX port for marathon application provided via environment variable PORT1
+# you can override port index with environment variable JMX_RMI_PORT_INDEX
+JMX_RMI_PORT_INDEX=${JMX_RMI_PORT_INDEX:-1}
+MARATHON_JMX_RMI_PORT_NAME=PORT$JMX_RMI_PORT_INDEX
+
+# Default JMX port is 12345, you can override it using environment variable JMX_PORT or Marathon specific PORTX
+JMX_PORT=${JMX_PORT:-12345}
+
+# Default JMX RMI port is 12345, you can override it using environment variable JMX_RMI_PORT or Marathon specific PORTX
+JMX_RMI_PORT=${JMX_RMI_PORT:-${!MARATHON_JMX_RMI_PORT_NAME:-${JMX_PORT}}}
+
+# Default docker hostname == default hostname for boot2docker TODO support linux and mac users
+HOST=${HOST:-192.168.99.100}
+
+# Default JMX configuration 
+DEFAULT_JMX_OPTS="-Dcom.sun.management.jmxremote \
+                  -Dcom.sun.management.jmxremote.port=$JMX_PORT \
+                  -Dcom.sun.management.jmxremote.rmi.port=$JMX_RMI_PORT \
+                  -Djava.rmi.server.hostname=$HOST \
+                  -Dcom.sun.management.jmxremote.authenticate=false \
+                  -Dcom.sun.management.jmxremote.ssl=false"
+
+# Default configuration for Garbage Collector
+DEFAULT_GC_OPTS="-XX:-UseGCOverheadLimit  \
+                    -XX:+UseConcMarkSweepGC \
+                    -XX:+UseCMSInitiatingOccupancyOnly \
+                    -XX:CMSInitiatingOccupancyFraction=70 \
+                    -XX:+UseLargePagesInMetaspace \
+                    -XX:+ScavengeBeforeFullGC \
+                    -XX:+CMSScavengeBeforeRemark \
+                    -XX:+DisableExplicitGC"
+
+# Default configuration for logging
+DEFAULT_LOGGING_OPTS="-Dlogging.stdout=false \
+                    -Dlogging.files=false \
+                    -Dlogging.syslog.host=$HOST \
+                    -Dlogging.syslog.localHostName=${MESOS_TASK_ID:-$HOSTNAME} \
+                    -Dlogging.syslog.applicationName=${APP_NAME:-\${sun.java.command\}} \
+                    -verbose:gc \
+                    -XX:+PrintGC \
+                    -XX:+PrintGCTimeStamps \
+                    -XX:+PrintGCDateStamps \
+                    -XX:+PrintGCDetails"
+
+# etc
+DEFAULT_OTHER_OPTS="-XX:-OmitStackTraceInFastThrow \
+                    -Djava.io.tmpdir=/tmp \
+                    -XX:+HeapDumpOnOutOfMemoryError \
+                    -XX:HeapDumpPath=/tmp"
+
+# You can override all options via environment variable JMV_OPTS
+# With environment variable JAVA_OPTS you can add you own specific configuration parameters 
+# To override only specific section use JMX_OPTS, GC_OPTS, LOGGING_OPTS, OTHER_OPTS
+JVM_OPTS=${JVM_OPTS:-$JAVA_OPTS ${JMX_OPTS:-$DEFAULT_JMX_OPTS} ${GC_OPTS:-$DEFAULT_GC_OPTS} ${LOGGING_OPTS:-$DEFAULT_LOGGING_OPTS} ${OTHER_OPTS:-$DEFAULT_OTHER_OPTS} }
+
+# jar name of you application can be defined via JAR_NAME
+java $JVM_OPTS -jar ${JAR_NAME:-*.jar}
+------------------------------------------------------------------------------------------------------
+before_script:
+  - python -V  # Print out python version for debugging
+  - pip install virtualenv
+  - virtualenv venv
+  - source venv/bin/activate
+
+------------------------------------------------------------------------------------------------------
+ @PDV(serverType = "ISR")
+    @Test(dataProvider = Provider.PDV_DATA_PROVIDER)
+    @TestCase(id = "PDV-3462329")
+------------------------------------------------------------------------------------------------------
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ringcentral.qa.common.Pair;
+import com.ringcentral.qa.common.ReporterNG;
+import com.ringcentral.qa.common.TestBaseCommon;
+import com.ringcentral.qa.common.i18n.RCTFProperties;
+import com.ringcentral.qa.common.utils.ProviderUtils;
+import com.ringcentral.qa.configuration.ConfigurationHolder;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.testng.annotations.DataProvider;
+
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.util.Map;
+
+public class IsrTestBase extends TestBaseCommon {
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final String NUM_TO_TAS_MAP_PROPERTY = "/pdv/numToTasMap";
+    private RCTFProperties properties = new RCTFProperties(getClass());
+
+    @Override
+    @DataProvider(name = Provider.PDV_DATA_PROVIDER, parallel = true)
+    protected Object[][] pdvDataProvider(Method testMethod) {
+        try {
+            String jsonString = ConfigurationHolder.getInstance().getConfiguration().getProperty(NUM_TO_TAS_MAP_PROPERTY, "{}");
+            Map<String, String> tasServerParameters = MAPPER.readValue(jsonString, Map.class);
+            if(tasServerParameters.isEmpty()){
+                ReporterNG.logWarning("NUMBER to TAS_IP map is empty");
+                return new Object[0][0];
+            }
+            Object[][] isrServerParameters = ProviderUtils.getParametersForPDVProvider(new Pair<>(testMethod, this), properties.getAllProperties());
+            int resultSize = tasServerParameters.size() * isrServerParameters.length;
+            Object[][] res = new Object[resultSize][2];
+            int index = 0;
+            for(Object[] isrParam : isrServerParameters){
+                for(Map.Entry<String, String> tasParam : tasServerParameters.entrySet()){
+                    res[index][0] = isrParam[0];
+                    res[index++][1] = new ImmutablePair<>(tasParam.getKey(), tasParam.getValue());
+                }
+            }
+            return res;
+        } catch (IOException e) {
+            ReporterNG.logWarning("NUMBER to TAS_IP map serialization fail");
+            ReporterNG.logComponent(e.getMessage());
+            return new Object[0][0];
+        }
+    }
+}
+------------------------------------------------------------------------------------------------------
+ <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pmd-plugin</artifactId>
+                <version>3.8</version>
+                <executions>
+                    <execution>
+                        <id>pmd</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>check</goal>
+                            <goal>cpd-check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <includeTests>true</includeTests>
+                    <printFailingErrors>true</printFailingErrors>test
+                </configuration>
+            </plugin>
+------------------------------------------------------------------------------------------------------
+#################################
+## Pre-Call Stress test script
+## Please compile the sipp binary first.
+##
+## Created by Jimmy Xu	2016.09.01
+#################################
+
+#!/bin/sh
+
+# Define Sipp path
+SIPP_PATH="./sipp/sipp"
+
+# Define scenario Path
+SCENARIO_PATH="./options_msg.xml"
+
+# Define SBC IP and port. e.g. 192.209.31.43:5091
+REMOTE_IP_PORT="192.209.31.43:5091"
+
+# Define Local IP and port. eg. 10.32.60.231 Please dont specify local port. Port will be randomly picked by sipp automatically
+LOCAL_IP="10.32.35.9"
+
+# Define user count. Every user will be a sipp instance
+USER_COUNT="10"
+
+# Define OPTIONS request frequence (how many OPTIONS requests should be sent per sec per user)
+FREQUENCE="50"
+
+# Define OPTIONS request total amount (how many OPTIONS requests should be sent per user)
+TOTAL_AMOUNT="100"
+
+TOTAL_CALLS=$((TOTAL_AMOUNT*USER_COUNT))
+
+echo "############### Pre-Call Stress Test ####################"
+echo "- SBC IP: $REMOTE_IP_PORT"
+echo "- LOCAL IP: $LOCAL_IP"
+echo "- User count: $USER_COUNT"
+echo "- Frequence: $FREQUENCE / 1 sec / 1 user"
+echo "- Calls: $TOTAL_AMOUNT / 1 user"
+echo "- Total Calls: $TOTAL_CALLS"
+echo "- "
+echo "##########################################################"
+
+echo "Generation scenario XML ...";
+
+echo "<?xml version=\"1.0\" encoding=\"ISO-8859-1\" ?>
+<!DOCTYPE scenario SYSTEM \"sipp.dtd\">
+<scenario name=\"Pre-Call OPTIONS message\">
+  <Global variables=\"sendCount,recvCount,printResult\" />
+  <init>
+    <nop>
+      <action>
+        <assign assign_to=\"printResult\" value=\"\" />
+        <assign assign_to=\"sendCount\" value=\"0\" />
+        <assign assign_to=\"recvCount\" value=\"0\" />
+      </action>
+    </nop>
+  </init>
+
+        <send>
+    <![CDATA[
+
+
+      OPTIONS sip:sip.ringcentral.com SIP/2.0
+      Via: SIP/2.0/UDP [local_ip]:[local_port];branch=[branch]
+      From: <sip:networkQualityDetection[pid][call_number]@sip.ringcentral.com>;tag=test_[pid]_[call_number]
+      To: <sip:networkQualityDetection[pid][call_number]@sip.ringcentral.com>
+      Call-ID: [call_id]
+      Cseq: [call_number] OPTIONS
+      Max-Forwards: 0
+      Content-Length: 0
+
+
+    ]]>
+        <action>
+          <add assign_to=\"sendCount\" value=\"1\" />
+        </action>
+        </send>
+
+  <recv response=\"483\" timeout=\"5000\" ontimeout=\"1\" next=\"1\" test=\"2\">
+      <action>
+        <add assign_to=\"recvCount\" value=\"1\" />
+        <test assign_to=\"2\" variable=\"recvCount\" compare=\"greater_than_equal\" value=\"$TOTAL_AMOUNT\" />
+      </action>
+  </recv>
+
+  <label id=\"1\" />
+
+  <nop>
+          <action>
+            <exec command=\"echo [timestamp] PID: [pid] --- OPTIONS response received: [\$recvCount]/[\$sendCount]/$TOTAL_AMOUNT >> result.log\" />
+            <exec int_cmd=\"stop_now\"/>
+           </action>
+  </nop>
+</scenario>" > ${SCENARIO_PATH};
+
+tmp=0
+while [ $tmp -lt $USER_COUNT ]
+do
+        $SIPP_PATH $REMOTE_IP_PORT -i $LOCAL_IP -sf $SCENARIO_PATH -nr -r $FREQUENCE -rp 1s -m $TOTAL_AMOUNT -nd -bg
+        tmp=$((tmp+1))
+done
+------------------------------------------------------------------------------------------------------
+docker build --no-cache --pull -t pdv-tests --build-arg REGISTRY=${LAB_DOCKER_REGISTRY} .
+------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------
+wmic os get osarchitecture | find /i "32-bit" >nul 2>&1
+------------------------------------------------------------------------------------------------------
+cd configs
+for f in *.py.sample; do cp -- "$f" "${f%.sample}"; done
+
+echo '# LEM http://git.ringcentral.com:8888/lab/lem' >> ~/.bashrc
+echo 'alias lem="cd /path/to/lem/ && python3 lemcli.py"' >> ~/.bashrc
+echo 'source <(lem -- --completion)' >> ~/.bashrc
+
+
+
+
+
+
+
+
+
+
+
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.socket.config.annotation.EnableWebSocket;
+import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
+
+@Configuration
+@EnableWebSocket
+public class WebSocketPullConfig implements WebSocketConfigurer {
+
+    private static final String WS_ROUTE = "/messages";
+
+    @Autowired
+    private WebSocketMessagesPullHandler webSocketMessagesPullHandler;
+
+    @Override
+    public void registerWebSocketHandlers(WebSocketHandlerRegistry webSocketHandlerRegistry) {
+        webSocketHandlerRegistry
+                .addHandler(webSocketMessagesPullHandler, WS_ROUTE);
+    }
+}
+
+    public static void main(String[] args) throws IOException {
+        final Status status = new Status();
+        status.checkers.put("etm", new HealthItem("etm", HealthCheckSeverity.CRITICAL, 1000));
+        new ObjectMapper().writeValue(System.out, status.toDto(true));
+    }
+
+
+      <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-shaded-jackson</artifactId>
+            <version>${flink-shaded-jackson.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>${testng.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-testng</artifactId>
+            <version>${allure.version}</version>
+            <scope>test</scope>
+        </dependency>
+       <dependency>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-java-commons</artifactId>
+            <version>${allure.version}</version>
+            <scope>compile</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>${kafka-clients.version}</version>
+            <scope>compile</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.xerial.snappy</groupId>
+                    <artifactId>snappy-java</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+ <plugin>
+                <groupId>io.qameta.allure</groupId>
+                <artifactId>allure-maven</artifactId>
+                <version>${allure-maven.version}</version>
+                <configuration>
+                    <reportVersion>${allure.version}</reportVersion>
+                    <allureDownloadUrl>
+                        http://uix01-t01-rdg01.lab.nordigy.ru:8081/repository/maven-proxy/io/qameta/allure/allure-commandline/%s/allure-commandline-%s.zip
+                    </allureDownloadUrl>
+                </configuration>
+            </plugin>
+
+      <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-surefire-plugin.version}</version>
+                <configuration>
+                    <includes>
+                        <include>*Test.java</include>
+                    </includes>
+                    <suiteXmlFiles>
+                        <suiteXmlFile>src/test/resources/test-suits/usages-tests.xml</suiteXmlFile>
+                    </suiteXmlFiles>
+                    <systemPropertyVariables>
+                        <reportDirectory>${project.build.directory}/allure-report</reportDirectory>
+                        <allure.results.directory>${project.build.directory}/allure-results</allure.results.directory>
+                    </systemPropertyVariables>
+                    <argLine>
+                        ${argLine} -Xmx1024m
+                        -javaagent:"${settings.localRepository}/org/aspectj/aspectjweaver/${aspectj.version}/aspectjweaver-${aspectj.version}.jar"
+                    </argLine>
+                </configuration>
+            </plugin>
+
+       <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-surefire-plugin.version}</version>
+                <configuration>
+                    <environmentVariables>
+                        <IT_CASE_S3_BUCKET>test-bucket</IT_CASE_S3_BUCKET>
+                        <IT_CASE_S3_ACCESS_KEY>s3-key</IT_CASE_S3_ACCESS_KEY>
+                        <IT_CASE_S3_SECRET_KEY>s3-secret</IT_CASE_S3_SECRET_KEY>
+                        <HADOOP_HOME>${java.io.tmpdir}</HADOOP_HOME>
+                    </environmentVariables>
+                </configuration>
+            </plugin>
+        </plugins>
+
+        <plugin>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>${maven-clean-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>clean-generated-sources</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                        <configuration>
+                            <filesets>
+                                <fileset>
+                                    <directory>${project.basedir}/src/main/generated-sources</directory>
+                                </fileset>
+                            </filesets>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+     <plugin>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro-maven-plugin</artifactId>
+                <version>${avro.version}</version>
+                <executions>
+                    <execution>
+                        <id>schemas</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>schema</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${project.basedir}/src/main/avro/</sourceDirectory>
+                            <outputDirectory>${project.basedir}/src/main/generated-sources/</outputDirectory>
+                            <imports>
+                                <import>${project.basedir}/src/main/avro/common/</import>
+                            </imports>
+                            <stringType>String</stringType>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+------------------------------------------------------------------------------------------------------
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.aop.support.AopUtils;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.BeanExpressionContext;
+import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.core.convert.ConversionService;
+import org.springframework.core.env.Environment;
+import org.springframework.util.ReflectionUtils;
+
+/**
+ * Processes all beans to find and register each method annotated with {@link HealthStatus}
+ * as a health-checker in the {@link Health} object
+ */
+@Slf4j
+public class HealthCheckBeanPostProcessor implements BeanPostProcessor {
+
+    public static final String DEFAULT_INTERVAL = (String) AnnotationUtils.getDefaultValue(HealthCheck.class, "checkIntervalMillis");
+    public static final Long DEFAULT_INTERVAL_LONG = Long.parseLong(DEFAULT_INTERVAL);
+    public static final String INTERVAL_PROPERTY_PREFIX = "service-check.period.";
+
+    private final Health health;
+    private final ConfigurableBeanFactory beanFactory;
+    private final BeanExpressionContext expressionContext;
+    private final ConversionService conversionService;
+    private final Environment environment;
+
+    @Autowired
+    public HealthCheckBeanPostProcessor(Health health,
+                                        ConfigurableBeanFactory beanFactory,
+                                        ConversionService conversionService,
+                                        Environment environment) {
+        this.health = health;
+        this.beanFactory = beanFactory;
+        this.conversionService = conversionService;
+        this.expressionContext = new BeanExpressionContext(beanFactory, null);
+        this.environment = environment;
+    }
+
+    @Override
+    public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+        return bean;
+    }
+
+    @Override
+    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+        Class<?> targetClass = AopUtils.getTargetClass(bean);
+        ReflectionUtils.doWithMethods(targetClass, method -> {
+            final HealthCheck annotation = method.getAnnotation(HealthCheck.class);
+            if (annotation != null) {
+                String name = resolveExpression(annotation.name(), String.class);
+                String componentName = annotation.componentName().isEmpty() ? null :
+                        resolveExpression(annotation.componentName(), String.class);
+
+                health.registerCheck(
+                        name,
+                        componentName,
+                        annotation.mandatory(),
+                        evalIntervalMillis(annotation.checkIntervalMillis(), name),
+                        resolveExpression(annotation.enabled(), Boolean.class),
+                        () -> HealthStatus.class.cast(method.invoke(bean))
+                );
+            }
+        });
+        return bean;
+    }
+
+    long evalIntervalMillis(String source, String checkName) {
+        if (DEFAULT_INTERVAL.equals(source)) {
+            return evalDefaultIntervalMillis(checkName);
+        } else {
+            final Long expressionResult = resolveExpression(source, Long.class);
+            log.info("Use expression result '{}' as '{}' health check interval", expressionResult, checkName);
+            return expressionResult;
+        }
+    }
+
+    private long evalDefaultIntervalMillis(String checkName) {
+        final String intervalProperty = INTERVAL_PROPERTY_PREFIX + checkName;
+        try {
+            if (environment.containsProperty(intervalProperty)) {
+                final Long propertyValue = conversionService.convert(environment.getProperty(intervalProperty), Long.class);
+                log.info("Use '{}' property value '{}' as '{}' health check interval", intervalProperty, propertyValue, checkName);
+                return propertyValue;
+            } else {
+                log.info("Use default interval '{}' as '{}' health check interval", DEFAULT_INTERVAL_LONG, checkName);
+                return DEFAULT_INTERVAL_LONG;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error on evaluating check interval from default value", e);
+        }
+    }
+
+    private <T> T resolveExpression(String source, Class<T> clazz) {
+        try {
+            final String expression = beanFactory.resolveEmbeddedValue(source);
+            final Object resolvedValue = beanFactory.getBeanExpressionResolver().evaluate(expression, expressionContext);
+            return conversionService.convert(resolvedValue, clazz);
+        } catch (Exception e) {
+            throw new RuntimeException("Error on evaluating enabled attribute from " + source, e);
+        }
+    }
+}
+
+
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+
+import javax.annotation.PostConstruct;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import static com.ringcentral.glip.common.healthcheck.utils.DateUtils.*;
+
+/**
+ * This threadsafe class provides overall application health-status, depending on all health-checkers statuses presented in the application.
+ * Health-checkers are declared with the help of {@link HealthCheck} annotation.
+ */
+@Slf4j
+public class Health {
+
+    private static final Long DEFAULT_STALE_CHECK_PERIOD = 5000L;
+
+    private final List<Checker> checkers;
+
+    @Getter
+    private final long staleCheckPeriod;
+
+    private volatile Status status;
+    private volatile HealthSnapshot lastSnapshot;
+
+    private long lastChangeMs;
+
+    public Health(Long staleCheckPeriod) {
+        if (staleCheckPeriod == null || staleCheckPeriod < 0) {
+            log.debug("Using default staleCheckPeriod, actual was {}", staleCheckPeriod);
+            this.staleCheckPeriod = DEFAULT_STALE_CHECK_PERIOD;
+        } else {
+            this.staleCheckPeriod = staleCheckPeriod;
+        }
+
+        this.checkers = new ArrayList<>();
+        this.status = Status.OK;
+        this.lastChangeMs = System.currentTimeMillis();
+    }
+
+    @PostConstruct
+    public void init() {
+        //schedule stale check task
+        createDaemonScheduler("stale-checker")
+                .scheduleAtFixedRate(this::checkStale, 0, staleCheckPeriod, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Thread safe, non blocking
+     *
+     * @return actual health status
+     */
+    public Status getStatus() {
+        return status;
+    }
+
+    /**
+     * Provides fixed health snapshot
+     *
+     * @return health snapshot
+     */
+    public HealthSnapshot getSnapshot() {
+        return lastSnapshot;
+    }
+
+
+    /**
+     * Forces to refresh all health-checkers and reevaluate overall status.
+     * All health-checks will be executed on the calling thread.
+     */
+    public synchronized void refresh() {
+        checkers.forEach(Checker::refresh);
+        evaluateOverallStatus();
+        writeSnapshot();
+    }
+
+    /**
+     * Creates new health-checker and periodic task to update its status
+     *
+     * @param name           checker name
+     * @param componentName  ADS-like component name
+     * @param mandatory      is check mandatory
+     * @param checkPeriod    checker status update period
+     * @param enabled        is check enabled
+     * @param statusProvider checker status supplying mechanism
+     */
+    public void registerCheck(String name,
+                              String componentName,
+                              boolean mandatory,
+                              long checkPeriod,
+                              boolean enabled,
+                              HealthStatusProvider statusProvider) {
+
+        //create and register checker
+        final Checker checker = new Checker(name, componentName, checkPeriod, mandatory, enabled, statusProvider);
+        this.checkers.add(checker);
+
+        //schedule periodic checker status update, starting right now
+        if (enabled) {
+            Runnable task = () -> {
+                String checkerName = checker.getName();
+
+                log.debug("Get actual \"{}\" status", checkerName);
+                final HealthStatus status = checker.getResultSafely();
+                log.debug("Actual \"{}\" status is {}", checkerName, status);
+
+                synchronized (Health.this) {
+                    log.debug("Refresh health-check status for checker {}", checkerName);
+                    checker.setResult(status);
+                    evaluateOverallStatus();
+                    writeSnapshot();
+                }
+
+                log.debug("Finished check of  \"{}\"; status is {}", checkerName, status);
+            };
+
+            createDaemonScheduler("health-checker-" + name)
+                    .scheduleWithFixedDelay(task, 0, checkPeriod, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    private synchronized void checkStale() {
+        checkers.forEach(Checker::checkStale);
+        evaluateOverallStatus();
+        writeSnapshot();
+    }
+
+    /**
+     * Evaluates overall health status based on checkers severities and statuses
+     */
+    private void evaluateOverallStatus() {
+
+        Status newStatus = Status.OK;
+        for (Checker checker : checkers) {
+            Status checkerStatus = checker.getLastStatus();
+            if (!checker.isEnabled()) {
+                continue;
+            }
+
+            if (checkerStatus == Status.Critical && checker.isMandatory()) {
+                newStatus = Status.Critical;
+                break;
+            }
+
+            if (checkerStatus != Status.OK) {
+                newStatus = Status.Warning;
+            }
+        }
+
+        if (status != newStatus) {
+            this.lastChangeMs = System.currentTimeMillis();
+            log.info("Health status is {}", newStatus.name());
+        }
+
+        this.status = newStatus;
+    }
+
+    private void writeSnapshot() {
+        final long uptimeMs = getUptimeMs();
+
+        Map<String, CheckerSnapshot> checkerSnapshots = checkers.stream().collect(
+                Collectors.toMap(Checker::getName, CheckerSnapshot::fromChecker)
+        );
+
+        this.lastSnapshot = new HealthSnapshot(
+                status,
+                uptimeMs,
+                formatUptimeDuration(uptimeMs),
+                lastChangeMs,
+                formatDate(lastChangeMs),
+                checkerSnapshots);
+    }
+
+    private ScheduledThreadPoolExecutor createDaemonScheduler(String name) {
+        return new ScheduledThreadPoolExecutor(1, runnable -> {
+            final Thread thread = new Thread(runnable, name);
+            thread.setDaemon(true);
+            return thread;
+        });
+    }
+}
+
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Value;
+
+import java.util.Map;
+
+@Value
+public class HealthSnapshot {
+
+    private Status status;
+    private long uptimeMs;
+    private String uptime;
+    private long statusChangeTimestampMs;
+    private String statusChangeDate;
+    private Map<String, CheckerSnapshot> checks;
+
+    @JsonIgnore
+    public UptimeSnapshot getUptimeSnapshot(){
+        return new UptimeSnapshot(uptimeMs, uptime);
+    }
+
+    @Value
+    public static class UptimeSnapshot {
+        private long uptimeMs;
+        private String uptime;
+    }
+}
+
+
+import org.apache.commons.lang3.time.DurationFormatUtils;
+
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
+import java.time.Instant;
+
+public final class DateUtils {
+    private DateUtils() {
+    }
+
+    public static long getUptimeMs() {
+        RuntimeMXBean rb = ManagementFactory.getRuntimeMXBean();
+        return rb.getUptime();
+    }
+
+    public static String formatUptimeDuration(long uptimeMs) {
+        return DurationFormatUtils.formatDuration(uptimeMs, "dd:HH:mm");
+    }
+
+    public static String formatDate(long timestamp) {
+        return Instant.ofEpochMilli(timestamp).toString();
+    }
+}
+
+
+
+import com.ringcentral.glip.common.healthcheck.Health;
+import com.ringcentral.glip.common.healthcheck.HealthCheckBeanPostProcessor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.convert.support.DefaultConversionService;
+import org.springframework.core.env.Environment;
+
+@Configuration
+public class HealthCheckConfig {
+
+    @Bean
+    // default stale-check period is 5 seconds
+    public Health health(@Value("${service-check.stale-check:5000}") Long staleCheck) {
+        return new Health(staleCheck);
+    }
+
+    @Bean
+    public HealthCheckBeanPostProcessor healthCheckBeanPostProcessor(Health health,
+                                                                     ConfigurableBeanFactory beanFactory,
+                                                                     Environment environment) {
+        //conversion service can not be autowired at this early stage, when bean-post-processors are created
+        final DefaultConversionService conversionService = new DefaultConversionService();
+
+        return new HealthCheckBeanPostProcessor(health, beanFactory, conversionService, environment);
+    }
+
+}
+
+
+
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.experimental.FieldDefaults;
+
+/**
+ * Object to be returned by methods annotated with {@link HealthCheck}
+ */
+@Getter
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
+public class HealthStatus {
+
+    private long timestamp;
+    private Status status;
+    private String message;
+    private Object state;
+
+    public static HealthStatus healthy(String message){
+        return healthy(message, null);
+    }
+
+    public static HealthStatus unhealthy(String message){
+        return unhealthy(message, null);
+    }
+
+    public static HealthStatus warning(String message){
+        return warning(message, null);
+    }
+
+    public static HealthStatus healthy(String message, Object state){
+        return new HealthStatus(System.currentTimeMillis(), Status.OK, message, state);
+    }
+
+    public static HealthStatus unhealthy(String message, Object state){
+        return new HealthStatus(System.currentTimeMillis(), Status.Critical, message, state);
+    }
+
+    public static HealthStatus warning(String message, Object state){
+        return new HealthStatus(System.currentTimeMillis(), Status.Warning, message, state);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s : %s", status, message);
+    }
+
+    public boolean isHealthy() {
+        return status == Status.OK;
+    }
+}
+
+
+public interface HealthStatusProvider {
+    HealthStatus getHealthStatus() throws Exception;
+}
+
+
+
+public enum Status {
+    OK,
+    Critical,
+    Warning
+}
+
+
+import lombok.Builder;
+import lombok.Getter;
+import lombok.ToString;
+
+import static com.ringcentral.glip.common.healthcheck.utils.DateUtils.formatDate;
+
+@Getter
+@Builder
+@ToString
+public class CheckerSnapshot {
+
+    private static final String DISABLED = "disabled";
+
+    private String componentName;
+    private String status;
+    private String message;
+    private Long executionTimestampMs;
+    private String executionDate;
+    private Long statusChangeTimestampMs;
+    private String statusChangeDate;
+    private Boolean mandatory;
+    private Object state;
+
+
+    public static CheckerSnapshot fromChecker(Checker checker) {
+
+        if (!checker.isEnabled()) {
+            return CheckerSnapshot.builder()
+                    .componentName(checker.getComponentName())
+                    .status(DISABLED)
+                    .build();
+        }
+
+        return CheckerSnapshot.builder()
+                .componentName(checker.getComponentName())
+                .status(checker.getLastStatus().name())
+                .message(checker.getLastResult().getMessage())
+                .executionTimestampMs(checker.getLastExecuted())
+                .executionDate(formatDate(checker.getLastExecuted()))
+                .statusChangeTimestampMs(checker.getLastStatusChange())
+                .statusChangeDate(formatDate(checker.getLastStatusChange()))
+                .mandatory(checker.isMandatory())
+                .state(checker.getLastResult().getState())
+                .build();
+    }
+}
+
+application:
+  glip.validation.collection:
+    default:
+      size:
+        min: 0
+        max: 60
+
+
+image: maven:3.3.9-alpine
+
+stages:
+  - compile
+  - test
+
+compile:
+  stage: compile
+  script:
+    - mvn clean install -q -DSkipTests
+  tags:
+    - cc-backend
+
+test:
+  stage: test
+  script:
+    - mvn test -q
+  tags:
+    - cc-backend
+
+.gitlab-ci.yml
+
+
+@Component("simpleHealthChecker")
+public class CustomHealthCheck extends AbstractAsyncHealthCheck {
+    @Override
+    protected void doHealthCheck(HealthCheckStatusBuilder builder) throws Exception {
+        builder.ok().withDetail("lastChanged", System.currentTimeMillis());
+    }
+}
+@Component
+public class SampleBean {
+
+        private final Counter counter;
+
+        public SampleBean(MeterRegistry registry) {
+                this.counter = registry.counter("received.messages");
+        }
+
+        public void handleMessage(String message) {
+                this.counter.increment();
+                // handle message implementation
+        }
+}
+
+------------------------------------------------------------------------------------------------------
+#ErrorDocument 404 /eng
+#ErrorDocument 403 /eng
+#ErrorDocument 402 /eng
+
+AddDefaultCharset UTF-8
+RewriteEngine On
+RewriteBase /
+
+Options -Indexes
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_URI} !=/server-status
+RewriteRule ^(.*)$ 404 [L,QSA]
+
+#GW-9339
+<IfModule mod_expires.c>
+        ExpiresActive On
+        <FilesMatch "(?i)^.+\.(png|jpg|jpeg|gif|css|ico|pdf)$">
+                ExpiresDefault "access plus 2 days"
+        </FilesMatch>
+</IfModule>
+
+#GW-12101
+AddType video/webm .webm
+<FilesMatch  "(?i)^.+\.webm$">
+        ForceType video/webm
+</FilesMatch>
+
+#GW-12153
+AddType text/x-component .htc
+<FilesMatch  "(?i)^.+\.htc$">
+        ForceType text/x-component
+</FilesMatch>
+<IfModule mod_deflate.c>
+#	AddOutputFilterByType DEFLATE text/x-component
+        AddOutputFilter DEFLATE htc
+</IfModule>
+
+#GW-13128
+AddType video/quicktime .mov
+<FilesMatch  "(?i)^.+\.mov$">
+        ForceType video/quicktime
+</FilesMatch>
+
+<Files ~ "(?i)^.+\.(inc|backup)$">
+        deny from all
+</Files>
+
+php_value allow_call_time_pass_reference 1
+php_value magic_quotes_gpc 0
+php_value register_globals 1
+php_value upload_max_filesize 50M
+php_value post_max_size 60M
+php_value max_execution_time 360
+php_value max_input_time 0
+php_value error_prepend_string '<div style="background: #FFF; color: #DC143C;">'
+php_value error_append_string '</div>'
+php_value session.gc_maxlifetime 3600
+
+DirectoryIndex index.php
+==============================================================================================================
+@Component("simpleHealthChecker")
+public class CustomHealthCheck extends AbstractAsyncHealthCheck {
+    @Override
+    protected void doHealthCheck(HealthCheckStatusBuilder builder) throws Exception {
+        builder.ok().withDetail("lastChanged", System.currentTimeMillis());
+    }
+}
+@Component
+public class SampleBean {
+
+        private final Counter counter;
+
+        public SampleBean(MeterRegistry registry) {
+                this.counter = registry.counter("received.messages");
+        }
+
+        public void handleMessage(String message) {
+                this.counter.increment();
+                // handle message implementation
+        }
+}
+==============================================================================================================
+@InterfaceAudience.LimitedPrivate
+@InterfaceStability.Unstable
+
+  @ConfigDef(
+      required = true,
+      type = ConfigDef.Type.STRING,
+      label = "JMS Initial Context Factory",
+      description = "ActiveMQ example: org.apache.activemq.jndi.ActiveMQInitialContextFactory",
+      displayPosition = 10,
+      group = "JMS"
+  )
+  public String initialContextFactory;
+==============================================================================================================
+import com.streamsets.pipeline.api.GenerateResourceBundle;
+import com.streamsets.pipeline.api.Label;
+
+@GenerateResourceBundle
+public enum LogMode implements Label {
+
+  COMMON_LOG_FORMAT("Common Log Format"),
+  COMBINED_LOG_FORMAT("Combined Log Format"),
+  APACHE_ERROR_LOG_FORMAT("Apache Error Log Format"),
+  APACHE_CUSTOM_LOG_FORMAT("Apache Access Log Custom Format"),
+  REGEX("Regular Expression"),
+  GROK("Grok Pattern"),
+  LOG4J("Log4j"),
+  CEF("Common Event Format (CEF)"),
+  LEEF("Log Event Extended Format (LEEF)"),
+  ;
+
+  private final String label;
+
+  LogMode(String label) {
+    this.label = label;
+
+  }
+
+  @Override
+  public String getLabel() {
+    return label;
+  }
+
+}
+==============================================================================================================
+     <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>buildnumber-maven-plugin</artifactId>
+                <version>1.3</version>
+                <executions>
+                    <execution>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>create</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <getRevisionOnlyOnce>true</getRevisionOnlyOnce>
+                    <doCheck>false</doCheck>
+                    <doUpdate>false</doUpdate>
+                    <timestampFormat>{0,date,yyyyMMdd.HHmmss.SSS}
+                    </timestampFormat>
+                </configuration>
+            </plugin>
+==============================================================================================================
+        <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.19.1</version>
+                <configuration>
+                    <systemProperties>
+                        <property>
+                            <name>log4j.configurationFile</name>
+                            <value>log4j.xml</value>
+                        </property>
+                    </systemProperties>
+                </configuration>
+            </plugin>
+==============================================================================================================
+      <dependency>
+            <groupId>com.nimbusds</groupId>
+            <artifactId>nimbus-jose-jwt</artifactId>
+            <version>[7.1,)</version>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+            <version>[1.58,)</version>
+            <scope>test</scope>
+        </dependency>
+==============================================================================================================
 repositories {
     mavenCentral()
 }
