@@ -33655,6 +33655,12 @@ php_value session.gc_maxlifetime 3600
 
 DirectoryIndex index.php
 ==============================================================================================================
+# make sure your code is linted (we use black)
+black . --exclude=venv/ --check
+
+# if black is not installed
+pip install black
+==============================================================================================================
 @Component("simpleHealthChecker")
 public class CustomHealthCheck extends AbstractAsyncHealthCheck {
     @Override
