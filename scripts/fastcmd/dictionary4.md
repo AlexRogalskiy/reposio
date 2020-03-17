@@ -33655,6 +33655,51 @@ php_value session.gc_maxlifetime 3600
 
 DirectoryIndex index.php
 ==============================================================================================================
+Map<String, List<Employee>> output = list.stream()
+
+            .collect(Collectors.groupingBy(Employee::getDepartment,
+
+                    Collectors.filtering(e -> e.getSalary() > 2000, Collectors.toList())));
+
+
+Function<String, Character> firstChar =  s -> Character.toLowerCase(s.charAt(0));
+
+ 
+
+List<String> a = Arrays.asList("foo", "Abc", "bar", "baz", "aBc");
+
+Map<Character, List<String>> collect = a.stream()
+
+        .collect(Collectors.groupingBy(firstChar));
+
+ 
+
+System.out.println(collect);
+ 
+
+Predicate<Employee> filter = e -> e.salary > 2000;
+
+Map<String, List<Employee>> collect = list.stream().collect(
+
+        Collectors.toMap(
+
+            e-> e.department,
+
+            e-> new ArrayList<Employee>(filter.test(e) ? Collections.singleton(e) : Collections.<Employee>emptyList()) ,
+
+            (l1, l2)-> {l1.addAll(l2); return l1;}
+
+        )
+
+);
+
+
+EnumMap<BlogPostType, List<BlogPost>> postsPerType = posts.stream()
+
+  .collect(groupingBy(BlogPost::getType,
+
+  () -> new EnumMap<>(BlogPostType.class), toList()));
+==============================================================================================================
 # make sure your code is linted (we use black)
 black . --exclude=venv/ --check
 
