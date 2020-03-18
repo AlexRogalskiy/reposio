@@ -33706,6 +33706,34 @@ black . --exclude=venv/ --check
 # if black is not installed
 pip install black
 ==============================================================================================================
+npm install -g electron@6.1.4 orca
+$ orca graph '{ "data": [{"y": [1,2,1]}] }' -o fig.png
+Windows:
+
+orca graph "{ \"data\": [{\"y\": [1,2,1]}] }" -o fig.png
+generates a PNG from the inputted plotly.js JSON attributes. Or,
+
+$ orca graph https://plot.ly/~empet/14324.json --format svg
+generates an SVG from a plotly.js JSON hosted on plot.ly.
+
+Poppler installation via Aptitude (used by some *nix/BSD, e.g. Ubuntu)
+$ apt-get install poppler-utils (requires `sudo` or root privileges)
+Poppler installation via Homebrew (third-party package manager for Mac OS X)
+$ brew install poppler
+Inkscape installation via Aptitude (used by some *nix/BSD, e.g. Ubuntu)
+$ apt-get install inkscape (requires `sudo` or root privileges)
+Inkscape installation via Homebrew (third-party package manager for Mac OS X)
+$ brew install inkscape
+==============================================================================================================
+# branch off master
+git checkout -b "{YOUR_CUSTOM_BRANCH}"
+
+# create a new folder in apps/
+mkdir /apps/{DASH_APP_NAME}
+
+# push new branch
+git push -u origin {YOUR_CUSTOM_BRANCH}
+==============================================================================================================
 @Component("simpleHealthChecker")
 public class CustomHealthCheck extends AbstractAsyncHealthCheck {
     @Override
