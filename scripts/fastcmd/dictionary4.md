@@ -33700,11 +33700,75 @@ EnumMap<BlogPostType, List<BlogPost>> postsPerType = posts.stream()
 
   () -> new EnumMap<>(BlogPostType.class), toList()));
 ==============================================================================================================
+    "build": "babel src --out-dir lib --ignore \"_*\"",
+    "watch": "babel src --watch --out-dir lib --ignore \"_*\""
+==============================================================================================================
+$ npm install plotly-notebook-js
+$ jupyter notebook
+==============================================================================================================
+Install the requirements:
+$ pip install cookiecutter
+$ pip install virtualenv
+Node.js/npm is also required.
+Run cookiecutter on the boilerplate repo:
+$ cookiecutter https://github.com/plotly/dash-component-boilerplate.git
+==============================================================================================================
+yarn test --watch
+yarn build --watch
+==============================================================================================================
+# you need brew and nvm
+brew install nvm
+
+cd /var/www/gekko
+
+#removed brew version of node
+brew uninstall node
+#removed all nvm versions of node
+rm -rf ~/.nvm/versions/node/*
+
+#stable version of node and nvm that works for gekko
+nvm install 9.10.1
+nvm alias default 9.10.1
+
+#install gekko modules 
+npm install --only=production
+cd exchange
+npm install --only=production
+cd ..
+
+#remove sqlite, tulip and talib
+rm -rf ./node_modules/talib*
+rm -rf ./node_modules/tulind*
+rm -rf ./node_modules/sqlite3*
+
+#Install tulip, sqlite and talib versions that are compatible
+npm install talib@1.0.4 --no-save
+npm install tulind@0.8.10 --no-save
+npm install sqlite3@4.0.0  --save 
+==============================================================================================================
 # make sure your code is linted (we use black)
 black . --exclude=venv/ --check
 
 # if black is not installed
 pip install black
+==============================================================================================================
+Running the app locally
+First create a virtual environment with conda or venv inside a temp folder, then activate it.
+
+virtualenv dash-svm-venv
+
+# Windows
+dash-svm-venv\Scripts\activate
+# Or Linux
+source venv/bin/activate
+Clone the git repo, then install the requirements with pip
+
+git clone https://github.com/plotly/dash-sample-apps
+cd dash-sample-apps/apps/dash-svm
+pip install -r requirements.txt
+Run the app
+
+python app.py
 ==============================================================================================================
 npm install -g electron@6.1.4 orca
 $ orca graph '{ "data": [{"y": [1,2,1]}] }' -o fig.png
