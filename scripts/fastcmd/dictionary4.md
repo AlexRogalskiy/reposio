@@ -33718,6 +33718,21 @@ ORDER BY a.email
 $ npm install plotly-notebook-js
 $ jupyter notebook
 ==============================================================================================================
+@article{huron:hal-00846260,
+    url = {http://hal.inria.fr/hal-00846260},
+    title = {{Visual Sedimentation}},
+    author = {Huron, Samuel and Vuillemot, Romain and Fekete, Jean-Daniel},
+    booktitle = {{IEEE Transactions on Visualization and Computer Graphics}},
+    publisher = {IEEE},
+    pages = {2446-2455},
+    journal = {IEEE Transactions on Visualization and Computer Graphics},
+    volume = {19},
+    number = {12 },
+    doi = {10.1109/TVCG.2013.227 },
+    year = {2013},
+    month = Dec,
+}
+==============================================================================================================
 Install the requirements:
 $ pip install cookiecutter
 $ pip install virtualenv
