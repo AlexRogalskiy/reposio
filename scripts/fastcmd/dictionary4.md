@@ -35922,6 +35922,117 @@ public interface ValueProvider<T> extends Supplier<T> {
     }
 }
 ==============================================================================================================
+/** * Java Program to reverse a singly list without using recursion. */ public class LinkedListProblem { public static void main(String[] args) { // creating a singly linked list SinglyLinkedList.Node head = new SinglyLinkedList.Node(1); SinglyLinkedList linkedlist = new SinglyLinkedList(head); // adding node into singly linked list linkedlist.add(new SinglyLinkedList.Node(2)); linkedlist.add(new SinglyLinkedList.Node(3)); // printing a singly linked list linkedlist.print(); // reversing the singly linked list linkedlist.reverse(); // printing the singly linked list again linkedlist.print(); } } /** * A class to represent singly list in Java * * @author WINDOWS 8 * */ class SinglyLinkedList { static class Node { private int data; private Node next; public Node(int data) { this.data = data; } public int data() { return data; } public Node next() { return next; } } private Node head; public SinglyLinkedList(Node head) { this.head = head; } /** * Java method to add an element to linked list * @param node */ public void add(Node node) { Node current = head; while (current != null) { if (current.next == null) { current.next = node; break; } current = current.next; } } /** * Java method to print a singly linked list */ public void print() { Node node = head; while (node != null) { System.out.print(node.data() + " "); node = node.next(); } System.out.println(""); } /** * Java method to reverse a linked list without recursion */ public void reverse() { Node pointer = head; Node previous = null, current = null; while (pointer != null) { current = pointer; pointer = pointer.next; // reverse the link current.next = previous; previous = current; head = current; } } } Output 1 2 3 3 2 1
+
+Read more: https://www.java67.com/2016/07/how-to-reverse-singly-linked-list-in-java-example.html#ixzz6HV7shUjV
+==============================================================================================================
+// Java program to implement Stack using linked 
+// list so that reverse can be done with O(1)  
+// extra space. 
+class StackNode { 
+    int data; 
+    StackNode next; 
+    public StackNode(int data) 
+    { 
+        this.data = data; 
+        this.next = null; 
+    } 
+} 
+  
+class Stack { 
+    StackNode top; 
+  
+    // Push and pop operations 
+    public void push(int data) 
+    { 
+        if (this.top == null) { 
+            top = new StackNode(data); 
+            return; 
+        } 
+        StackNode s = new StackNode(data); 
+        s.next = this.top; 
+        this.top = s; 
+    } 
+    public StackNode pop() 
+    { 
+        StackNode s = this.top; 
+        this.top = this.top.next; 
+        return s; 
+    } 
+  
+    // prints contents of stack 
+    public void display() 
+    { 
+        StackNode s = this.top; 
+        while (s != null) { 
+            System.out.print(s.data + " "); 
+            s = s.next; 
+        } 
+        System.out.println(); 
+    } 
+  
+    // Reverses the stack using simple 
+    // linked list reversal logic. 
+    public void reverse() 
+    { 
+        StackNode prev, cur, succ; 
+        cur = prev = this.top; 
+        cur = cur.next; 
+        prev.next = null; 
+        while (cur != null) { 
+  
+            succ = cur.next; 
+            cur.next = prev; 
+            prev = cur; 
+            cur = succ; 
+        } 
+        this.top = prev; 
+    } 
+} 
+  
+public class reverseStackWithoutSpace { 
+    public static void main(String[] args) 
+    { 
+        Stack s = new Stack(); 
+        s.push(1); 
+        s.push(2); 
+        s.push(3); 
+        s.push(4); 
+        System.out.println("Original Stack"); 
+        s.display(); 
+  
+        // reverse 
+        s.reverse(); 
+  
+        System.out.println("Reversed Stack"); 
+        s.display(); 
+    } 
+} 
+==============================================================================================================
+      <dependency>
+            <groupId>org.springframework.security.oauth</groupId>
+            <artifactId>spring-security-oauth2</artifactId>
+        </dependency>
+==============================================================================================================
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
+import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
+
+@Configuration
+@EnableAuthorizationServer
+public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdapter {
+
+    @Override
+    public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
+        clients.inMemory().withClient("javainuse").secret("secret").authorizedGrantTypes("authorization_code")
+            .scopes("read").authorities("CLIENT");
+    }
+}
+==============================================================================================================
+https://medium.com/textileio/tutorial-setting-up-an-ipfs-peer-part-i-de48239d82e0
+https://medium.com/hara-engineering/using-provable-things-to-retrieve-the-bitcoin-price-from-the-smart-contract-f47d1942027d
+==============================================================================================================
 import org.springframework.lang.NonNull;
 
 import java.util.Arrays;
@@ -45218,6 +45329,62 @@ public class ObjectifyConfig implements ServletContextListener {
     }
 
 }
+==============================================================================================================
+sudo: required
+
+language: java
+
+# https://travis-ci.community/t/install-of-oracle-jdk-8-failing/3038/9
+dist: trusty
+
+jdk:
+  - oraclejdk8
+
+env:
+  - MAVEN_VERSION=3.5.4
+
+install:
+  - "mvn -N io.takari:maven:wrapper -Dmaven=${MAVEN_VERSION} -Dhttps.protocols=TLSv1.2"
+
+script:
+  - "./mvnw --show-version --errors --batch-mode -Prun-its clean verify -Dhttps.protocols=TLSv1.2"
+
+cache:
+    directories:
+    - $HOME/.m2
+branches:
+    except:
+        - gh-pages
+notifications:
+    email:
+        - joerg.hohwiller@googlemail.com
+        - mojohaus@soebes.de
+==============================================================================================================
+language: java
+dist: xenial
+jdk: openjdk8
+
+env:
+  - TRAVIS_NODE_VERSION="lts/*"
+
+cache:
+  directories:
+    - $HOME/.m2
+    - $HOME/.npm
+
+before_install:
+  - 'if [[ -n "$DECRYPT_KEYPHRASE" ]]; then openssl aes-256-cbc -d -pass "env:DECRYPT_KEYPHRASE" -in .gnupg.tar.enc | tar xv; fi'
+  - 'nvm install ${TRAVIS_NODE_VERSION} && nvm use ${TRAVIS_NODE_VERSION}'
+
+install: ./mvnw install -DskipTests=true -Dmaven.javadoc.skip=true -DskipNpmBuild=true -B -V
+
+script: ./mvnw verify ${TRAVIS_TAG:+-Drevision=${TRAVIS_TAG} -DdisableSpringSnapshots=true} -B
+
+after_success:
+  - ./mvnw jacoco:report coveralls:report -B
+  - "[[ ${TRAVIS_PULL_REQUEST} == 'false' ]] && [[ ${TRAVIS_TAG} == '' ]] && ./mvnw deploy -DrepositoryId=sonatype-nexus-snapshots -DskipTests --settings deploy-settings.xml -B"
+  - "[[ ${TRAVIS_PULL_REQUEST} == 'false' ]] && [[ ${TRAVIS_TAG} != '' ]] && ./mvnw deploy -DrepositoryId=sonatype-nexus-staging -DskipTests -Drevision=${TRAVIS_TAG} -DdisableSpringSnapshots=true --settings deploy-settings.xml -B"
+
 ==============================================================================================================
 /**
  * This class is used as scheduled task which resets the database every 15 minutes to it's initial state.
