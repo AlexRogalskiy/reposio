@@ -45330,6 +45330,367 @@ public class ObjectifyConfig implements ServletContextListener {
 
 }
 ==============================================================================================================
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration debug="false" packagingData="true">
+
+    <property name="logDir" value="./petclinic.logs"/>
+
+    <appender name="File" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${logDir}/app.log</file>
+
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>DEBUG</level>
+        </filter>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- daily rollover -->
+            <fileNamePattern>${logDir}/app.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <!-- keep 30 days' worth of history -->
+            <maxHistory>30</maxHistory>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread%X{cubaApp}%X{cubaUser}] %logger - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="Console" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} %-5level %-40logger{36}- %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root>
+        <appender-ref ref="Console"/>
+        <appender-ref ref="File"/>
+    </root>
+
+    <!-- Begin CUBA -->
+
+    <logger name="com.haulmont.cuba" level="DEBUG"/>
+
+    <logger name="com.haulmont.cuba.core.sys" level="INFO"/>
+
+    <logger name="com.haulmont.cuba.core.sys.CubaDefaultListableBeanFactory" level="WARN"/>
+    
+    <logger name="com.haulmont.cuba.core.app.scheduling" level="INFO"/>
+
+    <logger name="com.haulmont.cuba.web.sys" level="INFO"/>
+
+    <logger name="com.haulmont.cuba.portal" level="INFO"/>
+
+    <logger name="com.haulmont.restapi.sys" level="INFO"/>
+
+    <logger name="com.haulmont.cuba.core.app.LockManager" level="INFO"/>
+
+    <!-- End CUBA -->
+
+    <logger name="org.eclipse.jetty" level="INFO"/>
+
+    <logger name="eclipselink" level="WARN"/>
+
+    <logger name="eclipselink.sql" level="INFO"/>
+
+    <logger name="org.springframework" level="WARN"/>
+
+    <logger name="com.vaadin" level="WARN"/>
+
+    <logger name="org.atmosphere" level="WARN"/>
+
+    <logger name="org.activiti" level="INFO"/>
+
+    <logger name="org.jgroups" level="INFO"/>
+    
+    <logger name="freemarker" level="INFO"/>
+
+    <logger name="org.thymeleaf.TemplateEngine" level="INFO"/>
+
+    <logger name="org.docx4j" level="WARN"/>
+    
+	<logger name="org.xlsx4j" level="WARN"/>
+
+    <logger name="org.apache.fop.apps.FOUserAgent" level="WARN"/>
+
+    <logger name="org.hibernate" level="WARN"/>
+
+    <logger name="sun" level="INFO"/>
+
+    <logger name="com.sun" level="INFO"/>
+
+    <logger name="javax" level="INFO"/>
+
+    <logger name="org.apache" level="INFO"/>
+
+    <logger name="org.docx4j.utils.ResourceUtils" level="ERROR"/>
+
+    <logger name="org.docx4j.Docx4jProperties" level="ERROR"/>
+
+    <logger name="org.xlsx4j.jaxb.Context" level="ERROR"/>
+
+    <logger name="org.docx4j.utils.XSLTUtils" level="ERROR"/>
+
+    <logger name="org.docx4j.jaxb.JaxbValidationEventHandler" level="ERROR"/>
+
+    <logger name="org.docx4j.TraversalUtil" level="ERROR"/>
+
+    <logger name="org.docx4j.fonts" level="ERROR"/>
+
+    <!-- Begin Perf4J  -->
+
+    <appender name="PerfStatFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${logDir}/perfstat.log</file>
+        <append>true</append>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${logDir}/perfstat.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>%msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="CoalescingStatistics" class="org.perf4j.logback.AsyncCoalescingStatisticsAppender">
+        <param name="TimeSlice" value="60000"/>
+        <appender-ref ref="PerfStatFile"/>
+    </appender>
+
+    <appender name="UIPerfStatFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${logDir}/perfstat-ui.log</file>
+        <append>true</append>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${logDir}/perfstat-ui.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>%msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="UICoalescingStatistics" class="org.perf4j.logback.AsyncCoalescingStatisticsAppender">
+        <param name="TimeSlice" value="120000"/>
+        <appender-ref ref="UIPerfStatFile"/>
+    </appender>
+
+    <logger name="org.perf4j.TimingLogger" additivity="false" level="INFO">
+        <appender-ref ref="CoalescingStatistics"/>
+    </logger>
+
+    <logger name="com.haulmont.cuba.gui.logging.UIPerformanceLogger" additivity="false" level="INFO">
+        <appender-ref ref="UICoalescingStatistics"/>
+    </logger>
+
+    <!-- End Perf4J  -->
+
+</configuration>
+==============================================================================================================
+import java.util.Collections;
+import java.util.Map;
+
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
+
+public class BlockingRegistrationClient implements RegistrationClient {
+
+	private static final ParameterizedTypeReference<Map<String, Object>> RESPONSE_TYPE = new ParameterizedTypeReference<Map<String, Object>>() {
+	};
+
+	private final RestTemplate restTemplate;
+
+	public BlockingRegistrationClient(RestTemplate restTemplate) {
+		this.restTemplate = restTemplate;
+	}
+
+	@Override
+	public String register(String adminUrl, Application application) {
+		ResponseEntity<Map<String, Object>> response = this.restTemplate.exchange(adminUrl, HttpMethod.POST,
+				new HttpEntity<>(application, this.createRequestHeaders()), RESPONSE_TYPE);
+		return response.getBody().get("id").toString();
+	}
+
+	@Override
+	public void deregister(String adminUrl, String id) {
+		this.restTemplate.delete(adminUrl + '/' + id);
+	}
+
+	protected HttpHeaders createRequestHeaders() {
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+		return HttpHeaders.readOnlyHttpHeaders(headers);
+	}
+}
+
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Map;
+
+import static java.util.Collections.singletonMap;
+
+public class StartupDateMetadataContributor implements MetadataContributor {
+
+	private final OffsetDateTime timestamp = OffsetDateTime.now();
+
+	@Override
+	public Map<String, String> getMetadata() {
+		return singletonMap("startup", this.timestamp.format(DateTimeFormatter.ISO_DATE_TIME));
+	}
+
+}
+==============================================================================================================
+<plugin>
+                <groupId>org.asciidoctor</groupId>
+                <artifactId>asciidoctor-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>output-html</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDocumentName>index.adoc</sourceDocumentName>
+                            <backend>html5</backend>
+                            <sourceHighlighter>coderay</sourceHighlighter>
+                            <resources>
+                                <resource>
+                                    <directory>src/main/asciidoc</directory>
+                                    <excludes>
+                                        <exclude>**/*.adoc</exclude>
+                                    </excludes>
+                                </resource>
+                            </resources>
+                            <attributes>
+                                <commit-id>${git.commit.id.abbrev}</commit-id>
+                                <commit-time>${git.commit.time}</commit-time>
+                                <project-version>${project.version}</project-version>
+                                <spring-cloud-version>${spring-cloud.version}</spring-cloud-version>
+                                <samples-dir>${basedir}/../spring-boot-admin-samples/</samples-dir>
+                                <main-dir>${basedir}/../</main-dir>
+                                <scm-tag>${env.TRAVIS_TAG}</scm-tag>
+                                <github-src>https://github.com/codecentric/spring-boot-admin/tree/master</github-src>
+                            </attributes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+==============================================================================================================
+consul:
+  image: library/consul
+  ports:
+    - "8500:8500"
+==============================================================================================================
+    public static void setRemoved(BaseGenericIdEntity entity, boolean removed) {
+        entity.__state = (byte) (removed ? entity.__state | REMOVED : entity.__state & ~REMOVED);
+    }
+==============================================================================================================
+@Entity(name = "sys$Folder")
+@Table(name = "SYS_FOLDER")
+@Inheritance(strategy = InheritanceType.JOINED)
+@DiscriminatorColumn(name = "FOLDER_TYPE", discriminatorType = DiscriminatorType.STRING)
+@DiscriminatorValue("F")
+@SystemLevel
+@EnableRestore(false)
+==============================================================================================================
+		@Override
+		protected void configure(HttpSecurity http) throws Exception {
+			SavedRequestAwareAuthenticationSuccessHandler successHandler = new SavedRequestAwareAuthenticationSuccessHandler();
+			successHandler.setTargetUrlParameter("redirectTo");
+			successHandler.setDefaultTargetUrl(this.adminContextPath + "/");
+
+			http.authorizeRequests((authorizeRequests) -> authorizeRequests
+					.antMatchers(this.adminContextPath + "/assets/**").permitAll()
+					.antMatchers(this.adminContextPath + "/login").permitAll().anyRequest().authenticated())
+					.formLogin((formLogin) -> formLogin.loginPage(this.adminContextPath + "/login")
+							.successHandler(successHandler))
+					.logout((logout) -> logout.logoutUrl(this.adminContextPath + "/logout"))
+					.httpBasic(Customizer.withDefaults())
+					.csrf((csrf) -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+							.ignoringRequestMatchers(
+									new AntPathRequestMatcher(this.adminContextPath + "/instances",
+											HttpMethod.POST.toString()),
+									new AntPathRequestMatcher(this.adminContextPath + "/instances/*",
+											HttpMethod.DELETE.toString()),
+									new AntPathRequestMatcher(this.adminContextPath + "/actuator/**")));
+		}
+
+==============================================================================================================
+<profile>
+            <id>include-cloud</id>
+            <activation>
+                <property>
+                    <name>!excludeSpringCloud</name>
+                </property>
+            </activation>
+            <modules>
+                <module>spring-boot-admin-sample-eureka</module>
+                <module>spring-boot-admin-sample-consul</module>
+                <module>spring-boot-admin-sample-zookeeper</module>
+            </modules>
+        </profile>
+==============================================================================================================
+private static final ParameterizedTypeReference<Map<String, Object>> RESPONSE_TYPE = new ParameterizedTypeReference<Map<String, Object>>() {
+	};
+
+	private final WebClient webclient;
+
+	private final Duration timeout;
+
+	public ReactiveRegistrationClient(WebClient webclient, Duration timeout) {
+		this.webclient = webclient;
+		this.timeout = timeout;
+	}
+
+	@Override
+	public String register(String adminUrl, Application application) {
+		Map<String, Object> response = this.webclient.post().uri(adminUrl).headers(this::setRequestHeaders)
+				.bodyValue(application).retrieve().bodyToMono(RESPONSE_TYPE).timeout(this.timeout).block();
+		return response.get("id").toString();
+	}
+==============================================================================================================
+Assuming that Apache Geode and gfsh command-line interface are already set up, we can start a locator named basicLocator and then a server named basicServer.
+
+To do so, let's run the following commands in the gfsh CLI:
+
+1
+gfsh>start locator --name="basicLocator"
+1
+gfsh>start server --name="basicServer"
+Once the server starts running, we can list all the members:
+
+1
+gfsh>list members
+The gfsh CLI output should list the locator and the server:
+
+1
+2
+3
+4
+    Name     | Id
+------------ | ------------------------------------------------------------------
+basicLocator | 10.25.3.192(basicLocator:25461:locator)<ec><v0>:1024 [Coordinator]
+basicServer  | 10.25.3.192(basicServer:25546)<v1>:1025
+Voila! We're all set to run our cache client app using the Maven command:
+
+1
+mvn spring-boot:run
+==============================================================================================================
 sudo: required
 
 language: java
