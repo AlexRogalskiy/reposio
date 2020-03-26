@@ -45591,6 +45591,493 @@ public class StartupDateMetadataContributor implements MetadataContributor {
                 </executions>
             </plugin>
 ==============================================================================================================
+@Configuration(proxyBeanMethods = false)
+	@ConditionalOnWebApplication(type = Type.SERVLET)
+	@AutoConfigureAfter(DispatcherServletAutoConfiguration.class)
+	
+@Configuration(proxyBeanMethods = false)
+@ConditionalOnWebApplication
+@ConditionalOnCloudPlatform(CloudPlatform.CLOUD_FOUNDRY)
+@Conditional(SpringBootAdminClientEnabledCondition.class)
+@EnableConfigurationProperties(CloudFoundryApplicationProperties.class)
+@AutoConfigureBefore({ SpringBootAdminClientAutoConfiguration.class })
+==============================================================================================================
+    <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-consul-discovery</artifactId>
+        </dependency>
+		   <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+        </dependency>
+		
+# tag::configuration-eureka[]
+eureka:   #<1>
+  instance:
+    leaseRenewalIntervalInSeconds: 10
+    health-check-url-path: /actuator/health
+    metadata-map:
+      startup: ${random.int}    #needed to trigger info and endpoint update after restart
+  client:
+    registryFetchIntervalSeconds: 5
+    serviceUrl:
+      defaultZone: ${EUREKA_SERVICE_URL:http://localhost:8761}/eureka/
+==============================================================================================================
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+
+import de.codecentric.boot.admin.server.config.AdminServerProperties;
+import de.codecentric.boot.admin.server.config.EnableAdminServer;
+
+@Configuration(proxyBeanMethods = false)
+@EnableAutoConfiguration
+@EnableDiscoveryClient
+@EnableAdminServer
+public class SpringBootAdminConsulApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(SpringBootAdminConsulApplication.class, args);
+	}
+
+	@Profile("insecure")
+	@Configuration(proxyBeanMethods = false)
+	public static class SecurityPermitAllConfig extends WebSecurityConfigurerAdapter {
+
+		private final String adminContextPath;
+
+		public SecurityPermitAllConfig(AdminServerProperties adminServerProperties) {
+			this.adminContextPath = adminServerProperties.getContextPath();
+		}
+
+		@Override
+		protected void configure(HttpSecurity http) throws Exception {
+			http.authorizeRequests((authorizeRequests) -> authorizeRequests.anyRequest().permitAll())
+					.csrf((csrf) -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+							.ignoringRequestMatchers(
+									new AntPathRequestMatcher(this.adminContextPath + "/instances",
+											HttpMethod.POST.toString()),
+									new AntPathRequestMatcher(this.adminContextPath + "/instances/*",
+											HttpMethod.DELETE.toString()),
+									new AntPathRequestMatcher(this.adminContextPath + "/actuator/**")));
+		}
+
+	}
+
+	@Profile("secure")
+	@Configuration(proxyBeanMethods = false)
+	public static class SecuritySecureConfig extends WebSecurityConfigurerAdapter {
+
+		private final String adminContextPath;
+
+		public SecuritySecureConfig(AdminServerProperties adminServerProperties) {
+			this.adminContextPath = adminServerProperties.getContextPath();
+		}
+
+		@Override
+		protected void configure(HttpSecurity http) throws Exception {
+			SavedRequestAwareAuthenticationSuccessHandler successHandler = new SavedRequestAwareAuthenticationSuccessHandler();
+			successHandler.setTargetUrlParameter("redirectTo");
+			successHandler.setDefaultTargetUrl(this.adminContextPath + "/");
+
+			http.authorizeRequests((authorizeRequests) -> authorizeRequests
+					.antMatchers(this.adminContextPath + "/assets/**").permitAll()
+					.antMatchers(this.adminContextPath + "/login").permitAll().anyRequest().authenticated())
+					.formLogin((formLogin) -> formLogin.loginPage(this.adminContextPath + "/login")
+							.successHandler(successHandler))
+					.logout((logout) -> logout.logoutUrl(this.adminContextPath + "/logout"))
+					.httpBasic(Customizer.withDefaults())
+					.csrf((csrf) -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+							.ignoringRequestMatchers(
+									new AntPathRequestMatcher(this.adminContextPath + "/instances",
+											HttpMethod.POST.toString()),
+									new AntPathRequestMatcher(this.adminContextPath + "/instances/*",
+											HttpMethod.DELETE.toString()),
+									new AntPathRequestMatcher(this.adminContextPath + "/actuator/**")));
+		}
+
+	}
+
+}
+==============================================================================================================
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>spring-boot-admin-sample-custom-ui</artifactId>
+    <name>Spring Boot Admin Server custom UI</name>
+    <description>Spring Boot Admin Server custom UI</description>
+    <parent>
+        <groupId>de.codecentric</groupId>
+        <artifactId>spring-boot-admin-samples</artifactId>
+        <version>${revision}</version>
+        <relativePath>..</relativePath>
+    </parent>
+    <dependencies>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>npm-install</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>npm</executable>
+                            <arguments>
+                                <argument>ci</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>npm-build</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skipNpmBuild}</skip>
+                            <executable>npm</executable>
+                            <arguments>
+                                <argument>run</argument>
+                                <argument>build</argument>
+                            </arguments>
+                            <environmentVariables>
+                                <PROJECT_VERSION>${project.version}</PROJECT_VERSION>
+                            </environmentVariables>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+            </plugin>
+        </plugins>
+        <resources>
+            <resource>
+                <directory>target/dist</directory>
+                <targetPath>META-INF/spring-boot-admin-server-ui/extensions/custom</targetPath>
+                <filtering>false</filtering>
+            </resource>
+        </resources>
+    </build>
+</project>
+==============================================================================================================
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+
+import de.codecentric.boot.admin.server.config.AdminServerProperties;
+import de.codecentric.boot.admin.server.config.EnableAdminServer;
+
+@Configuration(proxyBeanMethods = false)
+@EnableAutoConfiguration
+@EnableDiscoveryClient
+@EnableAdminServer
+public class SpringBootAdminEurekaApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(SpringBootAdminEurekaApplication.class, args);
+	}
+
+	@Profile("insecure")
+	@Configuration(proxyBeanMethods = false)
+	public static class SecurityPermitAllConfig extends WebSecurityConfigurerAdapter {
+
+		private final String adminContextPath;
+
+		public SecurityPermitAllConfig(AdminServerProperties adminServerProperties) {
+			this.adminContextPath = adminServerProperties.getContextPath();
+		}
+
+		@Override
+		protected void configure(HttpSecurity http) throws Exception {
+			http.authorizeRequests((authorizeRequests) -> authorizeRequests.anyRequest().permitAll())
+					.csrf((csrf) -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+							.ignoringRequestMatchers(
+									new AntPathRequestMatcher(this.adminContextPath + "/instances",
+											HttpMethod.POST.toString()),
+									new AntPathRequestMatcher(this.adminContextPath + "/instances/*",
+											HttpMethod.DELETE.toString()),
+									new AntPathRequestMatcher(this.adminContextPath + "/actuator/**")));
+
+		}
+
+	}
+
+	@Profile("secure")
+	@Configuration(proxyBeanMethods = false)
+	public static class SecuritySecureConfig extends WebSecurityConfigurerAdapter {
+
+		private final String adminContextPath;
+
+		public SecuritySecureConfig(AdminServerProperties adminServerProperties) {
+			this.adminContextPath = adminServerProperties.getContextPath();
+		}
+
+		@Override
+		protected void configure(HttpSecurity http) throws Exception {
+			SavedRequestAwareAuthenticationSuccessHandler successHandler = new SavedRequestAwareAuthenticationSuccessHandler();
+			successHandler.setTargetUrlParameter("redirectTo");
+			successHandler.setDefaultTargetUrl(this.adminContextPath + "/");
+
+			http.authorizeRequests((authorizeRequests) -> authorizeRequests
+					.antMatchers(this.adminContextPath + "/assets/**").permitAll()
+					.antMatchers(this.adminContextPath + "/login").permitAll().anyRequest().authenticated())
+					.formLogin((formLogin) -> formLogin.loginPage(this.adminContextPath + "/login")
+							.successHandler(successHandler))
+					.logout((logout) -> logout.logoutUrl(this.adminContextPath + "/logout"))
+					.httpBasic(Customizer.withDefaults())
+					.csrf((csrf) -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+							.ignoringRequestMatchers(
+									new AntPathRequestMatcher(this.adminContextPath + "/instances",
+											HttpMethod.POST.toString()),
+									new AntPathRequestMatcher(this.adminContextPath + "/instances/*",
+											HttpMethod.DELETE.toString()),
+									new AntPathRequestMatcher(this.adminContextPath + "/actuator/**")));
+		}
+
+	}
+
+}
+==============================================================================================================
+spring:
+  application:
+    name: consul-example
+  cloud:
+    config:
+      enabled: false
+    consul:
+      host: localhost
+      port: 8500
+      discovery:
+        tags: management.context-path=/foo, health.path=/ping, user.name=user, user.password=password
+  profiles:
+    active:
+      - secure
+
+# tag::configuration-eureka[]
+eureka:   #<1>
+  instance:
+    leaseRenewalIntervalInSeconds: 10
+    health-check-url-path: /actuator/health
+    metadata-map:
+		user.name: "user"         #These two are needed so that the server
+		user.password: "password" #can access the protected client endpoints
+		startup: ${random.int}    #needed to trigger info and endpoint update after restart
+  client:
+    registryFetchIntervalSeconds: 5
+    serviceUrl:
+      defaultZone: ${EUREKA_SERVICE_URL:http://localhost:8761}/eureka/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"  #<2>
+  endpoint:
+    health:
+      show-details: ALWAYS
+==============================================================================================================
+           <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                            <goal>build-info</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <mainClass>de.codecentric.boot.admin.SpringBootAdminReactiveApplication</mainClass>
+                    <addResources>false</addResources>
+                </configuration>
+            </plugin>
+==============================================================================================================
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-zookeeper-discovery</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-context</artifactId>
+        </dependency>
+==============================================================================================================
+spring:
+  application:
+    name: zookeeper-example
+  cloud:
+    config:
+      enabled: false
+    zookeeper:
+      connect-string: localhost:2181
+      discovery:
+        metadata:
+          management.context-path: /foo
+          health.path: /ping
+          user.name: user
+          user.password: password
+		  
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+
+import de.codecentric.boot.admin.server.config.AdminServerProperties;
+import de.codecentric.boot.admin.server.config.EnableAdminServer;
+
+@Configuration(proxyBeanMethods = false)
+@EnableAutoConfiguration
+@EnableDiscoveryClient
+@EnableAdminServer
+public class SpringBootAdminZookeeperApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(SpringBootAdminZookeeperApplication.class, args);
+	}
+
+	@Profile("insecure")
+	@Configuration(proxyBeanMethods = false)
+	public static class SecurityPermitAllConfig extends WebSecurityConfigurerAdapter {
+
+		private final AdminServerProperties adminServer;
+
+		public SecurityPermitAllConfig(AdminServerProperties adminServer) {
+			this.adminServer = adminServer;
+		}
+
+		@Override
+		protected void configure(HttpSecurity http) throws Exception {
+			http.authorizeRequests((authorizeRequests) -> authorizeRequests.anyRequest().permitAll())
+					.csrf((csrf) -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+							.ignoringRequestMatchers(
+									new AntPathRequestMatcher(this.adminServer.path("/instances"),
+											HttpMethod.POST.toString()),
+									new AntPathRequestMatcher(this.adminServer.path("/instances/*"),
+											HttpMethod.DELETE.toString()),
+									new AntPathRequestMatcher(this.adminServer.path("/actuator/**"))));
+		}
+
+	}
+
+	@Profile("secure")
+	@Configuration(proxyBeanMethods = false)
+	public static class SecuritySecureConfig extends WebSecurityConfigurerAdapter {
+
+		private final AdminServerProperties adminServer;
+
+		public SecuritySecureConfig(AdminServerProperties adminServer) {
+			this.adminServer = adminServer;
+		}
+
+		@Override
+		protected void configure(HttpSecurity http) throws Exception {
+			SavedRequestAwareAuthenticationSuccessHandler successHandler = new SavedRequestAwareAuthenticationSuccessHandler();
+			successHandler.setTargetUrlParameter("redirectTo");
+			successHandler.setDefaultTargetUrl(this.adminServer.path("/"));
+
+			http.authorizeRequests((authorizeRequests) -> authorizeRequests
+					.antMatchers(this.adminServer.path("/assets/**")).permitAll()
+					.antMatchers(this.adminServer.path("/login")).permitAll().anyRequest().authenticated())
+					.formLogin((formLogin) -> formLogin.loginPage(this.adminServer.path("/login"))
+							.successHandler(successHandler))
+					.logout((logout) -> logout.logoutUrl(this.adminServer.path("/logout")))
+					.httpBasic(Customizer.withDefaults())
+					.csrf((csrf) -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+							.ignoringRequestMatchers(
+									new AntPathRequestMatcher(this.adminServer.path("/instances"),
+											HttpMethod.POST.toString()),
+									new AntPathRequestMatcher(this.adminServer.path("/instances/*"),
+											HttpMethod.DELETE.toString()),
+									new AntPathRequestMatcher(this.adminServer.path("/actuator/**"))));
+		}
+
+	}
+
+}
+
+@ConditionalOnCloudPlatform
+==============================================================================================================
+	@Profile("secure")
+	@Configuration(proxyBeanMethods = false)
+	public static class SecuritySecureConfig extends WebSecurityConfigurerAdapter {
+
+		private final AdminServerProperties adminServer;
+
+		public SecuritySecureConfig(AdminServerProperties adminServer) {
+			this.adminServer = adminServer;
+		}
+
+		@Override
+		protected void configure(HttpSecurity http) throws Exception {
+			SavedRequestAwareAuthenticationSuccessHandler successHandler = new SavedRequestAwareAuthenticationSuccessHandler();
+			successHandler.setTargetUrlParameter("redirectTo");
+			successHandler.setDefaultTargetUrl(this.adminServer.path("/"));
+
+			http.authorizeRequests((authorizeRequests) -> authorizeRequests
+					.antMatchers(this.adminServer.path("/assets/**")).permitAll()
+					.antMatchers(this.adminServer.path("/login")).permitAll().anyRequest().authenticated())
+
+					.formLogin((formLogin) -> formLogin.loginPage(this.adminServer.path("/login"))
+							.successHandler(successHandler))
+					.logout((logout) -> logout.logoutUrl(this.adminServer.path("/logout")))
+					.httpBasic(Customizer.withDefaults())
+					.csrf((csrf) -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+							.ignoringRequestMatchers(
+									new AntPathRequestMatcher(this.adminServer.path("/instances"),
+											HttpMethod.POST.toString()),
+									new AntPathRequestMatcher(this.adminServer.path("/instances/*"),
+											HttpMethod.DELETE.toString()),
+									new AntPathRequestMatcher(this.adminServer.path("/actuator/**"))));
+		}
+
+	}
+==============================================================================================================
+	@Bean
+	@Profile("secure")
+	public SecurityWebFilterChain securityWebFilterChainSecure(ServerHttpSecurity http) {
+		return http
+				.authorizeExchange((authorizeExchange) -> authorizeExchange
+						.pathMatchers(this.adminServer.path("/assets/**")).permitAll()
+						.pathMatchers(this.adminServer.path("/login")).permitAll().anyExchange().authenticated())
+				.formLogin((formLogin) -> formLogin.loginPage(this.adminServer.path("/login")))
+				.logout((logout) -> logout.logoutUrl(this.adminServer.path("/logout")))
+				.httpBasic(Customizer.withDefaults()).csrf(ServerHttpSecurity.CsrfSpec::disable).build();
+	}
+==============================================================================================================
 consul:
   image: library/consul
   ports:
