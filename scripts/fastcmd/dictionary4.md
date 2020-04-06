@@ -46031,6 +46031,1416 @@ public class SpringBootAdminZookeeperApplication {
 
 @ConditionalOnCloudPlatform
 ==============================================================================================================
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
+import org.reactivestreams.Publisher;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
+import org.springframework.boot.autoconfigure.condition.NoneNestedConditions;
+import org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.mail.MailSender;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.web.client.RestTemplate;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.spring5.SpringTemplateEngine;
+import org.thymeleaf.spring5.templateresolver.SpringResourceTemplateResolver;
+import org.thymeleaf.templatemode.TemplateMode;
+
+import de.codecentric.boot.admin.server.domain.entities.InstanceRepository;
+import de.codecentric.boot.admin.server.domain.events.InstanceEvent;
+import de.codecentric.boot.admin.server.notify.CompositeNotifier;
+import de.codecentric.boot.admin.server.notify.DiscordNotifier;
+import de.codecentric.boot.admin.server.notify.HipchatNotifier;
+import de.codecentric.boot.admin.server.notify.LetsChatNotifier;
+import de.codecentric.boot.admin.server.notify.MailNotifier;
+import de.codecentric.boot.admin.server.notify.MicrosoftTeamsNotifier;
+import de.codecentric.boot.admin.server.notify.NotificationTrigger;
+import de.codecentric.boot.admin.server.notify.Notifier;
+import de.codecentric.boot.admin.server.notify.NotifierProxyProperties;
+import de.codecentric.boot.admin.server.notify.OpsGenieNotifier;
+import de.codecentric.boot.admin.server.notify.PagerdutyNotifier;
+import de.codecentric.boot.admin.server.notify.SlackNotifier;
+import de.codecentric.boot.admin.server.notify.TelegramNotifier;
+import de.codecentric.boot.admin.server.notify.filter.FilteringNotifier;
+import de.codecentric.boot.admin.server.notify.filter.web.NotificationFilterController;
+
+@Configuration(proxyBeanMethods = false)
+@EnableConfigurationProperties(NotifierProxyProperties.class)
+@AutoConfigureAfter({ MailSenderAutoConfiguration.class })
+public class AdminServerNotifierAutoConfiguration {
+
+	private static RestTemplate createNotifierRestTemplate(NotifierProxyProperties proxyProperties) {
+		RestTemplate restTemplate = new RestTemplate();
+		if (proxyProperties.getHost() != null) {
+			SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+			Proxy proxy = new Proxy(Proxy.Type.HTTP,
+					new InetSocketAddress(proxyProperties.getHost(), proxyProperties.getPort()));
+			requestFactory.setProxy(proxy);
+			restTemplate.setRequestFactory(requestFactory);
+		}
+		return restTemplate;
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnBean(Notifier.class)
+	public static class NotifierTriggerConfiguration {
+
+		@Bean(initMethod = "start", destroyMethod = "stop")
+		@ConditionalOnMissingBean(NotificationTrigger.class)
+		public NotificationTrigger notificationTrigger(Notifier notifier, Publisher<InstanceEvent> events) {
+			return new NotificationTrigger(notifier, events);
+		}
+
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnBean(Notifier.class)
+	@AutoConfigureBefore({ NotifierTriggerConfiguration.class })
+	public static class CompositeNotifierConfiguration {
+
+		@Bean
+		@Primary
+		@Conditional(NoSingleNotifierCandidateCondition.class)
+		public CompositeNotifier compositeNotifier(List<Notifier> notifiers) {
+			return new CompositeNotifier(notifiers);
+		}
+
+		static class NoSingleNotifierCandidateCondition extends NoneNestedConditions {
+
+			NoSingleNotifierCandidateCondition() {
+				super(ConfigurationPhase.REGISTER_BEAN);
+			}
+
+			@ConditionalOnSingleCandidate(Notifier.class)
+			static class HasSingleNotifierInstance {
+
+			}
+
+		}
+
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnSingleCandidate(FilteringNotifier.class)
+	public static class FilteringNotifierWebConfiguration {
+
+		private final FilteringNotifier filteringNotifier;
+
+		public FilteringNotifierWebConfiguration(FilteringNotifier filteringNotifier) {
+			this.filteringNotifier = filteringNotifier;
+		}
+
+		@Bean
+		public NotificationFilterController notificationFilterController() {
+			return new NotificationFilterController(this.filteringNotifier);
+		}
+
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@AutoConfigureBefore({ NotifierTriggerConfiguration.class, CompositeNotifierConfiguration.class })
+	@ConditionalOnBean(MailSender.class)
+	public static class MailNotifierConfiguration {
+
+		private final ApplicationContext applicationContext;
+
+		public MailNotifierConfiguration(ApplicationContext applicationContext) {
+			this.applicationContext = applicationContext;
+		}
+
+		@Bean
+		@ConditionalOnMissingBean
+		@ConfigurationProperties("spring.boot.admin.notify.mail")
+		public MailNotifier mailNotifier(JavaMailSender mailSender, InstanceRepository repository) {
+			return new MailNotifier(mailSender, repository, mailNotifierTemplateEngine());
+		}
+
+		@Bean
+		public TemplateEngine mailNotifierTemplateEngine() {
+			SpringResourceTemplateResolver resolver = new SpringResourceTemplateResolver();
+			resolver.setApplicationContext(this.applicationContext);
+			resolver.setTemplateMode(TemplateMode.HTML);
+			resolver.setCharacterEncoding(StandardCharsets.UTF_8.name());
+
+			SpringTemplateEngine templateEngine = new SpringTemplateEngine();
+			templateEngine.addTemplateResolver(resolver);
+			return templateEngine;
+		}
+
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnProperty(prefix = "spring.boot.admin.notify.hipchat", name = "url")
+	@AutoConfigureBefore({ NotifierTriggerConfiguration.class, CompositeNotifierConfiguration.class })
+	public static class HipchatNotifierConfiguration {
+
+		@Bean
+		@ConditionalOnMissingBean
+		@ConfigurationProperties("spring.boot.admin.notify.hipchat")
+		public HipchatNotifier hipchatNotifier(InstanceRepository repository, NotifierProxyProperties proxyProperties) {
+			return new HipchatNotifier(repository, createNotifierRestTemplate(proxyProperties));
+		}
+
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnProperty(prefix = "spring.boot.admin.notify.slack", name = "webhook-url")
+	@AutoConfigureBefore({ NotifierTriggerConfiguration.class, CompositeNotifierConfiguration.class })
+	public static class SlackNotifierConfiguration {
+
+		@Bean
+		@ConditionalOnMissingBean
+		@ConfigurationProperties("spring.boot.admin.notify.slack")
+		public SlackNotifier slackNotifier(InstanceRepository repository, NotifierProxyProperties proxyProperties) {
+			return new SlackNotifier(repository, createNotifierRestTemplate(proxyProperties));
+		}
+
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnProperty(prefix = "spring.boot.admin.notify.letschat", name = "url")
+	@AutoConfigureBefore({ NotifierTriggerConfiguration.class, CompositeNotifierConfiguration.class })
+	public static class LetsChatNotifierConfiguration {
+
+		@Bean
+		@ConditionalOnMissingBean
+		@ConfigurationProperties("spring.boot.admin.notify.letschat")
+		public LetsChatNotifier letsChatNotifier(InstanceRepository repository,
+				NotifierProxyProperties proxyProperties) {
+			return new LetsChatNotifier(repository, createNotifierRestTemplate(proxyProperties));
+		}
+
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnProperty(prefix = "spring.boot.admin.notify.pagerduty", name = "service-key")
+	@AutoConfigureBefore({ NotifierTriggerConfiguration.class, CompositeNotifierConfiguration.class })
+	public static class PagerdutyNotifierConfiguration {
+
+		@Bean
+		@ConditionalOnMissingBean
+		@ConfigurationProperties("spring.boot.admin.notify.pagerduty")
+		public PagerdutyNotifier pagerdutyNotifier(InstanceRepository repository,
+				NotifierProxyProperties proxyProperties) {
+			return new PagerdutyNotifier(repository, createNotifierRestTemplate(proxyProperties));
+		}
+
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnProperty(prefix = "spring.boot.admin.notify.opsgenie", name = "api-key")
+	@AutoConfigureBefore({ NotifierTriggerConfiguration.class, CompositeNotifierConfiguration.class })
+	public static class OpsGenieNotifierConfiguration {
+
+		@Bean
+		@ConditionalOnMissingBean
+		@ConfigurationProperties("spring.boot.admin.notify.opsgenie")
+		public OpsGenieNotifier opsgenieNotifier(InstanceRepository repository,
+				NotifierProxyProperties proxyProperties) {
+			return new OpsGenieNotifier(repository, createNotifierRestTemplate(proxyProperties));
+		}
+
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnProperty(prefix = "spring.boot.admin.notify.ms-teams", name = "webhook-url")
+	@AutoConfigureBefore({ NotifierTriggerConfiguration.class, CompositeNotifierConfiguration.class })
+	public static class MicrosoftTeamsNotifierConfiguration {
+
+		@Bean
+		@ConditionalOnMissingBean
+		@ConfigurationProperties("spring.boot.admin.notify.ms-teams")
+		public MicrosoftTeamsNotifier microsoftTeamsNotifier(InstanceRepository repository,
+				NotifierProxyProperties proxyProperties) {
+			return new MicrosoftTeamsNotifier(repository, createNotifierRestTemplate(proxyProperties));
+		}
+
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnProperty(prefix = "spring.boot.admin.notify.telegram", name = "auth-token")
+	@AutoConfigureBefore({ NotifierTriggerConfiguration.class, CompositeNotifierConfiguration.class })
+	public static class TelegramNotifierConfiguration {
+
+		@Bean
+		@ConditionalOnMissingBean
+		@ConfigurationProperties("spring.boot.admin.notify.telegram")
+		public TelegramNotifier telegramNotifier(InstanceRepository repository,
+				NotifierProxyProperties proxyProperties) {
+			return new TelegramNotifier(repository, createNotifierRestTemplate(proxyProperties));
+		}
+
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnProperty(prefix = "spring.boot.admin.notify.discord", name = "webhook-url")
+	@AutoConfigureBefore({ NotifierTriggerConfiguration.class, CompositeNotifierConfiguration.class })
+	public static class DiscordNotifierConfiguration {
+
+		@Bean
+		@ConditionalOnMissingBean
+		@ConfigurationProperties("spring.boot.admin.notify.discord")
+		public DiscordNotifier discordNotifier(InstanceRepository repository, NotifierProxyProperties proxyProperties) {
+			return new DiscordNotifier(repository, createNotifierRestTemplate(proxyProperties));
+		}
+
+	}
+
+}
+==============================================================================================================
+import java.util.List;
+
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import org.reactivestreams.Publisher;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
+import org.springframework.boot.autoconfigure.hazelcast.HazelcastAutoConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import de.codecentric.boot.admin.server.domain.events.InstanceEvent;
+import de.codecentric.boot.admin.server.domain.values.InstanceId;
+import de.codecentric.boot.admin.server.eventstore.HazelcastEventStore;
+import de.codecentric.boot.admin.server.eventstore.InstanceEventStore;
+import de.codecentric.boot.admin.server.notify.HazelcastNotificationTrigger;
+import de.codecentric.boot.admin.server.notify.NotificationTrigger;
+import de.codecentric.boot.admin.server.notify.Notifier;
+
+@Configuration(proxyBeanMethods = false)
+@ConditionalOnBean(AdminServerMarkerConfiguration.Marker.class)
+@ConditionalOnSingleCandidate(HazelcastInstance.class)
+@ConditionalOnProperty(prefix = "spring.boot.admin.hazelcast", name = "enabled", matchIfMissing = true)
+@AutoConfigureBefore({ AdminServerAutoConfiguration.class, AdminServerNotifierAutoConfiguration.class })
+@AutoConfigureAfter(HazelcastAutoConfiguration.class)
+public class AdminServerHazelcastAutoConfiguration {
+
+	public static final String DEFAULT_NAME_EVENT_STORE_MAP = "spring-boot-admin-event-store";
+
+	public static final String DEFAULT_NAME_SENT_NOTIFICATIONS_MAP = "spring-boot-admin-sent-notifications";
+
+	@Value("${spring.boot.admin.hazelcast.event-store:" + DEFAULT_NAME_EVENT_STORE_MAP + "}")
+	private String nameEventStoreMap = DEFAULT_NAME_EVENT_STORE_MAP;
+
+	@Bean
+	@ConditionalOnMissingBean(InstanceEventStore.class)
+	public HazelcastEventStore eventStore(HazelcastInstance hazelcastInstance) {
+		IMap<InstanceId, List<InstanceEvent>> map = hazelcastInstance.getMap(this.nameEventStoreMap);
+		return new HazelcastEventStore(map);
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnBean(Notifier.class)
+	public static class NotifierTriggerConfiguration {
+
+		@Value("${spring.boot.admin.hazelcast.sent-notifications:" + DEFAULT_NAME_SENT_NOTIFICATIONS_MAP + "}")
+		private String nameSentNotificationsMap = DEFAULT_NAME_SENT_NOTIFICATIONS_MAP;
+
+		@Bean(initMethod = "start", destroyMethod = "stop")
+		@ConditionalOnMissingBean(NotificationTrigger.class)
+		public NotificationTrigger notificationTrigger(HazelcastInstance hazelcastInstance, Notifier notifier,
+				Publisher<InstanceEvent> events) {
+			return new HazelcastNotificationTrigger(notifier, events,
+					hazelcastInstance.getMap(this.nameSentNotificationsMap));
+		}
+
+	}
+
+}
+==============================================================================================================
+	private final String name;
+
+	@Nullable
+	private final BuildVersion buildVersion;
+
+	private final String status;
+
+	private final Instant statusTimestamp;
+
+	private final List<Instance> instances;
+	
+@lombok.Builder(builderClassName = "Builder", toBuilder = true)
+==============================================================================================================
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.annotation.Nullable;
+
+import org.springframework.context.expression.MapAccessor;
+import org.springframework.expression.Expression;
+import org.springframework.expression.ParserContext;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
+import org.springframework.web.client.RestTemplate;
+import reactor.core.publisher.Mono;
+
+import de.codecentric.boot.admin.server.domain.entities.Instance;
+import de.codecentric.boot.admin.server.domain.entities.InstanceRepository;
+import de.codecentric.boot.admin.server.domain.events.InstanceEvent;
+
+/**
+ * Notifier submitting events to Telegram.
+ */
+public class TelegramNotifier extends AbstractStatusChangeNotifier {
+
+	private static final String DEFAULT_MESSAGE = "<strong>#{instance.registration.name}</strong>/#{instance.id} is <strong>#{event.statusInfo.status}</strong>";
+
+	private final SpelExpressionParser parser = new SpelExpressionParser();
+
+	private RestTemplate restTemplate;
+
+	/**
+	 * base url for telegram (i.e. https://api.telegram.org)
+	 */
+	private String apiUrl = "https://api.telegram.org";
+
+	/**
+	 * Unique identifier for the target chat or username of the target channel
+	 */
+	@Nullable
+	private String chatId;
+
+	/**
+	 * The token identifiying und authorizing your Telegram bot (e.g.
+	 * `123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11`)
+	 */
+	@Nullable
+	private String authToken;
+
+	/**
+	 * Send Markdown or HTML, if you want Telegram apps to show bold, italic, fixed-width
+	 * text or inline URLs in your bot's message.
+	 */
+	private String parseMode = "HTML";
+
+	/**
+	 * If true users will receive a notification with no sound.
+	 */
+	private boolean disableNotify = false;
+
+	private Expression message;
+
+	public TelegramNotifier(InstanceRepository repository, RestTemplate restTemplate) {
+		super(repository);
+		this.restTemplate = restTemplate;
+		this.message = parser.parseExpression(DEFAULT_MESSAGE, ParserContext.TEMPLATE_EXPRESSION);
+	}
+
+	@Override
+	protected Mono<Void> doNotify(InstanceEvent event, Instance instance) {
+		return Mono
+				.fromRunnable(() -> restTemplate.getForObject(buildUrl(), Void.class, createMessage(event, instance)));
+	}
+
+	protected String buildUrl() {
+		return String.format("%s/bot%s/sendmessage?chat_id={chat_id}&text={text}&parse_mode={parse_mode}"
+				+ "&disable_notification={disable_notification}", this.apiUrl, this.authToken);
+	}
+
+	private Map<String, Object> createMessage(InstanceEvent event, Instance instance) {
+		Map<String, Object> parameters = new HashMap<>();
+		parameters.put("chat_id", this.chatId);
+		parameters.put("parse_mode", this.parseMode);
+		parameters.put("disable_notification", this.disableNotify);
+		parameters.put("text", getText(event, instance));
+		return parameters;
+	}
+
+	@Nullable
+	protected String getText(InstanceEvent event, Instance instance) {
+		Map<String, Object> root = new HashMap<>();
+		root.put("event", event);
+		root.put("instance", instance);
+		root.put("lastStatus", getLastStatus(event.getInstance()));
+		StandardEvaluationContext context = new StandardEvaluationContext(root);
+		context.addPropertyAccessor(new MapAccessor());
+		return message.getValue(context, String.class);
+	}
+
+	public void setRestTemplate(RestTemplate restTemplate) {
+		this.restTemplate = restTemplate;
+	}
+
+	public String getApiUrl() {
+		return apiUrl;
+	}
+
+	public void setApiUrl(String apiUrl) {
+		this.apiUrl = apiUrl;
+	}
+
+	@Nullable
+	public String getChatId() {
+		return chatId;
+	}
+
+	public void setChatId(@Nullable String chatId) {
+		this.chatId = chatId;
+	}
+
+	@Nullable
+	public String getAuthToken() {
+		return authToken;
+	}
+
+	public void setAuthToken(@Nullable String authToken) {
+		this.authToken = authToken;
+	}
+
+	public boolean isDisableNotify() {
+		return disableNotify;
+	}
+
+	public void setDisableNotify(boolean disableNotify) {
+		this.disableNotify = disableNotify;
+	}
+
+	public String getParseMode() {
+		return parseMode;
+	}
+
+	public void setParseMode(String parseMode) {
+		this.parseMode = parseMode;
+	}
+
+	public void setMessage(String message) {
+		this.message = parser.parseExpression(message, ParserContext.TEMPLATE_EXPRESSION);
+	}
+
+}
+==============================================================================================================
+import java.net.URI;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.annotation.Nullable;
+
+import org.springframework.context.expression.MapAccessor;
+import org.springframework.expression.Expression;
+import org.springframework.expression.ParserContext;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.web.client.RestTemplate;
+import reactor.core.publisher.Mono;
+
+import de.codecentric.boot.admin.server.domain.entities.Instance;
+import de.codecentric.boot.admin.server.domain.entities.InstanceRepository;
+import de.codecentric.boot.admin.server.domain.events.InstanceEvent;
+import de.codecentric.boot.admin.server.domain.events.InstanceStatusChangedEvent;
+import de.codecentric.boot.admin.server.domain.values.StatusInfo;
+
+/**
+ * Notifier submitting events to Slack.
+ *
+ * @author Artur Dobosiewicz
+ */
+public class SlackNotifier extends AbstractStatusChangeNotifier {
+
+	private static final String DEFAULT_MESSAGE = "*#{instance.registration.name}* (#{instance.id}) is *#{event.statusInfo.status}*";
+
+	private final SpelExpressionParser parser = new SpelExpressionParser();
+
+	private RestTemplate restTemplate;
+
+	/**
+	 * Webhook url for Slack API (i.e. https://hooks.slack.com/services/xxx)
+	 */
+	@Nullable
+	private URI webhookUrl;
+
+	/**
+	 * Optional channel name without # sign (i.e. somechannel)
+	 */
+	@Nullable
+	private String channel;
+
+	/**
+	 * Optional emoji icon without colons (i.e. my-emoji)
+	 */
+	@Nullable
+	private String icon;
+
+	/**
+	 * Optional username which sends notification
+	 */
+	@Nullable
+	private String username = "Spring Boot Admin";
+
+	/**
+	 * Message formatted using Slack markups. SpEL template using event as root
+	 */
+	private Expression message;
+
+	public SlackNotifier(InstanceRepository repository, RestTemplate restTemplate) {
+		super(repository);
+		this.restTemplate = restTemplate;
+		this.message = parser.parseExpression(DEFAULT_MESSAGE, ParserContext.TEMPLATE_EXPRESSION);
+	}
+
+	@Override
+	protected Mono<Void> doNotify(InstanceEvent event, Instance instance) {
+		if (webhookUrl == null) {
+			return Mono.error(new IllegalStateException("'webhookUrl' must not be null."));
+		}
+		return Mono
+				.fromRunnable(() -> restTemplate.postForEntity(webhookUrl, createMessage(event, instance), Void.class));
+	}
+
+	public void setRestTemplate(RestTemplate restTemplate) {
+		this.restTemplate = restTemplate;
+	}
+
+	protected Object createMessage(InstanceEvent event, Instance instance) {
+		Map<String, Object> messageJson = new HashMap<>();
+		messageJson.put("username", username);
+		if (icon != null) {
+			messageJson.put("icon_emoji", ":" + icon + ":");
+		}
+		if (channel != null) {
+			messageJson.put("channel", channel);
+		}
+
+		Map<String, Object> attachments = new HashMap<>();
+		attachments.put("text", getText(event, instance));
+		attachments.put("color", getColor(event));
+		attachments.put("mrkdwn_in", Collections.singletonList("text"));
+		messageJson.put("attachments", Collections.singletonList(attachments));
+
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		return new HttpEntity<>(messageJson, headers);
+	}
+
+	@Nullable
+	protected String getText(InstanceEvent event, Instance instance) {
+		Map<String, Object> root = new HashMap<>();
+		root.put("event", event);
+		root.put("instance", instance);
+		root.put("lastStatus", getLastStatus(event.getInstance()));
+		StandardEvaluationContext context = new StandardEvaluationContext(root);
+		context.addPropertyAccessor(new MapAccessor());
+		return message.getValue(context, String.class);
+	}
+
+	protected String getColor(InstanceEvent event) {
+		if (event instanceof InstanceStatusChangedEvent) {
+			return StatusInfo.STATUS_UP.equals(((InstanceStatusChangedEvent) event).getStatusInfo().getStatus())
+					? "good" : "danger";
+		}
+		else {
+			return "#439FE0";
+		}
+	}
+
+	@Nullable
+	public URI getWebhookUrl() {
+		return webhookUrl;
+	}
+
+	public void setWebhookUrl(@Nullable URI webhookUrl) {
+		this.webhookUrl = webhookUrl;
+	}
+
+	@Nullable
+	public String getChannel() {
+		return channel;
+	}
+
+	public void setChannel(@Nullable String channel) {
+		this.channel = channel;
+	}
+
+	@Nullable
+	public String getIcon() {
+		return icon;
+	}
+
+	public void setIcon(@Nullable String icon) {
+		this.icon = icon;
+	}
+
+	@Nullable
+	public String getUsername() {
+		return username;
+	}
+
+	public void setUsername(@Nullable String username) {
+		this.username = username;
+	}
+
+	public String getMessage() {
+		return message.getExpressionString();
+	}
+
+	public void setMessage(String message) {
+		this.message = parser.parseExpression(message, ParserContext.TEMPLATE_EXPRESSION);
+	}
+
+}
+==============================================================================================================
+	public void start() {
+		this.reminderScheduler = Schedulers.newSingle("reminders");
+		this.subscription = Flux.interval(this.checkReminderInverval, this.reminderScheduler)
+				.log(log.getName(), Level.FINEST).doOnSubscribe((s) -> log.debug("Started reminders"))
+				.flatMap((i) -> this.sendReminders())
+				.retryWhen(Retry.any().retryMax(Long.MAX_VALUE)
+						.doOnRetry((ctx) -> log.warn("Unexpected error when sending reminders", ctx.exception())))
+				.subscribe();
+	}
+==============================================================================================================
+	@Bean
+	public SimpleModule adminJacksonModule() {
+		SimpleModule module = new SimpleModule();
+		module.addDeserializer(Registration.class, new RegistrationDeserializer());
+		module.setSerializerModifier(new RegistrationBeanSerializerModifier(
+				new SanitizingMapSerializer(this.adminServerProperties.getMetadataKeysToSanitize())));
+		return module;
+	}
+==============================================================================================================
+    {
+      "name": "spring.boot.admin.monitor.read-timeout",
+      "deprecation": {
+        "replacement": "spring.boot.admin.monitor.default-timeout",
+        "level": "error"
+      }
+    },
+==============================================================================================================
+	@ModelAttribute(value = "user", binding = false)
+	public Map<String, Object> getUser(@Nullable Principal principal) {
+		if (principal != null) {
+			return singletonMap("name", principal.getName());
+		}
+		return emptyMap();
+	}
+==============================================================================================================
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.Map;
+
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+
+import de.codecentric.boot.admin.server.domain.values.Registration;
+
+public class RegistrationDeserializer extends StdDeserializer<Registration> {
+
+	private static final long serialVersionUID = 1L;
+
+	public RegistrationDeserializer() {
+		super(Registration.class);
+	}
+
+	@Override
+	public Registration deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+		JsonNode node = p.readValueAsTree();
+		Registration.Builder builder = Registration.builder();
+
+		if (node.has("name")) {
+			builder.name(node.get("name").asText());
+		}
+		if (node.has("url")) {
+			String url = node.get("url").asText();
+			builder.healthUrl(url.replaceFirst("/+$", "") + "/health").managementUrl(url);
+		}
+		else {
+			if (node.has("healthUrl")) {
+				builder.healthUrl(node.get("healthUrl").asText());
+			}
+			if (node.has("managementUrl")) {
+				builder.managementUrl(node.get("managementUrl").asText());
+			}
+			if (node.has("serviceUrl")) {
+				builder.serviceUrl(node.get("serviceUrl").asText());
+			}
+		}
+
+		if (node.has("metadata")) {
+			Iterator<Map.Entry<String, JsonNode>> it = node.get("metadata").fields();
+			while (it.hasNext()) {
+				Map.Entry<String, JsonNode> entry = it.next();
+				builder.metadata(entry.getKey(), entry.getValue().asText());
+			}
+		}
+		return builder.build();
+	}
+}
+==============================================================================================================
+function export
+  set arr (echo $argv|tr = \n)
+  set -gx $arr[1] $arr[2]
+end
+
+set PATH $HOME/.jenv/shims $PATH
+command jenv rehash 2>/dev/null
+function jenv
+  set cmd $argv[1]
+  set arg ""
+  if test (count $argv) -gt 1
+    # Great... fish first array index is ... 1 !
+    set arg $argv[2..-1]
+  end
+
+  switch "$cmd"
+    case enable-plugin rehash shell shell-options
+        set script (jenv "sh-$cmd" "$arg")
+        eval $script
+    case '*'
+        command jenv $cmd $arg
+    end
+end
+
+_jenv() {
+  COMPREPLY=()
+  local word="${COMP_WORDS[COMP_CWORD]}"
+
+  if [ "$COMP_CWORD" -eq 1 ]; then
+    COMPREPLY=( $(compgen -W "$(jenv commands)" -- "$word") )
+  else
+    local words=("${COMP_WORDS[@]}")
+    unset words[0]
+    local completions=$(jenv completions "${words[@]}")
+    COMPREPLY=( $(compgen -W "$completions" -- "$word") )
+  fi
+}
+
+complete -o nospace -F _jenv jenv
+==============================================================================================================
+<dependency>
+    <groupId>com.thoughtworks.xstream</groupId>
+    <artifactId>xstream</artifactId>
+    <version>1.4.11.1</version>
+</dependency>
+     <dependency>
+        <groupId>jmock</groupId>
+        <artifactId>jmock</artifactId>
+        <version>${version.jmock}</version>
+        <scope>test</scope>
+      </dependency>
+==============================================================================================================
+     <dependency>
+        <groupId>org.hibernate</groupId>
+        <artifactId>hibernate-envers</artifactId>
+        <version>${version.org.hibernate.envers}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>cglib</groupId>
+            <artifactId>cglib</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+==============================================================================================================
+Instructions for setting up AWS
+You have to give/ensure the user mentioned in $HOME/.aws/credentials a policy. The steps are:
+
+choose IAM
+use "Policies" in navigation
+search for "AWSCodePipelineFullAccess"
+select Attach entities, select "Attach"
+get your user
+click "Attach policy"
+Check policies with this CLI command:
+
+aws iam list-attached-user-policies --user-name <USERNAME>
+Verify that the following entry is listed:
+
+{
+    "PolicyName": "AWSCodePipelineFullAccess", 
+    "PolicyArn": "arn:aws:iam::aws:policy/AWSCodePipelineFullAccess"
+}
+
+https://github.com/codecentric/aws-codepipelines-dashboard
+==============================================================================================================
+Infrastructure Setup
+Build Server
+The following Software is installed on the build server.
+
+Jenkins Server (Master)
+Jenkins Slave
+Nginx
+Sonar
+Nexus
+Installation
+Jenkins Server
+Install Jenkins Server including Plugins.
+
+sudo puppet module install rtyler-jenkins
+sudo puppet apply puppet/jenkins.pp
+Sonar
+Install Sonar SQM Server
+
+sudo puppet module install maestrodev-sonarqube
+sudo puppet apply puppet/sonar.pp
+Nginx
+Install Nginx as Proxy Server for Jenkins, Nexus and Sonar.
+
+sudo puppet module install jfryman-nginx
+sudo puppet apply puppet/nginx.pp
+sudo cp puppet/proxy.conf /etc/nginx/conf.d/proxy.conf  
+Nexus
+Install Nexus as Artefact Server
+
+# create nexus user
+sudo su
+useradd nexus
+cd /usr/local/
+
+# download nexus
+wget http://www.sonatype.org/downloads/nexus-latest-bundle.tar.gz
+
+# unzip and configure nexus
+tar xvfz nexus-latest-bundle.tar.gz
+ln -s nexus-2.8.1-01/ nexus
+chown nexus:nexus -R /usr/local/nexus/
+ln -s /usr/local/nexus/bin/nexus /etc/init.d/nexus
+chmod 755 /etc/init.d/nexus
+update-rc.d nexus defaults
+
+# start nexus service
+service nexus start
+
+# check logs
+tail -f /usr/local/nexus/logs/wrapper.log
+==============================================================================================================
+docker run --name javalandDB -e MYSQL_ROOT_PASSWORD=password -e MYSQL_DATABASE=app -p 3306:3306 -d mysql
+==============================================================================================================
+import org.codehaus.jackson.annotate.JsonCreator;
+import org.codehaus.jackson.annotate.JsonProperty;
+
+public class Timeslot {
+
+    private String start;
+    private String end;
+
+    @JsonCreator
+    public Timeslot(@JsonProperty("start") String start, @JsonProperty("end") String end) {
+        this(start);
+        this.end = end;
+    }
+
+    public Timeslot(String start) {
+        this.start = start;
+    }
+
+    public String getStart() {
+        return start;
+    }
+
+    public String getEnd() {
+        return end;
+    }
+
+    @Override
+    public String toString() {
+        String endToConcatenate = end != null ? " - " + end : "";
+        return start + endToConcatenate;
+    }
+}
+==============================================================================================================
+import java.util.Arrays;
+
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.springframework.batch.core.StepExecution;
+import org.springframework.batch.core.scope.context.StepContext;
+import org.springframework.batch.core.scope.context.StepSynchronizationManager;
+import org.springframework.util.ClassUtils;
+
+import io.micrometer.core.instrument.ImmutableTag;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
+
+/**
+ * This is a helper class for implementing method level profiling. See {@link ReaderProcessorWriterMetricsAspect} for an
+ * aspect extending this class. All calls to an adviced method are tracked in a RichGauge, so you'll see average
+ * duration time, maximum / minimum time, number of method calls and so on. For the name of the metric a special naming
+ * scheme is used so that our {@link MetricsListener} picks up the gauge and writes it to the ExecutionContext of the
+ * StepExecution and to the log.
+ * 
+ * Job configurations need to enable auto-proxying so that aspects may be applied. In JavaConfig just add
+ * {@code @EnableAspectJAutoProxy(proxyTargetClass=true)} as a class level annotation. In xml add
+ * {@code <aop:aspectj-autoproxy proxy-target-class="true"/>} to the xml configuration file. This needs to be done
+ * because jobs reside in child application contexts and don't inherit this kind of configuration from the parent.
+ * proxyTargetClass=true means using CGLIB as proxy mechanism which allows us to proxy classes without interfaces.
+ * 
+ * @author Tobias Flohre
+ */
+public abstract class AbstractBatchMetricsAspect {
+
+	private MeterRegistry meterRegistry;
+
+	public AbstractBatchMetricsAspect(MeterRegistry meterRegistry) {
+		this.meterRegistry = meterRegistry;
+	}
+
+	protected Object profileMethod(ProceedingJoinPoint pjp) throws Throwable {
+		Timer.Sample sample = Timer.start(meterRegistry);
+		try {
+			return pjp.proceed();
+		} finally {
+			sample.stop(meterRegistry.timer(MetricsListener.METRIC_NAME, Arrays.asList(//
+					new ImmutableTag("context", getStepIdentifier()), //
+					new ImmutableTag("method", ClassUtils.getShortName(pjp.getTarget().getClass()) + "."
+							+ pjp.getSignature().getName()))));
+		}
+	}
+
+	private String getStepIdentifier() {
+		StepContext stepContext = StepSynchronizationManager.getContext();
+		StepExecution stepExecution = StepSynchronizationManager.getContext().getStepExecution();
+		return stepContext.getJobName() + "." + stepExecution.getStepName();
+	}
+
+}
+==============================================================================================================
+https://rebrainme.com/webinar-universal-signup?userName=Alexander&userPhone=89817318779&userEmail=alexander.rogalsky%40yandex.ru
+==============================================================================================================
+@echo off
+
+SETLOCAL enabledelayedexpansion
+TITLE FSCrawler ${project.version}
+
+set SCRIPT_DIR=%~dp0
+for %%I in ("%SCRIPT_DIR%..") do set FS_HOME=%%~dpfI
+
+REM set to headless, just in case
+set JAVA_OPTS=%JAVA_OPTS% -Djava.awt.headless=true
+
+REM Ensure UTF-8 encoding by default (e.g. filenames)
+set JAVA_OPTS=%JAVA_OPTS% -Dfile.encoding=UTF-8
+
+set FS_CLASSPATH=%FS_HOME%/lib/*
+
+SET params='%*'
+
+:loop
+FOR /F "usebackq tokens=1* delims= " %%A IN (!params!) DO (
+    SET current=%%A
+    SET params='%%B'
+	SET silent=N
+
+	IF "!current!" == "-s" (
+		SET silent=Y
+	)
+	IF "!current!" == "--silent" (
+		SET silent=Y
+	)
+
+	IF "!silent!" == "Y" (
+		SET nopauseonerror=Y
+	) ELSE (
+	    IF "x!newparams!" NEQ "x" (
+	        SET newparams=!newparams! !current!
+        ) ELSE (
+            SET newparams=!current!
+        )
+	)
+
+    IF "x!params!" NEQ "x" (
+		GOTO loop
+	)
+)
+
+"%JAVA_HOME%\bin\java" %JAVA_OPTS% -cp "%FS_CLASSPATH%" -jar "%FS_HOME%/lib/${project.build.finalName}.jar" !newparams!
+
+ENDLOCAL
+
+@echo off
+
+SETLOCAL enabledelayedexpansion
+TITLE FSCrawler ${project.version}
+
+set SCRIPT_DIR=%~dp0
+for %%I in ("%SCRIPT_DIR%..") do set FS_HOME=%%~dpfI
+
+REM set to headless, just in case
+set JAVA_OPTS=%JAVA_OPTS% -Djava.awt.headless=true
+
+REM Ensure UTF-8 encoding by default (e.g. filenames)
+set JAVA_OPTS=%JAVA_OPTS% -Dfile.encoding=UTF-8
+
+set FS_CLASSPATH=%FS_HOME%/lib/*
+
+SET params='%*'
+
+:loop
+FOR /F "usebackq tokens=1* delims= " %%A IN (!params!) DO (
+    SET current=%%A
+    SET params='%%B'
+	SET silent=N
+
+	IF "!current!" == "-s" (
+		SET silent=Y
+	)
+	IF "!current!" == "--silent" (
+		SET silent=Y
+	)
+
+	IF "!silent!" == "Y" (
+		SET nopauseonerror=Y
+	) ELSE (
+	    IF "x!newparams!" NEQ "x" (
+	        SET newparams=!newparams! !current!
+        ) ELSE (
+            SET newparams=!current!
+        )
+	)
+
+    IF "x!params!" NEQ "x" (
+		GOTO loop
+	)
+)
+
+"%JAVA_HOME%\bin\java" %JAVA_OPTS% -cp "%FS_CLASSPATH%" -jar "%FS_HOME%/lib/${project.build.finalName}.jar" !newparams!
+
+ENDLOCAL
+==============================================================================================================
+        SimpleModule fscrawler = new SimpleModule("FsCrawler", new Version(2, 0, 0, null,
+                "fr.pilato.elasticsearch.crawler", "fscrawler"));
+        fscrawler.addSerializer(new TimeValueSerializer());
+        fscrawler.addDeserializer(TimeValue.class, new TimeValueDeserializer());
+        fscrawler.addSerializer(new PercentageSerializer());
+        fscrawler.addDeserializer(Percentage.class, new PercentageDeserializer());
+==============================================================================================================
+/**
+ * User: Hylke Stapersma
+ * E-mail:[ hylke.stapersma@codecentric.nl]
+ * Date: 23-12-12
+ * Time: 12:40
+ */
+public enum TriangleType {
+    EQUILATERAL,
+    ISOSCELES,
+    SCALENE;
+
+    public String getName(){
+        return name();
+    }
+}
+==============================================================================================================
+ @Around("execution(* org.springframework.batch.item.ItemReader.read(..))")
+==============================================================================================================
+<?xml version="1.0" encoding="UTF-8"?>
+<included>
+	<include resource="org/springframework/boot/logging/logback/base.xml" />
+	<property name="JOB_LOG_PATH" value="${JOB_LOG_PATH:-${LOG_PATH:-${java.io.tmpdir:-/tmp}/}}"/>
+	<!-- Appender for Loggging per JobExecution in a separate File -->
+	<appender name="JOBLOGGER" class="ch.qos.logback.classic.sift.SiftingAppender">
+		<!-- in the absence of the class attribute, it is assumed that the desired discriminator type is ch.qos.logback.classic.sift.MDCBasedDiscriminator -->
+		<discriminator>
+			<key>jobLogFileName</key>
+			<defaultValue>batch-default</defaultValue>
+		</discriminator>
+		<sift>
+			<appender name="${jobLogFileName}" class="ch.qos.logback.core.FileAppender">
+				<file>${JOB_LOG_PATH}${jobLogFileName}.log</file>
+				<append>true</append>
+				<encoder>
+					<pattern>${FILE_LOG_PATTERN}</pattern>
+				</encoder>
+			</appender>
+		</sift>
+	</appender>
+	<root level="INFO">
+		<appender-ref ref="JOBLOGGER" />
+	</root>
+</included>
+==============================================================================================================
+curl --data 'jobParameters=pathToFile=file:/tmp/partner-import.csv' localhost:8080/batch/operations/jobs/flatfileJob
+==============================================================================================================
+#!/bin/bash
+
+VERSION=$1
+ENVIRONMENT=$2
+
+echo "Deploying Version $VERSION to $ENVIRONMENT"
+
+APP_HOME=/opt/conference-app
+REPOSITORY=http://54.93.92.96:8081/artifactory/simple/libs-release-local
+
+if [ "$ENVIRONMENT" == 'JAVALAND_PROD_A' ]; then
+  SERVER="54.93.219.237"
+elif [ "$ENVIRONMENT" == 'JAVALAND_STAGING' ]; then
+  SERVER="52.28.10.112"
+elif [ "$ENVIRONMENT" == 'JAVALAND_TEST' ]; then
+  SERVER="52.28.14.105"
+else
+  echo "Stopping Deployment, please provide valide ENVIRONMENT variable"
+  exit 1
+fi
+ 
+echo "Stopping Java Process on $SERVER"
+ssh ubuntu@$SERVER "sudo killall java" || true
+
+echo "Downloading new Version"
+ssh ubuntu@$SERVER "rm -rf $APP_HOME/conference-app*.war"
+ssh ubuntu@$SERVER "killall java" || true
+
+ssh ubuntu@$SERVER "cd $APP_HOME && sudo wget $REPOSITORY/de/codecentric/conference-app/$VERSION/conference-app-$VERSION.war"
+
+echo "Copying Environment specific Properties"
+scp app/config/test.properties "ubuntu@$SERVER:$APP_HOME/application.properties"
+
+sleep 2
+
+echo "Starting Spring Boot App"
+ssh -f ubuntu@$SERVER "nohup java -jar $APP_HOME/conference-app-$VERSION.war &"
+
+echo "Waiting 30 seconds for app to start"
+sleep 30
+
+echo "Checking HTTP Status"
+STATUS=`curl -s -o /dev/null -w "%{http_code}" http://$SERVER:8080/home`
+if [ "$STATUS" == "200" ]; then
+  echo "Smoketest successful"
+else
+  echo "Please check your application. It does not seem to be running."
+  exit 1
+fi
+==============================================================================================================
+#!/bin/bash
+
+cp ../thot-app/target/thot.war .
+
+ssh -i ~/.vagrant.d/insecure_private_key vagrant@192.168.33.100 "sudo rm -rf /var/lib/tomcat7/webapps/*"
+ssh -i ~/.vagrant.d/insecure_private_key vagrant@192.168.33.100 "sudo rm -rf /var/lib/tomcat7/temp/"
+ssh -i ~/.vagrant.d/insecure_private_key vagrant@192.168.33.100 "sudo rm -rf /var/lib/tomcat7/work/"
+ssh -i ~/.vagrant.d/insecure_private_key vagrant@192.168.33.100 "sudo cp /vagrant/thot.war /var/lib/tomcat7/webapps/"
+ssh -i ~/.vagrant.d/insecure_private_key vagrant@192.168.33.100 "sudo service tomcat7 restart"
+
+rm thot.war
+==============================================================================================================
+docker run -e POSTGRES_PASSWORD=securePassword -e POSTGRES_USER=postgres -e POSTGRES_DB=quarkus-shoppinglist -d -p 5432:5432 postgres
+==============================================================================================================
+	@Test
+	public void callWeatherServiceSoapClient() {
+		WeatherResponse weatherResponse =
+				when()
+					.get("/weather/99423/45/50555")
+				.then()
+					.statusCode(HttpStatus.SC_OK)
+					.extract().body().as(WeatherResponse.class);
+
+		assertThat(weatherResponse.getCity(), is("Weimar"));
+	}
+
+==============================================================================================================
+<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.1</version>
+				<configuration>
+					<source>1.8</source>
+					<target>1.8</target>
+					<encoding>UTF-8</encoding>
+					<meminitial>128m</meminitial>
+					<maxmem>512m</maxmem>
+				</configuration>
+			</plugin>
+==============================================================================================================
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.joda.time.DateTime;
+
+import com.thoughtworks.xstream.converters.Converter;
+import com.thoughtworks.xstream.converters.MarshallingContext;
+import com.thoughtworks.xstream.converters.UnmarshallingContext;
+import com.thoughtworks.xstream.io.HierarchicalStreamReader;
+import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
+
+/**
+ * @author Andreas Houben
+ */
+public class DateTimeConverter implements Converter {
+
+    private final static Logger LOGGER = Logger.getLogger(DateTimeConverter.class.getName());
+
+    @Override
+    public void marshal(Object o, HierarchicalStreamWriter writer, MarshallingContext mc) {
+        DateTime dateTime = (DateTime) o;
+        writer.setValue(dateTime.toString());
+    }
+
+    @Override
+    public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext uc) {
+        DateTime dateTime = DateTime.now();
+        try {
+            dateTime = DateTime.parse(reader.getValue());
+        } catch (IllegalArgumentException e) {
+            LOGGER.log(Level.SEVERE, "Could not parse DateTime value {0}. Returning DateTime.now().", reader.getValue());
+        }
+        return dateTime;
+    }
+
+    @Override
+    public boolean canConvert(@SuppressWarnings("rawtypes") Class clazz) {
+        return DateTime.class.isAssignableFrom(clazz);
+    }
+
+}
+==============================================================================================================
+@XStreamAlias("message")
+@XStreamConverter(value=ToAttributedValueConverter.class, strings={"content"})
+class RendezvousMessage {
+
+	@XStreamAlias("type")
+	private int messageType;
+
+	private String content;
+	
+	@XStreamConverter(value=BooleanConverter.class, booleans={false}, strings={"yes", "no"})
+	private boolean important;
+
+	@XStreamConverter(SingleValueCalendarConverter.class)
+	private Calendar created = new GregorianCalendar();
+
+	public RendezvousMessage(int messageType, boolean important, String content) {
+		this.messageType = messageType;
+		this.important = important;
+		this.content = content;
+	}
+}
+==============================================================================================================
+@XStreamAlias("message")
+@XStreamConverter(value=ToAttributedValueConverter.class, strings={"content"})
+class RendezvousMessage {
+
+	@XStreamAlias("type")
+	private int messageType;
+
+	private List<String> content;
+	
+	@XStreamConverter(value=BooleanConverter.class, booleans={false}, strings={"yes", "no"})
+	private boolean important;
+
+	@XStreamConverter(SingleValueCalendarConverter.class)
+	private Calendar created = new GregorianCalendar();
+
+	public RendezvousMessage(int messageType, boolean important, String... content) {
+		this.messageType = messageType;
+		this.important = important;
+		this.content = Arrays.asList(content);
+	}
+}
+==============================================================================================================
+@ECHO off
+set MAVEN_OPTS_BACKUP=%MAVEN_OPTS%
+set MAVEN_OPTS=
+
+del /F /Q work\plugins
+call mvn -Dmaven.test.skip=true -DskipTests=true clean hpi:run <nul
+
+set MAVEN_OPTS=%MAVEN_OPTS_BACKUP%
+==============================================================================================================
+Manifest-Version: 1.0
+Implementation-Title: justAnExampleProjectToHaveAManifestFile
+Implementation-Version: 0.0.1-SNAPSHOT
+Archiver-Version: Plexus Archiver
+Built-By: jonashecht
+Implementation-Vendor-Id: de.codecentric.cxf
+Spring-Boot-Version: 1.4.3.RELEASE
+Implementation-Vendor: Pivotal Software, Inc.
+Main-Class: org.springframework.boot.loader.JarLauncher
+Start-Class: de.codecentric.cxf.TestApplication
+Spring-Boot-Classes: BOOT-INF/classes/
+Spring-Boot-Lib: BOOT-INF/lib/
+Created-By: Apache Maven 3.3.9
+Build-Jdk: 1.8.0_112
+Implementation-URL: http://projects.spring.io/spring-boot/restexamples
+ /
+==============================================================================================================
+META-INF/cxf/org.apache.cxf.Logger
+org.apache.cxf.common.logging.Slf4jLogger
+==============================================================================================================
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:gen="http://www.codecentric.de/namespace/weatherservice/general">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <gen:GetCityForecastByZIP>
+         <gen:ForecastRequest>
+            <gen:ZIP>99425</gen:ZIP>
+            <gen:flagcolor>bluewhite</gen:flagcolor>
+            <gen:productName>ForecastBasic</gen:productName>
+            <gen:ForecastCustomer>
+				<gen:Age>30</gen:Age>
+				<gen:Contribution>5000</gen:Contribution>
+				<gen:MethodOfPayment>Paypal</gen:MethodOfPayment>
+            </gen:ForecastCustomer>
+         </gen:ForecastRequest>
+      </gen:GetCityForecastByZIP>
+   </soapenv:Body>
+</soapenv:Envelope>
+==============================================================================================================
+# AutoConfigurations
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=de.codecentric.cxf.configuration.CxfAutoConfiguration
+
+#FailureAnalyzers
+org.springframework.boot.diagnostics.FailureAnalyzer=\
+de.codecentric.cxf.autodetection.diagnostics.SeiImplMissingFailureAnalyzer,\
+de.codecentric.cxf.autodetection.diagnostics.SeiMissingFailureAnalyzer,\
+de.codecentric.cxf.autodetection.diagnostics.WebServiceClientMissingFailureAnalyzer,\
+de.codecentric.cxf.autodetection.diagnostics.CxfSpringBootMavenPropertiesMissingFailureAnalyzer
+==============================================================================================================
+==============================================================================================================
+==============================================================================================================
+import org.springframework.web.reactive.function.client.ClientRequest;
+import org.springframework.web.reactive.function.client.ClientResponse;
+import org.springframework.web.reactive.function.client.ExchangeFunction;
+import reactor.core.publisher.Mono;
+
+import de.codecentric.boot.admin.server.domain.entities.Instance;
+
+/**
+ * Represents a function that filters an{@linkplain ExchangeFunction exchange function}
+ * issued on a registered instance.
+ *
+ * @author Johannes Edmeier
+ */
+@FunctionalInterface
+public interface InstanceExchangeFilterFunction {
+
+	Mono<ClientResponse> filter(Instance instance, ClientRequest request, ExchangeFunction next);
+
+}
+==============================================================================================================
+	private static final ParameterizedTypeReference<Map<String, Object>> RESPONSE_TYPE = new ParameterizedTypeReference<Map<String, Object>>() {
+	};
+	
+	protected Mono<Info> convertInfo(Instance instance, ClientResponse response) {
+		if (response.statusCode().is2xxSuccessful() && response.headers().contentType().map(
+				(mt) -> mt.isCompatibleWith(MediaType.APPLICATION_JSON) || mt.isCompatibleWith(ACTUATOR_V2_MEDIATYPE))
+				.orElse(false)) {
+			return response.bodyToMono(RESPONSE_TYPE).map(Info::from).defaultIfEmpty(Info.empty());
+		}
+		log.info("Couldn't retrieve info for {}: {}", instance, response.statusCode());
+		return response.releaseBody().then(Mono.just(Info.empty()));
+	}
+==============================================================================================================
 	@Profile("secure")
 	@Configuration(proxyBeanMethods = false)
 	public static class SecuritySecureConfig extends WebSecurityConfigurerAdapter {
