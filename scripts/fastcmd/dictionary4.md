@@ -47119,6 +47119,68 @@ FOR /F "usebackq tokens=1* delims= " %%A IN (!params!) DO (
 
 ENDLOCAL
 ==============================================================================================================
+@Service
+@Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE, 
+       proxyMode = ScopedProxyMode.TARGET_CLASS)
+class MessageBuilder {
+  // ...
+}
+==============================================================================================================
+@Service
+class MessageService {
+ 
+    private final ObjectFactory<MessageBuilder> messageBuilder;
+ 
+    MessageService(ObjectFactory<MessageBuilder> messageBuilder) {
+        this.messageBuilder = messageBuilder;
+    }
+ 
+    Message createMessage(String content, String receiver) {
+        return messageBuilder.getObject()
+                .withContent(content)
+                .withReceiver(receiver)
+                .build();
+    }
+ 
+}
+==============================================================================================================
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class MessageServiceTest {
+ 
+    @Autowired
+    private MessageService messageService;
+ 
+    @Test
+    public void shouldCreateTwoBuilders() throws Exception {
+        //when
+        messageService.createMessage("text", "alice");
+        messageService.createMessage("msg", "bob");
+        //then
+        int prototypeCounter = MessageBuilder.getInstanceCounter();
+        assertEquals("Wrong number of instances", 2, prototypeCounter);
+    }
+ 
+}
+==============================================================================================================
+@Service
+class MessageService {
+ 
+    private final ObjectFactory<MessageBuilder> messageBuilder;
+ 
+    MessageService(ObjectFactory<MessageBuilder> messageBuilder) {
+        this.messageBuilder = messageBuilder;
+    }
+ 
+    Message createMessage(String content, String receiver) {
+        return messageBuilder.getObject()
+                .withContent(content)
+                .withReceiver(receiver)
+                .build();
+    }
+ 
+}
+==============================================================================================================
         SimpleModule fscrawler = new SimpleModule("FsCrawler", new Version(2, 0, 0, null,
                 "fr.pilato.elasticsearch.crawler", "fscrawler"));
         fscrawler.addSerializer(new TimeValueSerializer());
